@@ -1,0 +1,126 @@
+[project]
+name = "documentai-api"
+version = "0.1.0"
+description = "DocumentAI API"
+readme = "README.md"
+requires-python = ">=3.11"
+
+dependencies = [
+  "boto3>=1.34.0",
+  "fastapi>=0.104.0",
+  "python-multipart>=0.0.6",
+  "uvicorn>=0.24.0",
+  "python-magic>=0.4.27",
+  "pypdf>=3.17.4",
+  "opencv-python-headless==4.9.0.80",
+  "numpy==1.26.4",
+  "pdf2image>=1.16.0",
+  "typer>=0.16.0",
+  "click>=8.1,<8.3",
+  "tenacity>=8.2.0",
+  "pydantic-settings>=2.0.3",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.0.0",
+  "pytest-cov>=4.1.0",
+  "pytest-mock>=3.11.0",
+  "pytest-xdist>=3.0.0",
+  "pytest-asyncio>=0.23.0",
+  "ruff>=0.1.0",
+  "httpx>=0.24.0",
+  "moto[all]>=4.2.0",
+  "freezegun>=1.2.0",
+  "mypy>=1.20.0",
+  "boto3-stubs[s3,dynamodb,bedrock,bedrock-runtime,bedrock-data-automation,bedrock-data-automation-runtime,sqs,athena,ssm]>=1.38.0",
+]
+
+[project.scripts]
+documentai_api = "documentai_api.main:main"
+bda_result_processor = "documentai_api.jobs.bda_result_processor.main:app"
+document_processor = "documentai_api.jobs.document_processor.main:app"
+export-openapi = "documentai_api.cli.export_openapi:app"
+
+[tool.mypy]
+pretty = true
+show_error_context = true
+strict = true
+enable_error_code = ["ignore-without-code", "exhaustive-match"]
+plugins = ["pydantic.mypy"]
+# prep for mypy 2.0
+local_partial_types = true
+allow_redefinition_new = true
+strict_bytes = true
+
+[[tool.mypy.overrides]]
+# document_detector.py has a number of OpenCV/numpy typing difficulties
+# note: the file may eventually replaced with lightweight alternative (Claude Haiku pre-classification)
+module = "documentai_api.utils.document_detector"
+disable_error_code = ["arg-type", "call-overload"]
+
+[tool.ruff]
+line-length = 100
+# see docs at https://docs.astral.sh/ruff/rules
+lint.select = [
+    # flake8-bugbear
+    "B",
+    # pydocstyle
+    "D", "D404",
+    # pycodestyle, ones that don't deal with formatting
+    "E4", "E7", "E9",
+    # Pyflakes
+    "F",
+    # FastAPI
+    "FAST",
+    # refurb
+    "FURB",
+    # isort
+    "I",
+    # flake8-no-pep420
+    "INP",
+    # pep8-naming
+    "N",
+    # perflint
+    "PERF",
+    # flake8-pytest-style
+    "PT",
+    # ruff stuff
+    "RUF",
+    # flake8-simplify
+    "SIM",
+    # flake8-debugger
+    "T10",
+    # pyupgrade
+    "UP",
+]
+lint.ignore = [
+    # don't require *every* public thing to have a docstring
+    "D1",
+    # some params are obvious
+    "D417",
+    # preserve even simple if-else blocks
+    "SIM108",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "@abstractmethod",
+]
+
+[tool.pytest.ini_options]
+addopts = "-m 'not audit'"
+markers = [
+    "audit: mark a test as a security audit log test, to be run isolated from other tests",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.28,<0.10.0"]
+build-backend = "uv_build"

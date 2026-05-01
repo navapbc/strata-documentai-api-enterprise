@@ -1,0 +1,169 @@
+.PHONY: \
+	architecture-diagram \
+	build \
+	check \
+	clean \
+	clean-volumes \
+	format \
+	help \
+	init \
+	init-local \
+	lint \
+	lint-mypy \
+	lint-ruff \
+	lint-uv \
+	login \
+	openapi-spec \
+	release-build \
+	run-logs \
+	setup-env \
+	start \
+	start-local \
+	stop \
+	test
+
+.DEFAULT_GOAL := help
+
+# Check that given variables are set and all have non-empty values,
+# die with an error otherwise.
+#
+# Params:
+#   1. Variable name(s) to test.
+#   2. (optional) Error message to print.
+# Based off of https://stackoverflow.com/questions/10858261/how-to-abort-makefile-if-variable-not-set
+check_defined = \
+	$(strip $(foreach 1,$1, \
+        $(call __check_defined,$1,$(strip $(value 2)))))
+__check_defined = \
+	$(if $(value $1),, \
+		$(error Undefined $1$(if $2, ($2))$(if $(value @), \
+			required by target '$@')))
+
+
+##################################################
+# Constants
+##################################################
+
+APP_NAME := documentai-api
+APP_DOCS_DIR := $(CURDIR)/../docs/$(APP_NAME)
+
+# By default, all python/uv commands will run inside of the docker container
+# if you wish to run this natively, add RUN_CMD_APPROACH=local to your environment vars
+# You can set this by either running `export RUN_CMD_APPROACH=local` in your shell or add
+# it to your ~/.zshrc file (and run `source ~/.zshrc`)
+ifeq "$(RUN_CMD_APPROACH)" "local"
+RUN_CMD :=
+else
+RUN_CMD := docker compose run $(DOCKER_EXEC_ARGS) --rm $(APP_NAME)
+endif
+
+PY_RUN_CMD := $(RUN_CMD) uv run --frozen
+
+ifdef CI
+FMT_ARGS := --check
+LINT_ARGS :=
+else
+FMT_ARGS :=
+LINT_ARGS := --fix
+endif
+
+##################################################
+# Build & Run
+##################################################
+setup-env: ## Set up local environment file
+	@test -f .env || cp local.env.example .env
+
+build: ## Build Docker containers
+	docker compose build
+
+start: ## Start containers in detached mode
+	docker compose up --renew-anon-volumes --detach
+
+start-local: ## Run the application server natively
+	$(PY_RUN_CMD) documentai_api
+
+run-logs: start ## Start containers and follow logs
+	docker compose logs --follow --no-color $(APP_NAME)
+
+init: setup-env ## Initialize project (container-based)
+	docker compose build
+
+init-local: setup-env ## Initialize project for native development
+	uv sync --all-extras --frozen
+
+clean-volumes: ## Remove project docker volumes
+	docker compose down --volumes
+
+stop: ## Stop containers
+	docker compose down
+
+check: ## Run all checks
+check: format lint test test-audit
+
+release-build: ## Build production Docker image
+	docker buildx build \
+		--platform=linux/amd64 \
+		$(OPTS) \
+		.
+
+##################################################
+# Testing
+##################################################
+
+test: ## Run test suite
+	$(PY_RUN_CMD) pytest $(args)
+
+test-coverage: ## Run tests with coverage report
+	$(PY_RUN_CMD) pytest --cov=src/documentai_api --cov-branch --cov-report=html:.coverage_report --cov-report=term-missing $(args)
+
+test-parallel: ## Run test suite in parallel
+	$(PY_RUN_CMD) pytest -n auto $(args)
+
+test-audit: ## Run audit logging tests
+	$(PY_RUN_CMD) pytest -m "audit" $(args)
+
+##################################################
+# Lint / Format
+##################################################
+
+format: ## Format code
+	$(PY_RUN_CMD) ruff format $(FMT_ARGS) .
+
+lint: ## Run all linters
+lint: lint-ruff lint-uv lint-mypy
+
+lint-ruff: ## Lint Python code with ruff
+	$(PY_RUN_CMD) ruff check $(LINT_ARGS) .
+
+lint-mypy: ## Type check with mypy
+	$(PY_RUN_CMD) mypy src
+
+lint-uv: ## Check uv lockfile is up-to-date
+	$(RUN_CMD) uv lock --check
+
+##################################################
+# Miscellaneous Utilities
+##################################################
+
+login: start ## Start shell in running container
+	docker exec -it $(APP_NAME) bash
+
+clean: ## Clean build artifacts
+	rm -rf .pytest_cache .coverage_report .coverage __pycache__
+	find . -type d -name "__pycache__" -exec rm -rf {} +
+
+openapi-spec: ## Export openapi spec to docs directory
+	$(PY_RUN_CMD) export-openapi > $(APP_DOCS_DIR)/openapi.json
+
+architecture-diagram:
+	docker run --rm \
+	-v $(APP_DOCS_DIR):/data \
+	ghcr.io/mermaid-js/mermaid-cli/mermaid-cli:latest \
+	-i diagrams/architecture.mmd \
+	-o media/architecture.png \
+	--iconPacks '@iconify-json/logos'
+
+help: ## Show help
+	@grep -Eh '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+	@echo "APP_NAME=$(APP_NAME)"
