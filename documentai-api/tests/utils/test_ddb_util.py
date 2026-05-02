@@ -7,9 +7,12 @@ from freezegun import freeze_time
 from documentai_api.config.constants import ProcessStatus
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils import ddb as ddb_util
-from documentai_api.utils.models import ClassificationData, InternalApiResponse
+from documentai_api.utils.models import (
+    BedrockClassificationResult,
+    ClassificationData,
+    InternalApiResponse,
+)
 from documentai_api.utils.response_codes import ResponseCodes
-from tests.helpers.assertions import assert_dict_contains
 
 
 @pytest.mark.parametrize(
@@ -404,9 +407,8 @@ def test_insert_ddb(ddb_doc_metadata_table, mocker):
         trace_id="trace-456",
         is_password_protected=True,
         is_document_blurry=False,
-        document_profile_raw_metrics=mock_raw_metrics,
-        document_profile_normalized_metrics=mock_normalized_metrics,
-        overall_blur_score=0.85,
+        pre_classification_document_type="W2",
+        pre_classification_confidence=".98",
     )
 
     item = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"]
@@ -427,9 +429,8 @@ def test_insert_ddb(ddb_doc_metadata_table, mocker):
     assert item[DocumentMetadata.IS_PASSWORD_PROTECTED] is True
     assert item[DocumentMetadata.IS_DOCUMENT_BLURRY] is False
     assert DocumentMetadata.RESPONSE_JSON in item
-    assert DocumentMetadata.DOCUMENT_METRICS_RAW in item
-    assert DocumentMetadata.DOCUMENT_METRICS_NORMALIZED in item
-    assert item[DocumentMetadata.OVERALL_BLUR_SCORE] == Decimal("0.85")
+    assert item[DocumentMetadata.PRE_CLASSIFICATION_DOCUMENT_TYPE] == "W2"
+    assert item[DocumentMetadata.PRE_CLASSIFICATION_CONFIDENCE] == Decimal("0.98")
 
 
 @pytest.mark.parametrize(
@@ -437,94 +438,129 @@ def test_insert_ddb(ddb_doc_metadata_table, mocker):
         "user_provided_document_category",
         "content_type",
         "is_password_protected",
-        "is_blurry",
+        "preclassify_result",
         "expected_status",
         "has_internal_response",
     ),
     [
-        ("income", "image/bmp", False, False, ProcessStatus.NOT_IMPLEMENTED, True),
-        ("income", "application/pdf", True, False, ProcessStatus.PASSWORD_PROTECTED, True),
-        ("income", "application/pdf", False, True, ProcessStatus.BLURRY_DOCUMENT_DETECTED, True),
-        ("income", "image/jpeg", False, False, ProcessStatus.PENDING_GRAYSCALE_CONVERSION, False),
-        ("income", "application/pdf", False, False, ProcessStatus.NOT_STARTED, False),
-        (None, "application/pdf", False, False, ProcessStatus.NOT_STARTED, False),
+        ("income", "image/bmp", False, None, ProcessStatus.NOT_IMPLEMENTED, True),
+        ("income", "application/pdf", True, None, ProcessStatus.PASSWORD_PROTECTED, True),
+        (
+            "income",
+            "application/pdf",
+            False,
+            BedrockClassificationResult(
+                document_type="other_document",
+                confidence=0.3,
+                document_count=1,
+                is_document=True,
+                is_blurry=True,
+            ),
+            ProcessStatus.BLURRY_DOCUMENT_DETECTED,
+            True,
+        ),
+        (
+            "income",
+            "application/pdf",
+            False,
+            BedrockClassificationResult(
+                document_type="not_a_document",
+                confidence=0.9,
+                document_count=1,
+                is_document=False,
+                is_blurry=False,
+            ),
+            ProcessStatus.NO_DOCUMENT_DETECTED,
+            True,
+        ),
+        (
+            "income",
+            "application/pdf",
+            False,
+            BedrockClassificationResult(
+                document_type="W2",
+                confidence=0.95,
+                document_count=2,
+                is_document=True,
+                is_blurry=False,
+            ),
+            ProcessStatus.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
+            True,
+        ),
+        (
+            "income",
+            "image/jpeg",
+            False,
+            BedrockClassificationResult(
+                document_type="W2",
+                confidence=0.95,
+                document_count=1,
+                is_document=True,
+                is_blurry=False,
+            ),
+            ProcessStatus.PENDING_GRAYSCALE_CONVERSION,
+            False,
+        ),
+        (
+            "income",
+            "application/pdf",
+            False,
+            BedrockClassificationResult(
+                document_type="W2",
+                confidence=0.95,
+                document_count=1,
+                is_document=True,
+                is_blurry=False,
+            ),
+            ProcessStatus.NOT_STARTED,
+            False,
+        ),
+        (
+            None,
+            "application/pdf",
+            False,
+            BedrockClassificationResult(
+                document_type="W2",
+                confidence=0.95,
+                document_count=1,
+                is_document=True,
+                is_blurry=False,
+            ),
+            ProcessStatus.NOT_STARTED,
+            False,
+        ),
     ],
 )
 def test_insert_initial_ddb_record(
     ddb_doc_metadata_table,
-    set_ddb_doc_metadata_table_env_vars,
     s3_bucket,
     user_provided_document_category,
     content_type,
     is_password_protected,
-    is_blurry,
+    preclassify_result,
     expected_status,
     has_internal_response,
     mocker,
 ):
-    import json
-
-    from documentai_api.utils.document_detector import (
-        DocumentProfile,
-        QualityMetricsNormalized,
-        QualityMetricsRaw,
+    mocker.patch("documentai_api.utils.ddb.document_utils.get_page_count", return_value=1)
+    mocker.patch(
+        "documentai_api.utils.ddb.document_utils.is_password_protected",
+        return_value=is_password_protected,
     )
+    mock_preclassify = mocker.patch("documentai_api.utils.ddb.preclassify_document_image")
+    if preclassify_result:
+        mock_preclassify.return_value = preclassify_result
 
-    mock_get_internal_api_response = mocker.patch(
-        "documentai_api.utils.ddb.get_internal_api_response"
+    mocker.patch("documentai_api.utils.ddb.get_bda_percentage", return_value=1.0)
+    mocker.patch("documentai_api.utils.ddb.get_all_schemas", return_value={"W2": {}, "Payslip": {}})
+    mocker.patch(
+        "documentai_api.utils.ddb.build_v1_api_response", return_value={"status": "completed"}
     )
-    if has_internal_response:
-        mock_get_internal_api_response.return_value = InternalApiResponse(
-            validation_passed=True,
-            document_category="income",
-            matched_document_class="paystub",
-            response_code=ResponseCodes.SUCCESS,
-            response_message="Success",
-        )
-    else:
-        mock_get_internal_api_response.return_value = None
-
-    mock_document_profile = DocumentProfile(
-        page_count=1,
-        raw_metrics=QualityMetricsRaw(
-            fft_score=0.0,
-            edge_score=0.0,
-            laplacian_variance=0.0,
-            local_contrast=0.0,
-            sobel_score=0.0,
-            noise_stddev=0.0,
-            motion_blur_score=0.0,
-        ),
-        normalized_metrics=QualityMetricsNormalized(
-            fft_score=1.0,
-            edge_score=1.0,
-            laplacian_variance=1.0,
-            local_contrast=1.0,
-            sobel_score=1.0,
-            noise_stddev=1.0,
-        ),
-        normalization_ranges=None,
-        overall_blur_score=0.0,
-        is_blurry=is_blurry,
-        is_multipage=False,
-        is_password_protected=is_password_protected,
-    )
-
-    mock_document_detector_class = mocker.patch("documentai_api.utils.ddb.DocumentDetector")
-    mock_document_detector_instance = mocker.MagicMock()
-    mock_document_detector_class.return_value = mock_document_detector_instance
-    mock_document_detector_instance.get_document_profile.return_value = mock_document_profile
-    mock_document_detector_instance.is_multidoc_in_single_page.return_value = False
 
     s3_object = s3_bucket.put_object(
         Key="input/test-file",
         Body=b"bytes",
         ContentType=content_type,
-        Metadata={
-            "job-id": "test-job-id",
-            "trace-id": "test-trace-id",
-            "original-file-name": "original-test.pdf",
-        },
     )
 
     ddb_util.insert_initial_ddb_record(
@@ -537,42 +573,28 @@ def test_insert_initial_ddb_record(
         trace_id="test-trace-id",
     )
 
-    mock_document_detector_instance.get_document_profile.assert_called_once_with(
-        b"bytes", s3_object.key
-    )
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
 
-    doc_meta_record = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
+    assert item[DocumentMetadata.PROCESS_STATUS] == expected_status
+    assert item[DocumentMetadata.CONTENT_TYPE] == content_type
+    assert item[DocumentMetadata.PAGES_DETECTED] == 1
+    assert item[DocumentMetadata.IS_PASSWORD_PROTECTED] == is_password_protected
+    assert item[DocumentMetadata.JOB_ID] == "test-job-id"
+    assert item[DocumentMetadata.TRACE_ID] == "test-trace-id"
+    assert DocumentMetadata.CREATED_AT in item
+    assert DocumentMetadata.UPDATED_AT in item
 
-    expected_record = {
-        "fileName": "test-file",
-        "originalFileName": "original-test.pdf",
-        "userProvidedDocumentCategory": user_provided_document_category or "unknown",
-        "processStatus": expected_status.value,
-        "fileSizeBytes": Decimal(5),
-        "contentType": content_type,
-        "jobId": "test-job-id",
-        "traceId": "test-trace-id",
-        "isDocumentBlurry": is_blurry,
-        "isPasswordProtected": is_password_protected,
-        "pagesDetected": Decimal(1),
-        "documentMetricsRaw": json.dumps(mock_document_profile.raw_metrics.to_json_dict()),
-        "documentMetricsNormalized": json.dumps(
-            mock_document_profile.normalized_metrics.to_json_dict()
-        ),
-        "overallBlurScore": Decimal(0),
-    }
-
-    assert_dict_contains(doc_meta_record, expected_record)
-
-    assert "createdAt" in doc_meta_record
-    assert "updatedAt" in doc_meta_record
+    if preclassify_result:
+        assert (
+            item[DocumentMetadata.PRE_CLASSIFICATION_DOCUMENT_TYPE]
+            == preclassify_result.document_type
+        )
 
     if has_internal_response:
-        assert doc_meta_record["responseJson"] == json.dumps(
-            mock_get_internal_api_response.return_value.__dict__
-        )
+        assert DocumentMetadata.RESPONSE_JSON in item
+        assert DocumentMetadata.V1_API_RESPONSE_JSON in item
     else:
-        assert "responseJson" not in doc_meta_record
+        assert DocumentMetadata.RESPONSE_JSON not in item
 
 
 def test_set_bda_processing_status_started(mocker):

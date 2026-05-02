@@ -4,9 +4,8 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
+import documentai_api.utils.documents as document_utils
 from documentai_api.config.constants import (
-    PROCESSING_STATUS_COMPLETED,
-    PROCESSING_STATUS_PENDING_EXTRACTION,
     ConfigDefaults,
     DocumentCategory,
     ProcessStatus,
@@ -17,11 +16,7 @@ from documentai_api.services import ddb as ddb_service
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils import env
 from documentai_api.utils import s3 as s3_utils
-from documentai_api.utils.document_detector import (
-    DocumentDetector,
-    QualityMetricsNormalized,
-    QualityMetricsRaw,
-)
+from documentai_api.utils.bedrock import preclassify_document_image
 from documentai_api.utils.env import get_required_env
 from documentai_api.utils.models import (
     ClassificationData,
@@ -31,6 +26,8 @@ from documentai_api.utils.models import (
 )
 from documentai_api.utils.response_builder import build_v1_api_response, get_internal_api_response
 from documentai_api.utils.response_codes import ResponseCodes
+from documentai_api.utils.schemas import get_all_schemas
+from documentai_api.utils.ssm import get_bda_percentage
 
 logger = get_logger(__name__)
 
@@ -191,7 +188,7 @@ def _build_timing_updates(
         except Exception as e:
             logger.error(f"Failed to calculate bda wait time for {object_key}: {e}")
 
-    elif status in PROCESSING_STATUS_COMPLETED:
+    elif ProcessStatus(status).is_completed():
         completion_updates, completion_values = _build_completion_timing(
             object_key, bda_output_s3_uri
         )
@@ -387,9 +384,8 @@ def insert_ddb(
     trace_id: str | None = None,
     is_password_protected: bool | None = False,
     is_document_blurry: bool | None = False,
-    document_profile_raw_metrics: QualityMetricsRaw | None = None,
-    document_profile_normalized_metrics: QualityMetricsNormalized | None = None,
-    overall_blur_score: float | None = None,
+    pre_classification_document_type: str | None = None,
+    pre_classification_confidence: float | None = None,
 ) -> None:
     try:
         table_name = get_required_env(env.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME)
@@ -429,18 +425,15 @@ def insert_ddb(
         if is_document_blurry is not None:
             item[DocumentMetadata.IS_DOCUMENT_BLURRY] = bool(is_document_blurry)
 
-        if document_profile_raw_metrics is not None:
-            item[DocumentMetadata.DOCUMENT_METRICS_RAW] = json.dumps(
-                document_profile_raw_metrics.to_json_dict()
+        if pre_classification_document_type is not None:
+            item[DocumentMetadata.PRE_CLASSIFICATION_DOCUMENT_TYPE] = (
+                pre_classification_document_type
             )
 
-        if document_profile_normalized_metrics is not None:
-            item[DocumentMetadata.DOCUMENT_METRICS_NORMALIZED] = json.dumps(
-                document_profile_normalized_metrics.to_json_dict()
+        if pre_classification_confidence is not None:
+            item[DocumentMetadata.PRE_CLASSIFICATION_CONFIDENCE] = Decimal(
+                str(pre_classification_confidence)
             )
-
-        if overall_blur_score is not None:
-            item[DocumentMetadata.OVERALL_BLUR_SCORE] = Decimal(str(overall_blur_score))
 
         ddb_service.put_item(table_name, item)
 
@@ -467,21 +460,15 @@ def insert_initial_ddb_record(
     file_size_bytes = s3_service.get_file_size_bytes(source_bucket_name, source_object_key)
     file_bytes = s3_service.get_file_bytes(source_bucket_name, source_object_key)
 
-    bda_percentage = 1.0  # TODO: fetch from SSM
-    is_multipage_detection_enabled = False  # TODO: add SSM configuration
+    bda_percentage = get_bda_percentage(user_provided_document_category)
     response_code = ResponseCodes.SUCCESS
     internal_api_response: InternalApiResponse | None = None
     process_status = ProcessStatus.PENDING_GRAYSCALE_CONVERSION
-    pages_detected = None
-
-    document_detector = DocumentDetector()
-    profile = document_detector.get_document_profile(file_bytes, source_object_key)
-    pages_detected = profile.page_count
-    is_password_protected = profile.is_password_protected
-    is_document_blurry = profile.is_blurry
-    document_profile_raw_metrics = profile.raw_metrics
-    document_profile_normalized_metrics = profile.normalized_metrics
-    overall_blur_score = profile.overall_blur_score
+    pages_detected = document_utils.get_page_count(file_bytes)
+    is_password_protected = document_utils.is_password_protected(file_bytes)
+    is_document_blurry = False
+    pre_classification_document_type = None
+    pre_classification_confidence = None
 
     if content_type == "image/bmp":
         process_status = ProcessStatus.NOT_IMPLEMENTED
@@ -496,34 +483,33 @@ def insert_initial_ddb_record(
         response_code = ResponseCodes.DOCUMENT_TYPE_NOT_IMPLEMENTED
 
     elif bda_percentage == 1.0 or random.random() <= bda_percentage:
-        if is_document_blurry:
+        result = preclassify_document_image(
+            file_bytes, content_type, list(get_all_schemas().keys())
+        )
+
+        pre_classification_document_type = result.document_type
+        pre_classification_confidence = result.confidence
+
+        if not result.is_document:
+            # clearly not a document (cat, random photo, etc.)
+            process_status = ProcessStatus.NO_DOCUMENT_DETECTED
+            response_code = ResponseCodes.NO_DOCUMENT_DETECTED
+
+        elif result.is_blurry:
             process_status = ProcessStatus.BLURRY_DOCUMENT_DETECTED
             response_code = ResponseCodes.BLURRY_DOCUMENT_DETECTED
+            is_document_blurry = True
+
+        elif result.document_count > 1:
+            process_status = ProcessStatus.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE
+            response_code = ResponseCodes.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE
 
         else:
+            # document passed pre-classification, proceed to extraction
             if content_type in ["image/jpeg", "image/png", "image/bmp", "image/tiff"]:
-                # image file - needs grayscale conversion first
                 process_status = ProcessStatus.PENDING_GRAYSCALE_CONVERSION
             else:
-                # non-image file - can go directly to BDA
                 process_status = ProcessStatus.NOT_STARTED
-
-            if is_multipage_detection_enabled and file_bytes:
-                logger.info("=== Starting multi-page detection validation ===")
-
-                try:
-                    if profile.is_multipage:
-                        logger.info(f"{ddb_key} is a multipage doc")
-                        process_status = ProcessStatus.MULTIPAGE
-                        response_code = ResponseCodes.MULTIPAGE_DOCUMENT
-
-                    else:
-                        logger.info(f"{ddb_key} is a single page doc")
-
-                except Exception as e:
-                    logger.info(f"=== Multipage detection failed: {e} ===")
-
-            logger.info("=== Finished multi-page detection validation ===")
 
     else:
         process_status = ProcessStatus.NOT_SAMPLED
@@ -531,7 +517,7 @@ def insert_initial_ddb_record(
 
     # initial status does not qualify for bda processing
     # create the json response signaling the process is complete
-    if process_status not in PROCESSING_STATUS_PENDING_EXTRACTION:
+    if not ProcessStatus(process_status).is_pending_extraction():
         internal_api_response = get_internal_api_response(
             object_key=ddb_key,
             response_code=response_code,
@@ -552,13 +538,21 @@ def insert_initial_ddb_record(
         trace_id=trace_id,
         is_document_blurry=is_document_blurry,
         is_password_protected=is_password_protected,
-        document_profile_raw_metrics=document_profile_raw_metrics,
-        document_profile_normalized_metrics=document_profile_normalized_metrics,
-        overall_blur_score=overall_blur_score,
+        pre_classification_document_type=pre_classification_document_type,
+        pre_classification_confidence=pre_classification_confidence,
     )
 
     # explicity remove file reference to free memory for the lambda
     del file_bytes
+
+    # document did not qualify for bda, processing complete
+    # create the v1 api response here and save to ddb
+    # write to sqs as the file was received, but no data extracted
+    if not ProcessStatus(process_status).is_pending_extraction():
+        v1_response = build_v1_api_response(ddb_key, process_status)
+        update_expr = f"SET {DocumentMetadata.V1_API_RESPONSE_JSON} = :v1ResponseJson"
+        expr_values = {":v1ResponseJson": json.dumps(v1_response)}
+        _execute_ddb_update(ddb_key, update_expr, expr_values)
 
 
 def set_bda_processing_status_started(object_key: str, bda_invocation_arn: str) -> None:
@@ -673,6 +667,27 @@ def classify_as_no_custom_blueprint_matched(
     update_ddb(
         object_key=object_key,
         status=ProcessStatus.NO_CUSTOM_BLUEPRINT_MATCHED,
+        internal_api_response=internal_api_response,
+        data=data,
+    )
+
+    # convert dataclass to dict for JSON serialization
+    return internal_api_response.__dict__
+
+
+def classify_as_multiple_documents_on_page(
+    object_key: str, data: ClassificationData
+) -> dict[str, Any]:
+    """Mark file processing as multiple documents detected on single page."""
+    internal_api_response: InternalApiResponse = get_internal_api_response(
+        object_key=object_key,
+        response_code=ResponseCodes.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
+        matched_document_class=None,
+    )
+
+    update_ddb(
+        object_key=object_key,
+        status=ProcessStatus.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
         internal_api_response=internal_api_response,
         data=data,
     )

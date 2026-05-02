@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from mypy_boto3_bedrock_data_automation_runtime.client import (
         RuntimeforBedrockDataAutomationClient,
     )
+    from mypy_boto3_bedrock_runtime.client import BedrockRuntimeClient
     from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
     from mypy_boto3_s3.client import S3Client
     from mypy_boto3_ssm.client import SSMClient
@@ -68,6 +69,13 @@ class AWSClientFactory:
         """Get Bedrock Data Automation Runtime client for job execution (invoke, get status)."""
         return cls.get_session().client(
             "bedrock-data-automation-runtime", region_name=cls._get_bda_region()
+        )
+
+    @classmethod
+    @lru_cache(maxsize=1)
+    def get_bedrock_runtime_client(cls) -> BedrockRuntimeClient:
+        return AWSClientFactory.get_session().client(
+            "bedrock-runtime", region_name=AWSClientFactory._get_region()
         )
 
     @classmethod

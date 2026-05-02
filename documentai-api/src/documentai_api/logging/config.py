@@ -1,7 +1,6 @@
 import logging
 import os
 import platform
-import pwd
 import sys
 from contextlib import AbstractContextManager
 from typing import Any, cast
@@ -12,6 +11,27 @@ import documentai_api.logging.audit
 import documentai_api.logging.formatters as formatters
 import documentai_api.logging.pii as pii
 from documentai_api.utils.env import PydanticBaseEnvConfig
+
+try:
+    import pwd
+
+    def _get_uid() -> int:
+        return os.getuid()  # type: ignore[attr-defined, no-any-return]
+
+    def _get_username() -> str:
+        return pwd.getpwuid(os.getuid()).pw_name  # type: ignore[attr-defined, no-any-return]
+except ImportError:
+    import getpass
+
+    def _get_uid() -> int:
+        return 0
+
+    def _get_username() -> str:
+        try:
+            return getpass.getuser()
+        except Exception:
+            return "unknown"
+
 
 logger = logging.getLogger(__name__)
 
@@ -120,8 +140,8 @@ def log_program_info(program_name: str) -> None:
         platform.system(),
         platform.node(),
         os.getpid(),
-        os.getuid(),
-        pwd.getpwuid(os.getuid()).pw_name,
+        _get_uid(),
+        _get_username(),
         extra={
             "hostname": platform.node(),
             "cpu_count": os.cpu_count(),

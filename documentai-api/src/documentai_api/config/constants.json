@@ -67,41 +67,6 @@
     "legal_documents",
     "employment_training"
   ],
-  "processing_statuses": {
-    "all": {
-      "blurry_document_detected": "blurry_document_detected",
-      "failed": "failed",
-      "multipage": "multipage", 
-      "no_custom_blueprint_matched": "no_custom_blueprint_matched",
-      "no_document_detected": "no_document_detected",
-      "not_implemented": "not_implemented",
-      "not_started": "not_started",
-      "password_protected": "password_protected",
-      "pending_grayscale_conversion": "pending_grayscale_conversion",
-      "started": "started",
-      "success": "success"
-    },
-    "completed": [
-      "success",
-      "failed",
-      "no_document_detected",
-      "no_custom_blueprint_matched"
-    ],
-    "not_supported": [
-        "multipage",
-        "password_protected"
-    ],
-    "pending_extraction": [
-      "not_started",
-      "pending_grayscale_conversion"
-    ],
-    "successful": [
-      "success",
-      "no_custom_blueprint_matched",
-      "not_sampled",
-      "not_implemented"
-    ]
-  },
   "file_validation": {
     "supported_content_types": [
       "application/pdf",

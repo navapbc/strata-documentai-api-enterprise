@@ -46,3 +46,12 @@ class ProcessingTimes:
 
     total_processing_time_seconds: Decimal = Decimal(0)
     bda_processing_time_seconds: Decimal = Decimal(0)
+
+
+@dataclass
+class BedrockClassificationResult:
+    document_type: str
+    confidence: float
+    document_count: int
+    is_document: bool
+    is_blurry: bool = False

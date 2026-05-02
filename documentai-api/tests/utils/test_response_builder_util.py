@@ -3,7 +3,6 @@ from datetime import UTC, datetime
 import pytest
 
 from documentai_api.config.constants import (
-    PROCESSING_STATUSES_SUCCESSFUL,
     BdaResponseFields,
     ProcessStatus,
 )
@@ -98,7 +97,7 @@ def test_get_internal_api_response(response_code, matched_document_class, ddb_do
             None,
         ),
         (
-            ProcessStatus.MULTIPAGE.value,
+            ProcessStatus.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE.value,
             None,
             "Unsupported type",
             False,
@@ -203,7 +202,7 @@ def test_build_v1_api_response(
     if additional_info:
         expected_response["additionalInfo"] = additional_info
 
-    if job_status in PROCESSING_STATUSES_SUCCESSFUL:
+    if ProcessStatus(job_status).is_successful():
         expected_response["fields"] = expected_fields_value
 
     assert response == expected_response

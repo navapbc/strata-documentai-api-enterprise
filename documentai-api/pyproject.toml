@@ -12,13 +12,12 @@ dependencies = [
   "uvicorn>=0.24.0",
   "python-magic>=0.4.27",
   "pypdf>=3.17.4",
-  "opencv-python-headless==4.9.0.80",
-  "numpy==1.26.4",
-  "pdf2image>=1.16.0",
   "typer>=0.16.0",
   "click>=8.1,<8.3",
   "tenacity>=8.2.0",
   "pydantic-settings>=2.0.3",
+  "pillow>=12.2.0",
+  "python-magic-bin>=0.4.14",
 ]
 
 [project.optional-dependencies]
@@ -52,12 +51,6 @@ plugins = ["pydantic.mypy"]
 local_partial_types = true
 allow_redefinition_new = true
 strict_bytes = true
-
-[[tool.mypy.overrides]]
-# document_detector.py has a number of OpenCV/numpy typing difficulties
-# note: the file may eventually replaced with lightweight alternative (Claude Haiku pre-classification)
-module = "documentai_api.utils.document_detector"
-disable_error_code = ["arg-type", "call-overload"]
 
 [tool.ruff]
 line-length = 100

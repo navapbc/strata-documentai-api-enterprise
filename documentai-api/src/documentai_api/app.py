@@ -26,7 +26,6 @@ from documentai_api.config.constants import (
     API_DESCRIPTION,
     API_TITLE,
     API_VERSION,
-    PROCESSING_STATUS_COMPLETED,
     S3_METADATA_KEY_ORIGINAL_FILE_NAME,
     SUPPORTED_CONTENT_TYPES,
     UPLOAD_METADATA_KEYS,
@@ -225,7 +224,8 @@ async def get_v1_document_processing_results(job_id: str, timeout: int) -> JobSt
 
             # processing complete, return results
             if (
-                job_status.process_status in PROCESSING_STATUS_COMPLETED
+                job_status.process_status
+                and ProcessStatus(job_status.process_status).is_completed()
                 and job_status.v1_response_json
             ):
                 return JobStatusResponse(**json.loads(job_status.v1_response_json))

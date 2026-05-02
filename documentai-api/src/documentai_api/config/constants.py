@@ -28,12 +28,6 @@ S3_METADATA_KEY_JOB_ID = UPLOAD_METADATA_KEYS["job_id"]
 S3_METADATA_KEY_TRACE_ID = UPLOAD_METADATA_KEYS["trace_id"]
 S3_METADATA_KEY_ORIGINAL_FILE_NAME = UPLOAD_METADATA_KEYS["original_file_name"]
 
-# grouped processing statuses
-PROCESSING_STATUSES_SUCCESSFUL = SETTINGS["processing_statuses"]["successful"]
-PROCESSING_STATUS_COMPLETED = SETTINGS["processing_statuses"]["completed"]
-PROCESSING_STATUS_NOT_SUPPORTED = SETTINGS["processing_statuses"]["not_supported"]
-PROCESSING_STATUS_PENDING_EXTRACTION = SETTINGS["processing_statuses"]["pending_extraction"]
-
 # grouped BDA job statuses
 BDA_JOB_STATUS_RUNNING = SETTINGS["bda_job_statuses"]["running"]
 BDA_JOB_STATUS_FAILED = SETTINGS["bda_job_statuses"]["failed"]
@@ -78,6 +72,7 @@ class ConfigDefaults(StrEnum):
     BDA_MAX_DOCUMENT_FILE_SIZE_BYTES = "524288000"
     DDB_EMIT_CUSTOM_CLOUDWATCH_METRICS = "false"
     EMPTY_FIELD_PERCENTAGE_THRESHOLD = "50"
+    MAX_PAGES_PER_DOCUMENT = "5"
 
 
 class DocumentCategory(StrEnum):
@@ -90,7 +85,7 @@ class DocumentCategory(StrEnum):
 class ProcessStatus(StrEnum):
     BLURRY_DOCUMENT_DETECTED = "blurry_document_detected"
     FAILED = "failed"
-    MULTIPAGE = "multipage"
+    MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE = "multiple_documents_single_page"
     NO_CUSTOM_BLUEPRINT_MATCHED = "no_custom_blueprint_matched"
     NO_DOCUMENT_DETECTED = "no_document_detected"
     NOT_IMPLEMENTED = "not_implemented"
@@ -100,3 +95,45 @@ class ProcessStatus(StrEnum):
     PENDING_GRAYSCALE_CONVERSION = "pending_grayscale_conversion"
     STARTED = "started"
     SUCCESS = "success"
+
+    def is_completed(self) -> bool:
+        return self in [
+            self.SUCCESS,
+            self.FAILED,
+            self.NO_DOCUMENT_DETECTED,
+            self.NO_CUSTOM_BLUEPRINT_MATCHED,
+        ]
+
+    def is_not_supported(self) -> bool:
+        return self in [
+            self.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
+            self.PASSWORD_PROTECTED,
+        ]
+
+    def is_pending_extraction(self) -> bool:
+        return self in [self.PENDING_GRAYSCALE_CONVERSION, self.NOT_STARTED]
+
+    def is_successful(self) -> bool:
+        return self in [
+            self.SUCCESS,
+            self.NO_CUSTOM_BLUEPRINT_MATCHED,
+            self.NOT_SAMPLED,
+            self.NOT_IMPLEMENTED,
+        ]
+
+
+class PreClassificationDefaults:
+    MODEL_ID = "us.amazon.nova-lite-v1:0"
+    PROMPT = "\n".join(
+        [
+            "Analyze this image. Respond in JSON only:",
+            '{"document_type": "string", "confidence": float 0-1, "document_count": int, "is_blurry": bool}',
+            "ONLY use one of these exact values for document_type: <<DOCUMENT_TYPES>>",
+            "Do not create new categories. If unsure, use 'other_document'.",
+            "If the image is a photograph, scenery, artwork, or contains no structured text, use 'not_a_document'.",
+            "Use 'other_document' ONLY for documents that don't match any listed type.",
+            "Set is_blurry to true ONLY if the image appears out of focus, smeared, or motion-blurred.",
+            "If is_blurry is true, set confidence below 0.5.",
+            "document_count: how many separate documents are visible in this image?",
+        ]
+    )

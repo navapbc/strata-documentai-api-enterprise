@@ -1,4 +1,7 @@
+from typing import Any
 from urllib.parse import urlparse
+
+from documentai_api.services import s3 as s3_service
 
 
 def parse_s3_uri(s3_uri: str) -> tuple[str, str]:
@@ -30,3 +33,21 @@ def get_s3_prefix_from_location(s3_location: str) -> str:
 
     _, prefix = parse_s3_uri(s3_location)
     return prefix
+
+
+def extract_s3_info_from_event(
+    event: dict[str, Any], include_metadata: bool = False
+) -> tuple[str, str] | tuple[str, str, dict[str, str]]:
+    """Extract file key and bucket name from EventBridge event."""
+    try:
+        file_key = event["detail"]["object"]["key"]
+        bucket_name = event["detail"]["bucket"]["name"]
+
+        if include_metadata:
+            metadata_response = s3_service.head_object(bucket_name, file_key)
+            metadata = metadata_response.get("Metadata", {})
+            return file_key, bucket_name, metadata
+
+        return file_key, bucket_name
+    except (KeyError, TypeError):
+        raise ValueError("Invalid EventBridge event structure") from None
