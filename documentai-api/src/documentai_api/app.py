@@ -381,6 +381,11 @@ async def get_document_results(
         raise HTTPException(status_code=500, detail="Failed to retrieve results") from e
 
 
+# ==============================================================================
+# dictionary endpoints
+# ==============================================================================
+
+
 @app.get("/v1/dictionary/schemas", dependencies=[Depends(verify_api_key)], name="getSchemaList")
 async def list_schemas() -> DictionarySchemaListResponse:
     """List all supported document types."""
@@ -454,3 +459,37 @@ async def search_schema_fields(
         return build_csv_response(data)
 
     return DictionarySearchResponse(fields=data)
+
+
+@app.get(
+    "/v1/dictionary/response-codes",
+    dependencies=[Depends(verify_api_key)],
+    name="getResponseCodes",
+)
+async def get_response_codes(format: DictionaryFormatType = DictionaryFormatType.JSON) -> Any:
+    """Get list of response codes and their meanings."""
+    from documentai_api.utils.response_codes import ResponseCodes
+
+    data = ResponseCodes.get_all()
+
+    if format == DictionaryFormatType.CSV:
+        return build_csv_response(data)
+
+    return {"responseCodes": data}
+
+
+@app.get(
+    "/v1/dictionary/document-categories",
+    dependencies=[Depends(verify_api_key)],
+    name="getDocumentCategories",
+)
+async def get_document_categories(format: DictionaryFormatType = DictionaryFormatType.JSON) -> Any:
+    """Get list of supported document categories."""
+    from documentai_api.config.constants import DOCUMENT_CATEGORIES
+
+    data = [{"category": c} for c in DOCUMENT_CATEGORIES]
+
+    if format == DictionaryFormatType.CSV:
+        return build_csv_response(data)
+
+    return {"documentCategories": DOCUMENT_CATEGORIES}

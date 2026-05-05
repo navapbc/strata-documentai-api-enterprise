@@ -27,3 +27,11 @@ class ResponseCodes:
     def is_success_response_code(cls, code: str) -> bool:
         """Get message for response code."""
         return code.startswith("0")
+
+    @classmethod
+    def get_all(cls) -> list[dict[str, str]]:
+        return [
+            {"code": v, "message": cls.get_message(v)}
+            for k, v in vars(cls).items()
+            if not k.startswith("_") and isinstance(v, str) and v[0].isdigit()
+        ]
