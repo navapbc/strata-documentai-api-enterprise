@@ -58,6 +58,24 @@ def extraction_rules_table(aws_credentials, monkeypatch):
 
 
 @pytest.fixture
+def api_keys_table(aws_credentials, monkeypatch):
+    from moto import mock_aws
+
+    with mock_aws():
+        import boto3
+
+        dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+        table = dynamodb.create_table(
+            TableName="api-keys",
+            KeySchema=[{"AttributeName": "keyHash", "KeyType": "HASH"}],
+            AttributeDefinitions=[{"AttributeName": "keyHash", "AttributeType": "S"}],
+            BillingMode="PAY_PER_REQUEST",
+        )
+        monkeypatch.setenv("API_KEYS_TABLE_NAME", table.name)
+        yield table
+
+
+@pytest.fixture
 def set_ddb_doc_metadata_table_env_vars(ddb_doc_metadata_table_resource, monkeypatch):
     from documentai_api.utils import env
 

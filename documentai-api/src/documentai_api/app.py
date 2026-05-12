@@ -1,7 +1,6 @@
 import asyncio
 import json
 import os
-import secrets
 import uuid
 from dataclasses import dataclass
 from typing import Annotated, Any, BinaryIO
@@ -16,14 +15,11 @@ from fastapi import (
     Request,
     Response,
     UploadFile,
-    status,
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
-from fastapi.security import APIKeyHeader
 
 from documentai_api.config.constants import (
-    API_AUTH_KEY_HEADER_NAME,
     API_DESCRIPTION,
     API_TITLE,
     API_VERSION,
@@ -55,6 +51,7 @@ from documentai_api.models.api_responses import (
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils import env
+from documentai_api.utils.auth import verify_api_key
 from documentai_api.utils.ddb import classify_as_failed, get_ddb_by_job_id
 from documentai_api.utils.models import ClassificationData
 from documentai_api.utils.response_builder import build_csv_response
@@ -77,21 +74,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 CONFIG_EXCLUDED_ROUTES = {"/", "/health", "/config", "/openapi.json", "/docs", "/redoc"}
-
-api_key_header = APIKeyHeader(name=API_AUTH_KEY_HEADER_NAME, auto_error=False)
-
-
-def verify_api_key(api_key: str = Depends(api_key_header)) -> None:
-    """Simple placeholder API key check."""
-    expected_key = os.getenv(env.API_AUTH_INSECURE_SHARED_KEY)
-
-    if not expected_key:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="API key not configured"
-        )
-
-    if not api_key or not secrets.compare_digest(api_key, expected_key):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
 
 
 def discover_endpoints(app: FastAPI) -> dict[str, str]:

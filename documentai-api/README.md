@@ -85,7 +85,14 @@ For detailed component descriptions, see [Project Structure](#project-structure)
 - `BDA_PROJECT_ARN` - AWS Bedrock Data Automation project ARN
 - `BDA_PROFILE_ARN` - AWS Bedrock Data Automation profile ARN
 - `BDA_REGION` - AWS region for BDA service
-- `API_AUTH_INSECURE_SHARED_KEY` - API authentication key (see [API Authentication](../docs/documentai-api/api-authentication.md))
+- `API_AUTH_INSECURE_SHARED_KEY` - API authentication key for local dev (see [API Authentication](../docs/documentai-api/api-authentication.md))
+- `API_AUTH_ENABLED` - Set to `true` to enable DynamoDB-backed multi-key auth (default: `false`)
+- `API_KEYS_TABLE_NAME` - DynamoDB table for API key hashes (required when `API_AUTH_ENABLED=true`)
+
+
+**Optional:**
+
+- `API_AUTH_CACHE_TTL` - API key cache TTL in seconds (default: `300`)
 
 
 **Optional for local development:**
@@ -179,6 +186,25 @@ curl -X POST "http://localhost:8000/v1/documents?wait=true&timeout=120" \
 
 For more details on API endpoints, see [openapi.json](../documentai-api/docs/openapi.json).
 
+### API Key Management
+
+When `API_AUTH_ENABLED=true`, API keys are stored as SHA-256 hashes in DynamoDB. Use the `api-keys` CLI to manage them:
+
+```bash
+# Generate a new key for a client
+api-keys generate --client-name my-service --environment prod
+
+# List active keys
+api-keys list
+api-keys list --client-name my-service --include-inactive
+
+# Deactivate a key
+api-keys deactivate --client-name my-service --api-key docai_...
+api-keys deactivate --client-name my-service --all
+```
+
+The plaintext key is shown once on generation and never stored. Store it securely.
+
 ### Development Commands
 ```bash
 make check         # Run all checks (format, lint, test)
@@ -227,6 +253,7 @@ For more details on writing tests, see [Writing Tests](../docs/documentai-api/wr
 │       ├── app.py                        # FastAPI application
 │       ├── main.py                       # CLI entry point
 │       ├── cli/                          # Miscellaneous cli scripts
+│       │   ├── api_keys.py               # API key management CLI
 │       │   ├── export_openapi.py
 │       ├── config/                       # Configuration and constants
 │       │   ├── constants.json
@@ -235,12 +262,15 @@ For more details on writing tests, see [Writing Tests](../docs/documentai-api/wr
 │       │   ├── bda_result_processor/     # Processes BDA output results
 │       │   └── document_processor/       # Handles document upload events
 │       ├── schemas/                      # Data models
+│       │   ├── api_key.py                # API key DynamoDB field names
 │       │   └── document_metadata.py
 │       ├── services/                     # AWS service clients
 │       │   ├── s3.py
 │       │   ├── ddb.py
 │       │   └── bda.py
 │       └── utils/                        # Utilities and helpers
+│           ├── auth.py                   # API key authentication (DDB + shared key modes)
+│           ├── cache.py                  # Generic in-memory TTL cache
 │           ├── document_detector.py
 │           ├── response_builder.py
 │           ├── bda_invoker.py

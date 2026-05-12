@@ -46,6 +46,23 @@ def query_by_pk(table_name: str, pk_name: str, pk_value: str) -> list[dict[str, 
     return response.get("Items", [])
 
 
+def scan(table_name: str) -> list[dict[str, Any]]:
+    """Scan all items in a DynamoDB table, handling pagination."""
+    table = AWSClientFactory.get_ddb_table(table_name)
+    items: list[dict[str, Any]] = []
+    kwargs: dict[str, Any] = {}
+
+    while True:
+        response = table.scan(**kwargs)
+        items.extend(response.get("Items", []))
+        last_key = response.get("LastEvaluatedKey")
+        if not last_key:
+            break
+        kwargs["ExclusiveStartKey"] = last_key
+
+    return items
+
+
 def query_by_key(
     table_name: str, index_name: str, key_name: str, key_value: str
 ) -> list[dict[str, Any]]:
