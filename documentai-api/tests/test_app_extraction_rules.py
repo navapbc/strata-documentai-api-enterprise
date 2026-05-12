@@ -16,18 +16,31 @@ def disable_auth():
     app.dependency_overrides.clear()
 
 
+MOCK_RULE = {
+    "tenantId": "t1",
+    "documentType": "W2",
+    "requiredFields": ["ssn", "wages"],
+    "optionalFields": ["employer_name"],
+    "createdAt": "2026-01-01T00:00:00+00:00",
+    "updatedAt": "2026-01-01T00:00:00+00:00",
+}
+
+
 def test_get_extraction_rules():
-    rules = [{"tenantId": "t1", "documentType": "W2", "fields": ["ssn", "wages"]}]
-    with patch("documentai_api.utils.extraction_rules.get_rules", return_value=rules):
+    with patch("documentai_api.utils.extraction_rules.get_rules", return_value=[MOCK_RULE]):
         response = client.get("/v1/config/extraction-rules?tenant_id=t1")
 
     assert response.status_code == 200
-    assert response.json()["rules"] == rules
+    rules = response.json()["rules"]
+    assert len(rules) == 1
+    assert rules[0]["tenantId"] == "t1"
+    assert rules[0]["documentType"] == "W2"
+    assert rules[0]["requiredFields"] == ["ssn", "wages"]
+    assert rules[0]["optionalFields"] == ["employer_name"]
 
 
 def test_get_extraction_rules_by_document_type():
-    rules = [{"tenantId": "t1", "documentType": "W2", "fields": ["ssn"]}]
-    with patch("documentai_api.utils.extraction_rules.get_rules", return_value=rules):
+    with patch("documentai_api.utils.extraction_rules.get_rules", return_value=[MOCK_RULE]):
         response = client.get("/v1/config/extraction-rules?tenant_id=t1&document_type=W2")
 
     assert response.status_code == 200

@@ -44,6 +44,9 @@ from documentai_api.models.api_responses import (
     DictionarySchemaDetailResponse,
     DictionarySchemaListResponse,
     DictionarySearchResponse,
+    ExtractionRuleDeleteResponse,
+    ExtractionRuleItem,
+    ExtractionRulesListResponse,
     HealthResponse,
     JobStatusResponse,
     UploadAsyncResponse,
@@ -506,6 +509,7 @@ async def get_document_categories(format: DictionaryFormatType = DictionaryForma
     "/v1/config/extraction-rules",
     dependencies=[Depends(verify_api_key)],
     name="getExtractionRules",
+    response_model=ExtractionRulesListResponse,
 )
 async def get_extraction_rules(
     tenant_id: str,
@@ -518,13 +522,14 @@ async def get_extraction_rules(
 
     if not rules:
         raise HTTPException(status_code=404, detail="No rules found")
-    return {"rules": rules}
+    return ExtractionRulesListResponse(rules=[ExtractionRuleItem(**r) for r in rules])
 
 
 @app.put(
     "/v1/config/extraction-rules",
     dependencies=[Depends(verify_api_key)],
     name="putExtractionRule",
+    response_model=ExtractionRuleItem,
 )
 async def put_extraction_rule(
     tenant_id: Annotated[str, Form()],
@@ -550,13 +555,14 @@ async def put_extraction_rule(
         ) from None
 
     rule = upsert_rule(tenant_id, document_type, parsed_required_fields, parsed_optional_fields)
-    return rule
+    return ExtractionRuleItem(**rule)
 
 
 @app.delete(
     "/v1/config/extraction-rules",
     dependencies=[Depends(verify_api_key)],
     name="deleteExtractionRule",
+    response_model=ExtractionRuleDeleteResponse,
 )
 async def delete_extraction_rule(
     tenant_id: str,
@@ -566,4 +572,4 @@ async def delete_extraction_rule(
     from documentai_api.utils.extraction_rules import delete_rule
 
     delete_rule(tenant_id, document_type)
-    return {"message": "Rule deleted"}
+    return ExtractionRuleDeleteResponse(message="Rule deleted")
