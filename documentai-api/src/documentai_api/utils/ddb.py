@@ -1,4 +1,5 @@
 import json
+import os
 import random
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -14,6 +15,7 @@ from documentai_api.logging import get_logger
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import ddb as ddb_service
 from documentai_api.services import s3 as s3_service
+from documentai_api.services import sqs as sqs_service
 from documentai_api.utils import env
 from documentai_api.utils import s3 as s3_utils
 from documentai_api.utils.bedrock import preclassify_document_image
@@ -282,6 +284,38 @@ def _execute_ddb_update(
     ddb_service.update_item(table_name, key, update_expression, expression_values)
 
 
+def _send_record_to_metrics_queue(object_key: str) -> None:
+    """Write object key to SQS queue."""
+    try:
+        queue_url = os.getenv(env.DDB_METRICS_INPUT_QUEUE_URL)
+
+        if not queue_url:
+            msg = (
+                f"{env.DDB_METRICS_INPUT_QUEUE_URL} environment variable not set, skipping metrics"
+            )
+            print(msg)
+            logger.warning(msg)
+            # do not raise an exception here. metrics are optional and shouldn't
+            # prevent process from completing successfully
+            return
+
+        table_name = get_required_env(env.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME)
+        key = {"fileName": object_key}
+        ddb_record = ddb_service.get_item(table_name, key)
+
+        if not ddb_record:
+            logger.warning(f"DDB record not found for {object_key}, skipping metrics")
+            # do not raise an exception here. metrics are optional and shouldn't
+            # prevent process from completing successfully
+            return
+
+        sqs_service.send_message(queue_url, json.dumps(ddb_record, default=str))
+        print(f"Successfully sent {object_key} to SQS queue")
+
+    except Exception as e:
+        logger.error(f"Failed to send {object_key} to SQS queue: {e}")
+
+
 def get_user_provided_document_category(object_key: str) -> DocumentCategory | None:
     """Get user specified document type for a file.
 
@@ -365,6 +399,9 @@ def update_ddb(
         update_expr = f"SET {DocumentMetadata.V1_API_RESPONSE_JSON} = :v1ResponseJson"
         expr_values = {":v1ResponseJson": json.dumps(v1_response)}
         _execute_ddb_update(object_key, update_expr, expr_values)
+
+        if ProcessStatus(status).is_completed():
+            _send_record_to_metrics_queue(object_key)
 
     except Exception as e:
         logger.error(f"Failed to update DDB status: {e}")
@@ -553,6 +590,7 @@ def insert_initial_ddb_record(
         update_expr = f"SET {DocumentMetadata.V1_API_RESPONSE_JSON} = :v1ResponseJson"
         expr_values = {":v1ResponseJson": json.dumps(v1_response)}
         _execute_ddb_update(ddb_key, update_expr, expr_values)
+        _send_record_to_metrics_queue(ddb_key)
 
 
 def set_bda_processing_status_started(object_key: str, bda_invocation_arn: str) -> None:

@@ -10,6 +10,7 @@ from documentai_api.logging import get_logger
 from documentai_api.utils import env
 
 if TYPE_CHECKING:
+    from mypy_boto3_athena import AthenaClient
     from mypy_boto3_bedrock_data_automation.client import DataAutomationforBedrockClient
     from mypy_boto3_bedrock_data_automation_runtime.client import (
         RuntimeforBedrockDataAutomationClient,
@@ -17,6 +18,7 @@ if TYPE_CHECKING:
     from mypy_boto3_bedrock_runtime.client import BedrockRuntimeClient
     from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
     from mypy_boto3_s3.client import S3Client
+    from mypy_boto3_sqs import SQSClient
     from mypy_boto3_ssm.client import SSMClient
 
 
@@ -77,6 +79,16 @@ class AWSClientFactory:
         return AWSClientFactory.get_session().client(
             "bedrock-runtime", region_name=AWSClientFactory._get_region()
         )
+
+    @classmethod
+    @lru_cache(maxsize=1)
+    def get_sqs_client(cls) -> SQSClient:
+        return cls.get_session().client("sqs", region_name=cls._get_region())
+
+    @classmethod
+    @lru_cache(maxsize=1)
+    def get_athena_client(cls) -> AthenaClient:
+        return cls.get_session().client("athena", region_name=cls._get_region())
 
     @classmethod
     @lru_cache(maxsize=1)

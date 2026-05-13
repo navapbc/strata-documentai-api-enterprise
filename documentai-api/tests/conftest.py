@@ -81,6 +81,25 @@ def mock_grayscale_dependencies(mocker):
 
 
 @pytest.fixture
+def mock_metrics_aggregator_env(mocker, monkeypatch):
+    """Mock environment and Athena dependencies for metrics aggregator tests."""
+    from documentai_api.utils import env
+
+    monkeypatch.setenv(env.GLUE_DATABASE_NAME, "test_db")
+    monkeypatch.setenv(env.DDB_RAW_DATA_TABLE_NAME, "test_table")
+    monkeypatch.setenv(env.ATHENA_WORKGROUP_NAME, "test_workgroup")
+    monkeypatch.setenv(env.DDB_EXPORT_BUCKET_NAME, "test-bucket")
+
+    mock_athena = mocker.patch("documentai_api.jobs.metrics_aggregator.main._execute_athena_query")
+    mock_results = mocker.patch("documentai_api.jobs.metrics_aggregator.main._get_athena_results")
+    mock_athena.return_value = "test-query-execution-id"
+    mock_results.return_value = [
+        {"process_status": "success", "created_at": "2026-02-20T10:00:00Z"}
+    ]
+    return {"mock_athena": mock_athena, "mock_results": mock_results}
+
+
+@pytest.fixture
 def disable_tenacity_wait(mocker):
     """Make Tenacity wait for 0 seconds between retries.
 

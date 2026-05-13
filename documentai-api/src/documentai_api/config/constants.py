@@ -28,6 +28,11 @@ S3_METADATA_KEY_JOB_ID = UPLOAD_METADATA_KEYS["job_id"]
 S3_METADATA_KEY_TRACE_ID = UPLOAD_METADATA_KEYS["trace_id"]
 S3_METADATA_KEY_ORIGINAL_FILE_NAME = UPLOAD_METADATA_KEYS["original_file_name"]
 
+# aggregates
+S3_RAW_DDB_DATA_PREFIX = "raw/utc/date"
+S3_AGG_DDB_DATA_DAILY_PREFIX = "aggregated/utc/date"
+S3_AGG_DDB_DATA_MONTHLY_PREFIX = "aggregated/utc/month"
+
 # grouped BDA job statuses
 BDA_JOB_STATUS_RUNNING = SETTINGS["bda_job_statuses"]["running"]
 BDA_JOB_STATUS_FAILED = SETTINGS["bda_job_statuses"]["failed"]
@@ -153,3 +158,42 @@ class DictionaryBlueprintField(StrEnum):
     TYPE = "type"
     DESCRIPTION = "description"
     DOCUMENT_TYPE = "documentType"
+
+
+class MetricsGranularity(StrEnum):
+    DAILY = "daily"
+    MONTHLY = "monthly"
+
+
+class MetricsAggregatorTargetDate:
+    TODAY = "today"
+    YESTERDAY = "yesterday"
+
+
+class TimingMetrics:
+    TOTAL_PROCESSING_TIME = "total_processing_time"
+    BDA_PROCESSING_TIME = "bda_processing_time"
+    BDA_WAIT_TIME = "bda_wait_time"
+
+
+class AthenaQueryStatus:
+    """AWS Athena query execution states.
+
+    See: https://docs.aws.amazon.com/athena/latest/APIReference/API_QueryExecutionStatus.html
+    Note: AWS uses British spelling 'CANCELLED' (double L). Canceled is preferred
+    in American English, while cancelled is standard in British English.
+    """
+
+    QUEUED = "QUEUED"
+    RUNNING = "RUNNING"
+    SUCCEEDED = "SUCCEEDED"
+    FAILED = "FAILED"
+    CANCELLED = "CANCELLED"
+
+    @staticmethod
+    def is_final(status: str) -> bool:
+        return status in {
+            AthenaQueryStatus.SUCCEEDED,
+            AthenaQueryStatus.FAILED,
+            AthenaQueryStatus.CANCELLED,
+        }
