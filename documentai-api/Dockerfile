@@ -10,7 +10,6 @@ RUN apt-get update -qq \
     && apt-get install --no-install-recommends --yes \
         build-essential \
         curl \
-        libmagic1 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

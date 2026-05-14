@@ -4,7 +4,7 @@ import uuid
 from dataclasses import dataclass
 from typing import Annotated, Any, BinaryIO
 
-import magic
+import filetype  # type: ignore[import-untyped]
 from fastapi import (
     Depends,
     FastAPI,
@@ -285,7 +285,7 @@ async def create_document(
         trace_id = str(uuid.uuid4())
 
     file_content = await file.read()
-    actual_content_type = magic.from_buffer(file_content, mime=True)
+    actual_content_type = filetype.guess_mime(file_content) or "application/octet-stream"
 
     if not FileValidation.is_supported(actual_content_type):
         raise HTTPException(
