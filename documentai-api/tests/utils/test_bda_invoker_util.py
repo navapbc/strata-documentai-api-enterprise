@@ -2,7 +2,6 @@ from unittest.mock import MagicMock, patch
 
 from documentai_api.config.constants import ConfigDefaults
 from documentai_api.utils import bda_invoker as bda_invoker_util
-from documentai_api.utils import env
 
 
 def test_invoke_bedrock_data_automation_single_page():
@@ -12,9 +11,9 @@ def test_invoke_bedrock_data_automation_single_page():
         patch.dict(
             "os.environ",
             {
-                env.BDA_PROJECT_ARN: "arn:aws:project",
-                env.BDA_PROFILE_ARN: "arn:aws:profile",
-                env.DOCUMENTAI_OUTPUT_LOCATION: "s3://output-bucket/path",
+                "BDA_PROJECT_ARN": "arn:aws:project",
+                "BDA_PROFILE_ARN": "arn:aws:profile",
+                "DOCUMENTAI_OUTPUT_LOCATION": "s3://output-bucket/path",
             },
         ),
         patch(
@@ -45,9 +44,9 @@ def test_invoke_bedrock_data_automation_document_truncation():
         patch.dict(
             "os.environ",
             {
-                env.BDA_PROJECT_ARN: "arn:aws:project",
-                env.BDA_PROFILE_ARN: "arn:aws:profile",
-                env.DOCUMENTAI_OUTPUT_LOCATION: "s3://output-bucket/path",
+                "BDA_PROJECT_ARN": "arn:aws:project",
+                "BDA_PROFILE_ARN": "arn:aws:profile",
+                "DOCUMENTAI_OUTPUT_LOCATION": "s3://output-bucket/path",
             },
         ),
         patch(
@@ -72,7 +71,7 @@ def test_invoke_bedrock_data_automation_document_truncation():
 
         assert result == bda_invocation_arn
         mock_truncate.assert_called_once_with(
-            b"file_content", max_pages=int(ConfigDefaults.MAX_PAGES_PER_DOCUMENT.value)
+            b"file_content", max_pages=int(ConfigDefaults.MAX_PAGES_PER_DOCUMENT)
         )
         mock_put_object.assert_called_once_with(
             bucket="test-bucket", key="test_truncated.pdf", body=b"truncated_content"

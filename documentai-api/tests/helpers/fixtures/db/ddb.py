@@ -1,5 +1,7 @@
 import pytest
 
+from documentai_api.config.env import EnvVars
+
 
 @pytest.fixture
 def ddb_doc_metadata_table(ddb_doc_metadata_table_resource, set_ddb_doc_metadata_table_env_vars):
@@ -53,7 +55,7 @@ def extraction_rules_table(aws_credentials, monkeypatch):
             ],
             BillingMode="PAY_PER_REQUEST",
         )
-        monkeypatch.setenv("EXTRACTION_RULES_TABLE_NAME", table.name)
+        monkeypatch.setenv(EnvVars.EXTRACTION_RULES_TABLE_NAME, table.name)
         yield table
 
 
@@ -71,15 +73,18 @@ def api_keys_table(aws_credentials, monkeypatch):
             AttributeDefinitions=[{"AttributeName": "keyHash", "AttributeType": "S"}],
             BillingMode="PAY_PER_REQUEST",
         )
-        monkeypatch.setenv("API_KEYS_TABLE_NAME", table.name)
+        monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, table.name)
         yield table
 
 
 @pytest.fixture
 def set_ddb_doc_metadata_table_env_vars(ddb_doc_metadata_table_resource, monkeypatch):
-    from documentai_api.utils import env
 
     monkeypatch.setenv(
-        env.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME, ddb_doc_metadata_table_resource.name
+        EnvVars.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME, ddb_doc_metadata_table_resource.name
     )
-    monkeypatch.setenv(env.DOCUMENTAI_DOCUMENT_METADATA_JOB_ID_INDEX_NAME, "job-id-index")
+    monkeypatch.setenv(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_JOB_ID_INDEX_NAME, "job-id-index")
+    monkeypatch.setenv(EnvVars.DOCUMENTAI_INPUT_LOCATION, "s3://test/input")
+    monkeypatch.setenv(EnvVars.DOCUMENTAI_OUTPUT_LOCATION, "s3://test/output")
+    monkeypatch.setenv(EnvVars.BDA_PROJECT_ARN, "arn:aws:test")
+    monkeypatch.setenv(EnvVars.BDA_PROFILE_ARN, "arn:aws:test")

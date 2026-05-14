@@ -119,16 +119,18 @@ def list_keys(
     ] = False,
 ) -> None:
     """List API keys, optionally filtered by client. Active keys only by default."""
+    from documentai_api.config.env import get_aws_config
     from documentai_api.schemas.api_key import ApiKeyRecord
     from documentai_api.services import ddb as ddb_service
     from documentai_api.utils.auth import get_active_keys_for_client
-    from documentai_api.utils.env import API_KEYS_TABLE_NAME, get_required_env
 
     try:
         if client_name and not include_inactive:
             records = get_active_keys_for_client(client_name)
         else:
-            table_name = get_required_env(API_KEYS_TABLE_NAME)
+            table_name = get_aws_config().api_keys_table_name
+            if not table_name:
+                raise ValueError("API_KEYS_TABLE_NAME environment variable not set")
             all_records = ddb_service.scan(table_name)
             if client_name:
                 all_records = [

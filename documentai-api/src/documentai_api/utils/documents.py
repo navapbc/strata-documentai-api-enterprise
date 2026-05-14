@@ -126,7 +126,7 @@ def _truncate_tiff(file_bytes: bytes, max_pages: int) -> bytes:
 
 
 def truncate_to_pages(
-    file_bytes: bytes, max_pages: int = int(ConfigDefaults.MAX_PAGES_PER_DOCUMENT.value)
+    file_bytes: bytes, max_pages: int = int(ConfigDefaults.MAX_PAGES_PER_DOCUMENT)
 ) -> bytes:
     file_type = detect_file_type(file_bytes)
 

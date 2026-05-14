@@ -1,5 +1,5 @@
 # Changes here will be overwritten by Copier
-_commit: 965da6c
+_commit: '7160196'
 _src_path: https://github.com/navapbc/strata-template-documentai-api
 app_local_port: 8000
 app_name: documentai-api

@@ -1,8 +1,8 @@
-import os
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
+from documentai_api.config.env import get_aws_config
 from documentai_api.logging import get_logger
 from documentai_api.services import ddb as ddb_service
 
@@ -16,11 +16,9 @@ class ExtractionRuleResult:
 
 
 def _get_table_name() -> str:
-    from documentai_api.utils.env import EXTRACTION_RULES_TABLE_NAME
-
-    table_name = os.getenv(EXTRACTION_RULES_TABLE_NAME)
+    table_name = get_aws_config().extraction_rules_table_name
     if not table_name:
-        raise ValueError(f"{EXTRACTION_RULES_TABLE_NAME} environment variable not set")
+        raise ValueError("EXTRACTION_RULES_TABLE_NAME environment variable not set")
     return table_name
 
 

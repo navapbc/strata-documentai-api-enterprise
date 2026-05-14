@@ -1,5 +1,4 @@
 import json
-import os
 import random
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -11,15 +10,14 @@ from documentai_api.config.constants import (
     DocumentCategory,
     ProcessStatus,
 )
+from documentai_api.config.env import EnvVars, get_aws_config, get_required_env
 from documentai_api.logging import get_logger
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import ddb as ddb_service
 from documentai_api.services import s3 as s3_service
 from documentai_api.services import sqs as sqs_service
-from documentai_api.utils import env
 from documentai_api.utils import s3 as s3_utils
 from documentai_api.utils.bedrock import preclassify_document_image
-from documentai_api.utils.env import get_required_env
 from documentai_api.utils.models import (
     ClassificationData,
     FieldMetrics,
@@ -57,35 +55,36 @@ def calculate_bda_processing_times(object_key: str, completion_time: datetime) -
 
     Returns dict with timing data to add to DDB update, or empty dict if calculation fails.
     """
-    try:
-        ddb_record = get_ddb_record(object_key)
-        created_at_str = ddb_record.get(DocumentMetadata.CREATED_AT)
-        bda_started_at_str = ddb_record.get(DocumentMetadata.BDA_STARTED_AT)
-
-        timing_data = ProcessingTimes()
-
-        if created_at_str:
-            created_at = datetime.fromisoformat(created_at_str)
-            total_processing_time_seconds = get_elapsed_time_seconds(created_at, completion_time)
-            timing_data.total_processing_time_seconds = total_processing_time_seconds
-            logger.info(f"Total processing time: {total_processing_time_seconds:.2f} seconds")
-
-        if bda_started_at_str:
-            bda_started_at = datetime.fromisoformat(bda_started_at_str)
-            bda_processing_time_seconds = get_elapsed_time_seconds(bda_started_at, completion_time)
-            timing_data.bda_processing_time_seconds = bda_processing_time_seconds
-            logger.info(f"BDA processing time: {bda_processing_time_seconds:.2f} seconds")
-
-        return timing_data
-
-    except Exception as e:
-        logger.error(f"Failed to calculate completion timing: {e}")
+    ddb_record = get_ddb_record(object_key)
+    if ddb_record is None:
         return ProcessingTimes()
+
+    created_at_str = ddb_record.get(DocumentMetadata.CREATED_AT)
+    bda_started_at_str = ddb_record.get(DocumentMetadata.BDA_STARTED_AT)
+
+    timing_data = ProcessingTimes()
+
+    if created_at_str:
+        created_at = datetime.fromisoformat(created_at_str)
+        total_processing_time_seconds = get_elapsed_time_seconds(created_at, completion_time)
+        timing_data.total_processing_time_seconds = total_processing_time_seconds
+        logger.info(f"Total processing time: {total_processing_time_seconds:.2f} seconds")
+
+    if bda_started_at_str:
+        bda_started_at = datetime.fromisoformat(bda_started_at_str)
+        bda_processing_time_seconds = get_elapsed_time_seconds(bda_started_at, completion_time)
+        timing_data.bda_processing_time_seconds = bda_processing_time_seconds
+        logger.info(f"BDA processing time: {bda_processing_time_seconds:.2f} seconds")
+
+    return timing_data
 
 
 def _calculate_wait_time(object_key: str) -> Decimal | None:
     """Calculate BDA wait time from file creation to BDA start."""
     ddb_record = get_ddb_record(object_key)
+    if ddb_record is None:
+        return None
+
     created_at_str = ddb_record.get(DocumentMetadata.CREATED_AT)
 
     if not created_at_str:
@@ -124,48 +123,45 @@ def _build_completion_timing(
     object_key: str, bda_output_s3_uri: str | None
 ) -> tuple[list[str], dict[str, Any]]:
     """Build completion timing updates."""
-    updates = []
+    updates: list[str] = []
     values: dict[str, Any] = {}
 
-    try:
-        ddb_record = get_ddb_record(object_key)
+    ddb_record = get_ddb_record(object_key)
+    # record doesn't exist yet (eg. pre-ddb insert failure), skip bda timing
+    if ddb_record is None:
+        return updates, values
 
-        if ddb_record.get(DocumentMetadata.BDA_STARTED_AT):
-            completed_time = datetime.now(UTC)
+    if ddb_record.get(DocumentMetadata.BDA_STARTED_AT):
+        completed_time = datetime.now(UTC)
 
-            # use S3 LastModified timestamp if available
-            if bda_output_s3_uri:
-                try:
-                    bucket, key = s3_utils.parse_s3_uri(bda_output_s3_uri)
-                    completed_time = s3_service.get_last_modified_at(bucket, key)
-                    logger.info(f"Using S3 LastModified for bdaCompletedAt: {completed_time}")
-                except Exception as e:
-                    logger.warning(
-                        f"Failed to get S3 timestamp for bdaCompletedAt, using current time: {e}"
-                    )
-
-            updates.append(f"{DocumentMetadata.BDA_COMPLETED_AT} = :bdaCompletedAt")
-            values[":bdaCompletedAt"] = completed_time.isoformat()
-
-            updates.append(f"{DocumentMetadata.PROCESSED_DATE} = :processedDate")
-            values[":processedDate"] = completed_time.strftime("%Y-%m-%d")
-
-            timing_data = calculate_bda_processing_times(object_key, completed_time)
-
-            if timing_data.total_processing_time_seconds:
-                updates.append(
-                    f"{DocumentMetadata.TOTAL_PROCESSING_TIME_SECONDS} = :totalProcessingTime"
+        # use S3 LastModified timestamp if available
+        if bda_output_s3_uri:
+            try:
+                bucket, key = s3_utils.parse_s3_uri(bda_output_s3_uri)
+                completed_time = s3_service.get_last_modified_at(bucket, key)
+                logger.info(f"Using S3 LastModified for bdaCompletedAt: {completed_time}")
+            except Exception as e:
+                logger.warning(
+                    f"Failed to get S3 timestamp for bdaCompletedAt, using current time: {e}"
                 )
-                values[":totalProcessingTime"] = timing_data.total_processing_time_seconds
 
-            if timing_data.bda_processing_time_seconds:
-                updates.append(
-                    f"{DocumentMetadata.BDA_PROCESSING_TIME_SECONDS} = :bdaProcessingTime"
-                )
-                values[":bdaProcessingTime"] = timing_data.bda_processing_time_seconds
-    except ValueError:
-        # record doesn't exist yet (eg. pre-ddb insert failure), skip bda timing
-        pass
+        updates.append(f"{DocumentMetadata.BDA_COMPLETED_AT} = :bdaCompletedAt")
+        values[":bdaCompletedAt"] = completed_time.isoformat()
+
+        updates.append(f"{DocumentMetadata.PROCESSED_DATE} = :processedDate")
+        values[":processedDate"] = completed_time.strftime("%Y-%m-%d")
+
+        timing_data = calculate_bda_processing_times(object_key, completed_time)
+
+        if timing_data.total_processing_time_seconds:
+            updates.append(
+                f"{DocumentMetadata.TOTAL_PROCESSING_TIME_SECONDS} = :totalProcessingTime"
+            )
+            values[":totalProcessingTime"] = timing_data.total_processing_time_seconds
+
+        if timing_data.bda_processing_time_seconds:
+            updates.append(f"{DocumentMetadata.BDA_PROCESSING_TIME_SECONDS} = :bdaProcessingTime")
+            values[":bdaProcessingTime"] = timing_data.bda_processing_time_seconds
 
     return updates, values
 
@@ -190,7 +186,7 @@ def _build_timing_updates(
         except Exception as e:
             logger.error(f"Failed to calculate bda wait time for {object_key}: {e}")
 
-    elif ProcessStatus(status).is_completed():
+    elif ProcessStatus.is_completed(status):
         completion_updates, completion_values = _build_completion_timing(
             object_key, bda_output_s3_uri
         )
@@ -262,7 +258,7 @@ def _build_update_expression(
 
         bda_region = (
             extract_region_from_bda_arn(bda_invocation_arn)
-            or ConfigDefaults.BDA_REGION_NOT_AVAILABLE.value
+            or ConfigDefaults.BDA_REGION_NOT_AVAILABLE
         )
         updates.append(f"{DocumentMetadata.BDA_REGION_USED} = :bdaRegion")
         values[":bdaRegion"] = bda_region
@@ -278,7 +274,7 @@ def _execute_ddb_update(
     object_key: str, update_expression: str, expression_values: dict[str, Any]
 ) -> None:
     """Execute the DynamoDB update."""
-    table_name = get_required_env(env.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME)
+    table_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME)
     key = {"fileName": object_key}
 
     ddb_service.update_item(table_name, key, update_expression, expression_values)
@@ -287,19 +283,17 @@ def _execute_ddb_update(
 def _send_record_to_metrics_queue(object_key: str) -> None:
     """Write object key to SQS queue."""
     try:
-        queue_url = os.getenv(env.DDB_METRICS_INPUT_QUEUE_URL)
+        queue_url = get_aws_config().ddb_metrics_input_queue_url
 
         if not queue_url:
-            msg = (
-                f"{env.DDB_METRICS_INPUT_QUEUE_URL} environment variable not set, skipping metrics"
-            )
+            msg = "DDB_METRICS_INPUT_QUEUE_URL environment variable not set, skipping metrics"
             print(msg)
             logger.warning(msg)
             # do not raise an exception here. metrics are optional and shouldn't
             # prevent process from completing successfully
             return
 
-        table_name = get_required_env(env.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME)
+        table_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME)
         key = {"fileName": object_key}
         ddb_record = ddb_service.get_item(table_name, key)
 
@@ -323,6 +317,9 @@ def get_user_provided_document_category(object_key: str) -> DocumentCategory | N
     is first processed. If this fails, we have a data pipeline problem.
     """
     ddb_record = get_ddb_record(object_key)
+    if ddb_record is None:
+        return None
+
     user_provided_document_category = ddb_record.get(
         DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY
     )
@@ -337,27 +334,22 @@ def get_user_provided_document_category(object_key: str) -> DocumentCategory | N
     )
 
 
-def get_ddb_record(object_key: str) -> dict[str, Any]:
+def get_ddb_record(object_key: str) -> dict[str, Any] | None:
     """Get DDB record by file name. Raises ValueError if not found."""
-    try:
-        table_name = get_required_env(env.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME)
-        key = {"fileName": object_key}
-        item = ddb_service.get_item(table_name, key)
+    table_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME)
+    key = {"fileName": object_key}
+    item = ddb_service.get_item(table_name, key)
 
-        if not item:
-            raise ValueError(f"DDB record not found for file: {object_key}")
+    if not item:
+        return None
 
-        return item
-    except Exception as e:
-        logger.error(f"Failed to get DDB record for {object_key}: {e}")
-        raise
+    return item
 
 
 def get_ddb_by_job_id(job_id: str) -> dict[str, Any] | None:
     """Get document metadata record by job ID."""
-    table_name = get_required_env(env.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME)
-    index_name = get_required_env(env.DOCUMENTAI_DOCUMENT_METADATA_JOB_ID_INDEX_NAME)
-
+    table_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME)
+    index_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_JOB_ID_INDEX_NAME)
     items = ddb_service.query_by_key(table_name, index_name, "jobId", job_id)
     return items[0] if items else None
 
@@ -400,7 +392,7 @@ def update_ddb(
         expr_values = {":v1ResponseJson": json.dumps(v1_response)}
         _execute_ddb_update(object_key, update_expr, expr_values)
 
-        if ProcessStatus(status).is_completed():
+        if ProcessStatus.is_completed(status):
             _send_record_to_metrics_queue(object_key)
 
     except Exception as e:
@@ -425,15 +417,14 @@ def insert_ddb(
     pre_classification_confidence: float | None = None,
 ) -> None:
     try:
-        table_name = get_required_env(env.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME)
+        table_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME)
 
         item: dict[str, Any] = {
             DocumentMetadata.FILE_NAME: object_key,
             DocumentMetadata.ORIGINAL_FILE_NAME: original_file_name,
             DocumentMetadata.PROCESS_STATUS: process_status,
             DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY: (
-                user_provided_document_category
-                or ConfigDefaults.USER_DOCUMENT_TYPE_NOT_PROVIDED.value
+                user_provided_document_category or ConfigDefaults.USER_DOCUMENT_TYPE_NOT_PROVIDED
             ),
             DocumentMetadata.CREATED_AT: datetime.now(UTC).isoformat(),
             DocumentMetadata.UPDATED_AT: datetime.now(UTC).isoformat(),
@@ -477,6 +468,29 @@ def insert_ddb(
     except Exception as e:
         logger.error(f"Failed to create DDB record for {object_key}: {e}")
         raise
+
+
+def insert_minimal_ddb_record(
+    ddb_key: str,
+    original_file_name: str,
+    job_id: str,
+    process_status: ProcessStatus = ProcessStatus.NOT_STARTED,
+    user_provided_document_category: str | None = None,
+    trace_id: str | None = None,
+    content_type: str | None = None,
+    file_size_bytes: int | None = None,
+) -> None:
+    """Create initial tracking record."""
+    insert_ddb(
+        object_key=ddb_key,
+        original_file_name=original_file_name,
+        user_provided_document_category=user_provided_document_category,
+        process_status=process_status,
+        file_size_bytes=file_size_bytes,
+        content_type=content_type,
+        job_id=job_id,
+        trace_id=trace_id,
+    )
 
 
 def insert_initial_ddb_record(
@@ -554,7 +568,7 @@ def insert_initial_ddb_record(
 
     # initial status does not qualify for bda processing
     # create the json response signaling the process is complete
-    if not ProcessStatus(process_status).is_pending_extraction():
+    if not ProcessStatus.is_pending_extraction(process_status):
         internal_api_response = get_internal_api_response(
             object_key=ddb_key,
             response_code=response_code,
@@ -585,7 +599,7 @@ def insert_initial_ddb_record(
     # document did not qualify for bda, processing complete
     # create the v1 api response here and save to ddb
     # write to sqs as the file was received, but no data extracted
-    if not ProcessStatus(process_status).is_pending_extraction():
+    if not ProcessStatus.is_pending_extraction(process_status):
         v1_response = build_v1_api_response(ddb_key, process_status)
         update_expr = f"SET {DocumentMetadata.V1_API_RESPONSE_JSON} = :v1ResponseJson"
         expr_values = {":v1ResponseJson": json.dumps(v1_response)}

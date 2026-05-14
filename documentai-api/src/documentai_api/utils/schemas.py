@@ -1,18 +1,16 @@
 """BDA schema management."""
 
 import json
-import os
 from typing import Any, cast
 
 from documentai_api.config.constants import (
-    CACHE_BLUEPRINT_SCHEMAS_TTL_MINUTES,
-    CACHE_KEY_BLUEPRINT_SCHEMAS,
+    Cache,
     DictionaryBlueprintField,
     DictionaryBlueprintSchema,
 )
+from documentai_api.config.env import EnvVars, get_required_env
 from documentai_api.logging import get_logger
 from documentai_api.services.bda import get_blueprint, get_data_automation_project
-from documentai_api.utils import env
 from documentai_api.utils.cache import get_cache
 
 logger = get_logger(__name__)
@@ -23,11 +21,7 @@ def _fetch_schemas_from_bda() -> dict[str, Any]:
     msg = "Fetching schemas from BDA"
     logger.info(msg)
 
-    project_arn = os.getenv(env.BDA_PROJECT_ARN)
-    if not project_arn:
-        msg = f"{env.BDA_PROJECT_ARN} not set"
-        logger.error(msg)
-        return {}
+    project_arn = get_required_env(EnvVars.BDA_PROJECT_ARN)
 
     try:
         # get project with blueprints
@@ -127,13 +121,13 @@ def get_all_schemas() -> dict[str, Any]:
     cache = get_cache()
 
     # try cache first
-    schemas = cache.get(CACHE_KEY_BLUEPRINT_SCHEMAS)
+    schemas = cache.get(Cache.KEY_BLUEPRINT_SCHEMAS)
     if schemas is not None:
         return cast(dict[str, Any], schemas)
 
     # fetch from BDA and cache
     schemas = _fetch_schemas_from_bda()
-    cache.add(CACHE_KEY_BLUEPRINT_SCHEMAS, schemas, ttl_minutes=CACHE_BLUEPRINT_SCHEMAS_TTL_MINUTES)
+    cache.add(Cache.KEY_BLUEPRINT_SCHEMAS, schemas, ttl_minutes=Cache.TTL_BLUEPRINT_SCHEMAS_MINUTES)
 
     return schemas
 
@@ -160,4 +154,4 @@ def get_all_fields() -> list[dict[str, Any]]:
 def invalidate_schema_cache() -> None:
     """Force refresh of schema cache."""
     cache = get_cache()
-    cache.invalidate(CACHE_KEY_BLUEPRINT_SCHEMAS)
+    cache.invalidate(Cache.KEY_BLUEPRINT_SCHEMAS)

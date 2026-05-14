@@ -8,21 +8,19 @@ import typer
 from botocore.exceptions import ClientError
 from tenacity import (
     RetryError,
-    retry,
+    Retrying,
     retry_if_exception_type,
     stop_after_attempt,
     wait_exponential_jitter,
 )
 
+import documentai_api.logging
 from documentai_api.config.constants import (
-    S3_METADATA_KEY_JOB_ID,
-    S3_METADATA_KEY_ORIGINAL_FILE_NAME,
-    S3_METADATA_KEY_TRACE_ID,
-    S3_METADATA_KEY_USER_PROVIDED_DOCUMENT_CATEGORY,
     ConfigDefaults,
     ProcessStatus,
+    S3MetadataKeys,
 )
-from documentai_api.logging import get_logger
+from documentai_api.config.env import EnvVars, get_aws_config, get_required_env
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils.bda_invoker import invoke_bedrock_data_automation
@@ -34,23 +32,22 @@ from documentai_api.utils.ddb import (
     set_bda_processing_status_not_started,
     set_bda_processing_status_started,
 )
-from documentai_api.utils.env import DOCUMENTAI_INPUT_LOCATION, MAX_BDA_INVOKE_RETRY_ATTEMPTS
 from documentai_api.utils.models import ClassificationData
 from documentai_api.utils.s3 import parse_s3_uri
 
-logger = get_logger(__name__)
+logger = documentai_api.logging.get_logger(__name__)
 app = typer.Typer()
 
 
 def is_file_too_large_for_bda(content_type: str, file_size_bytes: int) -> bool:
     """Check if file exceeds BDA size limits based on content type."""
     if content_type in ["image/jpeg", "image/png"]:
-        return int(file_size_bytes) > int(ConfigDefaults.BDA_MAX_IMAGE_SIZE_BYTES.value)
+        return int(file_size_bytes) > int(ConfigDefaults.BDA_MAX_IMAGE_SIZE_BYTES)
     elif content_type in ["application/pdf", "image/tiff"]:
-        return int(file_size_bytes) > int(ConfigDefaults.BDA_MAX_DOCUMENT_FILE_SIZE_BYTES.value)
+        return int(file_size_bytes) > int(ConfigDefaults.BDA_MAX_DOCUMENT_FILE_SIZE_BYTES)
     else:
         # unknown file type, assume document limit
-        return int(file_size_bytes) > int(ConfigDefaults.BDA_MAX_IMAGE_SIZE_BYTES.value)
+        return int(file_size_bytes) > int(ConfigDefaults.BDA_MAX_IMAGE_SIZE_BYTES)
 
 
 def convert_to_grayscale(
@@ -114,22 +111,27 @@ def convert_s3_object_to_grayscale(bucket_name: str, object_key: str) -> bool:
         return False
 
 
-@retry(
-    stop=stop_after_attempt(int(os.getenv(MAX_BDA_INVOKE_RETRY_ATTEMPTS, "3"))),
-    wait=wait_exponential_jitter(initial=10, max=120),
-    retry=retry_if_exception_type(ClientError),
-)
 def _invoke_bda(bucket_name: str, object_key: str, ddb_key: str) -> dict[str, Any]:
     """Invoke BDA for a file that's ready for processing."""
-    invocation_arn = invoke_bedrock_data_automation(bucket_name, object_key)
+    result: dict[str, Any] = {}
 
-    set_bda_processing_status_started(
-        object_key=ddb_key,
-        bda_invocation_arn=invocation_arn,
-    )
+    for attempt in Retrying(
+        stop=stop_after_attempt(get_aws_config().max_bda_invoke_retry_attempts),
+        wait=wait_exponential_jitter(initial=10, max=120),
+        retry=retry_if_exception_type(ClientError),
+    ):
+        with attempt:
+            invocation_arn = invoke_bedrock_data_automation(bucket_name, object_key)
 
-    logger.info(f"BDA job started for {ddb_key}, ARN: {invocation_arn}")
-    return {"invocationArn": invocation_arn}
+            set_bda_processing_status_started(
+                object_key=ddb_key,
+                bda_invocation_arn=invocation_arn,
+            )
+
+            logger.info(f"BDA job started for {ddb_key}, ARN: {invocation_arn}")
+            result = {"invocationArn": invocation_arn}
+
+    return result
 
 
 def invoke_bda(bucket_name: str, object_key: str, ddb_key: str) -> dict[str, Any]:
@@ -168,26 +170,25 @@ def main(
         job_id: Optional job ID (will be read from S3 metadata if not provided)
         trace_id: Optional trace ID (will be read from S3 metadata if not provided)
     """
-    input_location = os.getenv(DOCUMENTAI_INPUT_LOCATION, "")
-
     if bucket_name is None:
+        input_location = get_required_env(EnvVars.DOCUMENTAI_INPUT_LOCATION)
         bucket_name, _ = parse_s3_uri(input_location)
 
     logger.info(f"Processing document: s3://{bucket_name}/{object_key}")
 
     response = s3_service.head_object(bucket_name, object_key)
     metadata = response.get("Metadata", {})
-    original_file_name = metadata.get(S3_METADATA_KEY_ORIGINAL_FILE_NAME)
+    original_file_name = metadata.get(S3MetadataKeys.ORIGINAL_FILE_NAME)
     if not original_file_name:
         logger.warning("Original file name not present in S3 metadata")
         original_file_name = ""
 
     if not all([job_id, trace_id, user_provided_document_category]):
         try:
-            job_id = job_id or metadata.get(S3_METADATA_KEY_JOB_ID)
-            trace_id = trace_id or metadata.get(S3_METADATA_KEY_TRACE_ID)
+            job_id = job_id or metadata.get(S3MetadataKeys.JOB_ID)
+            trace_id = trace_id or metadata.get(S3MetadataKeys.TRACE_ID)
             user_provided_document_category = user_provided_document_category or metadata.get(
-                S3_METADATA_KEY_USER_PROVIDED_DOCUMENT_CATEGORY
+                S3MetadataKeys.USER_PROVIDED_DOCUMENT_CATEGORY
             )
         except Exception as e:
             logger.warning(f"Could not read S3 metadata: {e}")
@@ -195,9 +196,9 @@ def main(
     # strip S3 prefix for DynamoDB key (files are stored without prefix)
     ddb_key = os.path.basename(object_key)
 
-    try:
-        existing_record = get_ddb_record(ddb_key)
-    except ValueError:
+    existing_record = get_ddb_record(ddb_key)
+
+    if existing_record is None:
         # first time seeing this file
         logger.info(f"First time processing {ddb_key}")
         insert_initial_ddb_record(
@@ -212,6 +213,9 @@ def main(
 
         existing_record = get_ddb_record(ddb_key)
 
+        if existing_record is None:
+            raise Exception("Could not retrieve DDB record after creation")
+
     status = existing_record.get(DocumentMetadata.PROCESS_STATUS)
 
     if status == ProcessStatus.PENDING_GRAYSCALE_CONVERSION:
@@ -225,7 +229,7 @@ def main(
                 object_key=ddb_key,
                 data=ClassificationData(additional_info="File too large after conversion"),
             )
-    elif status == ProcessStatus.NOT_STARTED.value:
+    elif status == ProcessStatus.NOT_STARTED:
         # ready for BDA immediately
         invoke_bda(bucket_name, object_key, ddb_key)
     else:
@@ -247,10 +251,11 @@ def cli(
     ),
 ) -> None:
     """Process uploaded document and invoke BDA."""
-    try:
-        main(object_key, bucket_name, user_provided_document_category, job_id, trace_id)
-    except Exception:
-        raise typer.Exit(1) from None
+    with documentai_api.logging.init(__package__):
+        try:
+            main(object_key, bucket_name, user_provided_document_category, job_id, trace_id)
+        except Exception:
+            raise typer.Exit(1) from None
 
 
 if __name__ == "__main__":

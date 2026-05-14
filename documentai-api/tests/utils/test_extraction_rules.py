@@ -2,6 +2,7 @@ import boto3
 import pytest
 from moto import mock_aws
 
+from documentai_api.config.env import EnvVars
 from documentai_api.utils.extraction_rules import (
     apply_extraction_rules,
     delete_rule,
@@ -26,7 +27,7 @@ def extraction_rules_table(aws_credentials, monkeypatch):
             ],
             BillingMode="PAY_PER_REQUEST",
         )
-        monkeypatch.setenv("EXTRACTION_RULES_TABLE_NAME", table.name)
+        monkeypatch.setenv(EnvVars.EXTRACTION_RULES_TABLE_NAME, table.name)
         yield table
 
 

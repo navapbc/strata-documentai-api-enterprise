@@ -1,6 +1,5 @@
 import asyncio
 import json
-import os
 import uuid
 from dataclasses import dataclass
 from typing import Annotated, Any, BinaryIO
@@ -20,18 +19,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 
 from documentai_api.config.constants import (
-    API_DESCRIPTION,
-    API_TITLE,
     API_VERSION,
-    S3_METADATA_KEY_ORIGINAL_FILE_NAME,
     SUPPORTED_CONTENT_TYPES,
-    UPLOAD_METADATA_KEYS,
+    APIConfig,
     DictionaryBlueprintField,
     DictionaryBlueprintSchema,
     DictionaryFormatType,
     DocumentCategory,
+    FileValidation,
     ProcessStatus,
+    S3MetadataKeys,
 )
+from documentai_api.config.env import get_app_env_config, get_aws_config
 from documentai_api.logging import get_logger
 from documentai_api.models.api_responses import (
     ConfigResponse,
@@ -50,9 +49,12 @@ from documentai_api.models.api_responses import (
 )
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import s3 as s3_service
-from documentai_api.utils import env
 from documentai_api.utils.auth import verify_api_key
-from documentai_api.utils.ddb import classify_as_failed, get_ddb_by_job_id
+from documentai_api.utils.ddb import (
+    classify_as_failed,
+    get_ddb_by_job_id,
+    insert_minimal_ddb_record,
+)
 from documentai_api.utils.models import ClassificationData
 from documentai_api.utils.response_builder import build_csv_response
 from documentai_api.utils.s3 import parse_s3_uri
@@ -61,9 +63,9 @@ from documentai_api.utils.schemas import get_all_fields, get_all_schemas, get_do
 logger = get_logger(__name__)
 
 app = FastAPI(
-    title=API_TITLE,
-    description=API_DESCRIPTION,
-    version=API_VERSION,
+    title=APIConfig.TITLE,
+    description=APIConfig.DESCRIPTION,
+    version=APIConfig.VERSION,
 )
 
 app.add_middleware(
@@ -88,7 +90,7 @@ def discover_endpoints(app: FastAPI) -> dict[str, str]:
 # public endpoints (no auth required)
 @app.get("/")
 def root() -> dict[str, Any]:
-    return {"message": API_TITLE, "status": "healthy"}
+    return {"message": APIConfig.TITLE, "status": "healthy"}
 
 
 @app.get("/health")
@@ -101,11 +103,12 @@ def get_config(request: Request) -> ConfigResponse:
     endpoints = discover_endpoints(app)
     endpoints["postUploadSyncronous"] = f"{endpoints['postUpload']}?wait=true"
 
+    app_config = get_app_env_config()
     return ConfigResponse(
         api_url=f"{request.url.scheme}://{request.url.netloc}",
         version=API_VERSION,
-        image_tag=os.getenv("IMAGE_TAG"),
-        environment=os.getenv("ENVIRONMENT", "local"),
+        image_tag=app_config.image_tag,
+        environment=app_config.environment,
         endpoints=endpoints,
         supported_file_types=list(SUPPORTED_CONTENT_TYPES),
     )
@@ -143,9 +146,9 @@ def _get_job_status(job_id: str) -> JobStatus:
 
 
 async def upload_document_for_processing(
-    file: BinaryIO,
+    src_file: BinaryIO,
+    dest_path: str,
     original_file_name: str,
-    unique_file_name: str,
     content_type: str,
     user_provided_document_category: DocumentCategory | None = None,
     job_id: str | None = None,
@@ -154,15 +157,13 @@ async def upload_document_for_processing(
     logger.debug(
         "S3 upload started",
         extra={
-            "unique_file_name": unique_file_name,
+            "dest_path": dest_path,
             "user_provided_document_category": user_provided_document_category,
             "category_type": type(user_provided_document_category).__name__,
         },
     )
-    input_location = env.get_required_env(env.DOCUMENTAI_INPUT_LOCATION)
 
-    # DOCUMENTAI_INPUT_LOCATION includes full path (e.g. s3://bucket/input)
-    bucket_name, object_key = parse_s3_uri(f"{input_location}/{unique_file_name}")
+    bucket_name, object_key = parse_s3_uri(dest_path)
 
     try:
         metadata = {}
@@ -173,29 +174,27 @@ async def upload_document_for_processing(
                     f"Expected DocumentCategory, got {type(user_provided_document_category)}"
                 )
 
-            metadata[UPLOAD_METADATA_KEYS["user_provided_document_category"]] = (
+            metadata[S3MetadataKeys.USER_PROVIDED_DOCUMENT_CATEGORY] = (
                 user_provided_document_category.value
             )
 
-        metadata[S3_METADATA_KEY_ORIGINAL_FILE_NAME] = original_file_name
+        metadata[S3MetadataKeys.ORIGINAL_FILE_NAME] = original_file_name
 
         if job_id:
-            metadata[UPLOAD_METADATA_KEYS["job_id"]] = job_id
+            metadata[S3MetadataKeys.JOB_ID] = job_id
 
         if trace_id:
-            metadata[UPLOAD_METADATA_KEYS["trace_id"]] = trace_id
+            metadata[S3MetadataKeys.TRACE_ID] = trace_id
 
         logger.debug(
             "S3: Starting actual upload",
             extra={
                 "metadata": metadata,
-                "file": file,
-                "document_upload_bucket_name": bucket_name,
-                "unique_file_name": unique_file_name,
+                "dest_path": dest_path,
             },
         )
 
-        s3_service.upload_file(bucket_name, object_key, file, content_type, metadata)
+        s3_service.upload_file(bucket_name, object_key, src_file, content_type, metadata)
         logger.info("=== S3 UPLOAD SUCCESS ===")
 
     except Exception as e:
@@ -223,7 +222,7 @@ async def get_v1_document_processing_results(job_id: str, timeout: int) -> JobSt
             # processing complete, return results
             if (
                 job_status.process_status
-                and ProcessStatus(job_status.process_status).is_completed()
+                and ProcessStatus.is_completed(job_status.process_status)
                 and job_status.v1_response_json
             ):
                 return JobStatusResponse(**json.loads(job_status.v1_response_json))
@@ -288,12 +287,12 @@ async def create_document(
     file_content = await file.read()
     actual_content_type = magic.from_buffer(file_content, mime=True)
 
-    if actual_content_type not in SUPPORTED_CONTENT_TYPES:
+    if not FileValidation.is_supported(actual_content_type):
         raise HTTPException(
             status_code=400,
             detail=(
                 f"Invalid file type detected '{actual_content_type}'. File must be "
-                f"{', '.join(SUPPORTED_CONTENT_TYPES)}"
+                f"{', '.join(FileValidation.SUPPORTED_CONTENT_TYPES)}"
             ),
         )
 
@@ -305,17 +304,40 @@ async def create_document(
     file_extension = file.filename.split(".")[-1]
     file_name = file.filename.split(".")[0]
     unique_file_name = f"{file_name}-{uuid.uuid4()}.{file_extension}"
+    original_file_name = file.filename
     job_id = str(uuid.uuid4())
+    ddb_key = unique_file_name
 
-    await upload_document_for_processing(
-        file=file.file,
-        original_file_name=file.filename,
-        unique_file_name=unique_file_name,
-        content_type=actual_content_type,
-        user_provided_document_category=category,
+    # DOCUMENTAI_INPUT_LOCATION includes full path (e.g. s3://bucket/input)
+    input_location = get_aws_config().documentai_input_location
+    dest_path = f"{input_location}/{unique_file_name}"
+
+    insert_minimal_ddb_record(
+        ddb_key=ddb_key,
+        original_file_name=original_file_name,
         job_id=job_id,
+        user_provided_document_category=category,
         trace_id=trace_id,
+        content_type=actual_content_type,
     )
+
+    try:
+        await upload_document_for_processing(
+            src_file=file.file,
+            dest_path=dest_path,
+            original_file_name=file.filename,
+            content_type=actual_content_type,
+            user_provided_document_category=category,
+            job_id=job_id,
+            trace_id=trace_id,
+        )
+    except HTTPException as e:
+        classify_as_failed(
+            object_key=ddb_key,
+            error_message=e.detail,
+            data=ClassificationData(additional_info=e.detail),
+        )
+        raise
 
     response.headers["X-Trace-ID"] = trace_id
     if not wait:

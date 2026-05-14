@@ -116,6 +116,9 @@ def build_v1_api_response(
     from documentai_api.utils.ddb import get_ddb_record
 
     ddb_record = get_ddb_record(object_key)
+    if ddb_record is None:
+        raise ValueError(f"DDB record not found for file: {object_key}")
+
     job_id = ddb_record.get(DocumentMetadata.JOB_ID)
     matched_document_class = ddb_record.get(DocumentMetadata.BDA_MATCHED_DOCUMENT_CLASS)
     total_time = ddb_record.get(DocumentMetadata.TOTAL_PROCESSING_TIME_SECONDS)
@@ -134,7 +137,7 @@ def build_v1_api_response(
         base_response["matchedDocumentClass"] = matched_document_class
 
     # success response with full results
-    if ProcessStatus(job_status).is_successful():
+    if ProcessStatus.is_successful(job_status):
         base_response["jobStatus"] = "completed"
 
         if job_status == ProcessStatus.SUCCESS.value:
@@ -185,7 +188,7 @@ def build_v1_api_response(
             }
         )
 
-    elif ProcessStatus(job_status).is_not_supported():
+    elif ProcessStatus.is_not_supported(job_status):
         base_response.update(
             {
                 "jobStatus": "not_supported",

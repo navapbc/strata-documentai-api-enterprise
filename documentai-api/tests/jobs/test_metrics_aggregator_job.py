@@ -17,7 +17,6 @@ from documentai_api.jobs.metrics_aggregator.main import (
     _write_aggregated_stats,
     main,
 )
-from documentai_api.utils import env
 
 
 def create_record(
@@ -324,7 +323,7 @@ def test_main_already_aggregated(s3_client, s3_bucket):
         Body=json.dumps(existing_stats).encode(),
     )
 
-    with patch.dict("os.environ", {env.DDB_EXPORT_BUCKET_NAME: "test-bucket"}):
+    with patch.dict("os.environ", {"DDB_EXPORT_BUCKET_NAME": "test-bucket"}):
         result = main("2026-02-20", overwrite=False)
 
     assert result["statusCode"] == 200

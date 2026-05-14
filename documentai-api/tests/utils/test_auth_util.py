@@ -6,9 +6,9 @@ from unittest.mock import patch
 import pytest
 from fastapi import HTTPException
 
+from documentai_api.config.env import EnvVars
 from documentai_api.schemas.api_key import ApiKeyRecord
 from documentai_api.utils import auth as auth_util
-from documentai_api.utils import env
 from documentai_api.utils.cache import get_cache
 
 
@@ -43,17 +43,17 @@ def test_hash_key_different_inputs_produce_different_hashes():
 
 
 def test_get_cache_ttl_default(monkeypatch):
-    monkeypatch.delenv(env.API_AUTH_CACHE_TTL, raising=False)
+    monkeypatch.delenv(EnvVars.API_AUTH_CACHE_TTL, raising=False)
     assert auth_util._get_cache_ttl_minutes() == 5
 
 
 def test_get_cache_ttl_from_env(monkeypatch):
-    monkeypatch.setenv(env.API_AUTH_CACHE_TTL, "120")
+    monkeypatch.setenv(EnvVars.API_AUTH_CACHE_TTL, "120")
     assert auth_util._get_cache_ttl_minutes() == 2
 
 
 def test_get_cache_ttl_invalid_value(monkeypatch):
-    monkeypatch.setenv(env.API_AUTH_CACHE_TTL, "not-a-number")
+    monkeypatch.setenv(EnvVars.API_AUTH_CACHE_TTL, "not-a-number")
     assert auth_util._get_cache_ttl_minutes() == 5
 
 
@@ -144,28 +144,28 @@ def test_validate_key_record_invalid_expires_at():
 
 
 def test_insecure_key_missing_env_raises_500(monkeypatch):
-    monkeypatch.delenv(env.API_AUTH_INSECURE_SHARED_KEY, raising=False)
+    monkeypatch.delenv(EnvVars.API_AUTH_INSECURE_SHARED_KEY, raising=False)
     with pytest.raises(HTTPException) as exc_info:
         auth_util._verify_with_insecure_shared_key("any-key")
     assert exc_info.value.status_code == 500
 
 
 def test_insecure_key_invalid_raises_401(monkeypatch):
-    monkeypatch.setenv(env.API_AUTH_INSECURE_SHARED_KEY, "correct-key")
+    monkeypatch.setenv(EnvVars.API_AUTH_INSECURE_SHARED_KEY, "correct-key")
     with pytest.raises(HTTPException) as exc_info:
         auth_util._verify_with_insecure_shared_key("wrong-key")
     assert exc_info.value.status_code == 401
 
 
 def test_insecure_key_missing_header_raises_401(monkeypatch):
-    monkeypatch.setenv(env.API_AUTH_INSECURE_SHARED_KEY, "correct-key")
+    monkeypatch.setenv(EnvVars.API_AUTH_INSECURE_SHARED_KEY, "correct-key")
     with pytest.raises(HTTPException) as exc_info:
         auth_util._verify_with_insecure_shared_key(None)
     assert exc_info.value.status_code == 401
 
 
 def test_insecure_key_valid_passes(monkeypatch):
-    monkeypatch.setenv(env.API_AUTH_INSECURE_SHARED_KEY, "correct-key")
+    monkeypatch.setenv(EnvVars.API_AUTH_INSECURE_SHARED_KEY, "correct-key")
     auth_util._verify_with_insecure_shared_key("correct-key")  # should not raise
 
 
@@ -181,7 +181,7 @@ def test_ddb_verify_missing_key_raises_401():
 
 
 def test_ddb_verify_key_not_in_ddb_raises_401(monkeypatch):
-    monkeypatch.setenv(env.API_KEYS_TABLE_NAME, "api-keys-test")
+    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
     with patch("documentai_api.utils.auth._lookup_key_in_ddb", return_value=None):
         with pytest.raises(HTTPException) as exc_info:
             auth_util._verify_with_ddb("docai_" + "a" * 32)
@@ -189,7 +189,7 @@ def test_ddb_verify_key_not_in_ddb_raises_401(monkeypatch):
 
 
 def test_ddb_verify_inactive_key_raises_401(monkeypatch):
-    monkeypatch.setenv(env.API_KEYS_TABLE_NAME, "api-keys-test")
+    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
     with patch(
         "documentai_api.utils.auth._lookup_key_in_ddb",
         return_value={ApiKeyRecord.IS_ACTIVE: False, ApiKeyRecord.CLIENT_NAME: "test-client"},
@@ -200,7 +200,7 @@ def test_ddb_verify_inactive_key_raises_401(monkeypatch):
 
 
 def test_ddb_verify_valid_key_passes(monkeypatch):
-    monkeypatch.setenv(env.API_KEYS_TABLE_NAME, "api-keys-test")
+    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
     with patch(
         "documentai_api.utils.auth._lookup_key_in_ddb",
         return_value={ApiKeyRecord.IS_ACTIVE: True, ApiKeyRecord.CLIENT_NAME: "test-client"},
@@ -209,7 +209,7 @@ def test_ddb_verify_valid_key_passes(monkeypatch):
 
 
 def test_ddb_verify_uses_cache_on_second_call(monkeypatch):
-    monkeypatch.setenv(env.API_KEYS_TABLE_NAME, "api-keys-test")
+    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
     record = {ApiKeyRecord.IS_ACTIVE: True, ApiKeyRecord.CLIENT_NAME: "test-client"}
     with patch("documentai_api.utils.auth._lookup_key_in_ddb", return_value=record) as mock_lookup:
         auth_util._verify_with_ddb("docai_" + "a" * 32)
@@ -254,7 +254,7 @@ def test_ddb_verify_rejects_invalid_format():
 
 
 def test_update_last_used_debounced_skips_second_call(monkeypatch):
-    monkeypatch.setenv(env.API_KEYS_TABLE_NAME, "api-keys-test")
+    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
     with patch("documentai_api.services.ddb.update_item") as mock_update:
         auth_util._update_last_used("test-hash")
         auth_util._update_last_used("test-hash")  # should be skipped
@@ -262,7 +262,7 @@ def test_update_last_used_debounced_skips_second_call(monkeypatch):
 
 
 def test_update_last_used_writes_after_debounce_period(monkeypatch):
-    monkeypatch.setenv(env.API_KEYS_TABLE_NAME, "api-keys-test")
+    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
     with patch("documentai_api.services.ddb.update_item") as mock_update:
         auth_util._update_last_used("test-hash")
         # expire the debounce window
@@ -272,7 +272,7 @@ def test_update_last_used_writes_after_debounce_period(monkeypatch):
 
 
 def test_update_last_used_writes_to_ddb(monkeypatch):
-    monkeypatch.setenv(env.API_KEYS_TABLE_NAME, "api-keys-test")
+    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
     with patch("documentai_api.services.ddb.update_item") as mock_update:
         auth_util._update_last_used("test-hash")
         mock_update.assert_called_once()
@@ -282,13 +282,13 @@ def test_update_last_used_writes_to_ddb(monkeypatch):
 
 
 def test_update_last_used_silently_ignores_errors(monkeypatch):
-    monkeypatch.setenv(env.API_KEYS_TABLE_NAME, "api-keys-test")
+    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
     with patch("documentai_api.services.ddb.update_item", side_effect=Exception("DDB error")):
         auth_util._update_last_used("test-hash")  # should not raise
 
 
 def test_ddb_verify_fires_last_used_update(monkeypatch):
-    monkeypatch.setenv(env.API_KEYS_TABLE_NAME, "api-keys-test")
+    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
     record = {ApiKeyRecord.IS_ACTIVE: True, ApiKeyRecord.CLIENT_NAME: "test-client"}
     with (
         patch("documentai_api.utils.auth._lookup_key_in_ddb", return_value=record),
@@ -308,7 +308,7 @@ def test_ddb_verify_fires_last_used_update(monkeypatch):
 
 
 def test_generate_api_key_returns_key_and_no_existing(monkeypatch):
-    monkeypatch.setenv(env.API_KEYS_TABLE_NAME, "api-keys-test")
+    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
     with (
         patch("documentai_api.utils.auth.get_active_keys_for_client", return_value=[]),
         patch("documentai_api.services.ddb.put_item") as mock_put,
@@ -321,7 +321,7 @@ def test_generate_api_key_returns_key_and_no_existing(monkeypatch):
 
 
 def test_generate_api_key_warns_on_existing_keys(monkeypatch):
-    monkeypatch.setenv(env.API_KEYS_TABLE_NAME, "api-keys-test")
+    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
     existing_record = {ApiKeyRecord.IS_ACTIVE: True, ApiKeyRecord.CLIENT_NAME: "my-service"}
     with (
         patch(
@@ -336,7 +336,7 @@ def test_generate_api_key_warns_on_existing_keys(monkeypatch):
 
 
 def test_generate_api_key_stores_hash_not_plaintext(monkeypatch):
-    monkeypatch.setenv(env.API_KEYS_TABLE_NAME, "api-keys-test")
+    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
     with (
         patch("documentai_api.utils.auth.get_active_keys_for_client", return_value=[]),
         patch("documentai_api.services.ddb.put_item") as mock_put,
@@ -352,7 +352,7 @@ def test_generate_api_key_stores_hash_not_plaintext(monkeypatch):
 def test_generate_api_key_with_expires_at(monkeypatch):
     from datetime import UTC, datetime, timedelta
 
-    monkeypatch.setenv(env.API_KEYS_TABLE_NAME, "api-keys-test")
+    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
     expires = datetime.now(UTC) + timedelta(days=90)
     with (
         patch("documentai_api.utils.auth.get_active_keys_for_client", return_value=[]),
@@ -370,7 +370,7 @@ def test_generate_api_key_with_expires_at(monkeypatch):
 
 
 def test_deactivate_api_key_found(monkeypatch):
-    monkeypatch.setenv(env.API_KEYS_TABLE_NAME, "api-keys-test")
+    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
     record = {ApiKeyRecord.KEY_HASH: "test-hash", ApiKeyRecord.IS_ACTIVE: True}
     with (
         patch("documentai_api.services.ddb.get_item", return_value=record),
@@ -385,7 +385,7 @@ def test_deactivate_api_key_found(monkeypatch):
 
 
 def test_deactivate_api_key_not_found(monkeypatch):
-    monkeypatch.setenv(env.API_KEYS_TABLE_NAME, "api-keys-test")
+    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
     with patch("documentai_api.services.ddb.get_item", return_value=None):
         result = auth_util.deactivate_api_key("nonexistent-hash")
 
@@ -393,7 +393,7 @@ def test_deactivate_api_key_not_found(monkeypatch):
 
 
 def test_deactivate_api_key_invalidates_cache(monkeypatch):
-    monkeypatch.setenv(env.API_KEYS_TABLE_NAME, "api-keys-test")
+    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
     record = {ApiKeyRecord.KEY_HASH: "test-hash", ApiKeyRecord.IS_ACTIVE: True}
 
     get_cache().add("test-hash", record, ttl_minutes=5)
@@ -427,7 +427,7 @@ def test_deactivate_api_key_with_real_ddb(api_keys_table):
 
 
 def test_get_active_keys_for_client_returns_matching(monkeypatch):
-    monkeypatch.setenv(env.API_KEYS_TABLE_NAME, "api-keys-test")
+    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
     records = [
         {ApiKeyRecord.CLIENT_NAME: "my-service", ApiKeyRecord.IS_ACTIVE: True},
         {ApiKeyRecord.CLIENT_NAME: "other-service", ApiKeyRecord.IS_ACTIVE: True},
@@ -442,7 +442,7 @@ def test_get_active_keys_for_client_returns_matching(monkeypatch):
 
 
 def test_get_active_keys_for_client_returns_empty_on_error(monkeypatch):
-    monkeypatch.setenv(env.API_KEYS_TABLE_NAME, "api-keys-test")
+    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
     with patch("documentai_api.services.ddb.scan", side_effect=Exception("DDB error")):
         result = auth_util.get_active_keys_for_client("my-service")
 
@@ -455,21 +455,21 @@ def test_get_active_keys_for_client_returns_empty_on_error(monkeypatch):
 
 
 def test_verify_api_key_uses_ddb_when_enabled(monkeypatch):
-    monkeypatch.setenv(env.API_AUTH_ENABLED, "true")
+    monkeypatch.setenv(EnvVars.API_AUTH_ENABLED, "true")
     with patch("documentai_api.utils.auth._verify_with_ddb") as mock_ddb:
         auth_util.verify_api_key("docai_" + "a" * 32)
         mock_ddb.assert_called_once_with("docai_" + "a" * 32)
 
 
 def test_verify_api_key_uses_insecure_key_when_disabled(monkeypatch):
-    monkeypatch.setenv(env.API_AUTH_ENABLED, "false")
+    monkeypatch.setenv(EnvVars.API_AUTH_ENABLED, "false")
     with patch("documentai_api.utils.auth._verify_with_insecure_shared_key") as mock_insecure:
         auth_util.verify_api_key("docai_" + "a" * 32)
         mock_insecure.assert_called_once_with("docai_" + "a" * 32)
 
 
 def test_verify_api_key_disabled_by_default(monkeypatch):
-    monkeypatch.delenv(env.API_AUTH_ENABLED, raising=False)
+    monkeypatch.delenv(EnvVars.API_AUTH_ENABLED, raising=False)
     with patch("documentai_api.utils.auth._verify_with_insecure_shared_key") as mock_insecure:
         auth_util.verify_api_key("docai_" + "a" * 32)
         mock_insecure.assert_called_once_with("docai_" + "a" * 32)
@@ -542,7 +542,7 @@ def test_generate_api_key_warns_existing_via_ddb(api_keys_table):
 
 def test_verify_api_key_end_to_end_with_moto(api_keys_table, monkeypatch):
     """Test full verify_api_key → _verify_with_ddb → DDB flow using moto."""
-    monkeypatch.setenv(env.API_AUTH_ENABLED, "true")
+    monkeypatch.setenv(EnvVars.API_AUTH_ENABLED, "true")
 
     api_key, _ = auth_util.generate_api_key("test-client", "prod")
 
@@ -551,7 +551,7 @@ def test_verify_api_key_end_to_end_with_moto(api_keys_table, monkeypatch):
 
 def test_verify_api_key_end_to_end_invalid_key(api_keys_table, monkeypatch):
     """Test full flow rejects a key that doesn't exist in DDB."""
-    monkeypatch.setenv(env.API_AUTH_ENABLED, "true")
+    monkeypatch.setenv(EnvVars.API_AUTH_ENABLED, "true")
 
     with pytest.raises(HTTPException) as exc_info:
         auth_util.verify_api_key("docai_invalid_key")
@@ -560,7 +560,7 @@ def test_verify_api_key_end_to_end_invalid_key(api_keys_table, monkeypatch):
 
 def test_verify_api_key_end_to_end_deactivated_key(api_keys_table, monkeypatch):
     """Test full flow rejects a deactivated key."""
-    monkeypatch.setenv(env.API_AUTH_ENABLED, "true")
+    monkeypatch.setenv(EnvVars.API_AUTH_ENABLED, "true")
 
     api_key, _ = auth_util.generate_api_key("test-client", "prod")
     key_hash = auth_util._hash_key(api_key)

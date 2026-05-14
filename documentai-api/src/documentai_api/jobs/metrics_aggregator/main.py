@@ -17,8 +17,8 @@ from documentai_api.config.constants import (
     AthenaQueryStatus,
     TimingMetrics,
 )
+from documentai_api.config.env import get_aws_config
 from documentai_api.logging import get_logger
-from documentai_api.utils import env
 from documentai_api.utils.aws_client_factory import AWSClientFactory
 from documentai_api.utils.dates import validate_yyyymmdd_format
 
@@ -309,7 +309,10 @@ def main(target_date: str, overwrite: bool = False) -> dict[str, Any]:
     validate_yyyymmdd_format(target_date)
     yyyymm = target_date[:7]
 
-    metrics_bucket = env.get_required_env(env.DDB_EXPORT_BUCKET_NAME)
+    aws_config = get_aws_config()
+    metrics_bucket = aws_config.ddb_export_bucket_name
+    if not metrics_bucket:
+        raise ValueError("DDB_EXPORT_BUCKET_NAME environment variable not set")
 
     # --- daily aggregation ---
     if not overwrite and _check_if_previously_aggregated(metrics_bucket, target_date):
@@ -327,9 +330,15 @@ def main(target_date: str, overwrite: bool = False) -> dict[str, Any]:
             "recordsProcessed": existing_stats.get("total_records", 0),
         }
     else:
-        database_name = env.get_required_env(env.GLUE_DATABASE_NAME)
-        table_name = env.get_required_env(env.DDB_RAW_DATA_TABLE_NAME)
-        workgroup_name = env.get_required_env(env.ATHENA_WORKGROUP_NAME)
+        database_name = aws_config.glue_database_name
+        if not database_name:
+            raise ValueError("GLUE_DATABASE_NAME environment variable not set")
+        table_name = aws_config.ddb_raw_data_table_name
+        if not table_name:
+            raise ValueError("DDB_RAW_DATA_TABLE_NAME environment variable not set")
+        workgroup_name = aws_config.athena_workgroup_name
+        if not workgroup_name:
+            raise ValueError("ATHENA_WORKGROUP_NAME environment variable not set")
 
         query = _build_deduplication_query(database_name, table_name, target_date)
         execution_id = _execute_athena_query(query, database_name, workgroup_name)

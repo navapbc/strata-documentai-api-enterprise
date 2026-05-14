@@ -2,6 +2,8 @@
 
 import pytest
 
+from documentai_api.config.env import EnvVars
+
 #############################################################################
 # Autouse fixtures                                                          #
 #                                                                           #
@@ -33,16 +35,27 @@ def reset_env():
 #######################
 
 
+@pytest.fixture(autouse=True)
+def clear_config_cache():
+    from documentai_api.config.env import get_app_env_config, get_aws_config
+
+    get_aws_config.cache_clear()
+    get_app_env_config.cache_clear()
+    yield
+    get_aws_config.cache_clear()
+    get_app_env_config.cache_clear()
+
+
 @pytest.fixture
 def runtime_required_env(monkeypatch, s3_bucket, ddb_doc_metadata_table):
     """Required configuration to run the application in general."""
-    from documentai_api.utils import env
-
-    monkeypatch.setenv(env.DOCUMENTAI_INPUT_LOCATION, f"s3://{s3_bucket.name}/input")
-    monkeypatch.setenv(env.DOCUMENTAI_OUTPUT_LOCATION, f"s3://{s3_bucket.name}/output")
-    monkeypatch.setenv(env.BDA_PROJECT_ARN, "arn:aws:project")
-    monkeypatch.setenv(env.BDA_PROFILE_ARN, "arn:aws:profile")
-    monkeypatch.setenv(env.BDA_REGION, "us-east-1")
+    monkeypatch.setenv(EnvVars.BDA_PROFILE_ARN, "arn:aws:profile")
+    monkeypatch.setenv(EnvVars.BDA_PROJECT_ARN, "arn:aws:project")
+    monkeypatch.setenv(EnvVars.BDA_REGION, "us-east-1")
+    monkeypatch.setenv(EnvVars.DOCUMENTAI_INPUT_LOCATION, f"s3://{s3_bucket.name}/input")
+    monkeypatch.setenv(EnvVars.DOCUMENTAI_OUTPUT_LOCATION, f"s3://{s3_bucket.name}/output")
+    monkeypatch.setenv(EnvVars.API_AUTH_INSECURE_SHARED_KEY, "test-key")
+    monkeypatch.setenv(EnvVars.ENVIRONMENT, "test")
 
 
 @pytest.fixture
@@ -58,7 +71,7 @@ def api_client(runtime_required_env):
 @pytest.fixture
 def api_skeleton_key(monkeypatch):
     key = "foobar"
-    monkeypatch.setenv("API_AUTH_INSECURE_SHARED_KEY", key)
+    monkeypatch.setenv(EnvVars.API_AUTH_INSECURE_SHARED_KEY, key)
     return key
 
 
@@ -83,12 +96,10 @@ def mock_grayscale_dependencies(mocker):
 @pytest.fixture
 def mock_metrics_aggregator_env(mocker, monkeypatch):
     """Mock environment and Athena dependencies for metrics aggregator tests."""
-    from documentai_api.utils import env
-
-    monkeypatch.setenv(env.GLUE_DATABASE_NAME, "test_db")
-    monkeypatch.setenv(env.DDB_RAW_DATA_TABLE_NAME, "test_table")
-    monkeypatch.setenv(env.ATHENA_WORKGROUP_NAME, "test_workgroup")
-    monkeypatch.setenv(env.DDB_EXPORT_BUCKET_NAME, "test-bucket")
+    monkeypatch.setenv(EnvVars.GLUE_DATABASE_NAME, "test_db")
+    monkeypatch.setenv(EnvVars.DDB_RAW_DATA_TABLE_NAME, "test_table")
+    monkeypatch.setenv(EnvVars.ATHENA_WORKGROUP_NAME, "test_workgroup")
+    monkeypatch.setenv(EnvVars.DDB_EXPORT_BUCKET_NAME, "test-bucket")
 
     mock_athena = mocker.patch("documentai_api.jobs.metrics_aggregator.main._execute_athena_query")
     mock_results = mocker.patch("documentai_api.jobs.metrics_aggregator.main._get_athena_results")

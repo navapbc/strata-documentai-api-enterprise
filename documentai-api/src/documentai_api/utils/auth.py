@@ -1,7 +1,6 @@
 """API key authentication utilities."""
 
 import hashlib
-import os
 import secrets
 import threading
 import time
@@ -12,9 +11,9 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import APIKeyHeader
 
 from documentai_api.config.constants import API_AUTH_KEY_HEADER_NAME
+from documentai_api.config.env import get_app_env_config, get_aws_config
 from documentai_api.logging import get_logger
 from documentai_api.schemas.api_key import ApiKeyRecord
-from documentai_api.utils import env
 from documentai_api.utils.cache import get_cache
 
 logger = get_logger(__name__)
@@ -39,9 +38,9 @@ def _get_cache_ttl_minutes() -> int:
     but Cache.add() takes minutes, so we convert here.
     """
     try:
-        seconds = int(os.getenv(env.API_AUTH_CACHE_TTL, "300"))
+        seconds = get_app_env_config().api_auth_cache_ttl
         return max(1, seconds // 60)
-    except ValueError:
+    except Exception:
         return 5
 
 
@@ -49,7 +48,9 @@ def _lookup_key_in_ddb(key_hash: str) -> dict[str, Any] | None:
     """Look up an API key record from DynamoDB by its hash."""
     from documentai_api.services import ddb as ddb_service
 
-    table_name = env.get_required_env(env.API_KEYS_TABLE_NAME)
+    table_name = get_aws_config().api_keys_table_name
+    if not table_name:
+        raise ValueError("API_KEYS_TABLE_NAME environment variable not set")
     key = {ApiKeyRecord.KEY_HASH: key_hash}
 
     try:
@@ -97,7 +98,9 @@ def _update_last_used(key_hash: str) -> None:
     try:
         from documentai_api.services import ddb as ddb_service
 
-        table_name = env.get_required_env(env.API_KEYS_TABLE_NAME)
+        table_name = get_aws_config().api_keys_table_name
+        if not table_name:
+            raise ValueError("API_KEYS_TABLE_NAME environment variable not set")
         ddb_service.update_item(
             table_name,
             key={ApiKeyRecord.KEY_HASH: key_hash},
@@ -153,7 +156,7 @@ def _verify_with_ddb(api_key: str) -> None:
 
 def _verify_with_insecure_shared_key(api_key: str) -> None:
     """Validate API key against a single shared key (for local dev only)."""
-    expected_key = os.getenv(env.API_AUTH_INSECURE_SHARED_KEY)
+    expected_key = get_app_env_config().api_auth_insecure_shared_key
 
     if not expected_key:
         raise HTTPException(
@@ -171,7 +174,9 @@ def get_active_keys_for_client(client_name: str) -> list[dict[str, Any]]:
     """
     from documentai_api.services import ddb as ddb_service
 
-    table_name = env.get_required_env(env.API_KEYS_TABLE_NAME)
+    table_name = get_aws_config().api_keys_table_name
+    if not table_name:
+        raise ValueError("API_KEYS_TABLE_NAME environment variable not set")
 
     try:
         all_items = ddb_service.scan(table_name)
@@ -213,7 +218,9 @@ def generate_api_key(
     api_key = f"docai_{random_part}"
     key_hash = _hash_key(api_key)
 
-    table_name = env.get_required_env(env.API_KEYS_TABLE_NAME)
+    table_name = get_aws_config().api_keys_table_name
+    if not table_name:
+        raise ValueError("API_KEYS_TABLE_NAME environment variable not set")
 
     item: dict[str, Any] = {
         ApiKeyRecord.KEY_HASH: key_hash,
@@ -243,7 +250,9 @@ def deactivate_api_key(key_hash: str) -> bool:
     """
     from documentai_api.services import ddb as ddb_service
 
-    table_name = env.get_required_env(env.API_KEYS_TABLE_NAME)
+    table_name = get_aws_config().api_keys_table_name
+    if not table_name:
+        raise ValueError("API_KEYS_TABLE_NAME environment variable not set")
     key = {ApiKeyRecord.KEY_HASH: key_hash}
 
     existing = ddb_service.get_item(table_name, key)
@@ -272,7 +281,7 @@ def verify_api_key(api_key: str = Depends(api_key_header)) -> None:
     When API_AUTH_ENABLED is true, validates against DynamoDB api-keys table
     with in-memory caching. Falls back to insecure shared key for local dev.
     """
-    auth_enabled = os.getenv(env.API_AUTH_ENABLED, "false").lower() == "true"
+    auth_enabled = get_app_env_config().api_auth_enabled
 
     if auth_enabled:
         _verify_with_ddb(api_key)

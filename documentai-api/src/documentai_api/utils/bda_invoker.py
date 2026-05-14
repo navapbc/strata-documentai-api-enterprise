@@ -2,23 +2,20 @@ import os
 
 import documentai_api.utils.documents as document_utils
 from documentai_api.config.constants import ConfigDefaults
+from documentai_api.config.env import EnvVars, get_required_env
 from documentai_api.logging import get_logger
 from documentai_api.utils.aws_client_factory import AWSClientFactory
-from documentai_api.utils.env import (
-    BDA_PROFILE_ARN,
-    BDA_PROJECT_ARN,
-    DOCUMENTAI_OUTPUT_LOCATION,
-    get_required_env,
-)
 
 logger = get_logger(__name__)
 
 
 def invoke_bedrock_data_automation(source_bucket_name: str, source_object_name: str) -> str:
     """Invoke BDA and return job ARN."""
-    bda_project_arn = get_required_env(BDA_PROJECT_ARN)
-    bda_profile_arn = get_required_env(BDA_PROFILE_ARN)
-    documentai_output_location = get_required_env(DOCUMENTAI_OUTPUT_LOCATION).replace("s3://", "")
+    bda_project_arn = get_required_env(EnvVars.BDA_PROJECT_ARN)
+    bda_profile_arn = get_required_env(EnvVars.BDA_PROFILE_ARN)
+    documentai_output_location = get_required_env(EnvVars.DOCUMENTAI_OUTPUT_LOCATION).replace(
+        "s3://", ""
+    )
 
     logger.info(f"documentai_output_location after processing: {documentai_output_location}")
     logger.info(f"BDA_PROJECT_ARN: {bda_project_arn}")
@@ -36,13 +33,13 @@ def invoke_bedrock_data_automation(source_bucket_name: str, source_object_name: 
         file_bytes = s3_service.get_file_bytes(source_bucket_name, source_object_name)
         page_count = document_utils.get_page_count(file_bytes)
 
-        if page_count and page_count > int(ConfigDefaults.MAX_PAGES_PER_DOCUMENT.value):
+        if page_count and page_count > int(ConfigDefaults.MAX_PAGES_PER_DOCUMENT):
             logger.info(
-                f"{source_object_name} has {page_count} pages, truncating to {int(ConfigDefaults.MAX_PAGES_PER_DOCUMENT.value)}"
+                f"{source_object_name} has {page_count} pages, truncating to {int(ConfigDefaults.MAX_PAGES_PER_DOCUMENT)}"
             )
 
             truncated_bytes = document_utils.truncate_to_pages(
-                file_bytes, max_pages=int(ConfigDefaults.MAX_PAGES_PER_DOCUMENT.value)
+                file_bytes, max_pages=int(ConfigDefaults.MAX_PAGES_PER_DOCUMENT)
             )
 
             # create new truncated file name

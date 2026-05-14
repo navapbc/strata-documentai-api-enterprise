@@ -1,5 +1,4 @@
 import json
-import os
 import time
 from typing import Any
 
@@ -7,12 +6,9 @@ from documentai_api.config.constants import (
     ConfigDefaults,
     PreClassificationDefaults,
 )
+from documentai_api.config.env import get_aws_config
 from documentai_api.logging import get_logger
 from documentai_api.services.bedrock import invoke_model
-from documentai_api.utils.env import (
-    BEDROCK_CLASSIFICATION_MODEL_ID_PARAM,
-    BEDROCK_CLASSIFICATION_PROMPT_PARAM,
-)
 from documentai_api.utils.models import BedrockClassificationResult
 from documentai_api.utils.ssm import get_parameter_value
 
@@ -23,14 +19,14 @@ DEFAULT_PRECLASSIFICATION_PROMPT = PreClassificationDefaults.PROMPT
 
 
 def _get_model_id() -> str:
-    param_name = os.getenv(BEDROCK_CLASSIFICATION_MODEL_ID_PARAM)
+    param_name = get_aws_config().bedrock_classification_model_id_param
     if not param_name:
         return DEFAULT_PRECLASSIFICATION_MODEL_ID
     return get_parameter_value(param_name, default=DEFAULT_PRECLASSIFICATION_MODEL_ID)
 
 
 def _get_classification_prompt(document_types: list[str]) -> str:
-    param_name = os.getenv(BEDROCK_CLASSIFICATION_PROMPT_PARAM)
+    param_name = get_aws_config().bedrock_classification_prompt_param
     if not param_name:
         template = DEFAULT_PRECLASSIFICATION_PROMPT
     else:

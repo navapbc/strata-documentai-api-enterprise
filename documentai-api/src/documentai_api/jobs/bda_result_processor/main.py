@@ -6,13 +6,12 @@ from typing import Any
 
 import typer
 
-from documentai_api.logging import get_logger
-from documentai_api.utils import env
+import documentai_api.logging
+from documentai_api.config.env import EnvVars, get_required_env
 from documentai_api.utils.bda_output_processor import process_bda_output
-from documentai_api.utils.env import get_required_env
 from documentai_api.utils.s3 import get_s3_prefix_from_location
 
-logger = get_logger(__name__)
+logger = documentai_api.logging.get_logger(__name__)
 app = typer.Typer()
 
 
@@ -22,8 +21,10 @@ def extract_uploaded_filename(object_key: str) -> str:
     BDA output: processed/input/w2-xxx.pdf/uuid/0/custom_output/0/result.json
     Extract: w2-xxx.pdf
     """
-    output_prefix = get_s3_prefix_from_location(get_required_env(env.DOCUMENTAI_OUTPUT_LOCATION))
-    input_prefix = get_s3_prefix_from_location(get_required_env(env.DOCUMENTAI_INPUT_LOCATION))
+    output_prefix = get_s3_prefix_from_location(
+        get_required_env(EnvVars.DOCUMENTAI_OUTPUT_LOCATION)
+    )
+    input_prefix = get_s3_prefix_from_location(get_required_env(EnvVars.DOCUMENTAI_INPUT_LOCATION))
 
     # remove prefixes: processed/input/filename.pdf/... -> filename.pdf
     filename = object_key
@@ -78,12 +79,13 @@ def cli(
     object_key: str = typer.Argument(..., help="S3 object key of BDA output file"),
 ) -> None:
     """Process BDA output file."""
-    try:
-        result = main(bucket_name, object_key)
-        if result:
-            typer.echo(json.dumps(result))
-    except Exception:
-        raise typer.Exit(1) from None
+    with documentai_api.logging.init(__package__):
+        try:
+            result = main(bucket_name, object_key)
+            if result:
+                typer.echo(json.dumps(result))
+        except Exception:
+            raise typer.Exit(1) from None
 
 
 if __name__ == "__main__":
