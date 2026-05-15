@@ -17,6 +17,7 @@ from fastapi import (
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
+from mangum import Mangum
 
 from documentai_api.config.constants import (
     API_VERSION,
@@ -75,6 +76,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Lambda entrypoint for the API container. Configure the API Lambda function with
+# ImageConfig.Command = ["documentai_api.app.handler"].
+handler = Mangum(app, lifespan="off")
+
 CONFIG_EXCLUDED_ROUTES = {"/", "/health", "/config", "/openapi.json", "/docs", "/redoc"}
 
 

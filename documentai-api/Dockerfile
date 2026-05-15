@@ -54,7 +54,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Add project's virtual env to the PATH so we can directly run scripts defined in pyproject.toml
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Set the host to 0.0.0.0 to make the server available external to the container
-ENV HOST=0.0.0.0
-
-CMD ["documentai_api"]
+# Lambda runtime contract: every function uses this image and overrides ImageConfig.Command
+# to select its handler (e.g. "documentai_api.app.handler" for the API,
+# "documentai_api.jobs.document_processor.handler.handler" for the job).
+ENTRYPOINT ["python", "-m", "awslambdaric"]
+CMD ["documentai_api.app.handler"]
