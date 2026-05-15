@@ -98,7 +98,7 @@ async def health() -> HealthResponse:
     return HealthResponse(message="healthy")
 
 
-@app.get("/config")
+@app.get("/config", dependencies=[Depends(verify_api_key)])
 def get_config(request: Request) -> ConfigResponse:
     endpoints = discover_endpoints(app)
     endpoints["postUploadSyncronous"] = f"{endpoints['postUpload']}?wait=true"
