@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 import uuid
 from dataclasses import dataclass
 from typing import Annotated, Any, BinaryIO
@@ -80,6 +81,14 @@ app.add_middleware(
 # Lambda entrypoint for the API container. Configure the API Lambda function with
 # ImageConfig.Command = ["documentai_api.app.handler"].
 handler = Mangum(app, lifespan="off")
+
+# Configure logging when running in Lambda. main() bypassed, so LoggingContext is
+# never entered the normal way; without it, INFO logs are silently dropped.
+# AWS_LAMBDA_FUNCTION_NAME is set automatically by the Lambda runtime.
+if os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+    from documentai_api.logging.config import LoggingContext
+
+    LoggingContext("documentai_api")
 
 CONFIG_EXCLUDED_ROUTES = {"/", "/health", "/config", "/openapi.json", "/docs", "/redoc"}
 
