@@ -305,7 +305,8 @@ async def create_document(
     logger.info(
         "Upload received",
         extra={
-            "filename": file.filename,
+            # 'filename' is a reserved LogRecord attribute; using upload_filename instead.
+            "upload_filename": file.filename,
             "declared_content_type": file.content_type,
             "detected_content_type": actual_content_type,
             "size_bytes": len(file_content),
