@@ -251,7 +251,7 @@ def test_main_first_time_image(input_image, mocker, ddb_doc_metadata_table, mock
 
 def test_main_grayscale_conversion_fails(input_image, mocker, mock_invoke):
     """Test grayscale conversion failure marks as not implemented."""
-    mocker.patch("documentai_api.jobs.document_processor.main.insert_initial_ddb_record")
+    mocker.patch("documentai_api.jobs.document_processor.main.upsert_initial_ddb_record")
 
     mock_convert = mocker.patch(
         "documentai_api.jobs.document_processor.main.convert_s3_object_to_grayscale"
@@ -304,7 +304,7 @@ def test_main_idempotent_on_duplicate_events(input_pdf, mocker, mock_invoke):
 def test_main_propagates_s3_metadata(input_pdf, mocker):
     """Test that job_id, trace_id, and document category are read from S3 metadata."""
     mock_insert = mocker.patch(
-        "documentai_api.jobs.document_processor.main.insert_initial_ddb_record"
+        "documentai_api.jobs.document_processor.main.upsert_initial_ddb_record"
     )
 
     mock_get = mocker.patch("documentai_api.jobs.document_processor.main.get_ddb_record")

@@ -399,7 +399,7 @@ def test_update_ddb(status, has_timing, ddb_doc_metadata_table, mocker):
         assert item["timing"] == "val"
 
 
-def test_insert_ddb(ddb_doc_metadata_table, mocker):
+def test_upsert_ddb(ddb_doc_metadata_table, mocker):
     """Test DDB insert with all fields."""
     mock_raw_metrics = mocker.MagicMock()
     mock_raw_metrics.to_json_dict.return_value = {"raw": "data"}
@@ -416,7 +416,7 @@ def test_insert_ddb(ddb_doc_metadata_table, mocker):
 
     object_key = "test-file"
 
-    ddb_util.insert_ddb(
+    ddb_util.upsert_ddb(
         object_key=object_key,
         original_file_name="original-test.pdf",
         user_provided_document_category="income",
@@ -553,7 +553,7 @@ def test_insert_ddb(ddb_doc_metadata_table, mocker):
         ),
     ],
 )
-def test_insert_initial_ddb_record(
+def test_upsert_initial_ddb_record(
     ddb_doc_metadata_table,
     s3_bucket,
     user_provided_document_category,
@@ -585,7 +585,7 @@ def test_insert_initial_ddb_record(
         ContentType=content_type,
     )
 
-    ddb_util.insert_initial_ddb_record(
+    ddb_util.upsert_initial_ddb_record(
         source_bucket_name=s3_object.bucket_name,
         source_object_key=s3_object.key,
         original_file_name="original-test.pdf",

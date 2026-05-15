@@ -407,7 +407,7 @@ def update_ddb(
         raise
 
 
-def insert_ddb(
+def upsert_ddb(
     object_key: str,
     original_file_name: str,
     user_provided_document_category: str | None = None,
@@ -423,57 +423,66 @@ def insert_ddb(
     pre_classification_document_type: str | None = None,
     pre_classification_confidence: float | None = None,
 ) -> None:
-    try:
-        table_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME)
+    """Upsert a document-metadata DDB row by file name.
 
-        item: dict[str, Any] = {
-            DocumentMetadata.FILE_NAME: object_key,
-            DocumentMetadata.ORIGINAL_FILE_NAME: original_file_name,
-            DocumentMetadata.PROCESS_STATUS: process_status,
-            DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY: (
+    Creates the row if missing, updates it in place if present. `createdAt` is
+    set only on initial create (preserved on subsequent calls via if_not_exists);
+    `updatedAt` is always refreshed.
+    """
+    try:
+        now = datetime.now(UTC).isoformat()
+
+        expr_fields: list[str] = [
+            f"{DocumentMetadata.ORIGINAL_FILE_NAME} = :originalFileName",
+            f"{DocumentMetadata.PROCESS_STATUS} = :processStatus",
+            f"{DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY} = :category",
+            (f"{DocumentMetadata.CREATED_AT} = if_not_exists({DocumentMetadata.CREATED_AT}, :now)"),
+            f"{DocumentMetadata.UPDATED_AT} = :now",
+        ]
+        expr_values: dict[str, Any] = {
+            ":originalFileName": original_file_name,
+            ":processStatus": process_status,
+            ":category": (
                 user_provided_document_category or ConfigDefaults.USER_DOCUMENT_TYPE_NOT_PROVIDED
             ),
-            DocumentMetadata.CREATED_AT: datetime.now(UTC).isoformat(),
-            DocumentMetadata.UPDATED_AT: datetime.now(UTC).isoformat(),
+            ":now": now,
         }
 
         if file_size_bytes is not None:
-            item[DocumentMetadata.FILE_SIZE_BYTES] = file_size_bytes
+            expr_fields.append(f"{DocumentMetadata.FILE_SIZE_BYTES} = :fileSize")
+            expr_values[":fileSize"] = file_size_bytes
         if content_type:
-            item[DocumentMetadata.CONTENT_TYPE] = content_type
-
+            expr_fields.append(f"{DocumentMetadata.CONTENT_TYPE} = :contentType")
+            expr_values[":contentType"] = content_type
         if pages_detected is not None:
-            item[DocumentMetadata.PAGES_DETECTED] = pages_detected
-
+            expr_fields.append(f"{DocumentMetadata.PAGES_DETECTED} = :pages")
+            expr_values[":pages"] = pages_detected
         if internal_api_response:
-            item[DocumentMetadata.RESPONSE_JSON] = json.dumps(internal_api_response.__dict__)
-
+            expr_fields.append(f"{DocumentMetadata.RESPONSE_JSON} = :respJson")
+            expr_values[":respJson"] = json.dumps(internal_api_response.__dict__)
         if job_id:
-            item[DocumentMetadata.JOB_ID] = job_id
-
+            expr_fields.append(f"{DocumentMetadata.JOB_ID} = :jobId")
+            expr_values[":jobId"] = job_id
         if trace_id:
-            item[DocumentMetadata.TRACE_ID] = trace_id
-
+            expr_fields.append(f"{DocumentMetadata.TRACE_ID} = :traceId")
+            expr_values[":traceId"] = trace_id
         if is_password_protected is not None:
-            item[DocumentMetadata.IS_PASSWORD_PROTECTED] = bool(is_password_protected)
-
+            expr_fields.append(f"{DocumentMetadata.IS_PASSWORD_PROTECTED} = :pwProt")
+            expr_values[":pwProt"] = bool(is_password_protected)
         if is_document_blurry is not None:
-            item[DocumentMetadata.IS_DOCUMENT_BLURRY] = bool(is_document_blurry)
-
+            expr_fields.append(f"{DocumentMetadata.IS_DOCUMENT_BLURRY} = :blurry")
+            expr_values[":blurry"] = bool(is_document_blurry)
         if pre_classification_document_type is not None:
-            item[DocumentMetadata.PRE_CLASSIFICATION_DOCUMENT_TYPE] = (
-                pre_classification_document_type
-            )
-
+            expr_fields.append(f"{DocumentMetadata.PRE_CLASSIFICATION_DOCUMENT_TYPE} = :pcdt")
+            expr_values[":pcdt"] = pre_classification_document_type
         if pre_classification_confidence is not None:
-            item[DocumentMetadata.PRE_CLASSIFICATION_CONFIDENCE] = Decimal(
-                str(pre_classification_confidence)
-            )
+            expr_fields.append(f"{DocumentMetadata.PRE_CLASSIFICATION_CONFIDENCE} = :pcc")
+            expr_values[":pcc"] = Decimal(str(pre_classification_confidence))
 
-        ddb_service.put_item(table_name, item)
-
+        update_expr = "SET " + ", ".join(expr_fields)
+        _execute_ddb_update(object_key, update_expr, expr_values)
     except Exception as e:
-        logger.error(f"Failed to create DDB record for {object_key}: {e}")
+        logger.error(f"Failed to upsert DDB record for {object_key}: {e}")
         raise
 
 
@@ -487,8 +496,12 @@ def insert_minimal_ddb_record(
     content_type: str | None = None,
     file_size_bytes: int | None = None,
 ) -> None:
-    """Create initial tracking record."""
-    insert_ddb(
+    """Create initial tracking record from the API upload path.
+
+    Uses upsert_ddb so doc-processor's later upsert_initial_ddb_record can update
+    in place (preserving createdAt, job_id, trace_id) rather than overwriting.
+    """
+    upsert_ddb(
         object_key=ddb_key,
         original_file_name=original_file_name,
         user_provided_document_category=user_provided_document_category,
@@ -500,7 +513,7 @@ def insert_minimal_ddb_record(
     )
 
 
-def insert_initial_ddb_record(
+def upsert_initial_ddb_record(
     source_bucket_name: str,
     source_object_key: str,
     ddb_key: str,
@@ -509,7 +522,12 @@ def insert_initial_ddb_record(
     job_id: str | None = None,
     trace_id: str | None = None,
 ) -> None:
-    """Insert initial DDB record."""
+    """Run preclassification on the S3 object and upsert its DDB record.
+
+    Creates the row if it doesn't exist; updates it in place if it does. Safe
+    to call after the API Lambda's insert_minimal_ddb_record — createdAt and
+    other minimal-record fields are preserved.
+    """
     if not user_provided_document_category:
         logger.warning(f"Warning: user_provided_document_category is None/empty for {ddb_key}")
         user_provided_document_category = "unknown"
@@ -583,7 +601,7 @@ def insert_initial_ddb_record(
             user_provided_document_category=user_provided_document_category,
         )
 
-    insert_ddb(
+    upsert_ddb(
         object_key=ddb_key,
         original_file_name=original_file_name,
         user_provided_document_category=user_provided_document_category,

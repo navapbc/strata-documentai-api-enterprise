@@ -28,9 +28,9 @@ from documentai_api.utils.ddb import (
     classify_as_failed,
     classify_as_not_implemented,
     get_ddb_record,
-    insert_initial_ddb_record,
     set_bda_processing_status_not_started,
     set_bda_processing_status_started,
+    upsert_initial_ddb_record,
 )
 from documentai_api.utils.models import ClassificationData
 from documentai_api.utils.s3 import parse_s3_uri
@@ -195,13 +195,22 @@ def main(
 
     # strip S3 prefix for DynamoDB key (files are stored without prefix)
     ddb_key = os.path.basename(object_key)
-
     existing_record = get_ddb_record(ddb_key)
 
-    if existing_record is None:
-        # first time seeing this file
-        logger.info(f"First time processing {ddb_key}")
-        insert_initial_ddb_record(
+    # Run preclassification (and the rest of upsert_initial_ddb_record) only when
+    # the record is in its initial pre-classification state:
+    #   - no record (doc-processor saw the S3 event before the API Lambda), OR
+    #   - the API Lambda's minimal upload row (status=NOT_STARTED with no
+    #     preClassificationDocumentType yet).
+    # Otherwise we'd re-classify when grayscale conversion overwrites the input
+    # file in S3 and fires another event, looping the pipeline.
+    needs_preclassification = existing_record is None or (
+        existing_record.get(DocumentMetadata.PROCESS_STATUS) == ProcessStatus.NOT_STARTED
+        and DocumentMetadata.PRE_CLASSIFICATION_DOCUMENT_TYPE not in existing_record
+    )
+
+    if needs_preclassification:
+        upsert_initial_ddb_record(
             source_bucket_name=bucket_name,
             source_object_key=object_key,
             ddb_key=ddb_key,
@@ -210,11 +219,10 @@ def main(
             job_id=job_id,
             trace_id=trace_id,
         )
-
         existing_record = get_ddb_record(ddb_key)
 
-        if existing_record is None:
-            raise Exception("Could not retrieve DDB record after creation")
+    if existing_record is None:
+        raise Exception("Could not retrieve DDB record after upsert")
 
     status = existing_record.get(DocumentMetadata.PROCESS_STATUS)
 
