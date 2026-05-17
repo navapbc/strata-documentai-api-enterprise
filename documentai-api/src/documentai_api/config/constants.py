@@ -30,6 +30,7 @@ UPLOAD_METADATA_KEYS = {
     "trace_id": "trace-id",
     "user_provided_document_category": "user-provided-document-category",
     "batch_id": "batch-id",
+    "build_id": "build-id",
 }
 
 # S3 metadata keys (for reading from S3 objects)
@@ -175,6 +176,7 @@ class S3MetadataKeys:
     TRACE_ID = "trace-id"
     ORIGINAL_FILE_NAME = "original-file-name"
     BATCH_ID = "batch-id"
+    BUILD_ID = "build-id"
 
 
 class BatchStatus(StrEnum):
@@ -182,6 +184,12 @@ class BatchStatus(StrEnum):
     PROCESSING = "processing"
     COMPLETED = "completed"
     FAILED = "failed"
+
+
+class DocumentBuildStatus(StrEnum):
+    SUBMITTED = "submitted"
+    NOT_SUBMITTED = "not_submitted"
+    COMPLETED = "completed"
 
 
 class PreClassificationDefaults:

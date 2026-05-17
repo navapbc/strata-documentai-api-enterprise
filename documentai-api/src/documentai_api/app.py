@@ -22,6 +22,9 @@ from mangum import Mangum
 
 # Batch upload endpoints live in app_batch.py — mounted as a router below.
 from documentai_api.app_batch import router as batch_router
+
+# Document build (multi-page upload) endpoints live in app_build.py — mounted as a router below.
+from documentai_api.app_build import router as build_router
 from documentai_api.config.constants import (
     API_VERSION,
     SUPPORTED_CONTENT_TYPES,
@@ -70,6 +73,7 @@ app = FastAPI(
     version=APIConfig.VERSION,
 )
 app.include_router(batch_router)
+app.include_router(build_router)
 
 app.add_middleware(
     CORSMiddleware,

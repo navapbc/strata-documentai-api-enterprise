@@ -60,6 +60,33 @@ def extraction_rules_table(aws_credentials, monkeypatch):
 
 
 @pytest.fixture
+def document_build_ddb_table(aws_credentials, monkeypatch):
+    """Create a moto-backed document-builds table and point env vars at it."""
+    import boto3
+    from moto import mock_aws
+
+    with mock_aws():
+        dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+        table = dynamodb.create_table(
+            TableName="document-builds",
+            KeySchema=[
+                {"AttributeName": "buildId", "KeyType": "HASH"},
+                {"AttributeName": "pageNumber", "KeyType": "RANGE"},
+            ],
+            AttributeDefinitions=[
+                {"AttributeName": "buildId", "AttributeType": "S"},
+                {"AttributeName": "pageNumber", "AttributeType": "N"},
+            ],
+            BillingMode="PAY_PER_REQUEST",
+        )
+        monkeypatch.setenv(EnvVars.DOCUMENTAI_BUILD_TABLE_NAME, table.name)
+        monkeypatch.setenv(
+            EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION, "s3://test-bucket/preprocessing"
+        )
+        yield table
+
+
+@pytest.fixture
 def api_keys_table(aws_credentials, monkeypatch):
     from moto import mock_aws
 

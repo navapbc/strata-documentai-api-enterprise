@@ -51,6 +51,7 @@ async def upload_document_for_processing(
     job_id: str | None = None,
     trace_id: str | None = None,
     batch_id: str | None = None,
+    build_id: str | None = None,
 ) -> None:
     """Upload a document file to S3 with traceability metadata.
 
@@ -92,6 +93,9 @@ async def upload_document_for_processing(
 
         if batch_id:
             metadata[S3MetadataKeys.BATCH_ID] = batch_id
+
+        if build_id:
+            metadata[S3MetadataKeys.BUILD_ID] = build_id
 
         logger.debug(
             "S3: Starting actual upload",

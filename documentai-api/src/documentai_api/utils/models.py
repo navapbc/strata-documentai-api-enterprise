@@ -55,3 +55,15 @@ class BedrockClassificationResult:
     document_count: int
     is_document: bool
     is_blurry: bool = False
+
+
+@dataclass
+class PageMetadata:
+    """Metadata for a multipage document page."""
+
+    page_number: int
+    s3_key: str
+    s3_bucket_name: str
+    original_file_name: str | None = None
+    category: str | None = None
+    created_at: str | None = None
