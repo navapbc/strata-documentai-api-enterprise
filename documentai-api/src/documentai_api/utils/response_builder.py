@@ -196,6 +196,14 @@ def build_v1_api_response(
             }
         )
 
+    elif job_status == ProcessStatus.DELETED.value:
+        base_response.update(
+            {
+                "jobStatus": "deleted",
+                "message": "Document has been deleted",
+            }
+        )
+
     elif ProcessStatus.is_not_supported(job_status):
         base_response.update(
             {

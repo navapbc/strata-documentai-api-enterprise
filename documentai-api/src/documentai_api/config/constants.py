@@ -131,6 +131,7 @@ class FileValidation:
 class ProcessStatus(StrEnum):
     AI_CONSENT_DECLINED = "ai_consent_declined"
     BLURRY_DOCUMENT_DETECTED = "blurry_document_detected"
+    DELETED = "deleted"
     FAILED = "failed"
     MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE = "multiple_documents_single_page"
     NO_CUSTOM_BLUEPRINT_MATCHED = "no_custom_blueprint_matched"
@@ -151,6 +152,22 @@ class ProcessStatus(StrEnum):
             cls.FAILED,
             cls.NO_DOCUMENT_DETECTED,
             cls.NO_CUSTOM_BLUEPRINT_MATCHED,
+        ]
+
+    @classmethod
+    def is_classified(cls, value: str) -> bool:
+        return value in [
+            cls.AI_CONSENT_DECLINED,
+            cls.BLURRY_DOCUMENT_DETECTED,
+            cls.DELETED,
+            cls.FAILED,
+            cls.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
+            cls.NO_CUSTOM_BLUEPRINT_MATCHED,
+            cls.NO_DOCUMENT_DETECTED,
+            cls.NOT_IMPLEMENTED,
+            cls.NOT_SAMPLED,
+            cls.PASSWORD_PROTECTED,
+            cls.SUCCESS,
         ]
 
     @classmethod

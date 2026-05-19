@@ -357,6 +357,9 @@ async def get_document_results(
         if not job_status.ddb_record:
             raise HTTPException(status_code=404, detail=f"Job ID {job_id} not found")
 
+        if job_status.process_status == ProcessStatus.DELETED.value:
+            raise HTTPException(status_code=404, detail=f"Job ID {job_id} not found")
+
         if not job_status.v1_response_json:
             return JobStatusResponse(
                 job_id=job_id,
@@ -389,6 +392,48 @@ async def get_document_results(
         msg = f"Error retrieving results for job {job_id}: {e}"
         logger.error(msg)
         raise HTTPException(status_code=500, detail="Failed to retrieve results") from e
+
+
+@app.delete("/v1/documents/{job_id}", dependencies=[Depends(verify_api_key)], name="deleteDocument")
+async def delete_document(job_id: str) -> Response:
+    """Delete a document by job ID. Removes S3 file and marks DDB record as deleted."""
+    from documentai_api.services import s3 as s3_service
+    from documentai_api.utils.s3 import parse_s3_uri
+
+    job_status = _get_job_status(job_id)
+
+    if not job_status.ddb_record:
+        raise HTTPException(status_code=404, detail=f"Job ID {job_id} not found")
+
+    current_status = job_status.process_status
+    if current_status == ProcessStatus.DELETED.value:
+        raise HTTPException(status_code=404, detail=f"Job ID {job_id} not found")
+
+    if not current_status or not ProcessStatus.is_classified(current_status):
+        raise HTTPException(
+            status_code=400, detail="Cannot delete a document that is still processing"
+        )
+
+    # delete S3 file
+    if job_status.object_key:
+        try:
+            input_location = get_aws_config().documentai_input_location
+            if input_location:
+                bucket, prefix = parse_s3_uri(input_location)
+                s3_key = f"{prefix}/{job_status.object_key}" if prefix else job_status.object_key
+                s3_service.delete_object(bucket, s3_key)
+        except Exception as e:
+            logger.warning(f"Failed to delete S3 object for job {job_id}: {e}")
+
+    # mark DDB record as deleted
+    from documentai_api.utils.ddb import update_ddb
+
+    if not job_status.object_key:
+        raise HTTPException(status_code=500, detail=f"Incomplete record for job {job_id}")
+
+    update_ddb(object_key=job_status.object_key, status=ProcessStatus.DELETED)
+
+    return Response(status_code=204)
 
 
 MAX_SEARCH_JOB_IDS = 25

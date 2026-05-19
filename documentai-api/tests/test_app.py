@@ -431,3 +431,90 @@ def test_search_documents_handles_errors_gracefully(api_client, mocker):
     results = response.json()["results"]
     assert results[0]["jobStatus"] == "error"
     assert "Failed to retrieve" in results[0]["message"]
+
+
+def test_delete_document_success(api_client, mocker):
+    """Test successful document deletion."""
+    from documentai_api.app import JobStatus
+
+    mock_get_job_status = mocker.patch("documentai_api.app._get_job_status")
+    mock_get_job_status.return_value = JobStatus(
+        ddb_record={"fileName": "test.pdf"},
+        object_key="test.pdf",
+        process_status="success",
+        v1_response_json='{"jobId": "job-1", "jobStatus": "success", "message": "Done"}',
+    )
+    mock_s3_delete = mocker.patch("documentai_api.services.s3.delete_object")
+    mock_update_ddb = mocker.patch("documentai_api.utils.ddb.update_ddb")
+
+    response = api_client.delete("/v1/documents/job-1")
+
+    assert response.status_code == 204
+    mock_s3_delete.assert_called_once()
+    mock_update_ddb.assert_called_once()
+
+
+def test_delete_document_not_found(api_client, mocker):
+    """Test deleting non-existent document returns 404."""
+    from documentai_api.app import JobStatus
+
+    mock_get_job_status = mocker.patch("documentai_api.app._get_job_status")
+    mock_get_job_status.return_value = JobStatus(
+        ddb_record=None, object_key=None, process_status=None, v1_response_json=None
+    )
+
+    response = api_client.delete("/v1/documents/fake-job")
+
+    assert response.status_code == 404
+
+
+def test_delete_document_still_processing(api_client, mocker):
+    """Test deleting in-progress document returns 400."""
+    from documentai_api.app import JobStatus
+
+    mock_get_job_status = mocker.patch("documentai_api.app._get_job_status")
+    mock_get_job_status.return_value = JobStatus(
+        ddb_record={"fileName": "test.pdf"},
+        object_key="test.pdf",
+        process_status="started",
+        v1_response_json=None,
+    )
+
+    response = api_client.delete("/v1/documents/job-1")
+
+    assert response.status_code == 400
+    assert "still processing" in response.json()["detail"]
+
+
+def test_delete_document_already_deleted(api_client, mocker):
+    """Test deleting already-deleted document returns 404."""
+    from documentai_api.app import JobStatus
+
+    mock_get_job_status = mocker.patch("documentai_api.app._get_job_status")
+    mock_get_job_status.return_value = JobStatus(
+        ddb_record={"fileName": "test.pdf"},
+        object_key="test.pdf",
+        process_status="deleted",
+        v1_response_json=None,
+    )
+
+    response = api_client.delete("/v1/documents/job-1")
+
+    assert response.status_code == 404
+
+
+def test_get_document_results_deleted_returns_404(api_client, mocker):
+    """Test GET on deleted document returns 404."""
+    from documentai_api.app import JobStatus
+
+    mock_get_job_status = mocker.patch("documentai_api.app._get_job_status")
+    mock_get_job_status.return_value = JobStatus(
+        ddb_record={"fileName": "test.pdf"},
+        object_key="test.pdf",
+        process_status="deleted",
+        v1_response_json='{"jobId": "job-1", "jobStatus": "deleted", "message": "Document has been deleted"}',
+    )
+
+    response = api_client.get("/v1/documents/job-1")
+
+    assert response.status_code == 404
