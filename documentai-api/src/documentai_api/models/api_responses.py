@@ -141,3 +141,12 @@ class BuildDetailsResponse(BaseApiResponse):
     build_status: str
     page_count: int
     pages: list[BuildPageItem]
+
+
+class DocumentSearchRequest(BaseApiResponse):
+    job_ids: list[str]
+    include_extracted_data: bool = False
+
+
+class DocumentSearchResponse(BaseApiResponse):
+    results: list[JobStatusResponse]

@@ -360,3 +360,74 @@ def test_get_document_results_error_handling(api_client, mocker):
 
     assert response.status_code == 500
     assert "Failed to retrieve results" in response.json()["detail"]
+
+
+def test_search_documents_success(api_client, mocker):
+    """Test searching multiple job IDs returns results."""
+    from documentai_api.app import JobStatus
+
+    mock_get_job_status = mocker.patch("documentai_api.app._get_job_status")
+    mock_get_job_status.side_effect = [
+        JobStatus(
+            ddb_record={"fileName": "test.pdf"},
+            object_key="test.pdf",
+            process_status="success",
+            v1_response_json='{"jobId": "job-1", "jobStatus": "success", "message": "Done"}',
+        ),
+        JobStatus(ddb_record=None, object_key=None, process_status=None, v1_response_json=None),
+    ]
+
+    response = api_client.post("/v1/documents/search", json={"jobIds": ["job-1", "job-2"]})
+
+    assert response.status_code == 200
+    results = response.json()["results"]
+    assert len(results) == 2
+    assert results[0]["jobStatus"] == "success"
+    assert results[1]["jobStatus"] == "not_found"
+
+
+def test_search_documents_in_progress(api_client, mocker):
+    """Test search returns processing status for incomplete jobs."""
+    from documentai_api.app import JobStatus
+
+    mock_get_job_status = mocker.patch("documentai_api.app._get_job_status")
+    mock_get_job_status.return_value = JobStatus(
+        ddb_record={"fileName": "test.pdf"},
+        object_key="test.pdf",
+        process_status="started",
+        v1_response_json=None,
+    )
+
+    response = api_client.post("/v1/documents/search", json={"jobIds": ["job-1"]})
+
+    assert response.status_code == 200
+    results = response.json()["results"]
+    assert results[0]["jobStatus"] == "started"
+    assert "in progress" in results[0]["message"].lower()
+
+
+def test_search_documents_empty_list(api_client):
+    """Test search with empty job_ids returns 400."""
+    response = api_client.post("/v1/documents/search", json={"jobIds": []})
+    assert response.status_code == 400
+
+
+def test_search_documents_exceeds_limit(api_client):
+    """Test search with too many job_ids returns 400."""
+    job_ids = [f"job-{i}" for i in range(26)]
+    response = api_client.post("/v1/documents/search", json={"jobIds": job_ids})
+    assert response.status_code == 400
+    assert "Maximum of 25" in response.json()["detail"]
+
+
+def test_search_documents_handles_errors_gracefully(api_client, mocker):
+    """Test search continues when individual job lookup fails."""
+    mock_get_job_status = mocker.patch("documentai_api.app._get_job_status")
+    mock_get_job_status.side_effect = Exception("DDB error")
+
+    response = api_client.post("/v1/documents/search", json={"jobIds": ["job-1"]})
+
+    assert response.status_code == 200
+    results = response.json()["results"]
+    assert results[0]["jobStatus"] == "error"
+    assert "Failed to retrieve" in results[0]["message"]

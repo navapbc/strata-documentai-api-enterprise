@@ -46,6 +46,8 @@ from documentai_api.models.api_responses import (
     DictionarySchemaDetailResponse,
     DictionarySchemaListResponse,
     DictionarySearchResponse,
+    DocumentSearchRequest,
+    DocumentSearchResponse,
     ExtractionRuleDeleteResponse,
     ExtractionRuleItem,
     ExtractionRulesListResponse,
@@ -387,6 +389,81 @@ async def get_document_results(
         msg = f"Error retrieving results for job {job_id}: {e}"
         logger.error(msg)
         raise HTTPException(status_code=500, detail="Failed to retrieve results") from e
+
+
+MAX_SEARCH_JOB_IDS = 25
+
+
+@app.post(
+    "/v1/documents/search",
+    dependencies=[Depends(verify_api_key)],
+    name="searchDocuments",
+)
+async def search_documents(body: DocumentSearchRequest) -> DocumentSearchResponse:
+    """Search for multiple documents by job IDs."""
+    if not body.job_ids:
+        raise HTTPException(status_code=400, detail="job_ids must not be empty")
+    if len(body.job_ids) > MAX_SEARCH_JOB_IDS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Maximum of {MAX_SEARCH_JOB_IDS} job_ids per request",
+        )
+
+    results: list[JobStatusResponse] = []
+    for job_id in body.job_ids:
+        try:
+            job_status = _get_job_status(job_id)
+
+            if not job_status.ddb_record:
+                results.append(
+                    JobStatusResponse(
+                        job_id=job_id,
+                        job_status="not_found",
+                        message="Job ID not found",
+                    )
+                )
+            elif not job_status.v1_response_json:
+                results.append(
+                    JobStatusResponse(
+                        job_id=job_id,
+                        job_status=job_status.process_status or "processing",
+                        message="Processing in progress",
+                    )
+                )
+            elif body.include_extracted_data:
+                from documentai_api.utils.response_builder import build_v1_api_response
+
+                if not job_status.object_key or not job_status.process_status:
+                    results.append(
+                        JobStatusResponse(
+                            job_id=job_id,
+                            job_status="error",
+                            message="Incomplete record",
+                        )
+                    )
+                else:
+                    results.append(
+                        JobStatusResponse(
+                            **build_v1_api_response(
+                                object_key=job_status.object_key,
+                                job_status=job_status.process_status,
+                                include_extracted_data=True,
+                            )
+                        )
+                    )
+            else:
+                results.append(JobStatusResponse(**json.loads(job_status.v1_response_json)))
+        except Exception as e:
+            logger.error(f"Error retrieving job {job_id} in search: {e}")
+            results.append(
+                JobStatusResponse(
+                    job_id=job_id,
+                    job_status="error",
+                    message="Failed to retrieve results",
+                )
+            )
+
+    return DocumentSearchResponse(results=results)
 
 
 # ==============================================================================
