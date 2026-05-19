@@ -493,6 +493,9 @@ def upsert_ddb(
     is_document_blurry: bool | None = False,
     pre_classification_document_type: str | None = None,
     pre_classification_confidence: float | None = None,
+    external_document_id: str | None = None,
+    external_system_id: str | None = None,
+    ai_consent_flag: bool | None = None,
 ) -> None:
     """Upsert a document-metadata DDB row by file name.
 
@@ -552,6 +555,15 @@ def upsert_ddb(
         if pre_classification_confidence is not None:
             expr_fields.append(f"{DocumentMetadata.PRE_CLASSIFICATION_CONFIDENCE} = :pcc")
             expr_values[":pcc"] = Decimal(str(pre_classification_confidence))
+        if external_document_id is not None:
+            expr_fields.append(f"{DocumentMetadata.EXTERNAL_DOCUMENT_ID} = :extDocId")
+            expr_values[":extDocId"] = external_document_id
+        if external_system_id is not None:
+            expr_fields.append(f"{DocumentMetadata.EXTERNAL_SYSTEM_ID} = :extSysId")
+            expr_values[":extSysId"] = external_system_id
+        if ai_consent_flag is not None:
+            expr_fields.append(f"{DocumentMetadata.AI_CONSENT_FLAG} = :aiConsent")
+            expr_values[":aiConsent"] = ai_consent_flag
 
         update_expr = "SET " + ", ".join(expr_fields)
         _execute_ddb_update(object_key, update_expr, expr_values)
@@ -570,6 +582,9 @@ def insert_minimal_ddb_record(
     batch_id: str | None = None,
     content_type: str | None = None,
     file_size_bytes: int | None = None,
+    external_document_id: str | None = None,
+    external_system_id: str | None = None,
+    ai_consent_flag: bool | None = None,
 ) -> None:
     """Create initial tracking record from the API upload path.
 
@@ -586,6 +601,9 @@ def insert_minimal_ddb_record(
         job_id=job_id,
         trace_id=trace_id,
         batch_id=batch_id,
+        external_document_id=external_document_id,
+        external_system_id=external_system_id,
+        ai_consent_flag=ai_consent_flag,
     )
 
 
@@ -806,6 +824,23 @@ def classify_as_no_document_detected(object_key: str, data: ClassificationData) 
     )
 
     # convert dataclass to dict for JSON serialization
+    return internal_api_response.__dict__
+
+
+def classify_as_ai_consent_declined(object_key: str) -> dict[str, Any]:
+    """Mark file as not processed due to AI consent not provided."""
+    internal_api_response: InternalApiResponse = get_internal_api_response(
+        object_key=object_key,
+        response_code=ResponseCodes.AI_CONSENT_DECLINED,
+        matched_document_class=None,
+    )
+
+    update_ddb(
+        object_key=object_key,
+        status=ProcessStatus.AI_CONSENT_DECLINED,
+        internal_api_response=internal_api_response,
+    )
+
     return internal_api_response.__dict__
 
 

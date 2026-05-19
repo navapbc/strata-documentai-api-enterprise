@@ -94,6 +94,67 @@ def test_batch_upload_success(api_client, pdf_file):
     assert len(data["jobs"]) == 2
 
 
+def test_batch_upload_with_external_fields(api_client, pdf_file):
+    """Batch upload passes external fields to insert_minimal_ddb_record."""
+    with (
+        patch.dict(
+            os.environ, {EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"}
+        ),
+        patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
+        patch("documentai_api.app_batch.upload_document_for_processing", new_callable=AsyncMock),
+        patch("documentai_api.app_batch.insert_minimal_ddb_record") as mock_insert,
+        patch("documentai_api.app_batch.validate_batch_id"),
+        patch("documentai_api.app_batch.create_batch"),
+        patch("documentai_api.app_batch.update_batch_status"),
+        patch(
+            "documentai_api.app_batch.get_batch",
+            return_value={"batchId": "test-batch", "createdAt": "2026-03-02T20:00:00Z"},
+        ),
+    ):
+        files = [("files", pdf_file("doc1.pdf"))]
+        data = {
+            "external_document_id": "ext-doc-batch",
+            "external_system_id": "ext-sys-batch",
+            "ai_consent_flag": "true",
+        }
+        response = api_client.post("/v1/documents/batch", files=files, data=data)
+
+    assert response.status_code == 200
+    call_kwargs = mock_insert.call_args.kwargs
+    assert call_kwargs["external_document_id"] == "ext-doc-batch"
+    assert call_kwargs["external_system_id"] == "ext-sys-batch"
+    assert call_kwargs["ai_consent_flag"] is True
+
+
+def test_batch_upload_ai_consent_declined(api_client, pdf_file):
+    """Batch upload with ai_consent_flag=false skips S3 upload and marks as declined."""
+    with (
+        patch.dict(
+            os.environ, {EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"}
+        ),
+        patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
+        patch(
+            "documentai_api.app_batch.upload_document_for_processing", new_callable=AsyncMock
+        ) as mock_upload,
+        patch("documentai_api.app_batch.insert_minimal_ddb_record"),
+        patch("documentai_api.app_batch.classify_as_ai_consent_declined") as mock_classify,
+        patch("documentai_api.app_batch.validate_batch_id"),
+        patch("documentai_api.app_batch.create_batch"),
+        patch("documentai_api.app_batch.update_batch_status"),
+        patch(
+            "documentai_api.app_batch.get_batch",
+            return_value={"batchId": "test-batch", "createdAt": "2026-03-02T20:00:00Z"},
+        ),
+    ):
+        files = [("files", pdf_file("doc1.pdf"))]
+        data = {"ai_consent_flag": "false"}
+        response = api_client.post("/v1/documents/batch", files=files, data=data)
+
+    assert response.status_code == 200
+    mock_upload.assert_not_called()
+    mock_classify.assert_called_once()
+
+
 def test_batch_upload_no_files(api_client):
     """Batch upload with no files fails 422 (FastAPI form validation)."""
     response = api_client.post("/v1/documents/batch")

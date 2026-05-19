@@ -31,6 +31,7 @@ from documentai_api.schemas.document_batches import DocumentBatches
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.auth import verify_api_key
 from documentai_api.utils.ddb import (
+    classify_as_ai_consent_declined,
     classify_as_failed,
     create_batch,
     get_batch,
@@ -58,6 +59,9 @@ async def _process_batch_files(
     batch_id: str,
     category: DocumentCategory | None,
     trace_id: str,
+    external_document_id: str | None = None,
+    external_system_id: str | None = None,
+    ai_consent_flag: bool | None = None,
 ) -> list[dict[str, Any]]:
     """Upload each file in a batch to S3, return per-file job info."""
     jobs: list[dict[str, Any]] = []
@@ -92,7 +96,15 @@ async def _process_batch_files(
             trace_id=trace_id,
             batch_id=batch_id,
             content_type=actual_content_type,
+            external_document_id=external_document_id,
+            external_system_id=external_system_id,
+            ai_consent_flag=ai_consent_flag,
         )
+
+        if ai_consent_flag is False:
+            classify_as_ai_consent_declined(object_key=ddb_key)
+            jobs.append({"fileName": file.filename, "jobId": job_id, "batchPosition": idx})
+            continue
 
         try:
             await upload_document_for_processing(
@@ -125,6 +137,13 @@ async def upload_document_batch(
     batch_id: Annotated[str | None, Form()] = None,
     category: Annotated[DocumentCategory | None, Form()] = None,
     trace_id: Annotated[str | None, Header(alias="X-Trace-ID")] = None,
+    external_document_id: Annotated[
+        str | None, Form(description="External document identifier")
+    ] = None,
+    external_system_id: Annotated[
+        str | None, Form(description="External system identifier")
+    ] = None,
+    ai_consent_flag: Annotated[bool | None, Form(description="AI consent flag")] = None,
 ) -> dict[str, Any]:
     """Upload multiple documents as a single batch."""
     if not trace_id:
@@ -144,7 +163,13 @@ async def upload_document_batch(
     try:
         create_batch(batch_id, len(files), category, status=BatchStatus.UPLOADING)
         jobs = await _process_batch_files(
-            files=files, batch_id=batch_id, category=category, trace_id=trace_id
+            files=files,
+            batch_id=batch_id,
+            category=category,
+            trace_id=trace_id,
+            external_document_id=external_document_id,
+            external_system_id=external_system_id,
+            ai_consent_flag=ai_consent_flag,
         )
         update_batch_status(batch_id, status=BatchStatus.PROCESSING)
 
@@ -176,6 +201,13 @@ async def upload_zip_batch(
     batch_id: Annotated[str | None, Form()] = None,
     category: Annotated[DocumentCategory | None, Form()] = None,
     trace_id: Annotated[str | None, Header(alias="X-Trace-ID")] = None,
+    external_document_id: Annotated[
+        str | None, Form(description="External document identifier")
+    ] = None,
+    external_system_id: Annotated[
+        str | None, Form(description="External system identifier")
+    ] = None,
+    ai_consent_flag: Annotated[bool | None, Form(description="AI consent flag")] = None,
 ) -> dict[str, Any]:
     """Upload a ZIP archive of documents as a single batch."""
     if not trace_id:
@@ -197,7 +229,13 @@ async def upload_zip_batch(
 
         create_batch(batch_id, len(files), category, status=BatchStatus.UPLOADING)
         jobs = await _process_batch_files(
-            files=files, batch_id=batch_id, category=category, trace_id=trace_id
+            files=files,
+            batch_id=batch_id,
+            category=category,
+            trace_id=trace_id,
+            external_document_id=external_document_id,
+            external_system_id=external_system_id,
+            ai_consent_flag=ai_consent_flag,
         )
         update_batch_status(batch_id, status=BatchStatus.PROCESSING)
 

@@ -299,6 +299,44 @@ def test_create_document_asynchronous(api_client, blank_pdf_bytes):
     assert "uploaded successfully" in data["message"].lower()
 
 
+def test_create_document_with_external_fields(api_client, blank_pdf_bytes, mocker):
+    """Test document upload with external_document_id, external_system_id, and ai_consent_flag."""
+    mock_insert = mocker.patch("documentai_api.app.insert_minimal_ddb_record")
+
+    files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
+    data = {
+        "external_document_id": "ext-doc-123",
+        "external_system_id": "ext-sys-456",
+        "ai_consent_flag": "true",
+    }
+    response = api_client.post("/v1/documents", files=files, data=data)
+
+    assert response.status_code == 200
+    call_kwargs = mock_insert.call_args.kwargs
+    assert call_kwargs["external_document_id"] == "ext-doc-123"
+    assert call_kwargs["external_system_id"] == "ext-sys-456"
+    assert call_kwargs["ai_consent_flag"] is True
+
+
+def test_create_document_ai_consent_declined(api_client, blank_pdf_bytes, mocker):
+    """Test document upload with ai_consent_flag=false bypasses processing."""
+    mock_insert = mocker.patch("documentai_api.app.insert_minimal_ddb_record")
+    mock_classify = mocker.patch("documentai_api.app.classify_as_ai_consent_declined")
+    mock_upload = mocker.patch("documentai_api.app.upload_document_for_processing")
+
+    files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
+    data = {"ai_consent_flag": "false"}
+    response = api_client.post("/v1/documents", files=files, data=data)
+
+    assert response.status_code == 200
+    result = response.json()
+    assert result["jobStatus"] == "ai_consent_declined"
+    assert "AI consent not provided" in result["message"]
+    mock_insert.assert_called_once()
+    mock_classify.assert_called_once()
+    mock_upload.assert_not_called()
+
+
 def test_create_document_synchronous(api_client, blank_pdf_bytes, mocker):
     """Test synchronous document upload (wait=true)."""
     mock_get_results = mocker.patch("documentai_api.app.get_v1_document_processing_results")

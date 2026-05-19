@@ -9,4 +9,7 @@ class DocumentBuilds:
     CATEGORY = "category"
     CREATED_AT = "createdAt"
     SUBMITTED_AT = "submittedAt"
+    EXTERNAL_DOCUMENT_ID = "externalDocumentId"
+    EXTERNAL_SYSTEM_ID = "externalSystemId"
+    AI_CONSENT_FLAG = "aiConsentFlag"
     IS_BUILD_METADATA = "isBuildMetadata"

@@ -431,6 +431,9 @@ def test_upsert_ddb(ddb_doc_metadata_table, mocker):
         is_document_blurry=False,
         pre_classification_document_type="W2",
         pre_classification_confidence=".98",
+        external_document_id="ext-doc-789",
+        external_system_id="ext-sys-abc",
+        ai_consent_flag=True,
     )
 
     item = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"]
@@ -453,6 +456,11 @@ def test_upsert_ddb(ddb_doc_metadata_table, mocker):
     assert DocumentMetadata.RESPONSE_JSON in item
     assert item[DocumentMetadata.PRE_CLASSIFICATION_DOCUMENT_TYPE] == "W2"
     assert item[DocumentMetadata.PRE_CLASSIFICATION_CONFIDENCE] == Decimal("0.98")
+
+    # external fields
+    assert item[DocumentMetadata.EXTERNAL_DOCUMENT_ID] == "ext-doc-789"
+    assert item[DocumentMetadata.EXTERNAL_SYSTEM_ID] == "ext-sys-abc"
+    assert item[DocumentMetadata.AI_CONSENT_FLAG] is True
 
 
 @pytest.mark.parametrize(
@@ -728,3 +736,22 @@ def test_classify_functions(
         expected_call["error_message"] = error_msg
 
     mock_update.assert_called_once_with(**expected_call)
+
+
+def test_classify_as_ai_consent_declined(mocker):
+    """Test classify_as_ai_consent_declined marks file correctly."""
+    mock_get_response = mocker.patch("documentai_api.utils.ddb.get_internal_api_response")
+    mock_update = mocker.patch("documentai_api.utils.ddb.update_ddb")
+
+    ddb_util.classify_as_ai_consent_declined("test-file")
+
+    mock_get_response.assert_called_once_with(
+        object_key="test-file",
+        response_code=ResponseCodes.AI_CONSENT_DECLINED,
+        matched_document_class=None,
+    )
+    mock_update.assert_called_once_with(
+        object_key="test-file",
+        status=ProcessStatus.AI_CONSENT_DECLINED,
+        internal_api_response=mock_get_response.return_value,
+    )

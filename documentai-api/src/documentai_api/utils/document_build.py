@@ -139,7 +139,13 @@ def delete_document_build_page(build_id: str, page_number: int) -> bool:
     return True
 
 
-def create_document_build(build_id: str, category: DocumentCategory | None = None) -> str:
+def create_document_build(
+    build_id: str,
+    category: DocumentCategory | None = None,
+    external_document_id: str | None = None,
+    external_system_id: str | None = None,
+    ai_consent_flag: bool | None = None,
+) -> str:
     """Create a new document build."""
     item: dict[str, Any] = {
         DocumentBuilds.BUILD_ID: build_id,
@@ -150,6 +156,12 @@ def create_document_build(build_id: str, category: DocumentCategory | None = Non
 
     if category:
         item[DocumentBuilds.CATEGORY] = category.value
+    if external_document_id is not None:
+        item[DocumentBuilds.EXTERNAL_DOCUMENT_ID] = external_document_id
+    if external_system_id is not None:
+        item[DocumentBuilds.EXTERNAL_SYSTEM_ID] = external_system_id
+    if ai_consent_flag is not None:
+        item[DocumentBuilds.AI_CONSENT_FLAG] = ai_consent_flag
 
     ddb_service.put_item(get_document_build_table(), item)
     return build_id

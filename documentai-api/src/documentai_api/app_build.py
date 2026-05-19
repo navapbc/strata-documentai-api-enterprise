@@ -107,13 +107,26 @@ async def create_build(
         DocumentCategory | None, Form(description="Type of document being uploaded")
     ] = None,
     trace_id: Annotated[str | None, Header(alias="X-Trace-ID")] = None,
+    external_document_id: Annotated[
+        str | None, Form(description="External document identifier")
+    ] = None,
+    external_system_id: Annotated[
+        str | None, Form(description="External system identifier")
+    ] = None,
+    ai_consent_flag: Annotated[bool | None, Form(description="AI consent flag")] = None,
 ) -> BuildCreatedResponse:
     """Create a new document build for multi-page upload."""
     if not trace_id:
         trace_id = str(uuid.uuid4())
 
     build_id = str(uuid.uuid4())
-    create_document_build(build_id, category)
+    create_document_build(
+        build_id,
+        category,
+        external_document_id=external_document_id,
+        external_system_id=external_system_id,
+        ai_consent_flag=ai_consent_flag,
+    )
 
     response.headers["X-Trace-ID"] = trace_id
     return BuildCreatedResponse(

@@ -56,6 +56,7 @@ from documentai_api.models.api_responses import (
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.auth import verify_api_key
 from documentai_api.utils.ddb import (
+    classify_as_ai_consent_declined,
     classify_as_failed,
     get_ddb_by_job_id,
     insert_minimal_ddb_record,
@@ -227,6 +228,13 @@ async def create_document(
         DocumentCategory | None, Form(description="Type of document being uploaded")
     ] = None,
     trace_id: Annotated[str | None, Header(alias="X-Trace-ID")] = None,
+    external_document_id: Annotated[
+        str | None, Form(description="External document identifier")
+    ] = None,
+    external_system_id: Annotated[
+        str | None, Form(description="External system identifier")
+    ] = None,
+    ai_consent_flag: Annotated[bool | None, Form(description="AI consent flag")] = None,
     wait: bool = False,  # async by default
     timeout: int = 180,  # accounts for ECS cold starts and BDA processing time
 ) -> UploadAsyncResponse | JobStatusResponse:
@@ -292,7 +300,20 @@ async def create_document(
         user_provided_document_category=category,
         trace_id=trace_id,
         content_type=actual_content_type,
+        external_document_id=external_document_id,
+        external_system_id=external_system_id,
+        ai_consent_flag=ai_consent_flag,
     )
+
+    # bypass processing if AI consent not provided
+    if ai_consent_flag is False:
+        classify_as_ai_consent_declined(object_key=ddb_key)
+        response.headers["X-Trace-ID"] = trace_id
+        return UploadAsyncResponse(
+            job_id=job_id,
+            job_status=ProcessStatus.AI_CONSENT_DECLINED.value,
+            message="Document not processed - AI consent not provided",
+        )
 
     try:
         await upload_document_for_processing(

@@ -129,6 +129,7 @@ class FileValidation:
 
 
 class ProcessStatus(StrEnum):
+    AI_CONSENT_DECLINED = "ai_consent_declined"
     BLURRY_DOCUMENT_DETECTED = "blurry_document_detected"
     FAILED = "failed"
     MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE = "multiple_documents_single_page"
@@ -145,6 +146,7 @@ class ProcessStatus(StrEnum):
     @classmethod
     def is_completed(cls, value: str) -> bool:
         return value in [
+            cls.AI_CONSENT_DECLINED,
             cls.SUCCESS,
             cls.FAILED,
             cls.NO_DOCUMENT_DETECTED,

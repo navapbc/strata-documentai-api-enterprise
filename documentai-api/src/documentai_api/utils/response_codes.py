@@ -2,6 +2,7 @@ class ResponseCodes:
     SUCCESS = "000"
     BITMAP_RECEIVED = "001"
     DOCUMENT_TYPE_NOT_IMPLEMENTED = "002"
+    AI_CONSENT_DECLINED = "003"
     MISSING_FIELDS = "101"
     NO_DOCUMENT_DETECTED = "103"
     BLURRY_DOCUMENT_DETECTED = "104"
@@ -15,6 +16,7 @@ class ResponseCodes:
             cls.SUCCESS: "Document validation passed",
             cls.BITMAP_RECEIVED: "Bitmap received",
             cls.DOCUMENT_TYPE_NOT_IMPLEMENTED: "Document type not implemented",
+            cls.AI_CONSENT_DECLINED: "Document not processed - AI consent not provided",
             cls.MISSING_FIELDS: "Missing fields",
             cls.NO_DOCUMENT_DETECTED: "No document detected",
             cls.BLURRY_DOCUMENT_DETECTED: "Document is blurry",

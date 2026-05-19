@@ -100,6 +100,24 @@ def test_create_build(document_build_ddb_table):
     assert result["message"] == "Build created successfully"
 
 
+def test_create_build_with_external_fields(document_build_ddb_table):
+    """Test create build passes external fields to create_document_build."""
+    with patch("documentai_api.app_build.create_document_build") as mock_create:
+        mock_create.return_value = "fake-build-id"
+        data = {
+            "external_document_id": "ext-doc-build",
+            "external_system_id": "ext-sys-build",
+            "ai_consent_flag": "true",
+        }
+        response = client.post("/v1/builds", data=data)
+
+    assert response.status_code == 200
+    call_kwargs = mock_create.call_args.kwargs
+    assert call_kwargs["external_document_id"] == "ext-doc-build"
+    assert call_kwargs["external_system_id"] == "ext-sys-build"
+    assert call_kwargs["ai_consent_flag"] is True
+
+
 @pytest.mark.parametrize(
     ("build_id", "page_number", "expected_build"),
     [
