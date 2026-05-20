@@ -21,6 +21,7 @@ from fastapi import (
 
 from documentai_api.config.constants import (
     MAX_BATCH_SIZE,
+    ApiVisualizationTag,
     BatchStatus,
     DocumentCategory,
     ProcessStatus,
@@ -139,7 +140,12 @@ async def _process_batch_files(
     return jobs
 
 
-@router.post("/v1/documents/batch", dependencies=[Depends(verify_api_key)], name="batchUpload")
+@router.post(
+    "/v1/documents/batch",
+    dependencies=[Depends(verify_api_key)],
+    name="batchUpload",
+    tags=[ApiVisualizationTag.DOCUMENTS_UPLOAD],
+)
 async def upload_document_batch(
     response: Response,
     files: Annotated[list[UploadFile], Form(description="Documents to process")],
@@ -203,6 +209,7 @@ async def upload_document_batch(
     "/v1/documents/batch/zip",
     dependencies=[Depends(verify_api_key)],
     name="batchUploadZip",
+    tags=[ApiVisualizationTag.DOCUMENTS_UPLOAD],
 )
 async def upload_zip_batch(
     response: Response,
@@ -269,6 +276,7 @@ async def upload_zip_batch(
     "/v1/batches/{batch_id}",
     dependencies=[Depends(verify_api_key)],
     name="batchUploadStatus",
+    tags=[ApiVisualizationTag.DOCUMENTS_QUERY],
 )
 async def get_batch_status(batch_id: str) -> dict[str, Any]:
     """Get status of all documents in a batch.

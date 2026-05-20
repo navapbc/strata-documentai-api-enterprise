@@ -8,6 +8,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Form, Header, HTTPException, Request, Response, UploadFile
 
 from documentai_api.config.constants import (
+    ApiVisualizationTag,
     DocumentBuildStatus,
     DocumentCategory,
     ProcessStatus,
@@ -101,6 +102,7 @@ async def add_page_to_build(
     "/v1/builds",
     name="postDocumentBuild",
     dependencies=[Depends(verify_api_key)],
+    tags=[ApiVisualizationTag.BUILDS_LIFECYCLE],
 )
 async def create_build(
     response: Response,
@@ -140,6 +142,7 @@ async def create_build(
     "/v1/builds/{build_id}/pages",
     name="postDocumentBuildPage",
     dependencies=[Depends(verify_api_key)],
+    tags=[ApiVisualizationTag.BUILDS_PAGES],
 )
 async def upload_document_build_page(
     request: Request,
@@ -190,6 +193,7 @@ async def upload_document_build_page(
     "/v1/builds/{build_id}/pages/batch",
     name="postDocumentBuildPageBatch",
     dependencies=[Depends(verify_api_key)],
+    tags=[ApiVisualizationTag.BUILDS_PAGES],
 )
 async def upload_document_build_pages_batch(
     request: Request,
@@ -242,6 +246,7 @@ async def upload_document_build_pages_batch(
     name="postDocumentBuildSubmit",
     dependencies=[Depends(verify_api_key)],
     response_model=BuildSubmitAsyncResponse | JobStatusResponse,
+    tags=[ApiVisualizationTag.BUILDS_LIFECYCLE],
 )
 async def submit_document_build(
     request: Request,
@@ -319,6 +324,7 @@ async def submit_document_build(
     "/v1/builds/{build_id}",
     name="getDocumentBuildStatus",
     dependencies=[Depends(verify_api_key)],
+    tags=[ApiVisualizationTag.BUILDS_STATUS],
 )
 async def get_document_build(build_id: str) -> BuildDetailsResponse:
     """Get document build details including all uploaded pages."""
@@ -358,6 +364,7 @@ async def get_document_build(build_id: str) -> BuildDetailsResponse:
     "/v1/builds/{build_id}/pages/{page_number}",
     name="deleteDocumentBuildPage",
     dependencies=[Depends(verify_api_key)],
+    tags=[ApiVisualizationTag.BUILDS_PAGES],
 )
 async def delete_document_build_page_endpoint(build_id: str, page_number: int) -> Response:
     """Delete a specific page from a document build."""
@@ -384,6 +391,7 @@ async def delete_document_build_page_endpoint(build_id: str, page_number: int) -
     "/v1/builds/{build_id}",
     name="deleteDocumentBuild",
     dependencies=[Depends(verify_api_key)],
+    tags=[ApiVisualizationTag.BUILDS_LIFECYCLE],
 )
 async def delete_document_build_endpoint(build_id: str) -> Response:
     """Delete an entire document build and all its pages."""

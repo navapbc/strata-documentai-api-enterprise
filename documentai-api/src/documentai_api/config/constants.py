@@ -7,19 +7,6 @@ API_DESCRIPTION = "API for document processing"
 API_AUTH_KEY_HEADER_NAME = "API-Key"
 DEFAULT_TIMEOUT = 30
 
-# === File validation ===
-SUPPORTED_CONTENT_TYPES = (
-    "application/pdf",
-    "image/bmp",
-    "image/jpeg",
-    "image/png",
-    "image/tiff",
-    "image/heic",
-    "image/heif",
-    "image/webp",
-    "image/gif",
-)
-
 # === Document categories ===
 DOCUMENT_CATEGORIES = [
     "income",
@@ -121,16 +108,11 @@ class DocumentCategory(StrEnum):
 
 
 class FileValidation:
-    SUPPORTED_CONTENT_TYPES = (
+    BDA_NATIVE = (
         "application/pdf",
-        "image/bmp",
         "image/jpeg",
         "image/png",
         "image/tiff",
-        "image/heic",
-        "image/heif",
-        "image/webp",
-        "image/gif",
     )
 
     REQUIRES_CONVERSION = (
@@ -140,6 +122,8 @@ class FileValidation:
         "image/webp",
         "image/gif",
     )
+
+    SUPPORTED_CONTENT_TYPES = BDA_NATIVE + REQUIRES_CONVERSION
 
     GRAYSCALE_CONVERTIBLE = (
         "image/jpeg",
@@ -289,6 +273,19 @@ class TimingMetrics:
     TOTAL_PROCESSING_TIME = "total_processing_time"
     BDA_PROCESSING_TIME = "bda_processing_time"
     BDA_WAIT_TIME = "bda_wait_time"
+
+
+class ApiVisualizationTag:
+    DOCUMENTS_UPLOAD = "Documents:Upload"
+    DOCUMENTS_QUERY = "Documents:Query"
+    DOCUMENTS_DELETE = "Documents:Delete"
+    BUILDS_LIFECYCLE = "Builds:Lifecycle"
+    BUILDS_PAGES = "Builds:Pages"
+    BUILDS_STATUS = "Builds:Status"
+    DICTIONARY_SCHEMAS = "Dictionary:Schemas"
+    DICTIONARY_FIELDS = "Dictionary:Fields"
+    DICTIONARY_REFERENCE = "Dictionary:Reference"
+    CONFIG_RULES = "Config:Rules"
 
 
 class AthenaQueryStatus:

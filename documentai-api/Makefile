@@ -1,4 +1,5 @@
 .PHONY: \
+	api-sunburst \
 	architecture-diagram \
 	build \
 	check \
@@ -154,6 +155,9 @@ clean: ## Clean build artifacts
 
 openapi-spec: ## Export openapi spec to docs directory
 	$(PY_RUN_CMD) export-openapi > $(APP_DOCS_DIR)/openapi.json
+
+api-sunburst: ## Generate API sunburst chart
+	$(PY_RUN_CMD) generate-api-sunburst --output $(APP_DOCS_DIR)/media/api_sunburst.html
 
 architecture-diagram:
 	docker run --rm \

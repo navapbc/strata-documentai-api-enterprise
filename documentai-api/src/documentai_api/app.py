@@ -27,8 +27,8 @@ from documentai_api.app_batch import router as batch_router
 from documentai_api.app_build import router as build_router
 from documentai_api.config.constants import (
     API_VERSION,
-    SUPPORTED_CONTENT_TYPES,
     APIConfig,
+    ApiVisualizationTag,
     DictionaryBlueprintField,
     DictionaryBlueprintSchema,
     DictionaryFormatType,
@@ -137,7 +137,7 @@ def get_config(request: Request) -> ConfigResponse:
         image_tag=app_config.image_tag,
         environment=app_config.environment,
         endpoints=endpoints,
-        supported_file_types=list(SUPPORTED_CONTENT_TYPES),
+        supported_file_types=list(FileValidation.SUPPORTED_CONTENT_TYPES),
     )
 
 
@@ -225,7 +225,12 @@ async def get_v1_document_processing_results(job_id: str, timeout: int) -> JobSt
 
 
 # protected endpoints (require authorization)
-@app.post("/v1/documents", dependencies=[Depends(verify_api_key)], name="postUpload")
+@app.post(
+    "/v1/documents",
+    dependencies=[Depends(verify_api_key)],
+    name="postUpload",
+    tags=[ApiVisualizationTag.DOCUMENTS_UPLOAD],
+)
 async def create_document(
     request: Request,
     response: Response,
@@ -358,7 +363,11 @@ async def create_document(
         return await get_v1_document_processing_results(job_id, timeout)
 
 
-@app.get("/v1/documents/{job_id}", dependencies=[Depends(verify_api_key)])
+@app.get(
+    "/v1/documents/{job_id}",
+    dependencies=[Depends(verify_api_key)],
+    tags=[ApiVisualizationTag.DOCUMENTS_QUERY],
+)
 async def get_document_results(
     job_id: str, include_extracted_data: bool = False
 ) -> JobStatusResponse:
@@ -406,7 +415,12 @@ async def get_document_results(
         raise HTTPException(status_code=500, detail="Failed to retrieve results") from e
 
 
-@app.delete("/v1/documents/{job_id}", dependencies=[Depends(verify_api_key)], name="deleteDocument")
+@app.delete(
+    "/v1/documents/{job_id}",
+    dependencies=[Depends(verify_api_key)],
+    name="deleteDocument",
+    tags=[ApiVisualizationTag.DOCUMENTS_DELETE],
+)
 async def delete_document(job_id: str) -> Response:
     """Delete a document by job ID. Removes S3 file and marks DDB record as deleted."""
     from documentai_api.services import s3 as s3_service
@@ -455,6 +469,7 @@ MAX_SEARCH_JOB_IDS = 25
     "/v1/documents/search",
     dependencies=[Depends(verify_api_key)],
     name="searchDocuments",
+    tags=[ApiVisualizationTag.DOCUMENTS_QUERY],
 )
 async def search_documents(body: DocumentSearchRequest) -> DocumentSearchResponse:
     """Search for multiple documents by job IDs."""
@@ -528,7 +543,12 @@ async def search_documents(body: DocumentSearchRequest) -> DocumentSearchRespons
 # ==============================================================================
 
 
-@app.get("/v1/dictionary/schemas", dependencies=[Depends(verify_api_key)], name="getSchemaList")
+@app.get(
+    "/v1/dictionary/schemas",
+    dependencies=[Depends(verify_api_key)],
+    name="getSchemaList",
+    tags=[ApiVisualizationTag.DICTIONARY_SCHEMAS],
+)
 async def list_schemas() -> DictionarySchemaListResponse:
     """List all supported document types."""
     schemas = get_all_schemas()
@@ -540,6 +560,7 @@ async def list_schemas() -> DictionarySchemaListResponse:
     dependencies=[Depends(verify_api_key)],
     name="getSchemaDetail",
     response_model=DictionarySchemaDetailResponse,
+    tags=[ApiVisualizationTag.DICTIONARY_SCHEMAS],
 )
 async def get_schema_detail(
     document_type: str, format: DictionaryFormatType = DictionaryFormatType.JSON
@@ -563,6 +584,7 @@ async def get_schema_detail(
     dependencies=[Depends(verify_api_key)],
     name="getAllFields",
     response_model=DictionaryFieldsResponse,
+    tags=[ApiVisualizationTag.DICTIONARY_FIELDS],
 )
 async def get_all_schema_fields(
     format: DictionaryFormatType = DictionaryFormatType.JSON,
@@ -581,6 +603,7 @@ async def get_all_schema_fields(
     dependencies=[Depends(verify_api_key)],
     name="searchSchemas",
     response_model=DictionarySearchResponse,
+    tags=[ApiVisualizationTag.DICTIONARY_FIELDS],
 )
 async def search_schema_fields(
     q: str | None = None,
@@ -608,6 +631,7 @@ async def search_schema_fields(
     dependencies=[Depends(verify_api_key)],
     name="getResponseCodes",
     response_model=DictionaryResponseCodesResponse,
+    tags=[ApiVisualizationTag.DICTIONARY_REFERENCE],
 )
 async def get_response_codes(format: DictionaryFormatType = DictionaryFormatType.JSON) -> Any:
     """Get list of response codes and their meanings."""
@@ -626,6 +650,7 @@ async def get_response_codes(format: DictionaryFormatType = DictionaryFormatType
     dependencies=[Depends(verify_api_key)],
     name="getDocumentCategories",
     response_model=DictionaryDocumentCategoriesResponse,
+    tags=[ApiVisualizationTag.DICTIONARY_REFERENCE],
 )
 async def get_document_categories(format: DictionaryFormatType = DictionaryFormatType.JSON) -> Any:
     """Get list of supported document categories."""
@@ -647,6 +672,7 @@ async def get_document_categories(format: DictionaryFormatType = DictionaryForma
     dependencies=[Depends(verify_api_key)],
     name="getExtractionRules",
     response_model=ExtractionRulesListResponse,
+    tags=[ApiVisualizationTag.CONFIG_RULES],
 )
 async def get_extraction_rules(
     tenant_id: str,
@@ -667,6 +693,7 @@ async def get_extraction_rules(
     dependencies=[Depends(verify_api_key)],
     name="putExtractionRule",
     response_model=ExtractionRuleItem,
+    tags=[ApiVisualizationTag.CONFIG_RULES],
 )
 async def put_extraction_rule(
     tenant_id: Annotated[str, Form()],
@@ -700,6 +727,7 @@ async def put_extraction_rule(
     dependencies=[Depends(verify_api_key)],
     name="deleteExtractionRule",
     response_model=ExtractionRuleDeleteResponse,
+    tags=[ApiVisualizationTag.CONFIG_RULES],
 )
 async def delete_extraction_rule(
     tenant_id: str,
