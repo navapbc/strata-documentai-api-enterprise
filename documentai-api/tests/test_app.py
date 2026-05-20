@@ -4,25 +4,15 @@ from fastapi import HTTPException
 from documentai_api.app import (
     JobStatus,
     _get_job_status,
-    app,
     get_v1_document_processing_results,
     upload_document_for_processing,
-    verify_api_key,
 )
 from documentai_api.models.api_responses import JobStatusResponse
 
 
-def mock_verify_api_key():
-    """Mock API key verification - always passes."""
-    return None
-
-
 @pytest.fixture(autouse=True)
-def disable_auth():
-    """Disable API key authentication for all tests in this file."""
-    app.dependency_overrides[verify_api_key] = mock_verify_api_key
-    yield
-    app.dependency_overrides.clear()
+def _disable_auth(disable_auth):
+    pass
 
 
 def test_health(api_client):

@@ -5,7 +5,6 @@ from fastapi.testclient import TestClient
 
 from documentai_api.app import (
     app,
-    verify_api_key,
 )
 
 client = TestClient(app)
@@ -28,10 +27,8 @@ MOCK_SCHEMAS = {
 
 
 @pytest.fixture(autouse=True)
-def disable_auth():
-    app.dependency_overrides[verify_api_key] = lambda: None
-    yield
-    app.dependency_overrides.clear()
+def _disable_auth(disable_auth):
+    pass
 
 
 @pytest.fixture

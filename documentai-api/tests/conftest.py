@@ -69,6 +69,17 @@ def api_client(runtime_required_env):
 
 
 @pytest.fixture
+def disable_auth():
+    """Disable API key authentication for tests."""
+    from documentai_api.app import app
+    from documentai_api.utils.auth import verify_api_key
+
+    app.dependency_overrides[verify_api_key] = lambda: None
+    yield
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
 def api_skeleton_key(monkeypatch):
     key = "foobar"
     monkeypatch.setenv(EnvVars.API_AUTH_INSECURE_SHARED_KEY, key)

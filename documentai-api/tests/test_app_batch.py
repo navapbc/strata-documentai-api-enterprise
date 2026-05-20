@@ -6,23 +6,15 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from documentai_api.app import app, verify_api_key
 from documentai_api.app_batch import validate_batch_id
 from documentai_api.config.constants import BatchStatus
 from documentai_api.config.env import EnvVars
 from documentai_api.schemas.document_batches import DocumentBatches
 
 
-def _mock_verify_api_key() -> None:
-    return None
-
-
 @pytest.fixture(autouse=True)
-def disable_auth():
-    """Disable API key auth for all tests in this file."""
-    app.dependency_overrides[verify_api_key] = _mock_verify_api_key
-    yield
-    app.dependency_overrides.clear()
+def _disable_auth(disable_auth):
+    pass
 
 
 @pytest.fixture
