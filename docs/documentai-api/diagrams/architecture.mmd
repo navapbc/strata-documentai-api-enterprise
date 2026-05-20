@@ -1,23 +1,35 @@
 architecture-beta
     group api(logos:aws-vpc)[API Layer]
-    group processing(logos:aws-vpc)[Processing]
+    group processing(logos:aws-vpc)[Document Processing]
+    group metrics(logos:aws-vpc)[Metrics Pipeline]
 
-    service alb(logos:aws-elb)[ALB] in api
-    service ecs(logos:aws-ecs)[DocumentAI API] in api
-    
+    service apigw(logos:aws-api-gateway)[API Gateway] in api
+    service api-lambda(logos:aws-lambda)[API Lambda] in api
+
     service s3input(logos:aws-s3)[S3 Input] in processing
-    service document-processor(logos:aws-step-functions)[Document Processor] in processing
-    service ddb(logos:aws-dynamodb)[DynamoDB] in processing
-    service bedrock(server)[Bedrock Data Analytics] in processing
+    service document-processor(logos:aws-lambda)[Document Processor] in processing
+    service bedrock(server)[Bedrock Data Automation] in processing
     service s3output(logos:aws-s3)[S3 Output] in processing
-    service bda-output-processor(logos:aws-step-functions)[BDA Output Processor] in processing
+    service bda-result-processor(logos:aws-lambda)[BDA Result Processor] in processing
+    service ddb(logos:aws-dynamodb)[DynamoDB] in processing
 
-    alb:R --> L:ecs
-    ecs:R --> L:s3input
-    ecs:R <--> L:ddb
+    service sqs(logos:aws-sqs)[SQS Queue] in metrics
+    service metrics-processor(logos:aws-lambda)[Metrics Processor] in metrics
+    service s3metrics(logos:aws-s3)[S3 Metrics] in metrics
+    service glue(logos:aws-glue)[Glue Database] in metrics
+    service metrics-aggregator(logos:aws-lambda)[Metrics Aggregator] in metrics
+
+    apigw:R --> L:api-lambda
+    api-lambda:R --> L:s3input
     s3input:R --> L:document-processor
-    document-processor:B --> T:ddb
     document-processor:R --> L:bedrock
-    bedrock:B --> T:s3output
-    s3output:L --> R:bda-output-processor
-    bda-output-processor:T --> B:ddb
+    document-processor:B --> T:ddb
+    bedrock:R --> L:s3output
+    s3output:R --> L:bda-result-processor
+    bda-result-processor:B --> T:ddb
+    bda-result-processor:R --> L:sqs
+    sqs:R --> L:metrics-processor
+    metrics-processor:R --> L:s3metrics
+    s3metrics:B --> T:glue
+    glue:R --> L:metrics-aggregator
+    metrics-aggregator:B --> T:s3metrics
