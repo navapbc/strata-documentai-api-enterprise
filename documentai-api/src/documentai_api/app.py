@@ -212,7 +212,7 @@ async def get_v1_document_processing_results(job_id: str, timeout: int) -> JobSt
 
     # timeout - update ddb with failure if we have object_key
     if object_key:
-        result = classify_as_failed(
+        classify_as_failed(
             object_key=object_key,
             error_message="Processing timeout",
             data=ClassificationData(
@@ -220,14 +220,11 @@ async def get_v1_document_processing_results(job_id: str, timeout: int) -> JobSt
             ),
         )
 
-        return JobStatusResponse(**result)
-    else:
-        # fallback if we never got a record
-        return JobStatusResponse(
-            job_id=job_id,
-            job_status="failed",
-            message=f"Processing timeout after {timeout} seconds",
-        )
+    return JobStatusResponse(
+        job_id=job_id,
+        job_status=ProcessStatus.FAILED.value,
+        message=f"Processing timeout after {timeout} seconds",
+    )
 
 
 # protected endpoints (require authorization)

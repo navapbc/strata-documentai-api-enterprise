@@ -141,16 +141,12 @@ async def test_get_v1_document_processing_results_timeout(mocker):
     )
 
     mock_classify_as_failed = mocker.patch("documentai_api.app.classify_as_failed")
-    mock_classify_as_failed.return_value = {
-        "jobId": "test-job-id",
-        "jobStatus": "failed",
-        "message": "timeout",
-    }
 
     result = await get_v1_document_processing_results("test-job-id", timeout=1)
 
     mock_classify_as_failed.assert_called_once()
     assert result.job_status == "failed"
+    assert "timeout" in result.message.lower()
 
 
 @pytest.mark.asyncio
