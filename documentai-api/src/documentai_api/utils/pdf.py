@@ -12,14 +12,14 @@ from documentai_api.utils.models import PageMetadata
 logger = get_logger(__name__)
 
 
-def merge_pages_to_pdf(pages: list[PageMetadata]) -> bytes:
+def merge_pages_to_pdf(pages: list[PageMetadata]) -> io.BytesIO:
     """Merge multiple pages (PDF/images) from S3 into single PDF.
 
     Args:
         pages: List of PageMetadata objects with 's3Key', 's3BucketName', and 'pageNumber' fields
 
     Returns:
-        Merged PDF as bytes
+        Merged PDF as a seeked BytesIO stream
 
     Raises:
         ValueError: If unsupported file type encountered
@@ -46,11 +46,10 @@ def merge_pages_to_pdf(pages: list[PageMetadata]) -> bytes:
         else:
             raise ValueError(f"Unsupported file type: {file_ext}")
 
-    # write merged pdf to bytes
     output = io.BytesIO()
     writer.write(output)
     output.seek(0)
-    return output.read()
+    return output
 
 
 def _add_pdf_pages(writer: PdfWriter, pdf_bytes: bytes) -> None:

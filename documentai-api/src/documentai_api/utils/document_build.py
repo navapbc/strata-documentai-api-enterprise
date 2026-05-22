@@ -62,11 +62,16 @@ async def upsert_document_build_page(
     s3_path: str,
     original_file_name: str | None = None,
     category: DocumentCategory | None = None,
+    overwrite: bool = True,
 ) -> None:
-    """Upsert multipage session page record."""
+    """Upsert multipage session page record.
+
+    When overwrite=False, uses a conditional write to prevent clobbering
+    an existing page (raises ConditionalCheckFailedException on conflict).
+    """
     table_name = get_document_build_table()
 
-    item = {
+    item: dict[str, Any] = {
         DocumentBuilds.BUILD_ID: build_id,
         DocumentBuilds.PAGE_NUMBER: page_number,
         DocumentBuilds.S3_PATH: s3_path,
@@ -79,7 +84,30 @@ async def upsert_document_build_page(
     if category:
         item[DocumentBuilds.CATEGORY] = category.value
 
-    ddb_service.put_item(table_name, item)
+    if not overwrite:
+        from documentai_api.utils.aws_client_factory import AWSClientFactory
+
+        ddb_table = AWSClientFactory.get_ddb_table(table_name)
+        try:
+            ddb_table.put_item(
+                Item=item,
+                ConditionExpression="attribute_not_exists(#pk)",
+                ExpressionAttributeNames={"#pk": DocumentBuilds.BUILD_ID},
+            )
+        except Exception as e:
+            if "ConditionalCheckFailedException" in type(e).__name__ or (
+                hasattr(e, "response")
+                and e.response.get("Error", {}).get("Code") == "ConditionalCheckFailedException"
+            ):
+                from fastapi import HTTPException
+
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"Page {page_number} already exists for build {build_id}. Set overwrite=true to replace.",
+                ) from None
+            raise
+    else:
+        ddb_service.put_item(table_name, item)
 
 
 def get_document_build_pages(build_id: str) -> list[PageMetadata]:
@@ -110,16 +138,61 @@ def is_document_build_submitted(build_id: str) -> bool:
 
 
 def mark_document_build_submitted(build_id: str) -> None:
-    """Mark all pages in a multipage session as submitted."""
+    """Atomically mark a build as submitted using a conditional write.
+
+    Uses attribute_not_exists on submittedAt as a lock - if two concurrent
+    submits race, only one succeeds. The loser gets ConditionalCheckFailedException.
+    """
+    from documentai_api.utils.aws_client_factory import AWSClientFactory
+
     table_name = get_document_build_table()
     submitted_at = datetime.now(UTC).isoformat()
+
+    # First: conditionally write submittedAt on the metadata record (page 0).
+    # This is the "lock" - only one caller can succeed.
+    ddb_table = AWSClientFactory.get_ddb_table(table_name)
+    try:
+        ddb_table.update_item(
+            Key=_page_key(build_id, _METADATA_PAGE_NUMBER),
+            UpdateExpression=f"SET {DocumentBuilds.SUBMITTED_AT} = :submittedAt",
+            ExpressionAttributeValues={":submittedAt": submitted_at},
+            ConditionExpression=f"attribute_not_exists({DocumentBuilds.SUBMITTED_AT})",
+        )
+    except Exception as e:
+        if "ConditionalCheckFailedException" in type(e).__name__ or (
+            hasattr(e, "response")
+            and e.response.get("Error", {}).get("Code") == "ConditionalCheckFailedException"
+        ):
+            from fastapi import HTTPException
+
+            raise HTTPException(
+                status_code=400,
+                detail=f"Build {build_id} has already been submitted for processing",
+            ) from None
+        raise
+
+    # Then: stamp submittedAt on all page records (best-effort, metadata record is source of truth)
     for item in _query_items_for_build(build_id):
+        if item.get(DocumentBuilds.PAGE_NUMBER) == _METADATA_PAGE_NUMBER:
+            continue
         ddb_service.update_item(
             table_name=table_name,
             key=_page_key(build_id, item[DocumentBuilds.PAGE_NUMBER]),
-            update_expression=f"SET {DocumentBuilds.SUBMITTED_AT} = :{DocumentBuilds.SUBMITTED_AT}",
-            expression_values={f":{DocumentBuilds.SUBMITTED_AT}": submitted_at},
+            update_expression=f"SET {DocumentBuilds.SUBMITTED_AT} = :submittedAt",
+            expression_values={":submittedAt": submitted_at},
         )
+
+
+def clear_submitted_at(build_id: str) -> None:
+    """Remove submittedAt from the build metadata record (rollback on upload failure)."""
+    from documentai_api.utils.aws_client_factory import AWSClientFactory
+
+    table_name = get_document_build_table()
+    ddb_table = AWSClientFactory.get_ddb_table(table_name)
+    ddb_table.update_item(
+        Key=_page_key(build_id, _METADATA_PAGE_NUMBER),
+        UpdateExpression=f"REMOVE {DocumentBuilds.SUBMITTED_AT}",
+    )
 
 
 def delete_document_build_page(build_id: str, page_number: int) -> bool:

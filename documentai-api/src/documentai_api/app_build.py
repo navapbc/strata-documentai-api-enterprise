@@ -1,16 +1,19 @@
 """Document build endpoints for multi-page upload + submission."""
 
+import asyncio
 import os
 import uuid
-from io import BytesIO
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Form, Header, HTTPException, Request, Response, UploadFile
+from fastapi import APIRouter, Depends, Form, Header, HTTPException, Query, Response, UploadFile
 
 from documentai_api.config.constants import (
+    MAX_PAGES_PER_BUILD,
     ApiVisualizationTag,
+    ConfigDefaults,
     DocumentBuildStatus,
     DocumentCategory,
+    FileValidation,
     ProcessStatus,
 )
 from documentai_api.config.env import EnvVars, get_aws_config
@@ -27,10 +30,10 @@ from documentai_api.models.api_responses import (
 )
 from documentai_api.utils.auth import UserContext, get_user_context
 from documentai_api.utils.document_build import (
+    clear_submitted_at,
     create_document_build,
     delete_document_build,
     delete_document_build_page,
-    document_build_page_exists,
     get_document_build_pages,
     is_document_build_submitted,
     mark_document_build_submitted,
@@ -49,26 +52,29 @@ logger = get_logger(__name__)
 
 router = APIRouter(dependencies=[Depends(get_user_context)])
 
+MAX_FILE_SIZE_BYTES = ConfigDefaults.BDA_MAX_DOCUMENT_FILE_SIZE_BYTES
+
 
 async def add_page_to_build(
     file: UploadFile,
     build_id: str,
     page_number: int,
+    content_type: str,
     category: DocumentCategory | None = None,
     trace_id: str | None = None,
+    overwrite: bool = True,
 ) -> BuildPageBatchItem:
     """Upload one page's bytes to S3 and upsert its DDB record."""
     if not file.filename:
         raise HTTPException(status_code=400, detail="Filename is required")
 
-    actual_content_type = await validate_file_type(file)
     logger.info(
         f"Adding page to build {build_id}; page {page_number}; "
-        f"filename: {file.filename}; category: {category}; content-type: {actual_content_type}"
+        f"filename: {file.filename}; category: {category}; content-type: {content_type}"
     )
 
     file.file.seek(0)
-    file_extension = file.filename.split(".")[-1]
+    file_extension = FileValidation.get_extension(content_type)
     unique_file_name = f"{build_id}/page-{page_number}.{file_extension}"
 
     s3_location = os.getenv(EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION, "")
@@ -78,7 +84,7 @@ async def add_page_to_build(
         src_file=file.file,
         dest_path=dest_path,
         original_file_name=file.filename,
-        content_type=actual_content_type,
+        content_type=content_type,
         user_provided_document_category=category,
         trace_id=trace_id,
         build_id=build_id,
@@ -93,6 +99,7 @@ async def add_page_to_build(
         s3_path=s3_path,
         original_file_name=file.filename,
         category=category,
+        overwrite=overwrite,
     )
 
     return BuildPageBatchItem(page_number=page_number, file_name=file.filename)
@@ -147,11 +154,10 @@ async def create_build(
     tags=[ApiVisualizationTag.BUILDS_PAGES],
 )
 async def upload_document_build_page(
-    request: Request,
     response: Response,
     file: UploadFile,
     build_id: str,
-    page_number: Annotated[int | None, Form(description="Page number (1-indexed)")] = None,
+    page_number: Annotated[int | None, Form(description="Page number (1-indexed)", ge=1)] = None,
     overwrite: Annotated[bool, Form(description="Allow overwriting existing page")] = False,
     category: Annotated[
         DocumentCategory | None, Form(description="Type of document being uploaded")
@@ -163,17 +169,30 @@ async def upload_document_build_page(
         if not trace_id:
             trace_id = str(uuid.uuid4())
 
-        if page_number is None:
-            pages = get_document_build_pages(build_id)
-            page_number = max((p.page_number for p in pages), default=0) + 1
+        content_type = await validate_file_type(file)
 
-        if document_build_page_exists(build_id, page_number) and not overwrite:
+        if file.size and file.size > MAX_FILE_SIZE_BYTES:
             raise HTTPException(
-                status_code=409,
-                detail=f"Page {page_number} already exists for build {build_id}. Set overwrite=true to replace.",
+                status_code=400,
+                detail=f"File size exceeds maximum of {MAX_FILE_SIZE_BYTES} bytes",
             )
 
-        result = await add_page_to_build(file, build_id, page_number, category, trace_id)
+        pages = await asyncio.to_thread(get_document_build_pages, build_id)
+
+        if len(pages) >= MAX_PAGES_PER_BUILD:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Build exceeds maximum of {MAX_PAGES_PER_BUILD} pages",
+            )
+
+        if page_number is None:
+            page_number = max((p.page_number for p in pages), default=0) + 1
+
+        # Use conditional write to prevent race on page_number allocation.
+        # If overwrite=False and page exists, upsert_document_build_page will raise.
+        result = await add_page_to_build(
+            file, build_id, page_number, content_type, category, trace_id, overwrite=overwrite
+        )
 
         response.headers["X-Trace-ID"] = trace_id
         return BuildPageUploadResponse(
@@ -198,7 +217,6 @@ async def upload_document_build_page(
     tags=[ApiVisualizationTag.BUILDS_PAGES],
 )
 async def upload_document_build_pages_batch(
-    request: Request,
     response: Response,
     files: list[UploadFile],
     build_id: str,
@@ -212,26 +230,70 @@ async def upload_document_build_pages_batch(
         if not trace_id:
             trace_id = str(uuid.uuid4())
 
-        # Validate every file up front so a bad file doesn't leave partial uploads behind.
-        for file in files:
-            logger.debug(f"Validating file {file.filename} in batch upload for build {build_id}")
-            await validate_file_type(file)
+        # Cheap pre-check before reading/validating all files
+        if len(files) > MAX_PAGES_PER_BUILD:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Batch exceeds maximum of {MAX_PAGES_PER_BUILD} pages",
+            )
 
-        existing_pages = get_document_build_pages(build_id)
+        # Validate all files up front - cache content types to avoid double I/O
+        content_types: list[str] = []
+        for file in files:
+            ct = await validate_file_type(file)
+            if file.size and file.size > MAX_FILE_SIZE_BYTES:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"File '{file.filename}' exceeds maximum size of {MAX_FILE_SIZE_BYTES} bytes",
+                )
+            content_types.append(ct)
+
+        existing_pages = await asyncio.to_thread(get_document_build_pages, build_id)
         next_page_number = max((p.page_number for p in existing_pages), default=0) + 1
 
-        results: list[BuildPageBatchItem] = []
-        for file in files:
-            result = await add_page_to_build(file, build_id, next_page_number, category, trace_id)
-            results.append(result)
-            next_page_number += 1
+        if len(existing_pages) + len(files) > MAX_PAGES_PER_BUILD:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Build would exceed maximum of {MAX_PAGES_PER_BUILD} pages",
+            )
+
+        # Upload pages concurrently with bounded concurrency.
+        # overwrite=False prevents concurrent batch requests from clobbering each other.
+        # TaskGroup cancels siblings on first failure (unlike asyncio.gather).
+        semaphore = asyncio.Semaphore(5)
+
+        async def _upload_one(idx: int, file: UploadFile, ct: str) -> BuildPageBatchItem:
+            async with semaphore:
+                return await add_page_to_build(
+                    file,
+                    build_id,
+                    next_page_number + idx,
+                    ct,
+                    category,
+                    trace_id,
+                    overwrite=False,
+                )
+
+        try:
+            async with asyncio.TaskGroup() as tg:
+                tasks = [
+                    tg.create_task(_upload_one(i, f, ct))
+                    for i, (f, ct) in enumerate(zip(files, content_types, strict=True))
+                ]
+            results = [t.result() for t in tasks]
+        except* HTTPException as eg:
+            raise eg.exceptions[0] from None
+        except* ImageConversionError as eg:
+            raise HTTPException(
+                status_code=400, detail=f"Image conversion failed: {eg.exceptions[0]}"
+            ) from None
 
         response.headers["X-Trace-ID"] = trace_id
         page_word = "page" if len(results) == 1 else "pages"
         return BuildPagesBatchResponse(
             build_id=build_id,
             pages_added=len(results),
-            pages=results,
+            pages=list(results),
             message=f"{len(results)} {page_word} uploaded successfully",
         )
     except HTTPException:
@@ -243,6 +305,12 @@ async def upload_document_build_pages_batch(
         raise HTTPException(status_code=500, detail="Failed to upload pages") from e
 
 
+# TODO: Split submit into two endpoints to eliminate the union response model:
+#   POST /v1/builds/{build_id}/submit      → 202, BuildSubmitAsyncResponse
+#   POST /v1/builds/{build_id}/submit/wait → 200, JobStatusResponse
+# Benefits: clean OpenAPI/SDK generation, distinct metrics, no Pydantic
+# serialization ambiguity, timeout capped below LB idle limit (25s for APIGW).
+# The sync endpoint ties up a worker — cap concurrency or document the tradeoff.
 @router.post(
     "/v1/builds/{build_id}/submit",
     name="postDocumentBuildSubmit",
@@ -251,35 +319,18 @@ async def upload_document_build_pages_batch(
     tags=[ApiVisualizationTag.BUILDS_LIFECYCLE],
 )
 async def submit_document_build(
-    request: Request,
     response: Response,
     build_id: str,
     trace_id: Annotated[str | None, Header(alias="X-Trace-ID")] = None,
     wait: bool = False,
-    timeout: int = 120,
+    timeout: Annotated[int, Query(ge=1, le=300)] = 120,
 ) -> BuildSubmitAsyncResponse | JobStatusResponse:
     """Submit a multi-page build for processing."""
     try:
-        if is_document_build_submitted(build_id):
-            raise HTTPException(
-                status_code=400,
-                detail=f"Build {build_id} has already been submitted for processing",
-            )
-
-        pages = get_document_build_pages(build_id)
+        pages = await asyncio.to_thread(get_document_build_pages, build_id)
 
         if not pages:
-            raise HTTPException(status_code=404, detail=f"Build {build_id} not found")
-
-        merged_pdf_bytes = merge_pages_to_pdf(pages)
-
-        if not trace_id:
-            trace_id = str(uuid.uuid4())
-
-        job_id = str(uuid.uuid4())
-        unique_file_name = f"document-build-{build_id}-{uuid.uuid4()}.pdf"
-        category_str = pages[0].category
-        category = DocumentCategory(category_str) if category_str else None
+            raise HTTPException(status_code=400, detail=f"Build {build_id} has no pages to submit")
 
         input_location = get_aws_config().documentai_input_location
         if not input_location:
@@ -287,8 +338,32 @@ async def submit_document_build(
                 status_code=500, detail="DOCUMENTAI_INPUT_LOCATION environment variable not set"
             )
 
+        # Validate category consistency - reject mixed categories
+        categories = {p.category for p in pages}
+        non_none_categories = {c for c in categories if c is not None}
+        if len(non_none_categories) > 1:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Mixed categories in build: {', '.join(non_none_categories)}. All pages must use the same category.",
+            )
+
+        # Atomic lock: marks build as submitted via conditional write.
+        # Raises 400 if already submitted (prevents duplicate processing).
+        # All cheap validation must happen above this line.
+        await asyncio.to_thread(mark_document_build_submitted, build_id)
+
+        merged_pdf = await asyncio.to_thread(merge_pages_to_pdf, pages)
+
+        if not trace_id:
+            trace_id = str(uuid.uuid4())
+
+        job_id = str(uuid.uuid4())
+        unique_file_name = f"document-build-{build_id}-{uuid.uuid4()}.pdf"
+        category_str = next((p.category for p in pages if p.category), None)
+        category = DocumentCategory(category_str) if category_str else None
+
         await upload_document_for_processing(
-            src_file=BytesIO(merged_pdf_bytes),
+            src_file=merged_pdf,
             dest_path=f"{input_location}/{unique_file_name}",
             original_file_name=unique_file_name,
             content_type="application/pdf",
@@ -297,8 +372,6 @@ async def submit_document_build(
             trace_id=trace_id,
             build_id=build_id,
         )
-
-        mark_document_build_submitted(build_id)
 
         response.headers["X-Trace-ID"] = trace_id
 
@@ -318,6 +391,11 @@ async def submit_document_build(
     except HTTPException:
         raise
     except Exception as e:
+        # Upload failed after lock acquired - clear submittedAt so user can retry
+        try:
+            await asyncio.to_thread(clear_submitted_at, build_id)
+        except Exception as rollback_err:
+            logger.warning(f"Failed to rollback submittedAt for build {build_id}: {rollback_err}")
         logger.error(f"Error submitting document build {build_id}: {e}")
         raise HTTPException(status_code=500, detail="Failed to submit document build") from e
 
@@ -333,10 +411,10 @@ async def get_document_build(
 ) -> BuildDetailsResponse:
     """Get document build details including all uploaded pages."""
     try:
-        pages = get_document_build_pages(build_id)
+        pages = await asyncio.to_thread(get_document_build_pages, build_id)
         build_status = (
             DocumentBuildStatus.SUBMITTED
-            if is_document_build_submitted(build_id)
+            if await asyncio.to_thread(is_document_build_submitted, build_id)
             else DocumentBuildStatus.NOT_SUBMITTED
         )
 
@@ -370,7 +448,7 @@ async def get_document_build(
 async def delete_document_build_page_endpoint(build_id: str, page_number: int) -> Response:
     """Delete a specific page from a document build."""
     try:
-        deleted = delete_document_build_page(build_id, page_number)
+        deleted = await asyncio.to_thread(delete_document_build_page, build_id, page_number)
 
         if not deleted:
             raise HTTPException(
@@ -399,7 +477,7 @@ async def delete_document_build_endpoint(
 ) -> Response:
     """Delete an entire document build and all its pages."""
     try:
-        deleted = delete_document_build(build_id)
+        deleted = await asyncio.to_thread(delete_document_build, build_id)
 
         if not deleted:
             raise HTTPException(status_code=404, detail=f"Build {build_id} not found")

@@ -100,6 +100,11 @@ async def persist_initial_record(
 # =============================================================================
 
 
+# TODO: Split upload into two endpoints to eliminate the union response model:
+#   POST /v1/documents           → 202, UploadAsyncResponse (always async)
+#   POST /v1/documents/wait      → 200, JobStatusResponse (polls for completion)
+# Same rationale as app_build.py submit split: clean OpenAPI generation,
+# distinct metrics, timeout capped below LB idle limit, no worker starvation.
 @router.post(
     "/v1/documents",
     name="postUpload",

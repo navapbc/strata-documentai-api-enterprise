@@ -1,4 +1,5 @@
 from enum import StrEnum
+from typing import ClassVar
 
 # === API ===
 API_VERSION = "v1"
@@ -39,6 +40,7 @@ S3_METADATA_KEY_BATCH_ID = UPLOAD_METADATA_KEYS["batch_id"]
 # prevent throttling. Can be raised if the BDA quota is raised.
 # TODO: make configurable via environment variable for different deployments.
 MAX_BATCH_SIZE = 25
+MAX_PAGES_PER_BUILD = 50
 MAX_SEARCH_JOB_IDS = 25
 
 # Default error message for DDB persistence (avoids leaking exception internals)
@@ -146,6 +148,23 @@ class FileValidation:
     @staticmethod
     def needs_conversion(content_type: str) -> bool:
         return content_type in FileValidation.REQUIRES_CONVERSION
+
+    CONTENT_TYPE_TO_EXT: ClassVar[dict[str, str]] = {
+        "application/pdf": "pdf",
+        "image/jpeg": "jpg",
+        "image/jpg": "jpg",
+        "image/png": "png",
+        "image/tiff": "tiff",
+        "image/bmp": "bmp",
+        "image/heic": "heic",
+        "image/heif": "heif",
+        "image/webp": "webp",
+        "image/gif": "gif",
+    }
+
+    @staticmethod
+    def get_extension(content_type: str) -> str:
+        return FileValidation.CONTENT_TYPE_TO_EXT.get(content_type, "bin")
 
 
 class ProcessStatus(StrEnum):
