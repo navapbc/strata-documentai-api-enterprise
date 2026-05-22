@@ -1,5 +1,5 @@
 # Dockerfile.lambda
-FROM public.ecr.aws/lambda/python:3.11 AS base
+FROM public.ecr.aws/lambda/python:3.13 AS base
 
 # install uv for fast dep resolution
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
@@ -12,15 +12,16 @@ COPY pyproject.toml uv.lock ./
 COPY src/documentai_api/__init__.py ./src/documentai_api/__init__.py
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-   uv export --frozen --no-dev --no-emit-project | uv pip install --system -r -
+   uv export --frozen --no-dev --no-emit-project | uv pip install --system --only-binary=:all: -r -
 
 # install lambda insights in lambda container
 # https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Lambda-Insights-Getting-Started-docker.html
-RUN curl -O https://lambda-insights-extension.s3-ap-northeast-1.amazonaws.com/amazon_linux/lambda-insights-extension.rpm && \
+RUN dnf install -y curl-minimal && \
+   curl -O https://lambda-insights-extension.s3-ap-northeast-1.amazonaws.com/amazon_linux/lambda-insights-extension.rpm && \
    rpm -U lambda-insights-extension.rpm && \
    rm -f lambda-insights-extension.rpm && \
-   yum clean all && \
-   rm -rf /var/cache/yum
+   dnf clean all && \
+   rm -rf /var/cache/dnf
 
 COPY src/documentai_api/ ./src/documentai_api/
 ENV PYTHONPATH=${LAMBDA_TASK_ROOT}/src

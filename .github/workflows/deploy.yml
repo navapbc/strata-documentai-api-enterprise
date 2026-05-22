@@ -1,0 +1,81 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - prd
+      image_tag:
+        description: "Image tag (defaults to git SHA)"
+        required: false
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set image tag
+        id: tag
+        run: echo "IMAGE_TAG=${{ inputs.image_tag || github.sha }}" >> "$GITHUB_OUTPUT"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.10.0"
+          terraform_wrapper: false
+
+      - name: Terraform init
+        working-directory: infra/environments/${{ inputs.environment }}
+        run: terraform init -input=false -reconfigure
+
+      - name: Get ECR URL
+        id: ecr_url
+        working-directory: infra/environments/${{ inputs.environment }}
+        run: echo "ECR_URL=$(terraform output -raw ecr_repository_url)" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push image
+        env:
+          ECR_URL: ${{ steps.ecr_url.outputs.ECR_URL }}
+          IMAGE_TAG: ${{ steps.tag.outputs.IMAGE_TAG }}
+        run: |
+          docker build -f documentai-api/Dockerfile.lambda -t $ECR_URL:$IMAGE_TAG documentai-api/
+          docker push $ECR_URL:$IMAGE_TAG
+
+      - name: Terraform apply
+        working-directory: infra/environments/${{ inputs.environment }}
+        env:
+          IMAGE_TAG: ${{ steps.tag.outputs.IMAGE_TAG }}
+        run: terraform apply -var="image_tag=$IMAGE_TAG" -auto-approve
+
+      - name: Show outputs
+        working-directory: infra/environments/${{ inputs.environment }}
+        run: terraform output

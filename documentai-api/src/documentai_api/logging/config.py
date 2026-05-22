@@ -16,10 +16,10 @@ try:
     import pwd
 
     def _get_uid() -> int:
-        return os.getuid()  # type: ignore[attr-defined, no-any-return]
+        return os.getuid()
 
     def _get_username() -> str:
-        return pwd.getpwuid(os.getuid()).pw_name  # type: ignore[attr-defined, no-any-return]
+        return pwd.getpwuid(os.getuid()).pw_name
 except ImportError:
     import getpass
 

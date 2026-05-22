@@ -165,7 +165,7 @@ def _verify_with_ddb(api_key: str) -> None:
 
 def _verify_with_insecure_shared_key(api_key: str) -> None:
     """Validate API key against a single shared key (for local dev only)."""
-    expected_key = get_app_env_config().api_auth_insecure_shared_key
+    expected_key = get_app_env_config().resolve_insecure_shared_key()
 
     if not expected_key:
         raise HTTPException(
@@ -288,13 +288,20 @@ def verify_api_key(api_key: str = Depends(api_key_header)) -> None:
     """Verify the API key from the request header.
 
     When API_AUTH_ENABLED is true, validates against DynamoDB api-keys table
-    with in-memory caching. Falls back to insecure shared key for local dev.
+    with in-memory caching. Falls back to insecure shared key in non-prod
+    environments when API_AUTH_ALLOW_INSECURE_FALLBACK is true.
     """
-    auth_enabled = get_app_env_config().api_auth_enabled
+    config = get_app_env_config()
 
-    if auth_enabled:
+    if not config.api_auth_enabled:
+        _verify_with_insecure_shared_key(api_key)
+        return
+
+    try:
         _verify_with_ddb(api_key)
-    else:
+    except HTTPException:
+        if not config.api_auth_allow_insecure_fallback:
+            raise
         _verify_with_insecure_shared_key(api_key)
 
 

@@ -17,46 +17,54 @@ logger = get_logger(__name__)
 
 
 def _fetch_schemas_from_bda() -> dict[str, Any]:
-    """Fetch schemas from BDA."""
-    msg = "Fetching schemas from BDA"
-    logger.info(msg)
+    """Fetch schemas from all BDA projects."""
+    import os
 
-    project_arn = get_required_env(EnvVars.BDA_PROJECT_ARN)
+    logger.info("Fetching schemas from BDA")
 
-    try:
-        # get project with blueprints
-        project_response = get_data_automation_project(project_arn)
-        blueprints = (
-            project_response.get("project", {})
-            .get("customOutputConfiguration", {})
-            .get("blueprints", [])
-        )
+    # Try multi-project map first, fall back to single project ARN
+    project_arns_json = os.getenv("BDA_PROJECT_ARNS")
+    if project_arns_json:
+        project_arns = json.loads(project_arns_json)
+    else:
+        project_arn = get_required_env(EnvVars.BDA_PROJECT_ARN)
+        project_arns = {"default": project_arn}
 
-        schemas = {}
+    schemas: dict[str, Any] = {}
 
-        for blueprint_config in blueprints:
-            blueprint_arn = blueprint_config.get("blueprintArn")
-            if not blueprint_arn:
-                continue
+    for category, project_arn in project_arns.items():
+        try:
+            project_response = get_data_automation_project(project_arn)
+            blueprints = (
+                project_response.get("project", {})
+                .get("customOutputConfiguration", {})
+                .get("blueprints", [])
+            )
 
-            blueprint_response = get_blueprint(blueprint_arn)
-            blueprint = blueprint_response.get("blueprint", {})
-            schema_str = blueprint.get("schema", "{}")
-            schema = json.loads(schema_str)
-            document_type = schema.get("class", blueprint.get("blueprintName", "Unknown"))
+            for blueprint_config in blueprints:
+                blueprint_arn = blueprint_config.get("blueprintArn")
+                if not blueprint_arn:
+                    continue
 
-            fields = _extract_fields(schema)
+                blueprint_response = get_blueprint(blueprint_arn)
+                blueprint = blueprint_response.get("blueprint", {})
+                schema_str = blueprint.get("schema", "{}")
+                schema = json.loads(schema_str)
+                document_type = schema.get("class", blueprint.get("blueprintName", "Unknown"))
 
-            schemas[document_type] = {"documentType": document_type, "fields": fields}
+                fields = _extract_fields(schema)
 
-        msg = f"Fetched {len(schemas)} schemas from BDA"
-        logger.info(msg)
-        return schemas
+                schemas[document_type] = {
+                    "documentType": document_type,
+                    "fields": fields,
+                    "category": category,
+                }
 
-    except Exception as e:
-        msg = f"Failed to fetch schemas from BDA: {e}"
-        logger.error(msg)
-        raise
+        except Exception as e:
+            logger.error(f"Failed to fetch schemas from BDA project {category}: {e}")
+
+    logger.info(f"Fetched {len(schemas)} schemas from {len(project_arns)} BDA projects")
+    return schemas
 
 
 def _extract_fields(schema: dict[str, Any]) -> list[dict[str, Any]]:

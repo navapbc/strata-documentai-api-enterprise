@@ -2,6 +2,7 @@ import os
 from enum import StrEnum
 from functools import lru_cache
 
+import boto3
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -40,6 +41,7 @@ class EnvVars(StrEnum):
 
     # === Auth / API keys ===
     API_AUTH_INSECURE_SHARED_KEY = "API_AUTH_INSECURE_SHARED_KEY"
+    API_AUTH_INSECURE_SHARED_KEY_PARAM = "API_AUTH_INSECURE_SHARED_KEY_PARAM"
     API_AUTH_ENABLED = "API_AUTH_ENABLED"
     API_AUTH_CACHE_TTL = "API_AUTH_CACHE_TTL"
     API_KEYS_TABLE_NAME = "API_KEYS_TABLE_NAME"
@@ -98,7 +100,9 @@ class AWSEnvConfig(PydanticBaseEnvConfig):
 
 class AppEnvConfig(PydanticBaseEnvConfig):
     api_auth_insecure_shared_key: str = ""
+    api_auth_insecure_shared_key_param: str | None = None
     api_auth_enabled: bool = False
+    api_auth_allow_insecure_fallback: bool = False
     api_auth_cache_ttl: int = 300
     presigned_url_expiry_seconds: int = 900
     api_base_url: str = "http://localhost:8000"
@@ -106,6 +110,18 @@ class AppEnvConfig(PydanticBaseEnvConfig):
     environment: str = "local"
     host: str = "127.0.0.1"
     port: int = 8000
+
+    def resolve_insecure_shared_key(self) -> str:
+        """Resolve the insecure shared key from SSM if param is set, else use env var."""
+        if self.api_auth_insecure_shared_key:
+            return self.api_auth_insecure_shared_key
+        if self.api_auth_insecure_shared_key_param:
+            ssm = boto3.client("ssm")
+            response = ssm.get_parameter(
+                Name=self.api_auth_insecure_shared_key_param, WithDecryption=True
+            )
+            return response["Parameter"]["Value"]
+        return ""
 
 
 @lru_cache
