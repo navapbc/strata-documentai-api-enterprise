@@ -11,6 +11,7 @@ from documentai_api.models.api_responses import JobStatusResponse
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.ddb import classify_as_failed, get_ddb_by_job_id
 from documentai_api.utils.dto import ClassificationData
+from documentai_api.utils.response_builder import build_v1_api_response
 
 logger = get_logger(__name__)
 
@@ -39,7 +40,9 @@ def get_job_status(job_id: str) -> JobStatus:
     return JobStatus(ddb_record, object_key, process_status, v1_response)
 
 
-async def poll_for_completion(job_id: str, timeout: int, request: Any = None) -> JobStatusResponse:
+async def poll_for_completion(
+    job_id: str, timeout: int, request: Any = None, include_extracted_data: bool = False
+) -> JobStatusResponse:
     """Poll for document processing completion with timeout."""
     elapsed_time = 0
     object_key = None
@@ -62,6 +65,13 @@ async def poll_for_completion(job_id: str, timeout: int, request: Any = None) ->
                 and ProcessStatus.is_completed(job_status.process_status)
                 and job_status.v1_response_json
             ):
+                if include_extracted_data and job_status.object_key:
+                    result = build_v1_api_response(
+                        object_key=job_status.object_key,
+                        job_status=job_status.process_status,
+                        include_extracted_data=True,
+                    )
+                    return JobStatusResponse(**result)
                 return JobStatusResponse(**json.loads(job_status.v1_response_json))
 
             await asyncio.sleep(polling_interval)

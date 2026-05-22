@@ -83,7 +83,7 @@ def test_create_document_asynchronous(api_client, blank_pdf_bytes):
     files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
     response = api_client.post("/v1/documents", files=files)
 
-    assert response.status_code == 200
+    assert response.status_code == 202
     data = response.json()
     assert "jobId" in data
     assert data["jobStatus"] == "not_started"
@@ -102,7 +102,7 @@ def test_create_document_with_external_fields(api_client, blank_pdf_bytes, mocke
     }
     response = api_client.post("/v1/documents", files=files, data=data)
 
-    assert response.status_code == 200
+    assert response.status_code == 202
     record = mock_insert.call_args[0][0]
     assert record.external_document_id == "test-ext-doc-id"
     assert record.external_system_id == "test-ext-sys-id"
@@ -123,7 +123,7 @@ def test_create_document_ai_consent_declined(api_client, blank_pdf_bytes, mocker
     data = {"ai_consent_flag": "false"}
     response = api_client.post("/v1/documents", files=files, data=data)
 
-    assert response.status_code == 200
+    assert response.status_code == 202
     result = response.json()
     assert result["jobStatus"] == "ai_consent_declined"
     assert "AI consent not provided" in result["message"]
@@ -133,14 +133,14 @@ def test_create_document_ai_consent_declined(api_client, blank_pdf_bytes, mocker
 
 
 def test_create_document_synchronous(api_client, blank_pdf_bytes, mocker):
-    """Test synchronous document upload (wait=true)."""
+    """Test synchronous document upload via /v1/documents/wait."""
     mock_poll = mocker.patch("documentai_api.app_documents.poll_for_completion")
     mock_poll.return_value = JobStatusResponse(
         job_id="test-id", job_status="success", message="Document processed successfully"
     )
 
     files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
-    response = api_client.post("/v1/documents?wait=true", files=files)
+    response = api_client.post("/v1/documents/wait", files=files)
 
     assert response.status_code == 200
     assert response.json()["jobStatus"] == "success"
@@ -173,7 +173,7 @@ def test_create_document_trace_id_echoed_on_success(api_client, blank_pdf_bytes)
     files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
     response = api_client.post("/v1/documents", files=files)
 
-    assert response.status_code == 200
+    assert response.status_code == 202
     assert "X-Trace-ID" in response.headers
 
 
@@ -184,7 +184,7 @@ def test_create_document_custom_trace_id(api_client, blank_pdf_bytes):
         "/v1/documents", files=files, headers={"X-Trace-ID": "test-trace-id"}
     )
 
-    assert response.status_code == 200
+    assert response.status_code == 202
     assert response.headers["X-Trace-ID"] == "test-trace-id"
 
 
@@ -219,7 +219,7 @@ def test_create_document_conversion_failure(api_client, blank_pdf_bytes, mocker)
     files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
     response = api_client.post("/v1/documents", files=files)
 
-    assert response.status_code == 200
+    assert response.status_code == 202
     result = response.json()
     assert result["jobStatus"] == "conversion_failed"
 
@@ -454,7 +454,7 @@ def test_create_document_external_system_id_invalid_chars(api_client, blank_pdf_
 
 
 def test_create_document_sync_timeout_capped(api_client, blank_pdf_bytes, mocker):
-    """Test that wait=true caps timeout to MAX_WAIT_SECONDS - ALB_TIMEOUT_BUFFER_SECONDS."""
+    """Test that /v1/documents/wait caps timeout to MAX_WAIT_SECONDS - ALB_TIMEOUT_BUFFER_SECONDS."""
     from documentai_api.config.constants import ConfigDefaults
 
     mock_poll = mocker.patch("documentai_api.app_documents.poll_for_completion")
@@ -463,7 +463,7 @@ def test_create_document_sync_timeout_capped(api_client, blank_pdf_bytes, mocker
     )
 
     files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
-    response = api_client.post("/v1/documents?wait=true&timeout=99999", files=files)
+    response = api_client.post("/v1/documents/wait?timeout=99999", files=files)
 
     assert response.status_code == 200
     expected_cap = ConfigDefaults.MAX_WAIT_SECONDS - ConfigDefaults.ALB_TIMEOUT_BUFFER_SECONDS
@@ -479,7 +479,7 @@ def test_create_document_ai_consent_none_proceeds(api_client, blank_pdf_bytes, m
     files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
     response = api_client.post("/v1/documents", files=files)
 
-    assert response.status_code == 200
+    assert response.status_code == 202
     assert response.json()["jobStatus"] == "not_started"
     mock_classify.assert_not_called()
 
@@ -537,7 +537,7 @@ def test_search_documents_with_extracted_data_incomplete_record(api_client, mock
 def test_create_document_timeout_below_minimum(api_client, blank_pdf_bytes):
     """Test that timeout=0 returns 422 due to ge=1 constraint."""
     files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
-    response = api_client.post("/v1/documents?wait=true&timeout=0", files=files)
+    response = api_client.post("/v1/documents/wait?timeout=0", files=files)
     assert response.status_code == 422
 
 
@@ -549,7 +549,7 @@ def test_create_document_sync_passes_request_to_poll(api_client, blank_pdf_bytes
     )
 
     files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
-    response = api_client.post("/v1/documents?wait=true", files=files)
+    response = api_client.post("/v1/documents/wait", files=files)
 
     assert response.status_code == 200
     assert "request" in mock_poll.call_args.kwargs
@@ -565,7 +565,7 @@ def test_create_document_sync_default_timeout(api_client, blank_pdf_bytes, mocke
     )
 
     files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
-    response = api_client.post("/v1/documents?wait=true", files=files)
+    response = api_client.post("/v1/documents/wait", files=files)
 
     assert response.status_code == 200
     expected = ConfigDefaults.MAX_WAIT_SECONDS - ConfigDefaults.ALB_TIMEOUT_BUFFER_SECONDS
@@ -683,3 +683,76 @@ def test_delete_document_s3_failure_still_marks_deleted(api_client, mocker):
 
     assert response.status_code == 204
     mock_update_ddb.assert_called_once()
+
+
+# =============================================================================
+# Wait endpoint terminal-state short-circuit
+# =============================================================================
+
+
+def test_documents_wait_consent_declined_skips_poll(api_client, blank_pdf_bytes, mocker):
+    """Documents /wait returns immediately without polling when consent is declined."""
+    mocker.patch("documentai_api.app_documents.insert_minimal_ddb_record")
+    mocker.patch("documentai_api.app_documents.classify_as_ai_consent_declined")
+    mock_poll = mocker.patch("documentai_api.app_documents.poll_for_completion")
+
+    files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
+    data = {"ai_consent_flag": "false"}
+    response = api_client.post("/v1/documents/wait", files=files, data=data)
+
+    assert response.status_code == 200
+    assert response.json()["jobStatus"] == "ai_consent_declined"
+    mock_poll.assert_not_called()
+
+
+def test_documents_wait_conversion_failed_skips_poll(api_client, blank_pdf_bytes, mocker):
+    """Documents /wait returns immediately without polling on conversion failure."""
+    from documentai_api.utils.uploads import ImageConversionError
+
+    mocker.patch("documentai_api.app_documents.insert_minimal_ddb_record")
+    mocker.patch("documentai_api.utils.ddb.classify_as_conversion_failed")
+    mocker.patch(
+        "documentai_api.utils.uploads.upload_document_for_processing",
+        side_effect=ImageConversionError("Cannot convert"),
+    )
+    mock_poll = mocker.patch("documentai_api.app_documents.poll_for_completion")
+
+    files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
+    response = api_client.post("/v1/documents/wait", files=files)
+
+    assert response.status_code == 200
+    assert response.json()["jobStatus"] == "conversion_failed"
+    mock_poll.assert_not_called()
+
+
+# =============================================================================
+# include_extracted_data forwarding on wait endpoint
+# =============================================================================
+
+
+def test_documents_wait_forwards_include_extracted_data(api_client, blank_pdf_bytes, mocker):
+    """Documents /wait passes include_extracted_data to poll_for_completion."""
+    mock_poll = mocker.patch("documentai_api.app_documents.poll_for_completion")
+    mock_poll.return_value = JobStatusResponse(
+        job_id="test-id", job_status="success", message="Done"
+    )
+
+    files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
+    response = api_client.post("/v1/documents/wait?include_extracted_data=true", files=files)
+
+    assert response.status_code == 200
+    assert mock_poll.call_args.kwargs["include_extracted_data"] is True
+
+
+def test_documents_wait_include_extracted_data_defaults_false(api_client, blank_pdf_bytes, mocker):
+    """Documents /wait defaults include_extracted_data to False."""
+    mock_poll = mocker.patch("documentai_api.app_documents.poll_for_completion")
+    mock_poll.return_value = JobStatusResponse(
+        job_id="test-id", job_status="success", message="Done"
+    )
+
+    files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
+    response = api_client.post("/v1/documents/wait", files=files)
+
+    assert response.status_code == 200
+    assert mock_poll.call_args.kwargs["include_extracted_data"] is False

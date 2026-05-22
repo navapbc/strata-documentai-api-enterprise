@@ -34,7 +34,7 @@ def test_config_endpoints_discovered(api_client):
     assert "getExtractionRules" in endpoints
     assert "getSchemaList" in endpoints
     assert "postUpload" in endpoints
-    assert "postUploadSynchronous" in endpoints
+    assert "postUploadWait" in endpoints
 
     # excluded routes should not appear
     excluded_paths = set(endpoints.values())

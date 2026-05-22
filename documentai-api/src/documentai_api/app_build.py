@@ -5,7 +5,18 @@ import os
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Form, Header, HTTPException, Query, Response, UploadFile
+from fastapi import (
+    APIRouter,
+    Depends,
+    Form,
+    Header,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    UploadFile,
+    status,
+)
 
 from documentai_api.config.constants import (
     MAX_PAGES_PER_BUILD,
@@ -15,6 +26,7 @@ from documentai_api.config.constants import (
     DocumentCategory,
     FileValidation,
     ProcessStatus,
+    UploadMethod,
 )
 from documentai_api.config.env import EnvVars, get_aws_config
 from documentai_api.logging import get_logger
@@ -28,12 +40,19 @@ from documentai_api.models.api_responses import (
     BuildSubmitAsyncResponse,
     JobStatusResponse,
 )
+from documentai_api.models.document_record import DocumentRecord
+from documentai_api.schemas.document_builds import DocumentBuilds
 from documentai_api.utils.auth import UserContext, get_user_context
+from documentai_api.utils.ddb import (
+    classify_as_ai_consent_declined,
+    insert_minimal_ddb_record,
+)
 from documentai_api.utils.document_build import (
     clear_submitted_at,
     create_document_build,
     delete_document_build,
     delete_document_build_page,
+    get_build_metadata,
     get_document_build_pages,
     is_document_build_submitted,
     mark_document_build_submitted,
@@ -305,57 +324,84 @@ async def upload_document_build_pages_batch(
         raise HTTPException(status_code=500, detail="Failed to upload pages") from e
 
 
-# TODO: Split submit into two endpoints to eliminate the union response model:
-#   POST /v1/builds/{build_id}/submit      → 202, BuildSubmitAsyncResponse
-#   POST /v1/builds/{build_id}/submit/wait → 200, JobStatusResponse
-# Benefits: clean OpenAPI/SDK generation, distinct metrics, no Pydantic
-# serialization ambiguity, timeout capped below LB idle limit (25s for APIGW).
-# The sync endpoint ties up a worker - cap concurrency or document the tradeoff.
-@router.post(
-    "/v1/builds/{build_id}/submit",
-    name="postDocumentBuildSubmit",
-    dependencies=[Depends(validate_build_tenant_access)],
-    response_model=BuildSubmitAsyncResponse | JobStatusResponse,
-    tags=[ApiVisualizationTag.BUILDS_LIFECYCLE],
-)
-async def submit_document_build(
-    response: Response,
-    build_id: str,
-    trace_id: Annotated[str | None, Header(alias="X-Trace-ID")] = None,
-    wait: bool = False,
-    timeout: Annotated[int, Query(ge=1, le=300)] = 120,
-) -> BuildSubmitAsyncResponse | JobStatusResponse:
-    """Submit a multi-page build for processing."""
-    try:
+class _SubmitResult:
+    """Result of _submit_build."""
+
+    __slots__ = ("job_id", "job_status", "message", "page_count")
+
+    def __init__(self, job_id: str, job_status: str, message: str, page_count: int) -> None:
+        self.job_id = job_id
+        self.job_status = job_status
+        self.message = message
+        self.page_count = page_count
+
+
+async def _submit_build(response: Response, build_id: str, trace_id: str | None) -> _SubmitResult:
+    """Shared submit logic. Validates, merges, uploads. Returns _SubmitResult."""
+    if not trace_id:
+        trace_id = str(uuid.uuid4())
+    response.headers["X-Trace-ID"] = trace_id
+
+    # Check AI consent before any heavy work
+    build_metadata = await asyncio.to_thread(get_build_metadata, build_id)
+    if build_metadata and build_metadata.get(DocumentBuilds.AI_CONSENT_FLAG) is False:
+        job_id = str(uuid.uuid4())
+        ddb_key = f"document-build-{build_id}-{job_id}.pdf"
+        category_str = build_metadata.get(DocumentBuilds.CATEGORY)
+        category = DocumentCategory(category_str) if category_str else None
+
+        record = DocumentRecord(
+            ddb_key=ddb_key,
+            original_file_name=f"build-{build_id}.pdf",
+            job_id=job_id,
+            category=category,
+            trace_id=trace_id,
+            content_type="application/pdf",
+            external_document_id=build_metadata.get(DocumentBuilds.EXTERNAL_DOCUMENT_ID),
+            external_system_id=build_metadata.get(DocumentBuilds.EXTERNAL_SYSTEM_ID),
+            ai_consent_flag=False,
+            upload_method=UploadMethod.BUILD,
+            tenant_id=build_metadata[DocumentBuilds.TENANT_ID],
+            client_name=build_metadata[DocumentBuilds.CLIENT_NAME],
+        )
+        await asyncio.to_thread(insert_minimal_ddb_record, record)
+        await asyncio.to_thread(classify_as_ai_consent_declined, object_key=ddb_key)
+
         pages = await asyncio.to_thread(get_document_build_pages, build_id)
+        return _SubmitResult(
+            job_id=job_id,
+            job_status=ProcessStatus.AI_CONSENT_DECLINED.value,
+            message="Document not processed - AI consent not provided",
+            page_count=len(pages),
+        )
 
-        if not pages:
-            raise HTTPException(status_code=400, detail=f"Build {build_id} has no pages to submit")
+    pages = await asyncio.to_thread(get_document_build_pages, build_id)
 
-        input_location = get_aws_config().documentai_input_location
-        if not input_location:
-            raise HTTPException(
-                status_code=500, detail="DOCUMENTAI_INPUT_LOCATION environment variable not set"
-            )
+    if not pages:
+        raise HTTPException(status_code=400, detail=f"Build {build_id} has no pages to submit")
 
-        # Validate category consistency - reject mixed categories
-        categories = {p.category for p in pages}
-        non_none_categories = {c for c in categories if c is not None}
-        if len(non_none_categories) > 1:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Mixed categories in build: {', '.join(non_none_categories)}. All pages must use the same category.",
-            )
+    input_location = get_aws_config().documentai_input_location
+    if not input_location:
+        raise HTTPException(
+            status_code=500, detail="DOCUMENTAI_INPUT_LOCATION environment variable not set"
+        )
 
-        # Atomic lock: marks build as submitted via conditional write.
-        # Raises 400 if already submitted (prevents duplicate processing).
-        # All cheap validation must happen above this line.
-        await asyncio.to_thread(mark_document_build_submitted, build_id)
+    # Validate category consistency - reject mixed categories
+    categories = {p.category for p in pages}
+    non_none_categories = {c for c in categories if c is not None}
+    if len(non_none_categories) > 1:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Mixed categories in build: {', '.join(non_none_categories)}. All pages must use the same category.",
+        )
 
+    # Atomic lock: marks build as submitted via conditional write.
+    # Raises 400 if already submitted (prevents duplicate processing).
+    # All cheap validation must happen above this line.
+    await asyncio.to_thread(mark_document_build_submitted, build_id)
+
+    try:
         merged_pdf = await asyncio.to_thread(merge_pages_to_pdf, pages)
-
-        if not trace_id:
-            trace_id = str(uuid.uuid4())
 
         job_id = str(uuid.uuid4())
         unique_file_name = f"document-build-{build_id}-{uuid.uuid4()}.pdf"
@@ -373,21 +419,12 @@ async def submit_document_build(
             build_id=build_id,
         )
 
-        response.headers["X-Trace-ID"] = trace_id
-
-        if not wait:
-            return BuildSubmitAsyncResponse(
-                job_id=job_id,
-                build_id=build_id,
-                job_status=ProcessStatus.NOT_STARTED.value,
-                message="Document build submitted successfully",
-                page_count=len(pages),
-            )
-        else:
-            # Lazy import: app.py imports this module's router, so avoid a top-level cycle.
-            from documentai_api.utils.jobs import poll_for_completion
-
-            return await poll_for_completion(job_id, timeout)
+        return _SubmitResult(
+            job_id=job_id,
+            job_status=ProcessStatus.NOT_STARTED.value,
+            message="Document build submitted successfully",
+            page_count=len(pages),
+        )
     except HTTPException:
         raise
     except Exception as e:
@@ -398,6 +435,62 @@ async def submit_document_build(
             logger.warning(f"Failed to rollback submittedAt for build {build_id}: {rollback_err}")
         logger.error(f"Error submitting document build {build_id}: {e}")
         raise HTTPException(status_code=500, detail="Failed to submit document build") from e
+
+
+@router.post(
+    "/v1/builds/{build_id}/submit",
+    name="postDocumentBuildSubmit",
+    status_code=status.HTTP_202_ACCEPTED,
+    dependencies=[Depends(validate_build_tenant_access)],
+    tags=[ApiVisualizationTag.BUILDS_LIFECYCLE],
+)
+async def submit_document_build(
+    response: Response,
+    build_id: str,
+    trace_id: Annotated[str | None, Header(alias="X-Trace-ID")] = None,
+) -> BuildSubmitAsyncResponse:
+    """Submit a multi-page build for processing (fire-and-forget)."""
+    result = await _submit_build(response, build_id, trace_id)
+    return BuildSubmitAsyncResponse(
+        job_id=result.job_id,
+        build_id=build_id,
+        job_status=result.job_status,
+        message=result.message,
+        page_count=result.page_count,
+    )
+
+
+@router.post(
+    "/v1/builds/{build_id}/submit/wait",
+    name="postDocumentBuildSubmitWait",
+    dependencies=[Depends(validate_build_tenant_access)],
+    tags=[ApiVisualizationTag.BUILDS_LIFECYCLE],
+)
+async def submit_document_build_wait(
+    request: Request,
+    response: Response,
+    build_id: str,
+    trace_id: Annotated[str | None, Header(alias="X-Trace-ID")] = None,
+    include_extracted_data: bool = False,
+    timeout: Annotated[int, Query(ge=1)] = ConfigDefaults.MAX_WAIT_SECONDS
+    - ConfigDefaults.ALB_TIMEOUT_BUFFER_SECONDS,
+) -> JobStatusResponse:
+    """Submit a multi-page build and poll until processing completes or timeout."""
+    from documentai_api.utils.jobs import poll_for_completion
+
+    result = await _submit_build(response, build_id, trace_id)
+    if ProcessStatus.is_classified(result.job_status):
+        return JobStatusResponse(
+            job_id=result.job_id,
+            job_status=result.job_status,
+            message=result.message,
+        )
+    safe_timeout = min(
+        timeout, ConfigDefaults.MAX_WAIT_SECONDS - ConfigDefaults.ALB_TIMEOUT_BUFFER_SECONDS
+    )
+    return await poll_for_completion(
+        result.job_id, safe_timeout, request=request, include_extracted_data=include_extracted_data
+    )
 
 
 @router.get(

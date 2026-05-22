@@ -48,6 +48,7 @@ def mock_document_build_submit():
     import io
 
     with (
+        patch("documentai_api.app_build.get_build_metadata", return_value=None),
         patch("documentai_api.app_build.get_document_build_pages") as mock_get_pages,
         patch("documentai_api.app_build.merge_pages_to_pdf") as mock_merge,
         patch(
@@ -205,7 +206,7 @@ def test_submit_document_build_not_found(document_build_ddb_table, mock_document
 
 
 def test_submit_document_build_synchronous(document_build_ddb_table, mock_document_build_submit):
-    """Test synchronous document build submission (wait=true)."""
+    """Test synchronous document build submission via /submit/wait."""
     from documentai_api.models.api_responses import JobStatusResponse
 
     with patch(
@@ -221,7 +222,7 @@ def test_submit_document_build_synchronous(document_build_ddb_table, mock_docume
             message="Processing complete",
         )
 
-        response = client.post("/v1/builds/test-build-id/submit?wait=true")
+        response = client.post("/v1/builds/test-build-id/submit/wait")
 
     assert response.status_code == 200
     assert response.json()["jobStatus"] == "success"
@@ -238,7 +239,7 @@ def test_submit_document_build_with_category(document_build_ddb_table, mock_docu
 
     response = client.post("/v1/builds/test-build-id/submit")
 
-    assert response.status_code == 200
+    assert response.status_code == 202
     mock_document_build_submit["upload"].assert_called_once()
 
     # verify category was converted to enum
@@ -296,7 +297,7 @@ def test_submit_document_build_success(document_build_ddb_table, mock_document_b
 
     response = client.post("/v1/builds/test-build-id/submit")
 
-    assert response.status_code == 200
+    assert response.status_code == 202
     result = response.json()
     assert "jobId" in result
     assert result["buildId"] == "test-build-id"
@@ -598,7 +599,7 @@ def test_submit_document_build_category_with_none_pages(
 
     response = client.post("/v1/builds/test-build-id/submit")
 
-    assert response.status_code == 200
+    assert response.status_code == 202
 
 
 def test_upload_document_build_page_file_size_cap(
@@ -661,7 +662,7 @@ def test_submit_category_substitution_picks_first_non_none(
 
     response = client.post("/v1/builds/test-build-id/submit")
 
-    assert response.status_code == 200
+    assert response.status_code == 202
     call_kwargs = mock_document_build_submit["upload"].call_args.kwargs
     assert call_kwargs["user_provided_document_category"] == DocumentCategory.INCOME
 
@@ -676,8 +677,8 @@ def test_upload_document_build_page_number_validation(document_build_ddb_table):
 
 
 def test_submit_document_build_timeout_validation(document_build_ddb_table):
-    """timeout=999 is rejected by Query(ge=1, le=300) validation."""
-    response = client.post("/v1/builds/test-build-id/submit?timeout=999")
+    """timeout=0 is rejected by Query(ge=1) validation on /submit/wait."""
+    response = client.post("/v1/builds/test-build-id/submit/wait?timeout=0")
 
     assert response.status_code == 422
 
@@ -807,10 +808,10 @@ def test_upload_document_build_page_number_lower_bound(document_build_ddb_table,
     assert response.status_code == 422
 
 
-@pytest.mark.parametrize("timeout", [0, -1, 301, 999])
+@pytest.mark.parametrize("timeout", [0, -1])
 def test_submit_document_build_timeout_bounds(document_build_ddb_table, timeout):
-    """Timeout outside [1, 300] is rejected by Query(ge=1, le=300)."""
-    response = client.post(f"/v1/builds/test-build-id/submit?timeout={timeout}")
+    """Timeout below 1 is rejected by Query(ge=1) on /submit/wait."""
+    response = client.post(f"/v1/builds/test-build-id/submit/wait?timeout={timeout}")
 
     assert response.status_code == 422
 
@@ -859,7 +860,7 @@ def test_submit_trace_id_echoed(document_build_ddb_table, mock_document_build_su
         "/v1/builds/test-build-id/submit", headers={"X-Trace-ID": "trace-submit"}
     )
 
-    assert response.status_code == 200
+    assert response.status_code == 202
     assert response.headers.get("X-Trace-ID") == "trace-submit"
 
 
@@ -920,3 +921,191 @@ def test_submit_document_build_rollback_failure_still_returns_500(
     assert response.status_code == 500
     assert "Failed to submit" in response.json()["detail"]
     mock_clear.assert_called_once_with("test-build-id")
+
+
+# =============================================================================
+# Build consent-declined path
+# =============================================================================
+
+
+def test_submit_build_ai_consent_declined(document_build_ddb_table):
+    """When ai_consent_flag=False on build metadata, submit creates a DDB record and returns terminal status."""
+    from documentai_api.config.constants import UploadMethod
+    from documentai_api.schemas.document_builds import DocumentBuilds
+
+    build_metadata = {
+        DocumentBuilds.BUILD_ID: "test-build-id",
+        DocumentBuilds.AI_CONSENT_FLAG: False,
+        DocumentBuilds.TENANT_ID: "test-tenant",
+        DocumentBuilds.CLIENT_NAME: "test-client",
+        DocumentBuilds.CATEGORY: "income",
+        DocumentBuilds.EXTERNAL_DOCUMENT_ID: "ext-doc",
+        DocumentBuilds.EXTERNAL_SYSTEM_ID: "ext-sys",
+    }
+
+    with (
+        patch("documentai_api.app_build.get_build_metadata", return_value=build_metadata),
+        patch("documentai_api.app_build.insert_minimal_ddb_record") as mock_insert,
+        patch("documentai_api.app_build.classify_as_ai_consent_declined") as mock_classify,
+        patch("documentai_api.app_build.get_document_build_pages") as mock_get_pages,
+    ):
+        mock_get_pages.return_value = [
+            create_page_metadata(1, category="income"),
+            create_page_metadata(2, category="income"),
+        ]
+        response = client.post("/v1/builds/test-build-id/submit")
+
+    assert response.status_code == 202
+    result = response.json()
+
+    # Returns a real job_id (not the build_id)
+    assert result["jobId"] != "test-build-id"
+    assert result["jobStatus"] == "ai_consent_declined"
+    assert "AI consent not provided" in result["message"]
+    assert result["pageCount"] == 2
+
+    # DDB record was created with correct fields
+    mock_insert.assert_called_once()
+    record = mock_insert.call_args[0][0]
+    assert record.upload_method == UploadMethod.BUILD
+    assert record.ai_consent_flag is False
+    assert record.tenant_id == "test-tenant"
+    assert record.client_name == "test-client"
+    assert record.external_document_id == "ext-doc"
+    assert record.external_system_id == "ext-sys"
+    assert record.job_id == result["jobId"]
+    assert record.ddb_key.endswith(".pdf")
+
+    # classify_as_ai_consent_declined was called
+    mock_classify.assert_called_once()
+
+
+def test_submit_build_ai_consent_none_proceeds(
+    document_build_ddb_table, mock_document_build_submit
+):
+    """When ai_consent_flag is None (not set), submit proceeds normally."""
+    with patch("documentai_api.app_build.get_build_metadata", return_value={"aiConsentFlag": None}):
+        mock_document_build_submit["get_pages"].return_value = [
+            create_page_metadata(1, category="income"),
+        ]
+        response = client.post("/v1/builds/test-build-id/submit")
+
+    assert response.status_code == 202
+    assert response.json()["jobStatus"] == "not_started"
+
+
+# =============================================================================
+# Wait endpoint terminal-state short-circuit
+# =============================================================================
+
+
+def test_build_submit_wait_consent_declined_skips_poll(document_build_ddb_table):
+    """Build /submit/wait returns immediately without polling on consent decline."""
+    from documentai_api.schemas.document_builds import DocumentBuilds
+
+    build_metadata = {
+        DocumentBuilds.BUILD_ID: "test-build-id",
+        DocumentBuilds.AI_CONSENT_FLAG: False,
+        DocumentBuilds.TENANT_ID: "test-tenant",
+        DocumentBuilds.CLIENT_NAME: "test-client",
+    }
+
+    with (
+        patch("documentai_api.app_build.get_build_metadata", return_value=build_metadata),
+        patch("documentai_api.app_build.insert_minimal_ddb_record"),
+        patch("documentai_api.app_build.classify_as_ai_consent_declined"),
+        patch("documentai_api.app_build.get_document_build_pages", return_value=[]),
+        patch("documentai_api.utils.jobs.poll_for_completion", new_callable=AsyncMock) as mock_poll,
+    ):
+        response = client.post("/v1/builds/test-build-id/submit/wait")
+
+    assert response.status_code == 200
+    assert response.json()["jobStatus"] == "ai_consent_declined"
+    mock_poll.assert_not_called()
+
+
+# =============================================================================
+# include_extracted_data forwarding on wait endpoints
+# =============================================================================
+
+
+def test_build_submit_wait_forwards_include_extracted_data(
+    document_build_ddb_table, mock_document_build_submit
+):
+    """Build /submit/wait passes include_extracted_data to poll_for_completion."""
+    from documentai_api.models.api_responses import JobStatusResponse
+
+    with patch(
+        "documentai_api.utils.jobs.poll_for_completion",
+        new_callable=AsyncMock,
+    ) as mock_poll:
+        mock_document_build_submit["get_pages"].return_value = [
+            create_page_metadata(1, category="income"),
+        ]
+        mock_poll.return_value = JobStatusResponse(
+            job_id="test-job-id", job_status="success", message="Done"
+        )
+
+        response = client.post("/v1/builds/test-build-id/submit/wait?include_extracted_data=true")
+
+    assert response.status_code == 200
+    assert mock_poll.call_args.kwargs["include_extracted_data"] is True
+
+
+# =============================================================================
+# Trace-ID on early-failure paths in _submit_build
+# Note: FastAPI's default exception handler builds a fresh JSONResponse for
+# HTTPException, dropping headers set on the Response object. These tests
+# document that the trace-id IS set before the exception (so middleware can
+# echo it), but won't appear in the response without a custom exception handler.
+# =============================================================================
+
+
+def test_submit_build_trace_id_on_no_pages_error(
+    document_build_ddb_table, mock_document_build_submit
+):
+    """X-Trace-ID is set before no-pages error (dropped by default exception handler)."""
+    mock_document_build_submit["get_pages"].return_value = []
+
+    response = client.post(
+        "/v1/builds/nonexistent-build/submit",
+        headers={"X-Trace-ID": "trace-no-pages"},
+    )
+
+    assert response.status_code == 400
+    # Header is dropped by FastAPI's default HTTPException handler.
+    # A trace-id middleware is needed to echo it on error responses.
+
+
+def test_submit_build_trace_id_on_mixed_categories_error(
+    document_build_ddb_table, mock_document_build_submit
+):
+    """X-Trace-ID is set before mixed-categories error."""
+    mock_document_build_submit["get_pages"].return_value = [
+        create_page_metadata(1, category="income"),
+        create_page_metadata(2, category="identity"),
+    ]
+
+    response = client.post(
+        "/v1/builds/test-build-id/submit",
+        headers={"X-Trace-ID": "trace-mixed"},
+    )
+
+    assert response.status_code == 400
+
+
+def test_submit_build_trace_id_on_env_missing_error(
+    document_build_ddb_table, mock_document_build_submit
+):
+    """X-Trace-ID is set before env-missing error."""
+    mock_document_build_submit["get_pages"].return_value = [
+        create_page_metadata(1, category="income"),
+    ]
+    mock_document_build_submit["aws_config"].return_value.documentai_input_location = None
+
+    response = client.post(
+        "/v1/builds/test-build-id/submit",
+        headers={"X-Trace-ID": "trace-env-missing"},
+    )
+
+    assert response.status_code == 500

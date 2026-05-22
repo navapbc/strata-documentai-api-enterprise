@@ -13,6 +13,7 @@ from fastapi import (
     Request,
     Response,
     UploadFile,
+    status,
 )
 
 from documentai_api.annotations import (
@@ -67,18 +68,18 @@ router = APIRouter(dependencies=[Depends(get_user_context)])
 # =============================================================================
 
 
-# TODO: Split upload into two endpoints to eliminate the union response model:
-#   POST /v1/documents           → 202, UploadAsyncResponse (always async)
-#   POST /v1/documents/wait      → 200, JobStatusResponse (polls for completion)
-# Same rationale as app_build.py submit split: clean OpenAPI generation,
-# distinct metrics, timeout capped below LB idle limit, no worker starvation.
-@router.post(
-    "/v1/documents",
-    name="postUpload",
-    tags=[ApiVisualizationTag.DOCUMENTS_UPLOAD],
-)
-async def create_document(
-    request: Request,
+class _UploadResult:
+    """Result of _upload_document: job_id + status/message."""
+
+    __slots__ = ("job_id", "job_status", "message")
+
+    def __init__(self, job_id: str, job_status: str, message: str) -> None:
+        self.job_id = job_id
+        self.job_status = job_status
+        self.message = message
+
+
+async def _upload_document(
     response: Response,
     file: UploadFile,
     auth: AuthUser,
@@ -87,21 +88,15 @@ async def create_document(
     external_document_id: ExternalDocumentId = None,
     external_system_id: ExternalSystemId = None,
     ai_consent_flag: AiConsentFlag = True,
-    wait: bool = False,
-    timeout: Annotated[int, Query(ge=1)] = ConfigDefaults.MAX_WAIT_SECONDS
-    - ConfigDefaults.ALB_TIMEOUT_BUFFER_SECONDS,
-) -> UploadAsyncResponse | JobStatusResponse:
-    """Upload a document for processing."""
+) -> _UploadResult:
+    """Shared upload logic. Returns an _UploadResult with job_id, status, and message."""
     if not trace_id:
         trace_id = str(uuid.uuid4())
 
-    # Set trace ID early so it's included on the success path. Note: for HTTPException
-    # responses, FastAPI builds a fresh JSONResponse and this header is dropped -  a
-    # middleware or custom exception handler is responsible for echoing it on errors.
     response.headers["X-Trace-ID"] = trace_id
 
     actual_content_type = await validate_upload(file)
-    filename: str = file.filename  # type: ignore[assignment]  # validate_upload raises if None
+    filename: str = file.filename  # type: ignore[assignment]
 
     logger.info(
         "Processing document",
@@ -113,11 +108,6 @@ async def create_document(
     )
 
     job_id = str(uuid.uuid4())
-    # TODO: If external_document_id and external_system_id are provided, check for
-    # existing record with same combo for this tenant to prevent duplicates.
-    # Requires a GSI on (tenant_id, external_system_id#external_document_id) or a
-    # separate dedup lookup table with a short TTL (e.g. 24h) to catch retries
-    # without conflicting with document retention TTLs.
     unique_file_name = generate_unique_filename(filename, job_id)
     ddb_key = unique_file_name
 
@@ -144,10 +134,9 @@ async def create_document(
         logger.exception("Failed to create tracking record")
         raise HTTPException(status_code=500, detail="Failed to create upload record") from None
 
-    # Short-circuit if AI consent not provided
     if ai_consent_flag is False:
         await asyncio.to_thread(classify_as_ai_consent_declined, object_key=ddb_key)
-        return JobStatusResponse(
+        return _UploadResult(
             job_id=job_id,
             job_status=ProcessStatus.AI_CONSENT_DECLINED.value,
             message="Document not processed - AI consent not provided",
@@ -165,23 +154,96 @@ async def create_document(
             ddb_key=ddb_key,
         )
     except ImageConversionError:
-        return JobStatusResponse(
+        return _UploadResult(
             job_id=job_id,
             job_status=ProcessStatus.CONVERSION_FAILED.value,
             message="Image conversion failed",
         )
 
-    if not wait:
-        return UploadAsyncResponse(
-            job_id=job_id,
-            job_status=ProcessStatus.NOT_STARTED.value,
-            message="Document uploaded successfully",
+    return _UploadResult(
+        job_id=job_id,
+        job_status=ProcessStatus.NOT_STARTED.value,
+        message="Document uploaded successfully",
+    )
+
+
+@router.post(
+    "/v1/documents",
+    name="postUpload",
+    status_code=status.HTTP_202_ACCEPTED,
+    tags=[ApiVisualizationTag.DOCUMENTS_UPLOAD],
+)
+async def create_document(
+    response: Response,
+    file: UploadFile,
+    auth: AuthUser,
+    category: CategoryField = None,
+    trace_id: TraceId = None,
+    external_document_id: ExternalDocumentId = None,
+    external_system_id: ExternalSystemId = None,
+    ai_consent_flag: AiConsentFlag = True,
+) -> UploadAsyncResponse:
+    """Upload a document for processing (fire-and-forget)."""
+    result = await _upload_document(
+        response,
+        file,
+        auth,
+        category,
+        trace_id,
+        external_document_id,
+        external_system_id,
+        ai_consent_flag,
+    )
+    return UploadAsyncResponse(
+        job_id=result.job_id,
+        job_status=result.job_status,
+        message=result.message,
+    )
+
+
+@router.post(
+    "/v1/documents/wait",
+    name="postUploadWait",
+    tags=[ApiVisualizationTag.DOCUMENTS_UPLOAD],
+)
+async def create_document_wait(
+    request: Request,
+    response: Response,
+    file: UploadFile,
+    auth: AuthUser,
+    category: CategoryField = None,
+    trace_id: TraceId = None,
+    external_document_id: ExternalDocumentId = None,
+    external_system_id: ExternalSystemId = None,
+    ai_consent_flag: AiConsentFlag = True,
+    include_extracted_data: bool = False,
+    timeout: Annotated[int, Query(ge=1)] = ConfigDefaults.MAX_WAIT_SECONDS
+    - ConfigDefaults.ALB_TIMEOUT_BUFFER_SECONDS,
+) -> JobStatusResponse:
+    """Upload a document and poll until processing completes or timeout."""
+    result = await _upload_document(
+        response,
+        file,
+        auth,
+        category,
+        trace_id,
+        external_document_id,
+        external_system_id,
+        ai_consent_flag,
+    )
+    # Terminal states (consent declined, conversion failed) — return immediately.
+    if ProcessStatus.is_classified(result.job_status):
+        return JobStatusResponse(
+            job_id=result.job_id,
+            job_status=result.job_status,
+            message=result.message,
         )
-    else:
-        safe_timeout = min(
-            timeout, ConfigDefaults.MAX_WAIT_SECONDS - ConfigDefaults.ALB_TIMEOUT_BUFFER_SECONDS
-        )
-        return await poll_for_completion(job_id, safe_timeout, request=request)
+    safe_timeout = min(
+        timeout, ConfigDefaults.MAX_WAIT_SECONDS - ConfigDefaults.ALB_TIMEOUT_BUFFER_SECONDS
+    )
+    return await poll_for_completion(
+        result.job_id, safe_timeout, request=request, include_extracted_data=include_extracted_data
+    )
 
 
 @router.get(

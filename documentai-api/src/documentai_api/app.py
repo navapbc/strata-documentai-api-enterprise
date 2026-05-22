@@ -100,8 +100,6 @@ async def health() -> HealthResponse:
 @app.get("/config", dependencies=[Depends(verify_api_key)])
 def get_config() -> ConfigResponse:
     endpoints = discover_endpoints(app)
-    if "postUpload" in endpoints:
-        endpoints["postUploadSynchronous"] = f"{endpoints['postUpload']}?wait=true"
 
     app_config = get_app_env_config()
     return ConfigResponse(
