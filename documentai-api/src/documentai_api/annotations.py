@@ -6,10 +6,11 @@ Import and use directly as parameter type hints.
 
 from typing import Annotated
 
-from fastapi import Depends, Form, Header
+from fastapi import Depends, Form, Header, Query
 from pydantic import StringConstraints
 
 from documentai_api.config.constants import (
+    DictionaryFormatType,
     DocumentCategory,
 )
 from documentai_api.utils.auth import UserContext, get_user_context
@@ -47,3 +48,7 @@ AiConsentFlag = Annotated[
         )
     ),
 ]
+
+
+# Query params
+OutputFormat = Annotated[DictionaryFormatType, Query(alias="format")]

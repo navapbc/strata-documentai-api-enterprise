@@ -60,7 +60,7 @@ async def create_presigned_upload_url(
     category: CategoryField = None,
     trace_id: TraceId = None,
     external_document_id: ExternalDocumentId = None,
-    # ai_consent_flag is not accepted here — presigned URLs are only generated
+    # ai_consent_flag is not accepted here - presigned URLs are only generated
     # when the caller intends to upload for processing. If consent is declined,
     # use POST /v1/documents with ai_consent_flag=false instead (stores metadata
     # without uploading to S3).

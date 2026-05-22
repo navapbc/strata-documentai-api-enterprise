@@ -34,7 +34,7 @@ def test_config_endpoints_discovered(api_client):
     assert "getExtractionRules" in endpoints
     assert "getSchemaList" in endpoints
     assert "postUpload" in endpoints
-    assert "postUploadSyncronous" in endpoints
+    assert "postUploadSynchronous" in endpoints
 
     # excluded routes should not appear
     excluded_paths = set(endpoints.values())
@@ -201,3 +201,38 @@ async def test_poll_for_completion_polling_error(mocker):
     result = await poll_for_completion("test-job-id", timeout=10)
 
     assert result.job_status == "success"
+
+
+def test_config_api_url_from_env(api_client):
+    """api_url in /config comes from API_BASE_URL env, not request host."""
+    response = api_client.get("/config")
+    data = response.json()
+    assert "apiUrl" in data
+    assert data["apiUrl"] == "http://localhost:8000"
+
+
+def test_cors_preflight(api_client):
+    """OPTIONS preflight returns correct CORS headers."""
+    response = api_client.options(
+        "/v1/config/extraction-rules",
+        headers={
+            "Origin": "https://example.com",
+            "Access-Control-Request-Method": "PUT",
+            "Access-Control-Request-Headers": "Content-Type, x-api-key, X-Trace-ID",
+        },
+    )
+
+    assert response.status_code == 200
+    assert "PUT" in response.headers["access-control-allow-methods"]
+    assert "x-api-key" in response.headers["access-control-allow-headers"]
+    assert "X-Trace-ID" in response.headers["access-control-allow-headers"]
+    # Credentials should NOT be allowed (was the bug we fixed)
+    assert response.headers.get("access-control-allow-credentials", "false") != "true"
+
+
+def test_cors_expose_headers(api_client):
+    """Actual responses expose X-Trace-ID for browser JS to read."""
+    response = api_client.get("/health", headers={"Origin": "https://example.com"})
+
+    assert response.status_code == 200
+    assert "X-Trace-ID" in response.headers.get("access-control-expose-headers", "")

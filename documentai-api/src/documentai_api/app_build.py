@@ -310,7 +310,7 @@ async def upload_document_build_pages_batch(
 #   POST /v1/builds/{build_id}/submit/wait → 200, JobStatusResponse
 # Benefits: clean OpenAPI/SDK generation, distinct metrics, no Pydantic
 # serialization ambiguity, timeout capped below LB idle limit (25s for APIGW).
-# The sync endpoint ties up a worker — cap concurrency or document the tradeoff.
+# The sync endpoint ties up a worker - cap concurrency or document the tradeoff.
 @router.post(
     "/v1/builds/{build_id}/submit",
     name="postDocumentBuildSubmit",

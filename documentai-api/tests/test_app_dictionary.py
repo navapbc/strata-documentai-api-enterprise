@@ -3,9 +3,7 @@ from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
 
-from documentai_api.app import (
-    app,
-)
+from documentai_api.app import app
 
 client = TestClient(app)
 
@@ -34,7 +32,7 @@ def _disable_auth(disable_auth):
 @pytest.fixture
 def mock_schemas():
     with (
-        patch("documentai_api.app.get_all_schemas", return_value=MOCK_SCHEMAS),
+        patch("documentai_api.app_dictionary.get_all_schemas", return_value=MOCK_SCHEMAS),
         patch("documentai_api.utils.schemas.get_all_schemas", return_value=MOCK_SCHEMAS),
     ):
         yield
@@ -73,7 +71,7 @@ def test_schema_single(mock_schemas):
 
 def test_schema_not_found():
     """Test 404 for unknown schema."""
-    with patch("documentai_api.app.get_document_schema", return_value=None):
+    with patch("documentai_api.app_dictionary.get_document_schema", return_value=None):
         response = client.get("/v1/dictionary/schemas/Unknown")
 
     assert response.status_code == 404
@@ -306,3 +304,54 @@ def test_document_categories_csv():
     lines = [line for line in response.text.splitlines() if line]
     assert lines[0] == '"category"'
     assert any("income" in line for line in lines)
+
+
+def test_list_schemas_503_on_failure(mocker):
+    """list_schemas returns 503 when BDA is unavailable."""
+    mocker.patch("documentai_api.app_dictionary.get_all_schemas", side_effect=Exception("BDA down"))
+    response = client.get("/v1/dictionary/schemas")
+    assert response.status_code == 503
+
+
+def test_get_schema_detail_malformed(mocker):
+    """get_schema_detail returns 500 when schema is missing 'fields' key."""
+    mocker.patch(
+        "documentai_api.app_dictionary.get_document_schema",
+        return_value={"documentType": "W2"},  # no 'fields' key
+    )
+    response = client.get("/v1/dictionary/schemas/W2")
+    assert response.status_code == 500
+    assert "malformed" in response.json()["detail"].lower()
+
+
+def test_get_all_fields_503_on_failure(mocker):
+    """get_all_schema_fields returns 503 when BDA is unavailable."""
+    mocker.patch("documentai_api.app_dictionary.get_all_fields", side_effect=Exception("BDA down"))
+    response = client.get("/v1/dictionary/fields")
+    assert response.status_code == 503
+
+
+def test_search_fields_503_on_failure(mocker):
+    """search_schema_fields returns 503 when BDA is unavailable."""
+    mocker.patch("documentai_api.app_dictionary.get_all_fields", side_effect=Exception("BDA down"))
+    response = client.get("/v1/dictionary/search?q=ssn")
+    assert response.status_code == 503
+
+
+def test_get_schema_detail_503_on_failure(mocker):
+    """get_schema_detail returns 503 when BDA is unavailable."""
+    mocker.patch(
+        "documentai_api.app_dictionary.get_document_schema", side_effect=Exception("BDA down")
+    )
+    response = client.get("/v1/dictionary/schemas/W2")
+    assert response.status_code == 503
+
+
+def test_get_response_codes_503_on_failure(mocker):
+    """get_response_codes returns 503 when response codes unavailable."""
+    mocker.patch(
+        "documentai_api.utils.response_codes.ResponseCodes.get_all",
+        side_effect=Exception("unavailable"),
+    )
+    response = client.get("/v1/dictionary/response-codes")
+    assert response.status_code == 503

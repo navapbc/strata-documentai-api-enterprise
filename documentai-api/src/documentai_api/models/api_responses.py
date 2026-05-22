@@ -4,7 +4,7 @@
 
 from typing import Any
 
-from pydantic import AwareDatetime, HttpUrl
+from pydantic import AwareDatetime
 
 from documentai_api.models.base import BaseApiResponse
 
@@ -33,7 +33,7 @@ class HealthResponse(BaseApiResponse):
 
 
 class ConfigResponse(BaseApiResponse):
-    api_url: HttpUrl
+    api_url: str
     version: str
     image_tag: str | None
     environment: str

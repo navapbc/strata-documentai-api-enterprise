@@ -101,6 +101,7 @@ class AppEnvConfig(PydanticBaseEnvConfig):
     api_auth_enabled: bool = False
     api_auth_cache_ttl: int = 300
     presigned_url_expiry_seconds: int = 900
+    api_base_url: str = "http://localhost:8000"
     image_tag: str | None = None
     environment: str = "local"
     host: str = "127.0.0.1"

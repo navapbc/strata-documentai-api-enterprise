@@ -106,7 +106,7 @@ def generate_presigned_post(
     """Generate a presigned POST for browser/mobile-direct uploads.
 
     Unlike presigned PUT URLs, POST policies enforce size and content-type
-    at S3 — the upload is rejected before bytes land if conditions aren't met.
+    at S3 - the upload is rejected before bytes land if conditions aren't met.
 
     Args:
         bucket: S3 bucket name

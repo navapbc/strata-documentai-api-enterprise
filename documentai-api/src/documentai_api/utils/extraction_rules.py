@@ -42,31 +42,39 @@ def upsert_rule(
     required_fields: list[str],
     optional_fields: list[str],
 ) -> dict[str, Any]:
-    """Create or update an extraction rule."""
+    """Create or update an extraction rule atomically."""
+    from documentai_api.utils.aws_client_factory import AWSClientFactory
+
     table_name = _get_table_name()
     now = datetime.now(UTC).isoformat()
 
-    item = {
-        "tenantId": tenant_id,
-        "documentType": document_type,
-        "requiredFields": required_fields,
-        "optionalFields": optional_fields,
-        "updatedAt": now,
-    }
-
-    existing = ddb_service.get_item(
-        table_name, {"tenantId": tenant_id, "documentType": document_type}
+    ddb_table = AWSClientFactory.get_ddb_table(table_name)
+    response = ddb_table.update_item(
+        Key={"tenantId": tenant_id, "documentType": document_type},
+        UpdateExpression=(
+            "SET requiredFields = :rf, optionalFields = :of, updatedAt = :now, "
+            "createdAt = if_not_exists(createdAt, :now)"
+        ),
+        ExpressionAttributeValues={
+            ":rf": required_fields,
+            ":of": optional_fields,
+            ":now": now,
+        },
+        ReturnValues="ALL_NEW",
     )
-    item["createdAt"] = existing.get("createdAt", now) if existing else now
 
-    ddb_service.put_item(table_name, item)
-    return item
+    return response["Attributes"]
 
 
-def delete_rule(tenant_id: str, document_type: str) -> None:
-    """Delete an extraction rule."""
+def delete_rule(tenant_id: str, document_type: str) -> bool:
+    """Delete an extraction rule. Returns True if the rule existed, False otherwise."""
     table_name = _get_table_name()
-    ddb_service.delete_item(table_name, {"tenantId": tenant_id, "documentType": document_type})
+    key = {"tenantId": tenant_id, "documentType": document_type}
+    existing = ddb_service.get_item(table_name, key)
+    if not existing:
+        return False
+    ddb_service.delete_item(table_name, key)
+    return True
 
 
 def apply_extraction_rules(
