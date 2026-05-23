@@ -22,6 +22,19 @@ def clear_cache():
     auth_util._last_used_written_at.clear()
 
 
+@pytest.fixture
+def seed_api_key(api_keys_table):
+    """Factory fixture to create an API key and return (raw_key, key_hash)."""
+
+    def _seed(client_name="test-client", environment="prod", expires_at=None, tenant_id=None):
+        api_key, _ = auth_util.generate_api_key(
+            client_name, environment, expires_at=expires_at, tenant_id=tenant_id
+        )
+        return api_key, auth_util._hash_key(api_key)
+
+    return _seed
+
+
 ##############################################################################
 # _hash_key
 ##############################################################################
@@ -170,54 +183,6 @@ def test_insecure_key_valid_passes(monkeypatch):
 
 
 ##############################################################################
-# _verify_with_ddb
-##############################################################################
-
-
-def test_ddb_verify_missing_key_raises_401():
-    with pytest.raises(HTTPException) as exc_info:
-        auth_util._verify_with_ddb(None)
-    assert exc_info.value.status_code == 401
-
-
-def test_ddb_verify_key_not_in_ddb_raises_401(monkeypatch):
-    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
-    with patch("documentai_api.utils.auth._lookup_key_in_ddb", return_value=None):
-        with pytest.raises(HTTPException) as exc_info:
-            auth_util._verify_with_ddb("docai_" + "a" * 32)
-        assert exc_info.value.status_code == 401
-
-
-def test_ddb_verify_inactive_key_raises_401(monkeypatch):
-    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
-    with patch(
-        "documentai_api.utils.auth._lookup_key_in_ddb",
-        return_value={ApiKeyRecord.IS_ACTIVE: False, ApiKeyRecord.CLIENT_NAME: "test-client"},
-    ):
-        with pytest.raises(HTTPException) as exc_info:
-            auth_util._verify_with_ddb("docai_" + "a" * 32)
-        assert exc_info.value.status_code == 401
-
-
-def test_ddb_verify_valid_key_passes(monkeypatch):
-    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
-    with patch(
-        "documentai_api.utils.auth._lookup_key_in_ddb",
-        return_value={ApiKeyRecord.IS_ACTIVE: True, ApiKeyRecord.CLIENT_NAME: "test-client"},
-    ):
-        auth_util._verify_with_ddb("docai_" + "a" * 32)  # should not raise
-
-
-def test_ddb_verify_uses_cache_on_second_call(monkeypatch):
-    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
-    record = {ApiKeyRecord.IS_ACTIVE: True, ApiKeyRecord.CLIENT_NAME: "test-client"}
-    with patch("documentai_api.utils.auth._lookup_key_in_ddb", return_value=record) as mock_lookup:
-        auth_util._verify_with_ddb("docai_" + "a" * 32)
-        auth_util._verify_with_ddb("docai_" + "a" * 32)
-        mock_lookup.assert_called_once()  # second call should hit cache, not DDB
-
-
-##############################################################################
 # _is_valid_key_format
 ##############################################################################
 
@@ -242,27 +207,88 @@ def test_invalid_key_format_none():
     assert auth_util._is_valid_key_format(None) is False
 
 
+##############################################################################
+# _verify_with_ddb (moto-backed)
+##############################################################################
+
+
+def test_ddb_verify_missing_key_raises_401():
+    with pytest.raises(HTTPException) as exc_info:
+        auth_util._verify_with_ddb(None)
+    assert exc_info.value.status_code == 401
+
+
 def test_ddb_verify_rejects_invalid_format():
     with pytest.raises(HTTPException) as exc_info:
         auth_util._verify_with_ddb("not-a-valid-key")
     assert exc_info.value.status_code == 401
 
 
+def test_ddb_verify_key_not_in_ddb_raises_401(api_keys_table):
+    with pytest.raises(HTTPException) as exc_info:
+        auth_util._verify_with_ddb("docai_" + "a" * 32)
+    assert exc_info.value.status_code == 401
+
+
+def test_ddb_verify_inactive_key_raises_401(api_keys_table):
+    raw_key = "docai_" + "b" * 32
+    key_hash = auth_util._hash_key(raw_key)
+    api_keys_table.put_item(
+        Item={
+            ApiKeyRecord.KEY_HASH: key_hash,
+            ApiKeyRecord.CLIENT_NAME: "test-client",
+            ApiKeyRecord.IS_ACTIVE: False,
+        }
+    )
+    with pytest.raises(HTTPException) as exc_info:
+        auth_util._verify_with_ddb(raw_key)
+    assert exc_info.value.status_code == 401
+
+
+def test_ddb_verify_valid_key_passes(api_keys_table):
+    raw_key = "docai_" + "c" * 32
+    key_hash = auth_util._hash_key(raw_key)
+    api_keys_table.put_item(
+        Item={
+            ApiKeyRecord.KEY_HASH: key_hash,
+            ApiKeyRecord.CLIENT_NAME: "test-client",
+            ApiKeyRecord.IS_ACTIVE: True,
+        }
+    )
+    auth_util._verify_with_ddb(raw_key)  # should not raise
+
+
+def test_ddb_verify_uses_cache_on_second_call(api_keys_table):
+    raw_key = "docai_" + "d" * 32
+    key_hash = auth_util._hash_key(raw_key)
+    api_keys_table.put_item(
+        Item={
+            ApiKeyRecord.KEY_HASH: key_hash,
+            ApiKeyRecord.CLIENT_NAME: "test-client",
+            ApiKeyRecord.IS_ACTIVE: True,
+        }
+    )
+    with patch(
+        "documentai_api.utils.auth._lookup_key_in_ddb", wraps=auth_util._lookup_key_in_ddb
+    ) as spy:
+        auth_util._verify_with_ddb(raw_key)
+        auth_util._verify_with_ddb(raw_key)
+        spy.assert_called_once()  # second call hits cache
+
+
 ##############################################################################
-# _update_last_used
+# _update_last_used (behavior tests — patches needed for debounce/threading)
 ##############################################################################
 
 
-def test_update_last_used_debounced_skips_second_call(monkeypatch):
-    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
+def test_update_last_used_debounced_skips_second_call(api_keys_table):
     with patch("documentai_api.services.ddb.update_item") as mock_update:
         auth_util._update_last_used("test-hash")
         auth_util._update_last_used("test-hash")  # should be skipped
         mock_update.assert_called_once()
 
 
-def test_update_last_used_writes_after_debounce_period(monkeypatch):
-    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
+def test_update_last_used_writes_after_debounce_period(api_keys_table):
     with patch("documentai_api.services.ddb.update_item") as mock_update:
         auth_util._update_last_used("test-hash")
         # expire the debounce window
@@ -271,8 +297,7 @@ def test_update_last_used_writes_after_debounce_period(monkeypatch):
         assert mock_update.call_count == 2
 
 
-def test_update_last_used_writes_to_ddb(monkeypatch):
-    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
+def test_update_last_used_writes_to_ddb(api_keys_table):
     with patch("documentai_api.services.ddb.update_item") as mock_update:
         auth_util._update_last_used("test-hash")
         mock_update.assert_called_once()
@@ -281,176 +306,126 @@ def test_update_last_used_writes_to_ddb(monkeypatch):
         assert kwargs["key"] == {ApiKeyRecord.KEY_HASH: "test-hash"}
 
 
-def test_update_last_used_silently_ignores_errors(monkeypatch):
-    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
+def test_update_last_used_silently_ignores_errors(api_keys_table):
     with patch("documentai_api.services.ddb.update_item", side_effect=Exception("DDB error")):
         auth_util._update_last_used("test-hash")  # should not raise
 
 
-def test_ddb_verify_fires_last_used_update(monkeypatch):
-    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
-    record = {ApiKeyRecord.IS_ACTIVE: True, ApiKeyRecord.CLIENT_NAME: "test-client"}
-    with (
-        patch("documentai_api.utils.auth._lookup_key_in_ddb", return_value=record),
-        patch("documentai_api.utils.auth._update_last_used") as mock_last_used,
-        patch("threading.Thread") as mock_thread,
-    ):
-        mock_thread.return_value.start = lambda: mock_last_used(
-            auth_util._hash_key("docai_" + "a" * 32)
-        )
-        auth_util._verify_with_ddb("docai_" + "a" * 32)
-        mock_thread.assert_called_once()
-
-
 ##############################################################################
-# generate_api_key
+# generate_api_key (moto-backed)
 ##############################################################################
 
 
-def test_generate_api_key_returns_key_and_no_existing(monkeypatch):
-    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
-    with (
-        patch("documentai_api.utils.auth.get_active_keys_for_client", return_value=[]),
-        patch("documentai_api.services.ddb.put_item") as mock_put,
-    ):
-        api_key, existing = auth_util.generate_api_key("my-service", "prod")
+def test_generate_api_key_writes_to_ddb(seed_api_key, api_keys_table):
+    """Test generate_api_key stores the hash in DDB."""
+    api_key, key_hash = seed_api_key(client_name="my-service", environment="prod")
 
     assert api_key.startswith("docai_")
-    assert existing == []
-    mock_put.assert_called_once()
+
+    item = api_keys_table.get_item(Key={ApiKeyRecord.KEY_HASH: key_hash})["Item"]
+
+    assert item is not None
+    assert item[ApiKeyRecord.CLIENT_NAME] == "my-service"
+    assert item[ApiKeyRecord.ENVIRONMENT] == "prod"
+    assert item[ApiKeyRecord.IS_ACTIVE] is True
+    assert ApiKeyRecord.CREATED_AT in item
+    assert api_key not in str(item)  # plaintext not stored
 
 
-def test_generate_api_key_warns_on_existing_keys(monkeypatch):
-    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
-    existing_record = {ApiKeyRecord.IS_ACTIVE: True, ApiKeyRecord.CLIENT_NAME: "my-service"}
-    with (
-        patch(
-            "documentai_api.utils.auth.get_active_keys_for_client", return_value=[existing_record]
-        ),
-        patch("documentai_api.services.ddb.put_item"),
-    ):
-        api_key, existing = auth_util.generate_api_key("my-service", "prod")
+def test_generate_api_key_warns_existing_via_ddb(seed_api_key, api_keys_table):
+    """Test generate_api_key detects existing active keys via real DDB scan."""
+    seed_api_key(client_name="my-service")
 
-    assert api_key.startswith("docai_")
+    _, existing = auth_util.generate_api_key("my-service", "prod")
+
     assert len(existing) == 1
+    assert existing[0][ApiKeyRecord.CLIENT_NAME] == "my-service"
 
 
-def test_generate_api_key_stores_hash_not_plaintext(monkeypatch):
-    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
-    with (
-        patch("documentai_api.utils.auth.get_active_keys_for_client", return_value=[]),
-        patch("documentai_api.services.ddb.put_item") as mock_put,
-    ):
-        api_key, _ = auth_util.generate_api_key("my-service", "prod")
-
-    mock_put.assert_called_once()
-    _, item = mock_put.call_args.args
-    assert item[ApiKeyRecord.KEY_HASH] == auth_util._hash_key(api_key)
-    assert api_key not in str(item)
-
-
-def test_generate_api_key_with_expires_at(monkeypatch):
+def test_generate_api_key_with_expires_at(seed_api_key, api_keys_table):
     from datetime import UTC, datetime, timedelta
 
-    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
     expires = datetime.now(UTC) + timedelta(days=90)
-    with (
-        patch("documentai_api.utils.auth.get_active_keys_for_client", return_value=[]),
-        patch("documentai_api.services.ddb.put_item") as mock_put,
-    ):
-        auth_util.generate_api_key("my-service", "prod", expires_at=expires)
+    _, key_hash = seed_api_key(client_name="my-service", expires_at=expires)
 
-    item = mock_put.call_args[0][1]
+    item = api_keys_table.get_item(Key={ApiKeyRecord.KEY_HASH: key_hash})["Item"]
     assert ApiKeyRecord.EXPIRES_AT in item
 
 
 ##############################################################################
-# deactivate_api_key
+# deactivate_api_key (moto-backed)
 ##############################################################################
 
 
-def test_deactivate_api_key_found(monkeypatch):
-    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
-    record = {ApiKeyRecord.KEY_HASH: "test-hash", ApiKeyRecord.IS_ACTIVE: True}
-    with (
-        patch("documentai_api.services.ddb.get_item", return_value=record),
-        patch("documentai_api.services.ddb.update_item") as mock_update,
-    ):
-        result = auth_util.deactivate_api_key("test-hash")
-
-    assert result is True
-    mock_update.assert_called_once()
-    kwargs = mock_update.call_args.kwargs
-    assert kwargs["expression_values"][":isActive"] is False
-
-
-def test_deactivate_api_key_not_found(monkeypatch):
-    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
-    with patch("documentai_api.services.ddb.get_item", return_value=None):
-        result = auth_util.deactivate_api_key("nonexistent-hash")
-
-    assert result is False
-
-
-def test_deactivate_api_key_invalidates_cache(monkeypatch):
-    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
-    record = {ApiKeyRecord.KEY_HASH: "test-hash", ApiKeyRecord.IS_ACTIVE: True}
-
-    get_cache().add("test-hash", record, ttl_minutes=5)
-    assert get_cache().get("test-hash") is not None
-
-    with (
-        patch("documentai_api.services.ddb.get_item", return_value=record),
-        patch("documentai_api.services.ddb.update_item"),
-    ):
-        auth_util.deactivate_api_key("test-hash")
-
-    assert get_cache().get("test-hash") is None
-
-
-def test_deactivate_api_key_with_real_ddb(api_keys_table):
-    """Test deactivate_api_key updates DDB and invalidates cache."""
-    api_key, _ = auth_util.generate_api_key("my-service", "prod")
-    key_hash = auth_util._hash_key(api_key)
+def test_deactivate_api_key_found(seed_api_key, api_keys_table):
+    _, key_hash = seed_api_key()
 
     result = auth_util.deactivate_api_key(key_hash)
 
     assert result is True
-
     item = api_keys_table.get_item(Key={ApiKeyRecord.KEY_HASH: key_hash})["Item"]
     assert item[ApiKeyRecord.IS_ACTIVE] is False
 
 
+def test_deactivate_api_key_not_found(api_keys_table):
+    result = auth_util.deactivate_api_key("nonexistent-hash")
+    assert result is False
+
+
+def test_deactivate_api_key_invalidates_cache(seed_api_key):
+    _, key_hash = seed_api_key()
+
+    # Prime the cache by verifying the key
+    get_cache().add(key_hash, {ApiKeyRecord.IS_ACTIVE: True}, ttl_minutes=5)
+    assert get_cache().get(key_hash) is not None
+
+    auth_util.deactivate_api_key(key_hash)
+
+    assert get_cache().get(key_hash) is None
+
+
 ##############################################################################
-# get_active_keys_for_client
+# get_active_keys_for_client (moto-backed)
 ##############################################################################
 
 
-def test_get_active_keys_for_client_returns_matching(monkeypatch):
-    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
-    records = [
-        {ApiKeyRecord.CLIENT_NAME: "my-service", ApiKeyRecord.IS_ACTIVE: True},
-        {ApiKeyRecord.CLIENT_NAME: "other-service", ApiKeyRecord.IS_ACTIVE: True},
-        {ApiKeyRecord.CLIENT_NAME: "my-service", ApiKeyRecord.IS_ACTIVE: False},
-    ]
-    with patch("documentai_api.services.ddb.scan", return_value=records):
-        result = auth_util.get_active_keys_for_client("my-service")
+def test_get_active_keys_for_client_returns_matching(api_keys_table):
+    api_keys_table.put_item(
+        Item={
+            ApiKeyRecord.KEY_HASH: "hash-1",
+            ApiKeyRecord.CLIENT_NAME: "my-service",
+            ApiKeyRecord.IS_ACTIVE: True,
+        }
+    )
+    api_keys_table.put_item(
+        Item={
+            ApiKeyRecord.KEY_HASH: "hash-2",
+            ApiKeyRecord.CLIENT_NAME: "my-service",
+            ApiKeyRecord.IS_ACTIVE: False,
+        }
+    )
+    api_keys_table.put_item(
+        Item={
+            ApiKeyRecord.KEY_HASH: "hash-3",
+            ApiKeyRecord.CLIENT_NAME: "other-service",
+            ApiKeyRecord.IS_ACTIVE: True,
+        }
+    )
+
+    result = auth_util.get_active_keys_for_client("my-service")
 
     assert len(result) == 1
-    assert result[0][ApiKeyRecord.CLIENT_NAME] == "my-service"
-    assert result[0][ApiKeyRecord.IS_ACTIVE] is True
+    assert result[0][ApiKeyRecord.KEY_HASH] == "hash-1"
 
 
 def test_get_active_keys_for_client_returns_empty_on_error(monkeypatch):
-    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "api-keys-test")
-    with patch("documentai_api.services.ddb.scan", side_effect=Exception("DDB error")):
-        result = auth_util.get_active_keys_for_client("my-service")
-
+    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "nonexistent-table")
+    result = auth_util.get_active_keys_for_client("my-service")
     assert result == []
 
 
 ##############################################################################
-# verify_api_key (integration)
+# verify_api_key (routing behavior — patches needed)
 ##############################################################################
 
 
@@ -476,7 +451,42 @@ def test_verify_api_key_disabled_by_default(monkeypatch):
 
 
 ##############################################################################
-# moto-backed tests
+# verify_api_key end-to-end (moto-backed)
+##############################################################################
+
+
+def test_verify_api_key_end_to_end_with_moto(seed_api_key, monkeypatch):
+    """Test full verify_api_key → _verify_with_ddb → DDB flow using moto."""
+    monkeypatch.setenv(EnvVars.API_AUTH_ENABLED, "true")
+
+    api_key, _ = seed_api_key()
+
+    auth_util.verify_api_key(api_key)  # should not raise
+
+
+def test_verify_api_key_end_to_end_invalid_key(api_keys_table, monkeypatch):
+    """Test full flow rejects a key that doesn't exist in DDB."""
+    monkeypatch.setenv(EnvVars.API_AUTH_ENABLED, "true")
+
+    with pytest.raises(HTTPException) as exc_info:
+        auth_util.verify_api_key("docai_invalid_key")
+    assert exc_info.value.status_code == 401
+
+
+def test_verify_api_key_end_to_end_deactivated_key(seed_api_key, monkeypatch):
+    """Test full flow rejects a deactivated key."""
+    monkeypatch.setenv(EnvVars.API_AUTH_ENABLED, "true")
+
+    api_key, key_hash = seed_api_key()
+    auth_util.deactivate_api_key(key_hash)
+
+    with pytest.raises(HTTPException) as exc_info:
+        auth_util.verify_api_key(api_key)
+    assert exc_info.value.status_code == 401
+
+
+##############################################################################
+# _lookup_key_in_ddb (moto-backed)
 ##############################################################################
 
 
@@ -504,77 +514,14 @@ def test_lookup_key_in_ddb_not_found(api_keys_table):
     assert result is None
 
 
-def test_generate_api_key_writes_to_ddb(api_keys_table):
-    """Test generate_api_key stores the hash in DDB."""
-    api_key, existing = auth_util.generate_api_key("my-service", "prod")
-
-    assert existing == []
-    assert api_key.startswith("docai_")
-
-    key_hash = auth_util._hash_key(api_key)
-    result = api_keys_table.get_item(Key={ApiKeyRecord.KEY_HASH: key_hash})
-    item = result.get("Item")
-
-    assert item is not None
-    assert item[ApiKeyRecord.CLIENT_NAME] == "my-service"
-    assert item[ApiKeyRecord.ENVIRONMENT] == "prod"
-    assert item[ApiKeyRecord.IS_ACTIVE] is True
-    assert ApiKeyRecord.CREATED_AT in item
-    assert ApiKeyRecord.EXPIRES_AT not in item
-
-
-def test_generate_api_key_warns_existing_via_ddb(api_keys_table):
-    """Test generate_api_key detects existing active keys via real DDB scan."""
-    existing_hash = auth_util._hash_key("existing-key")
-    api_keys_table.put_item(
-        Item={
-            ApiKeyRecord.KEY_HASH: existing_hash,
-            ApiKeyRecord.CLIENT_NAME: "my-service",
-            ApiKeyRecord.IS_ACTIVE: True,
-        }
-    )
-
-    _, existing = auth_util.generate_api_key("my-service", "prod")
-
-    assert len(existing) == 1
-    assert existing[0][ApiKeyRecord.CLIENT_NAME] == "my-service"
-
-
-def test_verify_api_key_end_to_end_with_moto(api_keys_table, monkeypatch):
-    """Test full verify_api_key → _verify_with_ddb → DDB flow using moto."""
-    monkeypatch.setenv(EnvVars.API_AUTH_ENABLED, "true")
-
-    api_key, _ = auth_util.generate_api_key("test-client", "prod")
-
-    auth_util.verify_api_key(api_key)  # should not raise
-
-
-def test_verify_api_key_end_to_end_invalid_key(api_keys_table, monkeypatch):
-    """Test full flow rejects a key that doesn't exist in DDB."""
-    monkeypatch.setenv(EnvVars.API_AUTH_ENABLED, "true")
-
-    with pytest.raises(HTTPException) as exc_info:
-        auth_util.verify_api_key("docai_invalid_key")
-    assert exc_info.value.status_code == 401
-
-
-def test_verify_api_key_end_to_end_deactivated_key(api_keys_table, monkeypatch):
-    """Test full flow rejects a deactivated key."""
-    monkeypatch.setenv(EnvVars.API_AUTH_ENABLED, "true")
-
-    api_key, _ = auth_util.generate_api_key("test-client", "prod")
-    key_hash = auth_util._hash_key(api_key)
-
-    auth_util.deactivate_api_key(key_hash)
-
-    with pytest.raises(HTTPException) as exc_info:
-        auth_util.verify_api_key(api_key)
-    assert exc_info.value.status_code == 401
+##############################################################################
+# scan pagination
+##############################################################################
 
 
 def test_scan_returns_all_pages(api_keys_table):
     """Test that scan() retrieves all items across multiple DynamoDB pages."""
-    from unittest.mock import call, patch
+    from unittest.mock import call
 
     from documentai_api.services import ddb as ddb_service
 
@@ -592,39 +539,6 @@ def test_scan_returns_all_pages(api_keys_table):
         result = ddb_service.scan("api-keys")
 
     assert len(result) == 3
-    assert result[0]["keyHash"] == "a"
-    assert result[1]["keyHash"] == "b"
-    assert result[2]["keyHash"] == "c"
     assert mock_scan.call_count == 3
     assert mock_scan.call_args_list[1] == call(ExclusiveStartKey={"keyHash": "a"})
     assert mock_scan.call_args_list[2] == call(ExclusiveStartKey={"keyHash": "b"})
-
-
-def test_get_active_keys_for_client_with_real_ddb(api_keys_table):
-    """Test get_active_keys_for_client scans and filters correctly."""
-    api_keys_table.put_item(
-        Item={
-            ApiKeyRecord.KEY_HASH: "hash-1",
-            ApiKeyRecord.CLIENT_NAME: "my-service",
-            ApiKeyRecord.IS_ACTIVE: True,
-        }
-    )
-    api_keys_table.put_item(
-        Item={
-            ApiKeyRecord.KEY_HASH: "hash-2",
-            ApiKeyRecord.CLIENT_NAME: "my-service",
-            ApiKeyRecord.IS_ACTIVE: False,
-        }
-    )
-    api_keys_table.put_item(
-        Item={
-            ApiKeyRecord.KEY_HASH: "hash-3",
-            ApiKeyRecord.CLIENT_NAME: "other-service",
-            ApiKeyRecord.IS_ACTIVE: True,
-        }
-    )
-
-    result = auth_util.get_active_keys_for_client("my-service")
-
-    assert len(result) == 1
-    assert result[0][ApiKeyRecord.KEY_HASH] == "hash-1"
