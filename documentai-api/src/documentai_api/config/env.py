@@ -46,6 +46,7 @@ class EnvVars(StrEnum):
     API_AUTH_CACHE_TTL = "API_AUTH_CACHE_TTL"
     API_KEYS_TABLE_NAME = "API_KEYS_TABLE_NAME"
     TENANTS_TABLE_NAME = "TENANTS_TABLE_NAME"
+    AUDIT_EVENTS_TABLE_NAME = "AUDIT_EVENTS_TABLE_NAME"
 
     # === Extraction rules ===
     EXTRACTION_RULES_TABLE_NAME = "EXTRACTION_RULES_TABLE_NAME"
@@ -92,6 +93,7 @@ class AWSEnvConfig(PydanticBaseEnvConfig):
     # Auth / API keys
     api_keys_table_name: str | None = None
     tenants_table_name: str | None = None
+    audit_events_table_name: str | None = None
 
     # Extraction rules
     extraction_rules_table_name: str | None = None

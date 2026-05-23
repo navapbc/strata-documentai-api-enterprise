@@ -157,6 +157,24 @@ module "tenants" {
   table_name = "${local.service_name}-tenants"
   hash_key   = "tenantId"
 }
+
+module "audit_events" {
+  source        = "../../modules/nosql"
+  table_name    = "${local.service_name}-audit-events"
+  hash_key      = "tenantId"
+  sort_key      = "timestamp#eventId"
+  ttl_attribute = "ttl"
+
+  global_secondary_indexes = [
+    {
+      name          = "action-timestamp-index"
+      hash_key      = "action"
+      hash_key_type = "S"
+      sort_key      = "timestamp#eventId"
+      sort_key_type = "S"
+    }
+  ]
+}
 module "extraction_rules" {
   source     = "../../modules/nosql"
   table_name = "${local.service_name}-extraction-rules"
@@ -397,6 +415,7 @@ locals {
     DOCUMENTAI_DOCUMENT_METADATA_TENANT_INDEX_NAME          = local.gsi_tenant_id
     API_KEYS_TABLE_NAME                                     = module.api_keys.table_name
     TENANTS_TABLE_NAME                                      = module.tenants.table_name
+    AUDIT_EVENTS_TABLE_NAME                                  = module.audit_events.table_name
     EXTRACTION_RULES_TABLE_NAME                             = module.extraction_rules.table_name
     DOCUMENTAI_BATCH_TABLE_NAME                             = module.document_batches.table_name
     DOCUMENTAI_DOCUMENT_BUILD_TABLE_NAME                    = module.document_builds.table_name
@@ -461,6 +480,8 @@ data "aws_iam_policy_document" "data_access" {
       "${module.document_batches.table_arn}/index/*",
       "${module.document_builds.table_arn}",
       "${module.document_builds.table_arn}/index/*",
+      "${module.audit_events.table_arn}",
+      "${module.audit_events.table_arn}/index/*",
     ]
   }
 

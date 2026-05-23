@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 
-from documentai_api.annotations import OutputFormat
+from documentai_api.annotations import AuthUser, OutputFormat
 from documentai_api.config.constants import (
     ApiVisualizationTag,
     DictionaryBlueprintField,
@@ -21,7 +21,7 @@ from documentai_api.models.api_responses import (
     DictionarySchemaListResponse,
     DictionarySearchResponse,
 )
-from documentai_api.utils.auth import UserContext, get_user_context
+from documentai_api.utils.auth import get_user_context
 from documentai_api.utils.response_builder import build_csv_response
 from documentai_api.utils.schemas import get_all_fields, get_all_schemas, get_document_schema
 
@@ -45,7 +45,7 @@ _CSV_RESPONSES: dict[int | str, dict[str, Any]] = {
     tags=[ApiVisualizationTag.DICTIONARY_SCHEMAS],
 )
 async def list_schemas(
-    user: UserContext = Depends(get_user_context),
+    user: AuthUser,
 ) -> DictionarySchemaListResponse:
     """List all supported document types."""
     try:
@@ -67,8 +67,8 @@ async def list_schemas(
 )
 async def get_schema_detail(
     document_type: str,
+    user: AuthUser,
     output_format: OutputFormat = DictionaryFormatType.JSON,
-    user: UserContext = Depends(get_user_context),
 ) -> DictionarySchemaDetailResponse | Response:
     """Get field schema for a specific document type."""
     try:
@@ -101,8 +101,8 @@ async def get_schema_detail(
     tags=[ApiVisualizationTag.DICTIONARY_FIELDS],
 )
 async def get_all_schema_fields(
+    user: AuthUser,
     output_format: OutputFormat = DictionaryFormatType.JSON,
-    user: UserContext = Depends(get_user_context),
 ) -> DictionaryFieldsResponse | Response:
     """Get all fields across all document types."""
     try:
@@ -128,10 +128,10 @@ async def get_all_schema_fields(
     tags=[ApiVisualizationTag.DICTIONARY_FIELDS],
 )
 async def search_schema_fields(
+    user: AuthUser,
     q: str | None = None,
     field: DictionaryBlueprintField | None = None,
     output_format: OutputFormat = DictionaryFormatType.JSON,
-    user: UserContext = Depends(get_user_context),
 ) -> DictionarySearchResponse | Response:
     """Search fields across all blueprints."""
     try:
@@ -164,8 +164,8 @@ async def search_schema_fields(
     tags=[ApiVisualizationTag.DICTIONARY_REFERENCE],
 )
 async def get_response_codes(
+    user: AuthUser,
     output_format: OutputFormat = DictionaryFormatType.JSON,
-    user: UserContext = Depends(get_user_context),
 ) -> DictionaryResponseCodesResponse | Response:
     """Get list of response codes and their meanings."""
     try:
@@ -190,8 +190,8 @@ async def get_response_codes(
     tags=[ApiVisualizationTag.DICTIONARY_REFERENCE],
 )
 async def get_document_categories(
+    user: AuthUser,
     output_format: OutputFormat = DictionaryFormatType.JSON,
-    user: UserContext = Depends(get_user_context),
 ) -> DictionaryDocumentCategoriesResponse | Response:
     """Get list of supported document categories."""
     from documentai_api.config.constants import DOCUMENT_CATEGORIES

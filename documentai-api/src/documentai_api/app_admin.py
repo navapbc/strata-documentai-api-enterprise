@@ -1,5 +1,7 @@
 """Admin API router — API key management via Cognito JWT auth."""
 
+import hashlib
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from documentai_api.annotations import AdminClaims
@@ -12,6 +14,8 @@ from documentai_api.models.admin import (
     ListApiKeysResponse,
 )
 from documentai_api.schemas.api_key import ApiKeyRecord
+from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
+from documentai_api.utils.audit import log_event
 from documentai_api.utils.auth import (
     deactivate_api_key,
     find_api_key_by_prefix,
@@ -66,6 +70,19 @@ async def create_api_key(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to generate API key",
         ) from e
+    log_event(
+        claims,
+        action=AuditAction.KEY_CREATE,
+        target_type=AuditTargetType.KEY,
+        target_id=hashlib.sha256(api_key.encode()).hexdigest()[:8],
+        tenant_id=caller_tenant,
+        metadata={
+            "client_name": client_name,
+            "environment": environment,
+            "expires_at": str(expires_at) if expires_at else None,
+            "email_address": email_address,
+        },
+    )
     return CreateApiKeyResponse(
         api_key=api_key,
         client_name=client_name,
@@ -174,4 +191,11 @@ async def delete_api_key(
     if not deactivate_api_key(full_hash):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Key not found")
 
+    log_event(
+        claims,
+        action=AuditAction.KEY_REVOKE,
+        target_type=AuditTargetType.KEY,
+        target_id=full_hash[:8],
+        tenant_id=caller_tenant,
+    )
     return DeleteApiKeyResponse(deactivated=True, key_id=full_hash[:8])

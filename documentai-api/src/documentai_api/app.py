@@ -10,6 +10,7 @@ from fastapi.routing import APIRoute
 from mangum import Mangum
 
 from documentai_api.app_admin import router as admin_router
+from documentai_api.app_audit_log import router as audit_log_router
 
 # Routers
 from documentai_api.app_batch import router as batch_router
@@ -49,6 +50,7 @@ app.include_router(extraction_rules_router)
 app.include_router(admin_router)
 app.include_router(tenants_router)
 app.include_router(users_router)
+app.include_router(audit_log_router)
 
 app.add_middleware(
     CORSMiddleware,

@@ -1,4 +1,6 @@
+import boto3
 import pytest
+from moto import mock_aws
 
 from documentai_api.config.env import EnvVars
 
@@ -11,9 +13,6 @@ def ddb_doc_metadata_table(ddb_doc_metadata_table_resource, set_ddb_doc_metadata
 @pytest.fixture
 def ddb_doc_metadata_table_resource(aws_credentials):
     """Create a test DynamoDB table."""
-    import boto3
-    from moto import mock_aws
-
     with mock_aws():
         dynamodb = boto3.resource("dynamodb")
         table = dynamodb.create_table(
@@ -43,11 +42,7 @@ def ddb_doc_metadata_table_resource(aws_credentials):
 
 @pytest.fixture
 def extraction_rules_table(aws_credentials, monkeypatch):
-    from moto import mock_aws
-
     with mock_aws():
-        import boto3
-
         dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
         table = dynamodb.create_table(
             TableName="extraction-rules",
@@ -68,9 +63,6 @@ def extraction_rules_table(aws_credentials, monkeypatch):
 @pytest.fixture
 def document_build_ddb_table(aws_credentials, monkeypatch):
     """Create a moto-backed document-builds table and point env vars at it."""
-    import boto3
-    from moto import mock_aws
-
     with mock_aws():
         dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
         table = dynamodb.create_table(
@@ -95,9 +87,6 @@ def document_build_ddb_table(aws_credentials, monkeypatch):
 @pytest.fixture
 def ddb_batches_table(aws_credentials, monkeypatch):
     """Create a moto-backed document-batches table and point env vars at it."""
-    import boto3
-    from moto import mock_aws
-
     with mock_aws():
         dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
         table = dynamodb.create_table(
@@ -112,11 +101,7 @@ def ddb_batches_table(aws_credentials, monkeypatch):
 
 @pytest.fixture
 def api_keys_table(aws_credentials, monkeypatch):
-    from moto import mock_aws
-
     with mock_aws():
-        import boto3
-
         dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
         table = dynamodb.create_table(
             TableName="api-keys",
@@ -144,11 +129,7 @@ def set_ddb_doc_metadata_table_env_vars(ddb_doc_metadata_table_resource, monkeyp
 
 @pytest.fixture
 def tenants_table(aws_credentials, monkeypatch):
-    from moto import mock_aws
-
     with mock_aws():
-        import boto3
-
         dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
         table = dynamodb.create_table(
             TableName="tenants",
@@ -157,4 +138,35 @@ def tenants_table(aws_credentials, monkeypatch):
             BillingMode="PAY_PER_REQUEST",
         )
         monkeypatch.setenv(EnvVars.TENANTS_TABLE_NAME, table.name)
+        yield table
+
+
+@pytest.fixture
+def audit_events_table(aws_credentials, monkeypatch):
+    with mock_aws():
+        dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+        table = dynamodb.create_table(
+            TableName="audit-events",
+            KeySchema=[
+                {"AttributeName": "tenantId", "KeyType": "HASH"},
+                {"AttributeName": "timestamp#eventId", "KeyType": "RANGE"},
+            ],
+            AttributeDefinitions=[
+                {"AttributeName": "tenantId", "AttributeType": "S"},
+                {"AttributeName": "timestamp#eventId", "AttributeType": "S"},
+                {"AttributeName": "action", "AttributeType": "S"},
+            ],
+            GlobalSecondaryIndexes=[
+                {
+                    "IndexName": "action-timestamp-index",
+                    "KeySchema": [
+                        {"AttributeName": "action", "KeyType": "HASH"},
+                        {"AttributeName": "timestamp#eventId", "KeyType": "RANGE"},
+                    ],
+                    "Projection": {"ProjectionType": "ALL"},
+                }
+            ],
+            BillingMode="PAY_PER_REQUEST",
+        )
+        monkeypatch.setenv(EnvVars.AUDIT_EVENTS_TABLE_NAME, table.name)
         yield table

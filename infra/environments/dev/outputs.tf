@@ -14,6 +14,10 @@ output "document_metadata_table" {
   value = module.document_metadata.table_name
 }
 
+output "audit_events_table" {
+  value = module.audit_events.table_name
+}
+
 output "input_bucket" {
   value = module.input_bucket.bucket_name
 }
@@ -33,3 +37,5 @@ output "cognito_user_pool_id" {
 output "cognito_client_id" {
   value = module.identity_provider.client_id
 }
+
+

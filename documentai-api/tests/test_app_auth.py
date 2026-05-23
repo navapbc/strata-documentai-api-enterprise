@@ -1,7 +1,5 @@
 """Tests for API authentication."""
 
-from unittest.mock import patch
-
 from documentai_api.config.env import EnvVars
 
 ##############################################################################
@@ -79,43 +77,45 @@ def test_verify_api_key_valid(api_client, api_skeleton_key, mocker):
 ##############################################################################
 
 
-def test_ddb_auth_valid_key(api_client, monkeypatch, mocker):
+def test_ddb_auth_valid_key(api_client, monkeypatch, mocker, api_keys_table):
     """Test allows request when API key is valid in DDB."""
+    import hashlib
+
     monkeypatch.setenv(EnvVars.API_AUTH_ENABLED, "true")
     mocker.patch("documentai_api.app_dictionary.get_all_schemas", return_value={"test": {}})
 
-    with patch("documentai_api.utils.auth._verify_with_ddb"):
-        response = api_client.get("/v1/dictionary/schemas", headers={"API-Key": "docai_somekey"})
+    raw_key = "docai_" + "a" * 32
+    key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
+    api_keys_table.put_item(
+        Item={
+            "keyHash": key_hash,
+            "clientName": "test-client",
+            "tenantId": "test-tenant",
+            "environment": "dev",
+            "isActive": True,
+            "createdAt": "2025-01-01T00:00:00Z",
+        }
+    )
+
+    response = api_client.get("/v1/dictionary/schemas", headers={"API-Key": raw_key})
 
     assert response.status_code == 200
 
 
-def test_ddb_auth_invalid_key(api_client, monkeypatch):
+def test_ddb_auth_invalid_key(api_client, monkeypatch, api_keys_table):
     """Test returns 401 when API key is not in DDB."""
-    from fastapi import HTTPException
-
     monkeypatch.setenv(EnvVars.API_AUTH_ENABLED, "true")
 
-    with patch(
-        "documentai_api.utils.auth._verify_with_ddb",
-        side_effect=HTTPException(status_code=401, detail="Invalid API key"),
-    ):
-        response = api_client.get("/v1/dictionary/schemas", headers={"API-Key": "docai_badkey"})
+    response = api_client.get("/v1/dictionary/schemas", headers={"API-Key": "docai_badkey"})
 
     assert response.status_code == 401
     assert "Invalid API key" in response.json()["detail"]
 
 
-def test_ddb_auth_missing_header(api_client, monkeypatch):
+def test_ddb_auth_missing_header(api_client, monkeypatch, api_keys_table):
     """Test returns 401 when API key header is missing in DDB mode."""
-    from fastapi import HTTPException
-
     monkeypatch.setenv(EnvVars.API_AUTH_ENABLED, "true")
 
-    with patch(
-        "documentai_api.utils.auth._verify_with_ddb",
-        side_effect=HTTPException(status_code=401, detail="Invalid API key"),
-    ):
-        response = api_client.get("/v1/dictionary/schemas")
+    response = api_client.get("/v1/dictionary/schemas")
 
     assert response.status_code == 401

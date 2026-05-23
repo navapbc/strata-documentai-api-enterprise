@@ -6,6 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from documentai_api.app import app
+from documentai_api.schemas.audit_event import AuditAction, AuditEventRecord
 from documentai_api.utils.jwt_auth import verify_jwt
 
 KEYS_URL = "/v1/admin/api-keys"
@@ -91,13 +92,17 @@ def test_keys_tenant_admin_list_returns_200(client, api_keys_table):
     assert response.status_code == 200
 
 
-def test_keys_super_admin_create_returns_200(client, api_keys_table):
+def test_keys_super_admin_create_returns_200(client, api_keys_table, audit_events_table):
     _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
     response = client.post(KEYS_URL, json={"client_name": "test-client", "environment": "dev"})
     assert response.status_code == 200
     data = response.json()
     assert "apiKey" in data
     assert data["clientName"] == "test-client"
+    # Verify audit event written
+    items = audit_events_table.scan()["Items"]
+    assert len(items) == 1
+    assert items[0][AuditEventRecord.ACTION] == AuditAction.KEY_CREATE
 
 
 # ==============================================================================
@@ -179,11 +184,16 @@ def test_tenants_super_admin_list_returns_200(client, tenants_table):
     assert response.json()["count"] == 0
 
 
-def test_tenants_super_admin_create_returns_201(client, tenants_table):
+def test_tenants_super_admin_create_returns_201(client, tenants_table, audit_events_table):
     _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
     response = client.post(TENANTS_URL, json=NEW_TENANT)
     assert response.status_code == 201
     assert response.json()["tenantId"] == TENANT_ID
+    # Verify audit event written
+    items = audit_events_table.scan()["Items"]
+    assert len(items) == 1
+    assert items[0][AuditEventRecord.ACTION] == AuditAction.TENANT_CREATE
+    assert items[0][AuditEventRecord.TARGET_ID] == TENANT_ID
 
 
 def test_tenants_super_admin_create_duplicate_returns_409(client, seed_tenant):
@@ -212,11 +222,16 @@ def test_tenants_super_admin_update_returns_200(client, seed_tenant):
     assert response.json()["displayName"] == "Updated Name"
 
 
-def test_tenants_super_admin_delete_returns_200(client, seed_tenant):
+def test_tenants_super_admin_delete_returns_200(client, tenants_table, audit_events_table):
     _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
+    client.post(TENANTS_URL, json=NEW_TENANT)
     response = client.delete(f"{TENANTS_URL}/{TENANT_ID}")
     assert response.status_code == 200
     assert response.json()["deleted"] is True
+    # Verify audit event written
+    items = audit_events_table.scan()["Items"]
+    actions = [i[AuditEventRecord.ACTION] for i in items]
+    assert AuditAction.TENANT_DEACTIVATE in actions
 
 
 def test_tenants_super_admin_delete_not_found_returns_404(client, tenants_table):
@@ -308,7 +323,9 @@ def test_keys_create_missing_client_name_returns_422(client, api_keys_table):
 
 def test_keys_create_invalid_json_returns_422(client, api_keys_table):
     _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
-    response = client.post(KEYS_URL, content="not json", headers={"Content-Type": "application/json"})
+    response = client.post(
+        KEYS_URL, content="not json", headers={"Content-Type": "application/json"}
+    )
     assert response.status_code == 422
 
 
@@ -323,6 +340,7 @@ def test_keys_delete_ambiguous_prefix_returns_409(client, api_keys_table):
     keys = list_resp.json()["keys"]
     # Find a 1-char prefix shared by at least 2 keys
     from collections import Counter
+
     prefixes = Counter(k["keyPrefix"][0] for k in keys)
     ambiguous = [char for char, count in prefixes.items() if count > 1]
     if ambiguous:
@@ -367,7 +385,9 @@ def test_tenants_create_empty_display_name_returns_422(client, tenants_table):
 
 def test_tenants_create_invalid_json_returns_422(client, tenants_table):
     _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
-    response = client.post(TENANTS_URL, content="not json", headers={"Content-Type": "application/json"})
+    response = client.post(
+        TENANTS_URL, content="not json", headers={"Content-Type": "application/json"}
+    )
     assert response.status_code == 422
 
 

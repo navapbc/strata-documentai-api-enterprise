@@ -13,8 +13,10 @@ from documentai_api.models.tenants import (
     TenantItem,
     UpdateTenantRequest,
 )
+from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
 from documentai_api.schemas.tenants import TenantRecord
 from documentai_api.utils import tenants as tenants_util
+from documentai_api.utils.audit import log_event
 from documentai_api.utils.jwt_auth import is_super_admin, tenant_scope
 
 logger = get_logger(__name__)
@@ -62,6 +64,13 @@ async def create_tenant(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
 
+    log_event(
+        claims,
+        action=AuditAction.TENANT_CREATE,
+        target_type=AuditTargetType.TENANT,
+        target_id=body.tenant_id,
+        metadata={"display_name": body.display_name, "primary_contact": body.primary_contact},
+    )
     return _to_item(record)
 
 
@@ -119,6 +128,14 @@ async def update_tenant(
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg) from e
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=msg) from e
 
+    log_event(
+        claims,
+        action=AuditAction.TENANT_UPDATE,
+        target_type=AuditTargetType.TENANT,
+        target_id=tenant_id,
+        tenant_id=tenant_id,
+        metadata={"changed_fields": [k for k, v in body.model_dump(exclude_none=True).items()]},
+    )
     return _to_item(updated)
 
 
@@ -130,4 +147,11 @@ async def delete_tenant(
     """Deactivate a tenant (soft delete). Super-admin only."""
     if not tenants_util.deactivate_tenant(tenant_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant not found")
+    log_event(
+        claims,
+        action=AuditAction.TENANT_DEACTIVATE,
+        target_type=AuditTargetType.TENANT,
+        target_id=tenant_id,
+        tenant_id=tenant_id,
+    )
     return DeleteTenantResponse(deleted=True, tenant_id=tenant_id)

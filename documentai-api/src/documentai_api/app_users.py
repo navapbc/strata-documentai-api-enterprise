@@ -11,7 +11,9 @@ from pydantic import BaseModel, Field
 
 from documentai_api.annotations import SuperAdminClaims, verify_jwt_with_super_admin
 from documentai_api.logging import get_logger
+from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
 from documentai_api.services import cognito as cognito_service
+from documentai_api.utils.audit import log_event
 from documentai_api.utils.jwt_auth import SUPER_ADMIN, TENANT_ADMIN
 
 logger = get_logger(__name__)
@@ -93,6 +95,14 @@ async def approve_user(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to approve user",
         ) from e
+    log_event(
+        claims,
+        action=AuditAction.USER_APPROVE,
+        target_type=AuditTargetType.USER,
+        target_id=username,
+        tenant_id=body.tenant_id,
+        metadata={"role": body.role, "tenant_id": body.tenant_id},
+    )
     return {"username": username, "role": body.role, "tenant_id": body.tenant_id}
 
 
@@ -111,6 +121,13 @@ async def change_role(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to change role",
         ) from e
+    log_event(
+        claims,
+        action=AuditAction.USER_ROLE_CHANGE,
+        target_type=AuditTargetType.USER,
+        target_id=username,
+        metadata={"new_role": body.role},
+    )
     return {"username": username, "role": body.role}
 
 
@@ -129,6 +146,14 @@ async def change_tenant(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to change tenant",
         ) from e
+    log_event(
+        claims,
+        action=AuditAction.USER_TENANT_CHANGE,
+        target_type=AuditTargetType.USER,
+        target_id=username,
+        tenant_id=body.tenant_id,
+        metadata={"new_tenant": body.tenant_id},
+    )
     return {"username": username, "tenant_id": body.tenant_id}
 
 
@@ -149,6 +174,12 @@ async def delete_user(username: str, claims: SuperAdminClaims) -> dict[str, Any]
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete user",
         ) from e
+    log_event(
+        claims,
+        action=AuditAction.USER_DELETE,
+        target_type=AuditTargetType.USER,
+        target_id=username,
+    )
     return {"username": username, "deleted": True}
 
 
