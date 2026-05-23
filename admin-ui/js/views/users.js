@@ -1,10 +1,11 @@
 import * as Helpers from "../utils/helpers.js";
 import * as UsersService from "../services/users.js";
+import * as TenantsService from "../services/tenants.js";
 
 let _tbody, _noUsers, _refreshBtn, _pendingOnlyToggle;
 let _assignModal, _assignForm, _assignRoleSelect, _assignTenantInput, _assignTenantHint;
-let _assignTitle, _assignEmail, _assignCancel;
-let _deleteModal, _deleteEmail, _deleteCancel, _deleteConfirm;
+let _assignTitle, _assignEmail, _assignCancel, _assignError;
+let _deleteModal, _deleteEmail, _deleteCancel, _deleteConfirm, _deleteError;
 
 let _allUsers = [];
 let _editingUsername = null;
@@ -24,11 +25,13 @@ export function init() {
   _assignTitle = document.getElementById("assign-role-title");
   _assignEmail = document.getElementById("assign-role-email");
   _assignCancel = document.getElementById("assign-role-cancel");
+  _assignError = document.getElementById("assign-role-error");
 
   _deleteModal = document.getElementById("delete-user-modal");
   _deleteEmail = document.getElementById("delete-user-email");
   _deleteCancel = document.getElementById("delete-user-cancel");
   _deleteConfirm = document.getElementById("delete-user-confirm");
+  _deleteError = document.getElementById("delete-user-error");
 
   _refreshBtn.addEventListener("click", load);
   _pendingOnlyToggle.addEventListener("change", () => render(_allUsers));
@@ -94,36 +97,65 @@ function render(users) {
   }
 }
 
-function openAssignModal(user, mode) {
+async function openAssignModal(user, mode) {
   _editingUsername = user.username;
   _assignEmail.textContent = user.email || user.username;
   _assignTitle.textContent = mode === "approve" ? "Approve user" : "Edit user";
 
   const currentRole = roleLabel(user);
   _assignRoleSelect.value = currentRole === "super-admin" ? "super-admin" : "tenant-admin";
-  _assignTenantInput.value = user.tenant_id || "";
+
+  _assignError.classList.add("hidden");
+  await populateTenantOptions(user.tenant_id);
   updateTenantFieldRequirement();
   _assignModal.classList.remove("hidden");
 }
 
+async function populateTenantOptions(selectedTenantId) {
+  // Reset to just the placeholder, then refetch and append active tenants.
+  _assignTenantInput.innerHTML = '<option value="">— Select a tenant —</option>';
+  try {
+    const data = await TenantsService.list(true);
+    for (const tenant of data.tenants || []) {
+      const option = document.createElement("option");
+      option.value = tenant.tenantId;
+      option.textContent = `${tenant.displayName} (${tenant.tenantId})`;
+      _assignTenantInput.appendChild(option);
+    }
+    // If the user already has a tenant that's no longer in the active list,
+    // surface it explicitly so the admin sees the mismatch.
+    if (selectedTenantId && ![..._assignTenantInput.options].some((o) => o.value === selectedTenantId)) {
+      const option = document.createElement("option");
+      option.value = selectedTenantId;
+      option.textContent = `${selectedTenantId} (inactive or unknown)`;
+      _assignTenantInput.appendChild(option);
+    }
+    if (selectedTenantId) _assignTenantInput.value = selectedTenantId;
+  } catch (err) {
+    console.error("Failed to load tenants for assign modal:", err);
+  }
+}
+
 function updateTenantFieldRequirement() {
   const role = _assignRoleSelect.value;
-  const tenantRequired = role === "tenant-admin";
-  _assignTenantInput.required = tenantRequired;
-  _assignTenantHint.textContent = tenantRequired
-    ? "Required for tenant-admin."
-    : "Optional for super-admin.";
+  const isTenantAdmin = role === "tenant-admin";
+  const row = document.getElementById("assign-tenant-row");
+  if (row) row.classList.toggle("hidden", !isTenantAdmin);
+  _assignTenantInput.required = isTenantAdmin;
+  if (!isTenantAdmin) _assignTenantInput.value = "";
 }
 
 async function handleAssignSubmit(e) {
   e.preventDefault();
   if (!_editingUsername) return;
+  _assignError.classList.add("hidden");
 
   const role = _assignRoleSelect.value;
-  const tenantId = _assignTenantInput.value.trim() || null;
+  const tenantId = (_assignTenantInput.value || "").trim() || null;
 
   if (role === "tenant-admin" && !tenantId) {
-    alert("Tenant ID is required for tenant-admin.");
+    _assignError.textContent = "Tenant is required for tenant-admin.";
+    _assignError.classList.remove("hidden");
     return;
   }
 
@@ -133,26 +165,30 @@ async function handleAssignSubmit(e) {
     _editingUsername = null;
     await load();
   } catch (err) {
-    alert(`Failed to save: ${err.message}`);
+    _assignError.textContent = err.message;
+    _assignError.classList.remove("hidden");
   }
 }
 
 function openDeleteModal(user) {
   _pendingDeleteUsername = user.username;
   _deleteEmail.textContent = user.email || user.username;
+  _deleteError.classList.add("hidden");
   _deleteModal.classList.remove("hidden");
 }
 
 async function handleDeleteConfirm() {
   if (!_pendingDeleteUsername) return;
+  _deleteError.classList.add("hidden");
   const username = _pendingDeleteUsername;
-  _deleteModal.classList.add("hidden");
-  _pendingDeleteUsername = null;
   try {
     await UsersService.remove(username);
+    _deleteModal.classList.add("hidden");
+    _pendingDeleteUsername = null;
     await load();
   } catch (err) {
-    alert(`Failed to delete: ${err.message}`);
+    _deleteError.textContent = err.message;
+    _deleteError.classList.remove("hidden");
   }
 }
 

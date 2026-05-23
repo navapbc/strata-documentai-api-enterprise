@@ -9,29 +9,20 @@ from typing import Any, Literal
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
-from documentai_api.annotations import AdminClaims
+from documentai_api.annotations import SuperAdminClaims, verify_jwt_with_super_admin
 from documentai_api.logging import get_logger
 from documentai_api.services import cognito as cognito_service
-from documentai_api.utils.jwt_auth import (
-    SUPER_ADMIN,
-    TENANT_ADMIN,
-    require_super_admin,
-)
+from documentai_api.utils.jwt_auth import SUPER_ADMIN, TENANT_ADMIN
 
 logger = get_logger(__name__)
 
 Role = Literal["super-admin", "tenant-admin"]
 
 
-async def require_super_admin_dep(claims: AdminClaims) -> dict[str, Any]:
-    require_super_admin(claims)
-    return claims
-
-
 router = APIRouter(
     prefix="/v1/admin/users",
     tags=["admin-users"],
-    dependencies=[Depends(require_super_admin_dep)],
+    dependencies=[Depends(verify_jwt_with_super_admin)],
 )
 
 
@@ -58,7 +49,7 @@ class ChangeTenantRequest(BaseModel):
 
 
 @router.get("")
-async def list_users(claims: AdminClaims) -> dict[str, Any]:
+async def list_users(claims: SuperAdminClaims) -> dict[str, Any]:
     """List every user in the pool with their group + tenant assignment."""
     try:
         users = cognito_service.list_users()
@@ -83,14 +74,18 @@ def _validate_tenant_for_role(role: Role, tenant_id: str | None) -> None:
 async def approve_user(
     username: str,
     body: ApproveRequest,
-    claims: AdminClaims,
+    claims: SuperAdminClaims,
 ) -> dict[str, Any]:
     """Approve a pending user by assigning a role and (for tenant-admin) a tenant."""
     _validate_tenant_for_role(body.role, body.tenant_id)
     try:
         cognito_service.replace_role(username, body.role)
-        # super-admin keeps any prior tenant unless explicitly set; tenant-admin always sets.
-        if body.role == TENANT_ADMIN or body.tenant_id is not None:
+        # Super-admin is cross-tenant by definition — clear any prior tenant
+        # attribute so the user record reflects the role accurately.
+        # Tenant-admin always gets the supplied tenant.
+        if body.role == SUPER_ADMIN:
+            cognito_service.set_tenant(username, None)
+        else:
             cognito_service.set_tenant(username, body.tenant_id)
     except Exception as e:
         logger.error(f"Failed to approve user {username}: {e}")
@@ -105,7 +100,7 @@ async def approve_user(
 async def change_role(
     username: str,
     body: ChangeRoleRequest,
-    claims: AdminClaims,
+    claims: SuperAdminClaims,
 ) -> dict[str, Any]:
     """Change a user's role, or pass ``role: null`` to revoke."""
     try:
@@ -123,7 +118,7 @@ async def change_role(
 async def change_tenant(
     username: str,
     body: ChangeTenantRequest,
-    claims: AdminClaims,
+    claims: SuperAdminClaims,
 ) -> dict[str, Any]:
     """Set or clear a user's tenant assignment."""
     try:
@@ -138,7 +133,7 @@ async def change_tenant(
 
 
 @router.delete("/{username}")
-async def delete_user(username: str, claims: AdminClaims) -> dict[str, Any]:
+async def delete_user(username: str, claims: SuperAdminClaims) -> dict[str, Any]:
     """Permanently delete a user."""
     # Prevent self-deletion to avoid locking yourself out.
     if claims.get("cognito:username") == username or claims.get("sub") == username:

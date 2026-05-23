@@ -186,6 +186,16 @@
                             </div>
                         </div>
 
+                        <!-- Tenants (super-admin only) -->
+                        <div class="nav-section hidden" id="nav-section-tenants">
+                            <button class="nav-section-header active" data-section="tenants">
+                                <span class="nav-arrow">▾</span> Tenants
+                            </button>
+                            <div class="nav-section-body" id="section-tenants">
+                                <a class="nav-item" data-view="tenants-manage">Manage Tenants</a>
+                            </div>
+                        </div>
+
                         <!-- Blueprints -->
                         <div class="nav-section">
                             <button class="nav-section-header active" data-section="blueprints">
@@ -288,6 +298,35 @@
                         <p id="no-users" class="empty-state hidden">No users found.</p>
                     </div>
 
+                    <!-- Tenants View (super-admin only) -->
+                    <div id="view-tenants-manage" class="content-view hidden">
+                        <div class="content-header">
+                            <h2>Tenants</h2>
+                            <div class="content-actions">
+                                <label class="inline-checkbox">
+                                    <input type="checkbox" id="show-inactive-tenants">
+                                    Show inactive
+                                </label>
+                                <button id="create-tenant-btn" class="btn-primary">+ Create Tenant</button>
+                                <button id="refresh-tenants-btn" class="btn-secondary">Refresh</button>
+                            </div>
+                        </div>
+                        <table id="tenants-table">
+                            <thead>
+                                <tr>
+                                    <th>Tenant ID</th>
+                                    <th>Display name</th>
+                                    <th>Primary contact</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tenants-tbody"></tbody>
+                        </table>
+                        <p id="no-tenants" class="empty-state hidden">No tenants found.</p>
+                    </div>
+
                     <!-- Empty State -->
                     <div id="view-empty" class="content-view">
                         <div class="empty-state-full">
@@ -331,12 +370,50 @@
             </div>
         </div>
 
+        <!-- Tenant Create/Edit Modal -->
+        <div id="tenant-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2 id="tenant-modal-title">Create tenant</h2>
+                <form id="tenant-form">
+                    <label for="tenant-id">Tenant ID</label>
+                    <p class="field-hint">Lowercase letters, numbers, and dashes only. Cannot change after creation.</p>
+                    <input type="text" id="tenant-id" placeholder="e.g. acme-corp" required pattern="[a-z0-9-]+">
+
+                    <label for="tenant-name">Display name</label>
+                    <input type="text" id="tenant-name" placeholder="Acme Corporation" required>
+
+                    <label for="tenant-contact">Primary contact (optional)</label>
+                    <input type="email" id="tenant-contact" placeholder="ops@acme.com">
+
+                    <p id="tenant-form-error" class="error hidden"></p>
+
+                    <div class="modal-actions">
+                        <button type="button" id="tenant-cancel" class="btn-secondary">Cancel</button>
+                        <button type="submit" class="btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tenant Delete Modal -->
+        <div id="tenant-delete-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>Deactivate tenant</h2>
+                <p>This will mark the tenant as inactive. Existing API keys for this tenant will keep working until revoked separately. You can reactivate by toggling "Show inactive" and editing.</p>
+                <p>Tenant: <strong id="tenant-delete-name"></strong></p>
+                <p id="tenant-delete-error" class="error hidden"></p>
+                <div class="modal-actions">
+                    <button type="button" id="tenant-delete-cancel" class="btn-secondary">Cancel</button>
+                    <button type="button" id="tenant-delete-confirm" class="btn-danger">Deactivate</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Assign Role Modal -->
         <div id="assign-role-modal" class="modal hidden">
             <div class="modal-content">
                 <h2 id="assign-role-title">Approve user</h2>
-                <p>Assign a role and (for tenant-admin) a tenant.</p>
-                <p class="form-intro">User: <strong id="assign-role-email"></strong></p>
+                <p>Assign a role for <strong id="assign-role-email"></strong>.</p>
                 <form id="assign-role-form">
                     <label for="assign-role">Role</label>
                     <select id="assign-role" required>
@@ -344,9 +421,15 @@
                         <option value="super-admin">super-admin</option>
                     </select>
 
-                    <label for="assign-tenant">Tenant ID</label>
-                    <input type="text" id="assign-tenant" placeholder="e.g. acme-corp">
-                    <p class="field-hint" id="assign-tenant-hint">Required for tenant-admin.</p>
+                    <div id="assign-tenant-row">
+                        <label for="assign-tenant">Tenant</label>
+                        <select id="assign-tenant">
+                            <option value="">— Select a tenant —</option>
+                        </select>
+                        <p class="field-hint" id="assign-tenant-hint">Required for tenant-admin. Create tenants in the Tenants section first.</p>
+                    </div>
+
+                    <p id="assign-role-error" class="error hidden"></p>
 
                     <div class="modal-actions">
                         <button type="button" id="assign-role-cancel" class="btn-secondary">Cancel</button>
@@ -362,6 +445,7 @@
                 <h2>Delete user</h2>
                 <p>This will permanently delete the Cognito user. They will lose access immediately and cannot sign in again unless they sign up fresh.</p>
                 <p>User: <strong id="delete-user-email"></strong></p>
+                <p id="delete-user-error" class="error hidden"></p>
                 <div class="modal-actions">
                     <button type="button" id="delete-user-cancel" class="btn-secondary">Cancel</button>
                     <button type="button" id="delete-user-confirm" class="btn-danger">Delete user</button>

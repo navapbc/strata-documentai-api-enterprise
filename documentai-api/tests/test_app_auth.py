@@ -50,10 +50,17 @@ def test_all_non_public_routes_require_auth():
     public = {"/", "/health", "/openapi.json", "/docs", "/redoc"}
     auth_deps = {verify_api_key, get_user_context, verify_jwt}
 
+    def walk(dependant) -> set:
+        """Collect every callable in this dependency subtree."""
+        calls = {d.call for d in dependant.dependencies}
+        for child in dependant.dependencies:
+            calls |= walk(child)
+        return calls
+
     for route in app.routes:
         if not isinstance(route, APIRoute) or route.path in public:
             continue
-        deps = {d.call for d in route.dependant.dependencies}
+        deps = walk(route.dependant)
         assert not deps.isdisjoint(auth_deps), (
             f"Route {sorted(route.methods)} {route.path} is missing auth dependency"
         )

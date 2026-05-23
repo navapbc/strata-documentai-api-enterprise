@@ -98,13 +98,13 @@ async function handleCreate(e) {
       ? { api_key: `docai_${Math.random().toString(36).slice(2, 18)}` }
       : await KeysService.create(clientName, environment, expiresAt, emailAddress);
     _createModal.classList.add("hidden");
-    _newKeyValue.textContent = result.api_key || "—";
+    _newKeyValue.textContent = result.apiKey || "—";
     _keyCreatedModal.classList.remove("hidden");
     if (_isDemo) {
       DEMO_KEYS.push({
         client_name: clientName,
         environment,
-        key_prefix: result.api_key.slice(0, 12) + "...",
+        keyPrefix: result.apiKey.slice(0, 12) + "...",
         created_at: new Date().toISOString(),
         is_active: true,
       });
@@ -127,23 +127,23 @@ export function render(keys) {
   _noKeys.classList.add("hidden");
   for (const key of keys) {
     const tr = document.createElement("tr");
-    const isActive = key.is_active !== false;
+    const isActive = key.isActive !== false;
     if (!isActive) tr.classList.add("row-inactive");
     const actionCell = isActive
       ? `<button class="btn-danger btn-sm">Revoke</button>`
       : `<span class="badge badge-revoked">Revoked</span>`;
     tr.innerHTML = `
-      <td>${Helpers.esc(key.client_name || "—")}</td>
+      <td>${Helpers.esc(key.clientName || "—")}</td>
       <td>${Helpers.esc(key.environment || "—")}</td>
-      <td><code>${key.key_prefix ? Helpers.esc(key.key_prefix) + "…" : "—"}</code></td>
-      <td>${Helpers.formatDate(key.created_at)}</td>
-      <td>${key.last_used ? Helpers.formatDate(key.last_used) : "—"}</td>
+      <td><code>${key.keyPrefix ? Helpers.esc(key.keyPrefix) + "…" : "—"}</code></td>
+      <td>${Helpers.formatDate(key.createdAt)}</td>
+      <td>${key.lastUsed ? Helpers.formatDate(key.lastUsed) : "—"}</td>
       <td>${actionCell}</td>
     `;
     if (isActive) {
       tr.querySelector("button").addEventListener("click", () => {
         if (_isDemo) { tr.remove(); if (!_tbody.children.length) _noKeys.classList.remove("hidden"); }
-        else openRevokeModal(key.key_prefix);
+        else openRevokeModal(key.keyPrefix);
       });
     }
     _tbody.appendChild(tr);

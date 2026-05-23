@@ -14,10 +14,10 @@ from documentai_api.config.constants import (
     DocumentCategory,
 )
 from documentai_api.utils.auth import UserContext, get_user_context
-from documentai_api.utils.jwt_auth import require_role, verify_jwt
+from documentai_api.utils.jwt_auth import require_role, require_super_admin, verify_jwt
 
 
-async def _verify_jwt_with_role(
+async def verify_jwt_with_role(
     claims: Annotated[dict[str, Any], Depends(verify_jwt)],
 ) -> dict[str, Any]:
     """Verify the JWT and require that the user has been assigned a role.
@@ -29,7 +29,16 @@ async def _verify_jwt_with_role(
     return claims
 
 
-AdminClaims = Annotated[dict[str, Any], Depends(_verify_jwt_with_role)]
+async def verify_jwt_with_super_admin(
+    claims: Annotated[dict[str, Any], Depends(verify_jwt)],
+) -> dict[str, Any]:
+    """Verify the JWT and require that the user is in the super-admin group."""
+    require_super_admin(claims)
+    return claims
+
+
+AdminClaims = Annotated[dict[str, Any], Depends(verify_jwt_with_role)]
+SuperAdminClaims = Annotated[dict[str, Any], Depends(verify_jwt_with_super_admin)]
 
 # Auth
 # Router-level `dependencies=[Depends(get_user_context)]` enforces auth even if a handler

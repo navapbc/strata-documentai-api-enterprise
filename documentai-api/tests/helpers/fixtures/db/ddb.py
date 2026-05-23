@@ -140,3 +140,21 @@ def set_ddb_doc_metadata_table_env_vars(ddb_doc_metadata_table_resource, monkeyp
     monkeypatch.setenv(EnvVars.DOCUMENTAI_OUTPUT_LOCATION, "s3://test/output")
     monkeypatch.setenv(EnvVars.BDA_PROJECT_ARN, "arn:aws:test")
     monkeypatch.setenv(EnvVars.BDA_PROFILE_ARN, "arn:aws:test")
+
+
+@pytest.fixture
+def tenants_table(aws_credentials, monkeypatch):
+    from moto import mock_aws
+
+    with mock_aws():
+        import boto3
+
+        dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+        table = dynamodb.create_table(
+            TableName="tenants",
+            KeySchema=[{"AttributeName": "tenantId", "KeyType": "HASH"}],
+            AttributeDefinitions=[{"AttributeName": "tenantId", "AttributeType": "S"}],
+            BillingMode="PAY_PER_REQUEST",
+        )
+        monkeypatch.setenv(EnvVars.TENANTS_TABLE_NAME, table.name)
+        yield table

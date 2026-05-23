@@ -151,6 +151,12 @@ module "api_keys" {
   hash_key   = "keyHash"
 }
 
+
+module "tenants" {
+  source     = "../../modules/nosql"
+  table_name = "${local.service_name}-tenants"
+  hash_key   = "tenantId"
+}
 module "extraction_rules" {
   source     = "../../modules/nosql"
   table_name = "${local.service_name}-extraction-rules"
@@ -390,6 +396,7 @@ locals {
     DOCUMENTAI_DOCUMENT_METADATA_EXTERNAL_DOC_ID_INDEX_NAME = local.gsi_external_document_id
     DOCUMENTAI_DOCUMENT_METADATA_TENANT_INDEX_NAME          = local.gsi_tenant_id
     API_KEYS_TABLE_NAME                                     = module.api_keys.table_name
+    TENANTS_TABLE_NAME                                      = module.tenants.table_name
     EXTRACTION_RULES_TABLE_NAME                             = module.extraction_rules.table_name
     DOCUMENTAI_BATCH_TABLE_NAME                             = module.document_batches.table_name
     DOCUMENTAI_DOCUMENT_BUILD_TABLE_NAME                    = module.document_builds.table_name
@@ -446,6 +453,8 @@ data "aws_iam_policy_document" "data_access" {
       "${module.document_metadata.table_arn}/index/*",
       "${module.api_keys.table_arn}",
       "${module.api_keys.table_arn}/index/*",
+      "${module.tenants.table_arn}",
+      "${module.tenants.table_arn}/index/*",
       "${module.extraction_rules.table_arn}",
       "${module.extraction_rules.table_arn}/index/*",
       "${module.document_batches.table_arn}",

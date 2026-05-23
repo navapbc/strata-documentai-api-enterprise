@@ -18,6 +18,7 @@ from documentai_api.app_dictionary import router as dictionary_router
 from documentai_api.app_documents import router as documents_router
 from documentai_api.app_extraction_rules import router as extraction_rules_router
 from documentai_api.app_presigned import router as presigned_router
+from documentai_api.app_tenants import router as tenants_router
 from documentai_api.app_users import router as users_router
 from documentai_api.config.constants import (
     API_VERSION,
@@ -46,6 +47,7 @@ app.include_router(presigned_router)
 app.include_router(dictionary_router)
 app.include_router(extraction_rules_router)
 app.include_router(admin_router)
+app.include_router(tenants_router)
 app.include_router(users_router)
 
 app.add_middleware(
