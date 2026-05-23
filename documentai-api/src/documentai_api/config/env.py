@@ -76,6 +76,10 @@ class AWSEnvConfig(PydanticBaseEnvConfig):
     bedrock_classification_model_id_param: str | None = None
     bedrock_classification_prompt_param: str | None = None
 
+    # Cognito
+    cognito_user_pool_id: str | None = None
+    cognito_client_id: str | None = None
+
     # Document AI core
     documentai_document_metadata_table_name: str | None = None
     documentai_document_metadata_job_id_index_name: str | None = None

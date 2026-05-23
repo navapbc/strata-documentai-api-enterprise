@@ -254,6 +254,21 @@ module "config" {
   }
 }
 
+# --- Identity Provider (Cognito) ---
+
+module "identity_provider" {
+  source = "../../modules/identity-provider"
+  name   = "${local.service_name}-console"
+
+  callback_urls = [
+    "http://localhost:3000/callback",
+    "https://${local.service_name}-console.${var.region}.amazonaws.com/callback",
+  ]
+  logout_urls = [
+    "http://localhost:3000",
+  ]
+}
+
 # --- Secrets ---
 
 module "secrets" {
@@ -398,6 +413,8 @@ locals {
     API_AUTH_ALLOW_INSECURE_FALLBACK                        = "true"
     API_AUTH_CACHE_TTL                                      = local.api_auth_cache_ttl
     API_AUTH_INSECURE_SHARED_KEY_PARAM                      = "/${var.project_name}/${var.environment}/api-auth-insecure-shared-key"
+    COGNITO_USER_POOL_ID                                    = module.identity_provider.user_pool_id
+    COGNITO_CLIENT_ID                                       = module.identity_provider.client_id
   }
 
   lambda_policy_arns = {
@@ -547,6 +564,25 @@ data "aws_iam_policy_document" "supporting_services" {
       "athena:StopQueryExecution",
     ]
     resources = ["arn:aws:athena:${var.region}:${local.account_id}:workgroup/${local.service_name}-analytics"]
+  }
+
+  # Cognito
+  statement {
+    actions = [
+      "cognito-idp:AdminInitiateAuth",
+      "cognito-idp:AdminGetUser",
+      "cognito-idp:AdminCreateUser",
+      "cognito-idp:AdminSetUserPassword",
+      "cognito-idp:ListUsers",
+      # User-management endpoints (super-admin only):
+      "cognito-idp:AdminListGroupsForUser",
+      "cognito-idp:AdminAddUserToGroup",
+      "cognito-idp:AdminRemoveUserFromGroup",
+      "cognito-idp:AdminUpdateUserAttributes",
+      "cognito-idp:AdminDeleteUserAttributes",
+      "cognito-idp:AdminDeleteUser",
+    ]
+    resources = ["arn:aws:cognito-idp:${var.region}:${local.account_id}:userpool/*"]
   }
 
   # Glue

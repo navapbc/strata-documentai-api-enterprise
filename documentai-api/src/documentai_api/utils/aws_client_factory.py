@@ -15,6 +15,7 @@ if TYPE_CHECKING:
         RuntimeforBedrockDataAutomationClient,
     )
     from mypy_boto3_bedrock_runtime.client import BedrockRuntimeClient
+    from mypy_boto3_cognito_idp import CognitoIdentityProviderClient
     from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
     from mypy_boto3_s3.client import S3Client
     from mypy_boto3_sqs import SQSClient
@@ -90,6 +91,11 @@ class AWSClientFactory:
     @lru_cache(maxsize=1)
     def get_athena_client(cls) -> AthenaClient:
         return cls.get_session().client("athena", region_name=cls._get_region())
+
+    @classmethod
+    @lru_cache(maxsize=1)
+    def get_cognito_client(cls) -> CognitoIdentityProviderClient:
+        return cls.get_session().client("cognito-idp", region_name=cls._get_region())
 
     @classmethod
     @lru_cache(maxsize=1)

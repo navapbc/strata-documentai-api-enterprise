@@ -204,6 +204,9 @@ def generate_api_key(
     client_name: str,
     environment: str,
     expires_at: datetime | None = None,
+    created_by: str | None = None,
+    email_address: str | None = None,
+    tenant_id: str | None = None,
 ) -> tuple[str, list[dict[str, Any]]]:
     """Generate a new API key, store its hash in DynamoDB, and return the plaintext key.
 
@@ -242,10 +245,51 @@ def generate_api_key(
     if expires_at:
         item[ApiKeyRecord.EXPIRES_AT] = expires_at.isoformat()
 
+    if created_by:
+        item[ApiKeyRecord.CREATED_BY] = created_by
+    if email_address:
+        item[ApiKeyRecord.EMAIL_ADDRESS] = email_address
+    if tenant_id:
+        item[ApiKeyRecord.TENANT_ID] = tenant_id
+
     ddb_service.put_item(table_name, item)
     logger.info(f"Generated API key for client: {client_name} in environment: {environment}")
 
     return api_key, existing_keys
+
+
+def find_api_key_by_prefix(prefix: str, tenant_id: str | None = None) -> str | None:
+    """Find a single active API key by hash prefix. Returns the full hash, or None.
+
+    If ``tenant_id`` is provided, only keys belonging to that tenant are
+    considered (used to enforce tenant-admin isolation).
+
+    Raises ValueError if more than one active key matches the prefix within
+    the scoped set.
+    """
+    from documentai_api.services import ddb as ddb_service
+
+    table_name = get_aws_config().api_keys_table_name
+    if not table_name:
+        raise ValueError("API_KEYS_TABLE_NAME environment variable not set")
+
+    try:
+        all_items = ddb_service.scan(table_name)
+    except Exception as e:
+        logger.error(f"Failed to scan api-keys table: {e}")
+        return None
+
+    matches = [
+        item.get(ApiKeyRecord.KEY_HASH)
+        for item in all_items
+        if item.get(ApiKeyRecord.IS_ACTIVE, False)
+        and (item.get(ApiKeyRecord.KEY_HASH) or "").startswith(prefix)
+        and (tenant_id is None or item.get(ApiKeyRecord.TENANT_ID) == tenant_id)
+    ]
+
+    if len(matches) > 1:
+        raise ValueError(f"Prefix {prefix!r} matches {len(matches)} keys; use a longer prefix")
+    return matches[0] if matches else None
 
 
 def deactivate_api_key(key_hash: str) -> bool:

@@ -25,3 +25,11 @@ output "output_bucket" {
 output "bda_project_arns" {
   value = { for k, v in module.bedrock_data_automation : k => v.project_arn }
 }
+
+output "cognito_user_pool_id" {
+  value = module.identity_provider.user_pool_id
+}
+
+output "cognito_client_id" {
+  value = module.identity_provider.client_id
+}

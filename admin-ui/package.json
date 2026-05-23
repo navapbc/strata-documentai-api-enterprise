@@ -1,0 +1,14 @@
+{
+  "name": "docai-admin-ui",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "esbuild js/main.js --bundle --outfile=dist/bundle.js --sourcemap --watch --serve=3000 --servedir=.",
+    "build": "esbuild js/main.js --bundle --outfile=dist/bundle.js --minify",
+    "preview": "python3 -m http.server 3000"
+  },
+  "devDependencies": {
+    "esbuild": "^0.21.0"
+  }
+}

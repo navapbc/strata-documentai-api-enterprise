@@ -4,7 +4,7 @@ Centralizes repeated Annotated types so endpoint signatures stay DRY.
 Import and use directly as parameter type hints.
 """
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import Depends, Form, Header, Query
 from pydantic import StringConstraints
@@ -14,6 +14,22 @@ from documentai_api.config.constants import (
     DocumentCategory,
 )
 from documentai_api.utils.auth import UserContext, get_user_context
+from documentai_api.utils.jwt_auth import require_role, verify_jwt
+
+
+async def _verify_jwt_with_role(
+    claims: Annotated[dict[str, Any], Depends(verify_jwt)],
+) -> dict[str, Any]:
+    """Verify the JWT and require that the user has been assigned a role.
+
+    Pending users (authenticated but no Cognito group) get a 403 here so admin
+    handlers never see them.
+    """
+    require_role(claims)
+    return claims
+
+
+AdminClaims = Annotated[dict[str, Any], Depends(_verify_jwt_with_role)]
 
 # Auth
 # Router-level `dependencies=[Depends(get_user_context)]` enforces auth even if a handler

@@ -39,7 +39,8 @@ infra-plan: ## Plan infrastructure changes for $ENVIRONMENT
 
 infra-apply: ## Apply infrastructure changes for $ENVIRONMENT
 	@IMAGE_TAG=$${IMAGE_TAG:-$$(git -C .. rev-parse --short HEAD)} && \
-	terraform -chdir="$(TF_DIR)" apply -var="image_tag=$$IMAGE_TAG"
+	terraform -chdir="$(TF_DIR)" apply -var="image_tag=$$IMAGE_TAG" && \
+	terraform -chdir="$(TF_DIR)" output -json > ../admin-ui/config.json
 
 infra-deploy: ## Build, push image, and deploy for $ENVIRONMENT
 	@echo "Deploying to $(ENVIRONMENT)..."
@@ -55,6 +56,7 @@ infra-deploy: ## Build, push image, and deploy for $ENVIRONMENT
 	docker build --platform linux/amd64 -f ../documentai-api/Dockerfile.lambda -t $$ECR_URL:$$IMAGE_TAG ../documentai-api && \
 	docker push $$ECR_URL:$$IMAGE_TAG && \
 	terraform -chdir="$(TF_DIR)" apply -var="image_tag=$$IMAGE_TAG" -auto-approve && \
+	terraform -chdir="$(TF_DIR)" output -json > ../admin-ui/config.json && \
 	echo "Deploy complete: $$IMAGE_TAG → $(ENVIRONMENT)"
 
 infra-destroy: ## Destroy infrastructure for $ENVIRONMENT

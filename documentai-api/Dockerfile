@@ -25,14 +25,18 @@ COPY pyproject.toml uv.lock* /app/
 # Development stage with dev dependencies
 FROM base AS dev
 
-# Install project dependencies including dev dependencies
+# Install project dependencies including dev dependencies.
+# --reinstall ensures newly-added deps get installed even when uv's cache mount
+# holds an older venv state. Without it, dep additions can silently no-op and
+# show up later as "missing module" errors. Costs ~30-60s per dev image build;
+# acceptable since the release stage below stays on the fast path.
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-install-project --all-extras
+    uv sync --frozen --no-install-project --all-extras --reinstall
 
 # Copy application code
 COPY src/ /app/src
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --all-extras
+    uv sync --frozen --all-extras --reinstall
 
 # Add project's virtual env to the PATH so we can directly run scripts defined in pyproject.toml
 ENV PATH="/app/.venv/bin:$PATH"

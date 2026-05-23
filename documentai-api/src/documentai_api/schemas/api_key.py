@@ -12,3 +12,5 @@ class ApiKeyRecord:
     CREATED_AT = "createdAt"
     EXPIRES_AT = "expiresAt"
     LAST_USED = "lastUsed"
+    CREATED_BY = "createdBy"
+    EMAIL_ADDRESS = "emailAddress"

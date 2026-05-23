@@ -45,9 +45,10 @@ def test_all_non_public_routes_require_auth():
 
     from documentai_api.app import app
     from documentai_api.utils.auth import get_user_context, verify_api_key
+    from documentai_api.utils.jwt_auth import verify_jwt
 
     public = {"/", "/health", "/openapi.json", "/docs", "/redoc"}
-    auth_deps = {verify_api_key, get_user_context}
+    auth_deps = {verify_api_key, get_user_context, verify_jwt}
 
     for route in app.routes:
         if not isinstance(route, APIRoute) or route.path in public:

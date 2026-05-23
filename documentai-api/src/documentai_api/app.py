@@ -9,6 +9,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from mangum import Mangum
 
+from documentai_api.app_admin import router as admin_router
+
 # Routers
 from documentai_api.app_batch import router as batch_router
 from documentai_api.app_build import router as build_router
@@ -16,6 +18,7 @@ from documentai_api.app_dictionary import router as dictionary_router
 from documentai_api.app_documents import router as documents_router
 from documentai_api.app_extraction_rules import router as extraction_rules_router
 from documentai_api.app_presigned import router as presigned_router
+from documentai_api.app_users import router as users_router
 from documentai_api.config.constants import (
     API_VERSION,
     APIConfig,
@@ -42,13 +45,15 @@ app.include_router(build_router)
 app.include_router(presigned_router)
 app.include_router(dictionary_router)
 app.include_router(extraction_rules_router)
+app.include_router(admin_router)
+app.include_router(users_router)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=False,
     allow_methods=["GET", "PUT", "POST", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "x-api-key", "X-Trace-ID"],
+    allow_headers=["Content-Type", "x-api-key", "API-Key", "Authorization", "X-Trace-ID"],
     expose_headers=["X-Trace-ID"],
 )
 
