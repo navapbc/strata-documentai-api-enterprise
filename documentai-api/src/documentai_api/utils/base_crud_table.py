@@ -15,55 +15,31 @@ Subclass and declare table config to get standard CRUD operations:
 from datetime import UTC, datetime
 from typing import Any
 
-from documentai_api.config.env import get_aws_config
 from documentai_api.logging import get_logger
 from documentai_api.services import ddb as ddb_service
 from documentai_api.utils.aws_client_factory import AWSClientFactory
+from documentai_api.utils.base_readonly_table import ReadOnlyTable
 
 logger = get_logger(__name__)
 
 
-class BaseCrudTable:
+class BaseCrudTable(ReadOnlyTable):
     """Generic CRUD operations for a DynamoDB table."""
 
-    table_name_env: str
-    pk_field: str
-    sk_field: str | None = None
     active_field: str = "isActive"
     created_field: str = "createdAt"
     updated_field: str = "updatedAt"
 
-    def _get_table_name(self) -> str:
-        table_name: str | None = getattr(get_aws_config(), self.table_name_env.lower(), None)
-        if not table_name:
-            raise ValueError(f"{self.table_name_env} not configured")
-        return table_name
-
-    def _build_key(self, pk_value: str, sk_value: str | None = None) -> dict[str, str]:
-        key: dict[str, str] = {self.pk_field: pk_value}
-        if self.sk_field and sk_value:
-            key[self.sk_field] = sk_value
-        return key
-
-    def get(self, pk_value: str, sk_value: str | None = None) -> dict[str, Any] | None:
-        """Get a single item by key."""
-        return ddb_service.get_item(self._get_table_name(), self._build_key(pk_value, sk_value))
-
     def list_by_pk(self, pk_value: str, active_only: bool = True) -> list[dict[str, Any]]:
         """List items by partition key."""
-        if self.sk_field:
-            items = ddb_service.query_by_pk(self._get_table_name(), self.pk_field, pk_value)
-        else:
-            items = ddb_service.scan(self._get_table_name())
-            items = [i for i in items if i.get(self.pk_field) == pk_value]
-
+        items = super().list_by_pk(pk_value)
         if active_only and self.active_field:
             items = [i for i in items if i.get(self.active_field, True)]
         return items
 
     def list_all(self, active_only: bool = True) -> list[dict[str, Any]]:
         """Scan all items (use sparingly)."""
-        items = ddb_service.scan(self._get_table_name())
+        items = super().list_all()
         if active_only and self.active_field:
             items = [i for i in items if i.get(self.active_field, True)]
         return items
@@ -168,35 +144,3 @@ class BaseCrudTable:
             return False
         ddb_service.delete_item(self._get_table_name(), key)
         return True
-
-    def query(
-        self,
-        key_condition: Any,
-        filter_expression: Any | None = None,
-        index_name: str | None = None,
-        limit: int | None = None,
-        scan_forward: bool = True,
-        start_key: dict[str, Any] | None = None,
-    ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
-        """Run a DDB query with full control over conditions.
-
-        Returns (items, last_evaluated_key). last_evaluated_key is None if
-        there are no more pages.
-        """
-        table = AWSClientFactory.get_ddb_table(self._get_table_name())
-
-        kwargs: dict[str, Any] = {
-            "KeyConditionExpression": key_condition,
-            "ScanIndexForward": scan_forward,
-        }
-        if filter_expression is not None:
-            kwargs["FilterExpression"] = filter_expression
-        if index_name:
-            kwargs["IndexName"] = index_name
-        if limit:
-            kwargs["Limit"] = limit
-        if start_key:
-            kwargs["ExclusiveStartKey"] = start_key
-
-        response = table.query(**kwargs)
-        return response.get("Items", []), response.get("LastEvaluatedKey")

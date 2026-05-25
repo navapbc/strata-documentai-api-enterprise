@@ -1,0 +1,190 @@
+"""Tests for Lambda handler error handling — DDB marked as failed on unhandled errors."""
+
+from unittest.mock import patch
+
+import pytest
+
+from documentai_api.config.constants import ProcessStatus
+from documentai_api.config.env import EnvVars
+from documentai_api.jobs.bda_result_processor.handler import handler as bda_handler
+from documentai_api.jobs.document_processor.handler import handler as doc_handler
+from documentai_api.schemas.document_metadata import DocumentMetadata
+
+EVENTBRIDGE_S3_EVENT = {
+    "detail": {
+        "bucket": {"name": "test-bucket"},
+        "object": {"key": "input/test-tenant/doc.pdf"},
+    }
+}
+
+
+@pytest.fixture(autouse=True)
+def mock_env(monkeypatch):
+    monkeypatch.setenv(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME, "metadata")
+    monkeypatch.setenv(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_JOB_ID_INDEX_NAME, "job-id-index")
+    monkeypatch.setenv(EnvVars.DOCUMENTAI_INPUT_LOCATION, "s3://test-bucket/input")
+    monkeypatch.setenv(EnvVars.DOCUMENTAI_OUTPUT_LOCATION, "s3://test-bucket/output")
+    monkeypatch.setenv(EnvVars.BDA_PROJECT_ARN, "arn:aws:test")
+    monkeypatch.setenv(EnvVars.BDA_PROFILE_ARN, "arn:aws:test")
+    monkeypatch.setenv(EnvVars.BDA_REGION, "us-east-1")
+
+
+##############################################################################
+# Unit tests — verify handler wiring
+##############################################################################
+
+
+def test_document_processor_marks_failed_on_error():
+    with (
+        patch(
+            "documentai_api.jobs.document_processor.handler.main",
+            side_effect=RuntimeError("boom"),
+        ),
+        patch("documentai_api.jobs.document_processor.handler.classify_as_failed") as mock_fail,
+    ):
+        result = doc_handler(EVENTBRIDGE_S3_EVENT, None)
+
+        assert result["statusCode"] == 500
+        mock_fail.assert_called_once()
+        call_kwargs = mock_fail.call_args.kwargs
+        assert call_kwargs["object_key"] == "doc.pdf"
+        assert "boom" in call_kwargs["error_message"]
+
+
+def test_bda_result_processor_marks_failed_on_error():
+    bda_event = {
+        "detail": {
+            "bucket": {"name": "test-bucket"},
+            "object": {"key": "processed/test-tenant/result.json"},
+        }
+    }
+    with (
+        patch(
+            "documentai_api.jobs.bda_result_processor.handler.main",
+            side_effect=RuntimeError("bda crash"),
+        ),
+        patch("documentai_api.jobs.bda_result_processor.handler.classify_as_failed") as mock_fail,
+    ):
+        result = bda_handler(bda_event, None)
+
+        assert result["statusCode"] == 500
+        mock_fail.assert_called_once()
+        call_kwargs = mock_fail.call_args.kwargs
+        assert call_kwargs["object_key"] == "result.json"
+        assert "bda crash" in call_kwargs["error_message"]
+
+
+def test_document_processor_success_does_not_mark_failed():
+    with (
+        patch("documentai_api.jobs.document_processor.handler.main") as mock_main,
+        patch("documentai_api.jobs.document_processor.handler.classify_as_failed") as mock_fail,
+    ):
+        result = doc_handler(EVENTBRIDGE_S3_EVENT, None)
+
+        mock_main.assert_called_once()
+        mock_fail.assert_not_called()
+        assert result == {"statusCode": 200}
+
+
+def test_bda_result_processor_success_does_not_mark_failed():
+    bda_event = {
+        "detail": {
+            "bucket": {"name": "test-bucket"},
+            "object": {"key": "processed/test-tenant/result.json"},
+        }
+    }
+    with (
+        patch("documentai_api.jobs.bda_result_processor.handler.main") as mock_main,
+        patch("documentai_api.jobs.bda_result_processor.handler.classify_as_failed") as mock_fail,
+    ):
+        result = bda_handler(bda_event, None)
+
+        mock_main.assert_called_once()
+        mock_fail.assert_not_called()
+        assert result == {"statusCode": 200}
+
+
+##############################################################################
+# Integration tests — verify DDB actually updated to FAILED
+##############################################################################
+
+
+def test_document_processor_updates_ddb_to_failed(ddb_doc_metadata_table):
+    """Integration: handler error → DDB record marked as FAILED."""
+    ddb_doc_metadata_table.put_item(
+        Item={
+            DocumentMetadata.FILE_NAME: "doc.pdf",
+            DocumentMetadata.PROCESS_STATUS: ProcessStatus.NOT_STARTED.value,
+        }
+    )
+
+    with patch(
+        "documentai_api.jobs.document_processor.handler.main",
+        side_effect=RuntimeError("integration boom"),
+    ):
+        result = doc_handler(EVENTBRIDGE_S3_EVENT, None)
+
+    assert result["statusCode"] == 500
+
+    record = ddb_doc_metadata_table.get_item(Key={"fileName": "doc.pdf"})["Item"]
+    assert record[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.FAILED.value
+    assert "integration boom" in record.get(DocumentMetadata.ERROR_MESSAGE, "")
+
+
+def test_bda_result_processor_updates_ddb_to_failed(ddb_doc_metadata_table):
+    """Integration: BDA handler error → DDB record marked as FAILED."""
+    ddb_doc_metadata_table.put_item(
+        Item={
+            DocumentMetadata.FILE_NAME: "result.json",
+            DocumentMetadata.PROCESS_STATUS: ProcessStatus.NOT_STARTED.value,
+        }
+    )
+
+    bda_event = {
+        "detail": {
+            "bucket": {"name": "test-bucket"},
+            "object": {"key": "processed/test-tenant/result.json"},
+        }
+    }
+
+    with patch(
+        "documentai_api.jobs.bda_result_processor.handler.main",
+        side_effect=RuntimeError("bda integration crash"),
+    ):
+        result = bda_handler(bda_event, None)
+
+    assert result["statusCode"] == 500
+
+    record = ddb_doc_metadata_table.get_item(Key={"fileName": "result.json"})["Item"]
+    assert record[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.FAILED.value
+    assert "bda integration crash" in record.get(DocumentMetadata.ERROR_MESSAGE, "")
+
+
+def test_handler_returns_500_with_original_error_when_classify_fails():
+    """If classify_as_failed throws, the original error still surfaces."""
+    with (
+        patch(
+            "documentai_api.jobs.document_processor.handler.main",
+            side_effect=RuntimeError("original error"),
+        ),
+        patch(
+            "documentai_api.jobs.document_processor.handler.classify_as_failed",
+            side_effect=RuntimeError("ddb update failed"),
+        ),
+    ):
+        result = doc_handler(EVENTBRIDGE_S3_EVENT, None)
+
+    assert result["statusCode"] == 500
+    # Original error surfaces, not the cascading DDB failure
+    assert "original error" in result["body"]
+
+
+def test_malformed_event_returns_500_without_ddb_update():
+    """Malformed event → extract_s3_info_from_event raises before try/except."""
+    bad_event = {"garbage": "data"}
+
+    with patch("documentai_api.jobs.document_processor.handler.classify_as_failed") as mock_fail:
+        result = doc_handler(bad_event, None)
+
+    assert result["statusCode"] == 500
+    mock_fail.assert_not_called()

@@ -269,6 +269,16 @@
                             </div>
                         </div>
 
+                        <!-- Documents -->
+                        <div class="nav-section">
+                            <button class="nav-section-header" data-section="documents">
+                                <span class="nav-arrow">▸</span> Documents
+                            </button>
+                            <div class="nav-section-body hidden" id="section-documents">
+                                <a class="nav-item" data-view="documents">View Documents</a>
+                            </div>
+                        </div>
+
                         <!-- Test Documents -->
                         <div class="nav-section">
                             <button class="nav-section-header" data-section="test-docs">
@@ -425,6 +435,43 @@
                             <tbody id="categories-tbody"></tbody>
                         </table>
                         <p id="no-categories" class="empty-state hidden">No categories found.</p>
+                    </div>
+
+                    <!-- Documents View -->
+                    <div id="view-documents" class="content-view hidden">
+                        <div class="content-header">
+                            <h2>Documents</h2>
+                            <div class="content-actions">
+                                <input type="text" id="document-search-input" placeholder="Search by Job ID..." class="search-input">
+                                <button id="document-search-btn" class="btn-secondary">Search</button>
+                                <button id="refresh-documents-btn" class="btn-secondary">Refresh</button>
+                            </div>
+                        </div>
+                        <div class="documents-two-panel">
+                            <div class="documents-list-panel">
+                                <table id="documents-table">
+                                    <thead>
+                                        <tr>
+                                            <th>File Name</th>
+                                            <th>Job ID</th>
+                                            <th>Status</th>
+                                            <th>Category</th>
+                                            <th>Blueprint</th>
+                                            <th>Created</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="documents-tbody"></tbody>
+                                </table>
+                                <p id="no-documents" class="empty-state hidden">No documents found.</p>
+                                <div class="pagination-controls">
+                                    <button id="documents-prev-btn" class="btn-secondary" disabled>← Previous</button>
+                                    <button id="documents-next-btn" class="btn-secondary" disabled>Next →</button>
+                                </div>
+                            </div>
+                            <div class="documents-detail-panel" id="document-detail-panel">
+                                <p class="empty-state">Select a document to view details</p>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Audit Log View -->

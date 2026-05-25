@@ -94,7 +94,8 @@ resource "aws_cognito_user_pool" "this" {
     temporary_password_validity_days = var.temporary_password_validity_days
   }
 
-  mfa_configuration = "ON"
+  # MFA: set to "ON" in production to enforce TOTP for all users
+  mfa_configuration = "OPTIONAL"
   software_token_mfa_configuration {
     enabled = true
   }

@@ -9,7 +9,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from mangum import Mangum
 
-from documentai_api.app_admin import router as admin_router
+from documentai_api.app_admin_documents import router as admin_documents_router
+from documentai_api.app_api_keys import router as api_keys_router
 from documentai_api.app_audit_log import router as audit_log_router
 
 # Routers
@@ -49,10 +50,11 @@ app.include_router(build_router)
 app.include_router(presigned_router)
 app.include_router(dictionary_router)
 app.include_router(extraction_rules_router)
-app.include_router(admin_router)
+app.include_router(api_keys_router)
 app.include_router(tenants_router)
 app.include_router(users_router)
 app.include_router(audit_log_router)
+app.include_router(admin_documents_router)
 app.include_router(document_categories_router)
 app.include_router(blueprint_test_router)
 

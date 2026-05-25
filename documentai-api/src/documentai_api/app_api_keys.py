@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from documentai_api.annotations import AdminClaims
 from documentai_api.logging import get_logger
-from documentai_api.models.admin import (
+from documentai_api.models.api_key import (
     ApiKeyItem,
     CreateApiKeyRequest,
     CreateApiKeyResponse,

@@ -1,7 +1,5 @@
 """Admin audit log router — read-only access to audit events."""
 
-import base64
-import json
 from typing import Any
 
 from boto3.dynamodb.conditions import Attr, ConditionBase, Key
@@ -17,6 +15,7 @@ from documentai_api.schemas.audit_event import (
     AuditEventsTable,
 )
 from documentai_api.utils.jwt_auth import tenant_scope
+from documentai_api.utils.pagination import decode_cursor, encode_cursor
 
 logger = get_logger(__name__)
 
@@ -28,20 +27,6 @@ router = APIRouter(
 
 
 _table = AuditEventsTable()
-
-
-def _encode_cursor(last_key: dict[str, Any]) -> str:
-    return base64.urlsafe_b64encode(json.dumps(last_key).encode()).decode()
-
-
-def _decode_cursor(cursor: str) -> dict[str, Any]:
-    try:
-        result: dict[str, Any] = json.loads(base64.urlsafe_b64decode(cursor.encode()))
-        return result
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid cursor"
-        ) from None
 
 
 def _record_to_item(record: dict[str, Any]) -> AuditEventItem:
@@ -96,7 +81,7 @@ async def get_audit_log(
         tenant_id = scope
 
     try:
-        exclusive_start_key = _decode_cursor(cursor) if cursor else None
+        exclusive_start_key = decode_cursor(cursor) if cursor else None
 
         if action and not tenant_id:
             # Super-admin querying by action across all tenants (GSI)
@@ -121,7 +106,7 @@ async def get_audit_log(
         ) from e
 
     items = [_record_to_item(r) for r in records]
-    next_cursor = _encode_cursor(last_key) if last_key else None
+    next_cursor = encode_cursor(last_key) if last_key else None
     return AuditLogResponse(events=items, count=len(items), next_cursor=next_cursor)
 
 

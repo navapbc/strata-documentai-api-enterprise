@@ -433,7 +433,7 @@ locals {
     DOCUMENTAI_BATCH_TABLE_NAME                             = module.document_batches.table_name
     DOCUMENTAI_DOCUMENT_BUILD_TABLE_NAME                    = module.document_builds.table_name
     DOCUMENTAI_INPUT_LOCATION                               = "s3://${module.input_bucket.bucket_name}/input"
-    DOCUMENTAI_OUTPUT_LOCATION                              = "s3://${module.output_bucket.bucket_name}"
+    DOCUMENTAI_OUTPUT_LOCATION                              = "s3://${module.output_bucket.bucket_name}/processed"
     DDB_METRICS_INPUT_QUEUE_URL                             = module.metrics_queue.queue_url
     DDB_EXPORT_BUCKET_NAME                                  = module.metrics_bucket.bucket_name
     DDB_RAW_DATA_TABLE_NAME                                 = module.analytics.raw_metrics_table_name
@@ -664,7 +664,7 @@ module "document_processor_lambda" {
   environment_variables = local.lambda_env_vars
   policy_arns           = local.lambda_policy_arns
 
-  sqs_trigger = {
+  s3_trigger = {
     source_bucket = module.input_bucket.bucket_name
     path_prefix   = "input/"
   }
@@ -682,7 +682,7 @@ module "bda_result_processor_lambda" {
   environment_variables = local.lambda_env_vars
   policy_arns           = local.lambda_policy_arns
 
-  sqs_trigger = {
+  s3_trigger = {
     source_bucket = module.output_bucket.bucket_name
     path_prefix   = "processed/"
   }

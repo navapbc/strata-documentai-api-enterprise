@@ -1,5 +1,5 @@
 # Lambda worker module
-# S3 event → EventBridge → SQS → Lambda (with DLQ)
+# S3 event → EventBridge → Lambda (with DLQ on EventBridge rule)
 
 variable "function_name" {
   type = string
@@ -35,12 +35,12 @@ variable "policy_arns" {
   default     = {}
 }
 
-variable "sqs_trigger" {
+variable "s3_trigger" {
   type = object({
     source_bucket = string
     path_prefix   = string
   })
-  description = "S3 event trigger config routed through SQS"
+  description = "S3 event trigger config routed through EventBridge"
   default     = null
 }
 
@@ -94,26 +94,6 @@ resource "aws_iam_role_policy_attachment" "extra" {
   policy_arn = each.value
 }
 
-# SQS permissions for Lambda
-resource "aws_iam_role_policy" "sqs_access" {
-  count = var.sqs_trigger != null ? 1 : 0
-  name  = "${var.function_name}-sqs"
-  role  = aws_iam_role.this.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Action = [
-        "sqs:ReceiveMessage",
-        "sqs:DeleteMessage",
-        "sqs:GetQueueAttributes",
-      ]
-      Resource = [aws_sqs_queue.this[0].arn]
-    }]
-  })
-}
-
 # --- Lambda Function ---
 
 resource "aws_lambda_function" "this" {
@@ -141,73 +121,54 @@ resource "aws_lambda_function" "this" {
   }
 }
 
-# --- SQS Queue + DLQ (for S3 event triggers) ---
+# --- DLQ for failed EventBridge invocations ---
 
 resource "aws_sqs_queue" "dlq" {
-  count = var.sqs_trigger != null ? 1 : 0
+  count = var.s3_trigger != null ? 1 : 0
   name  = "${var.function_name}-dlq"
 
   message_retention_seconds = 1209600 # 14 days
 }
 
-resource "aws_sqs_queue" "this" {
-  count = var.sqs_trigger != null ? 1 : 0
-  name  = "${var.function_name}-queue"
-
-  visibility_timeout_seconds = var.timeout * 6
-  message_retention_seconds  = 86400 # 1 day
-
-  redrive_policy = jsonencode({
-    deadLetterTargetArn = aws_sqs_queue.dlq[0].arn
-    maxReceiveCount     = 3
-  })
-}
-
-# SQS policy to allow EventBridge to send messages
-resource "aws_sqs_queue_policy" "this" {
-  count     = var.sqs_trigger != null ? 1 : 0
-  queue_url = aws_sqs_queue.this[0].id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect    = "Allow"
-      Principal = { Service = "events.amazonaws.com" }
-      Action    = "sqs:SendMessage"
-      Resource  = aws_sqs_queue.this[0].arn
-    }]
-  })
-}
-
-# Lambda SQS event source mapping
-resource "aws_lambda_event_source_mapping" "sqs" {
-  count            = var.sqs_trigger != null ? 1 : 0
-  event_source_arn = aws_sqs_queue.this[0].arn
-  function_name    = aws_lambda_function.this.arn
-  batch_size       = 1
-}
-
-# --- EventBridge Rule (S3 → SQS) ---
+# --- EventBridge Rule (S3 → Lambda) ---
 
 resource "aws_cloudwatch_event_rule" "s3_trigger" {
-  count = var.sqs_trigger != null ? 1 : 0
+  count = var.s3_trigger != null ? 1 : 0
   name  = "${var.function_name}-s3-trigger"
 
   event_pattern = jsonencode({
     source      = ["aws.s3"]
     detail-type = ["Object Created"]
     detail = {
-      bucket = { name = [var.sqs_trigger.source_bucket] }
-      object = { key = [{ prefix = var.sqs_trigger.path_prefix }] }
+      bucket = { name = [var.s3_trigger.source_bucket] }
+      object = { key = [{ prefix = var.s3_trigger.path_prefix }] }
     }
   })
 }
 
-resource "aws_cloudwatch_event_target" "sqs" {
-  count     = var.sqs_trigger != null ? 1 : 0
+resource "aws_cloudwatch_event_target" "lambda" {
+  count     = var.s3_trigger != null ? 1 : 0
   rule      = aws_cloudwatch_event_rule.s3_trigger[0].name
   target_id = var.function_name
-  arn       = aws_sqs_queue.this[0].arn
+  arn       = aws_lambda_function.this.arn
+
+  dead_letter_config {
+    arn = aws_sqs_queue.dlq[0].arn
+  }
+
+  retry_policy {
+    maximum_event_age_in_seconds = 3600
+    maximum_retry_attempts       = 3
+  }
+}
+
+resource "aws_lambda_permission" "eventbridge_s3" {
+  count         = var.s3_trigger != null ? 1 : 0
+  statement_id  = "AllowEventBridgeS3Invoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.this.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.s3_trigger[0].arn
 }
 
 # --- EventBridge Schedule (for scheduled jobs) ---
@@ -246,8 +207,4 @@ output "function_arn" {
 
 output "role_arn" {
   value = aws_iam_role.this.arn
-}
-
-output "queue_url" {
-  value = var.sqs_trigger != null ? aws_sqs_queue.this[0].url : null
 }
