@@ -69,9 +69,9 @@ def test_keys_tenant_admin_create_scoped_to_own_tenant(client, api_keys_table, t
     _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
     client.post(TENANTS_URL, json={"tenant_id": TENANT_ID, "display_name": "Test"})
     _override_jwt(_make_claims(groups=[TENANT_ADMIN], tenant_id=TENANT_ID))
-    response = client.post(KEYS_URL, json={"client_name": "my-client", "environment": "dev"})
+    response = client.post(KEYS_URL, json={"api_key_name": "my-client", "environment": "dev"})
     assert response.status_code == 200
-    assert response.json()["clientName"] == "my-client"
+    assert response.json()["apiKeyName"] == "my-client"
 
 
 def test_keys_tenant_admin_list_returns_own_only(client, api_keys_table, tenants_table):
@@ -80,23 +80,23 @@ def test_keys_tenant_admin_list_returns_own_only(client, api_keys_table, tenants
     client.post(TENANTS_URL, json={"tenant_id": OTHER_TENANT_ID, "display_name": "Other"})
     client.post(
         KEYS_URL,
-        json={"client_name": "global-client", "environment": "dev", "tenant_id": OTHER_TENANT_ID},
+        json={"api_key_name": "global-client", "environment": "dev", "tenant_id": OTHER_TENANT_ID},
     )
     _override_jwt(_make_claims(groups=[TENANT_ADMIN], tenant_id=TENANT_ID))
-    client.post(KEYS_URL, json={"client_name": "tenant-client", "environment": "dev"})
+    client.post(KEYS_URL, json={"api_key_name": "tenant-client", "environment": "dev"})
 
     response = client.get(KEYS_URL)
     assert response.status_code == 200
     data = response.json()
     assert data["count"] == 1
-    assert data["keys"][0]["clientName"] == "tenant-client"
+    assert data["keys"][0]["apiKeyName"] == "tenant-client"
 
 
 def test_keys_tenant_admin_delete_own_returns_200(client, api_keys_table, tenants_table):
     _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
     client.post(TENANTS_URL, json={"tenant_id": TENANT_ID, "display_name": "Test"})
     _override_jwt(_make_claims(groups=[TENANT_ADMIN], tenant_id=TENANT_ID))
-    client.post(KEYS_URL, json={"client_name": "to-delete", "environment": "dev"})
+    client.post(KEYS_URL, json={"api_key_name": "to-delete", "environment": "dev"})
     list_resp = client.get(KEYS_URL)
     key_prefix = list_resp.json()["keys"][0]["keyPrefix"]
     response = client.delete(f"{KEYS_URL}/{key_prefix}")
@@ -110,7 +110,7 @@ def test_keys_tenant_admin_delete_other_returns_404(client, api_keys_table, tena
     client.post(TENANTS_URL, json={"tenant_id": OTHER_TENANT_ID, "display_name": "Other"})
     client.post(
         KEYS_URL,
-        json={"client_name": "other-key", "environment": "dev", "tenant_id": OTHER_TENANT_ID},
+        json={"api_key_name": "other-key", "environment": "dev", "tenant_id": OTHER_TENANT_ID},
     )
     list_resp = client.get(KEYS_URL, params={"tenant_id": OTHER_TENANT_ID})
     key_prefix = list_resp.json()["keys"][0]["keyPrefix"]
@@ -127,7 +127,7 @@ def test_keys_delete_full_hash_other_tenant_returns_404(client, api_keys_table, 
     client.post(TENANTS_URL, json={"tenant_id": OTHER_TENANT_ID, "display_name": "Other"})
     create_resp = client.post(
         KEYS_URL,
-        json={"client_name": "other-key", "environment": "dev", "tenant_id": OTHER_TENANT_ID},
+        json={"api_key_name": "other-key", "environment": "dev", "tenant_id": OTHER_TENANT_ID},
     )
     raw_key = create_resp.json()["apiKey"]
     full_hash = hashlib.sha256(raw_key.encode()).hexdigest()
@@ -145,7 +145,7 @@ def test_keys_tenant_admin_no_tenant_in_jwt_returns_403(client, api_keys_table):
 
 def test_keys_tenant_admin_no_tenant_in_jwt_create_returns_403(client, api_keys_table):
     _override_jwt(_make_claims(groups=[TENANT_ADMIN]))
-    response = client.post(KEYS_URL, json={"client_name": "test", "environment": "dev"})
+    response = client.post(KEYS_URL, json={"api_key_name": "test", "environment": "dev"})
     assert response.status_code == 403
 
 
@@ -158,7 +158,7 @@ def test_keys_tenant_admin_body_tenant_id_ignored(client, api_keys_table, tenant
     _override_jwt(_make_claims(groups=[TENANT_ADMIN], tenant_id=TENANT_ID))
     response = client.post(
         KEYS_URL,
-        json={"client_name": "spoofed", "environment": "dev", "tenant_id": OTHER_TENANT_ID},
+        json={"api_key_name": "spoofed", "environment": "dev", "tenant_id": OTHER_TENANT_ID},
     )
     assert response.status_code == 200
     list_resp = client.get(KEYS_URL)

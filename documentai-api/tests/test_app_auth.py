@@ -104,7 +104,7 @@ def test_ddb_auth_valid_key(api_client, monkeypatch, mocker, api_keys_table):
     api_keys_table.put_item(
         Item={
             "keyHash": key_hash,
-            "clientName": "test-client",
+            "apiKeyName": "test-client",
             "tenantId": "test-tenant",
             "environment": "dev",
             "isActive": True,
@@ -160,7 +160,7 @@ def tenant_a_document(ddb_doc_metadata_table):
             DocumentMetadata.JOB_ID: TENANT_A_DOC_ID,
             DocumentMetadata.TENANT_ID: TENANT_A,
             DocumentMetadata.PROCESS_STATUS: "COMPLETED",
-            DocumentMetadata.CLIENT_NAME: "client-a",
+            DocumentMetadata.API_KEY_NAME: "client-a",
         }
     )
 

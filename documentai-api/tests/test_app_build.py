@@ -761,7 +761,7 @@ def test_tenant_access_enforced_on_all_build_routes(method, path, document_build
     from documentai_api.utils.auth import UserContext, get_user_context_from_api_key
     from documentai_api.utils.tenant_access import validate_build_tenant_access
 
-    mock_context = UserContext(tenant_id="any-tenant", client_name="test-client")
+    mock_context = UserContext(tenant_id="any-tenant", api_key_name="test-client")
     called = []
 
     def _reject_tenant():
@@ -937,7 +937,7 @@ def test_submit_build_ai_consent_declined(document_build_ddb_table):
         DocumentBuilds.BUILD_ID: "test-build-id",
         DocumentBuilds.AI_CONSENT_FLAG: False,
         DocumentBuilds.TENANT_ID: "test-tenant",
-        DocumentBuilds.CLIENT_NAME: "test-client",
+        DocumentBuilds.API_KEY_NAME: "test-client",
         DocumentBuilds.CATEGORY: "income",
         DocumentBuilds.EXTERNAL_DOCUMENT_ID: "ext-doc",
         DocumentBuilds.EXTERNAL_SYSTEM_ID: "ext-sys",
@@ -970,7 +970,7 @@ def test_submit_build_ai_consent_declined(document_build_ddb_table):
     assert record.upload_method == UploadMethod.BUILD
     assert record.ai_consent_flag is False
     assert record.tenant_id == "test-tenant"
-    assert record.client_name == "test-client"
+    assert record.api_key_name == "test-client"
     assert record.external_document_id == "ext-doc"
     assert record.external_system_id == "ext-sys"
     assert record.job_id == result["jobId"]
@@ -1007,7 +1007,7 @@ def test_build_submit_wait_consent_declined_skips_poll(document_build_ddb_table)
         DocumentBuilds.BUILD_ID: "test-build-id",
         DocumentBuilds.AI_CONSENT_FLAG: False,
         DocumentBuilds.TENANT_ID: "test-tenant",
-        DocumentBuilds.CLIENT_NAME: "test-client",
+        DocumentBuilds.API_KEY_NAME: "test-client",
     }
 
     with (

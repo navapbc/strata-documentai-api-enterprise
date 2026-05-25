@@ -40,7 +40,7 @@ async def create_api_key(
     claims: AdminClaims,
 ) -> CreateApiKeyResponse:
     """Create a new API key for a client."""
-    client_name = body.client_name
+    api_key_name = body.api_key_name
     environment = body.environment
     expires_at = body.expires_at
     email_address = body.email_address
@@ -68,9 +68,18 @@ async def create_api_key(
             detail=f"Tenant '{effective_tenant}' does not exist.",
         )
 
+    # Check for duplicate key name within the same tenant
+    from documentai_api.utils.auth import is_duplicate_key_name
+
+    if is_duplicate_key_name(effective_tenant, api_key_name):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"An active key named '{api_key_name}' already exists for this tenant.",
+        )
+
     try:
         api_key, existing_keys = generate_api_key(
-            client_name=client_name,
+            api_key_name=api_key_name,
             environment=environment,
             expires_at=expires_at,
             created_by=created_by,
@@ -90,7 +99,7 @@ async def create_api_key(
         target_id=hashlib.sha256(api_key.encode()).hexdigest()[:8],
         tenant_id=effective_tenant,
         metadata={
-            "client_name": client_name,
+            "api_key_name": api_key_name,
             "environment": environment,
             "expires_at": str(expires_at) if expires_at else None,
             "email_address": email_address,
@@ -98,7 +107,7 @@ async def create_api_key(
     )
     return CreateApiKeyResponse(
         api_key=api_key,
-        client_name=client_name,
+        api_key_name=api_key_name,
         environment=environment,
         expires_at=expires_at,
         existing_active_keys=len(existing_keys) if existing_keys else 0,
@@ -109,7 +118,7 @@ async def create_api_key(
 @router.get("/api-keys")
 async def list_api_keys(
     claims: AdminClaims,
-    client_name: str | None = None,
+    api_key_name: str | None = None,
     include_inactive: bool = False,
     tenant_id: str | None = None,
 ) -> ListApiKeysResponse:
@@ -134,8 +143,10 @@ async def list_api_keys(
             all_records = [
                 r for r in all_records if r.get(ApiKeyRecord.TENANT_ID) == effective_tenant
             ]
-        if client_name:
-            all_records = [r for r in all_records if r.get(ApiKeyRecord.CLIENT_NAME) == client_name]
+        if api_key_name:
+            all_records = [
+                r for r in all_records if r.get(ApiKeyRecord.API_KEY_NAME) == api_key_name
+            ]
         records = (
             all_records
             if include_inactive
@@ -151,7 +162,7 @@ async def list_api_keys(
     # Redact key hashes for security
     items = [
         ApiKeyItem(
-            client_name=record.get(ApiKeyRecord.CLIENT_NAME),
+            api_key_name=record.get(ApiKeyRecord.API_KEY_NAME),
             tenant_id=record.get(ApiKeyRecord.TENANT_ID),
             environment=record.get(ApiKeyRecord.ENVIRONMENT),
             is_active=record.get(ApiKeyRecord.IS_ACTIVE),

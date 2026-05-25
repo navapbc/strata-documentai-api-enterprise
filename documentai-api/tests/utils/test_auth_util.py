@@ -26,9 +26,9 @@ def clear_cache():
 def seed_api_key(api_keys_table):
     """Factory fixture to create an API key and return (raw_key, key_hash)."""
 
-    def _seed(client_name="test-client", environment="prod", expires_at=None, tenant_id=None):
+    def _seed(api_key_name="test-client", environment="prod", expires_at=None, tenant_id=None):
         api_key, _ = auth_util.generate_api_key(
-            client_name, environment, expires_at=expires_at, tenant_id=tenant_id
+            api_key_name, environment, expires_at=expires_at, tenant_id=tenant_id
         )
         return api_key, auth_util._hash_key(api_key)
 
@@ -236,7 +236,7 @@ def test_ddb_verify_inactive_key_raises_401(api_keys_table):
     api_keys_table.put_item(
         Item={
             ApiKeyRecord.KEY_HASH: key_hash,
-            ApiKeyRecord.CLIENT_NAME: "test-client",
+            ApiKeyRecord.API_KEY_NAME: "test-client",
             ApiKeyRecord.IS_ACTIVE: False,
         }
     )
@@ -251,7 +251,7 @@ def test_ddb_verify_valid_key_passes(api_keys_table):
     api_keys_table.put_item(
         Item={
             ApiKeyRecord.KEY_HASH: key_hash,
-            ApiKeyRecord.CLIENT_NAME: "test-client",
+            ApiKeyRecord.API_KEY_NAME: "test-client",
             ApiKeyRecord.IS_ACTIVE: True,
         }
     )
@@ -264,7 +264,7 @@ def test_ddb_verify_uses_cache_on_second_call(api_keys_table):
     api_keys_table.put_item(
         Item={
             ApiKeyRecord.KEY_HASH: key_hash,
-            ApiKeyRecord.CLIENT_NAME: "test-client",
+            ApiKeyRecord.API_KEY_NAME: "test-client",
             ApiKeyRecord.IS_ACTIVE: True,
         }
     )
@@ -318,14 +318,14 @@ def test_update_last_used_silently_ignores_errors(api_keys_table):
 
 def test_generate_api_key_writes_to_ddb(seed_api_key, api_keys_table):
     """Test generate_api_key stores the hash in DDB."""
-    api_key, key_hash = seed_api_key(client_name="my-service", environment="prod")
+    api_key, key_hash = seed_api_key(api_key_name="my-service", environment="prod")
 
     assert api_key.startswith("docai_")
 
     item = api_keys_table.get_item(Key={ApiKeyRecord.KEY_HASH: key_hash})["Item"]
 
     assert item is not None
-    assert item[ApiKeyRecord.CLIENT_NAME] == "my-service"
+    assert item[ApiKeyRecord.API_KEY_NAME] == "my-service"
     assert item[ApiKeyRecord.ENVIRONMENT] == "prod"
     assert item[ApiKeyRecord.IS_ACTIVE] is True
     assert ApiKeyRecord.CREATED_AT in item
@@ -334,19 +334,19 @@ def test_generate_api_key_writes_to_ddb(seed_api_key, api_keys_table):
 
 def test_generate_api_key_warns_existing_via_ddb(seed_api_key, api_keys_table):
     """Test generate_api_key detects existing active keys via real DDB scan."""
-    seed_api_key(client_name="my-service")
+    seed_api_key(api_key_name="my-service")
 
     _, existing = auth_util.generate_api_key("my-service", "prod")
 
     assert len(existing) == 1
-    assert existing[0][ApiKeyRecord.CLIENT_NAME] == "my-service"
+    assert existing[0][ApiKeyRecord.API_KEY_NAME] == "my-service"
 
 
 def test_generate_api_key_with_expires_at(seed_api_key, api_keys_table):
     from datetime import UTC, datetime, timedelta
 
     expires = datetime.now(UTC) + timedelta(days=90)
-    _, key_hash = seed_api_key(client_name="my-service", expires_at=expires)
+    _, key_hash = seed_api_key(api_key_name="my-service", expires_at=expires)
 
     item = api_keys_table.get_item(Key={ApiKeyRecord.KEY_HASH: key_hash})["Item"]
     assert ApiKeyRecord.EXPIRES_AT in item
@@ -385,42 +385,42 @@ def test_deactivate_api_key_invalidates_cache(seed_api_key):
 
 
 ##############################################################################
-# get_active_keys_for_client (moto-backed)
+# get_active_keys_by_name (moto-backed)
 ##############################################################################
 
 
-def test_get_active_keys_for_client_returns_matching(api_keys_table):
+def test_get_active_keys_by_name_returns_matching(api_keys_table):
     api_keys_table.put_item(
         Item={
             ApiKeyRecord.KEY_HASH: "hash-1",
-            ApiKeyRecord.CLIENT_NAME: "my-service",
+            ApiKeyRecord.API_KEY_NAME: "my-service",
             ApiKeyRecord.IS_ACTIVE: True,
         }
     )
     api_keys_table.put_item(
         Item={
             ApiKeyRecord.KEY_HASH: "hash-2",
-            ApiKeyRecord.CLIENT_NAME: "my-service",
+            ApiKeyRecord.API_KEY_NAME: "my-service",
             ApiKeyRecord.IS_ACTIVE: False,
         }
     )
     api_keys_table.put_item(
         Item={
             ApiKeyRecord.KEY_HASH: "hash-3",
-            ApiKeyRecord.CLIENT_NAME: "other-service",
+            ApiKeyRecord.API_KEY_NAME: "other-service",
             ApiKeyRecord.IS_ACTIVE: True,
         }
     )
 
-    result = auth_util.get_active_keys_for_client("my-service")
+    result = auth_util.get_active_keys_by_name("my-service")
 
     assert len(result) == 1
     assert result[0][ApiKeyRecord.KEY_HASH] == "hash-1"
 
 
-def test_get_active_keys_for_client_returns_empty_on_error(monkeypatch):
+def test_get_active_keys_by_name_returns_empty_on_error(monkeypatch):
     monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "nonexistent-table")
-    result = auth_util.get_active_keys_for_client("my-service")
+    result = auth_util.get_active_keys_by_name("my-service")
     assert result == []
 
 
@@ -496,7 +496,7 @@ def test_lookup_key_in_ddb_found(api_keys_table):
     api_keys_table.put_item(
         Item={
             ApiKeyRecord.KEY_HASH: key_hash,
-            ApiKeyRecord.CLIENT_NAME: "test-client",
+            ApiKeyRecord.API_KEY_NAME: "test-client",
             ApiKeyRecord.IS_ACTIVE: True,
         }
     )
@@ -504,7 +504,7 @@ def test_lookup_key_in_ddb_found(api_keys_table):
     result = auth_util._lookup_key_in_ddb(key_hash)
 
     assert result is not None
-    assert result[ApiKeyRecord.CLIENT_NAME] == "test-client"
+    assert result[ApiKeyRecord.API_KEY_NAME] == "test-client"
     assert result[ApiKeyRecord.IS_ACTIVE] is True
 
 
@@ -512,6 +512,52 @@ def test_lookup_key_in_ddb_not_found(api_keys_table):
     """Test _lookup_key_in_ddb returns None when key does not exist."""
     result = auth_util._lookup_key_in_ddb("nonexistent-hash")
     assert result is None
+
+
+##############################################################################
+# is_duplicate_key_name (moto-backed)
+##############################################################################
+
+
+def test_is_duplicate_key_name_true_when_active_key_exists(api_keys_table):
+    api_keys_table.put_item(
+        Item={
+            ApiKeyRecord.KEY_HASH: "hash-1",
+            ApiKeyRecord.API_KEY_NAME: "my-service",
+            ApiKeyRecord.TENANT_ID: "tenant-a",
+            ApiKeyRecord.IS_ACTIVE: True,
+        }
+    )
+    assert auth_util.is_duplicate_key_name("tenant-a", "my-service") is True
+
+
+def test_is_duplicate_key_name_false_when_no_keys(api_keys_table):
+    assert auth_util.is_duplicate_key_name("tenant-a", "my-service") is False
+
+
+def test_is_duplicate_key_name_false_when_different_tenant(api_keys_table):
+    api_keys_table.put_item(
+        Item={
+            ApiKeyRecord.KEY_HASH: "hash-1",
+            ApiKeyRecord.API_KEY_NAME: "my-service",
+            ApiKeyRecord.TENANT_ID: "tenant-b",
+            ApiKeyRecord.IS_ACTIVE: True,
+        }
+    )
+    assert auth_util.is_duplicate_key_name("tenant-a", "my-service") is False
+
+
+def test_is_duplicate_key_name_true_even_when_inactive(api_keys_table):
+    """Key names are immutable audit identifiers — reuse is never allowed."""
+    api_keys_table.put_item(
+        Item={
+            ApiKeyRecord.KEY_HASH: "hash-1",
+            ApiKeyRecord.API_KEY_NAME: "my-service",
+            ApiKeyRecord.TENANT_ID: "tenant-a",
+            ApiKeyRecord.IS_ACTIVE: False,
+        }
+    )
+    assert auth_util.is_duplicate_key_name("tenant-a", "my-service") is True
 
 
 ##############################################################################

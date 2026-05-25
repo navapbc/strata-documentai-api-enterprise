@@ -78,7 +78,7 @@ async def _process_batch_files(
     category: DocumentCategory | None,
     trace_id: str,
     tenant_id: str,
-    client_name: str,
+    api_key_name: str,
     external_document_id: str | None = None,
     external_system_id: str | None = None,
     ai_consent_flag: bool | None = None,
@@ -120,7 +120,7 @@ async def _process_batch_files(
                 ai_consent_flag=ai_consent_flag,
                 upload_method=upload_method,
                 tenant_id=tenant_id,
-                client_name=client_name,
+                api_key_name=api_key_name,
             ),
         )
 
@@ -195,7 +195,7 @@ async def _execute_batch(
             category,
             status=BatchStatus.UPLOADING,
             tenant_id=auth.tenant_id,
-            client_name=auth.client_name,
+            api_key_name=auth.api_key_name,
         )
         jobs = await _process_batch_files(
             files=files,
@@ -203,7 +203,7 @@ async def _execute_batch(
             category=category,
             trace_id=trace_id,
             tenant_id=auth.tenant_id,
-            client_name=auth.client_name,
+            api_key_name=auth.api_key_name,
             external_document_id=external_document_id,
             external_system_id=external_system_id,
             ai_consent_flag=ai_consent_flag,

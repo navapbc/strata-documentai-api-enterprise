@@ -262,7 +262,7 @@
                             <thead>
                                 <tr>
                                     <th>Tenant</th>
-                                    <th>Client</th>
+                                    <th>Key Name</th>
                                     <th>Email</th>
                                     <th>Environment</th>
                                     <th>Key (prefix)</th>
@@ -437,8 +437,9 @@
                         <option value="">— Select tenant —</option>
                     </select>
 
-                    <label for="client-name">Client name</label>
-                    <input type="text" id="client-name" placeholder="e.g. acme-ingest" required>
+                    <label for="api-key-name">Key name</label>
+                    <p class="field-hint">Lowercase letters, numbers, and hyphens only.</p>
+                    <input type="text" id="api-key-name" placeholder="e.g. acme-ingest" required pattern="[a-z0-9-]+">
 
                     <label for="client-environment">Environment</label>
                     <select id="client-environment" required>

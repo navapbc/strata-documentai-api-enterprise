@@ -4,8 +4,8 @@ Writes structured events to the audit-events DynamoDB table.
 Each mutating admin action should call log_event() after success.
 
 Metadata conventions per action:
-    key.create       → {client_name, environment, expires_at, email_address}
-    key.revoke       → {key_prefix, client_name}
+    key.create       → {api_key_name, environment, expires_at, email_address}
+    key.revoke       → {key_prefix, api_key_name}
     user.approve     → {role, tenant_id}
     user.role.change → {previous_role, new_role}
     user.tenant.change → {previous_tenant, new_tenant}

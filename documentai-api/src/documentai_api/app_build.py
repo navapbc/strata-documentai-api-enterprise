@@ -156,7 +156,7 @@ async def create_build(
         external_system_id=external_system_id,
         ai_consent_flag=ai_consent_flag,
         tenant_id=auth.tenant_id,
-        client_name=auth.client_name,
+        api_key_name=auth.api_key_name,
     )
 
     response.headers["X-Trace-ID"] = trace_id
@@ -362,7 +362,7 @@ async def _submit_build(response: Response, build_id: str, trace_id: str | None)
             ai_consent_flag=False,
             upload_method=UploadMethod.BUILD,
             tenant_id=build_metadata[DocumentBuilds.TENANT_ID],
-            client_name=build_metadata[DocumentBuilds.CLIENT_NAME],
+            api_key_name=build_metadata[DocumentBuilds.API_KEY_NAME],
         )
         await asyncio.to_thread(insert_minimal_ddb_record, record)
         await asyncio.to_thread(classify_as_ai_consent_declined, object_key=ddb_key)

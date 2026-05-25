@@ -17,7 +17,7 @@ class DocumentRecord(BaseModel):
     job_id: str
     upload_method: str
     tenant_id: str
-    client_name: str
+    api_key_name: str
     process_status: ProcessStatus = ProcessStatus.NOT_STARTED
     category: DocumentCategory | None = None
     trace_id: str | None = None

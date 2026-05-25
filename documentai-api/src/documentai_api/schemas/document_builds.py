@@ -14,4 +14,4 @@ class DocumentBuilds:
     AI_CONSENT_FLAG = "aiConsentFlag"
     IS_BUILD_METADATA = "isBuildMetadata"
     TENANT_ID = "tenantId"
-    CLIENT_NAME = "clientName"
+    API_KEY_NAME = "apiKeyName"

@@ -10,7 +10,7 @@ app = typer.Typer()
 
 @app.command()
 def generate(
-    client_name: Annotated[str, typer.Option(help="Name of the calling system")],
+    api_key_name: Annotated[str, typer.Option(help="Name of the calling system")],
     environment: Annotated[str, typer.Option(help="Deployment environment (e.g. prod, staging)")],
     expires_at: Annotated[
         str | None,
@@ -38,7 +38,7 @@ def generate(
 
     try:
         api_key, existing_keys = generate_api_key(
-            client_name=client_name,
+            api_key_name=api_key_name,
             environment=environment,
             expires_at=parsed_expires_at,
         )
@@ -49,7 +49,7 @@ def generate(
     if existing_keys:
         typer.echo("")
         typer.echo(
-            f"Warning: {len(existing_keys)} active key(s) already exist for client '{client_name}'.",
+            f"Warning: {len(existing_keys)} active key(s) already exist for client '{api_key_name}'.",
             err=True,
         )
         typer.echo(
@@ -61,7 +61,7 @@ def generate(
     typer.echo("API Key (save this - it will not be shown again):")
     typer.echo(f"  {api_key}")
     typer.echo("")
-    typer.echo(f"Client:      {client_name}")
+    typer.echo(f"Client:      {api_key_name}")
     typer.echo(f"Environment: {environment}")
     if parsed_expires_at:
         typer.echo(f"Expires:     {parsed_expires_at.isoformat()}")
@@ -72,14 +72,14 @@ def generate(
 
 @app.command()
 def deactivate(
-    client_name: Annotated[str, typer.Option(help="Name of the calling system")],
+    api_key_name: Annotated[str, typer.Option(help="Name of the calling system")],
     api_key: Annotated[str | None, typer.Option(help="Plaintext API key to deactivate")] = None,
     all_keys: Annotated[
         bool, typer.Option("--all", help="Deactivate all active keys for the client")
     ] = False,
 ) -> None:
     """Deactivate one or all active API keys for a client."""
-    from documentai_api.utils.auth import _hash_key, deactivate_api_key, get_active_keys_for_client
+    from documentai_api.utils.auth import _hash_key, deactivate_api_key, get_active_keys_by_name
 
     if not api_key and not all_keys:
         typer.echo("Error: Provide --api-key or --all", err=True)
@@ -93,14 +93,14 @@ def deactivate(
         key_hash = _hash_key(api_key)
         deactivated = deactivate_api_key(key_hash)
         if deactivated:
-            typer.echo(f"Deactivated key for client: {client_name}")
+            typer.echo(f"Deactivated key for key: {api_key_name}")
         else:
-            typer.echo(f"Error: Key not found for client: {client_name}", err=True)
+            typer.echo(f"Error: Key not found for key: {api_key_name}", err=True)
             raise typer.Exit(code=1) from None
     else:
-        active_keys = get_active_keys_for_client(client_name)
+        active_keys = get_active_keys_by_name(api_key_name)
         if not active_keys:
-            typer.echo(f"No active keys found for client: {client_name}")
+            typer.echo(f"No active keys found for key: {api_key_name}")
             return
 
         from documentai_api.schemas.api_key import ApiKeyRecord
@@ -108,12 +108,12 @@ def deactivate(
         for record in active_keys:
             deactivate_api_key(record[ApiKeyRecord.KEY_HASH])
 
-        typer.echo(f"Deactivated {len(active_keys)} key(s) for client: {client_name}")
+        typer.echo(f"Deactivated {len(active_keys)} key(s) for key: {api_key_name}")
 
 
 @app.command(name="list")
 def list_keys(
-    client_name: Annotated[str | None, typer.Option(help="Filter by client name")] = None,
+    api_key_name: Annotated[str | None, typer.Option(help="Filter by client name")] = None,
     include_inactive: Annotated[
         bool, typer.Option("--include-inactive", help="Include inactive keys")
     ] = False,
@@ -122,19 +122,19 @@ def list_keys(
     from documentai_api.config.env import get_aws_config
     from documentai_api.schemas.api_key import ApiKeyRecord
     from documentai_api.services import ddb as ddb_service
-    from documentai_api.utils.auth import get_active_keys_for_client
+    from documentai_api.utils.auth import get_active_keys_by_name
 
     try:
-        if client_name and not include_inactive:
-            records = get_active_keys_for_client(client_name)
+        if api_key_name and not include_inactive:
+            records = get_active_keys_by_name(api_key_name)
         else:
             table_name = get_aws_config().api_keys_table_name
             if not table_name:
                 raise ValueError("API_KEYS_TABLE_NAME environment variable not set")
             all_records = ddb_service.scan(table_name)
-            if client_name:
+            if api_key_name:
                 all_records = [
-                    r for r in all_records if r.get(ApiKeyRecord.CLIENT_NAME) == client_name
+                    r for r in all_records if r.get(ApiKeyRecord.API_KEY_NAME) == api_key_name
                 ]
             if not include_inactive:
                 all_records = [r for r in all_records if r.get(ApiKeyRecord.IS_ACTIVE, False)]
@@ -151,7 +151,7 @@ def list_keys(
     typer.echo(f"{'CLIENT':<30} {'ENV':<12} {'ACTIVE':<8} {'CREATED':<30} {'EXPIRES'}")
     typer.echo("-" * 100)
     for record in records:
-        client = record.get(ApiKeyRecord.CLIENT_NAME, "unknown")
+        client = record.get(ApiKeyRecord.API_KEY_NAME, "unknown")
         environment = record.get(ApiKeyRecord.ENVIRONMENT, "unknown")
         active = str(record.get(ApiKeyRecord.IS_ACTIVE, False))
         created = record.get(ApiKeyRecord.CREATED_AT, "unknown")

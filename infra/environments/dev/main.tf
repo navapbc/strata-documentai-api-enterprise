@@ -422,9 +422,9 @@ locals {
     DOCUMENTAI_DOCUMENT_METADATA_TENANT_INDEX_NAME          = local.gsi_tenant_id
     API_KEYS_TABLE_NAME                                     = module.api_keys.table_name
     TENANTS_TABLE_NAME                                      = module.tenants.table_name
-    AUDIT_EVENTS_TABLE_NAME                                  = module.audit_events.table_name
+    AUDIT_EVENTS_TABLE_NAME                                 = module.audit_events.table_name
     EXTRACTION_RULES_TABLE_NAME                             = module.extraction_rules.table_name
-    DOCUMENT_CATEGORIES_TABLE_NAME                           = module.document_categories.table_name
+    DOCUMENT_CATEGORIES_TABLE_NAME                          = module.document_categories.table_name
     DOCUMENTAI_BATCH_TABLE_NAME                             = module.document_batches.table_name
     DOCUMENTAI_DOCUMENT_BUILD_TABLE_NAME                    = module.document_builds.table_name
     DOCUMENTAI_INPUT_LOCATION                               = "s3://${module.input_bucket.bucket_name}/input"

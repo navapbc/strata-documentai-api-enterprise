@@ -226,7 +226,7 @@ def create_document_build(
     external_system_id: str | None = None,
     ai_consent_flag: bool | None = None,
     tenant_id: str | None = None,
-    client_name: str | None = None,
+    api_key_name: str | None = None,
 ) -> str:
     """Create a new document build."""
     item: dict[str, Any] = {
@@ -246,8 +246,8 @@ def create_document_build(
         item[DocumentBuilds.AI_CONSENT_FLAG] = ai_consent_flag
     if tenant_id is not None:
         item[DocumentBuilds.TENANT_ID] = tenant_id
-    if client_name is not None:
-        item[DocumentBuilds.CLIENT_NAME] = client_name
+    if api_key_name is not None:
+        item[DocumentBuilds.API_KEY_NAME] = api_key_name
 
     ddb_service.put_item(get_document_build_table(), item)
     return build_id

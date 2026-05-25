@@ -75,12 +75,12 @@ def test_keys_super_admin_create_returns_200(
     _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
     client.post(TENANTS_URL, json={"tenant_id": TENANT_ID, "display_name": "Test"})
     response = client.post(
-        KEYS_URL, json={"client_name": "test-client", "environment": "dev", "tenant_id": TENANT_ID}
+        KEYS_URL, json={"api_key_name": "test-client", "environment": "dev", "tenant_id": TENANT_ID}
     )
     assert response.status_code == 200
     data = response.json()
     assert "apiKey" in data
-    assert data["clientName"] == "test-client"
+    assert data["apiKeyName"] == "test-client"
     items = audit_events_table.scan()["Items"]
     actions = [i[AuditEventRecord.ACTION] for i in items]
     assert AuditAction.KEY_CREATE in actions
@@ -88,7 +88,7 @@ def test_keys_super_admin_create_returns_200(
 
 def test_keys_super_admin_create_no_tenant_returns_400(client, api_keys_table, tenants_table):
     _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
-    response = client.post(KEYS_URL, json={"client_name": "test", "environment": "dev"})
+    response = client.post(KEYS_URL, json={"api_key_name": "test", "environment": "dev"})
     assert response.status_code == 400
     assert "tenant_id is required" in response.json()["detail"]
 
@@ -96,13 +96,13 @@ def test_keys_super_admin_create_no_tenant_returns_400(client, api_keys_table, t
 def test_keys_create_nonexistent_tenant_returns_400(client, api_keys_table, tenants_table):
     _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
     response = client.post(
-        KEYS_URL, json={"client_name": "test", "environment": "dev", "tenant_id": "nonexistent"}
+        KEYS_URL, json={"api_key_name": "test", "environment": "dev", "tenant_id": "nonexistent"}
     )
     assert response.status_code == 400
     assert "does not exist" in response.json()["detail"]
 
 
-def test_keys_create_missing_client_name_returns_422(client, api_keys_table):
+def test_keys_create_missing_api_key_name_returns_422(client, api_keys_table):
     _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
     response = client.post(KEYS_URL, json={})
     assert response.status_code == 422
@@ -120,7 +120,7 @@ def test_keys_list_include_inactive(client, api_keys_table, tenants_table):
     _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
     client.post(TENANTS_URL, json={"tenant_id": TENANT_ID, "display_name": "Test"})
     client.post(
-        KEYS_URL, json={"client_name": "to-revoke", "environment": "dev", "tenant_id": TENANT_ID}
+        KEYS_URL, json={"api_key_name": "to-revoke", "environment": "dev", "tenant_id": TENANT_ID}
     )
     list_resp = client.get(KEYS_URL, params={"tenant_id": TENANT_ID})
     key_prefix = list_resp.json()["keys"][0]["keyPrefix"]
@@ -134,40 +134,40 @@ def test_keys_list_include_inactive(client, api_keys_table, tenants_table):
     assert resp.json()["keys"][0]["isActive"] is False
 
 
-def test_keys_list_filter_by_client_name(client, api_keys_table, tenants_table):
+def test_keys_list_filter_by_api_key_name(client, api_keys_table, tenants_table):
     _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
     client.post(TENANTS_URL, json={"tenant_id": TENANT_ID, "display_name": "Test"})
     client.post(
-        KEYS_URL, json={"client_name": "alpha", "environment": "dev", "tenant_id": TENANT_ID}
+        KEYS_URL, json={"api_key_name": "alpha", "environment": "dev", "tenant_id": TENANT_ID}
     )
     client.post(
-        KEYS_URL, json={"client_name": "beta", "environment": "dev", "tenant_id": TENANT_ID}
+        KEYS_URL, json={"api_key_name": "beta", "environment": "dev", "tenant_id": TENANT_ID}
     )
 
-    resp = client.get(KEYS_URL, params={"tenant_id": TENANT_ID, "client_name": "alpha"})
+    resp = client.get(KEYS_URL, params={"tenant_id": TENANT_ID, "api_key_name": "alpha"})
     assert resp.json()["count"] == 1
-    assert resp.json()["keys"][0]["clientName"] == "alpha"
+    assert resp.json()["keys"][0]["apiKeyName"] == "alpha"
 
 
 def test_keys_list_super_admin_filter_by_tenant(client, api_keys_table, tenants_table):
     _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
     client.post(TENANTS_URL, json={"tenant_id": TENANT_ID, "display_name": "Test"})
     client.post(TENANTS_URL, json={"tenant_id": OTHER_TENANT_ID, "display_name": "Other"})
-    client.post(KEYS_URL, json={"client_name": "a", "environment": "dev", "tenant_id": TENANT_ID})
+    client.post(KEYS_URL, json={"api_key_name": "a", "environment": "dev", "tenant_id": TENANT_ID})
     client.post(
-        KEYS_URL, json={"client_name": "b", "environment": "dev", "tenant_id": OTHER_TENANT_ID}
+        KEYS_URL, json={"api_key_name": "b", "environment": "dev", "tenant_id": OTHER_TENANT_ID}
     )
 
     resp = client.get(KEYS_URL, params={"tenant_id": TENANT_ID})
     assert resp.json()["count"] == 1
-    assert resp.json()["keys"][0]["clientName"] == "a"
+    assert resp.json()["keys"][0]["apiKeyName"] == "a"
 
 
 def test_keys_delete_by_full_hash(client, api_keys_table, tenants_table):
     _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
     client.post(TENANTS_URL, json={"tenant_id": TENANT_ID, "display_name": "Test"})
     create_resp = client.post(
-        KEYS_URL, json={"client_name": "full-hash", "environment": "dev", "tenant_id": TENANT_ID}
+        KEYS_URL, json={"api_key_name": "full-hash", "environment": "dev", "tenant_id": TENANT_ID}
     )
     raw_key = create_resp.json()["apiKey"]
     full_hash = hashlib.sha256(raw_key.encode()).hexdigest()
@@ -184,7 +184,7 @@ def test_keys_delete_ambiguous_prefix_returns_409(client, api_keys_table, tenant
     for i in range(10):
         client.post(
             KEYS_URL,
-            json={"client_name": f"client-{i}", "environment": "dev", "tenant_id": TENANT_ID},
+            json={"api_key_name": f"client-{i}", "environment": "dev", "tenant_id": TENANT_ID},
         )
     list_resp = client.get(KEYS_URL)
     keys = list_resp.json()["keys"]
@@ -200,7 +200,7 @@ def test_keys_revoke_writes_audit_event(client, api_keys_table, tenants_table, a
     _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
     client.post(TENANTS_URL, json={"tenant_id": TENANT_ID, "display_name": "Test"})
     client.post(
-        KEYS_URL, json={"client_name": "audit-test", "environment": "dev", "tenant_id": TENANT_ID}
+        KEYS_URL, json={"api_key_name": "audit-test", "environment": "dev", "tenant_id": TENANT_ID}
     )
     list_resp = client.get(KEYS_URL, params={"tenant_id": TENANT_ID})
     key_prefix = list_resp.json()["keys"][0]["keyPrefix"]

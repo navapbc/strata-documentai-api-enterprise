@@ -47,7 +47,7 @@ def create_batch(
     category: DocumentCategory | None,
     status: BatchStatus = BatchStatus.UPLOADING,
     tenant_id: str | None = None,
-    client_name: str | None = None,
+    api_key_name: str | None = None,
 ) -> str:
     """Create batch record in DynamoDB. Returns the createdAt timestamp."""
     table_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME)
@@ -68,8 +68,8 @@ def create_batch(
         )
     if tenant_id is not None:
         item[DocumentBatches.TENANT_ID] = tenant_id
-    if client_name is not None:
-        item[DocumentBatches.CLIENT_NAME] = client_name
+    if api_key_name is not None:
+        item[DocumentBatches.API_KEY_NAME] = api_key_name
 
     try:
         ddb_service.put_item(
@@ -540,7 +540,7 @@ def upsert_ddb(
     ai_consent_flag: bool | None = None,
     upload_method: str | None = None,
     tenant_id: str | None = None,
-    client_name: str | None = None,
+    api_key_name: str | None = None,
 ) -> None:
     """Upsert a document-metadata DDB row by file name.
 
@@ -615,9 +615,9 @@ def upsert_ddb(
         if tenant_id is not None:
             expr_fields.append(f"{DocumentMetadata.TENANT_ID} = :tenantId")
             expr_values[":tenantId"] = tenant_id
-        if client_name is not None:
-            expr_fields.append(f"{DocumentMetadata.CLIENT_NAME} = :clientName")
-            expr_values[":clientName"] = client_name
+        if api_key_name is not None:
+            expr_fields.append(f"{DocumentMetadata.API_KEY_NAME} = :clientName")
+            expr_values[":clientName"] = api_key_name
 
         update_expr = "SET " + ", ".join(expr_fields)
         _execute_ddb_update(object_key, update_expr, expr_values)
@@ -647,7 +647,7 @@ def insert_minimal_ddb_record(record: DocumentRecord) -> None:
         ai_consent_flag=record.ai_consent_flag,
         upload_method=record.upload_method,
         tenant_id=record.tenant_id,
-        client_name=record.client_name,
+        api_key_name=record.api_key_name,
     )
 
 

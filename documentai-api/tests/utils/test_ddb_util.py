@@ -772,12 +772,12 @@ class TestCreateBatch:
             3,
             None,
             tenant_id="tenant-abc",
-            client_name="client-xyz",
+            api_key_name="client-xyz",
         )
 
         item = ddb_batches_table.get_item(Key={"batchId": "batch-1"})["Item"]
         assert item[DocumentBatches.TENANT_ID] == "tenant-abc"
-        assert item[DocumentBatches.CLIENT_NAME] == "client-xyz"
+        assert item[DocumentBatches.API_KEY_NAME] == "client-xyz"
         assert item[DocumentBatches.BATCH_STATUS] == "uploading"
         assert item[DocumentBatches.TOTAL_FILES] == 3
 
@@ -898,7 +898,7 @@ class TestGetBatch:
         """get_batch returns the batch record."""
         from documentai_api.schemas.document_batches import DocumentBatches
 
-        ddb_util.create_batch("batch-g1", 5, None, tenant_id="t1", client_name="c1")
+        ddb_util.create_batch("batch-g1", 5, None, tenant_id="t1", api_key_name="c1")
 
         record = ddb_util.get_batch("batch-g1")
 

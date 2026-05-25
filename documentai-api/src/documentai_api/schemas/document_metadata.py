@@ -18,7 +18,7 @@ class DocumentMetadata:
     AI_CONSENT_FLAG = "aiConsentFlag"
     UPLOAD_METHOD = "uploadMethod"
     TENANT_ID = "tenantId"
-    CLIENT_NAME = "clientName"
+    API_KEY_NAME = "apiKeyName"
     V1_API_RESPONSE_JSON = "v1ApiResponseJson"
     CREATED_AT = "createdAt"
     UPDATED_AT = "updatedAt"

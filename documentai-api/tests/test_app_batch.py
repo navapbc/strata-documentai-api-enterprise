@@ -670,11 +670,11 @@ def test_batch_upload_tenant_propagation(api_client, pdf_file):
     # create_batch receives tenant info
     create_kwargs = mock_create.call_args.kwargs
     assert create_kwargs["tenant_id"] == "test-tenant"
-    assert create_kwargs["client_name"] == "test-client"
+    assert create_kwargs["api_key_name"] == "test-client"
     # insert_minimal_ddb_record receives tenant info
     record = mock_insert.call_args[0][0]
     assert record.tenant_id == "test-tenant"
-    assert record.client_name == "test-client"
+    assert record.api_key_name == "test-client"
 
 
 def test_batch_upload_category_propagation(api_client, pdf_file):
@@ -748,7 +748,7 @@ def test_post_then_get_batch_end_to_end(
     batch_record = get_batch(batch_id)
     assert batch_record is not None
     assert batch_record[DocumentBatches.TENANT_ID] == "test-tenant"
-    assert batch_record[DocumentBatches.CLIENT_NAME] == "test-client"
+    assert batch_record[DocumentBatches.API_KEY_NAME] == "test-client"
     assert batch_record[DocumentBatches.BATCH_STATUS] == BatchStatus.PROCESSING.value
 
     # Verify job records in DDB via GSI
@@ -756,7 +756,7 @@ def test_post_then_get_batch_end_to_end(
     assert len(job_records) == 2
     for record in job_records:
         assert record["tenantId"] == "test-tenant"
-        assert record["clientName"] == "test-client"
+        assert record["apiKeyName"] == "test-client"
         assert record["batchId"] == batch_id
 
     # GET batch status

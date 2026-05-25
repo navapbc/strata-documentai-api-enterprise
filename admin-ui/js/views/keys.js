@@ -94,7 +94,7 @@ function openCreateModal() {
       tenantSelect.appendChild(newOpt);
     }
   }
-  document.getElementById("client-name").value = "";
+  document.getElementById("api-key-name").value = "";
   document.getElementById("client-environment").value = "dev";
   document.getElementById("client-email").value = "";
 }
@@ -102,19 +102,19 @@ function openCreateModal() {
 async function handleCreate(e) {
   e.preventDefault();
   const tenantId = document.getElementById("key-tenant").value.trim();
-  const clientName = document.getElementById("client-name").value.trim();
+  const apiKeyName = document.getElementById("api-key-name").value.trim();
   const environment = document.getElementById("client-environment").value.trim() || "dev";
   const emailAddress = document.getElementById("client-email").value.trim() || undefined;
   try {
     const result = _isDemo
       ? { api_key: `docai_${Math.random().toString(36).slice(2, 18)}` }
-      : await KeysService.create(clientName, environment, undefined, emailAddress, tenantId);
+      : await KeysService.create(apiKeyName, environment, undefined, emailAddress, tenantId);
     _createModal.classList.add("hidden");
     _newKeyValue.textContent = result.apiKey || "—";
     _keyCreatedModal.classList.remove("hidden");
     if (_isDemo) {
       DEMO_KEYS.push({
-        client_name: clientName,
+        api_key_name: apiKeyName,
         environment,
         keyPrefix: result.apiKey.slice(0, 12) + "...",
         created_at: new Date().toISOString(),
@@ -146,7 +146,7 @@ export function render(keys) {
       : `<span class="badge badge-revoked">Revoked</span>`;
     tr.innerHTML = `
       <td>${Helpers.esc(key.tenantId || "—")}</td>
-      <td>${Helpers.esc(key.clientName || "—")}</td>
+      <td>${Helpers.esc(key.apiKeyName || "—")}</td>
       <td>${Helpers.esc(key.emailAddress || "—")}</td>
       <td>${Helpers.esc(key.environment || "—")}</td>
       <td><code>${key.keyPrefix ? Helpers.esc(key.keyPrefix) + "…" : "—"}</code></td>

@@ -83,7 +83,7 @@ def disable_auth():
         validate_build_tenant_access,
     )
 
-    mock_context = UserContext(tenant_id="test-tenant", client_name="test-client")
+    mock_context = UserContext(tenant_id="test-tenant", api_key_name="test-client")
     app.dependency_overrides[verify_api_key] = lambda: mock_context
     app.dependency_overrides[get_user_context_from_api_key] = lambda: mock_context
     app.dependency_overrides[get_user_context_with_fallback] = lambda: mock_context

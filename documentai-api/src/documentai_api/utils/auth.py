@@ -27,7 +27,7 @@ class UserContext(BaseModel):
     """Authenticated user context."""
 
     tenant_id: str
-    client_name: str
+    api_key_name: str
 
 
 # tracks when lastUsed was last written per key hash: {key_hash: monotonic_time}
@@ -157,7 +157,7 @@ def _verify_with_ddb(api_key: str) -> None:
 
     if not _validate_key_record(record):
         logger.warning(
-            f"API key validation failed for client: {record.get(ApiKeyRecord.CLIENT_NAME, 'unknown')}"
+            f"API key validation failed for key: {record.get(ApiKeyRecord.API_KEY_NAME, 'unknown')}"
         )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
 
@@ -177,7 +177,7 @@ def _verify_with_insecure_shared_key(api_key: str) -> None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
 
 
-def get_active_keys_for_client(client_name: str) -> list[dict[str, Any]]:
+def get_active_keys_by_name(api_key_name: str) -> list[dict[str, Any]]:
     """Return all active DynamoDB records for a given client name.
 
     Note: performs a table scan - acceptable for low-volume admin operations.
@@ -193,7 +193,7 @@ def get_active_keys_for_client(client_name: str) -> list[dict[str, Any]]:
         return [
             item
             for item in all_items
-            if item.get(ApiKeyRecord.CLIENT_NAME) == client_name
+            if item.get(ApiKeyRecord.API_KEY_NAME) == api_key_name
             and item.get(ApiKeyRecord.IS_ACTIVE, False)
         ]
     except Exception as e:
@@ -201,8 +201,28 @@ def get_active_keys_for_client(client_name: str) -> list[dict[str, Any]]:
         return []
 
 
+def is_duplicate_key_name(tenant_id: str, api_key_name: str) -> bool:
+    """Check if a key with this name has ever existed for the tenant (active or inactive)."""
+    from documentai_api.services import ddb as ddb_service
+
+    table_name = get_aws_config().api_keys_table_name
+    if not table_name:
+        raise ValueError("API_KEYS_TABLE_NAME environment variable not set")
+
+    try:
+        all_items = ddb_service.scan(table_name)
+        return any(
+            item.get(ApiKeyRecord.API_KEY_NAME) == api_key_name
+            and item.get(ApiKeyRecord.TENANT_ID) == tenant_id
+            for item in all_items
+        )
+    except Exception as e:
+        logger.error(f"Failed to check duplicate key name: {e}")
+        return False
+
+
 def generate_api_key(
-    client_name: str,
+    api_key_name: str,
     environment: str,
     expires_at: datetime | None = None,
     created_by: str | None = None,
@@ -215,7 +235,7 @@ def generate_api_key(
     is persisted in DynamoDB.
 
     Args:
-        client_name: Name of the calling system (e.g. "my-service").
+        api_key_name: Name of the calling system (e.g. "my-service").
         environment: Deployment environment (e.g. "prod", "staging").
         expires_at: Optional expiry datetime. If None, the key never expires.
 
@@ -225,7 +245,7 @@ def generate_api_key(
     """
     from documentai_api.services import ddb as ddb_service
 
-    existing_keys = get_active_keys_for_client(client_name)
+    existing_keys = get_active_keys_by_name(api_key_name)
 
     random_part = secrets.token_urlsafe(32)[:32]
     api_key = f"docai_{random_part}"
@@ -237,7 +257,7 @@ def generate_api_key(
 
     item: dict[str, Any] = {
         ApiKeyRecord.KEY_HASH: key_hash,
-        ApiKeyRecord.CLIENT_NAME: client_name,
+        ApiKeyRecord.API_KEY_NAME: api_key_name,
         ApiKeyRecord.ENVIRONMENT: environment,
         ApiKeyRecord.IS_ACTIVE: True,
         ApiKeyRecord.CREATED_AT: datetime.now(UTC).isoformat(),
@@ -254,7 +274,7 @@ def generate_api_key(
         item[ApiKeyRecord.TENANT_ID] = tenant_id
 
     ddb_service.put_item(table_name, item)
-    logger.info(f"Generated API key for client: {client_name} in environment: {environment}")
+    logger.info(f"Generated API key for key: {api_key_name} in environment: {environment}")
 
     return api_key, existing_keys
 
@@ -320,8 +340,8 @@ def deactivate_api_key(key_hash: str) -> bool:
         expression_values={":isActive": False},
     )
 
-    client_name = existing.get(ApiKeyRecord.CLIENT_NAME, "unknown")
-    logger.info(f"Deactivated API key for client: {client_name}")
+    api_key_name = existing.get(ApiKeyRecord.API_KEY_NAME, "unknown")
+    logger.info(f"Deactivated API key for key: {api_key_name}")
 
     # invalidate cache so deactivation takes effect immediately
     get_cache().invalidate(key_hash)
@@ -357,7 +377,7 @@ def get_user_context_from_api_key(api_key: str = Depends(api_key_header)) -> Use
     and returns tenant/client info. Falls back to local dev context.
 
     Returns:
-        UserContext with tenant_id and client_name.
+        UserContext with tenant_id and api_key_name.
     """
     auth_enabled = get_app_env_config().api_auth_enabled
 
@@ -365,7 +385,7 @@ def get_user_context_from_api_key(api_key: str = Depends(api_key_header)) -> Use
         return _get_user_context_from_api_key_from_ddb(api_key)
 
     _verify_with_insecure_shared_key(api_key)
-    return UserContext(tenant_id="local", client_name="local-dev")
+    return UserContext(tenant_id="local", api_key_name="local-dev")
 
 
 def _get_user_context_from_api_key_from_ddb(api_key: str) -> UserContext:
@@ -388,20 +408,20 @@ def _get_user_context_from_api_key_from_ddb(api_key: str) -> UserContext:
 
     if not _validate_key_record(record):
         logger.warning(
-            f"API key validation failed for client: {record.get(ApiKeyRecord.CLIENT_NAME, 'unknown')}"
+            f"API key validation failed for key: {record.get(ApiKeyRecord.API_KEY_NAME, 'unknown')}"
         )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
 
     tenant_id = record.get(ApiKeyRecord.TENANT_ID)
     if not tenant_id:
-        logger.error(f"API key missing tenantId for client: {record.get(ApiKeyRecord.CLIENT_NAME)}")
+        logger.error(f"API key missing tenantId for key: {record.get(ApiKeyRecord.API_KEY_NAME)}")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
 
     threading.Thread(target=_update_last_used, args=(key_hash,), daemon=True).start()
 
     return UserContext(
         tenant_id=tenant_id,
-        client_name=record.get(ApiKeyRecord.CLIENT_NAME, "unknown"),
+        api_key_name=record.get(ApiKeyRecord.API_KEY_NAME, "unknown"),
     )
 
 
@@ -429,8 +449,8 @@ async def get_user_context_with_fallback(
         try:
             claims = _decode_and_verify(credentials.credentials)
             tenant_id = get_tenant_id(claims) or "__admin__"
-            client_name = claims.get("email") or claims.get("sub", "unknown")
-            return UserContext(tenant_id=tenant_id, client_name=client_name)
+            api_key_name = claims.get("email") or claims.get("sub", "unknown")
+            return UserContext(tenant_id=tenant_id, api_key_name=api_key_name)
         except Exception:
             pass
 

@@ -180,7 +180,7 @@ def test_extraction_rules_tenant_isolation(extraction_rules_table):
     upsert_rule("tenant-b", "W2", ["ssn"], ["wages"])
 
     # Authenticate as tenant A
-    mock_context = UserContext(tenant_id="tenant-a", client_name="client-a")
+    mock_context = UserContext(tenant_id="tenant-a", api_key_name="client-a")
     app.dependency_overrides[get_user_context_with_fallback] = lambda: mock_context
 
     try:

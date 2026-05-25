@@ -158,14 +158,14 @@ def test_document_tenant_access_does_not_reveal_resource_existence():
 
 
 def test_batch_tenant_access_passes_when_tenant_matches():
-    auth = UserContext(tenant_id="test-tenant", client_name="client-1")
+    auth = UserContext(tenant_id="test-tenant", api_key_name="client-1")
     with patch("documentai_api.utils.tenant_access.get_batch") as mock_get:
         mock_get.return_value = {"batchId": "batch-1", "tenantId": "test-tenant"}
         validate_batch_tenant_access("batch-1", auth)
 
 
 def test_batch_tenant_access_raises_404_when_tenant_mismatches():
-    auth = UserContext(tenant_id="other-tenant", client_name="client-1")
+    auth = UserContext(tenant_id="other-tenant", api_key_name="client-1")
     with patch("documentai_api.utils.tenant_access.get_batch") as mock_get:
         mock_get.return_value = {"batchId": "batch-1", "tenantId": "test-tenant"}
         with pytest.raises(HTTPException) as exc_info:
@@ -174,7 +174,7 @@ def test_batch_tenant_access_raises_404_when_tenant_mismatches():
 
 
 def test_batch_tenant_access_raises_404_when_batch_not_found():
-    auth = UserContext(tenant_id="test-tenant", client_name="client-1")
+    auth = UserContext(tenant_id="test-tenant", api_key_name="client-1")
     with patch("documentai_api.utils.tenant_access.get_batch") as mock_get:
         mock_get.return_value = None
         with pytest.raises(HTTPException) as exc_info:
@@ -183,7 +183,7 @@ def test_batch_tenant_access_raises_404_when_batch_not_found():
 
 
 def test_batch_tenant_access_raises_404_when_batch_has_no_tenant_id():
-    auth = UserContext(tenant_id="test-tenant", client_name="client-1")
+    auth = UserContext(tenant_id="test-tenant", api_key_name="client-1")
     with patch("documentai_api.utils.tenant_access.get_batch") as mock_get:
         mock_get.return_value = {"batchId": "batch-1"}
         with pytest.raises(HTTPException) as exc_info:
@@ -192,14 +192,14 @@ def test_batch_tenant_access_raises_404_when_batch_has_no_tenant_id():
 
 
 def test_build_tenant_access_passes_when_tenant_matches():
-    auth = UserContext(tenant_id="test-tenant", client_name="client-1")
+    auth = UserContext(tenant_id="test-tenant", api_key_name="client-1")
     with patch("documentai_api.utils.tenant_access.get_build_metadata") as mock_get:
         mock_get.return_value = {"buildId": "build-1", "tenantId": "test-tenant"}
         validate_build_tenant_access("build-1", auth)
 
 
 def test_build_tenant_access_raises_404_when_tenant_mismatches():
-    auth = UserContext(tenant_id="other-tenant", client_name="client-1")
+    auth = UserContext(tenant_id="other-tenant", api_key_name="client-1")
     with patch("documentai_api.utils.tenant_access.get_build_metadata") as mock_get:
         mock_get.return_value = {"buildId": "build-1", "tenantId": "test-tenant"}
         with pytest.raises(HTTPException) as exc_info:
@@ -208,7 +208,7 @@ def test_build_tenant_access_raises_404_when_tenant_mismatches():
 
 
 def test_build_tenant_access_raises_404_when_build_not_found():
-    auth = UserContext(tenant_id="test-tenant", client_name="client-1")
+    auth = UserContext(tenant_id="test-tenant", api_key_name="client-1")
     with patch("documentai_api.utils.tenant_access.get_build_metadata") as mock_get:
         mock_get.return_value = None
         with pytest.raises(HTTPException) as exc_info:
@@ -217,7 +217,7 @@ def test_build_tenant_access_raises_404_when_build_not_found():
 
 
 def test_build_tenant_access_raises_404_when_build_has_no_tenant_id():
-    auth = UserContext(tenant_id="test-tenant", client_name="client-1")
+    auth = UserContext(tenant_id="test-tenant", api_key_name="client-1")
     with patch("documentai_api.utils.tenant_access.get_build_metadata") as mock_get:
         mock_get.return_value = {"buildId": "build-1"}
         with pytest.raises(HTTPException) as exc_info:

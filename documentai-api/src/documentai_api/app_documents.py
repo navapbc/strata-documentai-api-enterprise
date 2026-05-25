@@ -127,7 +127,7 @@ async def _upload_document(
             ai_consent_flag=ai_consent_flag,
             upload_method=UploadMethod.DIRECT,
             tenant_id=auth.tenant_id,
-            client_name=auth.client_name,
+            api_key_name=auth.api_key_name,
         )
         await asyncio.to_thread(insert_minimal_ddb_record, record)
     except Exception:

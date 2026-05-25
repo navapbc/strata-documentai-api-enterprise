@@ -2,11 +2,12 @@
 
 from pydantic import AwareDatetime
 
+from documentai_api.annotations import ApiKeyNameStr
 from documentai_api.models.base import BaseApiResponse
 
 
 class CreateApiKeyRequest(BaseApiResponse):
-    client_name: str
+    api_key_name: ApiKeyNameStr
     environment: str = "dev"
     email_address: str | None = None
     expires_at: AwareDatetime | None = None
@@ -15,7 +16,7 @@ class CreateApiKeyRequest(BaseApiResponse):
 
 class CreateApiKeyResponse(BaseApiResponse):
     api_key: str
-    client_name: str
+    api_key_name: str
     environment: str
     expires_at: AwareDatetime | None = None
     existing_active_keys: int = 0
@@ -23,7 +24,7 @@ class CreateApiKeyResponse(BaseApiResponse):
 
 
 class ApiKeyItem(BaseApiResponse):
-    client_name: str | None = None
+    api_key_name: str | None = None
     tenant_id: str | None = None
     environment: str | None = None
     is_active: bool | None = None

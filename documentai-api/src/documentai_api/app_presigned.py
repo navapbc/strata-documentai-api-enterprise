@@ -140,7 +140,7 @@ async def create_presigned_upload_url(
             external_system_id=external_system_id,
             upload_method=UploadMethod.PRESIGNED,
             tenant_id=auth.tenant_id,
-            client_name=auth.client_name,
+            api_key_name=auth.api_key_name,
         )
         await asyncio.to_thread(insert_minimal_ddb_record, record)
     except Exception:
