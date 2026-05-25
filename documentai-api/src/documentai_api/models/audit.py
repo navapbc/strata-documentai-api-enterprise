@@ -19,6 +19,10 @@ class AuditEventItem(BaseApiResponse):
     timestamp: str
 
 
+class AuditActionsResponse(BaseApiResponse):
+    actions: list[str]
+
+
 class AuditLogResponse(BaseApiResponse):
     events: list[AuditEventItem]
     count: int

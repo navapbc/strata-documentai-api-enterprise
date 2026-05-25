@@ -9,8 +9,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from documentai_api.annotations import AdminClaims, IsoDateParam, PageLimit, verify_jwt_with_role
 from documentai_api.logging import get_logger
-from documentai_api.models.audit import AuditEventItem, AuditLogResponse
-from documentai_api.schemas.audit_event import GLOBAL_TENANT, AuditEventRecord, AuditEventsTable
+from documentai_api.models.audit import AuditActionsResponse, AuditEventItem, AuditLogResponse
+from documentai_api.schemas.audit_event import (
+    GLOBAL_TENANT,
+    AuditAction,
+    AuditEventRecord,
+    AuditEventsTable,
+)
 from documentai_api.utils.jwt_auth import tenant_scope
 
 logger = get_logger(__name__)
@@ -53,6 +58,15 @@ def _record_to_item(record: dict[str, Any]) -> AuditEventItem:
         metadata=record.get(AuditEventRecord.METADATA, {}),
         timestamp=timestamp,
     )
+
+
+@router.get("/actions")
+async def get_audit_actions() -> AuditActionsResponse:
+    """Return all known audit action strings."""
+    actions = [
+        v for k, v in vars(AuditAction).items() if not k.startswith("_") and isinstance(v, str)
+    ]
+    return AuditActionsResponse(actions=sorted(actions))
 
 
 @router.get("")

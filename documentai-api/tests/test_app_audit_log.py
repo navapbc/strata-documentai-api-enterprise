@@ -179,3 +179,42 @@ def test_audit_log_filter_by_action_and_tenant(client, seeded_events):
     assert data["count"] == 1
     assert data["events"][0]["action"] == AuditAction.KEY_CREATE
     assert data["events"][0]["tenantId"] == "test-tenant"
+
+
+##############################################################################
+# GET /v1/admin/audit-log/actions
+##############################################################################
+
+ACTIONS_URL = "/v1/admin/audit-log/actions"
+
+
+def test_actions_unauthenticated_returns_401(client):
+    response = client.get(ACTIONS_URL)
+    assert response.status_code == 401
+
+
+def test_actions_returns_sorted_list(client):
+    _override_jwt(SUPER_ADMIN_CLAIMS)
+    response = client.get(ACTIONS_URL)
+    assert response.status_code == 200
+    data = response.json()
+    actions = data["actions"]
+    assert isinstance(actions, list)
+    assert len(actions) > 0
+    assert actions == sorted(actions)
+
+
+def test_actions_contains_known_actions(client):
+    _override_jwt(SUPER_ADMIN_CLAIMS)
+    response = client.get(ACTIONS_URL)
+    actions = response.json()["actions"]
+    assert AuditAction.KEY_CREATE in actions
+    assert AuditAction.TENANT_CREATE in actions
+    assert AuditAction.USER_DELETE in actions
+
+
+def test_actions_tenant_admin_can_access(client):
+    _override_jwt(TENANT_ADMIN_CLAIMS)
+    response = client.get(ACTIONS_URL)
+    assert response.status_code == 200
+    assert len(response.json()["actions"]) > 0

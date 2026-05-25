@@ -227,6 +227,16 @@
                             </div>
                         </div>
 
+                        <!-- Audit Log -->
+                        <div class="nav-section">
+                            <button class="nav-section-header" data-section="audit-log">
+                                <span class="nav-arrow">▸</span> Audit Log
+                            </button>
+                            <div class="nav-section-body hidden" id="section-audit-log">
+                                <a class="nav-item" data-view="audit-log">View Events</a>
+                            </div>
+                        </div>
+
                         <!-- Test Documents -->
                         <div class="nav-section">
                             <button class="nav-section-header" data-section="test-docs">
@@ -383,6 +393,40 @@
                             <tbody id="categories-tbody"></tbody>
                         </table>
                         <p id="no-categories" class="empty-state hidden">No categories found.</p>
+                    </div>
+
+                    <!-- Audit Log View -->
+                    <div id="view-audit-log" class="content-view hidden">
+                        <div class="content-header">
+                            <h2>Audit Log</h2>
+                            <div class="content-actions">
+                                <select id="audit-action-filter" class="tenant-select">
+                                    <option value="">All actions</option>
+                                </select>
+                                <input type="date" id="audit-start-date" title="Start date">
+                                <input type="date" id="audit-end-date" title="End date">
+                                <button id="refresh-audit-btn" class="btn-secondary">Refresh</button>
+                            </div>
+                        </div>
+                        <table id="audit-table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Actor</th>
+                                    <th>Action</th>
+                                    <th>Target Type</th>
+                                    <th>Target ID</th>
+                                    <th>Tenant</th>
+                                    <th>Metadata</th>
+                                </tr>
+                            </thead>
+                            <tbody id="audit-tbody"></tbody>
+                        </table>
+                        <p id="no-audit-events" class="empty-state hidden">No audit events found.</p>
+                        <div class="pagination-controls">
+                            <button id="audit-prev-btn" class="btn-secondary" disabled>← Previous</button>
+                            <button id="audit-next-btn" class="btn-secondary" disabled>Next →</button>
+                        </div>
                     </div>
 
                     <!-- Test Documents View -->

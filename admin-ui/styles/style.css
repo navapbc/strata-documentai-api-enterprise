@@ -1189,3 +1189,19 @@ td { font-size: 0.875rem; }
   border-radius: 4px;
   background: var(--surface-color, #fff);
 }
+
+/* Audit Log */
+.pagination-controls {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.audit-meta {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary, #6b7280);
+}
