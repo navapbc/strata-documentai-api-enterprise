@@ -90,7 +90,16 @@ export function onExpire(callback) {
 
 function resetInactivityTimer() {
   stopInactivityTimer();
-  _inactivityTimer = setTimeout(() => {
+  _inactivityTimer = setTimeout(async () => {
+    const session = get();
+    if (session?.accessToken) {
+      try {
+        const { signOut } = await import("../services/auth.js");
+        await signOut(session.accessToken);
+      } catch {
+        // best-effort server-side revocation
+      }
+    }
     clear();
     if (_onExpire) _onExpire();
   }, INACTIVITY_TIMEOUT_MS);
@@ -112,6 +121,6 @@ function stopInactivityTimer() {
         resetInactivityTimer();
       }
     },
-    { passive: true }
+    { passive: true },
   );
 });

@@ -1,205 +1,195 @@
-import * as Helpers from "../utils/helpers.js";
 import * as UsersService from "../services/users.js";
 import * as TenantsService from "../services/tenants.js";
+import * as Helpers from "../utils/helpers.js";
+import * as Toast from "../utils/toast.js";
+import { h } from "../utils/dom.js";
+import { tpl } from "../utils/tpl.js";
+import html from "./users.html";
 
-let _tbody, _noUsers, _refreshBtn, _pendingOnlyToggle;
-let _assignModal, _assignForm, _assignRoleSelect, _assignTenantInput, _assignTenantHint;
-let _assignTitle, _assignEmail, _assignCancel, _assignError;
-let _deleteModal, _deleteEmail, _deleteCancel, _deleteConfirm, _deleteError;
+const tmpl = tpl(html);
 
-let _allUsers = [];
-let _editingUsername = null;
-let _pendingDeleteUsername = null;
+let _root, _tbody, _noUsers, _refreshBtn, _showPendingOnly;
+let _assignModal, _assignForm, _assignRoleSelect, _assignTenantSelect;
+let _assignRoleEmail, _assignRoleError, _assignRoleCancel, _assignRoleTitle;
+let _deleteModal, _deleteEmail, _deleteError, _deleteCancel, _deleteConfirm;
+let _pendingUsername = null;
 
-export function init() {
-  _tbody = document.getElementById("users-tbody");
-  _noUsers = document.getElementById("no-users");
-  _refreshBtn = document.getElementById("refresh-users-btn");
-  _pendingOnlyToggle = document.getElementById("show-pending-only");
+export function mount(root) {
+  _root = root;
+  root.replaceChildren(tmpl());
 
-  _assignModal = document.getElementById("assign-role-modal");
-  _assignForm = document.getElementById("assign-role-form");
-  _assignRoleSelect = document.getElementById("assign-role");
-  _assignTenantInput = document.getElementById("assign-tenant");
-  _assignTenantHint = document.getElementById("assign-tenant-hint");
-  _assignTitle = document.getElementById("assign-role-title");
-  _assignEmail = document.getElementById("assign-role-email");
-  _assignCancel = document.getElementById("assign-role-cancel");
-  _assignError = document.getElementById("assign-role-error");
+  // Inject actions into shared header
+  _showPendingOnly = h("input", { type: "checkbox", id: "show-pending-only" });
+  _refreshBtn = h("button", { className: "btn-secondary" }, "Refresh");
+  const label = h("label", { className: "inline-checkbox" }, _showPendingOnly, document.createTextNode(" Pending only"));
+  Helpers.setViewActions(label, _refreshBtn);
 
-  _deleteModal = document.getElementById("delete-user-modal");
-  _deleteEmail = document.getElementById("delete-user-email");
-  _deleteCancel = document.getElementById("delete-user-cancel");
-  _deleteConfirm = document.getElementById("delete-user-confirm");
-  _deleteError = document.getElementById("delete-user-error");
+  _tbody = root.querySelector("#users-tbody");
+  _noUsers = root.querySelector("#no-users");
 
-  _refreshBtn.addEventListener("click", load);
-  _pendingOnlyToggle.addEventListener("change", () => render(_allUsers));
+  _assignModal = root.querySelector("#assign-role-modal");
+  _assignForm = root.querySelector("#assign-role-form");
+  _assignRoleSelect = root.querySelector("#assign-role");
+  _assignTenantSelect = root.querySelector("#assign-tenant");
+  _assignRoleEmail = root.querySelector("#assign-role-email");
+  _assignRoleError = root.querySelector("#assign-role-error");
+  _assignRoleCancel = root.querySelector("#assign-role-cancel");
+  _assignRoleTitle = root.querySelector("#assign-role-title");
 
-  _assignCancel.addEventListener("click", () => _assignModal.classList.add("hidden"));
-  _assignForm.addEventListener("submit", handleAssignSubmit);
-  _assignRoleSelect.addEventListener("change", updateTenantFieldRequirement);
+  _deleteModal = root.querySelector("#delete-user-modal");
+  _deleteEmail = root.querySelector("#delete-user-email");
+  _deleteError = root.querySelector("#delete-user-error");
+  _deleteCancel = root.querySelector("#delete-user-cancel");
+  _deleteConfirm = root.querySelector("#delete-user-confirm");
 
-  _deleteCancel.addEventListener("click", () => _deleteModal.classList.add("hidden"));
-  _deleteConfirm.addEventListener("click", handleDeleteConfirm);
+  _refreshBtn.addEventListener("click", () => load());
+  _showPendingOnly.addEventListener("change", () => load());
+  _assignRoleCancel.addEventListener("click", closeAssignModal);
+  _assignForm.addEventListener("submit", handleAssignRole);
+  _assignRoleSelect.addEventListener("change", toggleTenantRow);
+  _deleteCancel.addEventListener("click", closeDeleteModal);
+  _deleteConfirm.addEventListener("click", handleDeleteUser);
+
+  load();
 }
 
-function statusLabel(user) {
-  if (!user.enabled) return { text: "Disabled", className: "badge-revoked" };
-  if (!user.groups || user.groups.length === 0) return { text: "Pending", className: "badge-pending" };
-  return { text: "Active", className: "badge-active" };
+export function unmount(root) {
+  root.replaceChildren();
 }
 
-function roleLabel(user) {
-  if (user.groups?.includes("super-admin")) return "super-admin";
-  if (user.groups?.includes("tenant-admin")) return "tenant-admin";
-  return "—";
+export async function load() {
+  Helpers.showLoading(_tbody, _noUsers);
+  try {
+    const data = await UsersService.list();
+    renderTable(data.users || []);
+  } catch (e) {
+    _tbody.innerHTML = "";
+    _noUsers.textContent = e.message;
+    _noUsers.classList.remove("hidden");
+  }
 }
 
-function render(users) {
+function renderTable(users) {
+  const pendingOnly = _showPendingOnly?.checked;
+  const filtered = pendingOnly ? users.filter((u) => !u.groups || u.groups.length === 0) : users;
+
   _tbody.innerHTML = "";
-  const filtered = _pendingOnlyToggle.checked
-    ? users.filter((u) => !u.groups || u.groups.length === 0)
-    : users;
-
   if (filtered.length === 0) {
-    _noUsers.textContent = _pendingOnlyToggle.checked ? "No pending users." : "No users found.";
     _noUsers.classList.remove("hidden");
     return;
   }
   _noUsers.classList.add("hidden");
 
   for (const user of filtered) {
-    const tr = document.createElement("tr");
-    const status = statusLabel(user);
-    const isPending = status.text === "Pending";
-    const actionCell = isPending
-      ? `<button class="btn-primary btn-sm" data-action="approve">Approve</button>
-         <button class="btn-danger btn-sm" data-action="delete">Delete</button>`
-      : `<button class="btn-outline btn-sm" data-action="edit">Edit</button>
-         <button class="btn-danger btn-sm" data-action="delete">Delete</button>`;
-    tr.innerHTML = `
-      <td>${Helpers.esc(user.email || user.username || "—")}</td>
-      <td><span class="badge ${status.className}">${status.text}</span></td>
-      <td>${Helpers.esc(roleLabel(user))}</td>
-      <td>${Helpers.esc(user.tenant_id || "—")}</td>
-      <td>${Helpers.formatDate(user.created_at)}</td>
-      <td class="row-actions">${actionCell}</td>
-    `;
-    tr.querySelectorAll("button[data-action]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const action = btn.dataset.action;
-        if (action === "approve" || action === "edit") openAssignModal(user, action);
-        else if (action === "delete") openDeleteModal(user);
-      });
-    });
+    const groups = user.groups || [];
+    const role = groups[0] || "pending";
+    const statusEl =
+      groups.length > 0
+        ? h("span", { className: "badge badge-success" }, "Active")
+        : h("span", { className: "badge badge-neutral" }, "Pending");
+    const roleBtn = h("button", { className: "btn-sm btn-secondary" }, "Assign Role");
+    const deleteBtn = h("button", { className: "btn-sm btn-danger" }, "Delete");
+
+    const tr = h(
+      "tr",
+      null,
+      h("td", null, user.email || "—"),
+      h("td", null, statusEl),
+      h("td", null, role),
+      h("td", null, user.tenantId || "—"),
+      h("td", null, Helpers.formatDate(user.createdAt)),
+      h("td", null, roleBtn, deleteBtn),
+    );
+
+    roleBtn.addEventListener("click", () => openAssignModal(user));
+    deleteBtn.addEventListener("click", () => openDeleteModal(user));
     _tbody.appendChild(tr);
   }
 }
 
-async function openAssignModal(user, mode) {
-  _editingUsername = user.username;
-  _assignEmail.textContent = user.email || user.username;
-  _assignTitle.textContent = mode === "approve" ? "Approve user" : "Edit user";
+async function openAssignModal(user) {
+  _pendingUsername = user.username;
+  _assignRoleEmail.textContent = user.email;
+  _assignRoleError.classList.add("hidden");
+  _assignRoleTitle.textContent = user.groups?.length > 0 ? "Change role" : "Approve user";
 
-  const currentRole = roleLabel(user);
-  _assignRoleSelect.value = currentRole === "super-admin" ? "super-admin" : "tenant-admin";
+  // Load tenants for dropdown
+  try {
+    const data = await TenantsService.list();
+    _assignTenantSelect.innerHTML = '<option value="">— Select a tenant —</option>';
+    for (const t of data.tenants || []) {
+      const opt = document.createElement("option");
+      opt.value = t.tenantId;
+      opt.textContent = t.displayName || t.tenantId;
+      if (t.tenantId === user.tenantId) opt.selected = true;
+      _assignTenantSelect.appendChild(opt);
+    }
+  } catch {
+    /* leave empty */
+  }
 
-  _assignError.classList.add("hidden");
-  await populateTenantOptions(user.tenant_id);
-  updateTenantFieldRequirement();
+  if (user.groups?.length > 0) {
+    _assignRoleSelect.value = user.groups[0];
+  }
+  toggleTenantRow();
   _assignModal.classList.remove("hidden");
 }
 
-async function populateTenantOptions(selectedTenantId) {
-  // Reset to just the placeholder, then refetch and append active tenants.
-  _assignTenantInput.innerHTML = '<option value="">— Select a tenant —</option>';
-  try {
-    const data = await TenantsService.list(true);
-    for (const tenant of data.tenants || []) {
-      const option = document.createElement("option");
-      option.value = tenant.tenantId;
-      option.textContent = `${tenant.displayName} (${tenant.tenantId})`;
-      _assignTenantInput.appendChild(option);
-    }
-    // If the user already has a tenant that's no longer in the active list,
-    // surface it explicitly so the admin sees the mismatch.
-    if (selectedTenantId && ![..._assignTenantInput.options].some((o) => o.value === selectedTenantId)) {
-      const option = document.createElement("option");
-      option.value = selectedTenantId;
-      option.textContent = `${selectedTenantId} (inactive or unknown)`;
-      _assignTenantInput.appendChild(option);
-    }
-    if (selectedTenantId) _assignTenantInput.value = selectedTenantId;
-  } catch (err) {
-    console.error("Failed to load tenants for assign modal:", err);
-  }
+function closeAssignModal() {
+  _assignModal.classList.add("hidden");
+  _pendingUsername = null;
 }
 
-function updateTenantFieldRequirement() {
-  const role = _assignRoleSelect.value;
-  const isTenantAdmin = role === "tenant-admin";
-  const row = document.getElementById("assign-tenant-row");
-  if (row) row.classList.toggle("hidden", !isTenantAdmin);
-  _assignTenantInput.required = isTenantAdmin;
-  if (!isTenantAdmin) _assignTenantInput.value = "";
+function toggleTenantRow() {
+  const row = _root.querySelector("#assign-tenant-row");
+  row.style.display = _assignRoleSelect.value === "tenant-admin" ? "" : "none";
 }
 
-async function handleAssignSubmit(e) {
+async function handleAssignRole(e) {
   e.preventDefault();
-  if (!_editingUsername) return;
-  _assignError.classList.add("hidden");
+  _assignRoleError.classList.add("hidden");
 
   const role = _assignRoleSelect.value;
-  const tenantId = (_assignTenantInput.value || "").trim() || null;
+  const tenantId = _assignTenantSelect.value;
 
   if (role === "tenant-admin" && !tenantId) {
-    _assignError.textContent = "Tenant is required for tenant-admin.";
-    _assignError.classList.remove("hidden");
+    _assignRoleError.textContent = "Tenant is required for tenant-admin role.";
+    _assignRoleError.classList.remove("hidden");
     return;
   }
 
   try {
-    await UsersService.approve(_editingUsername, role, tenantId);
-    _assignModal.classList.add("hidden");
-    _editingUsername = null;
-    await load();
+    await UsersService.approve(_pendingUsername, role, tenantId);
+    closeAssignModal();
+    Toast.show("Role assigned");
+    load();
   } catch (err) {
-    _assignError.textContent = err.message;
-    _assignError.classList.remove("hidden");
+    _assignRoleError.textContent = err.message;
+    _assignRoleError.classList.remove("hidden");
   }
 }
 
 function openDeleteModal(user) {
-  _pendingDeleteUsername = user.username;
-  _deleteEmail.textContent = user.email || user.username;
+  _pendingUsername = user.username;
+  _deleteEmail.textContent = user.email;
   _deleteError.classList.add("hidden");
   _deleteModal.classList.remove("hidden");
 }
 
-async function handleDeleteConfirm() {
-  if (!_pendingDeleteUsername) return;
+function closeDeleteModal() {
+  _deleteModal.classList.add("hidden");
+  _pendingUsername = null;
+}
+
+async function handleDeleteUser() {
   _deleteError.classList.add("hidden");
-  const username = _pendingDeleteUsername;
   try {
-    await UsersService.remove(username);
-    _deleteModal.classList.add("hidden");
-    _pendingDeleteUsername = null;
-    await load();
+    await UsersService.remove(_pendingUsername);
+    closeDeleteModal();
+    Toast.show("User deleted");
+    load();
   } catch (err) {
     _deleteError.textContent = err.message;
     _deleteError.classList.remove("hidden");
-  }
-}
-
-export async function load() {
-  try {
-    const data = await UsersService.list();
-    _allUsers = data.users || [];
-    render(_allUsers);
-  } catch (e) {
-    _tbody.innerHTML = "";
-    _noUsers.textContent = e.message;
-    _noUsers.classList.remove("hidden");
   }
 }

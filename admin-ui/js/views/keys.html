@@ -1,0 +1,89 @@
+<table id="keys-table">
+  <thead>
+    <tr>
+      <th>Tenant</th>
+      <th>Key Name</th>
+      <th>Email</th>
+      <th>Environment</th>
+      <th>Key (prefix)</th>
+      <th>Created</th>
+      <th>Last Used</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody id="keys-tbody"></tbody>
+</table>
+<p id="no-keys" class="empty-state hidden">No API keys found.</p>
+
+<!-- Create Key Modal -->
+<div id="create-modal" class="modal hidden">
+  <div class="modal-content">
+    <h2>Create API Key</h2>
+    <form id="create-form">
+      <label for="key-tenant">Tenant</label>
+      <select id="key-tenant" required>
+        <option value="">— Select tenant —</option>
+      </select>
+
+      <label for="api-key-name">Key name</label>
+      <p class="field-hint">Lowercase letters, numbers, and hyphens only.</p>
+      <input
+        type="text"
+        id="api-key-name"
+        placeholder="e.g. acme-ingest"
+        required
+        pattern="[a-z0-9\-]+"
+      />
+
+      <label for="client-environment">Environment</label>
+      <select id="client-environment" required>
+        <option value="dev">dev</option>
+        <option value="staging">staging</option>
+        <option value="prod">prod</option>
+      </select>
+
+      <label for="client-email">Owner email (optional)</label>
+      <input type="email" id="client-email" placeholder="Defaults to your email" />
+
+      <div class="modal-actions">
+        <button type="button" id="cancel-create" class="btn-secondary">Cancel</button>
+        <button type="submit" class="btn-primary">Create</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Revoke Key Modal -->
+<div id="revoke-modal" class="modal hidden">
+  <div class="modal-content">
+    <h2>Revoke API Key</h2>
+    <p>
+      This will immediately deactivate the key. Any service using it will start receiving 401
+      errors. This action cannot be undone.
+    </p>
+    <p>Key prefix: <code id="revoke-key-prefix"></code></p>
+    <div class="modal-actions">
+      <button type="button" id="cancel-revoke" class="btn-secondary">Cancel</button>
+      <button type="button" id="confirm-revoke" class="btn-danger">Revoke key</button>
+    </div>
+  </div>
+</div>
+
+<!-- Key Created Modal -->
+<div id="key-created-modal" class="modal hidden">
+  <div class="modal-content">
+    <h2>Key Created</h2>
+    <p>Copy this key now — it won't be shown again.</p>
+    <div class="key-detail">
+      <label>API URL</label>
+      <div class="key-detail-value" id="created-key-url"></div>
+    </div>
+    <div class="key-display">
+      <code id="new-key-value"></code>
+      <button id="copy-key-btn" class="btn-secondary">Copy</button>
+    </div>
+    <div class="modal-actions">
+      <button id="close-created" class="btn-primary">Done</button>
+    </div>
+  </div>
+</div>

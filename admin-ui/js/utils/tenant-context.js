@@ -13,12 +13,15 @@ export function init(selectEl) {
   _select = selectEl;
   _select.addEventListener("change", () => {
     _currentTenantId = _select.value || null;
-    _listeners.forEach(fn => fn(_currentTenantId));
+    _listeners.forEach((fn) => fn(_currentTenantId));
   });
 }
 
+let _loading = false;
+
 export async function load() {
-  if (!_select) return;
+  if (!_select || _loading) return;
+  _loading = true;
   const current = _select.value;
   _select.innerHTML = '<option value="">All Tenants</option>';
   try {
@@ -33,6 +36,7 @@ export async function load() {
     // Tenant list unavailable (tenant-admin)
   }
   if (current) _select.value = current;
+  _loading = false;
 }
 
 export function getTenantId() {
@@ -41,10 +45,14 @@ export function getTenantId() {
 
 export function onChange(fn) {
   _listeners.push(fn);
+  return () => {
+    const idx = _listeners.indexOf(fn);
+    if (idx >= 0) _listeners.splice(idx, 1);
+  };
 }
 
 export function setTenantId(tenantId) {
   _currentTenantId = tenantId;
   if (_select) _select.value = tenantId || "";
-  _listeners.forEach(fn => fn(_currentTenantId));
+  _listeners.forEach((fn) => fn(_currentTenantId));
 }

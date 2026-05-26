@@ -10,17 +10,14 @@ export function configure(userPoolId, clientId) {
 }
 
 async function cognitoFetch(action, body) {
-  const response = await fetch(
-    `https://cognito-idp.${COGNITO_REGION}.amazonaws.com/`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-amz-json-1.1",
-        "X-Amz-Target": `AWSCognitoIdentityProviderService.${action}`,
-      },
-      body: JSON.stringify(body),
-    }
-  );
+  const response = await fetch(`https://cognito-idp.${COGNITO_REGION}.amazonaws.com/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-amz-json-1.1",
+      "X-Amz-Target": `AWSCognitoIdentityProviderService.${action}`,
+    },
+    body: JSON.stringify(body),
+  });
 
   const data = await response.json();
 

@@ -1,0 +1,45 @@
+<table id="categories-table">
+  <thead>
+    <tr>
+      <th>Tenant</th>
+      <th>Name</th>
+      <th>Display Name</th>
+      <th>Description</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody id="categories-tbody"></tbody>
+</table>
+<p id="no-categories" class="empty-state hidden">No categories found.</p>
+
+<!-- Create/Edit Category Modal -->
+<div id="category-modal" class="modal hidden">
+  <div class="modal-content">
+    <h2 id="category-modal-title">Create category</h2>
+    <form id="category-form">
+      <label for="category-name">Category name</label>
+      <p class="field-hint">Lowercase letters, numbers, dashes, and underscores only.</p>
+      <input
+        type="text"
+        id="category-name"
+        placeholder="e.g. income"
+        required
+        pattern="[a-z0-9_\-]+"
+      />
+
+      <label for="category-display-name">Display name</label>
+      <input type="text" id="category-display-name" placeholder="Income Documents" required />
+
+      <label for="category-description">Description (optional)</label>
+      <input type="text" id="category-description" placeholder="W2s, 1099s, pay stubs" />
+
+      <p id="category-form-error" class="error hidden"></p>
+
+      <div class="modal-actions">
+        <button type="button" id="category-cancel" class="btn-secondary">Cancel</button>
+        <button type="submit" class="btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -5,7 +5,9 @@ function createClient(buildAuthHeaders) {
     configure(url) {
       baseUrl = url.replace(/\/$/, "");
     },
-    getBaseUrl() { return baseUrl; },
+    getBaseUrl() {
+      return baseUrl;
+    },
 
     async request(method, path, body = null) {
       const url = `${baseUrl}${path}`;
@@ -20,7 +22,9 @@ function createClient(buildAuthHeaders) {
         res = await fetch(url, opts);
       } catch (e) {
         console.error("Network error calling", url, e);
-        throw new Error(`Cannot reach API at ${baseUrl} — check CORS and that the endpoint is reachable.`);
+        throw new Error(
+          `Cannot reach API at ${baseUrl} — check CORS and that the endpoint is reachable.`,
+        );
       }
 
       if (!res.ok) {
@@ -40,8 +44,12 @@ function createClient(buildAuthHeaders) {
 let _jwt = "";
 let _apiKey = "";
 
-export function setJwt(token) { _jwt = token; }
-export function setApiKey(key) { _apiKey = key; }
+export function setJwt(token) {
+  _jwt = token;
+}
+export function setApiKey(key) {
+  _apiKey = key;
+}
 
 export const adminClient = createClient(() => ({ Authorization: `Bearer ${_jwt}` }));
 export const dataClient = createClient(() => ({ "API-Key": _apiKey }));

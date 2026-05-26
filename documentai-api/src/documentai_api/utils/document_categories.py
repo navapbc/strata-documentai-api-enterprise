@@ -20,6 +20,11 @@ def list_categories(tenant_id: str, active_only: bool = True) -> list[dict[str, 
     return _table.list_by_pk(tenant_id, active_only=active_only)
 
 
+def list_all_categories(active_only: bool = True) -> list[dict[str, Any]]:
+    """List all document categories across all tenants (super-admin only)."""
+    return _table.list_all(active_only=active_only)
+
+
 def create_category(
     tenant_id: str,
     category_name: str,

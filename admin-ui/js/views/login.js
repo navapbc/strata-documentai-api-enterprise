@@ -1,61 +1,48 @@
 import * as Auth from "../services/auth.js";
 import * as Session from "../utils/session.js";
 import QRCode from "qrcode";
+import { tpl } from "../utils/tpl.js";
+import html from "./login.html";
+
+const tmpl = tpl(html);
 
 let _onLogin = null;
 let _pendingEmail = null;
 let _mfaSession = null;
+let _root = null;
 
-export function init({ onLogin }) {
-  _onLogin = onLogin;
+export function onLoginSuccess(callback) {
+  _onLogin = callback;
+}
 
-  const signInCard = document.getElementById("sign-in-card");
-  const signUpCard = document.getElementById("sign-up-card");
-  const confirmCard = document.getElementById("confirm-card");
-  const helperSignIn = document.getElementById("helper-sign-in");
-  const helperSignUp = document.getElementById("helper-sign-up");
+export function mount(root) {
+  _root = root;
+  root.replaceChildren(tmpl());
 
-  // Sign In form
-  document.getElementById("sign-in-form").addEventListener("submit", handleSignIn);
+  root.querySelector("#sign-in-form").addEventListener("submit", handleSignIn);
+  root.querySelector("#sign-up-form").addEventListener("submit", handleSignUp);
+  root.querySelector("#confirm-form").addEventListener("submit", handleConfirm);
+  root.querySelector("#mfa-form").addEventListener("submit", handleMfaVerify);
+  root.querySelector("#mfa-setup-form").addEventListener("submit", handleMfaSetupVerify);
+  root.querySelector("#mfa-setup-cancel").addEventListener("click", () => reset());
 
-  // Sign Up form
-  document.getElementById("sign-up-form").addEventListener("submit", handleSignUp);
-
-  // Confirm form
-  document.getElementById("confirm-form").addEventListener("submit", handleConfirm);
-
-  // MFA form
-  document.getElementById("mfa-form").addEventListener("submit", handleMfaVerify);
-
-  // MFA Setup form
-  document.getElementById("mfa-setup-form").addEventListener("submit", handleMfaSetupVerify);
-  document.getElementById("mfa-setup-cancel").addEventListener("click", () => reset());
-
-  // Toggle between sign in / sign up
-  document.getElementById("show-sign-up").addEventListener("click", (e) => {
+  root.querySelector("#show-sign-up").addEventListener("click", (e) => {
     e.preventDefault();
-    signInCard.classList.add("hidden");
-    signUpCard.classList.remove("hidden");
-    confirmCard.classList.add("hidden");
-    if (helperSignIn) helperSignIn.classList.add("hidden");
-    if (helperSignUp) helperSignUp.classList.remove("hidden");
+    root.querySelector("#sign-in-card").classList.add("hidden");
+    root.querySelector("#sign-up-card").classList.remove("hidden");
+    root.querySelector("#confirm-card").classList.add("hidden");
   });
 
-  document.getElementById("show-sign-in").addEventListener("click", (e) => {
+  root.querySelector("#show-sign-in").addEventListener("click", (e) => {
     e.preventDefault();
-    signUpCard.classList.add("hidden");
-    confirmCard.classList.add("hidden");
-    signInCard.classList.remove("hidden");
-    if (helperSignUp) helperSignUp.classList.add("hidden");
-    if (helperSignIn) helperSignIn.classList.remove("hidden");
+    root.querySelector("#sign-up-card").classList.add("hidden");
+    root.querySelector("#confirm-card").classList.add("hidden");
+    root.querySelector("#sign-in-card").classList.remove("hidden");
   });
 
-  reset();
-
-  // Show/hide password toggles
-  document.querySelectorAll(".show-password").forEach((btn) => {
+  root.querySelectorAll(".show-password").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const input = document.getElementById(btn.dataset.target);
+      const input = root.querySelector(`#${btn.dataset.target}`);
       if (!input) return;
       const showing = input.type === "text";
       input.type = showing ? "password" : "text";
@@ -64,31 +51,40 @@ export function init({ onLogin }) {
   });
 }
 
-export function reset() {
-  document.getElementById("sign-in-card").classList.remove("hidden");
-  document.getElementById("sign-up-card").classList.add("hidden");
-  document.getElementById("confirm-card").classList.add("hidden");
-  document.getElementById("mfa-card").classList.add("hidden");
-  document.getElementById("mfa-setup-card").classList.add("hidden");
+export function unmount(root) {
+  root.replaceChildren();
+  _pendingEmail = null;
+  _mfaSession = null;
+}
+
+function reset() {
+  if (!_root) return;
+  _root.querySelector("#sign-in-card").classList.remove("hidden");
+  _root.querySelector("#sign-up-card").classList.add("hidden");
+  _root.querySelector("#confirm-card").classList.add("hidden");
+  _root.querySelector("#mfa-card").classList.add("hidden");
+  _root.querySelector("#mfa-setup-card").classList.add("hidden");
   ["sign-in-form", "sign-up-form", "confirm-form", "mfa-form", "mfa-setup-form"].forEach((id) => {
-    const form = document.getElementById(id);
+    const form = _root.querySelector(`#${id}`);
     if (form) form.reset();
   });
-  ["sign-in-error", "sign-up-error", "confirm-error", "mfa-error", "mfa-setup-error"].forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) el.classList.add("hidden");
-  });
+  ["sign-in-error", "sign-up-error", "confirm-error", "mfa-error", "mfa-setup-error"].forEach(
+    (id) => {
+      const el = _root.querySelector(`#${id}`);
+      if (el) el.classList.add("hidden");
+    },
+  );
   _pendingEmail = null;
   _mfaSession = null;
 }
 
 async function handleSignIn(e) {
   e.preventDefault();
-  const error = document.getElementById("sign-in-error");
+  const error = _root.querySelector("#sign-in-error");
   error.classList.add("hidden");
 
-  const email = document.getElementById("sign-in-email").value.trim();
-  const password = document.getElementById("sign-in-password").value;
+  const email = _root.querySelector("#sign-in-email").value.trim();
+  const password = _root.querySelector("#sign-in-password").value;
 
   try {
     const result = await Auth.signIn(email, password);
@@ -107,7 +103,13 @@ async function handleSignIn(e) {
       return;
     }
 
-    Session.save({ ...result, email });
+    Session.save({
+      accessToken: result.accessToken,
+      idToken: result.idToken,
+      refreshToken: result.refreshToken,
+      expiresIn: result.expiresIn,
+      email,
+    });
     if (_onLogin) _onLogin();
   } catch (err) {
     if (err.code === "NotAuthorizedException" || err.code === "UserNotFoundException") {
@@ -125,12 +127,12 @@ async function handleSignIn(e) {
 
 async function handleSignUp(e) {
   e.preventDefault();
-  const error = document.getElementById("sign-up-error");
+  const error = _root.querySelector("#sign-up-error");
   error.classList.add("hidden");
 
-  const email = document.getElementById("sign-up-email").value.trim();
-  const password = document.getElementById("sign-up-password").value;
-  const confirmPassword = document.getElementById("sign-up-password-confirm").value;
+  const email = _root.querySelector("#sign-up-email").value.trim();
+  const password = _root.querySelector("#sign-up-password").value;
+  const confirmPassword = _root.querySelector("#sign-up-password-confirm").value;
 
   if (password !== confirmPassword) {
     error.textContent = "Passwords do not match";
@@ -141,10 +143,6 @@ async function handleSignUp(e) {
   try {
     await Auth.signUp(email, password);
   } catch (err) {
-    // Swallow UsernameExistsException to prevent user enumeration —
-    // fall through to the confirm screen as if signup succeeded.
-    // Proper mitigation requires a Cognito PreSignUp/CustomMessage Lambda
-    // to email existing users a "you already have an account" notice.
     if (err.code !== "UsernameExistsException") {
       if (err.code === "InvalidPasswordException") {
         error.textContent = "Password must be at least 12 characters";
@@ -159,25 +157,21 @@ async function handleSignUp(e) {
   }
 
   _pendingEmail = email;
-  document.getElementById("sign-up-card").classList.add("hidden");
-  document.getElementById("confirm-card").classList.remove("hidden");
-  document.getElementById("confirm-email-display").textContent = email;
-  const helperSignUp = document.getElementById("helper-sign-up");
-  if (helperSignUp) helperSignUp.classList.add("hidden");
+  _root.querySelector("#sign-up-card").classList.add("hidden");
+  _root.querySelector("#confirm-card").classList.remove("hidden");
+  _root.querySelector("#confirm-email-display").textContent = email;
 }
 
 async function handleConfirm(e) {
   e.preventDefault();
-  const error = document.getElementById("confirm-error");
+  const error = _root.querySelector("#confirm-error");
   error.classList.add("hidden");
 
-  const code = document.getElementById("confirm-code").value.trim();
+  const code = _root.querySelector("#confirm-code").value.trim();
 
   try {
     await Auth.confirmSignUp(_pendingEmail, code);
-
-    // Auto sign in after confirmation
-    const password = document.getElementById("sign-up-password").value;
+    const password = _root.querySelector("#sign-up-password").value;
     const result = await Auth.signIn(_pendingEmail, password);
 
     if (result.challenge === "MFA_SETUP") {
@@ -191,7 +185,13 @@ async function handleConfirm(e) {
       return;
     }
 
-    Session.save({ ...result, email: _pendingEmail });
+    Session.save({
+      accessToken: result.accessToken,
+      idToken: result.idToken,
+      refreshToken: result.refreshToken,
+      expiresIn: result.expiresIn,
+      email: _pendingEmail,
+    });
     if (_onLogin) _onLogin();
   } catch (err) {
     error.textContent = "That code didn't work. Please check your email and try again.";
@@ -200,30 +200,30 @@ async function handleConfirm(e) {
 }
 
 function showMfaCard() {
-  document.getElementById("sign-in-card").classList.add("hidden");
-  document.getElementById("sign-up-card").classList.add("hidden");
-  document.getElementById("confirm-card").classList.add("hidden");
-  document.getElementById("mfa-card").classList.remove("hidden");
-  document.getElementById("mfa-setup-card").classList.add("hidden");
+  _root.querySelector("#sign-in-card").classList.add("hidden");
+  _root.querySelector("#sign-up-card").classList.add("hidden");
+  _root.querySelector("#confirm-card").classList.add("hidden");
+  _root.querySelector("#mfa-card").classList.remove("hidden");
+  _root.querySelector("#mfa-setup-card").classList.add("hidden");
 }
 
 async function showMfaSetupCard(session) {
-  document.getElementById("sign-in-card").classList.add("hidden");
-  document.getElementById("sign-up-card").classList.add("hidden");
-  document.getElementById("confirm-card").classList.add("hidden");
-  document.getElementById("mfa-card").classList.add("hidden");
-  document.getElementById("mfa-setup-card").classList.remove("hidden");
+  _root.querySelector("#sign-in-card").classList.add("hidden");
+  _root.querySelector("#sign-up-card").classList.add("hidden");
+  _root.querySelector("#confirm-card").classList.add("hidden");
+  _root.querySelector("#mfa-card").classList.add("hidden");
+  _root.querySelector("#mfa-setup-card").classList.remove("hidden");
 
   try {
     const resp = await Auth.associateSoftwareToken(session);
     _mfaSession = resp.Session;
     const secret = resp.SecretCode;
     const otpUri = `otpauth://totp/DocumentAI:${_pendingEmail}?secret=${secret}&issuer=DocumentAI`;
-    document.getElementById("mfa-secret-code").textContent = secret;
-    const canvas = document.getElementById("mfa-qr-canvas");
+    _root.querySelector("#mfa-secret-code").textContent = secret;
+    const canvas = _root.querySelector("#mfa-qr-canvas");
     await QRCode.toCanvas(canvas, otpUri, { width: 200, margin: 2 });
   } catch (err) {
-    const error = document.getElementById("mfa-setup-error");
+    const error = _root.querySelector("#mfa-setup-error");
     error.textContent = err.message;
     error.classList.remove("hidden");
   }
@@ -231,10 +231,10 @@ async function showMfaSetupCard(session) {
 
 async function handleMfaVerify(e) {
   e.preventDefault();
-  const error = document.getElementById("mfa-error");
+  const error = _root.querySelector("#mfa-error");
   error.classList.add("hidden");
 
-  const code = document.getElementById("mfa-code").value.trim();
+  const code = _root.querySelector("#mfa-code").value.trim();
 
   try {
     const tokens = await Auth.respondToMfaChallenge(_mfaSession, code, _pendingEmail);
@@ -244,7 +244,7 @@ async function handleMfaVerify(e) {
     if (err.code === "NotAuthorizedException") {
       error.textContent = "Session expired. Please sign in again.";
       error.classList.remove("hidden");
-      setTimeout(() => { reset(); document.getElementById("sign-in-card").classList.remove("hidden"); }, 2000);
+      setTimeout(() => reset(), 2000);
       return;
     } else if (err.code === "CodeMismatchException") {
       error.textContent = "Invalid code. Please try again.";
@@ -257,10 +257,10 @@ async function handleMfaVerify(e) {
 
 async function handleMfaSetupVerify(e) {
   e.preventDefault();
-  const error = document.getElementById("mfa-setup-error");
+  const error = _root.querySelector("#mfa-setup-error");
   error.classList.add("hidden");
 
-  const code = document.getElementById("mfa-setup-code").value.trim();
+  const code = _root.querySelector("#mfa-setup-code").value.trim();
 
   try {
     const tokens = await Auth.verifySoftwareToken(_mfaSession, code, _pendingEmail);
@@ -270,7 +270,7 @@ async function handleMfaSetupVerify(e) {
     if (err.code === "NotAuthorizedException") {
       error.textContent = "Session expired. Please sign in again.";
       error.classList.remove("hidden");
-      setTimeout(() => { reset(); document.getElementById("sign-in-card").classList.remove("hidden"); }, 2000);
+      setTimeout(() => reset(), 2000);
       return;
     } else if (err.code === "CodeMismatchException") {
       error.textContent = "Invalid code. Please try again.";

@@ -23,10 +23,17 @@ export async function update(tenantId, categoryName, { displayName, description,
   if (displayName !== undefined) body.display_name = displayName;
   if (description !== undefined) body.description = description;
   if (isActive !== undefined) body.is_active = isActive;
-  return adminClient.request("PATCH", `/v1/admin/document-categories/${encodeURIComponent(categoryName)}${params}`, body);
+  return adminClient.request(
+    "PATCH",
+    `/v1/admin/document-categories/${encodeURIComponent(categoryName)}${params}`,
+    body,
+  );
 }
 
 export async function remove(tenantId, categoryName) {
   const params = tenantId ? `?tenant_id=${encodeURIComponent(tenantId)}` : "";
-  return adminClient.request("DELETE", `/v1/admin/document-categories/${encodeURIComponent(categoryName)}${params}`);
+  return adminClient.request(
+    "DELETE",
+    `/v1/admin/document-categories/${encodeURIComponent(categoryName)}${params}`,
+  );
 }

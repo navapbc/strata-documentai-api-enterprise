@@ -63,9 +63,26 @@ async def list_document_categories(
     tenant_id: str | None = None,
     active_only: bool = True,
 ) -> ListDocumentCategoriesResponse:
-    """List document categories for a tenant."""
-    effective_tenant = _get_effective_tenant(claims, tenant_id)
-    records = categories_util.list_categories(effective_tenant, active_only=active_only)
+    """List document categories.
+
+    Super-admins can omit tenant_id to list all categories across tenants.
+    Tenant-admins are locked to their own tenant.
+    """
+    scope = tenant_scope(claims)
+    if scope is not None:
+        if tenant_id and tenant_id != scope:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to this tenant.",
+            )
+        tenant_id = scope
+
+    if tenant_id:
+        records = categories_util.list_categories(tenant_id, active_only=active_only)
+    else:
+        # Super-admin with no tenant filter — list all
+        records = categories_util.list_all_categories(active_only=active_only)
+
     items = [_to_item(r) for r in records]
     return ListDocumentCategoriesResponse(categories=items, count=len(items))
 

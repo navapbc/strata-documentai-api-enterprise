@@ -5,7 +5,13 @@ export async function list(tenantId) {
   return adminClient.request("GET", `/v1/config/extraction-rules${params}`);
 }
 
-export async function put(tenantId, documentType, requiredFields, optionalFields, blueprintArn = null) {
+export async function put(
+  tenantId,
+  documentType,
+  requiredFields,
+  optionalFields,
+  blueprintArn = null,
+) {
   const body = {
     tenant_id: tenantId,
     document_type: documentType,

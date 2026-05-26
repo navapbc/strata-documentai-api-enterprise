@@ -1,5 +1,14 @@
 import { adminClient } from "./http.js";
 
+/**
+ * @param {Object} [opts]
+ * @param {string} [opts.tenantId]
+ * @param {string} [opts.action]
+ * @param {string} [opts.startDate]
+ * @param {string} [opts.endDate]
+ * @param {number} [opts.limit]
+ * @param {string} [opts.cursor]
+ */
 export async function list({ tenantId, action, startDate, endDate, limit, cursor } = {}) {
   const params = new URLSearchParams();
   if (tenantId) params.set("tenant_id", tenantId);

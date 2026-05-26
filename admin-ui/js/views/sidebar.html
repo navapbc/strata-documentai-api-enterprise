@@ -1,0 +1,71 @@
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h1>DocumentAI Console</h1>
+      <span id="connected-url"></span>
+      <select id="global-tenant-select" class="global-tenant-select">
+        <option value="">All Tenants</option>
+      </select>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <button class="nav-section-header" data-section="keys">
+          <span class="nav-arrow">▸</span> API Keys
+        </button>
+        <div class="nav-section-body hidden" id="section-keys">
+          <a class="nav-item" data-view="keys">Manage APIKeys</a>
+        </div>
+      </div>
+
+      <div class="nav-section hidden" id="nav-section-users">
+        <button class="nav-section-header" data-section="users">
+          <span class="nav-arrow">▸</span> Users
+        </button>
+        <div class="nav-section-body hidden" id="section-users">
+          <a class="nav-item" data-view="users">Manage Users</a>
+        </div>
+      </div>
+
+      <div class="nav-section hidden" id="nav-section-tenants">
+        <button class="nav-section-header" data-section="tenants">
+          <span class="nav-arrow">▸</span> Tenants
+        </button>
+        <div class="nav-section-body hidden" id="section-tenants">
+          <a class="nav-item" data-view="tenants">Manage Tenants</a>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <button class="nav-section-header" data-section="docs">
+          <span class="nav-arrow">▸</span> Documents
+        </button>
+        <div class="nav-section-body hidden" id="section-docs">
+          <a class="nav-item" data-view="doc-categories">Manage Document Categories</a>
+          <a class="nav-item" data-view="extraction-rules">Manage Extraction Rules</a>
+          <a class="nav-item" data-view="test-documents">Test Document Extraction</a>
+          <a class="nav-item" data-view="documents">View Documents</a>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <button class="nav-section-header" data-section="audit-log">
+          <span class="nav-arrow">▸</span> Audit Log
+        </button>
+        <div class="nav-section-body hidden" id="section-audit-log">
+          <a class="nav-item" data-view="audit-log">View Audit Log Events</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button id="logout-btn" class="btn-secondary btn-block">Log Out</button>
+    </div>
+  </aside>
+
+  <div class="content-header">
+    <h2 id="view-title"></h2>
+    <div id="view-actions" class="content-actions"></div>
+  </div>
+  <main id="main-content" class="main-content"></main>
+</div>
