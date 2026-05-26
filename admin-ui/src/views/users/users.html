@@ -1,0 +1,63 @@
+<table id="users-table">
+  <thead>
+    <tr>
+      <th>Email</th>
+      <th>Status</th>
+      <th>Role</th>
+      <th>Tenant</th>
+      <th>Created</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody id="users-tbody"></tbody>
+</table>
+<p id="no-users" class="empty-state hidden">No users found.</p>
+
+<!-- Assign Role Modal -->
+<div id="assign-role-modal" class="modal hidden">
+  <div class="modal-content">
+    <h2 id="assign-role-title">Approve user</h2>
+    <p>Assign a role for <strong id="assign-role-email"></strong>.</p>
+    <form id="assign-role-form">
+      <label for="assign-role">Role</label>
+      <select id="assign-role" required>
+        <option value="tenant-admin">tenant-admin</option>
+        <option value="super-admin">super-admin</option>
+      </select>
+
+      <div id="assign-tenant-row">
+        <label for="assign-tenant">Tenant</label>
+        <select id="assign-tenant">
+          <option value="">- Select a tenant -</option>
+        </select>
+        <p class="field-hint" id="assign-tenant-hint">
+          Required for tenant-admin. Create tenants in the Tenants section first.
+        </p>
+      </div>
+
+      <p id="assign-role-error" class="error hidden"></p>
+
+      <div class="modal-actions">
+        <button type="button" id="assign-role-cancel" class="btn-secondary">Cancel</button>
+        <button type="submit" class="btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Delete User Modal -->
+<div id="delete-user-modal" class="modal hidden">
+  <div class="modal-content">
+    <h2>Delete user</h2>
+    <p>
+      This will permanently delete the Cognito user. They will lose access immediately and cannot
+      sign in again unless they sign up fresh.
+    </p>
+    <p>User: <strong id="delete-user-email"></strong></p>
+    <p id="delete-user-error" class="error hidden"></p>
+    <div class="modal-actions">
+      <button type="button" id="delete-user-cancel" class="btn-secondary">Cancel</button>
+      <button type="button" id="delete-user-confirm" class="btn-danger">Delete user</button>
+    </div>
+  </div>
+</div>

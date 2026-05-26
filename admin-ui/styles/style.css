@@ -264,7 +264,7 @@ form button[type="submit"]:not(.btn-primary):not(.btn-secondary):not(.btn-outlin
   background: #5ba3f5;
 }
 
-/* Nav Search — dark sidebar variant */
+/* Nav Search - dark sidebar variant */
 .sidebar .nav-search {
   padding: 0.25rem 1rem 0.5rem 1.5rem;
 }
@@ -289,7 +289,7 @@ form button[type="submit"]:not(.btn-primary):not(.btn-secondary):not(.btn-outlin
   box-shadow: none;
 }
 
-/* Nav Search — light variant (blueprints sidebar) */
+/* Nav Search - light variant (blueprints sidebar) */
 .blueprints-sidebar .nav-search {
   padding: 0 0 0.5rem;
 }
@@ -1050,7 +1050,7 @@ td {
   color: #005ea2;
 }
 
-/* Right panel — marketing */
+/* Right panel - marketing */
 .login-marketing {
   max-width: 480px;
 }
@@ -1137,7 +1137,7 @@ td {
   width: 100%;
 }
 
-/* Responsive — stack on mobile */
+/* Responsive - stack on mobile */
 @media (max-width: 880px) {
   .login-layout {
     grid-template-columns: 1fr;

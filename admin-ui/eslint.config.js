@@ -2,7 +2,7 @@ import noUnsanitized from "eslint-plugin-no-unsanitized";
 
 export default [
   {
-    files: ["js/**/*.js"],
+    files: ["src/**/*.js"],
     plugins: {
       "no-unsanitized": noUnsanitized,
     },

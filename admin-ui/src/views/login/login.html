@@ -1,0 +1,240 @@
+<header class="login-header">
+  <div class="login-header-inner">
+    <strong>DocumentAI Console</strong>
+  </div>
+</header>
+<div class="login-layout">
+  <div class="login-panel-left">
+    <div id="sign-in-card" class="login-form-container">
+      <h1>Sign in</h1>
+      <p class="form-intro">Welcome back.</p>
+      <p class="required-indicator">
+        <abbr title="required" class="req">*</abbr> indicates a required field.
+      </p>
+      <form id="sign-in-form" novalidate>
+        <label for="sign-in-email">Email address <abbr title="required" class="req">*</abbr></label>
+        <input type="email" id="sign-in-email" required />
+        <label for="sign-in-password">Password <abbr title="required" class="req">*</abbr></label>
+        <input type="password" id="sign-in-password" required />
+        <button type="button" class="show-password" data-target="sign-in-password">
+          Show password
+        </button>
+        <button type="submit" class="btn-primary btn-block">Sign in</button>
+        <p id="sign-in-error" class="error hidden"></p>
+      </form>
+      <p class="form-footer-link">
+        <a href="#" id="show-forgot-password">Forgot password?</a>
+      </p>
+      <p class="form-footer-link">
+        New to DocumentAI? <a href="#" id="show-sign-up">Create account</a>.
+      </p>
+    </div>
+
+    <div id="forgot-password-card" class="login-form-container hidden">
+      <h1>Reset password</h1>
+      <p class="form-intro">Enter your email and we'll send a verification code.</p>
+      <form id="forgot-password-form" novalidate>
+        <label for="forgot-email">Email address <abbr title="required" class="req">*</abbr></label>
+        <input type="email" id="forgot-email" required />
+        <button type="submit" class="btn-primary btn-block">Send code</button>
+        <p id="forgot-password-error" class="error hidden"></p>
+      </form>
+      <p class="form-footer-link">
+        <a href="#" id="forgot-back-to-sign-in">Back to sign in</a>
+      </p>
+    </div>
+
+    <div id="reset-password-card" class="login-form-container hidden">
+      <h1>Enter new password</h1>
+      <p class="form-intro">Check your email for the verification code.</p>
+      <form id="reset-password-form" novalidate>
+        <label for="reset-code"
+          >Verification code <abbr title="required" class="req">*</abbr></label
+        >
+        <input
+          type="text"
+          id="reset-code"
+          placeholder="123456"
+          required
+          pattern="[0-9]{6}"
+          inputmode="numeric"
+        />
+        <label for="reset-new-password">
+          New password <abbr title="required" class="req">*</abbr>
+          <span class="field-hint-inline">Must be at least 12 characters.</span>
+        </label>
+        <input type="password" id="reset-new-password" required minlength="12" />
+        <button type="button" class="show-password" data-target="reset-new-password">
+          Show password
+        </button>
+        <label for="reset-confirm-password"
+          >Re-type password <abbr title="required" class="req">*</abbr></label
+        >
+        <input type="password" id="reset-confirm-password" required minlength="12" />
+        <button type="submit" class="btn-primary btn-block">Reset password</button>
+        <p id="reset-password-error" class="error hidden"></p>
+      </form>
+    </div>
+
+    <div id="sign-up-card" class="login-form-container hidden">
+      <h1>Create account</h1>
+      <p class="form-intro">Get started with an account.</p>
+      <p class="required-indicator">
+        <abbr title="required" class="req">*</abbr> indicates a required field.
+      </p>
+      <form id="sign-up-form" novalidate>
+        <label for="sign-up-email">Email address <abbr title="required" class="req">*</abbr></label>
+        <input type="email" id="sign-up-email" required />
+        <label for="sign-up-password">
+          Create password <abbr title="required" class="req">*</abbr>
+          <span class="field-hint-inline">Must be at least 12 characters.</span>
+        </label>
+        <input type="password" id="sign-up-password" required minlength="12" />
+        <button type="button" class="show-password" data-target="sign-up-password">
+          Show password
+        </button>
+        <label for="sign-up-password-confirm"
+          >Re-type password <abbr title="required" class="req">*</abbr></label
+        >
+        <input type="password" id="sign-up-password-confirm" required minlength="12" />
+        <button type="submit" class="btn-primary btn-block">Create account</button>
+        <p id="sign-up-error" class="error hidden"></p>
+      </form>
+      <p class="form-footer-link">
+        Already have an account? <a href="#" id="show-sign-in">Sign in</a>.
+      </p>
+    </div>
+
+    <div id="confirm-card" class="login-form-container hidden">
+      <h1>Check your email</h1>
+      <p class="confirm-instructions">
+        We sent a verification code to <strong id="confirm-email-display"></strong>
+      </p>
+      <form id="confirm-form" novalidate>
+        <label for="confirm-code"
+          >Verification code <abbr title="required" class="req">*</abbr></label
+        >
+        <input
+          type="text"
+          id="confirm-code"
+          placeholder="123456"
+          required
+          pattern="[0-9]{6}"
+          inputmode="numeric"
+        />
+        <button type="submit" class="btn-primary btn-block">Confirm</button>
+        <p id="confirm-error" class="error hidden"></p>
+      </form>
+    </div>
+
+    <div id="mfa-card" class="login-form-container hidden">
+      <h1>Two-factor authentication</h1>
+      <p class="form-intro">Enter the 6-digit code from your authenticator app.</p>
+      <form id="mfa-form" novalidate>
+        <label for="mfa-code"
+          >Authentication code <abbr title="required" class="req">*</abbr></label
+        >
+        <input
+          type="text"
+          id="mfa-code"
+          placeholder="123456"
+          required
+          pattern="[0-9]{6}"
+          inputmode="numeric"
+          autocomplete="one-time-code"
+        />
+        <button type="submit" class="btn-primary btn-block">Verify</button>
+        <p id="mfa-error" class="error hidden"></p>
+      </form>
+    </div>
+
+    <div id="mfa-setup-card" class="login-form-container hidden">
+      <h1>Set up two-factor authentication</h1>
+      <p class="form-intro">
+        Scan this code with your authenticator app (Google Authenticator, 1Password, etc.).
+      </p>
+      <div class="mfa-setup-secret">
+        <canvas id="mfa-qr-canvas"></canvas>
+        <p>Or enter this key manually:</p>
+        <code id="mfa-secret-code"></code>
+      </div>
+      <form id="mfa-setup-form" novalidate>
+        <label for="mfa-setup-code"
+          >Verification code <abbr title="required" class="req">*</abbr></label
+        >
+        <input
+          type="text"
+          id="mfa-setup-code"
+          placeholder="123456"
+          required
+          pattern="[0-9]{6}"
+          inputmode="numeric"
+          autocomplete="one-time-code"
+        />
+        <button type="submit" class="btn-primary btn-block">Verify &amp; activate</button>
+        <button type="button" id="mfa-setup-cancel" class="btn-secondary btn-block">Cancel</button>
+        <p id="mfa-setup-error" class="error hidden"></p>
+      </form>
+    </div>
+  </div>
+
+  <div class="login-panel-right">
+    <div class="login-marketing">
+      <h2 class="marketing-tagline">Manage API access for your documents.</h2>
+      <p class="marketing-intro">
+        The DocumentAI Console gives admins a single place to issue keys, configure extraction
+        rules, and audit usage.
+      </p>
+      <ul class="value-props">
+        <li>
+          <span class="value-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                fill-rule="evenodd"
+                d="M15.75 1.5a6.75 6.75 0 0 0-6.651 7.906c.067.39-.032.717-.221.906l-6.5 6.499a3 3 0 0 0-.878 2.121v2.818c0 .414.336.75.75.75H6a.75.75 0 0 0 .75-.75v-1.5h1.5A.75.75 0 0 0 9 19.5V18h1.5a.75.75 0 0 0 .53-.22l2.658-2.658c.19-.189.517-.288.906-.22A6.75 6.75 0 1 0 15.75 1.5Zm0 3a.75.75 0 0 0 0 1.5A2.25 2.25 0 0 1 18 8.25a.75.75 0 0 0 1.5 0 3.75 3.75 0 0 0-3.75-3.75Z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </span>
+          <div><strong>Rotate API keys</strong> in seconds, with full revocation history.</div>
+        </li>
+        <li>
+          <span class="value-icon" aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="4" y1="6" x2="20" y2="6" />
+              <line x1="4" y1="12" x2="20" y2="12" />
+              <line x1="4" y1="18" x2="20" y2="18" />
+              <circle cx="9" cy="6" r="2" fill="#fff" />
+              <circle cx="15" cy="12" r="2" fill="#fff" />
+              <circle cx="7" cy="18" r="2" fill="#fff" />
+            </svg>
+          </span>
+          <div><strong>Tune extraction rules</strong> per blueprint without redeploying.</div>
+        </li>
+        <li>
+          <span class="value-icon" aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M12 2 4 5v6c0 5 3.5 9.5 8 11 4.5-1.5 8-6 8-11V5l-8-3z" />
+              <polyline points="9 12 11 14 15 10" />
+            </svg>
+          </span>
+          <div><strong>Audit every action</strong> taken against your tenant.</div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
