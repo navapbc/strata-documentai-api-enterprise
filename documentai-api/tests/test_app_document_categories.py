@@ -167,10 +167,10 @@ def test_categories_super_admin_delete_not_found_returns_404(client, document_ca
     assert response.status_code == 404
 
 
-def test_categories_super_admin_requires_tenant_id(client, document_categories_table):
+def test_categories_super_admin_lists_all_without_tenant_id(client, document_categories_table):
     _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
     response = client.get(CATEGORIES_URL)
-    assert response.status_code == 400
+    assert response.status_code == 200
 
 
 # ==============================================================================
@@ -438,7 +438,6 @@ def test_categories_tenant_admin_create_duplicate_returns_409(client, seed_categ
 @pytest.mark.parametrize(
     ("method", "path"),
     [
-        ("GET", CATEGORIES_URL),
         ("POST", CATEGORIES_URL),
         ("GET", f"{CATEGORIES_URL}/{CATEGORY_NAME}"),
         ("PATCH", f"{CATEGORIES_URL}/{CATEGORY_NAME}"),

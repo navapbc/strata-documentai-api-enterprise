@@ -280,7 +280,7 @@ def _write_aggregated_stats(
 
 
 def _get_daily_stats_for_month(bucket: str, yyyymm: str) -> list[dict[str, Any]]:
-    """Read all daily stats for a given month from S3."""
+    """Read all daily global stats for a given month from S3."""
     s3 = AWSClientFactory.get_s3_client()
     prefix = f"{S3_AGG_DDB_DATA_DAILY_PREFIX}={yyyymm}-"
 
@@ -288,7 +288,8 @@ def _get_daily_stats_for_month(bucket: str, yyyymm: str) -> list[dict[str, Any]]
     paginator = s3.get_paginator("list_objects_v2")
     for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
         for obj in page.get("Contents", []):
-            if obj["Key"].endswith("stats.json"):
+            # Only read global stats (exclude tenant-scoped files)
+            if obj["Key"].endswith("stats.json") and "/tenant=" not in obj["Key"]:
                 response = s3.get_object(Bucket=bucket, Key=obj["Key"])
                 daily_stats.append(json.loads(response["Body"].read().decode()))
 

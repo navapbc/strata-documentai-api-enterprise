@@ -25,6 +25,7 @@ def create_record(
     classification="W2",
     total_time=None,
     bda_time=None,
+    tenant_id="test-tenant",
 ):
     """Factory function to create test records with defaults."""
     record = {
@@ -32,6 +33,7 @@ def create_record(
         "process_status": status,
         "created_at": created_at,
         "bda_matched_document_class": classification,
+        "tenant_id": tenant_id,
     }
     if total_time:
         record["total_processing_time_seconds"] = str(total_time)
@@ -116,8 +118,11 @@ def test_build_deduplication_query():
 
 
 def test_aggregate_records_empty():
-    """Test aggregation with no records returns zeroed stats structure."""
-    stats = _aggregate_records([], "2026-02-20")
+    """Test aggregation with no records returns only __global__ key."""
+    result = _aggregate_records([], "2026-02-20")
+
+    assert set(result.keys()) == {"__global__"}
+    stats = result["__global__"]
 
     assert stats["date"] == "2026-02-20"
     assert stats["total_records"] == 0
@@ -165,15 +170,22 @@ def test_aggregate_records_single_record():
     )
 
     stats = _aggregate_records([record], "2026-02-20")
+    global_stats = stats["__global__"]
+    tenant_stats = stats["test-tenant"]
 
-    assert stats["total_records"] == 1
-    assert stats["by_status"]["success"] == 1
-    assert stats["by_hour"]["10"] == 1
-    assert stats["by_classification"]["W2"] == 1
-    assert stats["timing_stats"]["total_processing_time_sum"] == 5.5
-    assert stats["timing_stats"]["total_processing_time_count"] == 1
-    assert stats["timing_stats"]["bda_processing_time_sum"] == 3.2
-    assert stats["timing_stats"]["bda_processing_time_count"] == 1
+    # Global stats
+    assert global_stats["total_records"] == 1
+    assert global_stats["by_status"]["success"] == 1
+    assert global_stats["by_hour"]["10"] == 1
+    assert global_stats["by_classification"]["W2"] == 1
+    assert global_stats["timing_stats"]["total_processing_time_sum"] == 5.5
+    assert global_stats["timing_stats"]["total_processing_time_count"] == 1
+    assert global_stats["timing_stats"]["bda_processing_time_sum"] == 3.2
+    assert global_stats["timing_stats"]["bda_processing_time_count"] == 1
+
+    # Tenant stats match global for single-tenant record
+    assert tenant_stats["total_records"] == 1
+    assert tenant_stats["by_status"]["success"] == 1
 
 
 def test_aggregate_records_multiple_records():
@@ -184,7 +196,7 @@ def test_aggregate_records_multiple_records():
         create_record(status="failed", created_at="2026-02-20T11:00:00Z", classification="1099"),
     ]
 
-    stats = _aggregate_records(records, "2026-02-20")
+    stats = _aggregate_records(records, "2026-02-20")["__global__"]
 
     assert stats["total_records"] == 3
     assert stats["by_status"]["success"] == 2
@@ -195,6 +207,45 @@ def test_aggregate_records_multiple_records():
     assert stats["by_classification"]["1099"] == 1
     assert stats["timing_stats"]["total_processing_time_sum"] == 8.0
     assert stats["timing_stats"]["total_processing_time_count"] == 2
+
+
+def test_aggregate_records_multi_tenant():
+    """Test aggregation groups records by tenant and produces correct global + per-tenant stats."""
+    records = [
+        create_record(status="success", tenant_id="tenant-a", total_time=5.0),
+        create_record(status="success", tenant_id="tenant-a", total_time=3.0),
+        create_record(status="failed", tenant_id="tenant-b", total_time=4.0),
+    ]
+
+    result = _aggregate_records(records, "2026-02-20")
+
+    assert set(result.keys()) == {"__global__", "tenant-a", "tenant-b"}
+
+    # Global has all 3
+    assert result["__global__"]["total_records"] == 3
+    assert result["__global__"]["by_status"]["success"] == 2
+    assert result["__global__"]["by_status"]["failed"] == 1
+
+    # Tenant A has 2
+    assert result["tenant-a"]["total_records"] == 2
+    assert result["tenant-a"]["by_status"]["success"] == 2
+
+    # Tenant B has 1
+    assert result["tenant-b"]["total_records"] == 1
+    assert result["tenant-b"]["by_status"]["failed"] == 1
+
+
+def test_aggregate_records_missing_tenant_uses_unknown():
+    """Records without tenant_id are grouped under __unknown__."""
+    records = [
+        create_record(status="success", tenant_id=None),
+    ]
+
+    result = _aggregate_records(records, "2026-02-20")
+
+    assert "__unknown__" in result
+    assert result["__unknown__"]["total_records"] == 1
+    assert result["__global__"]["total_records"] == 1
 
 
 def test_check_if_previously_aggregated(s3_client, s3_bucket):
@@ -242,16 +293,27 @@ def test_check_if_previously_aggregated_reraises_non_404(s3_client, s3_bucket):
 
 def test_write_aggregated_stats(s3_client, s3_bucket):
     """Test writing aggregated stats to S3."""
-    stats = create_aggregated_stats()
+    global_stats = create_aggregated_stats()
+    tenant_stats = create_aggregated_stats(total_records=5)
+    stats_by_tenant = {
+        "__global__": global_stats,
+        "test-tenant": tenant_stats,
+    }
 
-    s3_key = _write_aggregated_stats("test-bucket", stats, "2026-02-20")
+    s3_key = _write_aggregated_stats("test-bucket", stats_by_tenant, "2026-02-20")
 
     assert s3_key == f"{S3_AGG_DDB_DATA_DAILY_PREFIX}=2026-02-20/stats.json"
 
-    # verify file was written
+    # verify global file was written
     obj = s3_client.get_object(Bucket="test-bucket", Key=s3_key)
     content = obj["Body"].read().decode()
     assert "2026-02-20" in content
+    assert "total_records" in content
+
+    # verify tenant file was written
+    tenant_key = f"{S3_AGG_DDB_DATA_DAILY_PREFIX}=2026-02-20/tenant=test-tenant/stats.json"
+    obj = s3_client.get_object(Bucket="test-bucket", Key=tenant_key)
+    content = obj["Body"].read().decode()
     assert "total_records" in content
 
 
@@ -392,7 +454,7 @@ def test_process_record_logs_warning_for_invalid_timing(caplog):
         "created_at": "2026-02-20T10:00:00Z",
         "total_processing_time_seconds": "not-a-number",
         "bda_processing_time_seconds": "also-bad",
-        "bda_wait_time_seconds": "",
+        "bda_wait_time_seconds": "also-invalid",
     }
     stats = {
         "total_records": 0,
@@ -421,8 +483,10 @@ def test_process_record_logs_warning_for_invalid_timing(caplog):
     warning_messages = [r.message for r in caplog.records if r.levelno == logging.WARNING]
     assert any("total_processing_time_seconds" in msg for msg in warning_messages)
     assert any("bda_processing_time_seconds" in msg for msg in warning_messages)
+    assert any("bda_wait_time_seconds" in msg for msg in warning_messages)
     assert stats["timing_stats"]["total_processing_time_count"] == 0
     assert stats["timing_stats"]["bda_processing_time_count"] == 0
+    assert stats["timing_stats"]["bda_wait_time_count"] == 0
 
 
 @mock_aws

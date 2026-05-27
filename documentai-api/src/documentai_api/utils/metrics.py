@@ -58,6 +58,8 @@ def _get_daily_metrics(
         else:
             s3_key = f"{S3_AGG_DDB_DATA_DAILY_PREFIX}={date_str}/stats.json"
 
+        logger.info(f"Reading metrics for {date_str}")
+
         try:
             obj = s3_service.get_object(bucket, s3_key)
             stats = json.loads(obj["Body"].read().decode())

@@ -100,6 +100,10 @@ resource "aws_glue_catalog_table" "raw_metrics" {
       type = "string"
     }
     columns {
+      name = "tenant_id"
+      type = "string"
+    }
+    columns {
       name = "process_status"
       type = "string"
     }
@@ -193,6 +197,30 @@ resource "aws_glue_catalog_table" "raw_metrics" {
     }
     columns {
       name = "bda_region_used"
+      type = "string"
+    }
+    columns {
+      name = "bda_project_arn"
+      type = "string"
+    }
+    columns {
+      name = "preclassification_category"
+      type = "string"
+    }
+    columns {
+      name = "preclassification_confidence"
+      type = "double"
+    }
+    columns {
+      name = "upload_method"
+      type = "string"
+    }
+    columns {
+      name = "api_key_name"
+      type = "string"
+    }
+    columns {
+      name = "original_file_name"
       type = "string"
     }
     columns {

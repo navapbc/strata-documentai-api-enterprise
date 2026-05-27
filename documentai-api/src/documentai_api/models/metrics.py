@@ -1,6 +1,5 @@
 """Response models for metrics endpoints."""
 
-from typing import Any
 
 from pydantic import Field
 
@@ -36,7 +35,7 @@ class PeriodStats(BaseApiResponse):
     by_status: dict[str, int] = Field(default_factory=dict)
     by_classification: dict[str, int] = Field(default_factory=dict)
     by_response_code: dict[str, int] = Field(default_factory=dict)
-    timing_stats: dict[str, Any] = Field(default_factory=dict)
+    timing_stats: TimingStats = TimingStats()
 
 
 class MetricsResponse(BaseApiResponse):

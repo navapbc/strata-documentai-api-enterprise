@@ -53,6 +53,9 @@ async def get_metrics(
         result = await run_in_threadpool(
             get_aggregated_metrics, bucket_name, start_date, end_date, granularity, resolved_tenant
         )
+        logger.info(
+            f"Metrics result: {result.get('summary', {}).get('total_records', 0)} total records"
+        )
         return MetricsResponse(**result)
 
     except ValueError as e:
