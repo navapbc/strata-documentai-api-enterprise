@@ -1,4 +1,4 @@
-"""User management router — super-admin only.
+"""User management router - super-admin only.
 
 Endpoints for listing Cognito users, approving pending sign-ups, and changing
 role / tenant assignments. All gated by ``require_super_admin``.
@@ -83,7 +83,7 @@ async def approve_user(
     _validate_tenant_for_role(body.role, body.tenant_id)
     try:
         cognito_service.replace_role(username, body.role)
-        # Super-admin is cross-tenant by definition — clear any prior tenant
+        # Super-admin is cross-tenant by definition - clear any prior tenant
         # attribute so the user record reflects the role accurately.
         # Tenant-admin always gets the supplied tenant.
         if body.role == SUPER_ADMIN:

@@ -18,6 +18,13 @@ class AuditAction:
     USER_ROLE_CHANGE = "user.role.change"
     USER_TENANT_CHANGE = "user.tenant.change"
     USER_DELETE = "user.delete"
+    DOCUMENT_CATEGORY_CREATE = "document_category.create"
+    DOCUMENT_CATEGORY_UPDATE = "document_category.update"
+    DOCUMENT_CATEGORY_DEACTIVATE = "document_category.deactivate"
+    EXTRACTION_RULE_UPDATE = "extraction_rule.update"
+    EXTRACTION_RULE_DELETE = "extraction_rule.delete"
+    AUTH_LOGIN = "auth.login"
+    AUTH_LOGOUT = "auth.logout"
 
 
 class AuditTargetType:
@@ -26,6 +33,9 @@ class AuditTargetType:
     TENANT = "tenant"
     KEY = "key"
     USER = "user"
+    DOCUMENT_CATEGORY = "document_category"
+    EXTRACTION_RULE = "extraction_rule"
+    SESSION = "session"
 
 
 class AuditEventRecord:

@@ -1,4 +1,4 @@
-"""Shared auth gate tests — 401/403 for unauthenticated and pending users."""
+"""Shared auth gate tests - 401/403 for unauthenticated and pending users."""
 
 import pytest
 from fastapi.testclient import TestClient
@@ -42,7 +42,7 @@ def client():
 
 
 # ==============================================================================
-# Unauthenticated — 401
+# Unauthenticated - 401
 # ==============================================================================
 
 
@@ -62,7 +62,7 @@ def test_users_unauthenticated_returns_401(client):
 
 
 # ==============================================================================
-# Pending user (no groups) — 403
+# Pending user (no groups) - 403
 # ==============================================================================
 
 

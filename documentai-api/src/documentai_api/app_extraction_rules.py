@@ -13,6 +13,8 @@ from documentai_api.models.extraction_rule import (
     ExtractionRuleItem,
     ExtractionRulesListResponse,
 )
+from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
+from documentai_api.utils.audit import log_event
 from documentai_api.utils.auth import get_user_context_with_fallback
 
 logger = get_logger(__name__)
@@ -98,6 +100,13 @@ async def put_extraction_rule(
         body.optional_fields,
         blueprint_arn=body.blueprint_arn,
     )
+    log_event(
+        claims={"sub": auth.api_key_name, "email": auth.api_key_name},
+        action=AuditAction.EXTRACTION_RULE_UPDATE,
+        target_type=AuditTargetType.EXTRACTION_RULE,
+        target_id=body.document_type,
+        tenant_id=effective_tenant,
+    )
     return ExtractionRuleItem(**rule)
 
 
@@ -118,4 +127,11 @@ async def delete_extraction_rule(
     deleted = delete_rule(effective_tenant, document_type)
     if not deleted:
         raise HTTPException(status_code=404, detail="Rule not found")
+    log_event(
+        claims={"sub": auth.api_key_name, "email": auth.api_key_name},
+        action=AuditAction.EXTRACTION_RULE_DELETE,
+        target_type=AuditTargetType.EXTRACTION_RULE,
+        target_id=document_type,
+        tenant_id=effective_tenant,
+    )
     return ExtractionRuleDeleteResponse(message="Rule deleted")

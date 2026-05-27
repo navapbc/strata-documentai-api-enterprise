@@ -116,7 +116,7 @@ class ConfigDefaults:
     MAX_PAGES_PER_DOCUMENT = 5
 
 
-# Document categories — must match the BDA project keys in infra/environments/*/main.tf
+# Document categories - must match the BDA project keys in infra/environments/*/main.tf
 class DocumentCategory(StrEnum):
     INCOME = "income"
     EXPENSES = "expenses"

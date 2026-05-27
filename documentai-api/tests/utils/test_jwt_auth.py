@@ -1,4 +1,4 @@
-"""Tests for JWT auth — signature verification, claims, roles."""
+"""Tests for JWT auth - signature verification, claims, roles."""
 
 import time
 from unittest.mock import MagicMock, patch

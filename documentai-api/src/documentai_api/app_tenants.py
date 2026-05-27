@@ -1,4 +1,4 @@
-"""Admin tenants router — CRUD for tenant management."""
+"""Admin tenants router - CRUD for tenant management."""
 
 from typing import Any
 

@@ -111,7 +111,7 @@ async def create_presigned_upload_url(
         metadata["user-provided-document-category"] = category.value
 
     # Generate the presigned POST before writing to DDB.
-    # Signing is local CPU work (no network call), so failure is unlikely —
+    # Signing is local CPU work (no network call), so failure is unlikely -
     # but if it does fail, we avoid orphaning a PENDING_UPLOAD DDB row.
     try:
         post_data = s3_service.generate_presigned_post(

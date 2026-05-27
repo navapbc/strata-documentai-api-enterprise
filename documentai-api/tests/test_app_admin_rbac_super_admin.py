@@ -1,4 +1,4 @@
-"""Super-admin RBAC tests — CRUD, edge cases, audit events."""
+"""Super-admin RBAC tests - CRUD, edge cases, audit events."""
 
 import hashlib
 from collections import Counter
@@ -58,7 +58,7 @@ def seed_tenant(client, tenants_table):
 
 
 # ==============================================================================
-# Keys — super-admin
+# Keys - super-admin
 # ==============================================================================
 
 
@@ -212,7 +212,7 @@ def test_keys_revoke_writes_audit_event(client, api_keys_table, tenants_table, a
 
 
 # ==============================================================================
-# Tenants — super-admin
+# Tenants - super-admin
 # ==============================================================================
 
 
@@ -340,7 +340,7 @@ def test_tenants_update_writes_audit_event(client, tenants_table, audit_events_t
 
 
 # ==============================================================================
-# Users — super-admin
+# Users - super-admin
 # ==============================================================================
 
 

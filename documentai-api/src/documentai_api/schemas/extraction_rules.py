@@ -19,4 +19,4 @@ class ExtractionRulesTable(BaseCrudTable):
     table_name_env = "extraction_rules_table_name"
     pk_field = ExtractionRuleRecord.TENANT_ID
     sk_field = ExtractionRuleRecord.DOCUMENT_TYPE
-    active_field = ""  # No active field — rules are hard-deleted
+    active_field = ""  # No active field - rules are hard-deleted

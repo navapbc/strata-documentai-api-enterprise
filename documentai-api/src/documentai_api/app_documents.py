@@ -229,7 +229,7 @@ async def create_document_wait(
         external_system_id,
         ai_consent_flag,
     )
-    # Terminal states (consent declined, conversion failed) — return immediately.
+    # Terminal states (consent declined, conversion failed) - return immediately.
     if ProcessStatus.is_classified(result.job_status):
         return JobStatusResponse(
             job_id=result.job_id,

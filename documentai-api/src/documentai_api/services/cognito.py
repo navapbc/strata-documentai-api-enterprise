@@ -1,4 +1,4 @@
-"""Cognito user management — list, role assignment, tenant assignment."""
+"""Cognito user management - list, role assignment, tenant assignment."""
 
 from typing import Any
 

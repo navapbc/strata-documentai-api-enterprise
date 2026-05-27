@@ -20,14 +20,14 @@ The system follows an event-driven architecture. See the [architecture diagram](
 
 ## Features
 
-- **Bedrock Data Automation** — Multi-project BDA with per-category blueprint routing
-- **Multi-tenant** — API key auth (DynamoDB-backed) with tenant isolation
-- **Admin API** — Tenant, user, API key, extraction rule, and document category management
-- **Cognito JWT auth** — Admin endpoints secured with Cognito User Pool tokens
-- **Metrics pipeline** — SQS → Lambda → S3 Parquet → Glue with partition projection
-- **Audit logging** — All admin actions recorded
-- **Multi-format** — PDF, JPEG, PNG, TIFF support
-- **Sync + async** — Upload with optional `?wait=true` for synchronous processing
+- **Bedrock Data Automation** - Multi-project BDA with per-category blueprint routing
+- **Multi-tenant** - API key auth (DynamoDB-backed) with tenant isolation
+- **Admin API** - Tenant, user, API key, extraction rule, and document category management
+- **Cognito JWT auth** - Admin endpoints secured with Cognito User Pool tokens
+- **Metrics pipeline** - SQS → Lambda → S3 Parquet → Glue with partition projection
+- **Audit logging** - All admin actions recorded
+- **Multi-format** - PDF, JPEG, PNG, TIFF support
+- **Sync + async** - Upload with optional `?wait=true` for synchronous processing
 
 ## File Requirements
 
@@ -100,7 +100,7 @@ Set by infrastructure on deploy:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `API_AUTH_CACHE_TTL` | `300` | API key cache TTL (seconds) |
-| `API_AUTH_INSECURE_SHARED_KEY` | — | Static API key for local dev (bypasses DynamoDB) |
+| `API_AUTH_INSECURE_SHARED_KEY` | - | Static API key for local dev (bypasses DynamoDB) |
 | `HOST` | `localhost` | API host |
 | `PORT` | `8000` | API port |
 | `ENVIRONMENT` | `local` | Environment name |
@@ -109,7 +109,7 @@ Set by infrastructure on deploy:
 
 ## API Endpoints
 
-Full API documentation is available at `/docs` (Swagger UI) and `/openapi.json` when the server is running. A snapshot is committed at [docs/documentai-api/openapi.json](../docs/documentai-api/openapi.json) — regenerate with `uv run export-openapi`.
+Full API documentation is available at `/docs` (Swagger UI) and `/openapi.json` when the server is running. A snapshot is committed at [docs/documentai-api/openapi.json](../docs/documentai-api/openapi.json) - regenerate with `uv run export-openapi`.
 
 See the [API route map](../docs/documentai-api/diagrams/api-routes.mmd) for a visual overview grouped by auth scheme.
 
@@ -142,7 +142,7 @@ See `/docs` for the complete list. Routes grouped by auth method:
 - `/v1/builds`
 
 **Cognito JWT** (admin console):
-- `/v1/admin/*` — api-keys, tenants, users, audit-log, documents, document-categories, blueprints/test
+- `/v1/admin/*` - api-keys, tenants, users, audit-log, documents, document-categories, blueprints/test
 
 **Dual auth (either)**:
 - `/v1/config/extraction-rules`

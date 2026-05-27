@@ -1,4 +1,4 @@
-"""Identity endpoint — returns the authenticated user's context."""
+"""Identity endpoint - returns the authenticated user's context."""
 
 from fastapi import APIRouter
 
@@ -22,7 +22,7 @@ async def get_me(auth: AuthUserWithFallback) -> MeResponse:
     Works with both API key and JWT auth. For API key callers, principal is the
     key name. For JWT callers, principal is the email or sub.
 
-    Note: pending JWT users (no Cognito group) still get 200 here — the UI
+    Note: pending JWT users (no Cognito group) still get 200 here - the UI
     needs this to render the "pending approval" state. Access control is
     enforced at the individual admin endpoints via verify_jwt_with_role.
     """

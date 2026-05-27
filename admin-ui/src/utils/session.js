@@ -114,7 +114,7 @@ function stopInactivityTimer() {
   }
 }
 
-// Activity listener — registered lazily on first save(), cleaned up on clear()
+// Activity listener - registered lazily on first save(), cleaned up on clear()
 let _activityListenersActive = false;
 
 function _onActivity() {

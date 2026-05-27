@@ -1,5 +1,5 @@
 /**
- * Test DOM helpers — encapsulate common dispatch patterns.
+ * Test DOM helpers - encapsulate common dispatch patterns.
  */
 
 export function typeInto(el, value) {

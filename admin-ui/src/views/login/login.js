@@ -333,7 +333,7 @@ async function handleForgotPassword(e) {
     _root.querySelector("#reset-password-card").classList.remove("hidden");
   } catch (err) {
     if (err.code === "UserNotFoundException") {
-      // Don't reveal whether user exists — show success anyway
+      // Don't reveal whether user exists - show success anyway
       _pendingEmail = email;
       _root.querySelector("#forgot-password-card").classList.add("hidden");
       _root.querySelector("#reset-password-card").classList.remove("hidden");

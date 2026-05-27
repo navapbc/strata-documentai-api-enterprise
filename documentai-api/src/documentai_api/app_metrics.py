@@ -1,4 +1,4 @@
-"""Metrics endpoint — aggregated document processing metrics."""
+"""Metrics endpoint - aggregated document processing metrics."""
 
 from datetime import datetime
 

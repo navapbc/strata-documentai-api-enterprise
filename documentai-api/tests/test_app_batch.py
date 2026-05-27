@@ -495,7 +495,7 @@ def test_batch_upload_classify_as_conversion_failed(api_client, pdf_file):
         files = [("files", pdf_file("doc1.heic"))]
         response = api_client.post("/v1/documents/batch", files=files)
 
-    # Conversion failure is not fatal to the batch — job is marked failed but batch continues
+    # Conversion failure is not fatal to the batch - job is marked failed but batch continues
     assert response.status_code == 200
     mock_classify_conversion.assert_called_once()
     call_kwargs = mock_classify_conversion.call_args.kwargs
@@ -587,7 +587,7 @@ def test_get_batch_status_is_classified_vs_is_completed(api_client):
         data = response.json()
         # All jobs are terminal (is_classified) so lazy completion triggers
         mock_update.assert_called_once()
-        # Only "success" counts as completed — not_implemented and not_sampled do not
+        # Only "success" counts as completed - not_implemented and not_sampled do not
         assert data["completed"] == 1
         # All jobs are terminal so inProgress is 0
         assert data["inProgress"] == 0

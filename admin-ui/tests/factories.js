@@ -1,5 +1,5 @@
 /**
- * Test factories — build objects with sensible defaults + optional overrides.
+ * Test factories - build objects with sensible defaults + optional overrides.
  * Usage: buildSession({ email: "custom@co.com" })
  */
 

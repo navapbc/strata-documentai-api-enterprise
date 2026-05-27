@@ -1,4 +1,4 @@
-"""Tenant-admin RBAC tests — scoping, isolation, 403s."""
+"""Tenant-admin RBAC tests - scoping, isolation, 403s."""
 
 import hashlib
 
@@ -55,7 +55,7 @@ def seed_tenant(client, tenants_table):
 
 
 # ==============================================================================
-# Keys — tenant-admin
+# Keys - tenant-admin
 # ==============================================================================
 
 
@@ -150,7 +150,7 @@ def test_keys_tenant_admin_no_tenant_in_jwt_create_returns_403(client, api_keys_
 
 
 def test_keys_tenant_admin_body_tenant_id_ignored(client, api_keys_table, tenants_table):
-    """Tenant-admin's body tenant_id is ignored — key is scoped to their JWT tenant."""
+    """Tenant-admin's body tenant_id is ignored - key is scoped to their JWT tenant."""
     _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
     client.post(TENANTS_URL, json={"tenant_id": TENANT_ID, "display_name": "Test"})
     client.post(TENANTS_URL, json={"tenant_id": OTHER_TENANT_ID, "display_name": "Other"})
@@ -166,7 +166,7 @@ def test_keys_tenant_admin_body_tenant_id_ignored(client, api_keys_table, tenant
 
 
 # ==============================================================================
-# Tenants — tenant-admin
+# Tenants - tenant-admin
 # ==============================================================================
 
 
@@ -251,7 +251,7 @@ def test_tenants_tenant_admin_no_tenant_in_jwt_returns_403(client, tenants_table
 
 
 # ==============================================================================
-# Users — tenant-admin (all 403)
+# Users - tenant-admin (all 403)
 # ==============================================================================
 
 

@@ -167,6 +167,71 @@ def test_put_extraction_rule_rejects_non_string_list():
     assert response.status_code == 422
 
 
+# ==============================================================================
+# Tenant-scope security
+# ==============================================================================
+
+
+def test_put_super_admin_missing_tenant_id_returns_400():
+    """Super-admin (tenant_id=__admin__) must provide tenant_id in body."""
+    from documentai_api.app import app
+    from documentai_api.utils.auth import UserContext, get_user_context_with_fallback
+
+    admin_context = UserContext(tenant_id="__admin__", api_key_name="admin-user")
+    app.dependency_overrides[get_user_context_with_fallback] = lambda: admin_context
+    try:
+        response = client.put(
+            "/v1/config/extraction-rules",
+            json={"document_type": "W2", "required_fields": ["ssn"], "optional_fields": []},
+        )
+        assert response.status_code == 400
+        assert "tenant_id is required" in response.json()["detail"]
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_delete_super_admin_missing_tenant_id_returns_400():
+    """Super-admin DELETE without tenant_id query param returns 400."""
+    from documentai_api.app import app
+    from documentai_api.utils.auth import UserContext, get_user_context_with_fallback
+
+    admin_context = UserContext(tenant_id="__admin__", api_key_name="admin-user")
+    app.dependency_overrides[get_user_context_with_fallback] = lambda: admin_context
+    try:
+        response = client.delete("/v1/config/extraction-rules?document_type=W2")
+        assert response.status_code == 400
+        assert "tenant_id is required" in response.json()["detail"]
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_put_tenant_admin_body_tenant_id_ignored(mocker):
+    """Tenant-admin's auth tenant is used regardless of body tenant_id."""
+    mock_upsert = mocker.patch("documentai_api.utils.extraction_rules.upsert_rule")
+    mock_upsert.return_value = {
+        "tenantId": "test-tenant",
+        "documentType": "W2",
+        "requiredFields": ["ssn"],
+        "optionalFields": [],
+        "createdAt": "2026-01-01",
+        "updatedAt": "2026-01-01",
+    }
+
+    # Body says "other-tenant" but auth is "test-tenant" - auth wins
+    response = client.put(
+        "/v1/config/extraction-rules",
+        json={
+            "document_type": "W2",
+            "required_fields": ["ssn"],
+            "optional_fields": [],
+            "tenant_id": "other-tenant",
+        },
+    )
+
+    assert response.status_code == 200
+    assert mock_upsert.call_args[0][0] == "test-tenant"
+
+
 @pytest.mark.integration
 def test_extraction_rules_tenant_isolation(extraction_rules_table):
     """End-to-end: tenant A cannot see or delete tenant B's rules."""
@@ -186,15 +251,15 @@ def test_extraction_rules_tenant_isolation(extraction_rules_table):
     try:
         tenant_a_client = TestClient(app)
 
-        # GET — tenant A should not see tenant B's rule
+        # GET - tenant A should not see tenant B's rule
         response = tenant_a_client.get("/v1/config/extraction-rules?document_type=W2")
         assert response.status_code == 404
 
-        # DELETE — tenant A cannot delete tenant B's rule
+        # DELETE - tenant A cannot delete tenant B's rule
         response = tenant_a_client.delete("/v1/config/extraction-rules?document_type=W2")
         assert response.status_code == 404
 
-        # PUT — tenant A creates their own rule
+        # PUT - tenant A creates their own rule
         response = tenant_a_client.put(
             "/v1/config/extraction-rules",
             json={

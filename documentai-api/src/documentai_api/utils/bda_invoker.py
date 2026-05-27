@@ -52,7 +52,7 @@ def resolve_project_arn(category: str | None) -> str:
     if category and _is_preclassification_routing_enabled() and category in arns:
         return arns[category]
 
-    # Routing disabled or category not found — use "all" project
+    # Routing disabled or category not found - use "all" project
     return arns["all"]
 
 

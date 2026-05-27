@@ -1,4 +1,4 @@
-"""Admin documents router — read-only access to processed documents."""
+"""Admin documents router - read-only access to processed documents."""
 
 import json
 from typing import Any
@@ -114,7 +114,7 @@ def _record_to_detail(record: dict[str, Any]) -> DocumentDetail:
 
 
 def _parse_confidence_scores(record: dict[str, Any]) -> list[dict[str, Any]] | None:
-    """Parse field confidence scores — stored as JSON string in DDB."""
+    """Parse field confidence scores - stored as JSON string in DDB."""
     raw = record.get(DocumentMetadata.FIELD_CONFIDENCE_SCORES)
     if not raw:
         return None
@@ -219,7 +219,7 @@ async def get_document(
         if not record:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
 
-        # Tenant-admin scoping — returns 404 to avoid existence disclosure.
+        # Tenant-admin scoping - returns 404 to avoid existence disclosure.
         if scope is not None and record.get(DocumentMetadata.TENANT_ID) != scope:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
 

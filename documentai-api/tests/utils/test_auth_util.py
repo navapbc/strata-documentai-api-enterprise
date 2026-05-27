@@ -277,7 +277,7 @@ def test_ddb_verify_uses_cache_on_second_call(api_keys_table):
 
 
 ##############################################################################
-# _update_last_used (behavior tests — patches needed for debounce/threading)
+# _update_last_used (behavior tests - patches needed for debounce/threading)
 ##############################################################################
 
 
@@ -425,7 +425,7 @@ def test_get_active_keys_by_name_returns_empty_on_error(monkeypatch):
 
 
 ##############################################################################
-# verify_api_key (routing behavior — patches needed)
+# verify_api_key (routing behavior - patches needed)
 ##############################################################################
 
 
@@ -548,7 +548,7 @@ def test_is_duplicate_key_name_false_when_different_tenant(api_keys_table):
 
 
 def test_is_duplicate_key_name_true_even_when_inactive(api_keys_table):
-    """Key names are immutable audit identifiers — reuse is never allowed."""
+    """Key names are immutable audit identifiers - reuse is never allowed."""
     api_keys_table.put_item(
         Item={
             ApiKeyRecord.KEY_HASH: "hash-1",

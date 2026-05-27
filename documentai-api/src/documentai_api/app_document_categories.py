@@ -1,4 +1,4 @@
-"""Admin document categories router — CRUD for tenant document categories."""
+"""Admin document categories router - CRUD for tenant document categories."""
 
 from typing import Any
 
@@ -13,8 +13,10 @@ from documentai_api.models.document_category import (
     ListDocumentCategoriesResponse,
     UpdateDocumentCategoryRequest,
 )
+from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
 from documentai_api.schemas.document_category import DocumentCategoryRecord
 from documentai_api.utils import document_categories as categories_util
+from documentai_api.utils.audit import log_event
 from documentai_api.utils.jwt_auth import resolve_tenant, tenant_scope
 
 logger = get_logger(__name__)
@@ -27,7 +29,7 @@ router = APIRouter(
 
 
 def _get_effective_tenant(claims: dict[str, Any], tenant_id: str | None = None) -> str:
-    """Resolve tenant — required for all category operations."""
+    """Resolve tenant - required for all category operations."""
     scope = tenant_scope(claims)
     if scope is not None:
         if tenant_id and tenant_id != scope:
@@ -80,7 +82,7 @@ async def list_document_categories(
     if tenant_id:
         records = categories_util.list_categories(tenant_id, active_only=active_only)
     else:
-        # Super-admin with no tenant filter — list all
+        # Super-admin with no tenant filter - list all
         records = categories_util.list_all_categories(active_only=active_only)
 
     items = [_to_item(r) for r in records]
@@ -104,6 +106,13 @@ async def create_document_category(
         )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
+    log_event(
+        claims=claims,
+        action=AuditAction.DOCUMENT_CATEGORY_CREATE,
+        target_type=AuditTargetType.DOCUMENT_CATEGORY,
+        target_id=body.category_name,
+        tenant_id=effective_tenant,
+    )
     return _to_item(record)
 
 
@@ -143,6 +152,13 @@ async def update_document_category(
         if "not found" in msg:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg) from e
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=msg) from e
+    log_event(
+        claims=claims,
+        action=AuditAction.DOCUMENT_CATEGORY_UPDATE,
+        target_type=AuditTargetType.DOCUMENT_CATEGORY,
+        target_id=category_name,
+        tenant_id=effective_tenant,
+    )
     return _to_item(updated)
 
 
@@ -156,3 +172,10 @@ async def delete_document_category(
     effective_tenant = _get_effective_tenant(claims, tenant_id)
     if not categories_util.delete_category(effective_tenant, category_name):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
+    log_event(
+        claims=claims,
+        action=AuditAction.DOCUMENT_CATEGORY_DEACTIVATE,
+        target_type=AuditTargetType.DOCUMENT_CATEGORY,
+        target_id=category_name,
+        tenant_id=effective_tenant,
+    )

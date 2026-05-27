@@ -158,7 +158,7 @@ def test_create_document_trace_id_echoed_on_validation_failure(api_client, empty
     """Test X-Trace-ID is returned even when file type validation fails.
 
     Note: HTTPException responses may not carry the header without middleware.
-    This test documents current behavior — if it fails, a trace-id middleware is needed.
+    This test documents current behavior - if it fails, a trace-id middleware is needed.
     """
     files = {"file": ("test.zip", empty_zip_bytes, "application/zip")}
     response = api_client.post("/v1/documents", files=files)

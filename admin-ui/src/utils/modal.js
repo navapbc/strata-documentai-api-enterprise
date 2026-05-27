@@ -1,5 +1,5 @@
 /**
- * Modal utilities — focus trap and ESC-to-close.
+ * Modal utilities - focus trap and ESC-to-close.
  * Usage: openModal(el, onClose) / closeModal(el)
  */
 

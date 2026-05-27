@@ -9,6 +9,7 @@ import * as Toast from "./utils/toast.js";
 import * as TenantContext from "./utils/tenant-context.js";
 import * as HttpClient from "./services/http.js";
 import * as Auth from "./services/auth.js";
+import * as Audit from "./services/audit.js";
 
 import pendingHtml from "./views/pending/pending.html";
 import dashboardHtml from "./views/sidebar/sidebar.html";
@@ -178,11 +179,13 @@ function routeAfterLogin(session) {
     return;
   }
   showDashboard(session);
+  Audit.reportLogin(session.email);
 }
 
 async function logout() {
   const session = Session.get();
   if (session?.accessToken) {
+    Audit.reportLogout(session.email);
     try {
       await Auth.signOut(session.accessToken);
     } catch {

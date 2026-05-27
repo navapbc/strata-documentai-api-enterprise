@@ -1,4 +1,4 @@
-"""Admin audit log router — read-only access to audit events."""
+"""Admin audit log router - read-only access to audit events."""
 
 from typing import Any
 

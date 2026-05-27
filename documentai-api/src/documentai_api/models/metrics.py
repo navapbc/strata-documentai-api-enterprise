@@ -1,6 +1,5 @@
 """Response models for metrics endpoints."""
 
-
 from pydantic import Field
 
 from documentai_api.models.base import BaseApiResponse

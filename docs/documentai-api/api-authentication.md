@@ -14,7 +14,7 @@ Contact your system administrator to obtain an API key for your environment. You
 docai_<random>
 ```
 
-Store it securely — it is shown only once at generation time.
+Store it securely - it is shown only once at generation time.
 
 ### Making Authenticated Requests
 
@@ -50,14 +50,14 @@ Protected routes are indicated by the lock icon (🔒). Public routes (e.g., `/h
 
 ### Error Responses
 
-**401 Unauthorized** — Invalid or missing API key:
+**401 Unauthorized** - Invalid or missing API key:
 ```json
 {
   "detail": "Invalid API key"
 }
 ```
 
-**500 Internal Server Error** — API key not configured (contact administrator):
+**500 Internal Server Error** - API key not configured (contact administrator):
 ```json
 {
   "detail": "API key not configured"
@@ -75,7 +75,7 @@ When `API_AUTH_ENABLED=true`, the API validates keys against a DynamoDB table (`
 3. The record is checked for `isActive=true` and an optional `expiresAt` date
 4. If valid, the request proceeds; otherwise a 401 is returned
 
-Keys are never stored or logged in plaintext — only the SHA-256 hash is persisted.
+Keys are never stored or logged in plaintext - only the SHA-256 hash is persisted.
 
 ### Required Environment Variables
 
@@ -87,7 +87,7 @@ Keys are never stored or logged in plaintext — only the SHA-256 hash is persis
 
 ### Generating an API Key
 
-Use the `api-keys generate` command. The plaintext key is displayed once and not stored — share it securely with the client.
+Use the `api-keys generate` command. The plaintext key is displayed once and not stored - share it securely with the client.
 
 ```bash
 api-keys generate --client-name "my-service" --environment prod
@@ -103,7 +103,7 @@ api-keys generate \
 
 Output:
 ```
-API Key (save this — it will not be shown again):
+API Key (save this - it will not be shown again):
   docai_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6
 
 Client:      my-service
@@ -184,8 +184,8 @@ API_AUTH_INSECURE_SHARED_KEY = {
 
 ## Security Considerations
 
-- Keys are hashed with SHA-256 before storage — the plaintext key cannot be recovered from DynamoDB
-- HTTPS is enforced by the load balancer — keys are never transmitted in plaintext
+- Keys are hashed with SHA-256 before storage - the plaintext key cannot be recovered from DynamoDB
+- HTTPS is enforced by the load balancer - keys are never transmitted in plaintext
 - Keys are never logged
 - Deactivation takes effect immediately (cache is invalidated on deactivate)
 - Auth failures are logged with client name (where available) but never the key itself
@@ -198,7 +198,7 @@ The following are known gaps in the v0.1 implementation. They are suitable for i
 No rate limiting is implemented at the application layer. Brute-force or abuse protection should be configured at the API Gateway or ALB level using WAF rules.
 
 **Key rotation policy**
-Keys do not expire automatically unless `expiresAt` is set at generation time. Rotation is a manual process — generate a new key, migrate the client, then deactivate the old one. Future versions could enforce a maximum key lifetime.
+Keys do not expire automatically unless `expiresAt` is set at generation time. Rotation is a manual process - generate a new key, migrate the client, then deactivate the old one. Future versions could enforce a maximum key lifetime.
 
 **HTTPS enforcement**
-HTTPS is not enforced at the application layer — it is the responsibility of the load balancer. Direct connections to the application that bypass the ALB would transmit keys in plaintext. Ensure the application is never exposed directly.
+HTTPS is not enforced at the application layer - it is the responsibility of the load balancer. Direct connections to the application that bypass the ALB would transmit keys in plaintext. Ensure the application is never exposed directly.

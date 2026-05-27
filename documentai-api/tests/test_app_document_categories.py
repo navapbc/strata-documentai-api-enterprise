@@ -300,7 +300,7 @@ def test_categories_tenant_admin_cannot_see_other_tenants_data(client, document_
     _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
     client.post(CATEGORIES_URL, params={"tenant_id": TENANT_ID}, json=NEW_CATEGORY)
 
-    # Tenant B admin lists — should see nothing
+    # Tenant B admin lists - should see nothing
     _override_jwt(_make_claims(groups=[TENANT_ADMIN], tenant_id=OTHER_TENANT_ID))
     response = client.get(CATEGORIES_URL)
     assert response.status_code == 200

@@ -83,11 +83,11 @@ describe("session inactivity timer", () => {
     vi.advanceTimersByTime(10 * 60 * 1000);
     document.dispatchEvent(new Event("click"));
 
-    // Advance 14 minutes from activity — should NOT fire (need 15)
+    // Advance 14 minutes from activity - should NOT fire (need 15)
     vi.advanceTimersByTime(14 * 60 * 1000);
     expect(callback).not.toHaveBeenCalled();
 
-    // Advance 2 more minutes — now past 15 from last activity
+    // Advance 2 more minutes - now past 15 from last activity
     vi.advanceTimersByTime(2 * 60 * 1000);
     await vi.runAllTimersAsync();
     expect(callback).toHaveBeenCalledTimes(1);
@@ -109,7 +109,7 @@ describe("session inactivity timer", () => {
     document.dispatchEvent(new Event("click"));
     vi.advanceTimersByTime(15 * 60 * 1000);
 
-    // onExpire was called once during clear's timer fire? No — clear stops the timer
+    // onExpire was called once during clear's timer fire? No - clear stops the timer
     // The callback should NOT have been called since we cleared before timeout
     expect(callback).not.toHaveBeenCalled();
   });
@@ -126,7 +126,7 @@ describe("session inactivity timer", () => {
     });
     Session.clear();
 
-    // Dispatch activity — should NOT restart timer since listeners were removed
+    // Dispatch activity - should NOT restart timer since listeners were removed
     document.dispatchEvent(new Event("click"));
     document.dispatchEvent(new Event("keydown"));
     document.dispatchEvent(new Event("mousemove"));
@@ -134,7 +134,7 @@ describe("session inactivity timer", () => {
     vi.advanceTimersByTime(15 * 60 * 1000);
     await vi.runAllTimersAsync();
 
-    // Callback should never fire — no timer was restarted
+    // Callback should never fire - no timer was restarted
     expect(callback).not.toHaveBeenCalled();
   });
 });

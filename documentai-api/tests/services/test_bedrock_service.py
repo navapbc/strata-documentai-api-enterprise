@@ -79,7 +79,7 @@ def test_converse_request_shape(monkeypatch):
         == '{"document_type": "tax_documents", "confidence": 0.95, "document_count": 1, "is_document": true}'
     )
 
-    # Stubber verifies the request matched expected_params — if not, it raises
+    # Stubber verifies the request matched expected_params - if not, it raises
     stubber.assert_no_pending_responses()
 
 

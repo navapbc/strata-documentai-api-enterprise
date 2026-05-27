@@ -1,4 +1,4 @@
-"""Tests for Lambda handler error handling — DDB marked as failed on unhandled errors."""
+"""Tests for Lambda handler error handling - DDB marked as failed on unhandled errors."""
 
 from unittest.mock import patch
 
@@ -30,7 +30,7 @@ def mock_env(monkeypatch):
 
 
 ##############################################################################
-# Unit tests — verify handler wiring
+# Unit tests - verify handler wiring
 ##############################################################################
 
 
@@ -105,7 +105,7 @@ def test_bda_result_processor_success_does_not_mark_failed():
 
 
 ##############################################################################
-# Integration tests — verify DDB actually updated to FAILED
+# Integration tests - verify DDB actually updated to FAILED
 ##############################################################################
 
 

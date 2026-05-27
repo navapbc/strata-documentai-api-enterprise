@@ -75,7 +75,7 @@ def test_log_event_defaults_to_global_tenant(audit_events_table):
 
 
 def test_log_event_does_not_raise_on_failure(monkeypatch):
-    """Audit logging should never break the request — failures are swallowed."""
+    """Audit logging should never break the request - failures are swallowed."""
     monkeypatch.setenv("AUDIT_EVENTS_TABLE_NAME", "nonexistent-table")
     # implicit: function should not raise
     log_event(

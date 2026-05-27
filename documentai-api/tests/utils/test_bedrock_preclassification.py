@@ -73,7 +73,7 @@ def test_skips_oversized_image():
 
 
 def test_pdf_not_subject_to_image_size_limit(monkeypatch):
-    """PDFs bypass the image size check — BDA handles large PDFs natively."""
+    """PDFs bypass the image size check - BDA handles large PDFs natively."""
     large_pdf = b"%PDF-1.4" + b"\x00" * (int(ConfigDefaults.BDA_MAX_IMAGE_SIZE_BYTES) + 1)
     response = _mock_invoke_response(
         {
@@ -221,7 +221,7 @@ def test_blurry_detection(monkeypatch):
 
 
 def test_empty_document_bytes(monkeypatch):
-    """Empty bytes still go through — model will likely return system_reject."""
+    """Empty bytes still go through - model will likely return system_reject."""
     response = _mock_invoke_response(
         {
             "document_type": "system_reject",
@@ -502,7 +502,7 @@ def test_native_bools_pass_through(monkeypatch):
 
 
 # =============================================================================
-# Integration tests — call real Bedrock API
+# Integration tests - call real Bedrock API
 # =============================================================================
 
 FIXTURES_DIR = Path(__file__).parent.parent / "helpers" / "fixtures" / "test-documents"

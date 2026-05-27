@@ -1,4 +1,4 @@
-"""Admin API router — API key management via Cognito JWT auth."""
+"""Admin API router - API key management via Cognito JWT auth."""
 
 import hashlib
 
@@ -52,7 +52,7 @@ async def create_api_key(
     if email_address is None and claims.get("email"):
         email_address = claims["email"]
 
-    # Resolve tenant — required for key creation
+    # Resolve tenant - required for key creation
     effective_tenant = resolve_tenant(claims, body.tenant_id)
     if not effective_tenant:
         raise HTTPException(

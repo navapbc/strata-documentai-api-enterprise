@@ -1,4 +1,4 @@
-"""Blueprint test runner — upload a document and see extraction results.
+"""Blueprint test runner - upload a document and see extraction results.
 
 Async approach: POST starts the test, GET polls for results.
 """
@@ -153,7 +153,7 @@ async def get_blueprint_test_result(
 
     logger.info(f"Blueprint test {test_id}: checking BDA status for {invocation_arn}")
 
-    # Check BDA status — call directly to see errors
+    # Check BDA status - call directly to see errors
     job_response: dict[str, Any] | None = None
     try:
         bda_runtime = AWSClientFactory.get_bda_runtime_client()
