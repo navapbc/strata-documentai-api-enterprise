@@ -65,6 +65,8 @@ make start-local
 
 ## Development Commands
 
+### Using Make (macOS/Linux)
+
 | Command | Description |
 |---------|-------------|
 | `make init` | Build Docker containers |
@@ -76,6 +78,31 @@ make start-local
 | `make test-parallel` | Tests in parallel |
 | `make lint` | Ruff linter |
 | `make format` | Ruff formatter |
+
+### Using tasks.py (cross-platform, Windows/macOS/Linux)
+
+For environments without Make (e.g. Windows PowerShell), use the task runner:
+
+```bash
+uv run tasks.py <task> [args...]
+```
+
+| Command | Description |
+|---------|-------------|
+| `uv run tasks.py test` | Run pytest suite |
+| `uv run tasks.py test-coverage` | Tests with coverage report |
+| `uv run tasks.py test-parallel` | Tests in parallel |
+| `uv run tasks.py check` | All checks (read-only: format check, lint, test) |
+| `uv run tasks.py precommit` | Pre-push: format, lint (with fix), test |
+| `uv run tasks.py format` | Format code |
+| `uv run tasks.py lint` | Lint with auto-fix |
+| `uv run tasks.py lint-check` | Lint without modifying |
+| `uv run tasks.py typecheck` | Type check with mypy |
+| `uv run tasks.py dev` | Start server with reload |
+| `uv run tasks.py start` | Start server (production mode) |
+| `uv run tasks.py openapi-spec` | Export OpenAPI spec to docs |
+| `uv run tasks.py clean` | Remove build artifacts |
+| `uv run tasks.py help` | Show all available tasks |
 
 ## Configuration
 

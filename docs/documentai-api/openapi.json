@@ -3007,7 +3007,7 @@
           "Identity"
         ],
         "summary": "Get Me",
-        "description": "Return the authenticated user's identity context.\n\nWorks with both API key and JWT auth. For API key callers, principal is the\nkey name. For JWT callers, principal is the email or sub.\n\nNote: pending JWT users (no Cognito group) still get 200 here \u2014 the UI\nneeds this to render the \"pending approval\" state. Access control is\nenforced at the individual admin endpoints via verify_jwt_with_role.",
+        "description": "Return the authenticated user's identity context.\n\nWorks with both API key and JWT auth. For API key callers, principal is the\nkey name. For JWT callers, principal is the email or sub.\n\nNote: pending JWT users (no Cognito group) still get 200 here - the UI\nneeds this to render the \"pending approval\" state. Access control is\nenforced at the individual admin endpoints via verify_jwt_with_role.",
         "operationId": "get_me_v1_me_get",
         "responses": {
           "200": {
@@ -3121,6 +3121,49 @@
             }
           }
         }
+      }
+    },
+    "/v1/audit/auth-event": {
+      "post": {
+        "tags": [
+          "Admin:Audit Log"
+        ],
+        "summary": "Report Auth Event",
+        "description": "Report an auth event from the admin UI (login, logout).",
+        "operationId": "report_auth_event_v1_audit_auth_event_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthEventRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/": {
@@ -3432,6 +3475,44 @@
           "count"
         ],
         "title": "AuditLogResponse"
+      },
+      "AuthEventRequest": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "title": "AuthEventRequest"
       },
       "BatchJobItem": {
         "properties": {
@@ -5603,9 +5684,18 @@
             "title": "Byresponsecode"
           },
           "timingStats": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Timingstats"
+            "$ref": "#/components/schemas/TimingStats",
+            "default": {
+              "totalProcessingTimeAvg": 0.0,
+              "totalProcessingTimeSum": 0.0,
+              "totalProcessingTimeCount": 0,
+              "bdaProcessingTimeAvg": 0.0,
+              "bdaProcessingTimeSum": 0.0,
+              "bdaProcessingTimeCount": 0,
+              "bdaWaitTimeAvg": 0.0,
+              "bdaWaitTimeSum": 0.0,
+              "bdaWaitTimeCount": 0
+            }
           }
         },
         "type": "object",
