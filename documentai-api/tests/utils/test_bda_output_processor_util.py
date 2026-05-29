@@ -5,6 +5,9 @@ import pytest
 from documentai_api.utils import bda_output_processor as bda_output_processor_util
 from documentai_api.utils.response_codes import ResponseCodes
 
+MOCK_S3_URI = "s3://test-bucket/processed/input/file-name/de8464af-d53e-44dc-a9f7-ad5360530210/0/custom_output/0/result.json"
+MOCK_DDB_RECORD = {"fileName": "test.pdf"}
+
 
 @pytest.mark.parametrize(
     ("bda_result", "expected_response_code", "expected_has_confidence_map"),
@@ -58,8 +61,10 @@ def test_process_bda_output_blueprint_matched_without_user_category():
         patch(
             "documentai_api.utils.bda_output_processor.classify_as_success"
         ) as mock_classify_as_success,
+        patch("documentai_api.utils.bda_output_processor.get_required_env", return_value="x"),
+        patch("documentai_api.services.ddb.query_by_key", return_value=[MOCK_DDB_RECORD]),
     ):
-        mock_extract_uri.return_value = "s3://bucket/output"
+        mock_extract_uri.return_value = MOCK_S3_URI
         mock_get_json.return_value = {
             "matched_blueprint": {"name": "invoice_blueprint", "confidence": "0.95"},
             "document_class": {"type": "invoice"},
@@ -67,7 +72,7 @@ def test_process_bda_output_blueprint_matched_without_user_category():
         }
         mock_classify_as_success.return_value = {"status": "success"}
 
-        result = bda_output_processor_util.process_bda_output("test.pdf", "bucket", "key")
+        result = bda_output_processor_util.process_bda_output("bucket", "key")
 
         mock_classify_as_success.assert_called_once()
         assert result == {"status": "success"}
@@ -82,8 +87,10 @@ def test_process_bda_output_blueprint_matched():
         patch(
             "documentai_api.utils.bda_output_processor.classify_as_success"
         ) as mock_classify_as_success,
+        patch("documentai_api.utils.bda_output_processor.get_required_env", return_value="x"),
+        patch("documentai_api.services.ddb.query_by_key", return_value=[MOCK_DDB_RECORD]),
     ):
-        mock_extract_uri.return_value = "s3://bucket/output"
+        mock_extract_uri.return_value = MOCK_S3_URI
         mock_get_json.return_value = {
             "matched_blueprint": {"name": "invoice_blueprint", "confidence": "0.95"},
             "document_class": {"type": "invoice"},
@@ -91,7 +98,7 @@ def test_process_bda_output_blueprint_matched():
         }
         mock_classify_as_success.return_value = {"status": "success"}
 
-        result = bda_output_processor_util.process_bda_output("test.pdf", "bucket", "key")
+        result = bda_output_processor_util.process_bda_output("bucket", "key")
 
         mock_classify_as_success.assert_called_once()
         assert result == {"status": "success"}
@@ -116,8 +123,10 @@ def test_process_bda_output_no_matching_blueprint(text, expected_status, expecte
         patch(
             f"documentai_api.utils.bda_output_processor.{expected_classify_method}"
         ) as mock_classify_method,
+        patch("documentai_api.utils.bda_output_processor.get_required_env", return_value="x"),
+        patch("documentai_api.services.ddb.query_by_key", return_value=[MOCK_DDB_RECORD]),
     ):
-        mock_extract_uri.return_value = "s3://bucket/output"
+        mock_extract_uri.return_value = MOCK_S3_URI
         mock_get_json.return_value = {
             "matched_blueprint": {},
             "document_class": {"type": "unknown"},
@@ -125,7 +134,7 @@ def test_process_bda_output_no_matching_blueprint(text, expected_status, expecte
         mock_get_text.return_value = text
         mock_classify_method.return_value = expected_status
 
-        result = bda_output_processor_util.process_bda_output("test.pdf", "bucket", "key")
+        result = bda_output_processor_util.process_bda_output("bucket", "key")
 
         mock_classify_method.assert_called_once()
         assert result == expected_status

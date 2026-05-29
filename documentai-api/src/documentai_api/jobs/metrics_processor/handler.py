@@ -17,6 +17,8 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
 
     Processes metrics from SQS queue and writes to S3.
     """
+    # TODO: Update to call main() if more complex processing is needed,
+    # currently just writes raw messages to S3
     bucket_name = get_aws_config().ddb_export_bucket_name
     if not bucket_name:
         raise KeyError("DDB_EXPORT_BUCKET_NAME")

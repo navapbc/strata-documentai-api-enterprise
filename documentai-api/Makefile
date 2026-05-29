@@ -145,6 +145,7 @@ test-e2e: ## Run e2e tests
 	  "DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME=" + .document_metadata_table.value,\
 	  "DOCUMENTAI_DOCUMENT_METADATA_JOB_ID_INDEX_NAME=" + .document_metadata_job_id_index_name.value,\
 	  "DOCUMENTAI_DOCUMENT_METADATA_TENANT_INDEX_NAME=" + .document_metadata_tenant_index_name.value,\
+	  "DOCUMENTAI_DOCUMENT_METADATA_BDA_INVOCATION_ID_INDEX_NAME=" + .document_metadata_bda_invocation_id_index_name.value,\
 	  "DOCUMENTAI_INPUT_LOCATION=s3://" + .input_bucket.value + "/input"' > .env.e2e
 	@chmod 600 .env.e2e
 	@echo "Wrote .env.e2e"

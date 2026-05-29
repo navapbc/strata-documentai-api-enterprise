@@ -5,7 +5,7 @@ from typing import Any
 
 from documentai_api.config.constants import MetricsAggregatorTargetDate
 from documentai_api.jobs.metrics_aggregator.main import main
-from documentai_api.logging import get_logger
+from documentai_api.logging import get_logger, init
 from documentai_api.utils.lambda_error_handler import handle_lambda_errors
 
 logger = get_logger(__name__)
@@ -36,8 +36,11 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         )
 
     overwrite = str(event.get("overwrite", "false")).lower() == "true"
-    logger.info(f"Aggregating metrics for {target_date} (overwrite={overwrite})")
-    result = main(target_date, overwrite)
-    logger.info(f"Aggregation complete: {result}")
+
+    with init(__package__):
+        logger.info(f"Aggregating metrics for {target_date} (overwrite={overwrite})")
+        result = main(target_date, overwrite)
+
+        logger.info(f"Aggregation complete: {result}")
 
     return result

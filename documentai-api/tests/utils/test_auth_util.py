@@ -281,14 +281,30 @@ def test_ddb_verify_uses_cache_on_second_call(api_keys_table):
 ##############################################################################
 
 
-def test_update_last_used_debounced_skips_second_call(api_keys_table):
+@pytest.fixture
+def pinned_api_keys_config(api_keys_table):
+    """Pin get_aws_config for _update_last_used tests.
+
+    _update_last_used reads get_aws_config().api_keys_table_name and bails out
+    (swallowing the error) if it's empty. get_aws_config is lru-cached and shared
+    process-wide, and the production code spawns daemon threads that call it; a
+    leaked thread from a prior test can repopulate the cache with a config missing
+    api_keys_table_name during this test's fixture setup, making update_item never
+    get called. Pinning the config makes these tests immune to that race.
+    """
+    with patch("documentai_api.utils.auth.get_aws_config") as mock_config:
+        mock_config.return_value.api_keys_table_name = api_keys_table.name
+        yield
+
+
+def test_update_last_used_debounced_skips_second_call(pinned_api_keys_config):
     with patch("documentai_api.services.ddb.update_item") as mock_update:
         auth_util._update_last_used("test-hash")
         auth_util._update_last_used("test-hash")  # should be skipped
         mock_update.assert_called_once()
 
 
-def test_update_last_used_writes_after_debounce_period(api_keys_table):
+def test_update_last_used_writes_after_debounce_period(pinned_api_keys_config):
     with patch("documentai_api.services.ddb.update_item") as mock_update:
         auth_util._update_last_used("test-hash")
         # expire the debounce window
@@ -297,7 +313,7 @@ def test_update_last_used_writes_after_debounce_period(api_keys_table):
         assert mock_update.call_count == 2
 
 
-def test_update_last_used_writes_to_ddb(api_keys_table):
+def test_update_last_used_writes_to_ddb(pinned_api_keys_config):
     with patch("documentai_api.services.ddb.update_item") as mock_update:
         auth_util._update_last_used("test-hash")
         mock_update.assert_called_once()
@@ -306,7 +322,7 @@ def test_update_last_used_writes_to_ddb(api_keys_table):
         assert kwargs["key"] == {ApiKeyRecord.KEY_HASH: "test-hash"}
 
 
-def test_update_last_used_silently_ignores_errors(api_keys_table):
+def test_update_last_used_silently_ignores_errors(pinned_api_keys_config):
     with patch("documentai_api.services.ddb.update_item", side_effect=Exception("DDB error")):
         auth_util._update_last_used("test-hash")  # should not raise
 

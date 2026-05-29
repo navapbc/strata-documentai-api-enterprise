@@ -112,7 +112,7 @@ async def _upload_document(
     ddb_key = unique_file_name
 
     input_location = get_aws_config().documentai_input_location
-    dest_path = f"{input_location}/{unique_file_name}"
+    dest_path = f"{input_location}/{auth.tenant_id}/{unique_file_name}"
 
     try:
         record = DocumentRecord(
@@ -331,7 +331,10 @@ async def delete_document(job_id: uuid.UUID, auth: AuthUser) -> Response:
             input_location = get_aws_config().documentai_input_location
             if input_location:
                 bucket, prefix = parse_s3_uri(input_location)
-                s3_key = f"{prefix}/{job_status.object_key}" if prefix else job_status.object_key
+                # Objects are stored under the owning tenant's prefix. The record's tenant
+                # was validated == auth.tenant_id above, so use auth.tenant_id directly.
+                tenant_object_key = f"{auth.tenant_id}/{job_status.object_key}"
+                s3_key = f"{prefix}/{tenant_object_key}" if prefix else tenant_object_key
                 await asyncio.to_thread(s3_service.delete_object, bucket, s3_key)
         except Exception as e:
             logger.warning(f"Failed to delete S3 object for job {job_id}: {e}")

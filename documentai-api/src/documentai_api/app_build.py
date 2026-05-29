@@ -18,6 +18,7 @@ from fastapi import (
     status,
 )
 
+from documentai_api.annotations import AuthUser
 from documentai_api.config.constants import (
     MAX_PAGES_PER_BUILD,
     ApiVisualizationTag,
@@ -79,6 +80,7 @@ async def add_page_to_build(
     build_id: str,
     page_number: int,
     content_type: str,
+    tenant_id: str,
     category: DocumentCategory | None = None,
     trace_id: str | None = None,
     overwrite: bool = True,
@@ -94,7 +96,7 @@ async def add_page_to_build(
 
     file.file.seek(0)
     file_extension = FileValidation.get_extension(content_type)
-    unique_file_name = f"{build_id}/page-{page_number}.{file_extension}"
+    unique_file_name = f"{tenant_id}/{build_id}/page-{page_number}.{file_extension}"
 
     s3_location = os.getenv(EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION, "")
     dest_path = f"{s3_location}/{unique_file_name}"
@@ -174,6 +176,7 @@ async def upload_document_build_page(
     response: Response,
     file: UploadFile,
     build_id: str,
+    auth: AuthUser,
     page_number: Annotated[int | None, Form(description="Page number (1-indexed)", ge=1)] = None,
     overwrite: Annotated[bool, Form(description="Allow overwriting existing page")] = False,
     category: Annotated[
@@ -208,7 +211,14 @@ async def upload_document_build_page(
         # Use conditional write to prevent race on page_number allocation.
         # If overwrite=False and page exists, upsert_document_build_page will raise.
         result = await add_page_to_build(
-            file, build_id, page_number, content_type, category, trace_id, overwrite=overwrite
+            file,
+            build_id,
+            page_number,
+            content_type,
+            auth.tenant_id,
+            category,
+            trace_id,
+            overwrite=overwrite,
         )
 
         response.headers["X-Trace-ID"] = trace_id
@@ -236,6 +246,7 @@ async def upload_document_build_pages_batch(
     response: Response,
     files: list[UploadFile],
     build_id: str,
+    auth: AuthUser,
     category: Annotated[
         DocumentCategory | None, Form(description="Type of document being uploaded")
     ] = None,
@@ -285,6 +296,7 @@ async def upload_document_build_pages_batch(
                     build_id,
                     next_page_number + idx,
                     ct,
+                    auth.tenant_id,
                     category,
                     trace_id,
                     overwrite=False,
@@ -333,7 +345,9 @@ class _SubmitResult:
         self.page_count = page_count
 
 
-async def _submit_build(response: Response, build_id: str, trace_id: str | None) -> _SubmitResult:
+async def _submit_build(
+    response: Response, build_id: str, trace_id: str | None, tenant_id: str, api_key_name: str
+) -> _SubmitResult:
     """Shared submit logic. Validates, merges, uploads. Returns _SubmitResult."""
     if not trace_id:
         trace_id = str(uuid.uuid4())
@@ -405,9 +419,28 @@ async def _submit_build(response: Response, build_id: str, trace_id: str | None)
         category_str = next((p.category for p in pages if p.category), None)
         category = DocumentCategory(category_str) if category_str else None
 
+        # Pre-insert a tenant-stamped job record before upload. The doc-processor's
+        # upsert_initial_ddb_record (keyed by basename, with no tenant) updates this
+        # row in place; without it the row is created tenant-less and the owner's
+        # GET /v1/documents/{job_id} 404s on the tenant check.
+        await asyncio.to_thread(
+            insert_minimal_ddb_record,
+            DocumentRecord(
+                ddb_key=unique_file_name,
+                original_file_name=unique_file_name,
+                job_id=job_id,
+                category=category,
+                trace_id=trace_id,
+                content_type="application/pdf",
+                upload_method=UploadMethod.BUILD,
+                tenant_id=tenant_id,
+                api_key_name=api_key_name,
+            ),
+        )
+
         await upload_document_for_processing(
             src_file=merged_pdf,
-            dest_path=f"{input_location}/{unique_file_name}",
+            dest_path=f"{input_location}/{tenant_id}/{unique_file_name}",
             original_file_name=unique_file_name,
             content_type="application/pdf",
             user_provided_document_category=category,
@@ -443,10 +476,11 @@ async def _submit_build(response: Response, build_id: str, trace_id: str | None)
 async def submit_document_build(
     response: Response,
     build_id: str,
+    auth: AuthUser,
     trace_id: Annotated[str | None, Header(alias="X-Trace-ID")] = None,
 ) -> BuildSubmitAsyncResponse:
     """Submit a multi-page build for processing (fire-and-forget)."""
-    result = await _submit_build(response, build_id, trace_id)
+    result = await _submit_build(response, build_id, trace_id, auth.tenant_id, auth.api_key_name)
     return BuildSubmitAsyncResponse(
         job_id=result.job_id,
         build_id=build_id,
@@ -465,6 +499,7 @@ async def submit_document_build_wait(
     request: Request,
     response: Response,
     build_id: str,
+    auth: AuthUser,
     trace_id: Annotated[str | None, Header(alias="X-Trace-ID")] = None,
     include_extracted_data: bool = False,
     timeout: Annotated[int, Query(ge=1)] = ConfigDefaults.MAX_WAIT_SECONDS
@@ -473,7 +508,7 @@ async def submit_document_build_wait(
     """Submit a multi-page build and poll until processing completes or timeout."""
     from documentai_api.utils.jobs import poll_for_completion
 
-    result = await _submit_build(response, build_id, trace_id)
+    result = await _submit_build(response, build_id, trace_id, auth.tenant_id, auth.api_key_name)
     if ProcessStatus.is_classified(result.job_status):
         return JobStatusResponse(
             job_id=result.job_id,

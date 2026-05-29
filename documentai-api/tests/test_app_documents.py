@@ -1,5 +1,7 @@
 """Tests for document endpoints (upload, query, delete, search)."""
 
+from unittest.mock import AsyncMock
+
 import pytest
 
 from documentai_api.models.api_responses import JobStatusResponse
@@ -88,6 +90,20 @@ def test_create_document_asynchronous(api_client, blank_pdf_bytes):
     assert "jobId" in data
     assert data["jobStatus"] == "not_started"
     assert "uploaded successfully" in data["message"].lower()
+
+
+def test_create_document_uploads_under_tenant_prefix(api_client, blank_pdf_bytes, mocker):
+    """Upload writes the S3 object under the caller's tenant prefix."""
+    mock_dispatch = mocker.patch(
+        "documentai_api.app_documents.dispatch_upload", new_callable=AsyncMock
+    )
+
+    files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
+    response = api_client.post("/v1/documents", files=files)
+
+    assert response.status_code == 202
+    dest_path = mock_dispatch.call_args.kwargs["dest_path"]
+    assert "/test-tenant/" in dest_path
 
 
 def test_create_document_with_external_fields(api_client, blank_pdf_bytes, mocker):
@@ -318,6 +334,10 @@ def test_delete_document_success(api_client, mocker):
 
     assert response.status_code == 204
     mock_s3_delete.assert_called_once()
+    # S3 key must be rebuilt under the record's tenant prefix, else the delete
+    # targets a non-existent (un-prefixed) key and silently misses the object.
+    deleted_key = mock_s3_delete.call_args.args[1]
+    assert deleted_key == "input/test-tenant/test.pdf"
     mock_update_ddb.assert_called_once()
 
 

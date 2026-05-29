@@ -55,6 +55,7 @@ def mock_document_build_submit():
             "documentai_api.app_build.upload_document_for_processing",
             new_callable=AsyncMock,
         ) as mock_upload,
+        patch("documentai_api.app_build.insert_minimal_ddb_record") as mock_insert,
         patch("documentai_api.app_build.mark_document_build_submitted") as mock_mark_submitted,
         patch("documentai_api.config.env.AWSEnvConfig") as mock_aws_config,
     ):
@@ -65,6 +66,7 @@ def mock_document_build_submit():
             "get_pages": mock_get_pages,
             "merge": mock_merge,
             "upload": mock_upload,
+            "insert": mock_insert,
             "mark_submitted": mock_mark_submitted,
             "aws_config": mock_aws_config,
         }
@@ -306,6 +308,33 @@ def test_submit_document_build_success(document_build_ddb_table, mock_document_b
 
     # verify build was marked as submitted
     mock_document_build_submit["mark_submitted"].assert_called_with("test-build-id")
+
+
+def test_submit_document_build_stamps_tenant_on_job_record(
+    document_build_ddb_table, mock_document_build_submit
+):
+    """Submit must pre-insert a tenant-stamped job record so the owner can read results.
+
+    Without it the doc-processor creates a tenant-less row and
+    GET /v1/documents/{job_id} 404s on the tenant check.
+    """
+    mock_document_build_submit["get_pages"].return_value = [create_page_metadata(1)]
+
+    response = client.post("/v1/builds/test-build-id/submit")
+
+    assert response.status_code == 202
+
+    mock_document_build_submit["insert"].assert_called_once()
+    record = mock_document_build_submit["insert"].call_args.args[0]
+    assert record.tenant_id == "test-tenant"
+    assert record.api_key_name == "test-client"
+    # ddb_key must equal the uploaded object's basename so the doc-processor's
+    # basename-keyed upsert updates this row in place.
+    assert record.job_id == response.json()["jobId"]
+
+    # merged PDF is also written under the tenant prefix
+    dest_path = mock_document_build_submit["upload"].call_args.kwargs["dest_path"]
+    assert "/test-tenant/" in dest_path
 
 
 def test_upload_document_build_page_error_handling(
@@ -888,6 +917,17 @@ def test_upload_document_build_page_non_pdf_content_types(
     assert call_kwargs["content_type"] == content_type
     # Verify dest_path uses the correct extension
     assert call_kwargs["dest_path"].endswith(f".{expected_ext}")
+
+
+def test_upload_build_page_uses_tenant_prefix(document_build_ddb_table, mock_document_build_upload):
+    """Build page is written to S3 under the caller's tenant prefix."""
+    files = {"file": ("page.pdf", b"fake pdf", "application/pdf")}
+    data = {"page_number": 1}
+    response = client.post("/v1/builds/test-build-id/pages", files=files, data=data)
+
+    assert response.status_code == 200
+    dest_path = mock_document_build_upload["upload"].call_args.kwargs["dest_path"]
+    assert "/test-tenant/" in dest_path
 
 
 def test_batch_upload_with_category(document_build_ddb_table, mock_document_build_upload):

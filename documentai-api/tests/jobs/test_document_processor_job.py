@@ -252,6 +252,39 @@ def test_main_first_time_pdf(input_pdf, mocker, ddb_doc_metadata_table, mock_inv
     )
 
 
+def test_main_strips_tenant_prefix_for_ddb_key(s3_bucket, ddb_doc_metadata_table, mock_invoke):
+    """A tenant-prefixed S3 object resolves to a bare (basename) DDB key.
+
+    The API pre-inserts the job record under the un-prefixed filename, so the
+    processor must key off the basename to update it in place. S3 operations,
+    by contrast, must keep the full tenant-prefixed key.
+    """
+    tenant_key = "input/test-tenant/document-build-abc.pdf"
+    obj = s3_bucket.put_object(
+        Key=tenant_key,
+        Body=b"PDF data",
+        ContentType="application/pdf",
+        Metadata={
+            "job-id": "test-job-id",
+            "trace-id": "test-trace-id",
+            "user-provided-document-category": "income",
+            "original-file-name": "original.pdf",
+        },
+    )
+
+    main(obj.key, obj.bucket_name)
+
+    # DDB key is the basename, with the tenant segment stripped.
+    expected_ddb_key = "document-build-abc.pdf"
+    record = ddb_doc_metadata_table.get_item(Key={"fileName": expected_ddb_key})["Item"]
+    assert record[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.NOT_STARTED
+
+    # S3 operations still receive the full tenant-prefixed key.
+    mock_invoke.assert_called_once_with(
+        obj.bucket_name, tenant_key, expected_ddb_key, "tax_documents"
+    )
+
+
 def test_main_first_time_image(input_image, mocker, ddb_doc_metadata_table, mock_invoke):
     """Test first time processing image (needs grayscale)."""
     mock_convert = mocker.patch(

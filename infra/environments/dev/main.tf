@@ -57,6 +57,7 @@ locals {
   # DynamoDB GSI names - single source of truth for infra + env vars
   gsi_job_id               = "JobIdIndex"
   gsi_external_document_id = "ExternalDocumentIdIndex"
+  gsi_bda_invocation_id    = "BdaInvocationIdIndex"
   gsi_tenant_id            = "TenantIdIndex"
   gsi_status_created_at    = "StatusCreatedAtIndex"
   gsi_tenant_batches       = "TenantIndex"
@@ -132,6 +133,11 @@ module "document_metadata" {
     {
       name          = local.gsi_external_document_id
       hash_key      = "externalDocumentId"
+      hash_key_type = "S"
+    },
+    {
+      name          = local.gsi_bda_invocation_id
+      hash_key      = "bdaInvocationId"
       hash_key_type = "S"
     },
     {
@@ -416,6 +422,7 @@ locals {
     DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME                 = module.document_metadata.table_name
     DOCUMENTAI_DOCUMENT_METADATA_JOB_ID_INDEX_NAME          = local.gsi_job_id
     DOCUMENTAI_DOCUMENT_METADATA_EXTERNAL_DOC_ID_INDEX_NAME = local.gsi_external_document_id
+    DOCUMENTAI_DOCUMENT_METADATA_BDA_INVOCATION_ID_INDEX_NAME = local.gsi_bda_invocation_id
     DOCUMENTAI_DOCUMENT_METADATA_TENANT_INDEX_NAME          = local.gsi_tenant_id
     API_KEYS_TABLE_NAME                                     = module.api_keys.table_name
     TENANTS_TABLE_NAME                                      = module.tenants.table_name

@@ -34,6 +34,10 @@ output "document_metadata_job_id_index_name" {
   value = local.gsi_job_id
 }
 
+output "document_metadata_bda_invocation_id_index_name" {
+  value = local.gsi_bda_invocation_id
+}
+
 output "input_bucket" {
   value = module.input_bucket.bucket_name
 }

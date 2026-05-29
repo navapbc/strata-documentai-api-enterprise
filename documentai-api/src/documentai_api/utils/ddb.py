@@ -372,6 +372,13 @@ def _build_update_expression(
             extract_region_from_bda_arn(bda_invocation_arn)
             or ConfigDefaults.BDA_REGION_NOT_AVAILABLE
         )
+
+        bda_invocation_id = bda_invocation_arn.split("/")[
+            -1
+        ]  # invocation ID is last segment of ARN
+        updates.append(f"{DocumentMetadata.BDA_INVOCATION_ID} = :bdaInvocationId")
+        values[":bdaInvocationId"] = bda_invocation_id
+
         updates.append(f"{DocumentMetadata.BDA_REGION_USED} = :bdaRegion")
         values[":bdaRegion"] = bda_region
 
@@ -654,6 +661,10 @@ def insert_minimal_ddb_record(record: DocumentRecord) -> None:
         upload_method=record.upload_method,
         tenant_id=record.tenant_id,
         api_key_name=record.api_key_name,
+    )
+
+    logger.info(
+        f"Inserted initial DDB record for {record.ddb_key} with status {record.process_status}"
     )
 
 

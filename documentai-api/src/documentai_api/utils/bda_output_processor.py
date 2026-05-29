@@ -1,7 +1,10 @@
+import re
+import uuid
 from dataclasses import dataclass, field
 from typing import Any
 
 from documentai_api.config.constants import BdaResponseFields, ConfigDefaults
+from documentai_api.config.env import EnvVars, get_required_env
 from documentai_api.logging import get_logger
 from documentai_api.services.bda import extract_bda_output_s3_uri, get_bda_result_json
 from documentai_api.utils.bda import (
@@ -70,17 +73,49 @@ def get_matched_blueprint(bda_result_json: dict[str, Any]) -> MatchedBlueprintIn
     return MatchedBlueprintInfo(matched_blueprint_name, matched_blueprint_confidence)
 
 
-def process_bda_output(
-    uploaded_filename: str, bda_output_bucket_name: str, bda_output_object_key: str
-) -> dict[str, Any]:
+def process_bda_output(bda_output_bucket_name: str, bda_output_object_key: str) -> dict[str, Any]:
     # The user-provided category helps routing, but it doesn't gate visibility.
     # If BDA matched a blueprint and extracted fields, we surface them regardless;
     # if it didn't, the downstream NO_CUSTOM_BLUEPRINT_MATCHED / NO_DOCUMENT_DETECTED
     # paths handle the no-blueprint case.
+    from documentai_api.config.constants import UUID_PATTERN
+    from documentai_api.schemas.document_metadata import DocumentMetadata
+    from documentai_api.services import ddb as ddb_service
+
     bda_output_s3_uri = extract_bda_output_s3_uri(bda_output_bucket_name, bda_output_object_key)
 
     if not bda_output_s3_uri:
         raise ValueError("No BDA output S3 URI found")
+
+    # BDA writes output under {output_location}/{input_key}/{invocation_id}/... (see
+    # bda_invoker output config), and stores that same invocation_id in DDB as the last
+    # ARN segment. The invocation_id is the deepest UUID in the path (everything after it
+    # is non-UUID: segment index, custom_output, result.json), so take the last match.
+    uuid_matches = re.findall(UUID_PATTERN, bda_output_s3_uri)
+    bda_invocation_id = str(uuid.UUID(uuid_matches[-1])) if uuid_matches else None
+
+    if bda_invocation_id is None:
+        raise ValueError("No BDA invocation ID found in BDA output S3 URI")
+
+    table_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME)
+    index_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_BDA_INVOCATION_ID_INDEX_NAME)
+    items = ddb_service.query_by_key(
+        table_name, index_name, DocumentMetadata.BDA_INVOCATION_ID, bda_invocation_id
+    )
+
+    if not items:
+        raise ValueError(f"No DDB record found for BDA invocation ID {bda_invocation_id}")
+
+    if len(items) > 1:
+        logger.warning(
+            f"Multiple DDB records found for BDA invocation ID {bda_invocation_id}, using the first one"
+        )
+
+    ddb_record = items[0]
+    # FILE_NAME is the partition key on this table, so it is always present; index by key
+    # to fail loudly (KeyError) if a malformed record ever lacks it, rather than silently
+    # passing object_key=None downstream.
+    file_name: str = ddb_record[DocumentMetadata.FILE_NAME]
 
     bda_result_json = get_bda_result_json(bda_output_s3_uri)
     if not bda_result_json:
@@ -112,15 +147,13 @@ def process_bda_output(
             logger.info(msg)
             classification_data.additional_info = msg
             return classify_as_no_custom_blueprint_matched(
-                object_key=uploaded_filename, data=classification_data
+                object_key=file_name, data=classification_data
             )
         else:
             msg += "Unable to extract meaningful document content."
             logger.info(msg)
             classification_data.additional_info = msg
-            return classify_as_no_document_detected(
-                object_key=uploaded_filename, data=classification_data
-            )
+            return classify_as_no_document_detected(object_key=file_name, data=classification_data)
     else:
         msg = "Custom matching blueprint found, and document type matches. Success."
         logger.info(msg)
@@ -131,7 +164,7 @@ def process_bda_output(
         classification_data.additional_info = msg
 
         return classify_as_success(
-            object_key=uploaded_filename,
+            object_key=file_name,
             response_code=results.response_code or ResponseCodes.SUCCESS,
             data=classification_data,
         )

@@ -103,7 +103,7 @@ async def _process_batch_files(
         job_id = str(uuid.uuid4())
         unique_file_name = f"{idx}-{generate_unique_filename(file.filename, job_id)}"
         ddb_key = unique_file_name
-        dest_path = f"{input_location}/{unique_file_name}"
+        dest_path = f"{input_location}/{tenant_id}/{unique_file_name}"
 
         await asyncio.to_thread(
             insert_minimal_ddb_record,
@@ -186,7 +186,7 @@ async def _execute_batch(
     # Server-generated to prevent cross-tenant ID probing and collision attacks.
     # If tenant-supplied batch_id is needed, update dynamodb infra to support
     # a gsi on batch_id/tenant_id
-    batch_id = str(uuid.uuid4())
+    batch_id = f"{auth.tenant_id}/{uuid.uuid4()!s}"
 
     try:
         created_at = create_batch(

@@ -55,6 +55,9 @@ BDA_JOB_STATUS_FAILED = ["ServiceError", "ClientError"]
 BDA_JOB_STATUS_COMPLETED = ["Success"]
 
 
+UUID_PATTERN = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+
+
 class APIConfig:
     VERSION = "v1"
     TITLE = "Document AI API"

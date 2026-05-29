@@ -152,7 +152,7 @@ async def create_presigned_upload_url(
             "job_id": job_id,
             "tenant_id": auth.tenant_id,
             "content_type": content_type,
-            "filename": filename,
+            "upload_filename": filename,
         },
     )
 

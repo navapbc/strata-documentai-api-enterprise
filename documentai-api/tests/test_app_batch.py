@@ -387,8 +387,12 @@ def test_batch_upload_returns_uuid_batch_id(api_client, pdf_file):
 
     assert response.status_code == 200
     batch_id = response.json()["batchId"]
-    # Verify it's a valid UUID
-    uuid.UUID(batch_id)
+    # batch_id is tenant-prefixed: "{tenant_id}/{uuid}"
+    tenant_prefix, sep, uuid_part = batch_id.partition("/")
+    assert sep == "/"
+    assert tenant_prefix == "test-tenant"
+    # Verify the suffix is a valid UUID
+    uuid.UUID(uuid_part)
 
 
 def test_upload_document_batch_exceeds_max_size(api_client, monkeypatch):
@@ -675,6 +679,32 @@ def test_batch_upload_tenant_propagation(api_client, pdf_file):
     record = mock_insert.call_args[0][0]
     assert record.tenant_id == "test-tenant"
     assert record.api_key_name == "test-client"
+
+
+def test_batch_upload_uploads_under_tenant_prefix(api_client, pdf_file):
+    """Each batch file is written to S3 under the caller's tenant prefix."""
+    with (
+        patch.dict(
+            os.environ, {EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"}
+        ),
+        patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
+        patch(
+            "documentai_api.app_batch.upload_document_for_processing", new_callable=AsyncMock
+        ) as mock_upload,
+        patch("documentai_api.app_batch.insert_minimal_ddb_record"),
+        patch("documentai_api.app_batch.create_batch", return_value="2026-03-02T20:00:00Z"),
+        patch("documentai_api.app_batch.update_batch_status"),
+        patch(
+            "documentai_api.app_batch.get_batch",
+            return_value={"batchId": "test-batch", "createdAt": "2026-03-02T20:00:00Z"},
+        ),
+    ):
+        files = [("files", pdf_file("doc1.pdf"))]
+        response = api_client.post("/v1/documents/batch", files=files)
+
+    assert response.status_code == 200
+    dest_path = mock_upload.call_args.kwargs["dest_path"]
+    assert "/test-tenant/" in dest_path
 
 
 def test_batch_upload_category_propagation(api_client, pdf_file):

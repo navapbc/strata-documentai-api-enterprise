@@ -125,7 +125,9 @@ def _wipe_e2e_tenant(tenant_id: str) -> None:
     for record in items:
         object_key = record.get(DocumentMetadata.FILE_NAME) or record.get("objectKey")
         if object_key:
-            s3_key = f"{prefix}/{object_key}" if prefix else object_key
+            # Objects are stored under the tenant prefix; FILE_NAME is the bare key.
+            tenant_object_key = f"{tenant_id}/{object_key}"
+            s3_key = f"{prefix}/{tenant_object_key}" if prefix else tenant_object_key
             try:
                 s3.delete_object(Bucket=bucket, Key=s3_key)
                 deleted_objects += 1
