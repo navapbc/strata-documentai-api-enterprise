@@ -8,7 +8,11 @@ A serverless document processing system deployed as a Lambda container. Handles 
 
 ## Architecture
 
-The system follows an event-driven architecture. See the [architecture diagram](../docs/documentai-api/diagrams/architecture.mmd) for the complete system view.
+The system follows an event-driven architecture:
+
+![Architecture diagram](../docs/documentai-api/media/architecture.svg)
+
+The diagram source lives in [`architecture.mmd`](../docs/documentai-api/diagrams/architecture.mmd).
 
 **Processing Flow:**
 1. Document uploaded via API endpoint, stored in S3, metadata written to DynamoDB
@@ -17,6 +21,12 @@ The system follows an event-driven architecture. See the [architecture diagram](
 4. BDA writes results to S3 output bucket
 5. EventBridge triggers BDA Result Processor to extract fields and update DynamoDB
 6. Metrics emitted to SQS → Metrics Processor → S3 (Parquet) → Glue
+
+The request lifecycle across these components:
+
+![Request lifecycle diagram](../docs/documentai-api/media/request-lifecycle.svg)
+
+The diagram source lives in [`request-lifecycle.mmd`](../docs/documentai-api/diagrams/request-lifecycle.mmd).
 
 ## Features
 
@@ -118,7 +128,7 @@ Set by infrastructure on deploy:
 | `BDA_PROJECT_ARN` | Bedrock Data Automation project ARN |
 | `BDA_PROFILE_ARN` | BDA profile ARN |
 | `BDA_REGION` | AWS region for BDA |
-| `API_AUTH_ENABLED` | Enable DynamoDB-backed auth (`true`/`false`) |
+| `API_AUTH_ENABLED` | Enable DynamoDB-backed auth. Defaults to `false` (insecure single-key dev mode); **must be `true` for any hosted/production deploy** - see [api-authentication.md](../docs/documentai-api/api-authentication.md) |
 | `API_KEYS_TABLE_NAME` | DynamoDB API keys table |
 | `COGNITO_USER_POOL_ID` | Cognito User Pool ID (admin auth) |
 
@@ -189,11 +199,13 @@ API keys can be created via:
 
 ## Testing
 
-Most tests use pytest with moto for AWS service mocking — no real AWS infrastructure required. Tests are split into three tiers via pytest markers:
+Most tests use pytest with moto for AWS service mocking - no real AWS infrastructure required. Tests are split into three tiers via pytest markers:
 
 - **unit** (default): fast, moto-backed or pure-logic tests.
 - **integration** (`-m integration`): also moto-backed; run separately from the default suite.
 - **e2e** (`-m e2e`): run against **real deployed AWS** and a live API. These need `.env.e2e` (generated from terraform outputs) and are excluded from the default run.
+
+> ⚠️ Never commit .env.e2e. It's generated from live terraform outputs and contains real dev AWS account, API Gateway, bucket, and table identifiers. It's gitignored (both root and `documentai-api/.gitignore`) and must stay that way - treat it as local-only.
 
 ```bash
 make test                                    # Unit suite (excludes integration + e2e)
@@ -203,7 +215,7 @@ make test args="-m integration"              # Integration (moto) tests
 make test-e2e                                # E2E tests against real AWS (regenerates .env.e2e)
 ```
 
-E2E tests create documents under a dedicated per-worker tenant (`e2e-test-tenant-<worker>`, e.g. `-master` serially or `-gw0` under `-n`), so parallel workers never wipe each other's data. Cleanup (deleting those documents from DynamoDB/S3) is **opt-in** — set `E2E_WIPE_TENANT=1` to enable it; otherwise test data is left in place.
+E2E tests create documents under a dedicated per-worker tenant (`e2e-test-tenant-<worker>`, e.g. `-master` serially or `-gw0` under `-n`), so parallel workers never wipe each other's data. Cleanup (deleting those documents from DynamoDB/S3) is **opt-in** - set `E2E_WIPE_TENANT=1` to enable it; otherwise test data is left in place.
 
 ## Project Structure
 

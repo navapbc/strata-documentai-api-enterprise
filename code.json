@@ -1,0 +1,45 @@
+{
+  "name": "strata-documentai-api-enterprise",
+  "version": "0.1.0",
+  "description": "Serverless document processing platform to upload documents, extract structured data, manage tenants and API keys, and review results through an admin console.",
+  "status": "Development",
+  "permissions": {
+    "licenses": [
+      {
+        "name": "MIT",
+        "URL": "https://github.com/navapbc/strata-documentai-api-enterprise/blob/main/LICENSE"
+      }
+    ],
+    "usageType": [
+      "openSource"
+    ]
+  },
+  "organization": "Nava",
+  "repositoryURL": "https://github.com/navapbc/strata-documentai-api-enterprise",
+  "repositoryVisibility": "public",
+  "vcs": "git",
+  "reuseFrequency": {
+    "forks": 0
+  },
+  "languages": [
+    "Python",
+    "JavaScript",
+    "HCL"
+  ],
+  "maintenance": "internal",
+  "SBOM": "https://github.com/navapbc/strata-documentai-api-enterprise/network/dependencies",
+  "date": {
+    "created": "2026-05-01T13:45:57Z",
+    "lastModified": "2026-05-29T10:28:37Z",
+    "metadataLastUpdated": "2026-05-29T19:00:00Z"
+  },
+  "tags": [
+    "platform",
+    "sdk"
+  ],
+  "contact": {
+    "email": "strata@navapbc.com"
+  },
+  "feedbackMechanism": "https://github.com/navapbc/strata-documentai-api-enterprise/issues",
+  "AIUseCaseID": "0"
+}

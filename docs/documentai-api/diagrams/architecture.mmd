@@ -1,51 +1,71 @@
 architecture-beta
-    group admin(logos:aws-cloudfront)[Admin Console]
-    group auth(logos:aws-cognito)[Identity]
-    group api(logos:aws-vpc)[API Layer]
-    group processing(logos:aws-vpc)[Document Processing]
-    group data-extraction(logos:aws-vpc)[Data Extraction]
-    group metrics(logos:aws-vpc)[Metrics Pipeline]
+  %% Groups
+  group admin(logos:aws-cloudfront)[Admin Console]
+  group api(logos:aws-vpc)[API Layer]
+  group processing(logos:aws-vpc)[Document Processing]
+  group data-extraction(logos:aws-vpc)[Data Extraction]
+  group metrics(logos:aws-vpc)[Metrics Pipeline]
 
-    service cloudfront(logos:aws-cloudfront)[CloudFront] in admin
-    service s3ui(logos:aws-s3)[S3 Static Site] in admin
+  %% Admin
+  %% NOTE: 'material-symbols' requires external JSON injection.
+  %% The users icon render as a '?' inside the native VS Code preview window,
+  %% but generates perfectly centered 1:1 square nodes when compiled via 'make'.
+  service user(material-symbols:manage-accounts)[Admin User]
+  service cloudfront(logos:aws-cloudfront)[CloudFront] in admin
+  service s3ui(logos:aws-s3)[S3 Static Site] in admin
 
-    service cognito(logos:aws-cognito)[Cognito User Pool] in auth
+  %% API Layer
+  service cognito(logos:aws-cognito)[Cognito User Pool] in api
+  service apigw(logos:aws-api-gateway)[API Gateway] in api
+  service api-lambda(logos:aws-lambda)[API Lambda] in api
+  service ddb-apikeys(logos:aws-dynamodb)[API Keys] in api
 
-    service apigw(logos:aws-api-gateway)[API Gateway] in api
-    service api-lambda(logos:aws-lambda)[API Lambda] in api
+  %% Document Processing
+  service s3input(logos:aws-s3)[S3 Input] in processing
+  service eventbridge1(logos:aws-eventbridge)[EventBridge] in processing
+  service document-processor(logos:aws-lambda)[Document Processor] in processing
+  service ddb(logos:aws-dynamodb)[Document Metadata] in processing
 
-    service s3input(logos:aws-s3)[S3 Input] in processing
-    service eventbridge1(logos:aws-eventbridge)[EventBridge] in processing
-    service document-processor(logos:aws-lambda)[Document Processor] in processing
-    service ddb(logos:aws-dynamodb)[DynamoDB] in processing
-    service bedrock(server)[Bedrock Data Automation] in data-extraction
-    service s3output(logos:aws-s3)[S3 Output] in data-extraction
-    service eventbridge2(logos:aws-eventbridge)[EventBridge] in data-extraction
-    service bda-result-processor(logos:aws-lambda)[BDA Result Processor] in data-extraction
-    service ddb2(logos:aws-dynamodb)[DynamoDB] in data-extraction
-    service sqs(logos:aws-sqs)[SQS Queue] in metrics
-    service metrics-processor(logos:aws-lambda)[Metrics Processor] in metrics
-    service s3metrics(logos:aws-s3)[S3 Metrics] in metrics
-    service glue(logos:aws-glue)[Glue Database] in metrics
-    service metrics-aggregator(logos:aws-lambda)[Metrics Aggregator] in metrics
+  %% Data Extraction
+  service bedrock(server)[Bedrock Data Automation] in data-extraction
+  service s3output(logos:aws-s3)[S3 Output] in data-extraction
+  service eventbridge2(logos:aws-eventbridge)[EventBridge] in data-extraction
+  service bda-result-processor(logos:aws-lambda)[BDA Result Processor] in data-extraction
+  service ddb2(logos:aws-dynamodb)[Document Metadata] in data-extraction
 
-    cloudfront:R --> L:s3ui
-    cloudfront:B --> T:cognito
-    cognito:R --> L:apigw
+  %% Metrics Pipeline
+  service sqs(logos:aws-sqs)[SQS Queue] in metrics
+  service metrics-processor(logos:aws-lambda)[Metrics Processor] in metrics
+  service s3metrics(logos:aws-s3)[S3 Metrics] in metrics
+  service glue(logos:aws-glue)[Glue Database] in metrics
+  service metrics-aggregator(logos:aws-lambda)[Metrics Aggregator] in metrics
 
-    apigw:R --> L:api-lambda
-    api-lambda:R --> L:s3input
-    s3input:R --> L:eventbridge1
-    eventbridge1:R --> L:document-processor
-    document-processor:B --> T:bedrock
-    document-processor:T --> B:ddb
-    bedrock:R --> L:s3output
-    s3output:R --> L:eventbridge2
-    eventbridge2:R --> L:bda-result-processor
-    bda-result-processor:T --> B:ddb2
-    bda-result-processor:B --> T:sqs
-    sqs:B --> T:metrics-processor
-    metrics-processor:L --> R:s3metrics
-    s3metrics:L --> R:glue
-    glue:B --> T:metrics-aggregator
-    metrics-aggregator:B --> T:s3metrics
+  %% Admin flow
+  cloudfront:T --> B:s3ui
+  cloudfront:R --> L:cognito
+  user:B --> T:s3ui
+
+  %% API flow
+  cognito:R --> L:apigw
+  apigw:R --> L:api-lambda
+  api-lambda:R --> L:ddb-apikeys
+  api-lambda:B --> T:s3input
+
+  %% Processing flow
+  s3input:R --> L:eventbridge1
+  eventbridge1:R --> L:document-processor
+  document-processor:R --> L:ddb
+  document-processor:B --> T:bedrock
+
+  %% Extraction flow
+  bedrock:R --> L:s3output
+  s3output:R --> L:eventbridge2
+  eventbridge2:R --> L:bda-result-processor
+  bda-result-processor:R --> L:ddb2
+  bda-result-processor:B --> T:sqs
+
+  %% Metrics flow
+  sqs:R --> L:metrics-processor
+  metrics-processor:R --> L:s3metrics
+  s3metrics:R --> L:glue
+  glue:R --> L:metrics-aggregator

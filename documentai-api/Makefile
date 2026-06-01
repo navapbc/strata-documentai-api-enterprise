@@ -51,8 +51,8 @@ APP_DOCS_DIR := $(CURDIR)/../docs/$(APP_NAME)
 TF_DIR := ../infra/environments/dev
 
 DIAGRAMS := \
-	$(APP_DOCS_DIR)/media/architecture.png \
-	$(APP_DOCS_DIR)/media/request-lifecycle.png
+	$(APP_DOCS_DIR)/media/architecture.svg \
+	$(APP_DOCS_DIR)/media/request-lifecycle.svg
 
 # By default, all python/uv commands will run inside of the docker container
 # if you wish to run this natively, add RUN_CMD_APPROACH=local to your environment vars
@@ -183,16 +183,17 @@ clean: ## Clean build artifacts
 openapi-spec: ## Export openapi spec to docs directory
 	$(PY_RUN_CMD) export-openapi > $(APP_DOCS_DIR)/openapi.json
 
-diagrams: ## Render all .mmd diagrams to PNG
+diagrams: ## Render all .mmd diagrams to SVG
 diagrams: $(DIAGRAMS)
 
-$(APP_DOCS_DIR)/media/%.png: $(APP_DOCS_DIR)/diagrams/%.mmd
+$(APP_DOCS_DIR)/media/%.svg: $(APP_DOCS_DIR)/diagrams/%.mmd
 	docker run --rm \
 	-v $(APP_DOCS_DIR):/data \
 	ghcr.io/mermaid-js/mermaid-cli/mermaid-cli:latest \
 	-i diagrams/$*.mmd \
-	-o media/$*.png \
-	--iconPacks '@iconify-json/logos'
+	-o media/$*.svg \
+	--iconPacks '@iconify-json/logos' \
+	--iconPacks '@iconify-json/material-symbols'
 
 help: ## Show help
 	@grep -Eh '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'

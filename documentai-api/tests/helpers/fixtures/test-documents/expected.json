@@ -1,12 +1,12 @@
 {
-  "public-benefits-identity-coverage-medicaid-card.jpg": {
+  "synthetic-public-benefits-identity-coverage-medicaid-card.jpg": {
     "//": [
       "Bedrock Data Automation is unable to classify this document using existing blueprints. ",
       "Additional investigation is needed to determine why. ",
       "Including in tests as-is to avoid blocking other work. ",
       "Marking e2e_enabled: true to flag for follow-up and prevent accidental regressions."
     ],
-    "bdaMatchedDocumentClass": null, 
+    "bdaMatchedDocumentClass": null,
     "content_type": "image/jpeg",
     "e2e_enabled": true,
     "isDocumentBlurry": false,
@@ -14,7 +14,7 @@
     "preclassificationCategory": "government_benefits",
     "responseCode": "002"
   },
-  "public-benefits-identity-proof-state-photo-id.jpg": {
+  "synthetic-public-benefits-identity-proof-state-photo-id.jpg": {
     "bdaMatchedDocumentClass": "US-drivers-licenses",
     "content_type": "image/jpeg",
     "e2e_enabled": true,
@@ -23,7 +23,7 @@
     "preclassificationCategory": "identity_verification",
     "responseCode": "000"
   },
-  "public-benefits-income-proof-pay-statement-photo.png": {
+  "synthetic-public-benefits-income-proof-pay-statement-photo.png": {
     "bdaMatchedDocumentClass": "Payslip",
     "content_type": "image/png",
     "e2e_enabled": true,
@@ -32,7 +32,7 @@
     "preclassificationCategory": "employment_wages",
     "responseCode": "000"
   },
-  "public-benefits-income-proof-pay-statement-rendered.png": {
+  "synthetic-public-benefits-income-proof-pay-statement-rendered.png": {
     "bdaMatchedDocumentClass": "Payslip",
     "content_type": "image/png",
     "e2e_enabled": true,
@@ -41,7 +41,7 @@
     "preclassificationCategory": "employment_wages",
     "responseCode": "000"
   },
-  "public-benefits-income-proof-pay-stub.jpg": {
+  "synthetic-public-benefits-income-proof-pay-stub.jpg": {
     "bdaMatchedDocumentClass": "Payslip",
     "content_type": "image/jpeg",
     "e2e_enabled": true,
@@ -50,7 +50,7 @@
     "preclassificationCategory": "employment_wages",
     "responseCode": "000"
   },
-  "public-benefits-residency-proof-utility-bill.jpg": {
+  "synthetic-public-benefits-residency-proof-utility-bill.jpg": {
     "//": [
       "Bedrock Data Automation is unable to classify this document using existing blueprints. ",
       "Additional investigation is needed to determine why. ",
@@ -65,7 +65,7 @@
     "preclassificationCategory": "recurring_bills",
     "responseCode": "002"
   },
-  "snap-income-proof-employment-wage-verification-letter-photo.png": {
+  "synthetic-snap-income-proof-employment-wage-verification-letter-photo.png": {
     "bdaMatchedDocumentClass": "Employment-Verification-Letter",
     "content_type": "image/png",
     "e2e_enabled": true,
@@ -74,7 +74,7 @@
     "preclassificationCategory": "employment_wages",
     "responseCode": "000"
   },
-  "snap-income-proof-employment-wage-verification-letter-rendered.png": {
+  "synthetic-snap-income-proof-employment-wage-verification-letter-rendered.png": {
     "bdaMatchedDocumentClass": "Employment-Verification-Letter",
     "content_type": "image/png",
     "e2e_enabled": true,
@@ -83,7 +83,7 @@
     "preclassificationCategory": "employment_wages",
     "responseCode": "000"
   },
-  "snap-income-proof-self-employment-ledger-photo.png": {
+  "synthetic-snap-income-proof-self-employment-ledger-photo.png": {
     "//": [
       "Bedrock Data Automation is unable to classify this document using existing blueprints. ",
       "Additional investigation is needed to determine why. ",
@@ -98,7 +98,7 @@
     "preclassificationCategory": "independent_earnings",
     "responseCode": "002"
   },
-  "snap-income-proof-self-employment-ledger-rendered.png": {
+  "synthetic-snap-income-proof-self-employment-ledger-rendered.png": {
     "//": [
       "Bedrock Data Automation is unable to classify this document using existing blueprints. ",
       "Additional investigation is needed to determine why. ",
@@ -113,7 +113,7 @@
     "preclassificationCategory": "independent_earnings",
     "responseCode": "002"
   },
-  "wic-adjunctive-eligibility-snap-benefits-letter.jpg": {
+  "synthetic-wic-adjunctive-eligibility-snap-benefits-letter.jpg": {
     "bdaMatchedDocumentClass": null,
     "content_type": "image/jpeg",
     "e2e_enabled": true,
@@ -122,9 +122,9 @@
     "preclassificationCategory": "government_benefits",
     "responseCode": "002"
   },
-  "wic-certification-pregnancy-verification-clinic-note.jpg": {
+  "synthetic-wic-certification-pregnancy-verification-clinic-note.jpg": {
     "//": [
-      "Bedrock Data Automation is incorrectly classifying this document as Proof-of-Loss-of-Health-Coverage. ", 
+      "Bedrock Data Automation is incorrectly classifying this document as Proof-of-Loss-of-Health-Coverage. ",
       "Additional investigation is needed to determine why. ",
       "Including in tests as-is to avoid blocking other work. ",
       "Marking e2e_enabled: true to flag for follow-up and prevent accidental regressions."
