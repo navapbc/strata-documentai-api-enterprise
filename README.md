@@ -1,23 +1,46 @@
+<p>
+  <img src="docs/documentai-api/media/Nava-Strata-Logo-V02.svg" alt="Nava Strata" width="400">
+</p>
+<p><i>Open source tools for every layer of government service delivery.</i></p>
+<p><b>Strata is a gold-standard target architecture and suite of open-source tools that gives government agencies everything they need to run a modern service.</b></p>
+
+<h4 align="center">
+  <a href="https://github.com/navapbc/strata-documentai-api-enterprise/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/license-apache_2.0-red" alt="Nava Strata is released under the Apache 2.0 license" >
+  </a>
+  <a href="https://github.com/navapbc/strata-documentai-api-enterprise/blob/main/CONTRIBUTING.md">
+    <img src="https://img.shields.io/badge/PRs-Welcome-brightgreen" alt="PRs welcome!" />
+  </a>
+  <a href="https://github.com/navapbc/strata-documentai-api-enterprise/commits/main">
+    <img src="https://img.shields.io/github/commit-activity/m/navapbc/strata-documentai-api-enterprise" alt="git commit activity" />
+  </a>
+</h4>
+
 # DocumentAI API
 
-Open source tools for document processing and intelligent data extraction.
+Open source tools for document processing and intelligent data extraction. 
 
-DocumentAI API is a serverless document processing platform that helps teams upload documents, extract structured data, manage tenants and API keys, and review results through an admin console.
+DocumentAI API is a serverless document processing platform that helps teams upload documents, extract structured data, manage tenants and API keys, and review results through an admin console for operating document extraction workflows.
 
 This repository is a complete DocumentAI API application. It includes the API, admin UI, infrastructure, documentation, and deployment scripts needed to run the platform in AWS.
+
+Unlike some other Strata templates, this is a complete application intended for use almost out of the box.
+
+See [`navapbc/strata`](https://github.com/navapbc/strata) for other template repos.
 
 > ⚠️ **Public Preview / Active Development**
 > This project is under active development. APIs, configuration, and features may change. It is not ready for production use.
 
 ## Features
 
-- API for uploading and processing document files
-- Intelligent data extraction using Amazon Bedrock Data Automation
-- Tenant-scoped API key management
+- API for uploading, identifying, and extracting data from document files
+- Serverless FastAPI application deployed on AWS Lambda
+- Document processing with Bedrock Data Automation
+- Multi-tenant API key authentication and authorization
 - Admin console for managing tenants, users, API keys, and extraction rules
-- Document viewer for reviewing processing results
-- Metrics collection and reporting pipeline
-- Terraform infrastructure for AWS deployment
+- Terraform infrastructure for the full serverless stack
+- Metrics pipeline for document processing and platform usage
+- Cognito-backed admin authentication with MFA support
 
 ## Repo structure
 ```
