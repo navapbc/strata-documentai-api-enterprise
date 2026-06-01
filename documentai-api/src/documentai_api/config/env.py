@@ -70,6 +70,7 @@ class EnvVars(StrEnum):
     ENVIRONMENT = "ENVIRONMENT"
     HOST = "HOST"
     PORT = "PORT"
+    AWS_LAMBDA_FUNCTION_NAME = "AWS_LAMBDA_FUNCTION_NAME"  # set automatically by the Lambda runtime
 
 
 class PydanticBaseEnvConfig(BaseSettings):
@@ -144,6 +145,17 @@ class AppEnvConfig(PydanticBaseEnvConfig):
     environment: str = "local"
     host: str = "127.0.0.1"
     port: int = 8000
+
+    def is_hosted_env(self) -> bool:
+        """Whether the app is running in a deployed (non-local) environment.
+
+        Detected via the Lambda runtime marker (`AWS_LAMBDA_FUNCTION_NAME`, set
+        automatically by AWS), which is true for every real deployment regardless of
+        the `ENVIRONMENT` name. The app is deployed exclusively to Lambda today; if we
+        ever host it elsewhere (ECS/EC2/etc.), extend this with that platform's signal.
+        Local dev and the test suite run outside Lambda, so they are treated as non-hosted.
+        """
+        return bool(os.environ.get(EnvVars.AWS_LAMBDA_FUNCTION_NAME))
 
     def resolve_insecure_shared_key(self) -> str:
         """Resolve the insecure shared key from SSM if param is set, else use env var."""

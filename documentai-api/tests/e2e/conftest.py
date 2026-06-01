@@ -47,7 +47,7 @@ def monkeypatch_session():
 
 @pytest.fixture(scope="session")
 def api_key(reset_env, monkeypatch_session, e2e_tenant_id):
-    # generate_api_key reads API_KEYS_TABLE_NAME from app config — must be set
+    # generate_api_key reads API_KEYS_TABLE_NAME from app config - must be set
     for k in (
         "API_KEYS_TABLE_NAME",
         "AWS_REGION",
@@ -94,7 +94,7 @@ def _wipe_e2e_tenant(tenant_id: str) -> None:
     so a partial cleanup doesn't break the test session.
     """
     if not os.environ.get("E2E_WIPE_TENANT"):
-        logger.info("e2e wipe skipped — E2E_WIPE_TENANT not set")
+        logger.info("e2e wipe skipped - E2E_WIPE_TENANT not set")
         return
 
     import boto3
@@ -110,7 +110,7 @@ def _wipe_e2e_tenant(tenant_id: str) -> None:
     input_location = cfg.documentai_input_location
 
     if not (table_name and tenant_index_name and input_location):
-        logger.warning("e2e wipe skipped — required AWS config missing")
+        logger.warning("e2e wipe skipped - required AWS config missing")
         return
 
     bucket, prefix = parse_s3_uri(input_location)
@@ -152,7 +152,7 @@ def _wipe_e2e_tenant(tenant_id: str) -> None:
 def _sweep_stale_e2e_documents(_sweep_stale_e2e_keys, e2e_tenant_id):
     """Wipe this worker's e2e tenant before the run starts.
 
-    Belt-and-suspenders — `cleanup_e2e_tenant` handles the happy path; this
+    Belt-and-suspenders - `cleanup_e2e_tenant` handles the happy path; this
     handles 'previous run crashed and left documents behind.'
     """
     _wipe_e2e_tenant(e2e_tenant_id)
@@ -163,7 +163,7 @@ def _sweep_stale_e2e_documents(_sweep_stale_e2e_keys, e2e_tenant_id):
 def cleanup_e2e_tenant(api_key, e2e_tenant_id):
     """Delete every document this worker created in its e2e tenant.
 
-    Runs after api_key teardown — depends on it so the key still exists if
+    Runs after api_key teardown - depends on it so the key still exists if
     we ever want to use the API for cleanup instead of going direct to DDB/S3.
     """
     yield
@@ -189,7 +189,7 @@ def _sweep_stale_e2e_keys():
     cutoff = (datetime.now(UTC) - timedelta(hours=1)).isoformat()
     swept = 0
 
-    # API keys table is small — full scan is fine; no GSI on api_key_name
+    # API keys table is small - full scan is fine; no GSI on api_key_name
     start_key = None
     while True:
         kwargs = {}

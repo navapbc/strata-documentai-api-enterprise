@@ -85,6 +85,25 @@ if os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
 
     LoggingContext("documentai_api")
 
+
+def _require_auth_in_hosted_envs() -> None:
+    """Refuse to start with per-key auth disabled in a hosted environment.
+
+    API_AUTH_ENABLED defaults to false for local dev, where the API falls back to a
+    single shared key. Booting a hosted deployment that way would put the entire API
+    behind one shared secret, so fail closed instead. Mangum runs with lifespan="off",
+    so a FastAPI startup event would not fire in Lambda; this runs at import time.
+    """
+    config = get_app_env_config()
+    if not config.api_auth_enabled and config.is_hosted_env():
+        raise RuntimeError(
+            f"API_AUTH_ENABLED is false in a hosted environment (ENVIRONMENT={config.environment!r}). "
+            "Per-key DynamoDB auth is required for deployed environments; set API_AUTH_ENABLED=true."
+        )
+
+
+_require_auth_in_hosted_envs()
+
 CONFIG_EXCLUDED_ROUTES = {"/", "/health", "/config", "/openapi.json", "/docs", "/redoc"}
 
 _cached_endpoints: dict[str, str] | None = None

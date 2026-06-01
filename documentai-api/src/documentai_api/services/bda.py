@@ -58,7 +58,8 @@ def get_bda_job_response(bda_invocation_arn: str) -> GetDataAutomationStatusResp
     try:
         bedrock_client = AWSClientFactory.get_bda_runtime_client()
         return bedrock_client.get_data_automation_status(invocationArn=bda_invocation_arn)
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Failed to get BDA job status for {bda_invocation_arn}: {e}")
         return None
 
 

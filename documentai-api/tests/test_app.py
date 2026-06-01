@@ -1,8 +1,12 @@
 """Tests for app.py (public endpoints and shared utilities)."""
 
+from types import SimpleNamespace
+from unittest.mock import patch
+
 import pytest
 from fastapi import HTTPException
 
+from documentai_api import app as app_module
 from documentai_api.utils.jobs import JobStatus, get_job_status, poll_for_completion
 from documentai_api.utils.uploads import upload_document_for_processing
 
@@ -236,3 +240,40 @@ def test_cors_expose_headers(api_client):
 
     assert response.status_code == 200
     assert "X-Trace-ID" in response.headers.get("access-control-expose-headers", "")
+
+
+##############################################################################
+# _require_auth_in_hosted_envs (insecure-by-default startup guard)
+##############################################################################
+
+
+def _patch_auth_config(*, enabled: bool, hosted: bool):
+    """Patch get_app_env_config with a fake whose hosted-ness is controllable.
+
+    The env-name / Lambda detection itself is covered by AppEnvConfig.is_hosted_env
+    tests; here we only exercise the guard's branching.
+    """
+    cfg = SimpleNamespace(
+        api_auth_enabled=enabled,
+        environment="prod" if hosted else "local",
+        is_hosted_env=lambda: hosted,
+    )
+    return patch.object(app_module, "get_app_env_config", return_value=cfg)
+
+
+def test_require_auth_allows_non_hosted_without_auth():
+    with _patch_auth_config(enabled=False, hosted=False):
+        app_module._require_auth_in_hosted_envs()  # should not raise
+
+
+def test_require_auth_rejects_hosted_without_auth():
+    with (
+        _patch_auth_config(enabled=False, hosted=True),
+        pytest.raises(RuntimeError, match="API_AUTH_ENABLED is false"),
+    ):
+        app_module._require_auth_in_hosted_envs()
+
+
+def test_require_auth_allows_hosted_when_auth_enabled():
+    with _patch_auth_config(enabled=True, hosted=True):
+        app_module._require_auth_in_hosted_envs()  # should not raise

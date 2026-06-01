@@ -1,6 +1,8 @@
 """Tests for utils/auth.py."""
 
 import hashlib
+import threading
+import time
 from unittest.mock import patch
 
 import pytest
@@ -12,12 +14,28 @@ from documentai_api.utils import auth as auth_util
 from documentai_api.utils.cache import get_cache
 
 
+def _drain_lastused_threads(timeout: float = 2.0) -> None:
+    """Join any in-flight lastUsed updater threads.
+
+    verify_api_key fires `_update_last_used` in daemon threads; under randomized test
+    ordering one spawned by an earlier test can still be running here and mutate the
+    shared `_last_used_written_at` / config cache mid-assertion. Draining them first
+    makes these tests deterministic.
+    """
+    deadline = time.monotonic() + timeout
+    for thread in threading.enumerate():
+        if thread.name == auth_util._LAST_USED_THREAD_NAME and thread.is_alive():
+            thread.join(timeout=max(0.0, deadline - time.monotonic()))
+
+
 @pytest.fixture(autouse=True)
 def clear_cache():
     """Clear the in-memory auth cache and lastUsed debounce state between tests."""
+    _drain_lastused_threads()
     get_cache().clear()
     auth_util._last_used_written_at.clear()
     yield
+    _drain_lastused_threads()
     get_cache().clear()
     auth_util._last_used_written_at.clear()
 
@@ -282,18 +300,10 @@ def test_ddb_verify_uses_cache_on_second_call(api_keys_table):
 
 
 @pytest.fixture
-def pinned_api_keys_config(api_keys_table):
-    """Pin get_aws_config for _update_last_used tests.
-
-    _update_last_used reads get_aws_config().api_keys_table_name and bails out
-    (swallowing the error) if it's empty. get_aws_config is lru-cached and shared
-    process-wide, and the production code spawns daemon threads that call it; a
-    leaked thread from a prior test can repopulate the cache with a config missing
-    api_keys_table_name during this test's fixture setup, making update_item never
-    get called. Pinning the config makes these tests immune to that race.
-    """
+def pinned_api_keys_config():
+    """Pin get_aws_config for _update_last_used tests."""
     with patch("documentai_api.utils.auth.get_aws_config") as mock_config:
-        mock_config.return_value.api_keys_table_name = api_keys_table.name
+        mock_config.return_value.api_keys_table_name = "api-keys"
         yield
 
 
@@ -325,6 +335,18 @@ def test_update_last_used_writes_to_ddb(pinned_api_keys_config):
 def test_update_last_used_silently_ignores_errors(pinned_api_keys_config):
     with patch("documentai_api.services.ddb.update_item", side_effect=Exception("DDB error")):
         auth_util._update_last_used("test-hash")  # should not raise
+
+
+def test_update_last_used_dict_is_bounded(pinned_api_keys_config, monkeypatch):
+    """The lastUsed debounce map must not grow without bound (one entry per key)."""
+    monkeypatch.setattr(auth_util, "_LAST_USED_MAX_ENTRIES", 100)
+    with patch("documentai_api.services.ddb.update_item"):
+        for i in range(1000):
+            auth_util._update_last_used(f"hash-{i}")
+    assert len(auth_util._last_used_written_at) == 100
+    # The most recently written hashes are retained; the oldest are evicted.
+    assert "hash-999" in auth_util._last_used_written_at
+    assert "hash-0" not in auth_util._last_used_written_at
 
 
 ##############################################################################

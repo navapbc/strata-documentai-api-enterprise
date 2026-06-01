@@ -4,6 +4,7 @@ import hashlib
 import secrets
 import threading
 import time
+from collections import OrderedDict
 from datetime import UTC, datetime
 from typing import Annotated, Any
 
@@ -32,9 +33,13 @@ class UserContext(BaseModel):
 
 
 # tracks when lastUsed was last written per key hash: {key_hash: monotonic_time}
-_last_used_written_at: dict[str, float] = {}
+# Ordered + capped so it acts as an LRU: without a bound this would grow by one
+# entry per unique key hash for the life of the process (a slow memory leak).
+_last_used_written_at: "OrderedDict[str, float]" = OrderedDict()
 _last_used_lock = threading.Lock()
 _LAST_USED_DEBOUNCE_SECONDS = 60  # write at most once per minute per key
+_LAST_USED_MAX_ENTRIES = 50_000  # cap on tracked key hashes; least-recent evicted first
+_LAST_USED_THREAD_NAME = "auth-lastused"  # named so tests can drain leaked update threads
 
 
 def _hash_key(api_key: str) -> str:
@@ -105,6 +110,10 @@ def _update_last_used(key_hash: str) -> None:
         if now - last_written < _LAST_USED_DEBOUNCE_SECONDS:
             return
         _last_used_written_at[key_hash] = now
+        _last_used_written_at.move_to_end(key_hash)
+        # Evict the least-recently-written entries once over the cap.
+        while len(_last_used_written_at) > _LAST_USED_MAX_ENTRIES:
+            _last_used_written_at.popitem(last=False)
 
     try:
         from documentai_api.services import ddb as ddb_service
@@ -162,7 +171,9 @@ def _verify_with_ddb(api_key: str) -> None:
         )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
 
-    threading.Thread(target=_update_last_used, args=(key_hash,), daemon=True).start()
+    threading.Thread(
+        target=_update_last_used, args=(key_hash,), name=_LAST_USED_THREAD_NAME, daemon=True
+    ).start()
 
 
 def _verify_with_insecure_shared_key(api_key: str) -> None:
@@ -418,7 +429,9 @@ def _get_user_context_from_api_key_from_ddb(api_key: str) -> UserContext:
         logger.error(f"API key missing tenantId for key: {record.get(ApiKeyRecord.API_KEY_NAME)}")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
 
-    threading.Thread(target=_update_last_used, args=(key_hash,), daemon=True).start()
+    threading.Thread(
+        target=_update_last_used, args=(key_hash,), name=_LAST_USED_THREAD_NAME, daemon=True
+    ).start()
 
     return UserContext(
         tenant_id=tenant_id,
@@ -452,8 +465,10 @@ async def get_user_context_with_fallback(
             tenant_id = get_tenant_id(claims) or "__admin__"
             api_key_name = claims.get("email") or claims.get("sub", "unknown")
             return UserContext(tenant_id=tenant_id, api_key_name=api_key_name, auth_method="jwt")
-        except Exception:
-            pass
+        except Exception as e:
+            # debug, not warning: this fires on every expired/garbage bearer token
+            # (routine, caller-controlled), so warning-level would be noise + a log-spam vector.
+            logger.debug(f"Bearer token verification failed: {e}")
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
