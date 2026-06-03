@@ -24,12 +24,10 @@ DocumentAI API is a serverless document processing platform that helps teams upl
 
 This repository is a complete DocumentAI API application. It includes the API, admin UI, infrastructure, documentation, and deployment scripts needed to run the platform in AWS.
 
-Unlike some other Strata templates, this is a complete application intended for use almost out of the box.
+For Strata template applications, see [`navapbc/strata`](https://github.com/navapbc/strata).
 
-See [`navapbc/strata`](https://github.com/navapbc/strata) for other template repos.
-
-> ⚠️ **Public Preview / Active Development**
-> This project is under active development. APIs, configuration, and features may change. It is not ready for production use.
+> ⚠️ **Public Preview / Active Development (June 2026)**
+> This project is under active development, but is being designed for out-of-the-box use. APIs, configuration, and features may change.
 
 ## Features
 
@@ -42,7 +40,8 @@ See [`navapbc/strata`](https://github.com/navapbc/strata) for other template rep
 - Metrics pipeline for document processing and platform usage
 - Cognito-backed admin authentication with MFA support
 
-## Repo structure
+## Getting Started
+### Repo structure
 ```
 ├── documentai-api/     # Python API using FastAPI on Lambda
 ├── admin-ui/           # Admin console (vanilla JS SPA)
@@ -52,7 +51,7 @@ See [`navapbc/strata`](https://github.com/navapbc/strata) for other template rep
 └── Makefile            # Commands for setup, deploy, and teardown
 ```
 
-## Requirements
+### Requirements
 
 Before getting started, install and configure:
 
@@ -64,7 +63,7 @@ Before getting started, install and configure:
 
 You will also need an AWS profile with permission to create the required infrastructure.
 
-## Setup
+### Setup
 
 To set up the application for the first time:
 
@@ -91,9 +90,9 @@ make deploy
 
 The deploy command builds the API, applies the Terraform infrastructure, builds the admin UI, uploads it to S3, and updates CloudFront. The admin UI configuration is generated automatically during deployment.
 
-## Local development
+### Local development
 
-### API
+#### API
 
 To run the API locally with Docker:
 
@@ -114,7 +113,7 @@ export RUN_CMD_APPROACH=local
 make start-local
 ```
 
-### Admin UI
+#### Admin UI
 
 ```bash
 cd admin-ui
@@ -125,7 +124,7 @@ npm run dev
 
 The admin UI will run at `localhost:3000`. If you have not deployed the infrastructure yet, update `admin-ui/config.json` with the API endpoint and Cognito values you want to use.
 
-## Deploy
+### Deploy
 
 From the repository root:
 
@@ -149,7 +148,7 @@ make deploy ENVIRONMENT=dev AWS_PROFILE=my-profile
 
 Only the `dev` environment exists today. To add another environment, copy `infra/environments/dev/` and update its `terraform.tfvars`.
 
-## Teardown
+### Teardown
 
 To remove the deployed infrastructure:
 
@@ -225,13 +224,10 @@ The diagram source lives in [`architecture.mmd`](docs/documentai-api/diagrams/ar
 
 ## Contributing
 
-PRs are welcome. This project uses:
-
-- Conventional commits
-- Squash merges to `main`
-- Ruff, mypy, and pytest for Python (moto for AWS mocking, flat test functions, monkeypatch over patch)
-- ESLint, Prettier, Vitest, and Playwright for JavaScript
+For more information about our contribution guidelines, see
+[CONTRIBUTING.md](CONTRIBUTING.md). All contributors are expected to follow our
+[Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## License
 
-MIT
+This project is licensed under the Apache 2.0 License. See the [LICENSE](LICENSE) file for details.
