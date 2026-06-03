@@ -1,0 +1,34 @@
+{
+  "description": "An onboarding or tax form completed by a newly hired employee, establishing their employment status, starting details, and withholding selections.",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "class": "New-Hire-Form",
+  "definitions": {},
+  "properties": {
+    "employee_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The full name of the newly hired employee."
+    },
+    "employer_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The official name of the hiring company or organization."
+    },
+    "hire_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The employee's official first day of work or effective hire date."
+    },
+    "job_title": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The position, role, or job title assigned to the new hire."
+    },
+    "filing_status": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The tax withholding filing status chosen by the employee, such as Single, Married filing jointly, or Head of household."
+    }
+  }
+}

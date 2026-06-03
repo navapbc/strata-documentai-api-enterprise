@@ -1,0 +1,39 @@
+{
+  "description": "A financial statement detailing the usage, sales, and corresponding royalty earnings generated from intellectual property or resource rights.",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "class": "Royalty-Statement",
+  "definitions": {},
+  "properties": {
+    "payee_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The full name of the individual or entity earning and receiving the royalty payments."
+    },
+    "payor_organization": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The name of the publisher, studio, distributor, or corporation paying out the royalties."
+    },
+    "property_or_work_title": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The name of the specific book, song, album, patent, or asset generating the royalty earnings."
+    },
+    "statement_period": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The specific time frame or date range covered by the royalty calculations."
+    },
+    "gross_royalty_earnings": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The total gross royalty earnings accrued during the period before any production costs, splits, or taxes are deducted."
+    },
+    "net_payment_amount": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The final net dollar amount being distributed to the payee for the statement period."
+    }
+  }
+}

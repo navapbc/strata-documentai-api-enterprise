@@ -1,0 +1,39 @@
+{
+  "description": "A financial statement outlining the performance, contract value, and distribution details of an annuity investment account.",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "class": "Annuity-Statement",
+  "definitions": {},
+  "properties": {
+    "contract_holder": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The full name of the primary owner or annuitant listed on the contract."
+    },
+    "contract_number": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The unique contract, policy, or account number identifying the annuity."
+    },
+    "annuity_provider": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The name of the insurance company or financial institution issuing the annuity statement."
+    },
+    "statement_period": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The date range covered by the statement, or the specific statement closing date."
+    },
+    "current_contract_value": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The total ending monetary value of the annuity contract for the current period, often labeled Ending Value or Account Balance."
+    },
+    "distribution_amount": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The dollar amount of any systematic or scheduled payout distributed during the period, if applicable."
+    }
+  }
+}

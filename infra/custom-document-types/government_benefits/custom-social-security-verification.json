@@ -1,0 +1,34 @@
+{
+  "description": "An official benefit verification letter issued by the Social Security Administration detailing an individual's monthly benefit type and payment amounts.",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "class": "Social-Security-Verification",
+  "definitions": {},
+  "properties": {
+    "beneficiary_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The full name of the individual receiving the Social Security benefits."
+    },
+    "ssn_last_four": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The last four digits of the beneficiary's Social Security Number, if visible on the document."
+    },
+    "monthly_benefit_amount": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The current gross monthly dollar amount paid to the individual before any deductions (like Medicare premiums)."
+    },
+    "benefit_type": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The specific type of benefit being received, such as Retirement, Disability (SSDI), or Supplemental Security Income (SSI)."
+    },
+    "effective_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The date the current payment amount went into effect, typically found near the top or within the payment breakdown text."
+    }
+  }
+}

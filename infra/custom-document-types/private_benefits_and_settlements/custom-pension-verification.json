@@ -1,0 +1,34 @@
+{
+  "description": "An official letter or statement verifying an individual's recurring pension distribution details, usually issued by an employer or retirement board.",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "class": "Pension-Verification",
+  "definitions": {},
+  "properties": {
+    "pensioner_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The full name of the retired employee receiving the pension benefit."
+    },
+    "issuing_organization": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The name of the company, union, or government entity paying out the pension."
+    },
+    "gross_payout_amount": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The total gross dollar amount of the pension benefit before taxes or deductions are removed."
+    },
+    "payout_frequency": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The recurrence interval of the pension payment, typically Monthly."
+    },
+    "benefit_start_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The date the pension payments officially commenced or the date of the most recent cost-of-living adjustment."
+    }
+  }
+}

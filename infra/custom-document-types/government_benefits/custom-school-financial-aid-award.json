@@ -1,0 +1,44 @@
+{
+  "description": "An official letter from an educational institution detailing the financial aid package, including grants, scholarships, and loans offered to a student.",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "class": "Financial-Aid-Award",
+  "definitions": {},
+  "properties": {
+    "student_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The full name of the student to whom the financial aid is being awarded."
+    },
+    "institution_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The name of the college, university, or school issuing the financial aid award package."
+    },
+    "academic_year": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The specific academic school year the aid applies to, such as 2026-2027."
+    },
+    "total_cost_of_attendance": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The estimated gross cost to attend the school for the year, including tuition, fees, and housing."
+    },
+    "total_grants_and_scholarships": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The total sum of gift aid that does not need to be repaid, often aggregated from Pell Grants, institutional scholarships, and merit awards."
+    },
+    "total_student_loans_offered": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The total sum of federal or institutional loans offered to the student that require repayment."
+    },
+    "net_price": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The remaining balance the student or family is responsible for paying after grants and scholarships are deducted from the cost of attendance."
+    }
+  }
+}

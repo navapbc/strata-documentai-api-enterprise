@@ -86,13 +86,16 @@ variable "bda_projects" {
     independent_earnings = {
       managed_blueprint_arns = [
         "arn:aws:bedrock:us-east-1:aws:blueprint/bedrock-data-automation-public-invoice",
+        "arn:aws:bedrock:us-east-1:aws:blueprint/bedrock-data-automation-public-form-1040-schedule-c",
       ]
     }
     government_benefits = {
       managed_blueprint_arns = []
     }
     private_benefits_and_settlements = {
-      managed_blueprint_arns = []
+      managed_blueprint_arns = [
+        "arn:aws:bedrock:us-east-1:aws:blueprint/bedrock-data-automation-public-workers-compensation-form",
+      ]
     }
     court_ordered_benefits = {
       managed_blueprint_arns = []
@@ -143,6 +146,8 @@ variable "bda_projects" {
         "arn:aws:bedrock:us-east-1:aws:blueprint/bedrock-data-automation-public-us-driver-license",
         "arn:aws:bedrock:us-east-1:aws:blueprint/bedrock-data-automation-public-us-passport",
         "arn:aws:bedrock:us-east-1:aws:blueprint/bedrock-data-automation-public-birth-certificate",
+        "arn:aws:bedrock:us-east-1:aws:blueprint/bedrock-data-automation-public-workers-compensation-form",
+        "arn:aws:bedrock:us-east-1:aws:blueprint/bedrock-data-automation-public-form-1040-schedule-c",
       ]
     }
   }

@@ -1,0 +1,39 @@
+{
+  "description": "A legal document or court order detailing the financial terms, frequency, and duration of spousal support or alimony payments.",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "class": "Alimony-Decree",
+  "definitions": {},
+  "properties": {
+    "issuing_court": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The name of the court, county, or state jurisdiction that issued the support decree."
+    },
+    "payor_spouse": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The full name of the spouse ordered to make the maintenance or alimony payments."
+    },
+    "payee_spouse": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The full name of the spouse receiving the maintenance or alimony payments."
+    },
+    "alimony_amount": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The recurring dollar amount ordered for spousal support."
+    },
+    "payment_frequency": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The recurring schedule of the payments, usually Monthly or Bi-Weekly."
+    },
+    "termination_condition": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The conditions under which alimony ends, such as a specific end date, remarriage of the recipient, or death."
+    }
+  }
+}

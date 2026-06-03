@@ -1,0 +1,34 @@
+{
+  "description": "An official summary or award letter issued by the Department of Veterans Affairs verifying a veteran's benefit type, disability rating, and monthly payment details.",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "class": "VA-Benefit-Letter",
+  "definitions": {},
+  "properties": {
+    "veteran_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The full name of the veteran receiving the benefits."
+    },
+    "va_file_number": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The unique VA file number or service identification number associated with the claim."
+    },
+    "monthly_award_amount": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The total recurring monthly dollar amount paid to the veteran by the VA."
+    },
+    "combined_evaluation_rating": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The veteran's total combined service-connected disability rating, typically expressed as a percentage (e.g., 70%, 100%)."
+    },
+    "effective_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The date the current monthly payment amount or disability rating went into effect."
+    }
+  }
+}

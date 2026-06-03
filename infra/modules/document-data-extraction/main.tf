@@ -77,10 +77,6 @@ resource "awscc_bedrock_data_automation_project" "this" {
   custom_output_configuration = length(local.all_blueprints) > 0 ? {
     blueprints = local.all_blueprints
   } : null
-
-  lifecycle {
-    ignore_changes = [custom_output_configuration.blueprints]
-  }
 }
 
 resource "awscc_bedrock_blueprint" "this" {

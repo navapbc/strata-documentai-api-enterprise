@@ -1,0 +1,39 @@
+{
+  "description": "An informal letter, signed statement, or note from a household member or contributor verifying that they provide financial assistance to cover household expenses.",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "class": "Household-Contribution-Statement",
+  "definitions": {},
+  "properties": {
+    "contributor_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The full name of the person who is contributing money or paying towards the household expenses."
+    },
+    "recipient_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The full name of the person receiving the financial help or the primary householder named in the letter."
+    },
+    "contribution_amount": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The dollar amount of financial assistance or expense coverage specified in the statement."
+    },
+    "contribution_frequency": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "How often the money is contributed, such as Monthly, Weekly, or One-time, as described in the text."
+    },
+    "expense_type": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The specific expenses the money is intended for, if mentioned (e.g., Rent, Utilities, Groceries, or General support)."
+    },
+    "statement_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The date the letter or note was written or signed by the contributor."
+    }
+  }
+}

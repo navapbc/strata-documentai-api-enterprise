@@ -1,0 +1,39 @@
+{
+  "description": "A legal order, decree, or official ledger establishing or tracking monthly child support financial obligations.",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "class": "Child-Support-Document",
+  "definitions": {},
+  "properties": {
+    "case_number": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The court case number or state registry identification number associated with the child support file."
+    },
+    "obligor_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The full name of the parent legally obligated to pay the child support. May be labeled as Payor or Defendant."
+    },
+    "obligee_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The full name of the parent or guardian receiving the child support. May be labeled as Payee, Recipient, or Plaintiff."
+    },
+    "payment_frequency": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "How often payments are due, such as Monthly, Semi-Monthly, or Weekly."
+    },
+    "base_support_amount": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The recurring base dollar amount ordered for child support per payment cycle, excluding arrears or medical add-ons."
+    },
+    "effective_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The date on which the support obligation begins, or the date the current ledger history starts."
+    }
+  }
+}

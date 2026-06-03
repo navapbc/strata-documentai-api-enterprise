@@ -1,0 +1,44 @@
+{
+  "description": "A formal piece of correspondence or notice sent by an insurance provider regarding policy changes, claim updates, or billing notifications.",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "class": "Insurance-Company-Letter",
+  "definitions": {},
+  "properties": {
+    "insurance_provider": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The official name of the insurance company or provider issuing the letter."
+    },
+    "recipient_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The full name of the policyholder, claimant, or individual to whom the letter is addressed."
+    },
+    "letter_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The date the letter or notice was officially issued."
+    },
+    "policy_number": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The insurance policy or member identification number referenced in the text."
+    },
+    "claim_number": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The specific claim reference number mentioned, if the letter is regarding an ongoing or closed insurance claim."
+    },
+    "subject_line": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The title, subject line, or main heading summarizing the purpose of the letter (e.g., Notice of Cancellation, Claim Update)."
+    },
+    "action_required_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Any specific deadline or date by which the recipient must respond or take action, if mentioned in the text."
+    }
+  }
+}
