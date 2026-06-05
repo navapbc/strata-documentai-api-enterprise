@@ -16,12 +16,12 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",
-    "esbuild": "^0.21.0",
-    "eslint": "^10.4.0",
+    "esbuild": "^0.28.0",
+    "eslint": "^10.4.1",
     "eslint-plugin-no-unsanitized": "^4.1.5",
     "jsdom": "^29.1.1",
     "prettier": "^3.8.3",
-    "vitest": "^4.1.7"
+    "vitest": "^4.1.8"
   },
   "dependencies": {
     "qrcode": "^1.5.4"
