@@ -2,12 +2,9 @@
 
 import pytest
 
-from documentai_api.config.constants import ConfigDefaults, ProcessStatus
+from documentai_api.config.constants import ProcessStatus
 from documentai_api.jobs.document_processor.main import (
-    convert_s3_object_to_grayscale,
-    convert_to_grayscale,
     invoke_bda,
-    is_file_too_large_for_bda,
     main,
 )
 from documentai_api.schemas.document_metadata import DocumentMetadata
@@ -45,6 +42,18 @@ def mock_invoke(mocker):
     return mocker.patch("documentai_api.jobs.document_processor.main.invoke_bda")
 
 
+@pytest.fixture(autouse=True)
+def mock_detect_bbox(mocker):
+    """Patch detection to a no-op so the crop step in main() never reaches Bedrock.
+
+    Cropping lives in utils.image_optimization; returning None there makes
+    crop_image_to_document_roi a no-op during these flow tests.
+    """
+    return mocker.patch(
+        "documentai_api.utils.image_optimization.detect_document_bbox", return_value=None
+    )
+
+
 @pytest.fixture
 def input_image(s3_bucket):
     return s3_bucket.put_object(
@@ -73,120 +82,6 @@ def input_pdf(s3_bucket):
             "original-file-name": "original.pdf",
         },
     )
-
-
-@pytest.mark.parametrize(
-    ("content_type", "file_size", "expected"),
-    [
-        ("image/jpeg", ConfigDefaults.BDA_MAX_IMAGE_SIZE_BYTES, False),
-        ("image/jpeg", int(ConfigDefaults.BDA_MAX_IMAGE_SIZE_BYTES) + 1, True),
-        ("image/png", ConfigDefaults.BDA_MAX_IMAGE_SIZE_BYTES, False),
-        ("image/png", int(ConfigDefaults.BDA_MAX_IMAGE_SIZE_BYTES) + 1, True),
-        ("application/pdf", ConfigDefaults.BDA_MAX_DOCUMENT_FILE_SIZE_BYTES, False),
-        ("application/pdf", int(ConfigDefaults.BDA_MAX_DOCUMENT_FILE_SIZE_BYTES) + 1, True),
-        ("image/tiff", ConfigDefaults.BDA_MAX_DOCUMENT_FILE_SIZE_BYTES, False),
-        ("image/tiff", int(ConfigDefaults.BDA_MAX_DOCUMENT_FILE_SIZE_BYTES) + 1, True),
-        ("unknown/type", int(ConfigDefaults.BDA_MAX_IMAGE_SIZE_BYTES) + 1, True),
-    ],
-)
-def test_is_file_too_large_for_bda(content_type, file_size, expected):
-    """Test file size validation for BDA limits."""
-    result = is_file_too_large_for_bda(content_type, file_size)
-    assert result == expected
-
-
-def test_convert_to_grayscale_non_image():
-    """Test that non-image files are returned unchanged."""
-    file_bytes = b"pdf content"
-    result_bytes, result_type = convert_to_grayscale("test.pdf", file_bytes, "application/pdf")
-
-    assert result_bytes == file_bytes
-    assert result_type == "application/pdf"
-
-
-def test_convert_to_grayscale_invalid_image():
-    """Test grayscale conversion with invalid image data."""
-    file_bytes = b"not an image"
-    result_bytes, result_type = convert_to_grayscale("test.jpg", file_bytes, "image/jpeg")
-
-    assert result_bytes == file_bytes
-    assert result_type == "image/jpeg"
-
-
-def test_convert_to_grayscale_small_image():
-    """Test grayscale conversion with small valid image."""
-    import io
-
-    from PIL import Image
-
-    # Create a small test image
-    img = Image.new("RGB", (10, 10), color="red")
-    buf = io.BytesIO()
-    img.save(buf, format="JPEG")
-
-    result_bytes, result_type = convert_to_grayscale("test.jpg", buf.getvalue(), "image/jpeg")
-
-    assert result_type == "image/jpeg"
-    assert len(result_bytes) > 0
-
-
-def test_convert_to_grayscale_large_image_converts_to_pdf():
-    """Test large image converts to PDF."""
-    import io
-
-    from PIL import Image
-
-    # Create a large image that exceeds BDA limit after grayscale
-    img = Image.new("RGB", (5000, 5000), color="red")
-    buf = io.BytesIO()
-    img.save(buf, format="JPEG")
-
-    _, result_type = convert_to_grayscale("test.jpg", buf.getvalue(), "image/jpeg")
-
-    # May or may not convert to PDF depending on compression
-    assert result_type in ["image/jpeg", "application/pdf"]
-
-
-def test_convert_s3_object_to_grayscale_success(s3_bucket, mocker):
-    """Test successful S3 object grayscale conversion."""
-    s3_bucket.put_object(Key="test.jpg", Body=b"image data", ContentType="image/jpeg")
-
-    mock_convert = mocker.patch("documentai_api.jobs.document_processor.main.convert_to_grayscale")
-    mock_convert.return_value = (b"grayscale data", "image/jpeg")
-
-    result = convert_s3_object_to_grayscale(s3_bucket.name, "test.jpg")
-
-    current_object = s3_bucket.Object("test.jpg")
-
-    assert result is True
-    mock_convert.assert_called_once_with("test.jpg", b"image data", "image/jpeg")
-
-    assert current_object.content_type == "image/jpeg"
-    assert current_object.get()["Body"].read() == b"grayscale data"
-
-
-def test_convert_s3_object_to_grayscale_file_too_large(s3_bucket, mocker):
-    """Test S3 conversion returns False when file too large."""
-    s3_bucket.put_object(Key="test.jpg", Body=b"image data", ContentType="image/jpeg")
-
-    large_bytes = b"x" * (ConfigDefaults.BDA_MAX_IMAGE_SIZE_BYTES + 1)
-    mock_convert = mocker.patch("documentai_api.jobs.document_processor.main.convert_to_grayscale")
-    mock_convert.return_value = (large_bytes, "image/jpeg")
-
-    result = convert_s3_object_to_grayscale(s3_bucket.name, "test.jpg")
-
-    assert result is False
-
-    # but file is still updated in S3
-    current_object = s3_bucket.Object("test.jpg")
-    assert current_object.get()["Body"].read() == large_bytes
-
-
-def test_convert_s3_object_to_grayscale_error(s3_bucket):
-    """Test S3 grayscale conversion handles errors gracefully."""
-    result = convert_s3_object_to_grayscale(s3_bucket.name, "file_that_does_not_exist.jpg")
-
-    assert result is False
 
 
 def test_invoke_bda_success(input_pdf, mocker):

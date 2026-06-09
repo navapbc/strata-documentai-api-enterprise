@@ -20,6 +20,7 @@ class EnvVars(StrEnum):
     MAX_BDA_INVOKE_RETRY_ATTEMPTS = "MAX_BDA_INVOKE_RETRY_ATTEMPTS"
     BEDROCK_CLASSIFICATION_MODEL_ID_PARAM = "BEDROCK_CLASSIFICATION_MODEL_ID_PARAM"
     BEDROCK_CLASSIFICATION_PROMPT_PARAM = "BEDROCK_CLASSIFICATION_PROMPT_PARAM"
+    BEDROCK_BOUNDING_BOX_MODEL_ID_PARAM = "BEDROCK_BOUNDING_BOX_MODEL_ID_PARAM"
 
     # === Document AI core ===
     DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME = "DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME"
@@ -85,6 +86,10 @@ class AWSEnvConfig(PydanticBaseEnvConfig):
     max_bda_invoke_retry_attempts: int = 3
     bedrock_classification_model_id_param: str | None = None
     bedrock_classification_prompt_param: str | None = None
+    bedrock_bounding_box_model_id_param: str | None = None
+
+    # Image pipeline
+    document_crop_param: str | None = None
 
     # BDA project ARNs (per preclassification category)
     preclassification_routing_param: str | None = None

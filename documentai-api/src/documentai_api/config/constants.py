@@ -1,3 +1,4 @@
+import re
 from enum import StrEnum
 from typing import ClassVar
 
@@ -117,6 +118,11 @@ class ConfigDefaults:
     BLURRY_DOCUMENT_THRESHOLD = 25
     BDA_MAX_IMAGE_SIZE_BYTES = 5_242_880
     BDA_MAX_DOCUMENT_FILE_SIZE_BYTES = 524_288_000
+    # Bedrock Converse per-image limits (used by the vision bbox-detection call).
+    # The real API ceiling is 3.75MB / 8000px per image - stricter than the 5MB BDA
+    # limit above - so oversized images are downscaled in-memory just for detection.
+    BEDROCK_CONVERSE_MAX_IMAGE_BYTES = 3_750_000
+    BEDROCK_CONVERSE_MAX_IMAGE_DIMENSION_PX = 8000
     DDB_EMIT_CUSTOM_CLOUDWATCH_METRICS = False
     EMPTY_FIELD_PERCENTAGE_THRESHOLD = 50
     MAX_PAGES_PER_DOCUMENT = 5
@@ -335,6 +341,34 @@ class PreClassificationDefaults:
             "If is_blurry is true, set confidence below 0.5 and use 'system_reject'.",
             "document_count: how many separate documents are visible?",
         ]
+    )
+
+
+class PreprocessingBoundingBoxDefault:
+    """Defaults for document bounding-box detection used to crop images before BDA."""
+
+    # Vision model used for ROI detection. Kept separate from the preclassification
+    # model so the two can be tuned/swapped independently (they happen to share a
+    # default today, but bbox detection and classification are different tasks).
+    MODEL_ID = "us.amazon.nova-lite-v1:0"
+
+    PROMPT = "\n".join(
+        [
+            "Locate the single primary document, ID card, or form in this image.",
+            "Return ONLY its bounding box as JSON, no other text:",
+            '{"bounding_box": [x1, y1, x2, y2]}',
+            "Coordinates use a 0-1000 scale (x1,y1 = top-left, x2,y2 = bottom-right).",
+            "Draw the box tightly around the document, excluding background, hands, and surfaces.",
+            'If no document is clearly present, respond {"bounding_box": null}.',
+        ]
+    )
+
+    # tolerant of the malformed JSON vision models routinely emit (stray brackets,
+    # missing braces): pulls the four bounding_box numbers rather than json.loads.
+    ARRAY_RE = re.compile(
+        r"bounding_box\"?\s*:\s*\[\s*"
+        r"(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*"
+        r"(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)"
     )
 
 

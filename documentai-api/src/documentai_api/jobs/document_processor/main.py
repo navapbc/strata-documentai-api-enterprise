@@ -16,8 +16,6 @@ from tenacity import (
 
 import documentai_api.logging
 from documentai_api.config.constants import (
-    ConfigDefaults,
-    FileValidation,
     ProcessStatus,
     S3MetadataKeys,
 )
@@ -34,82 +32,14 @@ from documentai_api.utils.ddb import (
     upsert_initial_ddb_record,
 )
 from documentai_api.utils.dto import ClassificationData
+from documentai_api.utils.image_optimization import (
+    convert_s3_object_to_grayscale,
+    crop_image_to_document_roi,
+)
 from documentai_api.utils.s3 import parse_s3_uri
 
 logger = documentai_api.logging.get_logger(__name__)
 app = typer.Typer()
-
-
-def is_file_too_large_for_bda(content_type: str, file_size_bytes: int) -> bool:
-    """Check if file exceeds BDA size limits based on content type."""
-    if content_type in ["image/jpeg", "image/png"]:
-        return int(file_size_bytes) > int(ConfigDefaults.BDA_MAX_IMAGE_SIZE_BYTES)
-    elif content_type in ["application/pdf", "image/tiff"]:
-        return int(file_size_bytes) > int(ConfigDefaults.BDA_MAX_DOCUMENT_FILE_SIZE_BYTES)
-    else:
-        # unknown file type, assume document limit
-        return int(file_size_bytes) > int(ConfigDefaults.BDA_MAX_IMAGE_SIZE_BYTES)
-
-
-def convert_to_grayscale(
-    object_key: str, file_bytes: bytes, content_type: str
-) -> tuple[bytes, str]:
-    """Convert image to grayscale, and to PDF if over 5MB."""
-    if content_type not in FileValidation.GRAYSCALE_CONVERTIBLE:
-        return file_bytes, content_type
-
-    try:
-        import io
-
-        from PIL import Image
-
-        img = Image.open(io.BytesIO(file_bytes))
-        gray = img.convert("L")
-
-        # try jpeg first
-        jpeg_output = io.BytesIO()
-        gray.save(jpeg_output, format="JPEG", quality=100)
-        jpeg_bytes = jpeg_output.getvalue()
-
-        if len(jpeg_bytes) > int(ConfigDefaults.BDA_MAX_IMAGE_SIZE_BYTES):
-            logger.info(f"{object_key} too large for BDA, converting to PDF")
-            pdf_output = io.BytesIO()
-            gray.save(pdf_output, format="PDF")
-            return pdf_output.getvalue(), "application/pdf"
-        else:
-            return jpeg_bytes, "image/jpeg"
-
-    except Exception as e:
-        logger.error(f"Grayscale conversion failed: {e}")
-        return file_bytes, content_type
-
-
-def convert_s3_object_to_grayscale(bucket_name: str, object_key: str) -> bool:
-    """Convert S3 image to grayscale in-place."""
-    try:
-        # download file
-        response = s3_service.get_object(bucket_name, object_key)
-        file_bytes = response["Body"].read()
-        content_type = response.get("ContentType", "application/octet-stream")
-
-        # convert to grayscale
-        grayscale_bytes, content_type = convert_to_grayscale(object_key, file_bytes, content_type)
-
-        # upload back (overwrite)
-        s3_service.put_object(bucket_name, object_key, grayscale_bytes, content_type)
-
-        # Check final size
-        final_size = len(grayscale_bytes)
-        if is_file_too_large_for_bda(content_type, final_size):
-            logger.error(f"File still too large after conversion: {final_size} bytes")
-            return False
-
-        logger.info(f"Converted {object_key} for BDA processing")
-
-        return True
-    except Exception as e:
-        logger.error(f"Failed to convert {object_key} to grayscale: {e}")
-        return False
 
 
 def _invoke_bda(
@@ -244,6 +174,7 @@ def main(
         preclassification_category = existing_record.get(
             DocumentMetadata.PRECLASSIFICATION_CATEGORY
         )
+        crop_image_to_document_roi(bucket_name, object_key)
         if convert_s3_object_to_grayscale(bucket_name, object_key):
             set_bda_processing_status_not_started(ddb_key)
             invoke_bda(bucket_name, object_key, ddb_key, preclassification_category)
@@ -257,6 +188,7 @@ def main(
         preclassification_category = existing_record.get(
             DocumentMetadata.PRECLASSIFICATION_CATEGORY
         )
+        crop_image_to_document_roi(bucket_name, object_key)
         invoke_bda(bucket_name, object_key, ddb_key, preclassification_category)
     else:
         logger.info(f"File {ddb_key} already has status: {status}, skipping")

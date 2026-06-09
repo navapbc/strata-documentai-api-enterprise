@@ -41,3 +41,6 @@ htmlcov/
 # Local Lambda packaging artifacts (from test-deploy CLI)
 build/
 lambda-env.json
+
+# Visual-inspection crops written by the bbox integration test
+tests/helpers/fixtures/test-documents/_bbox_output/

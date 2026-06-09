@@ -58,3 +58,19 @@ def get_empty_field_threshold_percentage() -> float:
     param_name = f"/idp/config/{_get_env_name()}/empty-field-threshold-percentage"
     percentage_str = get_parameter_value(param_name, default="50")
     return float(percentage_str) / 100.0
+
+
+def is_document_crop_enabled() -> bool:
+    """Whether image document-ROI cropping is on. SSM-configurable at runtime; default off.
+
+    Mirrors the preclassification-routing flag: the parameter path is provided via
+    env config so it can be toggled in SSM without a redeploy. Defaults to off
+    (opt-in) when the flag is unconfigured or the parameter is missing, so it can
+    be validated per-environment before being turned on.
+    """
+    from documentai_api.config.env import get_aws_config
+
+    config = get_aws_config()
+    if not config.document_crop_param:
+        return False
+    return get_parameter_value(config.document_crop_param, default="false").lower() == "true"

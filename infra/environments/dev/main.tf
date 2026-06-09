@@ -277,6 +277,11 @@ module "config" {
 
   parameters = {
     "feature-flags/preclassification-based-routing" = "false"
+    "feature-flags/document-crop"                   = "false"
+    # Vision model ids - swappable at runtime via SSM (no redeploy). Kept as
+    # separate params so preclassification and bbox detection can be tuned apart.
+    "models/classification-model-id" = "us.amazon.nova-lite-v1:0"
+    "models/bounding-box-model-id"   = "us.amazon.nova-lite-v1:0"
   }
 }
 
@@ -417,53 +422,55 @@ locals {
   lambda_image_uri = "${module.ecr.repository_url}:${var.image_tag}"
 
   lambda_env_vars = {
-    ENVIRONMENT                                             = var.environment
-    PRECLASSIFICATION_ROUTING_PARAM                         = "${local.ssm_prefix}/feature-flags/preclassification-based-routing"
-    DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME                 = module.document_metadata.table_name
-    DOCUMENTAI_DOCUMENT_METADATA_JOB_ID_INDEX_NAME          = local.gsi_job_id
-    DOCUMENTAI_DOCUMENT_METADATA_EXTERNAL_DOC_ID_INDEX_NAME = local.gsi_external_document_id
+    ENVIRONMENT                                               = var.environment
+    PRECLASSIFICATION_ROUTING_PARAM                           = "${local.ssm_prefix}/feature-flags/preclassification-based-routing"
+    DOCUMENT_CROP_PARAM                                       = "${local.ssm_prefix}/feature-flags/document-crop"
+    DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME                   = module.document_metadata.table_name
+    DOCUMENTAI_DOCUMENT_METADATA_JOB_ID_INDEX_NAME            = local.gsi_job_id
+    DOCUMENTAI_DOCUMENT_METADATA_EXTERNAL_DOC_ID_INDEX_NAME   = local.gsi_external_document_id
     DOCUMENTAI_DOCUMENT_METADATA_BDA_INVOCATION_ID_INDEX_NAME = local.gsi_bda_invocation_id
-    DOCUMENTAI_DOCUMENT_METADATA_TENANT_INDEX_NAME          = local.gsi_tenant_id
-    API_KEYS_TABLE_NAME                                     = module.api_keys.table_name
-    TENANTS_TABLE_NAME                                      = module.tenants.table_name
-    AUDIT_EVENTS_TABLE_NAME                                 = module.audit_events.table_name
-    EXTRACTION_RULES_TABLE_NAME                             = module.extraction_rules.table_name
-    DOCUMENT_CATEGORIES_TABLE_NAME                          = module.document_categories.table_name
-    DOCUMENTAI_BATCH_TABLE_NAME                             = module.document_batches.table_name
-    DOCUMENTAI_DOCUMENT_BUILD_TABLE_NAME                    = module.document_builds.table_name
-    DOCUMENTAI_INPUT_LOCATION                               = "s3://${module.input_bucket.bucket_name}/input"
-    DOCUMENTAI_OUTPUT_LOCATION                              = "s3://${module.output_bucket.bucket_name}/processed"
-    DDB_METRICS_INPUT_QUEUE_URL                             = module.metrics_queue.queue_url
-    DDB_EXPORT_BUCKET_NAME                                  = module.metrics_bucket.bucket_name
-    DDB_RAW_DATA_TABLE_NAME                                 = module.analytics.raw_metrics_table_name
-    GLUE_DATABASE_NAME                                      = module.analytics.database_name
-    ATHENA_WORKGROUP_NAME                                   = module.analytics.workgroup_name
-    BDA_PROJECT_ARN_TAX_DOCUMENTS                           = module.bedrock_data_automation["tax_documents"].project_arn
-    BDA_PROJECT_ARN_EMPLOYMENT_WAGES                        = module.bedrock_data_automation["employment_wages"].project_arn
-    BDA_PROJECT_ARN_INDEPENDENT_EARNINGS                    = module.bedrock_data_automation["independent_earnings"].project_arn
-    BDA_PROJECT_ARN_GOVERNMENT_BENEFITS                     = module.bedrock_data_automation["government_benefits"].project_arn
-    BDA_PROJECT_ARN_PRIVATE_BENEFITS_AND_SETTLEMENTS        = module.bedrock_data_automation["private_benefits_and_settlements"].project_arn
-    BDA_PROJECT_ARN_COURT_ORDERED_BENEFITS                  = module.bedrock_data_automation["court_ordered_benefits"].project_arn
-    BDA_PROJECT_ARN_FINANCIAL_ASSETS                        = module.bedrock_data_automation["financial_assets"].project_arn
-    BDA_PROJECT_ARN_RECEIPTS_AND_INVOICES                   = module.bedrock_data_automation["receipts_and_invoices"].project_arn
-    BDA_PROJECT_ARN_RECURRING_BILLS                         = module.bedrock_data_automation["recurring_bills"].project_arn
-    BDA_PROJECT_ARN_HOUSING_EXPENSES                        = module.bedrock_data_automation["housing_expenses"].project_arn
-    BDA_PROJECT_ARN_DEBT_OBLIGATIONS                        = module.bedrock_data_automation["debt_obligations"].project_arn
-    BDA_PROJECT_ARN_IDENTITY_VERIFICATION                   = module.bedrock_data_automation["identity_verification"].project_arn
-    BDA_PROJECT_ARN_RIGHT_TO_WORK                           = module.bedrock_data_automation["right_to_work"].project_arn
-    BDA_PROJECT_ARN_ALL                                     = module.bedrock_data_automation["all"].project_arn
-    BDA_PROJECT_ARN                                         = module.bedrock_data_automation["all"].project_arn
-    BDA_PROFILE_ARN                                         = module.bedrock_data_automation["all"].profile_arn
-    BDA_REGION                                              = var.bda_region
-    BEDROCK_CLASSIFICATION_MODEL_ID                         = "us.amazon.nova-lite-v1:0"
-    SSM_PREFIX                                              = local.ssm_prefix
-    MAX_BDA_INVOKE_RETRY_ATTEMPTS                           = local.max_bda_invoke_retry_attempts
-    API_AUTH_ENABLED                                        = local.api_auth_enabled
-    API_AUTH_ALLOW_INSECURE_FALLBACK                        = "true"
-    API_AUTH_CACHE_TTL                                      = local.api_auth_cache_ttl
-    API_AUTH_INSECURE_SHARED_KEY_PARAM                      = "/${var.project_name}/${var.environment}/api-auth-insecure-shared-key"
-    COGNITO_USER_POOL_ID                                    = module.identity_provider.user_pool_id
-    COGNITO_CLIENT_ID                                       = module.identity_provider.client_id
+    DOCUMENTAI_DOCUMENT_METADATA_TENANT_INDEX_NAME            = local.gsi_tenant_id
+    API_KEYS_TABLE_NAME                                       = module.api_keys.table_name
+    TENANTS_TABLE_NAME                                        = module.tenants.table_name
+    AUDIT_EVENTS_TABLE_NAME                                   = module.audit_events.table_name
+    EXTRACTION_RULES_TABLE_NAME                               = module.extraction_rules.table_name
+    DOCUMENT_CATEGORIES_TABLE_NAME                            = module.document_categories.table_name
+    DOCUMENTAI_BATCH_TABLE_NAME                               = module.document_batches.table_name
+    DOCUMENTAI_DOCUMENT_BUILD_TABLE_NAME                      = module.document_builds.table_name
+    DOCUMENTAI_INPUT_LOCATION                                 = "s3://${module.input_bucket.bucket_name}/input"
+    DOCUMENTAI_OUTPUT_LOCATION                                = "s3://${module.output_bucket.bucket_name}/processed"
+    DDB_METRICS_INPUT_QUEUE_URL                               = module.metrics_queue.queue_url
+    DDB_EXPORT_BUCKET_NAME                                    = module.metrics_bucket.bucket_name
+    DDB_RAW_DATA_TABLE_NAME                                   = module.analytics.raw_metrics_table_name
+    GLUE_DATABASE_NAME                                        = module.analytics.database_name
+    ATHENA_WORKGROUP_NAME                                     = module.analytics.workgroup_name
+    BDA_PROJECT_ARN_TAX_DOCUMENTS                             = module.bedrock_data_automation["tax_documents"].project_arn
+    BDA_PROJECT_ARN_EMPLOYMENT_WAGES                          = module.bedrock_data_automation["employment_wages"].project_arn
+    BDA_PROJECT_ARN_INDEPENDENT_EARNINGS                      = module.bedrock_data_automation["independent_earnings"].project_arn
+    BDA_PROJECT_ARN_GOVERNMENT_BENEFITS                       = module.bedrock_data_automation["government_benefits"].project_arn
+    BDA_PROJECT_ARN_PRIVATE_BENEFITS_AND_SETTLEMENTS          = module.bedrock_data_automation["private_benefits_and_settlements"].project_arn
+    BDA_PROJECT_ARN_COURT_ORDERED_BENEFITS                    = module.bedrock_data_automation["court_ordered_benefits"].project_arn
+    BDA_PROJECT_ARN_FINANCIAL_ASSETS                          = module.bedrock_data_automation["financial_assets"].project_arn
+    BDA_PROJECT_ARN_RECEIPTS_AND_INVOICES                     = module.bedrock_data_automation["receipts_and_invoices"].project_arn
+    BDA_PROJECT_ARN_RECURRING_BILLS                           = module.bedrock_data_automation["recurring_bills"].project_arn
+    BDA_PROJECT_ARN_HOUSING_EXPENSES                          = module.bedrock_data_automation["housing_expenses"].project_arn
+    BDA_PROJECT_ARN_DEBT_OBLIGATIONS                          = module.bedrock_data_automation["debt_obligations"].project_arn
+    BDA_PROJECT_ARN_IDENTITY_VERIFICATION                     = module.bedrock_data_automation["identity_verification"].project_arn
+    BDA_PROJECT_ARN_RIGHT_TO_WORK                             = module.bedrock_data_automation["right_to_work"].project_arn
+    BDA_PROJECT_ARN_ALL                                       = module.bedrock_data_automation["all"].project_arn
+    BDA_PROJECT_ARN                                           = module.bedrock_data_automation["all"].project_arn
+    BDA_PROFILE_ARN                                           = module.bedrock_data_automation["all"].profile_arn
+    BDA_REGION                                                = var.bda_region
+    BEDROCK_CLASSIFICATION_MODEL_ID_PARAM                     = "${local.ssm_prefix}/models/classification-model-id"
+    BEDROCK_BOUNDING_BOX_MODEL_ID_PARAM                       = "${local.ssm_prefix}/models/bounding-box-model-id"
+    SSM_PREFIX                                                = local.ssm_prefix
+    MAX_BDA_INVOKE_RETRY_ATTEMPTS                             = local.max_bda_invoke_retry_attempts
+    API_AUTH_ENABLED                                          = local.api_auth_enabled
+    API_AUTH_ALLOW_INSECURE_FALLBACK                          = "true"
+    API_AUTH_CACHE_TTL                                        = local.api_auth_cache_ttl
+    API_AUTH_INSECURE_SHARED_KEY_PARAM                        = "/${var.project_name}/${var.environment}/api-auth-insecure-shared-key"
+    COGNITO_USER_POOL_ID                                      = module.identity_provider.user_pool_id
+    COGNITO_CLIENT_ID                                         = module.identity_provider.client_id
   }
 
   lambda_policy_arns = {
