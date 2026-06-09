@@ -24,6 +24,7 @@ class DocumentMetadata:
     V1_API_RESPONSE_JSON = "v1ApiResponseJson"
     CREATED_AT = "createdAt"
     UPDATED_AT = "updatedAt"
+    TIME_TO_LIVE = "ttl"
 
     # preclassification fields
     PRECLASSIFICATION_CATEGORY = "preclassificationCategory"

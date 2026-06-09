@@ -26,13 +26,26 @@ def put_item(
 
 
 def update_item(
-    table_name: str, key: dict[str, Any], update_expression: str, expression_values: dict[str, Any]
+    table_name: str,
+    key: dict[str, Any],
+    update_expression: str,
+    expression_values: dict[str, Any],
+    expression_names: dict[str, str] | None = None,
 ) -> None:
-    """Update item in DynamoDB table."""
+    """Update item in DynamoDB table.
+
+    Pass `expression_names` to alias reserved attribute names (e.g. `ttl`) in the
+    update expression via `#placeholder` references.
+    """
     ddb_table = AWSClientFactory.get_ddb_table(table_name)
-    ddb_table.update_item(
-        Key=key, UpdateExpression=update_expression, ExpressionAttributeValues=expression_values
-    )
+    kwargs: dict[str, Any] = {
+        "Key": key,
+        "UpdateExpression": update_expression,
+        "ExpressionAttributeValues": expression_values,
+    }
+    if expression_names:
+        kwargs["ExpressionAttributeNames"] = expression_names
+    ddb_table.update_item(**kwargs)
 
 
 def delete_item(table_name: str, key: dict[str, Any]) -> None:

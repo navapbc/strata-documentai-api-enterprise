@@ -2,13 +2,14 @@ import os
 from datetime import UTC, datetime
 from typing import Any
 
-from documentai_api.config.constants import DocumentCategory
+from documentai_api.config.constants import ConfigDefaults, DocumentCategory
 from documentai_api.config.env import EnvVars
 from documentai_api.schemas.document_builds import DocumentBuilds
 from documentai_api.services import ddb as ddb_service
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils import s3 as s3_utils
 from documentai_api.utils.dto import PageMetadata
+from documentai_api.utils.ttl import ttl_epoch_in_days
 
 # Sentinel page number reserved for the per-build metadata record (not a real page).
 _METADATA_PAGE_NUMBER = 0
@@ -76,6 +77,7 @@ async def upsert_document_build_page(
         DocumentBuilds.PAGE_NUMBER: page_number,
         DocumentBuilds.S3_PATH: s3_path,
         DocumentBuilds.CREATED_AT: datetime.now(UTC).isoformat(),
+        DocumentBuilds.TIME_TO_LIVE: ttl_epoch_in_days(ConfigDefaults.DOCUMENT_BUILDS_TTL_DAYS),
     }
 
     if original_file_name:
@@ -234,6 +236,7 @@ def create_document_build(
         DocumentBuilds.PAGE_NUMBER: _METADATA_PAGE_NUMBER,
         DocumentBuilds.CREATED_AT: datetime.now(UTC).isoformat(),
         DocumentBuilds.IS_BUILD_METADATA: True,
+        DocumentBuilds.TIME_TO_LIVE: ttl_epoch_in_days(ConfigDefaults.DOCUMENT_BUILDS_TTL_DAYS),
     }
 
     if category:

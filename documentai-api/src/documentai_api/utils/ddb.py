@@ -31,6 +31,7 @@ from documentai_api.utils.dto import (
 from documentai_api.utils.response_builder import build_v1_api_response, get_internal_api_response
 from documentai_api.utils.response_codes import ResponseCodes
 from documentai_api.utils.ssm import get_bda_percentage
+from documentai_api.utils.ttl import ttl_epoch_in_days
 
 logger = get_logger(__name__)
 
@@ -57,8 +58,8 @@ def create_batch(
         DocumentBatches.BATCH_STATUS: status.value,
         DocumentBatches.TOTAL_FILES: total_files,
         DocumentBatches.CREATED_AT: created_at,
-        # TTL 30 days from creation - batch records are short-lived tracking artifacts.
-        DocumentBatches.TIME_TO_LIVE: int(datetime.now(UTC).timestamp() + (30 * 24 * 60 * 60)),
+        # TTL from creation - batch records are short-lived tracking artifacts.
+        DocumentBatches.TIME_TO_LIVE: ttl_epoch_in_days(ConfigDefaults.DOCUMENT_BATCHES_TTL_DAYS),
     }
 
     if category:
@@ -394,13 +395,16 @@ def _build_update_expression(
 
 
 def _execute_ddb_update(
-    object_key: str, update_expression: str, expression_values: dict[str, Any]
+    object_key: str,
+    update_expression: str,
+    expression_values: dict[str, Any],
+    expression_names: dict[str, str] | None = None,
 ) -> None:
     """Execute the DynamoDB update."""
     table_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME)
     key = {"fileName": object_key}
 
-    ddb_service.update_item(table_name, key, update_expression, expression_values)
+    ddb_service.update_item(table_name, key, update_expression, expression_values, expression_names)
 
 
 def _send_record_to_metrics_queue(object_key: str) -> None:
@@ -570,6 +574,9 @@ def upsert_ddb(
             f"{DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY} = :category",
             (f"{DocumentMetadata.CREATED_AT} = if_not_exists({DocumentMetadata.CREATED_AT}, :now)"),
             f"{DocumentMetadata.UPDATED_AT} = :now",
+            # TTL fixed from creation - preserved on subsequent upserts via if_not_exists.
+            # `ttl` is a DynamoDB reserved word, so reference it via the #ttl alias.
+            "#ttl = if_not_exists(#ttl, :ttl)",
         ]
         expr_values: dict[str, Any] = {
             ":originalFileName": original_file_name,
@@ -578,6 +585,7 @@ def upsert_ddb(
                 user_provided_document_category or ConfigDefaults.USER_DOCUMENT_TYPE_NOT_PROVIDED
             ),
             ":now": now,
+            ":ttl": ttl_epoch_in_days(ConfigDefaults.DOCUMENT_METADATA_TTL_DAYS),
         }
 
         if file_size_bytes is not None:
@@ -633,7 +641,12 @@ def upsert_ddb(
             expr_values[":clientName"] = api_key_name
 
         update_expr = "SET " + ", ".join(expr_fields)
-        _execute_ddb_update(object_key, update_expr, expr_values)
+        _execute_ddb_update(
+            object_key,
+            update_expr,
+            expr_values,
+            expression_names={"#ttl": DocumentMetadata.TIME_TO_LIVE},
+        )
     except Exception as e:
         logger.error(f"Failed to upsert DDB record for {object_key}: {e}")
         raise
