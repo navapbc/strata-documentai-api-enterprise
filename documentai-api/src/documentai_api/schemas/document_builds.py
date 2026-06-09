@@ -15,3 +15,4 @@ class DocumentBuilds:
     IS_BUILD_METADATA = "isBuildMetadata"
     TENANT_ID = "tenantId"
     API_KEY_NAME = "apiKeyName"
+    TIME_TO_LIVE = "ttl"

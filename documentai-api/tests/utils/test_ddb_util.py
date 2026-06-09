@@ -462,6 +462,33 @@ def test_upsert_ddb(ddb_doc_metadata_table, mocker):
     assert item[DocumentMetadata.EXTERNAL_SYSTEM_ID] == "ext-sys-abc"
     assert item[DocumentMetadata.AI_CONSENT_FLAG] is True
 
+    # ttl stamped ~180 days out as an integer epoch
+    ttl = item[DocumentMetadata.TIME_TO_LIVE]
+    assert isinstance(ttl, Decimal)  # DynamoDB returns numbers as Decimal
+    assert ttl % 1 == 0
+    expected = int(datetime.now(UTC).timestamp()) + 180 * 24 * 60 * 60
+    assert abs(int(ttl) - expected) < 600  # within 10 minutes
+
+
+@freeze_time("2026-01-01 12:00:00+00:00")
+def test_upsert_ddb_ttl_fixed_from_creation(ddb_doc_metadata_table):
+    """TTL is stamped once at create and preserved on later upserts (not extended)."""
+    object_key = "ttl-fixed-file"
+
+    ddb_util.upsert_ddb(object_key=object_key, original_file_name="f.pdf")
+    created_ttl = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"][
+        DocumentMetadata.TIME_TO_LIVE
+    ]
+
+    # a later upsert (simulated 5 days on) must not move the ttl
+    with freeze_time("2026-01-06 12:00:00+00:00"):
+        ddb_util.upsert_ddb(object_key=object_key, original_file_name="f.pdf")
+
+    later_ttl = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"][
+        DocumentMetadata.TIME_TO_LIVE
+    ]
+    assert later_ttl == created_ttl
+
 
 @pytest.mark.parametrize(
     (
@@ -779,6 +806,11 @@ class TestCreateBatch:
         assert item[DocumentBatches.API_KEY_NAME] == "client-xyz"
         assert item[DocumentBatches.BATCH_STATUS] == "uploading"
         assert item[DocumentBatches.TOTAL_FILES] == 3
+
+        # ttl stamped ~30 days out as an integer epoch
+        ttl = item[DocumentBatches.TIME_TO_LIVE]
+        expected = int(datetime.now(UTC).timestamp()) + 30 * 24 * 60 * 60
+        assert abs(int(ttl) - expected) < 600
 
     def test_returns_created_at_timestamp(self, ddb_batches_table):
         """create_batch returns the createdAt ISO timestamp."""
