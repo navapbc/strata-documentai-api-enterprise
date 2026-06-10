@@ -109,3 +109,26 @@ def test_extract_s3_info_raises_on_invalid_shape(event):
     """Malformed events raise ValueError."""
     with pytest.raises(ValueError, match="Invalid S3 event structure"):
         s3_util.extract_s3_info_from_event(event)
+
+
+@pytest.mark.parametrize(
+    ("tenant_id", "subpath", "expected_key"),
+    [
+        ("tenant-a", "", "input/tenant-a/doc.pdf"),
+        ("tenant-a", "precrop", "input/tenant-a/precrop/doc.pdf"),
+        (None, "", "input/doc.pdf"),
+        (None, "precrop", "input/precrop/doc.pdf"),
+    ],
+)
+def test_get_bucket_and_key(tenant_id, subpath, expected_key):
+    """Layout is centralized: {prefix}/{tenant}/{subpath}/{file}, empties skipped."""
+    bucket, key = s3_util.get_bucket_and_key("s3://my-bucket/input", tenant_id, "doc.pdf", subpath)
+    assert bucket == "my-bucket"
+    assert key == expected_key
+
+
+def test_get_bucket_and_key_no_prefix():
+    """A location with no prefix yields a tenant-scoped key with no leading slash."""
+    bucket, key = s3_util.get_bucket_and_key("s3://my-bucket", "tenant-a", "doc.pdf")
+    assert bucket == "my-bucket"
+    assert key == "tenant-a/doc.pdf"

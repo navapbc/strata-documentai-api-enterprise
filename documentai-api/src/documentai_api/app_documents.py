@@ -28,6 +28,7 @@ from documentai_api.config.constants import (
     MAX_SEARCH_JOB_IDS,
     ApiVisualizationTag,
     ConfigDefaults,
+    DeletionType,
     ProcessStatus,
     UploadMethod,
 )
@@ -152,6 +153,7 @@ async def _upload_document(
             job_id=job_id,
             trace_id=trace_id,
             ddb_key=ddb_key,
+            tenant_id=auth.tenant_id,
         )
     except ImageConversionError:
         return _UploadResult(
@@ -307,10 +309,18 @@ async def get_document_results(
     "/v1/documents/{job_id}",
     tags=[ApiVisualizationTag.DOCUMENTS_DELETE],
 )
-async def delete_document(job_id: uuid.UUID, auth: AuthUser) -> Response:
-    """Delete a document by job ID. Removes S3 file and marks DDB record as deleted."""
-    from documentai_api.services import s3 as s3_service
-    from documentai_api.utils.s3 import parse_s3_uri
+async def delete_document(
+    job_id: uuid.UUID,
+    auth: AuthUser,
+    soft_delete: bool = True,
+) -> Response:
+    """Delete a document by job ID.
+
+    soft_delete=True (default): retain the S3 files, mark the record DELETED
+    (recoverable). soft_delete=False: also purge every S3 copy of the document -
+    original upload, preprocessing copies, and BDA output (hard delete).
+    """
+    from documentai_api.utils.uploads import purge_document_s3_artifacts
 
     job_status = await asyncio.to_thread(get_job_status, str(job_id))
 
@@ -325,28 +335,37 @@ async def delete_document(job_id: uuid.UUID, auth: AuthUser) -> Response:
             status_code=400, detail="Cannot delete a document that is still processing"
         )
 
-    # delete S3 file
-    if job_status.object_key:
-        try:
-            input_location = get_aws_config().documentai_input_location
-            if input_location:
-                bucket, prefix = parse_s3_uri(input_location)
-                # Objects are stored under the owning tenant's prefix. The record's tenant
-                # was validated == auth.tenant_id above, so use auth.tenant_id directly.
-                tenant_object_key = f"{auth.tenant_id}/{job_status.object_key}"
-                s3_key = f"{prefix}/{tenant_object_key}" if prefix else tenant_object_key
-                await asyncio.to_thread(s3_service.delete_object, bucket, s3_key)
-        except Exception as e:
-            logger.warning(f"Failed to delete S3 object for job {job_id}: {e}")
-
-    # mark DDB record as deleted
-    from documentai_api.utils.ddb import update_ddb
-
     if not job_status.object_key:
         raise HTTPException(status_code=500, detail=f"Incomplete record for job {job_id}")
 
+    # hard delete purges every S3 copy of the document; soft delete retains them.
+    # The record's tenant was validated == auth.tenant_id above. If the purge
+    # can't confirm every copy is gone, do NOT mark the record deleted: surface a
+    # 500 so the caller knows the data still exists and can retry (the record
+    # stays non-deleted, so a retry isn't blocked by the already-deleted 404).
+    if not soft_delete:
+        failures = await asyncio.to_thread(
+            purge_document_s3_artifacts,
+            object_key=job_status.object_key,
+            tenant_id=auth.tenant_id,
+        )
+        if failures:
+            logger.error(
+                "Hard delete purge incomplete; record left intact",
+                extra={"job_id": str(job_id), "failed_locations": failures},
+            )
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to fully delete document (locations: {', '.join(failures)})",
+            )
+
+    # mark DDB record as deleted, recording soft vs hard
+    from documentai_api.utils.ddb import mark_document_deleted
+
     await asyncio.to_thread(
-        update_ddb, object_key=job_status.object_key, status=ProcessStatus.DELETED
+        mark_document_deleted,
+        object_key=job_status.object_key,
+        deletion_type=DeletionType.SOFT if soft_delete else DeletionType.HARD,
     )
 
     return Response(status_code=204)

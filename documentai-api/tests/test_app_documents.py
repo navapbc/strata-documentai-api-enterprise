@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+from documentai_api.config.constants import DeletionType
 from documentai_api.models.api_responses import JobStatusResponse
 from documentai_api.utils.jobs import JobStatus
 
@@ -319,7 +320,7 @@ def test_search_documents_handles_errors_gracefully(api_client, mocker):
 
 
 def test_delete_document_success(api_client, mocker):
-    """Test successful document deletion."""
+    """Test default (soft) deletion: record marked deleted, S3 files retained."""
     mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
     mock_get_job_status.return_value = JobStatus(
         ddb_record={"fileName": "test.pdf", "tenantId": "test-tenant"},
@@ -327,18 +328,41 @@ def test_delete_document_success(api_client, mocker):
         process_status="success",
         v1_response_json='{"jobId": "job-1", "jobStatus": "success", "message": "Done"}',
     )
-    mock_s3_delete = mocker.patch("documentai_api.services.s3.delete_object")
-    mock_update_ddb = mocker.patch("documentai_api.utils.ddb.update_ddb")
+    mock_purge = mocker.patch("documentai_api.utils.uploads.purge_document_s3_artifacts")
+    mock_mark_deleted = mocker.patch("documentai_api.utils.ddb.mark_document_deleted")
 
     response = api_client.delete(f"/v1/documents/{TEST_JOB_ID}")
 
     assert response.status_code == 204
-    mock_s3_delete.assert_called_once()
-    # S3 key must be rebuilt under the record's tenant prefix, else the delete
-    # targets a non-existent (un-prefixed) key and silently misses the object.
-    deleted_key = mock_s3_delete.call_args.args[1]
-    assert deleted_key == "input/test-tenant/test.pdf"
-    mock_update_ddb.assert_called_once()
+    # Soft delete retains every S3 copy of the document.
+    mock_purge.assert_not_called()
+    mock_mark_deleted.assert_called_once_with(
+        object_key="test.pdf", deletion_type=DeletionType.SOFT
+    )
+
+
+def test_delete_document_hard_delete(api_client, mocker):
+    """Test hard deletion: all S3 artifacts purged and record marked deleted (hard)."""
+    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status.return_value = JobStatus(
+        ddb_record={"fileName": "test.pdf", "tenantId": "test-tenant"},
+        object_key="test.pdf",
+        process_status="success",
+        v1_response_json='{"jobId": "job-1", "jobStatus": "success", "message": "Done"}',
+    )
+    # empty list = every S3 copy confirmed purged
+    mock_purge = mocker.patch(
+        "documentai_api.utils.uploads.purge_document_s3_artifacts", return_value=[]
+    )
+    mock_mark_deleted = mocker.patch("documentai_api.utils.ddb.mark_document_deleted")
+
+    response = api_client.delete(f"/v1/documents/{TEST_JOB_ID}?soft_delete=false")
+
+    assert response.status_code == 204
+    mock_purge.assert_called_once_with(object_key="test.pdf", tenant_id="test-tenant")
+    mock_mark_deleted.assert_called_once_with(
+        object_key="test.pdf", deletion_type=DeletionType.HARD
+    )
 
 
 def test_delete_document_not_found(api_client, mocker):
@@ -687,8 +711,10 @@ def test_search_documents_mixed_success_and_failure(api_client, mocker):
     assert results[1]["jobStatus"] == "error"
 
 
-def test_delete_document_s3_failure_still_marks_deleted(api_client, mocker):
-    """Test that S3 delete failure logs warning but still marks DDB record as deleted."""
+def test_delete_document_hard_purge_failure_returns_500_and_does_not_mark_deleted(
+    api_client, mocker
+):
+    """A failed hard-delete purge returns 500 and leaves the record un-deleted."""
     mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
     mock_get_job_status.return_value = JobStatus(
         ddb_record={"fileName": "test.pdf", "tenantId": "test-tenant"},
@@ -696,13 +722,83 @@ def test_delete_document_s3_failure_still_marks_deleted(api_client, mocker):
         process_status="success",
         v1_response_json='{"jobId": "job-1", "jobStatus": "success", "message": "Done"}',
     )
+    # delete_object/delete_prefix raise -> purge reports failed locations.
     mocker.patch("documentai_api.services.s3.delete_object", side_effect=Exception("S3 down"))
-    mock_update_ddb = mocker.patch("documentai_api.utils.ddb.update_ddb")
+    mocker.patch("documentai_api.services.s3.delete_prefix", side_effect=Exception("S3 down"))
+    mock_mark_deleted = mocker.patch("documentai_api.utils.ddb.mark_document_deleted")
 
-    response = api_client.delete(f"/v1/documents/{TEST_JOB_ID}")
+    response = api_client.delete(f"/v1/documents/{TEST_JOB_ID}?soft_delete=false")
 
-    assert response.status_code == 204
-    mock_update_ddb.assert_called_once()
+    assert response.status_code == 500
+    assert "Failed to fully delete" in response.json()["detail"]
+    # record must NOT be marked deleted when data may still exist
+    mock_mark_deleted.assert_not_called()
+
+
+def test_purge_document_s3_artifacts_deletes_all_locations(monkeypatch, mocker):
+    """Hard-delete purge removes input, preprocessing, and BDA output artifacts."""
+    from documentai_api.config.env import EnvVars
+    from documentai_api.utils.uploads import purge_document_s3_artifacts
+
+    monkeypatch.setenv(EnvVars.DOCUMENTAI_INPUT_LOCATION, "s3://bucket/input")
+    monkeypatch.setenv(EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION, "s3://bucket/preprocessing")
+    monkeypatch.setenv(EnvVars.DOCUMENTAI_OUTPUT_LOCATION, "s3://bucket/output")
+
+    mock_delete = mocker.patch("documentai_api.services.s3.delete_object")
+    mock_delete_prefix = mocker.patch("documentai_api.services.s3.delete_prefix")
+
+    failures = purge_document_s3_artifacts(object_key="doc-uuid.pdf", tenant_id="test-tenant")
+
+    assert failures == []  # every location purged cleanly
+    # Original upload and both preprocessing copies are tenant-scoped single objects.
+    deleted = [c.args for c in mock_delete.mock_calls]
+    assert ("bucket", "input/test-tenant/doc-uuid.pdf") in deleted
+    assert ("bucket", "preprocessing/test-tenant/doc-uuid.pdf") in deleted
+    assert ("bucket", "preprocessing/test-tenant/precrop/doc-uuid.pdf") in deleted
+    # BDA output is a tree, deleted by prefix - including the truncated variant.
+    prefixes = [c.args for c in mock_delete_prefix.mock_calls]
+    assert ("bucket", "output/doc-uuid.pdf/") in prefixes
+    assert ("bucket", "output/doc-uuid_truncated.pdf/") in prefixes
+
+
+def test_purge_document_s3_artifacts_skips_unset_locations(monkeypatch, mocker):
+    """Locations that aren't configured are skipped rather than erroring."""
+    from documentai_api.config.env import EnvVars
+    from documentai_api.utils.uploads import purge_document_s3_artifacts
+
+    monkeypatch.setenv(EnvVars.DOCUMENTAI_INPUT_LOCATION, "s3://bucket/input")
+    monkeypatch.delenv(EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION, raising=False)
+    monkeypatch.delenv(EnvVars.DOCUMENTAI_OUTPUT_LOCATION, raising=False)
+
+    mock_delete = mocker.patch("documentai_api.services.s3.delete_object")
+    mock_delete_prefix = mocker.patch("documentai_api.services.s3.delete_prefix")
+
+    purge_document_s3_artifacts(object_key="doc-uuid.pdf", tenant_id="test-tenant")
+
+    mock_delete.assert_called_once_with("bucket", "input/test-tenant/doc-uuid.pdf")
+    mock_delete_prefix.assert_not_called()
+
+
+def test_purge_document_s3_artifacts_reports_failed_locations(monkeypatch, mocker):
+    """A genuine S3 error on a location is reported, and other locations still run."""
+    from documentai_api.config.env import EnvVars
+    from documentai_api.utils.uploads import purge_document_s3_artifacts
+
+    monkeypatch.setenv(EnvVars.DOCUMENTAI_INPUT_LOCATION, "s3://bucket/input")
+    monkeypatch.setenv(EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION, "s3://bucket/preprocessing")
+    monkeypatch.setenv(EnvVars.DOCUMENTAI_OUTPUT_LOCATION, "s3://bucket/output")
+
+    # input delete fails; preprocessing + output succeed
+    mocker.patch("documentai_api.services.s3.delete_object", side_effect=Exception("denied"))
+    mock_delete_prefix = mocker.patch("documentai_api.services.s3.delete_prefix")
+
+    failures = purge_document_s3_artifacts(object_key="doc-uuid.pdf", tenant_id="test-tenant")
+
+    assert "input" in failures
+    assert "preprocessing" in failures  # delete_object also drives preprocessing
+    # output uses delete_prefix (not patched to fail), so it succeeds and isn't reported
+    assert "output" not in failures
+    mock_delete_prefix.assert_called()
 
 
 # =============================================================================

@@ -15,17 +15,20 @@ from documentai_api.config.env import EnvVars
 from documentai_api.logging import get_logger
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils.bedrock import detect_document_bbox
-from documentai_api.utils.s3 import parse_s3_uri
+from documentai_api.utils.s3 import get_bucket_and_key
 from documentai_api.utils.ssm import is_document_crop_enabled
 
 logger = get_logger(__name__)
 
 
-def _save_precrop_original(object_key: str, file_bytes: bytes, content_type: str) -> None:
+def _save_precrop_original(
+    object_key: str, file_bytes: bytes, content_type: str, tenant_id: str | None = None
+) -> None:
     """Save the pre-crop image to the preprocessing location for audit/recovery.
 
-    Stored under a ``precrop/`` sub-prefix so it never collides with the upload-time
-    original audit copy. Raises if no preprocessing location is configured or the
+    Stored tenant-scoped under a ``precrop/`` sub-prefix - {tenant}/precrop/{file}
+    - so it never collides with the upload-time original audit copy and stays
+    isolated per tenant. Raises if no preprocessing location is configured or the
     save fails - the caller must abort the crop rather than overwrite the original
     with no recoverable backup.
     """
@@ -36,12 +39,11 @@ def _save_precrop_original(object_key: str, file_bytes: bytes, content_type: str
             "a pre-crop backup of the original"
         )
 
-    pre_bucket, pre_prefix = parse_s3_uri(location)
     base = os.path.basename(object_key)
-    pre_key = f"{pre_prefix}/precrop/{base}" if pre_prefix else f"precrop/{base}"
+    bucket, key = get_bucket_and_key(location, tenant_id, base, "precrop")
 
-    s3_service.put_object(pre_bucket, pre_key, file_bytes, content_type)
-    logger.info(f"Saved pre-crop original to preprocessing: {pre_key}")
+    s3_service.put_object(bucket, key, file_bytes, content_type)
+    logger.info(f"Saved pre-crop original to preprocessing: {key}")
 
 
 def crop_image_to_bbox(
@@ -160,13 +162,15 @@ def convert_s3_object_to_grayscale(bucket_name: str, object_key: str) -> bool:
         return False
 
 
-def crop_image_to_document_roi(bucket_name: str, object_key: str) -> None:
+def crop_image_to_document_roi(
+    bucket_name: str, object_key: str, tenant_id: str | None = None
+) -> None:
     """Crop an S3 image in-place to the document's region of interest before BDA.
 
     Uses the Bedrock vision model to locate the document, then crops with PIL and
     overwrites the S3 object. Best-effort and feature-flag gated: any miss (flag
     off, non-image, no document found, or error) leaves the object untouched so
-    BDA still runs on the full image.
+    BDA still runs on the full image. ``tenant_id`` scopes the pre-crop backup.
     """
     if not is_document_crop_enabled():
         return
@@ -187,7 +191,7 @@ def crop_image_to_document_roi(bucket_name: str, object_key: str) -> None:
         cropped_bytes = crop_image_to_bbox(file_bytes, bbox)
         # preserve the pre-crop image first; if the backup can't be made, the
         # exception aborts the crop so we never overwrite the original unrecoverably
-        _save_precrop_original(object_key, file_bytes, content_type)
+        _save_precrop_original(object_key, file_bytes, content_type, tenant_id=tenant_id)
         s3_service.put_object(bucket_name, object_key, cropped_bytes, content_type)
         logger.info(f"Cropped {object_key} to document ROI before BDA")
     except Exception as e:

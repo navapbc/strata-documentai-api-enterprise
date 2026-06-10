@@ -8,6 +8,7 @@ import documentai_api.utils.documents as document_utils
 from documentai_api.config.constants import (
     BatchStatus,
     ConfigDefaults,
+    DeletionType,
     DocumentCategory,
     FileValidation,
     ProcessStatus,
@@ -534,6 +535,21 @@ def update_ddb(
     except Exception as e:
         logger.error(f"Failed to update DDB status: {e}")
         raise
+
+
+def mark_document_deleted(object_key: str, deletion_type: DeletionType) -> None:
+    """Mark a document-metadata record DELETED and record soft vs hard delete."""
+    update_expr = (
+        f"SET {DocumentMetadata.PROCESS_STATUS} = :status, "
+        f"{DocumentMetadata.DELETION_TYPE} = :deletionType, "
+        f"{DocumentMetadata.UPDATED_AT} = :updatedAt"
+    )
+    expr_values: dict[str, Any] = {
+        ":status": ProcessStatus.DELETED.value,
+        ":deletionType": deletion_type.value,
+        ":updatedAt": datetime.now(UTC).isoformat(),
+    }
+    _execute_ddb_update(object_key, update_expr, expr_values)
 
 
 def upsert_ddb(

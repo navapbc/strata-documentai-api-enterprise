@@ -186,6 +186,13 @@ class FileValidation:
         return FileValidation.CONTENT_TYPE_TO_EXT.get(content_type, "bin")
 
 
+class DeletionType(StrEnum):
+    """How a document was deleted, recorded on the DDB record when DELETED."""
+
+    SOFT = "soft"  # record marked deleted, S3 file retained (recoverable)
+    HARD = "hard"  # record marked deleted, S3 file removed
+
+
 class ProcessStatus(StrEnum):
     AI_CONSENT_DECLINED = "ai_consent_declined"
     BLURRY_DOCUMENT_DETECTED = "blurry_document_detected"

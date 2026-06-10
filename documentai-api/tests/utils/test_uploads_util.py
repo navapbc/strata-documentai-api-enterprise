@@ -171,3 +171,30 @@ async def test_dispatch_upload_conversion_error_classifies_and_reraises(mocker):
         )
 
     mock_classify.assert_called_once()
+
+
+def test_save_original_to_preprocessing_tenant_scoped(mocker, monkeypatch):
+    """The upload-time original is stored under the tenant's preprocessing prefix."""
+    from documentai_api.config.env import EnvVars
+    from documentai_api.utils.uploads import _save_original_to_preprocessing
+
+    monkeypatch.setenv(EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION, "s3://bucket/preprocessing")
+    mock_upload = mocker.patch("documentai_api.services.s3.upload_file")
+
+    _save_original_to_preprocessing(b"data", "doc-uuid.png", "image/png", tenant_id="test-tenant")
+
+    assert mock_upload.call_args.args[0] == "bucket"
+    assert mock_upload.call_args.args[1] == "preprocessing/test-tenant/doc-uuid.png"
+
+
+def test_save_original_to_preprocessing_without_tenant_falls_back(mocker, monkeypatch):
+    """No tenant_id keeps the legacy un-scoped key (e.g. document-build flow)."""
+    from documentai_api.config.env import EnvVars
+    from documentai_api.utils.uploads import _save_original_to_preprocessing
+
+    monkeypatch.setenv(EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION, "s3://bucket/preprocessing")
+    mock_upload = mocker.patch("documentai_api.services.s3.upload_file")
+
+    _save_original_to_preprocessing(b"data", "doc-uuid.png", "image/png")
+
+    assert mock_upload.call_args.args[1] == "preprocessing/doc-uuid.png"

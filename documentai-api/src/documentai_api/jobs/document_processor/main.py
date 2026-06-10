@@ -174,7 +174,9 @@ def main(
         preclassification_category = existing_record.get(
             DocumentMetadata.PRECLASSIFICATION_CATEGORY
         )
-        crop_image_to_document_roi(bucket_name, object_key)
+        crop_image_to_document_roi(
+            bucket_name, object_key, tenant_id=existing_record.get(DocumentMetadata.TENANT_ID)
+        )
         if convert_s3_object_to_grayscale(bucket_name, object_key):
             set_bda_processing_status_not_started(ddb_key)
             invoke_bda(bucket_name, object_key, ddb_key, preclassification_category)
@@ -188,7 +190,9 @@ def main(
         preclassification_category = existing_record.get(
             DocumentMetadata.PRECLASSIFICATION_CATEGORY
         )
-        crop_image_to_document_roi(bucket_name, object_key)
+        crop_image_to_document_roi(
+            bucket_name, object_key, tenant_id=existing_record.get(DocumentMetadata.TENANT_ID)
+        )
         invoke_bda(bucket_name, object_key, ddb_key, preclassification_category)
     else:
         logger.info(f"File {ddb_key} already has status: {status}, skipping")
