@@ -254,6 +254,24 @@ def test_crop_roi_saves_precrop_original_to_preprocessing(s3_bucket, mocker, mon
     assert len(s3_bucket.Object("a.png").get()["Body"].read()) != len(original)
 
 
+def test_crop_roi_saves_precrop_original_tenant_scoped(s3_bucket, mocker, monkeypatch):
+    """With a tenant_id the pre-crop backup is stored under {tenant}/precrop/."""
+    from documentai_api.config.env import EnvVars
+
+    monkeypatch.setenv(
+        EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION, f"s3://{s3_bucket.name}/preprocessing"
+    )
+    mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=True)
+    mocker.patch(f"{MODULE}.detect_document_bbox", return_value=(200, 200, 600, 600))
+    original = _png_bytes(1000, 1000)
+    s3_bucket.put_object(Key="a.png", Body=original, ContentType="image/png")
+
+    crop_image_to_document_roi(s3_bucket.name, "a.png", tenant_id="test-tenant")
+
+    stored = s3_bucket.Object("preprocessing/test-tenant/precrop/a.png").get()["Body"].read()
+    assert stored == original
+
+
 def test_crop_roi_swallows_errors(s3_bucket, mocker):
     """Missing object: never raises, processing continues."""
     mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=True)

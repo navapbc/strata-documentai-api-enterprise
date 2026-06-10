@@ -4,6 +4,7 @@ class DocumentMetadata:
     ORIGINAL_FILE_NAME = "originalFileName"
     USER_PROVIDED_DOCUMENT_CATEGORY = "userProvidedDocumentCategory"
     PROCESS_STATUS = "processStatus"
+    DELETION_TYPE = "deletionType"  # "soft" | "hard" once a record is DELETED
     BDA_INVOCATION_ARN = "bdaInvocationArn"
     BDA_INVOCATION_ID = "bdaInvocationId"
     BDA_PROJECT_ARN_USED = "bdaProjectArn"

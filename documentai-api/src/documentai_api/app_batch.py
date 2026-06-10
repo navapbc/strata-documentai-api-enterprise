@@ -139,6 +139,7 @@ async def _process_batch_files(
                     job_id=job_id,
                     trace_id=trace_id,
                     batch_id=batch_id,
+                    tenant_id=tenant_id,
                 )
             except ImageConversionError as e:
                 await asyncio.to_thread(

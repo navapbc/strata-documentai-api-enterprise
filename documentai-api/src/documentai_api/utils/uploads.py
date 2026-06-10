@@ -17,13 +17,72 @@ from documentai_api.config.env import EnvVars
 from documentai_api.logging import get_logger
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils.image_conversion import convert_to_png
-from documentai_api.utils.s3 import parse_s3_uri
+from documentai_api.utils.s3 import get_bucket_and_key, parse_s3_uri
 
 logger = get_logger(__name__)
 
 
 class ImageConversionError(Exception):
     """Raised when image format conversion fails."""
+
+
+def purge_document_s3_artifacts(object_key: str, tenant_id: str) -> list[str]:
+    """Remove every S3 copy of a document, used by hard delete.
+
+    Covers all three locations a document's bytes can land in: the original
+    upload (input), the preprocessing copies, and the BDA output tree. Attempts
+    all three regardless of individual failures (so one error doesn't strand the
+    rest), and returns the names of any locations that could NOT be purged.
+
+    The caller treats a non-empty return as a failed hard delete: an empty list
+    means every artifact is confirmed gone. Note that S3 deletes are idempotent -
+    a missing object is a success, not a failure - so a non-empty result reflects
+    a real error (permissions, throttling, etc.), not "nothing to delete".
+    """
+    failures: list[str] = []
+
+    # 1. Original upload: {input}/{tenant}/{object_key}
+    input_location = os.environ.get(EnvVars.DOCUMENTAI_INPUT_LOCATION)
+    if input_location:
+        try:
+            bucket, key = get_bucket_and_key(input_location, tenant_id, object_key)
+            s3_service.delete_object(bucket, key)
+        except Exception as e:
+            logger.warning(f"Failed to delete input object for {object_key}: {e}")
+            failures.append("input")
+
+    # 2. Preprocessing copies, both tenant-scoped: the upload-time original at
+    #    {preprocessing}/{tenant}/{object_key} and the pre-crop original at
+    #    {preprocessing}/{tenant}/precrop/{object_key}.
+    preprocessing_location = os.environ.get(EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION)
+    if preprocessing_location:
+        try:
+            bucket, _ = parse_s3_uri(preprocessing_location)
+            for subpath in ("", "precrop"):
+                _, key = get_bucket_and_key(preprocessing_location, tenant_id, object_key, subpath)
+                s3_service.delete_object(bucket, key)
+        except Exception as e:
+            logger.warning(f"Failed to delete preprocessing object for {object_key}: {e}")
+            failures.append("preprocessing")
+
+    # 3. BDA output tree: {output}/{input_key}/{invocation_id}/... A recursive
+    #    prefix delete of the doc's output root removes everything BDA wrote -
+    #    standard output, custom output, and job_metadata.json. input_key is the
+    #    object_key, or the "_truncated" variant for oversized docs (see
+    #    bda_invoker), so purge both candidate roots.
+    output_location = os.environ.get(EnvVars.DOCUMENTAI_OUTPUT_LOCATION)
+    if output_location:
+        try:
+            bucket, prefix = parse_s3_uri(output_location)
+            base, ext = os.path.splitext(object_key)
+            for name in (object_key, f"{base}_truncated{ext}"):
+                out_prefix = f"{prefix}/{name}/" if prefix else f"{name}/"
+                s3_service.delete_prefix(bucket, out_prefix)
+        except Exception as e:
+            logger.warning(f"Failed to delete output objects for {object_key}: {e}")
+            failures.append("output")
+
+    return failures
 
 
 def generate_unique_filename(filename: str, job_id: str) -> str:
@@ -84,18 +143,24 @@ async def validate_upload(file: UploadFile) -> str:
     return actual_content_type
 
 
-def _save_original_to_preprocessing(file_bytes: bytes, object_key: str, content_type: str) -> None:
-    """Save original file to preprocessing location for audit trail."""
+def _save_original_to_preprocessing(
+    file_bytes: bytes, object_key: str, content_type: str, tenant_id: str | None = None
+) -> None:
+    """Save original file to preprocessing location for audit trail.
+
+    Stored under the owning tenant's prefix (mirroring the input layout) so
+    preprocessing artifacts are tenant-scoped. ``object_key`` is the bare file
+    name; the tenant prefix is added here.
+    """
     preprocessing_location = os.environ.get(EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION)
     if not preprocessing_location:
         return
 
-    pre_bucket, pre_prefix = parse_s3_uri(preprocessing_location)
-    pre_key = f"{pre_prefix}/{object_key}" if pre_prefix else object_key
+    bucket, key = get_bucket_and_key(preprocessing_location, tenant_id, object_key)
 
     try:
-        s3_service.upload_file(pre_bucket, pre_key, BytesIO(file_bytes), content_type)
-        logger.info(f"Original file saved to preprocessing: {pre_key}")
+        s3_service.upload_file(bucket, key, BytesIO(file_bytes), content_type)
+        logger.info(f"Original file saved to preprocessing: {key}")
     except Exception as e:
         logger.warning(f"Failed to save original to preprocessing: {e}")
 
@@ -110,6 +175,7 @@ async def dispatch_upload(
     job_id: str,
     trace_id: str,
     ddb_key: str,
+    tenant_id: str | None = None,
 ) -> None:
     """Upload file to S3. Classifies DDB record on failure."""
     from documentai_api.utils.ddb import classify_as_conversion_failed, classify_as_failed
@@ -124,6 +190,7 @@ async def dispatch_upload(
             user_provided_document_category=category,
             job_id=job_id,
             trace_id=trace_id,
+            tenant_id=tenant_id,
         )
     except ImageConversionError as e:
         await asyncio.to_thread(
@@ -159,6 +226,7 @@ async def upload_document_for_processing(
     trace_id: str | None = None,
     batch_id: str | None = None,
     build_id: str | None = None,
+    tenant_id: str | None = None,
 ) -> None:
     """Upload a document file to S3 with traceability metadata.
 
@@ -176,7 +244,9 @@ async def upload_document_for_processing(
             extra={"upload_filename": original_file_name, "original_size_bytes": len(file_bytes)},
         )
 
-        _save_original_to_preprocessing(file_bytes, os.path.basename(object_key), content_type)
+        _save_original_to_preprocessing(
+            file_bytes, os.path.basename(object_key), content_type, tenant_id=tenant_id
+        )
 
         try:
             converted_bytes = await asyncio.to_thread(convert_to_png, file_bytes, content_type)

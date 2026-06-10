@@ -8,7 +8,11 @@ from typing import IO, TYPE_CHECKING, Any
 from documentai_api.utils.aws_client_factory import AWSClientFactory
 
 if TYPE_CHECKING:
-    from mypy_boto3_s3.type_defs import GetObjectOutputTypeDef, HeadObjectOutputTypeDef
+    from mypy_boto3_s3.type_defs import (
+        GetObjectOutputTypeDef,
+        HeadObjectOutputTypeDef,
+        ObjectIdentifierTypeDef,
+    )
 
 
 def upload_file(
@@ -58,6 +62,22 @@ def delete_object(bucket: str, key: str) -> None:
     """Delete file from S3."""
     s3_client = AWSClientFactory.get_s3_client()
     s3_client.delete_object(Bucket=bucket, Key=key)
+
+
+def delete_prefix(bucket: str, prefix: str) -> int:
+    """Delete every object under a prefix. Returns the number of objects deleted."""
+    s3_client = AWSClientFactory.get_s3_client()
+    paginator = s3_client.get_paginator("list_objects_v2")
+
+    deleted = 0
+    for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
+        objects: list[ObjectIdentifierTypeDef] = [
+            {"Key": obj["Key"]} for obj in page.get("Contents", [])
+        ]
+        if objects:
+            s3_client.delete_objects(Bucket=bucket, Delete={"Objects": objects})
+            deleted += len(objects)
+    return deleted
 
 
 def get_content_type(bucket: str, key: str) -> str:
