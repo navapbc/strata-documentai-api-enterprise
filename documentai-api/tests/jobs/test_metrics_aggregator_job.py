@@ -42,8 +42,12 @@ def create_record(
     return record
 
 
-def create_daily_stats(s3_client, date, total_records=5):
-    """Factory function to create daily stats in S3."""
+def create_daily_stats(s3_client, date, total_records=5, tenant_id=None):
+    """Factory function to create daily stats in S3.
+
+    When tenant_id is given, writes to the tenant-scoped daily path; otherwise
+    writes to the global daily path.
+    """
     bda_wait_time_avg = 2.4
     bda_processing_time_avg = 30.0
     total_processing_time_avg = bda_wait_time_avg + bda_processing_time_avg
@@ -69,9 +73,14 @@ def create_daily_stats(s3_client, date, total_records=5):
         },
     }
 
+    if tenant_id:
+        key = f"{S3_AGG_DDB_DATA_DAILY_PREFIX}={date}/tenant={tenant_id}/stats.json"
+    else:
+        key = f"{S3_AGG_DDB_DATA_DAILY_PREFIX}={date}/stats.json"
+
     s3_client.put_object(
         Bucket="test-bucket",
-        Key=f"{S3_AGG_DDB_DATA_DAILY_PREFIX}={date}/stats.json",
+        Key=key,
         Body=json.dumps(stats),
     )
     return stats
@@ -323,21 +332,27 @@ def test_get_daily_stats_for_month_empty(s3_client, s3_bucket):
 
     daily_stats = _get_daily_stats_for_month("test-bucket", "2026-02")
 
-    assert daily_stats == []
+    assert daily_stats == {}
 
 
 def test_get_daily_stats_for_month_multiple_days(s3_client, s3_bucket):
-    """Test reading daily stats for multiple days."""
+    """Test reading daily stats for multiple days, grouped by tenant."""
     from documentai_api.jobs.metrics_aggregator.main import _get_daily_stats_for_month
 
     create_daily_stats(s3_client, "2026-02-01", total_records=10)
     create_daily_stats(s3_client, "2026-02-02", total_records=15)
     create_daily_stats(s3_client, "2026-02-03", total_records=12)
+    create_daily_stats(s3_client, "2026-02-01", total_records=4, tenant_id="tenant-a")
+    create_daily_stats(s3_client, "2026-02-02", total_records=6, tenant_id="tenant-a")
 
     daily_stats = _get_daily_stats_for_month("test-bucket", "2026-02")
 
-    assert len(daily_stats) == 3
-    assert all(stat["date"].startswith("2026-02") for stat in daily_stats)
+    assert set(daily_stats.keys()) == {"__global__", "tenant-a"}
+    assert len(daily_stats["__global__"]) == 3
+    assert len(daily_stats["tenant-a"]) == 2
+    assert all(
+        stat["date"].startswith("2026-02") for stats in daily_stats.values() for stat in stats
+    )
 
 
 def test_aggregate_monthly_no_daily_stats(s3_client, s3_bucket):
@@ -374,6 +389,45 @@ def test_aggregate_monthly_success(s3_client, s3_bucket):
     assert monthly_stats["month"] == "2026-02"
     assert monthly_stats["total_records"] == 37  # 10 + 15 + 12
     assert monthly_stats["total_bda_invocations"] == 31  # (10-2) + (15-2) + (12-2)
+
+
+def test_aggregate_monthly_multi_tenant(s3_client, s3_bucket):
+    """Test monthly aggregation writes a per-tenant file alongside the global one."""
+    from documentai_api.jobs.metrics_aggregator.main import _aggregate_monthly
+
+    # global daily stats
+    create_daily_stats(s3_client, "2026-02-01", total_records=10)
+    create_daily_stats(s3_client, "2026-02-02", total_records=15)
+    # tenant-scoped daily stats (3 days)
+    create_daily_stats(s3_client, "2026-02-01", total_records=4, tenant_id="tenant-a")
+    create_daily_stats(s3_client, "2026-02-02", total_records=6, tenant_id="tenant-a")
+    create_daily_stats(s3_client, "2026-02-03", total_records=8, tenant_id="tenant-a")
+
+    result = _aggregate_monthly("test-bucket", "2026-02")
+
+    assert result is not None
+    assert result["month"] == "2026-02"
+    # daysProcessed reflects the tenant with the most days
+    assert result["daysProcessed"] == 3
+    # outputLocation always points at the global monthly file
+    assert result["outputLocation"].endswith(f"{S3_AGG_DDB_DATA_MONTHLY_PREFIX}=2026-02/stats.json")
+
+    # global monthly stats
+    obj = s3_client.get_object(
+        Bucket="test-bucket", Key=f"{S3_AGG_DDB_DATA_MONTHLY_PREFIX}=2026-02/stats.json"
+    )
+    global_monthly = json.loads(obj["Body"].read().decode())
+    assert global_monthly["month"] == "2026-02"
+    assert global_monthly["total_records"] == 25  # 10 + 15
+
+    # per-tenant monthly stats
+    obj = s3_client.get_object(
+        Bucket="test-bucket",
+        Key=f"{S3_AGG_DDB_DATA_MONTHLY_PREFIX}=2026-02/tenant=tenant-a/stats.json",
+    )
+    tenant_monthly = json.loads(obj["Body"].read().decode())
+    assert tenant_monthly["month"] == "2026-02"
+    assert tenant_monthly["total_records"] == 18  # 4 + 6 + 8
 
 
 def test_main_already_aggregated(s3_client, s3_bucket):
@@ -546,6 +600,63 @@ def test_main_with_monthly_aggregation(s3_client, s3_bucket, mock_metrics_aggreg
     assert len(result["monthlyAggregations"]) == 1
     assert result["monthlyAggregations"][0]["month"] == "2026-02"
     assert result["monthlyAggregations"][0]["daysProcessed"] == 3
+
+
+def test_main_multi_tenant_daily_and_monthly(s3_client, s3_bucket, mock_metrics_aggregator_env):
+    """End-to-end: multi-tenant Athena rows flow through main() to tenant-scoped daily AND monthly S3 files.
+
+    main() always runs the monthly rollup after the daily write, so a single run
+    pins the full pipeline: _aggregate_records grouping -> daily writer keys ->
+    monthly reader parsing -> monthly writer keys, for both global and per-tenant.
+    """
+    mock_results = mock_metrics_aggregator_env["mock_results"]
+    mock_results.return_value = [
+        create_record(tenant_id="tenant-a", created_at="2026-02-15T10:00:00Z"),
+        create_record(tenant_id="tenant-a", created_at="2026-02-15T11:00:00Z"),
+        create_record(tenant_id="tenant-b", created_at="2026-02-15T12:00:00Z"),
+    ]
+
+    result = main("2026-02-15", overwrite=True)
+
+    assert result["statusCode"] == 200
+    assert result["recordsProcessed"] == 3
+
+    def read(key):
+        return json.loads(
+            s3_client.get_object(Bucket="test-bucket", Key=key)["Body"].read().decode()
+        )
+
+    # daily files: global + one per tenant
+    assert read(f"{S3_AGG_DDB_DATA_DAILY_PREFIX}=2026-02-15/stats.json")["total_records"] == 3
+    assert (
+        read(f"{S3_AGG_DDB_DATA_DAILY_PREFIX}=2026-02-15/tenant=tenant-a/stats.json")[
+            "total_records"
+        ]
+        == 2
+    )
+    assert (
+        read(f"{S3_AGG_DDB_DATA_DAILY_PREFIX}=2026-02-15/tenant=tenant-b/stats.json")[
+            "total_records"
+        ]
+        == 1
+    )
+
+    # monthly rollup: global + one per tenant
+    global_monthly = read(f"{S3_AGG_DDB_DATA_MONTHLY_PREFIX}=2026-02/stats.json")
+    assert global_monthly["month"] == "2026-02"
+    assert global_monthly["total_records"] == 3
+    assert (
+        read(f"{S3_AGG_DDB_DATA_MONTHLY_PREFIX}=2026-02/tenant=tenant-a/stats.json")[
+            "total_records"
+        ]
+        == 2
+    )
+    assert (
+        read(f"{S3_AGG_DDB_DATA_MONTHLY_PREFIX}=2026-02/tenant=tenant-b/stats.json")[
+            "total_records"
+        ]
+        == 1
+    )
 
 
 @mock_aws

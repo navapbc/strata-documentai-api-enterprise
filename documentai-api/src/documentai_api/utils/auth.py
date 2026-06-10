@@ -189,8 +189,13 @@ def _verify_with_insecure_shared_key(api_key: str) -> None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
 
 
-def get_active_keys_by_name(api_key_name: str) -> list[dict[str, Any]]:
+def get_active_keys_by_name(
+    api_key_name: str, tenant_id: str | None = None
+) -> list[dict[str, Any]]:
     """Return all active DynamoDB records for a given client name.
+
+    If ``tenant_id`` is provided, only keys belonging to that tenant are returned;
+    otherwise keys are matched by name across all tenants.
 
     Note: performs a table scan - acceptable for low-volume admin operations.
     """
@@ -207,6 +212,7 @@ def get_active_keys_by_name(api_key_name: str) -> list[dict[str, Any]]:
             for item in all_items
             if item.get(ApiKeyRecord.API_KEY_NAME) == api_key_name
             and item.get(ApiKeyRecord.IS_ACTIVE, False)
+            and (tenant_id is None or item.get(ApiKeyRecord.TENANT_ID) == tenant_id)
         ]
     except Exception as e:
         logger.error(f"Failed to scan api-keys table: {e}")
@@ -236,10 +242,10 @@ def is_duplicate_key_name(tenant_id: str, api_key_name: str) -> bool:
 def generate_api_key(
     api_key_name: str,
     environment: str,
+    tenant_id: str,
     expires_at: datetime | None = None,
     created_by: str | None = None,
     email_address: str | None = None,
-    tenant_id: str | None = None,
 ) -> tuple[str, list[dict[str, Any]]]:
     """Generate a new API key, store its hash in DynamoDB, and return the plaintext key.
 
@@ -257,7 +263,7 @@ def generate_api_key(
     """
     from documentai_api.services import ddb as ddb_service
 
-    existing_keys = get_active_keys_by_name(api_key_name)
+    existing_keys = get_active_keys_by_name(api_key_name, tenant_id)
 
     random_part = secrets.token_urlsafe(32)[:32]
     api_key = f"docai_{random_part}"
@@ -278,12 +284,12 @@ def generate_api_key(
     if expires_at:
         item[ApiKeyRecord.EXPIRES_AT] = expires_at.isoformat()
 
+    item[ApiKeyRecord.TENANT_ID] = tenant_id
+
     if created_by:
         item[ApiKeyRecord.CREATED_BY] = created_by
     if email_address:
         item[ApiKeyRecord.EMAIL_ADDRESS] = email_address
-    if tenant_id:
-        item[ApiKeyRecord.TENANT_ID] = tenant_id
 
     ddb_service.put_item(table_name, item)
     logger.info(f"Generated API key for key: {api_key_name} in environment: {environment}")

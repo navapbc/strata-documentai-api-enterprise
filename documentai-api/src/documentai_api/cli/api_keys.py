@@ -12,6 +12,10 @@ app = typer.Typer()
 def generate(
     api_key_name: Annotated[str, typer.Option(help="Name of the calling system")],
     environment: Annotated[str, typer.Option(help="Deployment environment (e.g. prod, staging)")],
+    tenant_id: Annotated[
+        str,
+        typer.Option(help="Tenant ID to associate with the key"),
+    ],
     expires_at: Annotated[
         str | None,
         typer.Option(
@@ -36,11 +40,18 @@ def generate(
             typer.echo("Expected ISO 8601 format, e.g. 2027-01-01T00:00:00+00:00", err=True)
             raise typer.Exit(code=1) from None
 
+    from documentai_api.utils.tenants import get_tenant
+
+    if not get_tenant(tenant_id):
+        typer.echo(f"Error: Tenant '{tenant_id}' does not exist.", err=True)
+        raise typer.Exit(code=1)
+
     try:
         api_key, existing_keys = generate_api_key(
             api_key_name=api_key_name,
             environment=environment,
             expires_at=parsed_expires_at,
+            tenant_id=tenant_id,
         )
     except Exception as e:
         typer.echo(f"Error: Failed to generate API key: {e}", err=True)
@@ -63,6 +74,7 @@ def generate(
     typer.echo("")
     typer.echo(f"Client:      {api_key_name}")
     typer.echo(f"Environment: {environment}")
+    typer.echo(f"Tenant:      {tenant_id}")
     if parsed_expires_at:
         typer.echo(f"Expires:     {parsed_expires_at.isoformat()}")
     else:

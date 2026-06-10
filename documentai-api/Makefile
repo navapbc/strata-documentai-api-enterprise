@@ -181,14 +181,15 @@ clean: ## Clean build artifacts
 	rm -rf .pytest_cache .coverage_report .coverage __pycache__
 	find . -type d -name "__pycache__" -exec rm -rf {} +
 
-api-key: ## Mint an API key (NAME=client ENVIRONMENT=dev [EXPIRES=ISO8601]).
+api-key: ## Mint an API key (NAME=client ENVIRONMENT=dev TENANT=tenant-id [EXPIRES=ISO8601]).
 # Runs natively (not in container) - needs host AWS credentials for DynamoDB.
 # Example usage:
-#   make api-key NAME=my-client ENVIRONMENT=dev
-#   make api-key NAME=my-client ENVIRONMENT=dev EXPIRES=2026-12-31T23:59:59Z
+#   make api-key NAME=my-client ENVIRONMENT=dev TENANT=my-tenant
+#   make api-key NAME=my-client ENVIRONMENT=dev TENANT=my-tenant EXPIRES=2026-12-31T23:59:59Z
 	@:$(call check_defined, NAME, client name, e.g. NAME=my-client)
 	@:$(call check_defined, ENVIRONMENT, environment, e.g. ENVIRONMENT=dev)
-	uv run --frozen api-keys generate --api-key-name "$(NAME)" --environment "$(ENVIRONMENT)" $(if $(EXPIRES),--expires-at "$(EXPIRES)",)
+	@:$(call check_defined, TENANT, tenant ID, e.g. TENANT=my-tenant)
+	uv run --frozen api-keys generate --api-key-name "$(NAME)" --environment "$(ENVIRONMENT)" --tenant-id "$(TENANT)" $(if $(EXPIRES),--expires-at "$(EXPIRES)",)
 
 openapi-spec: ## Export openapi spec to docs directory
 	$(PY_RUN_CMD) export-openapi > $(APP_DOCS_DIR)/openapi.json

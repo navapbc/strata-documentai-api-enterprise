@@ -279,46 +279,72 @@ def _write_aggregated_stats(
     return global_key
 
 
-def _get_daily_stats_for_month(bucket: str, yyyymm: str) -> list[dict[str, Any]]:
-    """Read all daily global stats for a given month from S3."""
+def _get_daily_stats_for_month(bucket: str, yyyymm: str) -> dict[str, list[dict[str, Any]]]:
+    """Read all daily stats for a given month from S3, grouped by tenant.
+
+    Returns a dict of {tenant_id: [daily_stats]}. The key "__global__" contains
+    the global (non-tenant-scoped) daily stats.
+    """
     s3 = AWSClientFactory.get_s3_client()
     prefix = f"{S3_AGG_DDB_DATA_DAILY_PREFIX}={yyyymm}-"
 
-    daily_stats = []
+    by_tenant: dict[str, list[dict[str, Any]]] = {}
     paginator = s3.get_paginator("list_objects_v2")
     for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
         for obj in page.get("Contents", []):
-            # Only read global stats (exclude tenant-scoped files)
-            if obj["Key"].endswith("stats.json") and "/tenant=" not in obj["Key"]:
-                response = s3.get_object(Bucket=bucket, Key=obj["Key"])
-                daily_stats.append(json.loads(response["Body"].read().decode()))
+            key = obj["Key"]
+            if not key.endswith("stats.json"):
+                continue
 
-    return daily_stats
+            response = s3.get_object(Bucket=bucket, Key=key)
+            stats = json.loads(response["Body"].read().decode())
+
+            if "/tenant=" in key:
+                # extract tenant id from path like .../tenant=foo/stats.json
+                tenant_id = key.split("/tenant=")[1].split("/")[0]
+            else:
+                tenant_id = "__global__"
+
+            by_tenant.setdefault(tenant_id, []).append(stats)
+
+    return by_tenant
 
 
 def _aggregate_monthly(bucket: str, yyyymm: str) -> dict[str, Any] | None:
-    """Aggregate daily stats into monthly stats."""
-    s3_key = f"{S3_AGG_DDB_DATA_MONTHLY_PREFIX}={yyyymm}/stats.json"
+    """Aggregate daily stats into monthly stats, per-tenant and global."""
     s3 = AWSClientFactory.get_s3_client()
 
-    daily_stats = _get_daily_stats_for_month(bucket, yyyymm)
-    if not daily_stats:
+    daily_stats_by_tenant = _get_daily_stats_for_month(bucket, yyyymm)
+    if not daily_stats_by_tenant:
         logger.warning(f"No daily stats found for {yyyymm}")
         return None
 
     from documentai_api.utils.metrics import build_summary
 
-    monthly_stats = build_summary(daily_stats)
-    monthly_stats["month"] = yyyymm
+    days_processed = 0
+    for tenant_id, daily_stats in daily_stats_by_tenant.items():
+        monthly_stats = build_summary(daily_stats)
+        monthly_stats["month"] = yyyymm
 
-    s3.put_object(
-        Bucket=bucket, Key=s3_key, Body=json.dumps(monthly_stats), ContentType="application/json"
-    )
-    logger.info(f"Monthly stats written to s3://{bucket}/{s3_key}")
+        if tenant_id == "__global__":
+            s3_key = f"{S3_AGG_DDB_DATA_MONTHLY_PREFIX}={yyyymm}/stats.json"
+        else:
+            s3_key = f"{S3_AGG_DDB_DATA_MONTHLY_PREFIX}={yyyymm}/tenant={tenant_id}/stats.json"
+
+        s3.put_object(
+            Bucket=bucket,
+            Key=s3_key,
+            Body=json.dumps(monthly_stats),
+            ContentType="application/json",
+        )
+        logger.info(f"Monthly stats written to s3://{bucket}/{s3_key}")
+        days_processed = max(days_processed, len(daily_stats))
+
+    global_key = f"{S3_AGG_DDB_DATA_MONTHLY_PREFIX}={yyyymm}/stats.json"
     return {
         "month": yyyymm,
-        "outputLocation": f"s3://{bucket}/{s3_key}",
-        "daysProcessed": len(daily_stats),
+        "outputLocation": f"s3://{bucket}/{global_key}",
+        "daysProcessed": days_processed,
     }
 
 

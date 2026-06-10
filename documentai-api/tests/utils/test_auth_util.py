@@ -44,9 +44,11 @@ def clear_cache():
 def seed_api_key(api_keys_table):
     """Factory fixture to create an API key and return (raw_key, key_hash)."""
 
-    def _seed(api_key_name="test-client", environment="prod", expires_at=None, tenant_id=None):
+    def _seed(
+        api_key_name="test-client", environment="prod", expires_at=None, tenant_id="test-tenant"
+    ):
         api_key, _ = auth_util.generate_api_key(
-            api_key_name, environment, expires_at=expires_at, tenant_id=tenant_id
+            api_key_name, environment, tenant_id=tenant_id, expires_at=expires_at
         )
         return api_key, auth_util._hash_key(api_key)
 
@@ -374,10 +376,19 @@ def test_generate_api_key_warns_existing_via_ddb(seed_api_key, api_keys_table):
     """Test generate_api_key detects existing active keys via real DDB scan."""
     seed_api_key(api_key_name="my-service")
 
-    _, existing = auth_util.generate_api_key("my-service", "prod")
+    _, existing = auth_util.generate_api_key("my-service", "prod", "test-tenant")
 
     assert len(existing) == 1
     assert existing[0][ApiKeyRecord.API_KEY_NAME] == "my-service"
+
+
+def test_generate_api_key_existing_warning_is_tenant_scoped(seed_api_key, api_keys_table):
+    """A same-named active key in another tenant must not be reported as existing."""
+    seed_api_key(api_key_name="my-service", tenant_id="tenant-a")
+
+    _, existing = auth_util.generate_api_key("my-service", "prod", "tenant-b")
+
+    assert existing == []
 
 
 def test_generate_api_key_with_expires_at(seed_api_key, api_keys_table):
