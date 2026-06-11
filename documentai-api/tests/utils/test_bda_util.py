@@ -1,4 +1,19 @@
+import pytest
+
 from documentai_api.utils import bda as bda_util
+
+
+@pytest.mark.parametrize(
+    ("arn", "expected_region"),
+    [
+        ("arn:aws:bedrock-data-automation:us-east-1:123456789012:job/abc123", "us-east-1"),
+        ("arn:aws:bedrock-data-automation:eu-west-1:123456789012:job/xyz789", "eu-west-1"),
+        ("invalid-arn", None),
+    ],
+)
+def test_extract_region_from_bda_arn(arn, expected_region):
+    """Test extracting AWS region from BDA ARN."""
+    assert bda_util.extract_region_from_bda_arn(arn) == expected_region
 
 
 def test_get_text_from_standard_blueprint_document_modality():

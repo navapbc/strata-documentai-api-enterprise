@@ -178,7 +178,10 @@ async def dispatch_upload(
     tenant_id: str | None = None,
 ) -> None:
     """Upload file to S3. Classifies DDB record on failure."""
-    from documentai_api.utils.ddb import classify_as_conversion_failed, classify_as_failed
+    from documentai_api.utils.document_lifecycle import (
+        classify_as_conversion_failed,
+        classify_as_failed,
+    )
     from documentai_api.utils.dto import ClassificationData
 
     try:

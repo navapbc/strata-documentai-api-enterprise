@@ -14,7 +14,7 @@ from documentai_api.utils.bda import (
     extract_field_metadata_from_bda_results,
     get_text_from_standard_blueprint,
 )
-from documentai_api.utils.ddb import (
+from documentai_api.utils.document_lifecycle import (
     classify_as_no_custom_blueprint_matched,
     classify_as_no_document_detected,
     classify_as_success,

@@ -152,3 +152,16 @@ def extract_field_metadata_from_bda_results(
     """Extract only metadata (confidence, empty fields) from BDA result."""
     metadata, _ = extract_field_values_from_bda_results(bda_result_json)
     return metadata
+
+
+def extract_region_from_bda_arn(bda_invocation_arn: str) -> str | None:
+    """Extract AWS region from BDA invocation ARN."""
+    try:
+        # arn format: arn:aws:bedrock-data-automation:us-east-1:account:job/job-id
+        parts = bda_invocation_arn.split(":")
+        if len(parts) >= 4:
+            return parts[3]  # Region is the 4th part
+        return None
+    except Exception as e:
+        logger.error(f"Failed to extract region from ARN {bda_invocation_arn}: {e}")
+        return None
