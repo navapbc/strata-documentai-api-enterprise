@@ -8,7 +8,7 @@ from documentai_api.schemas.document_batches import DocumentBatches
 from documentai_api.schemas.document_builds import DocumentBuilds
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.auth import UserContext, get_user_context_from_api_key
-from documentai_api.utils.ddb import get_batch
+from documentai_api.utils.batch_operations import get_batch
 from documentai_api.utils.document_build import get_build_metadata
 
 # TODO: Have validate_batch_tenant_access and validate_build_tenant_access return the

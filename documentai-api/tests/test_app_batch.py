@@ -753,7 +753,7 @@ def test_post_then_get_batch_end_to_end(
     """POST /v1/documents/batch → GET /v1/batches/{id} round-trip against real DDB."""
     from documentai_api.config.constants import BatchStatus
     from documentai_api.schemas.document_batches import DocumentBatches
-    from documentai_api.utils.ddb import get_batch, query_jobs_by_batch_id
+    from documentai_api.utils.batch_operations import get_batch, query_jobs_by_batch_id
 
     mocker.patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf")
     mocker.patch("documentai_api.app_batch.upload_document_for_processing", new_callable=AsyncMock)

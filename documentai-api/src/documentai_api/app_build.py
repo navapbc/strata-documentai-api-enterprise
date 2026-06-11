@@ -44,10 +44,6 @@ from documentai_api.models.api_responses import (
 from documentai_api.models.document_record import DocumentRecord
 from documentai_api.schemas.document_builds import DocumentBuilds
 from documentai_api.utils.auth import UserContext, get_user_context_from_api_key
-from documentai_api.utils.ddb import (
-    classify_as_ai_consent_declined,
-    insert_minimal_ddb_record,
-)
 from documentai_api.utils.document_build import (
     clear_submitted_at,
     create_document_build,
@@ -58,6 +54,10 @@ from documentai_api.utils.document_build import (
     is_document_build_submitted,
     mark_document_build_submitted,
     upsert_document_build_page,
+)
+from documentai_api.utils.document_lifecycle import (
+    classify_as_ai_consent_declined,
+    insert_minimal_ddb_record,
 )
 from documentai_api.utils.pdf import merge_pages_to_pdf
 from documentai_api.utils.s3 import parse_s3_uri

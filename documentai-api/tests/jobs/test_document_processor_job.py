@@ -25,7 +25,7 @@ def mock_preclassification(mocker):
     from documentai_api.utils.dto import BedrockClassificationResult
 
     mocker.patch(
-        "documentai_api.utils.ddb.preclassify_document",
+        "documentai_api.utils.document_lifecycle.preclassify_document",
         return_value=BedrockClassificationResult(
             document_type="tax_documents",
             confidence=0.95,

@@ -45,15 +45,17 @@ from documentai_api.models.document_record import DocumentRecord
 from documentai_api.schemas.document_batches import DocumentBatches
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.auth import UserContext, get_user_context_from_api_key
-from documentai_api.utils.ddb import (
+from documentai_api.utils.batch_operations import (
+    create_batch,
+    get_batch,
+    query_jobs_by_batch_id,
+    update_batch_status,
+)
+from documentai_api.utils.document_lifecycle import (
     classify_as_ai_consent_declined,
     classify_as_conversion_failed,
     classify_as_failed,
-    create_batch,
-    get_batch,
     insert_minimal_ddb_record,
-    query_jobs_by_batch_id,
-    update_batch_status,
 )
 from documentai_api.utils.dto import ClassificationData
 from documentai_api.utils.tenant_access import validate_batch_tenant_access

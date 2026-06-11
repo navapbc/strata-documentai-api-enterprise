@@ -23,10 +23,10 @@ from documentai_api.config.env import EnvVars, get_aws_config, get_required_env
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils.bda_invoker import invoke_bedrock_data_automation
-from documentai_api.utils.ddb import (
+from documentai_api.utils.ddb import get_ddb_record
+from documentai_api.utils.document_lifecycle import (
     classify_as_failed,
     classify_as_not_implemented,
-    get_ddb_record,
     set_bda_processing_status_not_started,
     set_bda_processing_status_started,
     upsert_initial_ddb_record,
