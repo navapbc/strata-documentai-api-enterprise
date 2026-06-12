@@ -55,6 +55,23 @@ class BedrockClassificationResult:
     document_count: int
     is_document: bool
     is_blurry: bool = False
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    duration_seconds: Decimal | None = None
+    model_id: str | None = None
+
+
+@dataclass
+class CropResult:
+    """Result of the document ROI crop operation."""
+
+    cropped: bool = False
+    bounding_box: tuple[float, float, float, float] | None = None
+    retained_percentage: Decimal | None = None
+    duration_seconds: Decimal | None = None
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    model_id: str | None = None
 
 
 @dataclass

@@ -1,11 +1,13 @@
 """Tests for utils/image_optimization.py (pre-BDA S3 image preparation)."""
 
 import io
+from decimal import Decimal
 
 import pytest
 from PIL import Image
 
 from documentai_api.config.constants import ConfigDefaults
+from documentai_api.utils.dto import CropResult
 from documentai_api.utils.image_optimization import (
     convert_s3_object_to_grayscale,
     convert_to_grayscale,
@@ -190,7 +192,7 @@ def test_crop_roi_skips_non_image(s3_bucket, mocker):
 def test_crop_roi_no_document_leaves_object(s3_bucket, mocker):
     """No bbox detected: object is left uncropped."""
     mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=True)
-    mocker.patch(f"{MODULE}.detect_document_bbox", return_value=None)
+    mocker.patch(f"{MODULE}.detect_document_bbox", return_value=(None, CropResult()))
     original = _png_bytes(1000, 1000)
     s3_bucket.put_object(Key="a.png", Body=original, ContentType="image/png")
 
@@ -207,7 +209,18 @@ def test_crop_roi_happy_path_overwrites_with_cropped(s3_bucket, mocker, monkeypa
         EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION, f"s3://{s3_bucket.name}/preprocessing"
     )
     mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=True)
-    mocker.patch(f"{MODULE}.detect_document_bbox", return_value=(200, 200, 600, 600))
+    mocker.patch(
+        f"{MODULE}.detect_document_bbox",
+        return_value=(
+            (200, 200, 600, 600),
+            CropResult(
+                duration_seconds=Decimal("0.5"),
+                input_tokens=100,
+                output_tokens=50,
+                model_id="test-model",
+            ),
+        ),
+    )
     s3_bucket.put_object(Key="a.png", Body=_png_bytes(1000, 1000), ContentType="image/png")
 
     crop_image_to_document_roi(s3_bucket.name, "a.png")
@@ -224,7 +237,18 @@ def test_crop_roi_aborts_when_no_preprocessing_location(s3_bucket, mocker, monke
 
     monkeypatch.delenv(EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION, raising=False)
     mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=True)
-    mocker.patch(f"{MODULE}.detect_document_bbox", return_value=(200, 200, 600, 600))
+    mocker.patch(
+        f"{MODULE}.detect_document_bbox",
+        return_value=(
+            (200, 200, 600, 600),
+            CropResult(
+                duration_seconds=Decimal("0.5"),
+                input_tokens=100,
+                output_tokens=50,
+                model_id="test-model",
+            ),
+        ),
+    )
     original = _png_bytes(1000, 1000)
     s3_bucket.put_object(Key="a.png", Body=original, ContentType="image/png")
 
@@ -242,7 +266,18 @@ def test_crop_roi_saves_precrop_original_to_preprocessing(s3_bucket, mocker, mon
         EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION, f"s3://{s3_bucket.name}/preprocessing"
     )
     mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=True)
-    mocker.patch(f"{MODULE}.detect_document_bbox", return_value=(200, 200, 600, 600))
+    mocker.patch(
+        f"{MODULE}.detect_document_bbox",
+        return_value=(
+            (200, 200, 600, 600),
+            CropResult(
+                duration_seconds=Decimal("0.5"),
+                input_tokens=100,
+                output_tokens=50,
+                model_id="test-model",
+            ),
+        ),
+    )
     original = _png_bytes(1000, 1000)
     s3_bucket.put_object(Key="a.png", Body=original, ContentType="image/png")
 
@@ -262,7 +297,18 @@ def test_crop_roi_saves_precrop_original_tenant_scoped(s3_bucket, mocker, monkey
         EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION, f"s3://{s3_bucket.name}/preprocessing"
     )
     mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=True)
-    mocker.patch(f"{MODULE}.detect_document_bbox", return_value=(200, 200, 600, 600))
+    mocker.patch(
+        f"{MODULE}.detect_document_bbox",
+        return_value=(
+            (200, 200, 600, 600),
+            CropResult(
+                duration_seconds=Decimal("0.5"),
+                input_tokens=100,
+                output_tokens=50,
+                model_id="test-model",
+            ),
+        ),
+    )
     original = _png_bytes(1000, 1000)
     s3_bucket.put_object(Key="a.png", Body=original, ContentType="image/png")
 

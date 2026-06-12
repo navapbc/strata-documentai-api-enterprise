@@ -73,9 +73,9 @@ def test_converse_request_shape(monkeypatch):
         )
 
     # Verify response is parsed correctly
-    assert result["role"] == "assistant"
+    assert result["output"]["message"]["role"] == "assistant"
     assert (
-        result["content"][0]["text"]
+        result["output"]["message"]["content"][0]["text"]
         == '{"document_type": "tax_documents", "confidence": 0.95, "document_count": 1, "is_document": true}'
     )
 
@@ -112,7 +112,7 @@ def test_retries_on_throttling(monkeypatch):
     with stubber:
         result = invoke_model(model_id="test-model", messages=messages)
 
-    assert result["role"] == "assistant"
+    assert result["output"]["message"]["role"] == "assistant"
     stubber.assert_no_pending_responses()
 
 

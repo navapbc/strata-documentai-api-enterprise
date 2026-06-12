@@ -31,7 +31,7 @@ from documentai_api.utils.document_lifecycle import (
     set_bda_processing_status_started,
     upsert_initial_ddb_record,
 )
-from documentai_api.utils.dto import ClassificationData
+from documentai_api.utils.dto import ClassificationData, CropResult
 from documentai_api.utils.image_optimization import (
     convert_s3_object_to_grayscale,
     crop_image_to_document_roi,
@@ -40,6 +40,44 @@ from documentai_api.utils.s3 import parse_s3_uri
 
 logger = documentai_api.logging.get_logger(__name__)
 app = typer.Typer()
+
+
+def _persist_optimization_metrics(
+    ddb_key: str,
+    crop_result: CropResult,
+    grayscale_applied: bool,
+    processed_file_size_bytes: int | None,
+) -> None:
+    """Write image optimization metrics to the DDB record."""
+    from documentai_api.config.env import EnvVars, get_required_env
+    from documentai_api.services import ddb as ddb_service
+
+    field_map = {
+        DocumentMetadata.CROP_BOUNDING_BOX: str(list(crop_result.bounding_box))
+        if crop_result.bounding_box
+        else None,
+        DocumentMetadata.CROP_RETAINED_PERCENTAGE: crop_result.retained_percentage,
+        DocumentMetadata.CROP_DURATION_SECONDS: crop_result.duration_seconds,
+        DocumentMetadata.CROP_INPUT_TOKENS: crop_result.input_tokens,
+        DocumentMetadata.CROP_OUTPUT_TOKENS: crop_result.output_tokens,
+        DocumentMetadata.CROP_MODEL_ID: crop_result.model_id,
+        DocumentMetadata.GRAYSCALE_CONVERSION: grayscale_applied,
+        DocumentMetadata.PROCESSED_FILE_SIZE_BYTES: processed_file_size_bytes,
+    }
+
+    updates = []
+    values = {}
+    for field, value in field_map.items():
+        if value is not None:
+            param = f":{field[0].lower()}{field[1:]}"
+            updates.append(f"{field} = {param}")
+            values[param] = value
+
+    if updates:
+        table_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME)
+        ddb_service.update_item(
+            table_name, {"fileName": ddb_key}, "SET " + ", ".join(updates), values
+        )
 
 
 def _invoke_bda(
@@ -174,14 +212,19 @@ def main(
         preclassification_category = existing_record.get(
             DocumentMetadata.PRECLASSIFICATION_CATEGORY
         )
-        crop_image_to_document_roi(
+        crop_result = crop_image_to_document_roi(
             bucket_name, object_key, tenant_id=existing_record.get(DocumentMetadata.TENANT_ID)
         )
         if convert_s3_object_to_grayscale(bucket_name, object_key):
+            processed_size = s3_service.get_file_size_bytes(bucket_name, object_key)
+            _persist_optimization_metrics(ddb_key, crop_result, True, processed_size)
             set_bda_processing_status_not_started(ddb_key)
             invoke_bda(bucket_name, object_key, ddb_key, preclassification_category)
             logger.info(f"Converted {ddb_key} to grayscale and invoked BDA")
         else:
+            # Grayscale conversion ran but the result was still too large for BDA.
+            # Record as False since the optimization didn't produce a usable output.
+            _persist_optimization_metrics(ddb_key, crop_result, False, None)
             classify_as_not_implemented(
                 object_key=ddb_key,
                 data=ClassificationData(additional_info="File too large after conversion"),
@@ -190,9 +233,11 @@ def main(
         preclassification_category = existing_record.get(
             DocumentMetadata.PRECLASSIFICATION_CATEGORY
         )
-        crop_image_to_document_roi(
+        crop_result = crop_image_to_document_roi(
             bucket_name, object_key, tenant_id=existing_record.get(DocumentMetadata.TENANT_ID)
         )
+        processed_size = s3_service.get_file_size_bytes(bucket_name, object_key)
+        _persist_optimization_metrics(ddb_key, crop_result, False, processed_size)
         invoke_bda(bucket_name, object_key, ddb_key, preclassification_category)
     else:
         logger.info(f"File {ddb_key} already has status: {status}, skipping")

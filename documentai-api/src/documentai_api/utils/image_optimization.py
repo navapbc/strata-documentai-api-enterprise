@@ -7,6 +7,7 @@ best-effort: a failure leaves the original object untouched so BDA still runs.
 
 import io
 import os
+from decimal import Decimal
 
 from PIL import Image
 
@@ -15,6 +16,7 @@ from documentai_api.config.env import EnvVars
 from documentai_api.logging import get_logger
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils.bedrock import detect_document_bbox
+from documentai_api.utils.dto import CropResult
 from documentai_api.utils.s3 import get_bucket_and_key
 from documentai_api.utils.ssm import is_document_crop_enabled
 
@@ -164,7 +166,7 @@ def convert_s3_object_to_grayscale(bucket_name: str, object_key: str) -> bool:
 
 def crop_image_to_document_roi(
     bucket_name: str, object_key: str, tenant_id: str | None = None
-) -> None:
+) -> CropResult:
     """Crop an S3 image in-place to the document's region of interest before BDA.
 
     Uses the Bedrock vision model to locate the document, then crops with PIL and
@@ -173,7 +175,7 @@ def crop_image_to_document_roi(
     BDA still runs on the full image. ``tenant_id`` scopes the pre-crop backup.
     """
     if not is_document_crop_enabled():
-        return
+        return CropResult()
 
     try:
         response = s3_service.get_object(bucket_name, object_key)
@@ -181,19 +183,27 @@ def crop_image_to_document_roi(
         content_type = response.get("ContentType", "application/octet-stream")
 
         if not content_type.startswith("image/"):
-            return
+            return CropResult()
 
-        bbox = detect_document_bbox(file_bytes, content_type)
+        bbox, crop_result = detect_document_bbox(file_bytes, content_type)
+
         if bbox is None:
             logger.info(f"No document ROI detected for {object_key}; leaving image uncropped")
-            return
+            return crop_result
 
         cropped_bytes = crop_image_to_bbox(file_bytes, bbox)
-        # preserve the pre-crop image first; if the backup can't be made, the
-        # exception aborts the crop so we never overwrite the original unrecoverably
         _save_precrop_original(object_key, file_bytes, content_type, tenant_id=tenant_id)
         s3_service.put_object(bucket_name, object_key, cropped_bytes, content_type)
-        logger.info(f"Cropped {object_key} to document ROI before BDA")
+
+        x1, y1, x2, y2 = bbox
+        retained = Decimal(str(round((x2 - x1) * (y2 - y1) / 1_000_000 * 100, 2)))
+
+        crop_result.cropped = True
+        crop_result.bounding_box = bbox
+        crop_result.retained_percentage = retained
+
+        logger.info(f"Cropped {object_key} to document ROI before BDA (retained {retained}%)")
+        return crop_result
     except Exception as e:
-        # never block processing on a crop failure
         logger.warning(f"Document ROI crop skipped for {object_key}: {e}")
+        return CropResult()

@@ -18,7 +18,10 @@ SAMPLE_IMAGE = b"\x89PNG\r\n" + b"\x00" * 100
 
 
 def _mock_invoke_response(parsed: dict) -> dict:
-    return {"content": [{"text": json.dumps(parsed)}]}
+    return {
+        "output": {"message": {"content": [{"text": json.dumps(parsed)}]}},
+        "usage": {"inputTokens": 100, "outputTokens": 50},
+    }
 
 
 def _patch_invoke(monkeypatch, response):
@@ -482,7 +485,8 @@ def test_bbox_detection_uses_bbox_model_id(monkeypatch):
     monkeypatch.setattr("documentai_api.utils.bedrock.invoke_model", lambda **kwargs: None)
     monkeypatch.setattr("documentai_api.utils.bedrock._invoke", capture_invoke)
 
-    assert detect_document_bbox(SAMPLE_IMAGE, "image/png") == (100.0, 200.0, 800.0, 900.0)
+    bbox, _ = detect_document_bbox(SAMPLE_IMAGE, "image/png")
+    assert bbox == (100.0, 200.0, 800.0, 900.0)
     assert used["model_id"] == "bbox-model"
 
 
@@ -558,12 +562,14 @@ def _patch_bbox_invoke(monkeypatch, response):
 
 def test_detect_bbox_returns_box(monkeypatch):
     _patch_bbox_invoke(monkeypatch, _mock_invoke_response({"bounding_box": [100, 200, 800, 900]}))
-    assert detect_document_bbox(SAMPLE_IMAGE, "image/png") == (100.0, 200.0, 800.0, 900.0)
+    bbox, _ = detect_document_bbox(SAMPLE_IMAGE, "image/png")
+    assert bbox == (100.0, 200.0, 800.0, 900.0)
 
 
 def test_detect_bbox_null_returns_none(monkeypatch):
     _patch_bbox_invoke(monkeypatch, _mock_invoke_response({"bounding_box": None}))
-    assert detect_document_bbox(SAMPLE_IMAGE, "image/png") is None
+    bbox, _ = detect_document_bbox(SAMPLE_IMAGE, "image/png")
+    assert bbox is None
 
 
 @pytest.mark.parametrize(
@@ -577,11 +583,13 @@ def test_detect_bbox_null_returns_none(monkeypatch):
 )
 def test_detect_bbox_rejects_invalid(monkeypatch, box):
     _patch_bbox_invoke(monkeypatch, _mock_invoke_response({"bounding_box": box}))
-    assert detect_document_bbox(SAMPLE_IMAGE, "image/png") is None
+    bbox, _ = detect_document_bbox(SAMPLE_IMAGE, "image/png")
+    assert bbox is None
 
 
 def test_detect_bbox_non_image_returns_none():
-    assert detect_document_bbox(b"%PDF-1.4", "application/pdf") is None
+    bbox, _ = detect_document_bbox(b"%PDF-1.4", "application/pdf")
+    assert bbox is None
 
 
 def _make_image_bytes(width: int, height: int, *, noise: bool = False, fmt: str = "PNG") -> bytes:
@@ -618,7 +626,8 @@ def test_detect_bbox_downscales_oversized_image(monkeypatch):
 
     monkeypatch.setattr("documentai_api.utils.bedrock._invoke", capture_invoke)
 
-    assert detect_document_bbox(big, "image/png") == (100.0, 200.0, 800.0, 900.0)
+    bbox, _ = detect_document_bbox(big, "image/png")
+    assert bbox == (100.0, 200.0, 800.0, 900.0)
     sent_bytes = sent["image"]["source"]["bytes"]
     assert len(sent_bytes) <= int(ConfigDefaults.BEDROCK_CONVERSE_MAX_IMAGE_BYTES)
     assert sent["image"]["format"] == "jpeg"
@@ -666,7 +675,8 @@ def test_detect_bbox_swallows_errors(monkeypatch):
         raise RuntimeError("bedrock down")
 
     monkeypatch.setattr("documentai_api.utils.bedrock._invoke", boom)
-    assert detect_document_bbox(SAMPLE_IMAGE, "image/png") is None
+    bbox, _ = detect_document_bbox(SAMPLE_IMAGE, "image/png")
+    assert bbox is None
 
 
 # =============================================================================
@@ -736,8 +746,17 @@ def test_detect_document_bbox_real(filename, monkeypatch, real_aws_credentials):
     image_bytes = filepath.read_bytes()
     content_type = _get_content_type(filename)
 
-    bbox = detect_document_bbox(image_bytes, content_type)
+    bbox, metrics = detect_document_bbox(image_bytes, content_type)
     assert bbox is not None, f"{filename}: no bounding box detected"
+
+    # the live response should have populated the optimization metrics
+    assert metrics.model_id == "us.amazon.nova-lite-v1:0"
+    assert metrics.duration_seconds is not None
+    assert metrics.duration_seconds > 0
+    assert metrics.input_tokens is not None
+    assert metrics.input_tokens > 0
+    assert metrics.output_tokens is not None
+    assert metrics.output_tokens > 0
 
     x1, y1, x2, y2 = bbox
     assert 0 <= x1 < x2 <= 1000, f"{filename}: invalid x range in {bbox}"

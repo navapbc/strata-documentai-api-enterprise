@@ -30,6 +30,20 @@ class DocumentMetadata:
     # preclassification fields
     PRECLASSIFICATION_CATEGORY = "preclassificationCategory"
     PRECLASSIFICATION_CONFIDENCE = "preclassificationConfidence"
+    PRECLASSIFICATION_INPUT_TOKENS = "preclassificationInputTokens"
+    PRECLASSIFICATION_OUTPUT_TOKENS = "preclassificationOutputTokens"
+    PRECLASSIFICATION_DURATION_SECONDS = "preclassificationDurationSeconds"
+    PRECLASSIFICATION_MODEL_ID = "preclassificationModelId"
+
+    # image optimization fields
+    CROP_BOUNDING_BOX = "cropBoundingBox"
+    CROP_RETAINED_PERCENTAGE = "cropRetainedPercentage"
+    CROP_DURATION_SECONDS = "cropDurationSeconds"
+    CROP_INPUT_TOKENS = "cropInputTokens"
+    CROP_OUTPUT_TOKENS = "cropOutputTokens"
+    CROP_MODEL_ID = "cropModelId"
+    GRAYSCALE_CONVERSION = "grayscaleConversion"
+    PROCESSED_FILE_SIZE_BYTES = "processedFileSizeBytes"
 
     # performance tracking
     BDA_STARTED_AT = "bdaStartedAt"

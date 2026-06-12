@@ -285,6 +285,10 @@ def upsert_initial_ddb_record(
     is_document_blurry = False
     pre_classification_document_type = None
     pre_classification_confidence = None
+    pre_classification_input_tokens = None
+    pre_classification_output_tokens = None
+    pre_classification_duration_seconds = None
+    pre_classification_model_id = None
 
     if is_password_protected:
         process_status = ProcessStatus.PASSWORD_PROTECTED
@@ -295,6 +299,10 @@ def upsert_initial_ddb_record(
 
         pre_classification_document_type = result.document_type
         pre_classification_confidence = result.confidence
+        pre_classification_input_tokens = result.input_tokens
+        pre_classification_output_tokens = result.output_tokens
+        pre_classification_duration_seconds = result.duration_seconds
+        pre_classification_model_id = result.model_id
 
         if not result.is_document:
             process_status = ProcessStatus.NO_DOCUMENT_DETECTED
@@ -341,6 +349,10 @@ def upsert_initial_ddb_record(
         is_password_protected=is_password_protected,
         pre_classification_document_type=pre_classification_document_type,
         pre_classification_confidence=pre_classification_confidence,
+        pre_classification_input_tokens=pre_classification_input_tokens,
+        pre_classification_output_tokens=pre_classification_output_tokens,
+        pre_classification_duration_seconds=pre_classification_duration_seconds,
+        pre_classification_model_id=pre_classification_model_id,
     )
 
     # explicitly remove file reference to free memory for the lambda
