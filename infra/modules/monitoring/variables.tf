@@ -9,13 +9,15 @@ variable "region" {
 }
 
 variable "create_alarms" {
-  type    = bool
-  default = false
+  type        = bool
+  description = "Whether to create CloudWatch alarms and the SNS notification topic."
+  default     = false
 }
 
 variable "create_dashboard" {
-  type    = bool
-  default = true
+  type        = bool
+  description = "Whether to create the CloudWatch dashboard."
+  default     = true
 }
 
 # --- Notification endpoints ---
@@ -33,28 +35,6 @@ variable "slack" {
   })
   description = "Optional AWS Chatbot Slack target. Requires a one-time workspace authorization in the console."
   default     = null
-}
-
-# --- API target (ECS + ALB path) ---
-
-variable "alb_arn_suffix" {
-  type    = string
-  default = null
-}
-
-variable "target_group_arn_suffix" {
-  type    = string
-  default = null
-}
-
-variable "ecs_cluster_name" {
-  type    = string
-  default = null
-}
-
-variable "ecs_service_name" {
-  type    = string
-  default = null
 }
 
 # --- API target (API Gateway HTTP API path) ---
@@ -82,23 +62,27 @@ variable "api_log_metrics" {
 # --- Workers (Lambda) ---
 
 variable "document_processor_function_name" {
-  type    = string
-  default = null
+  type        = string
+  description = "Name of the document-processor Lambda to monitor. Null disables its metrics."
+  default     = null
 }
 
 variable "bda_result_processor_function_name" {
-  type    = string
-  default = null
+  type        = string
+  description = "Name of the BDA result-processor Lambda to monitor. Null disables its metrics."
+  default     = null
 }
 
 variable "metrics_processor_function_name" {
-  type    = string
-  default = null
+  type        = string
+  description = "Name of the metrics-processor Lambda to monitor. Null disables its metrics."
+  default     = null
 }
 
 variable "metrics_aggregator_function_name" {
-  type    = string
-  default = null
+  type        = string
+  description = "Name of the metrics-aggregator Lambda to monitor. Null disables its metrics."
+  default     = null
 }
 
 variable "worker_timeout_seconds" {
@@ -110,53 +94,39 @@ variable "worker_timeout_seconds" {
 # --- Queues ---
 
 variable "metrics_queue_name" {
-  type    = string
-  default = null
+  type        = string
+  description = "Name of the metrics SQS queue to monitor. Null disables its metrics."
+  default     = null
 }
 
 variable "document_processor_dlq_name" {
-  type    = string
-  default = null
+  type        = string
+  description = "Name of the document-processor dead-letter queue to monitor. Null disables its metrics."
+  default     = null
 }
 
 variable "bda_output_dlq_name" {
-  type    = string
-  default = null
+  type        = string
+  description = "Name of the BDA output dead-letter queue to monitor. Null disables its metrics."
+  default     = null
 }
 
 # --- Alarm thresholds ---
 
-variable "alb_5xx_threshold" {
-  type    = number
-  default = 5
-}
-
-variable "alb_p99_latency_threshold_seconds" {
-  type    = number
-  default = 2
-}
-
-variable "ecs_cpu_threshold" {
-  type    = number
-  default = 80
-}
-
-variable "ecs_memory_threshold" {
-  type    = number
-  default = 80
-}
-
 variable "queue_max_age_seconds" {
-  type    = number
-  default = 900
+  type        = number
+  description = "Age of the oldest queue message (seconds) that triggers an alarm."
+  default     = 900
 }
 
 variable "api_5xx_threshold" {
-  type    = number
-  default = 5
+  type        = number
+  description = "API Gateway 5xx count over the evaluation period that triggers an alarm."
+  default     = 5
 }
 
 variable "api_p99_latency_threshold_ms" {
-  type    = number
-  default = 3000
+  type        = number
+  description = "API Gateway p99 integration latency (milliseconds) that triggers an alarm."
+  default     = 3000
 }

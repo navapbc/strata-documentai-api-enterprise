@@ -44,8 +44,7 @@ All commands accept `ENVIRONMENT=dev|staging|prod` and `AWS_PROFILE=your-profile
 |--------|-------------|
 | `vpc` | VPC with public/private subnets |
 | `networking` | Security groups, VPC endpoints |
-| `api-gateway` | REST API with Lambda integration |
-| `service` | API Lambda (container image) |
+| `api-gateway` | API Gateway HTTP API + Lambda (container image) |
 | `container-image-repository` | ECR repository |
 | `worker` | Lambda workers: document processor (EventBridge), BDA result processor (EventBridge), metrics processor (SQS), metrics aggregator (scheduled) |
 | `document-data-extraction` | Bedrock Data Automation projects (multi-project, per-category routing) |

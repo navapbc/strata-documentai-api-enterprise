@@ -1,16 +1,3 @@
-variable "secrets" {
-  type = map(object({
-    manage_method     = string # "generated" or "manual"
-    secret_store_name = string
-  }))
-  description = "Map of secret configurations"
-
-  validation {
-    condition     = alltrue([for s in values(var.secrets) : contains(["manual", "generated"], s.manage_method)])
-    error_message = "manage_method must be 'manual' or 'generated'"
-  }
-}
-
 locals {
   generated_secrets = {
     for name, config in var.secrets :
@@ -41,11 +28,4 @@ resource "aws_ssm_parameter" "generated" {
 data "aws_ssm_parameter" "manual" {
   for_each = local.manual_secrets
   name     = each.value.secret_store_name
-}
-
-output "secret_arns" {
-  value = merge(
-    { for k, v in aws_ssm_parameter.generated : k => v.arn },
-    { for k, v in data.aws_ssm_parameter.manual : k => v.arn },
-  )
 }

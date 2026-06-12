@@ -27,8 +27,6 @@ locals {
 
   alarm_worker_names = var.create_alarms ? toset(local.worker_function_names) : toset([])
   alarm_dlq_names    = var.create_alarms ? toset(local.dlq_names) : toset([])
-  has_alb            = var.alb_arn_suffix != null && var.target_group_arn_suffix != null
-  has_ecs            = var.ecs_cluster_name != null && var.ecs_service_name != null
 }
 
 # --- SNS topic + subscriptions ---

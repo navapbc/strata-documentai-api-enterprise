@@ -1,13 +1,3 @@
-variable "name" {
-  type        = string
-  description = "Name prefix for resources"
-}
-
-variable "default_root_object" {
-  type    = string
-  default = "index.html"
-}
-
 # --- S3 Bucket (private, no website hosting - served via CloudFront OAC) ---
 
 resource "aws_s3_bucket" "site" {
@@ -140,22 +130,4 @@ data "aws_iam_policy_document" "site" {
 resource "aws_s3_bucket_policy" "site" {
   bucket = aws_s3_bucket.site.id
   policy = data.aws_iam_policy_document.site.json
-}
-
-# --- Outputs ---
-
-output "bucket_name" {
-  value = aws_s3_bucket.site.bucket
-}
-
-output "distribution_id" {
-  value = aws_cloudfront_distribution.site.id
-}
-
-output "distribution_domain" {
-  value = aws_cloudfront_distribution.site.domain_name
-}
-
-output "url" {
-  value = "https://${aws_cloudfront_distribution.site.domain_name}"
 }
