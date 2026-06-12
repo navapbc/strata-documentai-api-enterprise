@@ -104,6 +104,12 @@ resource "aws_lambda_function" "this" {
 }
 
 # --- API Gateway HTTP API ---
+#
+# NOTE (WAF): AWS WAF (wafv2) cannot be attached to an HTTP API (apigatewayv2) —
+# WAF only associates with REST APIs, ALB, CloudFront, AppSync and Cognito. To
+# put WAF in front of this API you'd need either a CloudFront distribution ahead
+# of it (associate the web ACL there) or a migration to a REST API. Tracked as a
+# follow-up rather than a code change here.
 
 resource "aws_apigatewayv2_api" "this" {
   name          = var.function_name

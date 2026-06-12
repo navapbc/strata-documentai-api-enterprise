@@ -18,6 +18,11 @@ variable "image_repository_url" {
   type = string
 }
 
+variable "image_repository_arn" {
+  type        = string
+  description = "ECR repository ARN, used to scope the task executor's image-pull permissions"
+}
+
 variable "image_tag" {
   type = string
 }
@@ -137,6 +142,8 @@ data "aws_iam_policy_document" "task_executor" {
   }
 
   statement {
+    # GetAuthorizationToken is an account-level action that does not support
+    # resource scoping, so "*" is required by IAM here.
     actions   = ["ecr:GetAuthorizationToken"]
     resources = ["*"]
   }
@@ -147,7 +154,7 @@ data "aws_iam_policy_document" "task_executor" {
       "ecr:BatchGetImage",
       "ecr:GetDownloadUrlForLayer",
     ]
-    resources = ["*"]
+    resources = [var.image_repository_arn]
   }
 }
 
@@ -165,6 +172,11 @@ resource "aws_iam_role_policy_attachment" "extra_policies" {
 
 # --- Security Groups ---
 
+# Public ingress (0.0.0.0/0) on 80/443 is intentional: this is a public-facing
+# API. If the service should ever be internal-only, replace the CIDRs below with
+# the allowed ranges. NOTE: this whole ECS/ALB path is currently dormant — the
+# deployment runs the Lambda API (use_lambda_api = true), so module.service has
+# count 0 and nothing here is provisioned today.
 resource "aws_security_group" "alb" {
   name_prefix = "${var.service_name}-alb-"
   vpc_id      = var.vpc_id

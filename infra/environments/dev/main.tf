@@ -379,6 +379,7 @@ module "service" {
   private_subnet_ids   = local.private_subnet_ids
   public_subnet_ids    = local.public_subnet_ids
   image_repository_url = module.ecr.repository_url
+  image_repository_arn = module.ecr.repository_arn
   image_tag            = var.image_tag
   cpu                  = var.cpu
   memory               = var.memory
@@ -505,18 +506,28 @@ module "monitoring" {
   api_log_metrics         = var.use_lambda_api ? module.api_gateway[0].api_log_metrics : null
 
   # Worker Lambdas (null when workers run as ECS tasks).
-  document_processor_function_name   = var.use_lambda_workers ? module.document_processor_lambda[0].function_name : null
-  bda_result_processor_function_name = var.use_lambda_workers ? module.bda_result_processor_lambda[0].function_name : null
-  metrics_processor_function_name    = var.use_lambda_workers ? module.metrics_processor_lambda[0].function_name : null
-  metrics_aggregator_function_name   = var.use_lambda_workers ? module.metrics_aggregator_lambda[0].function_name : null
+  document_processor_function_name   = var.use_lambda_workers ? module.workers["document-processor"].function_name : null
+  bda_result_processor_function_name = var.use_lambda_workers ? module.workers["bda-result-processor"].function_name : null
+  metrics_processor_function_name    = var.use_lambda_workers ? module.workers["metrics-processor"].function_name : null
+  metrics_aggregator_function_name   = var.use_lambda_workers ? module.workers["metrics-aggregator"].function_name : null
 
   # Queues.
   metrics_queue_name          = module.metrics_queue.queue_name
-  document_processor_dlq_name = var.use_lambda_workers ? module.document_processor_lambda[0].dlq_name : null
-  bda_output_dlq_name         = var.use_lambda_workers ? module.bda_result_processor_lambda[0].dlq_name : null
+  document_processor_dlq_name = var.use_lambda_workers ? module.workers["document-processor"].dlq_name : null
+  bda_output_dlq_name         = var.use_lambda_workers ? module.workers["bda-result-processor"].dlq_name : null
 }
 
 # --- Consolidated IAM Policies (4 policies instead of 15+) ---
+
+# AWS-managed key ARNs for SSE-KMS access (buckets use aws/s3, SecureString
+# params use aws/ssm), resolved so the data-access policy can scope to them.
+data "aws_kms_alias" "s3" {
+  name = "alias/aws/s3"
+}
+
+data "aws_kms_alias" "ssm" {
+  name = "alias/aws/ssm"
+}
 
 data "aws_iam_policy_document" "data_access" {
   # All DynamoDB tables + KMS keys
@@ -552,13 +563,27 @@ data "aws_iam_policy_document" "data_access" {
     ]
   }
 
+  # Scoped to exactly the keys this role touches: the per-table DynamoDB CMKs,
+  # the AWS-managed aws/s3 key (SSE-KMS buckets) and the aws/ssm key (SecureString
+  # params — API-auth key, Cognito client secret). Dropping any of these breaks
+  # table/bucket/param access, so verify after applying.
   statement {
     actions = [
       "kms:Decrypt",
       "kms:DescribeKey",
       "kms:GenerateDataKey",
     ]
-    resources = ["arn:aws:kms:${var.region}:${local.account_id}:key/*"]
+    resources = concat(
+      [for m in [
+        module.document_metadata, module.api_keys, module.tenants,
+        module.extraction_rules, module.document_categories,
+        module.document_batches, module.document_builds, module.audit_events,
+      ] : m.kms_key_arn],
+      [
+        data.aws_kms_alias.s3.target_key_arn,
+        data.aws_kms_alias.ssm.target_key_arn,
+      ],
+    )
   }
 }
 
@@ -704,83 +729,44 @@ resource "aws_iam_policy" "supporting_services" {
   policy = data.aws_iam_policy_document.supporting_services.json
 }
 
-module "document_processor_lambda" {
-  count  = var.use_lambda_workers ? 1 : 0
-  source = "../../modules/worker"
-
-  function_name         = "${local.service_name}-document-processor"
-  image_uri             = local.lambda_image_uri
-  command               = ["documentai_api.jobs.document_processor.handler.handler"]
-  timeout               = 300
-  memory_size           = 512
-  environment_variables = local.lambda_env_vars
-  policy_arns           = local.lambda_policy_arns
-
-  s3_trigger = {
-    source_bucket = module.input_bucket.bucket_name
-    path_prefix   = "input/"
+# Workers share all config except their command and trigger. The trigger types
+# differ (S3 / SQS / schedule), so they can't live in one map value without making
+# the map heterogeneous (which for_each rejects). Instead the command map drives
+# for_each and each trigger is resolved from its own homogeneous lookup map.
+locals {
+  worker_commands = {
+    "document-processor"   = ["documentai_api.jobs.document_processor.handler.handler"]
+    "bda-result-processor" = ["documentai_api.jobs.bda_result_processor.handler.handler"]
+    "metrics-processor"    = ["documentai_api.jobs.metrics_processor.handler.handler"]
+    "metrics-aggregator"   = ["documentai_api.jobs.metrics_aggregator.handler.handler"]
   }
 }
 
-module "bda_result_processor_lambda" {
-  count  = var.use_lambda_workers ? 1 : 0
-  source = "../../modules/worker"
+module "workers" {
+  for_each = var.use_lambda_workers ? local.worker_commands : {}
+  source   = "../../modules/worker"
 
-  function_name         = "${local.service_name}-bda-result-processor"
+  function_name         = "${local.service_name}-${each.key}"
   image_uri             = local.lambda_image_uri
-  command               = ["documentai_api.jobs.bda_result_processor.handler.handler"]
+  command               = each.value
   timeout               = 300
   memory_size           = 512
   environment_variables = local.lambda_env_vars
   policy_arns           = local.lambda_policy_arns
 
-  s3_trigger = {
-    source_bucket = module.output_bucket.bucket_name
-    path_prefix   = "processed/"
-  }
-}
+  s3_trigger = lookup({
+    "document-processor"   = { source_bucket = module.input_bucket.bucket_name, path_prefix = "input/" }
+    "bda-result-processor" = { source_bucket = module.output_bucket.bucket_name, path_prefix = "processed/" }
+  }, each.key, null)
 
-module "metrics_processor_lambda" {
-  count  = var.use_lambda_workers ? 1 : 0
-  source = "../../modules/worker"
+  sqs_trigger = lookup({
+    "metrics-processor" = { queue_arn = module.metrics_queue.queue_arn, batch_size = 10, max_batching_window_seconds = 300 }
+  }, each.key, null)
 
-  function_name         = "${local.service_name}-metrics-processor"
-  image_uri             = local.lambda_image_uri
-  command               = ["documentai_api.jobs.metrics_processor.handler.handler"]
-  timeout               = 300
-  memory_size           = 512
-  environment_variables = local.lambda_env_vars
-  policy_arns           = local.lambda_policy_arns
-
-  sqs_trigger = {
-    queue_arn                   = module.metrics_queue.queue_arn
-    batch_size                  = 10
-    max_batching_window_seconds = 300
-  }
-}
-
-module "metrics_aggregator_lambda" {
-  count  = var.use_lambda_workers ? 1 : 0
-  source = "../../modules/worker"
-
-  function_name         = "${local.service_name}-metrics-aggregator"
-  image_uri             = local.lambda_image_uri
-  command               = ["documentai_api.jobs.metrics_aggregator.handler.handler"]
-  timeout               = 300
-  memory_size           = 512
-  environment_variables = local.lambda_env_vars
-  policy_arns           = local.lambda_policy_arns
-
-  schedules = [
-    {
-      name                = "current-day"
-      schedule_expression = "rate(5 minutes)"
-      input               = { mode = "today", overwrite = "true" }
-    },
-    {
-      name                = "prior-day"
-      schedule_expression = "cron(0 2 * * ? *)"
-      input               = { mode = "yesterday", overwrite = "true" }
-    },
-  ]
+  schedules = lookup({
+    "metrics-aggregator" = [
+      { name = "current-day", schedule_expression = "rate(5 minutes)", input = { mode = "today", overwrite = "true" } },
+      { name = "prior-day", schedule_expression = "cron(0 2 * * ? *)", input = { mode = "yesterday", overwrite = "true" } },
+    ]
+  }, each.key, [])
 }

@@ -160,3 +160,7 @@ output "table_arn" {
 output "access_policy_arn" {
   value = aws_iam_policy.access.arn
 }
+
+output "kms_key_arn" {
+  value = aws_kms_key.this.arn
+}
