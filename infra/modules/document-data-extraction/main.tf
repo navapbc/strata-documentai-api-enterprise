@@ -1,35 +1,3 @@
-terraform {
-  required_providers {
-    aws = {
-      source = "hashicorp/aws"
-    }
-    awscc = {
-      source  = "hashicorp/awscc"
-      version = ">= 1.63.0"
-    }
-  }
-}
-
-variable "name" {
-  type = string
-}
-
-variable "blueprints" {
-  type        = list(string)
-  description = "List of blueprint file paths or ARNs"
-  default     = []
-}
-
-variable "standard_output_configuration" {
-  type    = any
-  default = null
-}
-
-variable "tags" {
-  type    = map(string)
-  default = {}
-}
-
 locals {
   bda_tags = [
     for key, value in var.tags : {
@@ -119,15 +87,3 @@ resource "aws_iam_policy" "access" {
 
 data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
-
-output "project_arn" {
-  value = awscc_bedrock_data_automation_project.this.project_arn
-}
-
-output "profile_arn" {
-  value = "arn:aws:bedrock:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:data-automation-profile/us.data-automation-v1"
-}
-
-output "access_policy_arn" {
-  value = aws_iam_policy.access.arn
-}

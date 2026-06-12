@@ -20,11 +20,6 @@ Every alarm sets both `alarm_actions` and `ok_actions` to the SNS topic, so subs
 | Lambda errors | `Errors` per function | ≥ 1 for 1 period |
 | Lambda throttles | `Throttles` per function | ≥ 1 for 1 period |
 | Lambda duration | `Duration` max | > 80% of configured timeout for 1 period |
-| ALB 5xx | `HTTPCode_Target_5XX_Count` | > threshold for 1 period |
-| ALB unhealthy hosts | `UnHealthyHostCount` | ≥ 1 for 2 periods |
-| ALB latency | `TargetResponseTime` p99 | > threshold for 3 periods |
-| ECS CPU | `CPUUtilization` avg | > threshold for 3 periods |
-| ECS memory | `MemoryUtilization` avg | > threshold for 3 periods |
 | Metrics queue backlog | `ApproximateAgeOfOldestMessage` | > threshold for 2 periods |
 | API Gateway 5xx | `5xx` sum | > threshold for 1 period |
 | API Gateway latency | `Latency` p99 | > threshold for 3 periods |
@@ -35,16 +30,13 @@ Sections are conditionally rendered based on which inputs are non-null:
 
 1. **Health at a glance** - single-value scorecards (API activity, errors, DLQ, queue)
 2. **API** - requests/errors graph with custom log metrics, latency percentiles
-3. **ECS / API** - running tasks, CPU, memory, ALB errors
-4. **Pipeline Health** - Lambda invocations with metric-math error rate %
-5. **Pipeline Latency** - p50/p99/max duration per worker
-6. **Queues** - analytics queue depth and oldest message age
-7. **Dead Letter Queues** - per-DLQ message visibility
-8. **Observability Lambdas** - metrics processor/aggregator throughput
+3. **Pipeline Health** - Lambda invocations with metric-math error rate %
+4. **Pipeline Latency** - p50/p99/max duration per worker
+5. **Queues** - analytics queue depth and oldest message age
+6. **Dead Letter Queues** - per-DLQ message visibility
+7. **Observability Lambdas** - metrics processor/aggregator throughput
 
 ## Usage
-
-The API surface has two mutually exclusive paths: provide *either* the API Gateway inputs (`api_gateway_id`, `api_log_metrics`) *or* the ECS/ALB inputs (`alb_arn_suffix`, `target_group_arn_suffix`, `ecs_cluster_name`, `ecs_service_name`). Pass `null` for the path you aren't using.
 
 ```hcl
 module "monitoring" {
@@ -63,26 +55,20 @@ module "monitoring" {
     channel_id   = "C01234567"
   }
 
-  # API Gateway path
-  api_gateway_id  = module.api_gateway[0].api_id
-  api_log_metrics = module.api_gateway[0].api_log_metrics
-
-  # ECS/ALB path (pass null when using API Gateway)
-  alb_arn_suffix          = null
-  target_group_arn_suffix = null
-  ecs_cluster_name        = null
-  ecs_service_name        = null
+  # API Gateway
+  api_gateway_id  = module.api_gateway.api_id
+  api_log_metrics = module.api_gateway.api_log_metrics
 
   # Workers
-  document_processor_function_name   = module.document_processor.function_name
-  bda_result_processor_function_name = module.bda_result_processor.function_name
-  metrics_processor_function_name    = module.metrics_processor.function_name
-  metrics_aggregator_function_name   = module.metrics_aggregator.function_name
+  document_processor_function_name   = module.workers["document-processor"].function_name
+  bda_result_processor_function_name = module.workers["bda-result-processor"].function_name
+  metrics_processor_function_name    = module.workers["metrics-processor"].function_name
+  metrics_aggregator_function_name   = module.workers["metrics-aggregator"].function_name
 
   # Queues
   metrics_queue_name          = module.metrics_queue.queue_name
-  document_processor_dlq_name = module.document_processor.dlq_name
-  bda_output_dlq_name         = module.bda_result_processor.dlq_name
+  document_processor_dlq_name = module.workers["document-processor"].dlq_name
+  bda_output_dlq_name         = module.workers["bda-result-processor"].dlq_name
 }
 ```
 
@@ -100,10 +86,6 @@ All inputs with defaults are optional. Pass `null` to omit a resource category f
 | `slack` | object | `null` | Chatbot Slack config (`workspace_id`, `channel_id`) |
 | `api_gateway_id` | string | `null` | API Gateway HTTP API id |
 | `api_log_metrics` | object | `null` | Custom metrics from access-log filters |
-| `alb_arn_suffix` | string | `null` | ALB ARN suffix for metrics |
-| `target_group_arn_suffix` | string | `null` | Target group ARN suffix |
-| `ecs_cluster_name` | string | `null` | ECS cluster name |
-| `ecs_service_name` | string | `null` | ECS service name |
 | `document_processor_function_name` | string | `null` | Lambda function name |
 | `bda_result_processor_function_name` | string | `null` | Lambda function name |
 | `metrics_processor_function_name` | string | `null` | Lambda function name |
@@ -113,7 +95,7 @@ All inputs with defaults are optional. Pass `null` to omit a resource category f
 | `document_processor_dlq_name` | string | `null` | DLQ name |
 | `bda_output_dlq_name` | string | `null` | DLQ name |
 
-Alarm thresholds (`alb_5xx_threshold`, `ecs_cpu_threshold`, etc.) have sensible defaults - see `variables.tf`.
+Alarm thresholds (`api_5xx_threshold`, `api_p99_latency_threshold_ms`, `queue_max_age_seconds`) have sensible defaults - see `variables.tf`.
 
 ## Outputs
 

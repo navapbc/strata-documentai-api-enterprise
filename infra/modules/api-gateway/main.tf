@@ -1,47 +1,3 @@
-# API Gateway HTTP API → Lambda (container image)
-
-variable "function_name" {
-  type = string
-}
-
-variable "image_uri" {
-  type = string
-}
-
-variable "command" {
-  type        = list(string)
-  description = "CMD override for the Lambda container"
-  default     = ["documentai_api.app.handler"]
-}
-
-variable "timeout" {
-  type    = number
-  default = 30
-}
-
-variable "memory_size" {
-  type    = number
-  default = 1024
-}
-
-variable "environment_variables" {
-  type    = map(string)
-  default = {}
-}
-
-variable "policy_arns" {
-  type    = map(string)
-  default = {}
-}
-
-variable "vpc_config" {
-  type = object({
-    subnet_ids         = list(string)
-    security_group_ids = list(string)
-  })
-  default = null
-}
-
 # --- IAM ---
 
 data "aws_iam_policy_document" "assume_role" {
@@ -105,7 +61,7 @@ resource "aws_lambda_function" "this" {
 
 # --- API Gateway HTTP API ---
 #
-# NOTE (WAF): AWS WAF (wafv2) cannot be attached to an HTTP API (apigatewayv2) —
+# NOTE (WAF): AWS WAF (wafv2) cannot be attached to an HTTP API (apigatewayv2) -
 # WAF only associates with REST APIs, ALB, CloudFront, AppSync and Cognito. To
 # put WAF in front of this API you'd need either a CloudFront distribution ahead
 # of it (associate the web ACL there) or a migration to a REST API. Tracked as a
@@ -209,31 +165,4 @@ resource "aws_cloudwatch_log_metric_filter" "document_status_polls" {
     default_value = "0"
     unit          = "Count"
   }
-}
-
-# --- Outputs ---
-
-output "api_endpoint" {
-  value = aws_apigatewayv2_api.this.api_endpoint
-}
-
-output "api_id" {
-  value = aws_apigatewayv2_api.this.id
-}
-
-output "api_log_metrics" {
-  description = "Custom metrics parsed from the access log, splitting document submissions from status-poll GETs."
-  value = {
-    namespace        = local.api_log_metric_namespace
-    submitted_metric = aws_cloudwatch_log_metric_filter.documents_submitted.metric_transformation[0].name
-    polls_metric     = aws_cloudwatch_log_metric_filter.document_status_polls.metric_transformation[0].name
-  }
-}
-
-output "function_name" {
-  value = aws_lambda_function.this.function_name
-}
-
-output "function_arn" {
-  value = aws_lambda_function.this.arn
 }

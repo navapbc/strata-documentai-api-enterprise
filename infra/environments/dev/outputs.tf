@@ -1,5 +1,5 @@
 output "api_endpoint" {
-  value = var.use_lambda_api ? module.api_gateway[0].api_endpoint : module.service[0].alb_dns_name
+  value = module.api_gateway.api_endpoint
 }
 
 output "ecr_repository_url" {

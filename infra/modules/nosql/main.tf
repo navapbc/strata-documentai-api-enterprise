@@ -1,49 +1,3 @@
-variable "table_name" {
-  type = string
-}
-
-variable "hash_key" {
-  type    = string
-  default = "id"
-}
-
-variable "hash_key_type" {
-  type    = string
-  default = "S"
-}
-
-variable "sort_key" {
-  type    = string
-  default = null
-}
-
-variable "sort_key_type" {
-  type    = string
-  default = "S"
-}
-
-variable "ttl_attribute" {
-  type    = string
-  default = null
-}
-
-variable "global_secondary_indexes" {
-  type = list(object({
-    name            = string
-    hash_key        = string
-    hash_key_type   = string
-    sort_key        = optional(string)
-    sort_key_type   = optional(string)
-    projection_type = optional(string, "ALL")
-  }))
-  default = []
-}
-
-variable "is_temporary" {
-  type    = bool
-  default = false
-}
-
 # KMS key for encryption
 resource "aws_kms_key" "this" {
   description             = "KMS key for ${var.table_name}"
@@ -147,20 +101,4 @@ data "aws_iam_policy_document" "access" {
 resource "aws_iam_policy" "access" {
   name   = "${var.table_name}-access"
   policy = data.aws_iam_policy_document.access.json
-}
-
-output "table_name" {
-  value = aws_dynamodb_table.this.name
-}
-
-output "table_arn" {
-  value = aws_dynamodb_table.this.arn
-}
-
-output "access_policy_arn" {
-  value = aws_iam_policy.access.arn
-}
-
-output "kms_key_arn" {
-  value = aws_kms_key.this.arn
 }

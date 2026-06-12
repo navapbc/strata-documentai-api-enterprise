@@ -1,65 +1,3 @@
-# Cognito User Pool + App Client for console authentication
-
-variable "name" {
-  type = string
-}
-
-variable "is_temporary" {
-  type    = bool
-  default = false
-}
-
-variable "callback_urls" {
-  type    = list(string)
-  default = []
-}
-
-variable "logout_urls" {
-  type    = list(string)
-  default = []
-}
-
-variable "password_minimum_length" {
-  type    = number
-  default = 12
-}
-
-variable "temporary_password_validity_days" {
-  type    = number
-  default = 7
-}
-
-variable "domain_identity_arn" {
-  type        = string
-  description = "SES domain identity ARN for sending emails. If null, uses Cognito default."
-  default     = null
-}
-
-variable "sender_email" {
-  type    = string
-  default = null
-}
-
-variable "sender_display_name" {
-  type    = string
-  default = null
-}
-
-variable "reply_to_email" {
-  type    = string
-  default = null
-}
-
-variable "verification_email_message" {
-  type    = string
-  default = null
-}
-
-variable "verification_email_subject" {
-  type    = string
-  default = null
-}
-
 # --- Cognito User Pool ---
 
 resource "aws_cognito_user_pool" "this" {
@@ -198,14 +136,6 @@ resource "aws_cognito_user_group" "tenant_admin" {
   precedence   = 10
 }
 
-# --- Store client secret in SSM ---
-
-resource "aws_ssm_parameter" "client_secret" {
-  name  = "/${var.name}/identity-provider/client-secret"
-  type  = "SecureString"
-  value = aws_cognito_user_pool_client.this.client_secret
-}
-
 # --- IAM Policy ---
 
 data "aws_caller_identity" "current" {}
@@ -222,22 +152,4 @@ data "aws_iam_policy_document" "access" {
 resource "aws_iam_policy" "access" {
   name   = "${var.name}-cognito-access"
   policy = data.aws_iam_policy_document.access.json
-}
-
-# --- Outputs ---
-
-output "user_pool_id" {
-  value = aws_cognito_user_pool.this.id
-}
-
-output "client_id" {
-  value = aws_cognito_user_pool_client.this.id
-}
-
-output "client_secret_arn" {
-  value = aws_ssm_parameter.client_secret.arn
-}
-
-output "access_policy_arn" {
-  value = aws_iam_policy.access.arn
 }

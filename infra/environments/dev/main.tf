@@ -47,8 +47,6 @@ locals {
   # SSM
   ssm_prefix = "/${var.project_name}/${var.environment}"
 
-  # Glue - table name comes from analytics module output
-
   # App defaults
   max_bda_invoke_retry_attempts = "3"
   api_auth_enabled              = "true"
@@ -63,26 +61,6 @@ locals {
   gsi_tenant_batches       = "TenantIndex"
   gsi_tenant_builds        = "TenantIndex"
   gsi_external_ref_id      = "ExternalReferenceIdIndex"
-}
-
-# --- Networking ---
-
-module "vpc" {
-  count  = var.create_vpc ? 1 : 0
-  source = "../../modules/vpc"
-  name   = "${var.project_name}-${var.environment}"
-}
-
-module "networking" {
-  count    = var.create_vpc ? 0 : 1
-  source   = "../../modules/networking"
-  vpc_name = var.vpc_name
-}
-
-locals {
-  vpc_id             = var.create_vpc ? module.vpc[0].vpc_id : module.networking[0].vpc_id
-  private_subnet_ids = var.create_vpc ? module.vpc[0].private_subnet_ids : module.networking[0].private_subnet_ids
-  public_subnet_ids  = var.create_vpc ? module.vpc[0].public_subnet_ids : module.networking[0].public_subnet_ids
 }
 
 # --- ECR ---
@@ -368,43 +346,9 @@ module "bedrock_data_automation" {
 }
 
 
-# --- API (ECS Fargate + ALB or API Gateway + Lambda) ---
-
-module "service" {
-  count  = var.use_lambda_api ? 0 : 1
-  source = "../../modules/service"
-
-  service_name         = local.service_name
-  vpc_id               = local.vpc_id
-  private_subnet_ids   = local.private_subnet_ids
-  public_subnet_ids    = local.public_subnet_ids
-  image_repository_url = module.ecr.repository_url
-  image_repository_arn = module.ecr.repository_arn
-  image_tag            = var.image_tag
-  cpu                  = var.cpu
-  memory               = var.memory
-  desired_count        = var.desired_count
-
-  environment_variables = local.lambda_env_vars
-
-  extra_policy_arns = local.lambda_policy_arns
-
-  file_upload_jobs = var.use_lambda_workers ? {} : {
-    document_processor = {
-      source_bucket = module.input_bucket.bucket_name
-      path_prefix   = "input/"
-      task_command  = ["document_processor", "<object_key>", "<bucket_name>"]
-    }
-    bda_result_processor = {
-      source_bucket = module.output_bucket.bucket_name
-      path_prefix   = "processed/"
-      task_command  = ["bda_result_processor", "<bucket_name>", "<object_key>"]
-    }
-  }
-}
+# --- API (API Gateway + Lambda) ---
 
 module "api_gateway" {
-  count  = var.use_lambda_api ? 1 : 0
   source = "../../modules/api-gateway"
 
   function_name = "${local.service_name}-api"
@@ -417,7 +361,7 @@ module "api_gateway" {
   policy_arns = local.lambda_policy_arns
 }
 
-# --- Lambda Workers (when job_compute_type = "lambda") ---
+# --- Lambda Workers ---
 
 locals {
   lambda_image_uri = "${module.ecr.repository_url}:${var.image_tag}"
@@ -497,24 +441,20 @@ module "monitoring" {
   alarm_emails = var.alarm_emails
   slack        = var.slack_config
 
-  # API target (ECS + ALB path; null when running the Lambda API).
-  alb_arn_suffix          = var.use_lambda_api ? null : module.service[0].alb_arn_suffix
-  target_group_arn_suffix = var.use_lambda_api ? null : module.service[0].target_group_arn_suffix
-  ecs_cluster_name        = var.use_lambda_api ? null : module.service[0].cluster_name
-  ecs_service_name        = var.use_lambda_api ? null : module.service[0].service_name
-  api_gateway_id          = var.use_lambda_api ? module.api_gateway[0].api_id : null
-  api_log_metrics         = var.use_lambda_api ? module.api_gateway[0].api_log_metrics : null
+  # API Gateway
+  api_gateway_id  = module.api_gateway.api_id
+  api_log_metrics = module.api_gateway.api_log_metrics
 
-  # Worker Lambdas (null when workers run as ECS tasks).
-  document_processor_function_name   = var.use_lambda_workers ? module.workers["document-processor"].function_name : null
-  bda_result_processor_function_name = var.use_lambda_workers ? module.workers["bda-result-processor"].function_name : null
-  metrics_processor_function_name    = var.use_lambda_workers ? module.workers["metrics-processor"].function_name : null
-  metrics_aggregator_function_name   = var.use_lambda_workers ? module.workers["metrics-aggregator"].function_name : null
+  # Worker Lambdas
+  document_processor_function_name   = module.workers["document-processor"].function_name
+  bda_result_processor_function_name = module.workers["bda-result-processor"].function_name
+  metrics_processor_function_name    = module.workers["metrics-processor"].function_name
+  metrics_aggregator_function_name   = module.workers["metrics-aggregator"].function_name
 
-  # Queues.
+  # Queues
   metrics_queue_name          = module.metrics_queue.queue_name
-  document_processor_dlq_name = var.use_lambda_workers ? module.workers["document-processor"].dlq_name : null
-  bda_output_dlq_name         = var.use_lambda_workers ? module.workers["bda-result-processor"].dlq_name : null
+  document_processor_dlq_name = module.workers["document-processor"].dlq_name
+  bda_output_dlq_name         = module.workers["bda-result-processor"].dlq_name
 }
 
 # --- Consolidated IAM Policies (4 policies instead of 15+) ---
@@ -565,7 +505,7 @@ data "aws_iam_policy_document" "data_access" {
 
   # Scoped to exactly the keys this role touches: the per-table DynamoDB CMKs,
   # the AWS-managed aws/s3 key (SSE-KMS buckets) and the aws/ssm key (SecureString
-  # params — API-auth key, Cognito client secret). Dropping any of these breaks
+  # params - API-auth key, Cognito client secret). Dropping any of these breaks
   # table/bucket/param access, so verify after applying.
   statement {
     actions = [
@@ -743,7 +683,7 @@ locals {
 }
 
 module "workers" {
-  for_each = var.use_lambda_workers ? local.worker_commands : {}
+  for_each = local.worker_commands
   source   = "../../modules/worker"
 
   function_name         = "${local.service_name}-${each.key}"

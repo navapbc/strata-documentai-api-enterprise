@@ -1,21 +1,3 @@
-variable "name" {
-  type = string
-}
-
-variable "results_bucket_name" {
-  type = string
-}
-
-variable "metrics_bucket_name" {
-  type        = string
-  description = "S3 bucket where raw DDB export data lands (source for Athena queries)"
-}
-
-variable "is_temporary" {
-  type    = bool
-  default = false
-}
-
 # --- S3 bucket for Athena query results ---
 
 module "results_bucket" {
@@ -311,30 +293,4 @@ data "aws_iam_policy_document" "access" {
 resource "aws_iam_policy" "access" {
   name   = "${var.name}-analytics-access"
   policy = data.aws_iam_policy_document.access.json
-}
-
-# --- Outputs ---
-
-output "raw_metrics_table_name" {
-  value = aws_glue_catalog_table.raw_metrics.name
-}
-
-output "workgroup_name" {
-  value = aws_athena_workgroup.this.name
-}
-
-output "database_name" {
-  value = aws_glue_catalog_database.this.name
-}
-
-output "results_bucket_name" {
-  value = module.results_bucket.bucket_name
-}
-
-output "access_policy_arn" {
-  value = aws_iam_policy.access.arn
-}
-
-output "results_bucket_arn" {
-  value = module.results_bucket.bucket_arn
 }

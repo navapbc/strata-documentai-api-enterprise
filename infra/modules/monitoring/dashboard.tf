@@ -8,8 +8,6 @@
 # keeps the layout gap-free regardless of which sections are present.
 
 locals {
-  show_api_section = local.has_ecs || local.has_alb
-
   pipeline_workers = [
     for w in [
       { title = "Document Processor", fn = var.document_processor_function_name },
@@ -103,44 +101,6 @@ locals {
         yAxis = { left = { label = "ms", showUnits = false } }
       }
     }] : [],
-
-    # === ECS / API ===
-    local.show_api_section ? [{ type = "text", width = 24, height = 1, properties = { markdown = "## ECS / API" } }] : [],
-    local.has_ecs ? [
-      {
-        type = "metric", width = 6, height = 6,
-        properties = {
-          title   = "Running Tasks", region = var.region, view = "timeSeries", period = local.period,
-          metrics = [["ECS/ContainerInsights", "RunningTaskCount", "ClusterName", var.ecs_cluster_name, "ServiceName", var.ecs_service_name, { stat = "Average" }]]
-        }
-      },
-      {
-        type = "metric", width = 6, height = 6,
-        properties = {
-          title   = "ECS CPU Utilization", region = var.region, view = "timeSeries", period = local.period,
-          metrics = [["AWS/ECS", "CPUUtilization", "ClusterName", var.ecs_cluster_name, "ServiceName", var.ecs_service_name, { stat = "Average" }]]
-        }
-      },
-      {
-        type = "metric", width = 6, height = 6,
-        properties = {
-          title   = "ECS Memory Utilization", region = var.region, view = "timeSeries", period = local.period,
-          metrics = [["AWS/ECS", "MemoryUtilization", "ClusterName", var.ecs_cluster_name, "ServiceName", var.ecs_service_name, { stat = "Average" }]]
-        }
-      },
-    ] : [],
-    local.has_alb ? [
-      {
-        type = "metric", width = 6, height = 6,
-        properties = {
-          title = "ALB 5xx Errors", region = var.region, view = "timeSeries", period = local.period, stat = "Sum",
-          metrics = [
-            ["AWS/ApplicationELB", "HTTPCode_ELB_5XX_Count", "LoadBalancer", var.alb_arn_suffix],
-            ["AWS/ApplicationELB", "HTTPCode_Target_5XX_Count", "LoadBalancer", var.alb_arn_suffix, "TargetGroup", var.target_group_arn_suffix],
-          ]
-        }
-      },
-    ] : [],
 
     # === Pipeline Health: throughput and error rate % (metric math) ===
     length(local.pipeline_workers) > 0 ? [{ type = "text", width = 24, height = 1, properties = { markdown = "## Pipeline Health" } }] : [],

@@ -1,39 +1,3 @@
-variable "name" {
-  type        = string
-  description = "Bucket name"
-}
-
-variable "is_temporary" {
-  type    = bool
-  default = false
-}
-
-variable "service_principals_with_access" {
-  type    = list(string)
-  default = []
-}
-
-variable "versioning_status" {
-  description = "The versioning state of the bucket."
-  type        = string
-  default     = "Disabled" # Default to Disabled, set to "Enabled" if versioning is desired
-  validation {
-    condition     = contains(["Enabled", "Disabled", "Suspended"], var.versioning_status)
-    error_message = "versioning_status must be Enabled, Disabled, or Suspended."
-  }
-}
-
-variable "lifecycle_rules" {
-  type = list(object({
-    id                         = string
-    prefix                     = optional(string, "")
-    expiration_days            = optional(number)
-    transition_to_ia_days      = optional(number)
-    transition_to_glacier_days = optional(number)
-  }))
-  default = []
-}
-
 resource "aws_s3_bucket" "this" {
   bucket        = var.name
   force_destroy = var.is_temporary
@@ -133,6 +97,8 @@ resource "aws_iam_policy" "access" {
 }
 
 # Bucket policy for service principals (e.g. bedrock.amazonaws.com)
+data "aws_caller_identity" "current" {}
+
 data "aws_iam_policy_document" "bucket_policy" {
   count = length(var.service_principals_with_access) > 0 ? 1 : 0
 
@@ -150,6 +116,12 @@ data "aws_iam_policy_document" "bucket_policy" {
       aws_s3_bucket.this.arn,
       "${aws_s3_bucket.this.arn}/*",
     ]
+    # Confused-deputy guard: only this account's service workloads may use the grant.
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceAccount"
+      values   = [data.aws_caller_identity.current.account_id]
+    }
   }
 }
 
@@ -157,16 +129,4 @@ resource "aws_s3_bucket_policy" "this" {
   count  = length(var.service_principals_with_access) > 0 ? 1 : 0
   bucket = aws_s3_bucket.this.id
   policy = data.aws_iam_policy_document.bucket_policy[0].json
-}
-
-output "bucket_name" {
-  value = aws_s3_bucket.this.bucket
-}
-
-output "bucket_arn" {
-  value = aws_s3_bucket.this.arn
-}
-
-output "access_policy_arn" {
-  value = aws_iam_policy.access.arn
 }
