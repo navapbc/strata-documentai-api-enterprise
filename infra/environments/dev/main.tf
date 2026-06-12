@@ -481,6 +481,41 @@ locals {
   }
 }
 
+# --- Monitoring (CloudWatch dashboard + alarms + SNS) ---
+
+module "monitoring" {
+  source = "../../modules/monitoring"
+
+  name_prefix = local.service_name
+  region      = var.region
+
+  # Dashboard in every env; alarms only in prd.
+  create_dashboard = true
+  create_alarms    = var.environment == "prd"
+
+  alarm_emails = var.alarm_emails
+  slack        = var.slack_config
+
+  # API target (ECS + ALB path; null when running the Lambda API).
+  alb_arn_suffix          = var.use_lambda_api ? null : module.service[0].alb_arn_suffix
+  target_group_arn_suffix = var.use_lambda_api ? null : module.service[0].target_group_arn_suffix
+  ecs_cluster_name        = var.use_lambda_api ? null : module.service[0].cluster_name
+  ecs_service_name        = var.use_lambda_api ? null : module.service[0].service_name
+  api_gateway_id          = var.use_lambda_api ? module.api_gateway[0].api_id : null
+  api_log_metrics         = var.use_lambda_api ? module.api_gateway[0].api_log_metrics : null
+
+  # Worker Lambdas (null when workers run as ECS tasks).
+  document_processor_function_name   = var.use_lambda_workers ? module.document_processor_lambda[0].function_name : null
+  bda_result_processor_function_name = var.use_lambda_workers ? module.bda_result_processor_lambda[0].function_name : null
+  metrics_processor_function_name    = var.use_lambda_workers ? module.metrics_processor_lambda[0].function_name : null
+  metrics_aggregator_function_name   = var.use_lambda_workers ? module.metrics_aggregator_lambda[0].function_name : null
+
+  # Queues.
+  metrics_queue_name          = module.metrics_queue.queue_name
+  document_processor_dlq_name = var.use_lambda_workers ? module.document_processor_lambda[0].dlq_name : null
+  bda_output_dlq_name         = var.use_lambda_workers ? module.bda_result_processor_lambda[0].dlq_name : null
+}
+
 # --- Consolidated IAM Policies (4 policies instead of 15+) ---
 
 data "aws_iam_policy_document" "data_access" {

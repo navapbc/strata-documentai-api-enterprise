@@ -283,3 +283,13 @@ output "function_arn" {
 output "role_arn" {
   value = aws_iam_role.this.arn
 }
+
+# DLQ identifiers for monitoring. Null when this worker has no S3 trigger
+# (only s3_trigger workers create a DLQ).
+output "dlq_arn" {
+  value = var.s3_trigger != null ? aws_sqs_queue.dlq[0].arn : null
+}
+
+output "dlq_name" {
+  value = var.s3_trigger != null ? aws_sqs_queue.dlq[0].name : null
+}

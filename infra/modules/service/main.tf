@@ -502,3 +502,21 @@ output "cluster_arn" {
 output "task_role_name" {
   value = aws_iam_role.task.name
 }
+
+# CloudWatch dimension identifiers for the monitoring module.
+# ALB/target-group "full names" use the ARN suffix (e.g. app/<name>/<id>).
+output "alb_arn_suffix" {
+  value = aws_lb.this.arn_suffix
+}
+
+output "target_group_arn_suffix" {
+  value = aws_lb_target_group.this.arn_suffix
+}
+
+output "cluster_name" {
+  value = local.cluster_name
+}
+
+output "service_name" {
+  value = aws_ecs_service.this.name
+}
