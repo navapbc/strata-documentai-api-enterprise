@@ -64,6 +64,21 @@ variable "use_lambda_api" {
   default     = false
 }
 
+variable "alarm_emails" {
+  type        = list(string)
+  description = "Email addresses subscribed to the alarm SNS topic (set per-env, prd only)"
+  default     = []
+}
+
+variable "slack_config" {
+  type = object({
+    workspace_id = string
+    channel_id   = string
+  })
+  description = "Optional AWS Chatbot Slack target for alarms. Requires a one-time workspace authorization in the console."
+  default     = null
+}
+
 variable "bda_projects" {
   type = map(object({
     managed_blueprint_arns = list(string)

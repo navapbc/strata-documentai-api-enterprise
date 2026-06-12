@@ -104,6 +104,12 @@ resource "aws_lambda_function" "this" {
 }
 
 # --- API Gateway HTTP API ---
+#
+# NOTE (WAF): AWS WAF (wafv2) cannot be attached to an HTTP API (apigatewayv2) —
+# WAF only associates with REST APIs, ALB, CloudFront, AppSync and Cognito. To
+# put WAF in front of this API you'd need either a CloudFront distribution ahead
+# of it (associate the web ACL there) or a migration to a REST API. Tracked as a
+# follow-up rather than a code change here.
 
 resource "aws_apigatewayv2_api" "this" {
   name          = var.function_name
@@ -165,10 +171,63 @@ resource "aws_lambda_permission" "apigw" {
   source_arn    = "${aws_apigatewayv2_api.this.execution_arn}/*/*"
 }
 
+# --- Access-log metric filters: split real submissions from status-poll traffic ---
+#
+# The API is a single $default route, so API Gateway's per-route Count can't tell a
+# document submission apart from the status polling GETs that follow each submission.
+# These filters parse the JSON access log (which carries method and path) into 
+# dimensionless custom metrics for cloudwatch alarms and dashboards. Note that these 
+# are "metric filters", not "logs-based metrics"
+
+locals {
+  api_log_metric_namespace = "DocumentAI/Api"
+}
+
+resource "aws_cloudwatch_log_metric_filter" "documents_submitted" {
+  name           = "${var.function_name}-documents-submitted"
+  log_group_name = aws_cloudwatch_log_group.api.name
+  pattern        = "{ ($.method = \"POST\") && ($.path = \"/v1/documents\") }"
+
+  metric_transformation {
+    name          = "DocumentsSubmitted"
+    namespace     = local.api_log_metric_namespace
+    value         = "1"
+    default_value = "0"
+    unit          = "Count"
+  }
+}
+
+resource "aws_cloudwatch_log_metric_filter" "document_status_polls" {
+  name           = "${var.function_name}-document-status-polls"
+  log_group_name = aws_cloudwatch_log_group.api.name
+  pattern        = "{ ($.method = \"GET\") && ($.path = \"/v1/documents/*\") }"
+
+  metric_transformation {
+    name          = "DocumentStatusPolls"
+    namespace     = local.api_log_metric_namespace
+    value         = "1"
+    default_value = "0"
+    unit          = "Count"
+  }
+}
+
 # --- Outputs ---
 
 output "api_endpoint" {
   value = aws_apigatewayv2_api.this.api_endpoint
+}
+
+output "api_id" {
+  value = aws_apigatewayv2_api.this.id
+}
+
+output "api_log_metrics" {
+  description = "Custom metrics parsed from the access log, splitting document submissions from status-poll GETs."
+  value = {
+    namespace        = local.api_log_metric_namespace
+    submitted_metric = aws_cloudwatch_log_metric_filter.documents_submitted.metric_transformation[0].name
+    polls_metric     = aws_cloudwatch_log_metric_filter.document_status_polls.metric_transformation[0].name
+  }
 }
 
 output "function_name" {

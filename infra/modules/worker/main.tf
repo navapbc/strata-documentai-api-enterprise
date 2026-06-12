@@ -54,12 +54,6 @@ variable "sqs_trigger" {
   default     = null
 }
 
-variable "schedule_expression" {
-  type        = string
-  description = "EventBridge schedule expression (e.g. rate(1 day))"
-  default     = null
-}
-
 variable "schedules" {
   type = list(object({
     name                = string
@@ -221,31 +215,7 @@ resource "aws_lambda_event_source_mapping" "sqs" {
   maximum_batching_window_in_seconds = var.sqs_trigger.max_batching_window_seconds
 }
 
-# --- EventBridge Schedule (single, legacy) ---
-
-resource "aws_cloudwatch_event_rule" "schedule" {
-  count               = var.schedule_expression != null ? 1 : 0
-  name                = "${var.function_name}-schedule"
-  schedule_expression = var.schedule_expression
-}
-
-resource "aws_cloudwatch_event_target" "schedule" {
-  count     = var.schedule_expression != null ? 1 : 0
-  rule      = aws_cloudwatch_event_rule.schedule[0].name
-  target_id = var.function_name
-  arn       = aws_lambda_function.this.arn
-}
-
-resource "aws_lambda_permission" "schedule" {
-  count         = var.schedule_expression != null ? 1 : 0
-  statement_id  = "AllowEventBridgeInvoke"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.this.function_name
-  principal     = "events.amazonaws.com"
-  source_arn    = aws_cloudwatch_event_rule.schedule[0].arn
-}
-
-# --- EventBridge Schedules (multiple, with input payloads) ---
+# --- EventBridge Schedules (with optional input payloads) ---
 
 resource "aws_cloudwatch_event_rule" "schedules" {
   for_each            = { for s in var.schedules : s.name => s }
@@ -282,4 +252,14 @@ output "function_arn" {
 
 output "role_arn" {
   value = aws_iam_role.this.arn
+}
+
+# DLQ identifiers for monitoring. Null when this worker has no S3 trigger
+# (only s3_trigger workers create a DLQ).
+output "dlq_arn" {
+  value = var.s3_trigger != null ? aws_sqs_queue.dlq[0].arn : null
+}
+
+output "dlq_name" {
+  value = var.s3_trigger != null ? aws_sqs_queue.dlq[0].name : null
 }
