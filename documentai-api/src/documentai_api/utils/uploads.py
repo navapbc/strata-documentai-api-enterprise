@@ -51,16 +51,14 @@ def purge_document_s3_artifacts(object_key: str, tenant_id: str) -> list[str]:
             logger.warning(f"Failed to delete input object for {object_key}: {e}")
             failures.append("input")
 
-    # 2. Preprocessing copies, both tenant-scoped: the upload-time original at
-    #    {preprocessing}/{tenant}/{object_key} and the pre-crop original at
-    #    {preprocessing}/{tenant}/precrop/{object_key}.
+    # 2. Preprocessing copy (tenant-scoped): the upload-time original at
+    #    {preprocessing}/{tenant}/{object_key}.
     preprocessing_location = os.environ.get(EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION)
     if preprocessing_location:
         try:
             bucket, _ = parse_s3_uri(preprocessing_location)
-            for subpath in ("", "precrop"):
-                _, key = get_bucket_and_key(preprocessing_location, tenant_id, object_key, subpath)
-                s3_service.delete_object(bucket, key)
+            _, key = get_bucket_and_key(preprocessing_location, tenant_id, object_key)
+            s3_service.delete_object(bucket, key)
         except Exception as e:
             logger.warning(f"Failed to delete preprocessing object for {object_key}: {e}")
             failures.append("preprocessing")
@@ -151,18 +149,20 @@ def _save_original_to_preprocessing(
     Stored under the owning tenant's prefix (mirroring the input layout) so
     preprocessing artifacts are tenant-scoped. ``object_key`` is the bare file
     name; the tenant prefix is added here.
+
+    Raises if DOCUMENTAI_PREPROCESSING_LOCATION is unset or the write fails —
+    the upload must not proceed without a guaranteed original backup.
     """
     preprocessing_location = os.environ.get(EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION)
     if not preprocessing_location:
-        return
+        raise RuntimeError(
+            "DOCUMENTAI_PREPROCESSING_LOCATION is not set; refusing to upload without "
+            "a preprocessing backup of the original"
+        )
 
     bucket, key = get_bucket_and_key(preprocessing_location, tenant_id, object_key)
-
-    try:
-        s3_service.upload_file(bucket, key, BytesIO(file_bytes), content_type)
-        logger.info(f"Original file saved to preprocessing: {key}")
-    except Exception as e:
-        logger.warning(f"Failed to save original to preprocessing: {e}")
+    s3_service.upload_file(bucket, key, BytesIO(file_bytes), content_type)
+    logger.info(f"Original file saved to preprocessing: {key}")
 
 
 async def dispatch_upload(
@@ -233,22 +233,23 @@ async def upload_document_for_processing(
 ) -> None:
     """Upload a document file to S3 with traceability metadata.
 
-    If the file requires format conversion (HEIC, WebP, GIF, BMP), the original
-    is saved to the preprocessing location and a converted PNG is uploaded to the
-    destination path.
+    The original file is always saved to the preprocessing location for audit.
+    If the file requires format conversion (HEIC, WebP, GIF, BMP), a converted
+    PNG is uploaded to the destination path; otherwise the original is uploaded.
     """
     bucket_name, object_key = parse_s3_uri(dest_path)
 
+    # Always save the original to preprocessing for audit trail
+    file_bytes = await asyncio.to_thread(src_file.read)
+    _save_original_to_preprocessing(
+        file_bytes, os.path.basename(object_key), content_type, tenant_id=tenant_id
+    )
+
     # handle format conversion for mobile/unsupported-by-BDA formats
     if FileValidation.needs_conversion(content_type):
-        file_bytes = await asyncio.to_thread(src_file.read)
         logger.info(
             f"Converting {content_type} to PNG",
             extra={"upload_filename": original_file_name, "original_size_bytes": len(file_bytes)},
-        )
-
-        _save_original_to_preprocessing(
-            file_bytes, os.path.basename(object_key), content_type, tenant_id=tenant_id
         )
 
         try:
@@ -258,6 +259,8 @@ async def upload_document_for_processing(
 
         src_file = BytesIO(converted_bytes)
         content_type = "image/png"
+    else:
+        src_file = BytesIO(file_bytes)
 
     try:
         metadata = {}

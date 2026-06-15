@@ -112,17 +112,15 @@ def test_extract_s3_info_raises_on_invalid_shape(event):
 
 
 @pytest.mark.parametrize(
-    ("tenant_id", "subpath", "expected_key"),
+    ("tenant_id", "expected_key"),
     [
-        ("tenant-a", "", "input/tenant-a/doc.pdf"),
-        ("tenant-a", "precrop", "input/tenant-a/precrop/doc.pdf"),
-        (None, "", "input/doc.pdf"),
-        (None, "precrop", "input/precrop/doc.pdf"),
+        ("tenant-a", "input/tenant-a/doc.pdf"),
+        (None, "input/doc.pdf"),
     ],
 )
-def test_get_bucket_and_key(tenant_id, subpath, expected_key):
-    """Layout is centralized: {prefix}/{tenant}/{subpath}/{file}, empties skipped."""
-    bucket, key = s3_util.get_bucket_and_key("s3://my-bucket/input", tenant_id, "doc.pdf", subpath)
+def test_get_bucket_and_key(tenant_id, expected_key):
+    """Layout is centralized: {prefix}/{tenant}/{file}, empty segments skipped."""
+    bucket, key = s3_util.get_bucket_and_key("s3://my-bucket/input", tenant_id, "doc.pdf")
     assert bucket == "my-bucket"
     assert key == expected_key
 

@@ -8,6 +8,7 @@ from documentai_api.jobs.document_processor.main import (
     main,
 )
 from documentai_api.schemas.document_metadata import DocumentMetadata
+from documentai_api.utils.dto import CropResult, OptimizationResult
 
 
 @pytest.fixture(autouse=True)
@@ -43,13 +44,10 @@ def mock_invoke(mocker):
 
 @pytest.fixture(autouse=True)
 def mock_detect_bbox(mocker):
-    """Patch detection to a no-op so the crop step in main() never reaches Bedrock.
-
-    Cropping lives in utils.image_optimization; returning None there makes
-    crop_image_to_document_roi a no-op during these flow tests.
-    """
+    """Patch detection to a no-op so the crop step never reaches Bedrock."""
     return mocker.patch(
-        "documentai_api.utils.image_optimization.detect_document_bbox", return_value=None
+        "documentai_api.utils.image_optimization.detect_document_bbox",
+        return_value=(None, CropResult()),
     )
 
 
@@ -181,10 +179,10 @@ def test_main_strips_tenant_prefix_for_ddb_key(s3_bucket, ddb_doc_metadata_table
 
 def test_main_first_time_image(input_image, mocker, ddb_doc_metadata_table, mock_invoke):
     """Test first time processing image (needs grayscale)."""
-    mock_convert = mocker.patch(
-        "documentai_api.jobs.document_processor.main.convert_s3_object_to_grayscale"
+    mock_optimize = mocker.patch("documentai_api.jobs.document_processor.main.optimize_s3_image")
+    mock_optimize.return_value = OptimizationResult(
+        crop_result=CropResult(), grayscale_applied=True, file_size_bytes=100, too_large=False
     )
-    mock_convert.return_value = True
 
     main(input_image.key, input_image.bucket_name)
 
@@ -193,20 +191,22 @@ def test_main_first_time_image(input_image, mocker, ddb_doc_metadata_table, mock
     doc_meta_record = ddb_doc_metadata_table.get_item(Key={"fileName": expected_object_key})["Item"]
     assert doc_meta_record[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.NOT_STARTED
 
-    mock_convert.assert_called_once_with(input_image.bucket_name, input_image.key)
+    mock_optimize.assert_called_once_with(
+        input_image.bucket_name, input_image.key, apply_grayscale=True
+    )
     mock_invoke.assert_called_once_with(
         input_image.bucket_name, input_image.key, expected_object_key, "tax_documents"
     )
 
 
 def test_main_grayscale_conversion_fails(input_image, mocker, mock_invoke):
-    """Test grayscale conversion failure marks as not implemented."""
+    """Test grayscale conversion failure (too large) marks as not implemented."""
     mocker.patch("documentai_api.jobs.document_processor.main.upsert_initial_ddb_record")
 
-    mock_convert = mocker.patch(
-        "documentai_api.jobs.document_processor.main.convert_s3_object_to_grayscale"
+    mock_optimize = mocker.patch("documentai_api.jobs.document_processor.main.optimize_s3_image")
+    mock_optimize.return_value = OptimizationResult(
+        crop_result=CropResult(), grayscale_applied=False, file_size_bytes=999999999, too_large=True
     )
-    mock_convert.return_value = False
 
     mock_classify = mocker.patch(
         "documentai_api.jobs.document_processor.main.classify_as_not_implemented"

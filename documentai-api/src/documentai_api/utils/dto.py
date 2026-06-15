@@ -75,6 +75,17 @@ class CropResult:
 
 
 @dataclass
+class OptimizationResult:
+    """Combined result of single-pass crop + grayscale optimization."""
+
+    crop_result: CropResult
+    grayscale_applied: bool = False
+    file_size_bytes: int | None = None
+    too_large: bool = False
+    failed: bool = False
+
+
+@dataclass
 class PageMetadata:
     """Metadata for a multipage document page."""
 

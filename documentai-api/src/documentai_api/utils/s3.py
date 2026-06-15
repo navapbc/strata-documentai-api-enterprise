@@ -97,19 +97,17 @@ def build_s3_key(*parts: str) -> str:
     return "/".join(p.strip("/") for p in parts if p)
 
 
-def get_bucket_and_key(
-    location_uri: str, tenant_id: str | None, file_name: str, subpath: str = ""
-) -> tuple[str, str]:
+def get_bucket_and_key(location_uri: str, tenant_id: str | None, file_name: str) -> tuple[str, str]:
     """Resolve (bucket, key) for a tenant-scoped document artifact.
 
-    Encodes the storage layout in one place - ``{prefix}/{tenant}/{subpath}/{file_name}``
+    Encodes the storage layout in one place - ``{prefix}/{tenant}/{file_name}``
     - so the upload/processing writers and the delete path can't drift on how a
     document's S3 objects are keyed. When ``tenant_id`` is falsy the tenant
     segment is omitted (legacy un-scoped paths, e.g. document builds); empty
     segments are skipped.
     """
     bucket, prefix = parse_s3_uri(location_uri)
-    return bucket, build_s3_key(prefix, tenant_id or "", subpath, file_name)
+    return bucket, build_s3_key(prefix, tenant_id or "", file_name)
 
 
 def sanitize_for_s3_metadata(value: str, max_length: int = 512) -> str:
