@@ -448,6 +448,10 @@ def upsert_ddb(
     is_document_blurry: bool | None = False,
     pre_classification_document_type: str | None = None,
     pre_classification_confidence: float | None = None,
+    pre_classification_input_tokens: int | None = None,
+    pre_classification_output_tokens: int | None = None,
+    pre_classification_duration_seconds: Decimal | None = None,
+    pre_classification_model_id: str | None = None,
     external_document_id: str | None = None,
     external_system_id: str | None = None,
     ai_consent_flag: bool | None = None,
@@ -517,6 +521,18 @@ def upsert_ddb(
         if pre_classification_confidence is not None:
             expr_fields.append(f"{DocumentMetadata.PRECLASSIFICATION_CONFIDENCE} = :pcc")
             expr_values[":pcc"] = Decimal(str(pre_classification_confidence))
+        if pre_classification_input_tokens is not None:
+            expr_fields.append(f"{DocumentMetadata.PRECLASSIFICATION_INPUT_TOKENS} = :pcit")
+            expr_values[":pcit"] = pre_classification_input_tokens
+        if pre_classification_output_tokens is not None:
+            expr_fields.append(f"{DocumentMetadata.PRECLASSIFICATION_OUTPUT_TOKENS} = :pcot")
+            expr_values[":pcot"] = pre_classification_output_tokens
+        if pre_classification_duration_seconds is not None:
+            expr_fields.append(f"{DocumentMetadata.PRECLASSIFICATION_DURATION_SECONDS} = :pcds")
+            expr_values[":pcds"] = pre_classification_duration_seconds
+        if pre_classification_model_id is not None:
+            expr_fields.append(f"{DocumentMetadata.PRECLASSIFICATION_MODEL_ID} = :pcmi")
+            expr_values[":pcmi"] = pre_classification_model_id
         if external_document_id is not None:
             expr_fields.append(f"{DocumentMetadata.EXTERNAL_DOCUMENT_ID} = :extDocId")
             expr_values[":extDocId"] = external_document_id

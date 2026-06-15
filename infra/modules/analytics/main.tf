@@ -237,6 +237,54 @@ resource "aws_glue_catalog_table" "raw_metrics" {
       name = "matched_blueprint_field_not_empty_avg_confidence"
       type = "double"
     }
+    columns {
+      name = "preclassification_input_tokens"
+      type = "int"
+    }
+    columns {
+      name = "preclassification_output_tokens"
+      type = "int"
+    }
+    columns {
+      name = "preclassification_duration_seconds"
+      type = "double"
+    }
+    columns {
+      name = "preclassification_model_id"
+      type = "string"
+    }
+    columns {
+      name = "crop_bounding_box"
+      type = "string"
+    }
+    columns {
+      name = "crop_retained_percentage"
+      type = "double"
+    }
+    columns {
+      name = "crop_duration_seconds"
+      type = "double"
+    }
+    columns {
+      name = "crop_input_tokens"
+      type = "int"
+    }
+    columns {
+      name = "crop_output_tokens"
+      type = "int"
+    }
+    columns {
+      name = "crop_model_id"
+      type = "string"
+    }
+    columns {
+      name = "grayscale_conversion"
+      type = "boolean"
+    }
+    columns {
+      name = "processed_file_size_bytes"
+      type = "bigint"
+    }
   }
 
   partition_keys {

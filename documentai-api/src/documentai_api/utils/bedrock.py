@@ -2,6 +2,7 @@ import io
 import json
 import re
 import time
+from decimal import Decimal
 from typing import Any
 
 from PIL import Image
@@ -15,7 +16,7 @@ from documentai_api.config.constants import (
 from documentai_api.config.env import get_aws_config
 from documentai_api.logging import get_logger
 from documentai_api.services.bedrock import invoke_model
-from documentai_api.utils.dto import BedrockClassificationResult
+from documentai_api.utils.dto import BedrockClassificationResult, CropResult
 from documentai_api.utils.ssm import get_parameter_value
 
 logger = get_logger(__name__)
@@ -51,7 +52,8 @@ def _invoke(messages: list[Any], max_tokens: int = 256, model_id: str | None = N
     if model_id is None:
         model_id = _get_model_id()
     logger.info(f"Invoking Bedrock model: {model_id}")
-    return invoke_model(model_id=model_id, messages=messages, max_tokens=max_tokens)
+    response = invoke_model(model_id=model_id, messages=messages, max_tokens=max_tokens)
+    return response
 
 
 def _parse_bbox(text: str) -> tuple[float, float, float, float] | None:
@@ -125,17 +127,16 @@ def _downscale_for_detection(image_bytes: bytes, content_type: str) -> tuple[byt
 
 def detect_document_bbox(
     image_bytes: bytes, content_type: str
-) -> tuple[float, float, float, float] | None:
+) -> tuple[tuple[float, float, float, float] | None, CropResult]:
     """Detect the primary document's bounding box in an image via the Bedrock vision model.
 
-    Returns the box as ``(x1, y1, x2, y2)`` on Nova's 0-1000 normalized scale, or
-    ``None`` when no document is found or detection fails. Best-effort - never raises.
-
-    Images above the Bedrock Converse per-image limits are downscaled in-memory just
-    for this call; the normalized box still maps onto the full-resolution original.
+    Returns a tuple of (bbox, crop_result) where bbox is ``(x1, y1, x2, y2)`` on Nova's
+    0-1000 normalized scale (or None), and crop_result contains duration/token/model info.
     """
+    result = CropResult()
+
     if not content_type.startswith("image/"):
-        return None
+        return None, result
 
     detection_bytes, detection_format = _downscale_for_detection(image_bytes, content_type)
 
@@ -150,21 +151,31 @@ def detect_document_bbox(
     ]
 
     try:
-        result = _invoke(messages=messages, model_id=_get_bbox_model_id())
-        box = _parse_bbox(result["content"][0]["text"])
+        model_id = _get_bbox_model_id()
+        start = time.time()
+        response = _invoke(messages=messages, model_id=model_id)
+        elapsed = round(time.time() - start, 2)
+
+        usage = response.get("usage", {})
+        result.duration_seconds = Decimal(str(elapsed))
+        result.input_tokens = usage.get("inputTokens")
+        result.output_tokens = usage.get("outputTokens")
+        result.model_id = model_id
+
+        text = response["output"]["message"]["content"][0]["text"]
+        box = _parse_bbox(text)
         if box is None:
-            return None
+            return None, result
 
         x1, y1, x2, y2 = box
-        # reject degenerate / out-of-range boxes
         if not (0 <= x1 < x2 <= 1000 and 0 <= y1 < y2 <= 1000):
             logger.warning(f"Ignoring invalid document bbox: {box}")
-            return None
+            return None, result
 
-        return x1, y1, x2, y2
+        return (x1, y1, x2, y2), result
     except Exception as e:
         logger.warning(f"Document bbox detection failed: {e}")
-        return None
+        return None, result
 
 
 def preclassify_document(document_bytes: bytes, content_type: str) -> BedrockClassificationResult:
@@ -202,11 +213,13 @@ def preclassify_document(document_bytes: bytes, content_type: str) -> BedrockCla
     ]
 
     try:
+        model_id = _get_model_id()
         start = time.time()
-        result = _invoke(messages=messages)
+        response = _invoke(messages=messages, model_id=model_id)
         elapsed = round(time.time() - start, 2)
 
-        text = result["content"][0]["text"]
+        usage = response.get("usage", {})
+        text = response["output"]["message"]["content"][0]["text"]
         parsed = json.loads(text)
 
         document_type = parsed.get("document_type", "other_document")
@@ -220,6 +233,10 @@ def preclassify_document(document_bytes: bytes, content_type: str) -> BedrockCla
             document_count=max(0, int(parsed.get("document_count", 1))),
             is_document=str(parsed.get("is_document", True)).lower() == "true",
             is_blurry=str(parsed.get("is_blurry", False)).lower() == "true",
+            input_tokens=usage.get("inputTokens"),
+            output_tokens=usage.get("outputTokens"),
+            duration_seconds=Decimal(str(elapsed)),
+            model_id=model_id,
         )
 
         logger.info(

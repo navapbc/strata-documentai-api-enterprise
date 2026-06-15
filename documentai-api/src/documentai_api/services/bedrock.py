@@ -24,4 +24,4 @@ def invoke_model(model_id: str, messages: list[Any], max_tokens: int = 256) -> A
         messages=messages,
         inferenceConfig={"maxTokens": max_tokens},
     )
-    return response["output"]["message"]
+    return response

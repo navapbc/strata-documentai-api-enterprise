@@ -255,7 +255,7 @@ module "config" {
 
   parameters = {
     "feature-flags/preclassification-based-routing" = "false"
-    "feature-flags/document-crop"                   = "false"
+    "feature-flags/document-crop"                   = "true"
     # Vision model ids - swappable at runtime via SSM (no redeploy). Kept as
     # separate params so preclassification and bbox detection can be tuned apart.
     "models/classification-model-id" = "us.amazon.nova-lite-v1:0"
