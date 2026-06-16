@@ -27,8 +27,8 @@ from documentai_api.utils.ddb import get_ddb_record
 from documentai_api.utils.document_lifecycle import (
     classify_as_failed,
     classify_as_not_implemented,
-    set_bda_processing_status_not_started,
     set_bda_processing_status_started,
+    set_processing_status_started,
     upsert_initial_ddb_record,
 )
 from documentai_api.utils.dto import ClassificationData, CropResult
@@ -204,11 +204,20 @@ def main(
         raise Exception("Could not retrieve DDB record after upsert")
 
     status = existing_record.get(DocumentMetadata.PROCESS_STATUS)
+    logger.info(
+        f"Processing {ddb_key}: status={status}, "
+        f"has_preclassification={'preclassificationCategory' in existing_record}"
+    )
 
     if status == ProcessStatus.PENDING_IMAGE_OPTIMIZATION:
-        # JPEG/PNG images always get crop + grayscale before BDA. Grayscale
-        # shrinks file size and improves extraction consistency. If the result
-        # still exceeds BDA's limit (or download fails), mark NOT_IMPLEMENTED.
+        # Atomically claim - only one invocation proceeds; duplicates bail.
+        if not set_processing_status_started(
+            ddb_key, ProcessStatus.PENDING_IMAGE_OPTIMIZATION.value
+        ):
+            logger.info(f"{ddb_key} already claimed from PENDING_IMAGE_OPTIMIZATION; skipping")
+            return
+        # JPEG/PNG images always get crop + grayscale before BDA.
+        logger.info(f"Branch: PENDING_IMAGE_OPTIMIZATION (apply_grayscale=True) for {ddb_key}")
         preclassification_category = existing_record.get(
             DocumentMetadata.PRECLASSIFICATION_CATEGORY
         )
@@ -221,7 +230,6 @@ def main(
             _persist_optimization_metrics(
                 ddb_key, opt.crop_result, opt.grayscale_applied, opt.file_size_bytes
             )
-            set_bda_processing_status_not_started(ddb_key)
             invoke_bda(bucket_name, object_key, ddb_key, preclassification_category)
             logger.info(f"Optimized {ddb_key} and invoked BDA")
         else:
@@ -235,9 +243,13 @@ def main(
                 ),
             )
     elif status and ProcessStatus.is_awaiting_processing(status):
+        # Atomically claim - only one invocation proceeds; duplicates bail.
+        if not set_processing_status_started(ddb_key, status):
+            logger.info(f"{ddb_key} already claimed from {status}; skipping")
+            return
         # Non-grayscale-convertible files (PDFs, TIFFs). Best-effort crop to
         # isolate the document from background for better extraction quality.
-        # If crop fails, BDA runs on the original untouched file.
+        logger.info(f"Branch: is_awaiting_processing (apply_grayscale=False) for {ddb_key}")
         preclassification_category = existing_record.get(
             DocumentMetadata.PRECLASSIFICATION_CATEGORY
         )
@@ -249,8 +261,7 @@ def main(
         _persist_optimization_metrics(ddb_key, opt.crop_result, False, opt.file_size_bytes)
         invoke_bda(bucket_name, object_key, ddb_key, preclassification_category)
     else:
-        # Already processing or terminal (SUCCESS, FAILED, STARTED) — skip.
-        # Guards against duplicate S3 event notifications.
+        # Already processing or terminal (SUCCESS, FAILED, STARTED) - skip.
         logger.info(f"File {ddb_key} already has status: {status}, skipping")
 
 

@@ -137,7 +137,8 @@ def test_main_first_time_pdf(input_pdf, mocker, ddb_doc_metadata_table, mock_inv
     expected_object_key = "test.pdf"
 
     doc_meta_record = ddb_doc_metadata_table.get_item(Key={"fileName": expected_object_key})["Item"]
-    assert doc_meta_record[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.NOT_STARTED
+    # The atomic claim transitions the status to STARTED before BDA is invoked.
+    assert doc_meta_record[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.STARTED
 
     mock_invoke.assert_called_once_with(
         input_pdf.bucket_name, input_pdf.key, expected_object_key, "tax_documents"
@@ -169,7 +170,8 @@ def test_main_strips_tenant_prefix_for_ddb_key(s3_bucket, ddb_doc_metadata_table
     # DDB key is the basename, with the tenant segment stripped.
     expected_ddb_key = "document-build-abc.pdf"
     record = ddb_doc_metadata_table.get_item(Key={"fileName": expected_ddb_key})["Item"]
-    assert record[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.NOT_STARTED
+    # The atomic claim transitions the status to STARTED before BDA is invoked.
+    assert record[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.STARTED
 
     # S3 operations still receive the full tenant-prefixed key.
     mock_invoke.assert_called_once_with(
@@ -189,7 +191,8 @@ def test_main_first_time_image(input_image, mocker, ddb_doc_metadata_table, mock
     expected_object_key = "test.jpg"
 
     doc_meta_record = ddb_doc_metadata_table.get_item(Key={"fileName": expected_object_key})["Item"]
-    assert doc_meta_record[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.NOT_STARTED
+    # The atomic claim transitions the status to STARTED before BDA is invoked.
+    assert doc_meta_record[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.STARTED
 
     mock_optimize.assert_called_once_with(
         input_image.bucket_name, input_image.key, apply_grayscale=True
@@ -202,6 +205,11 @@ def test_main_first_time_image(input_image, mocker, ddb_doc_metadata_table, mock
 def test_main_grayscale_conversion_fails(input_image, mocker, mock_invoke):
     """Test grayscale conversion failure (too large) marks as not implemented."""
     mocker.patch("documentai_api.jobs.document_processor.main.upsert_initial_ddb_record")
+    # DDB is fully mocked here, so stub the atomic claim as successful.
+    mocker.patch(
+        "documentai_api.jobs.document_processor.main.set_processing_status_started",
+        return_value=True,
+    )
 
     mock_optimize = mocker.patch("documentai_api.jobs.document_processor.main.optimize_s3_image")
     mock_optimize.return_value = OptimizationResult(

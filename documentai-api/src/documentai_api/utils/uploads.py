@@ -150,7 +150,7 @@ def _save_original_to_preprocessing(
     preprocessing artifacts are tenant-scoped. ``object_key`` is the bare file
     name; the tenant prefix is added here.
 
-    Raises if DOCUMENTAI_PREPROCESSING_LOCATION is unset or the write fails —
+    Raises if DOCUMENTAI_PREPROCESSING_LOCATION is unset or the write fails -
     the upload must not proceed without a guaranteed original backup.
     """
     preprocessing_location = os.environ.get(EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION)

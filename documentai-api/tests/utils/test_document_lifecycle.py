@@ -198,6 +198,51 @@ def test_set_bda_processing_status_not_started(mocker):
     )
 
 
+def test_set_processing_status_started_claims_when_status_matches(ddb_doc_metadata_table):
+    """Atomic claim succeeds and flips status to STARTED when the expected status matches."""
+    ddb_doc_metadata_table.put_item(
+        Item={
+            "fileName": "claim-test",
+            DocumentMetadata.PROCESS_STATUS: ProcessStatus.PENDING_IMAGE_OPTIMIZATION.value,
+        }
+    )
+
+    claimed = lifecycle_util.set_processing_status_started(
+        "claim-test", ProcessStatus.PENDING_IMAGE_OPTIMIZATION.value
+    )
+
+    assert claimed is True
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": "claim-test"})["Item"]
+    assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.STARTED
+
+
+def test_set_processing_status_started_returns_false_when_already_claimed(ddb_doc_metadata_table):
+    """A duplicate invocation loses the race: the conditional update fails, status untouched."""
+    ddb_doc_metadata_table.put_item(
+        Item={
+            "fileName": "claim-test",
+            DocumentMetadata.PROCESS_STATUS: ProcessStatus.STARTED.value,
+        }
+    )
+
+    claimed = lifecycle_util.set_processing_status_started(
+        "claim-test", ProcessStatus.PENDING_IMAGE_OPTIMIZATION.value
+    )
+
+    assert claimed is False
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": "claim-test"})["Item"]
+    assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.STARTED
+
+
+def test_set_processing_status_started_returns_false_when_record_missing(ddb_doc_metadata_table):
+    """No record to claim (never upserted) → conditional update fails, returns False."""
+    claimed = lifecycle_util.set_processing_status_started(
+        "does-not-exist", ProcessStatus.PENDING_IMAGE_OPTIMIZATION.value
+    )
+
+    assert claimed is False
+
+
 # test all classify_as* methods - classify_as_success, classify_as_failed, etc.
 # the structure is essentially the identical, test using parameterization rather
 # than repeating boilerplate code each time
