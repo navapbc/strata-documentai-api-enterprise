@@ -77,10 +77,23 @@ module "input_bucket" {
   name                           = "${local.service_name}-dde-input"
   service_principals_with_access = ["bedrock.amazonaws.com"]
 
-  lifecycle_rules = [{
-    id              = "expire-processed"
-    expiration_days = 7
-  }]
+  lifecycle_rules = [
+    {
+      id              = "expire-processed"
+      prefix          = "input/"
+      expiration_days = 7
+    },
+    {
+      id              = "expire-preprocessing-originals"
+      prefix          = "preprocessing/"
+      expiration_days = 30
+    },
+    {
+      id              = "expire-test-runner"
+      prefix          = "test-runner/"
+      expiration_days = 7
+    },
+  ]
 }
 
 module "output_bucket" {
@@ -90,7 +103,7 @@ module "output_bucket" {
 
   lifecycle_rules = [{
     id              = "expire-results"
-    expiration_days = 90
+    expiration_days = 30
   }]
 }
 
@@ -383,6 +396,7 @@ locals {
     DOCUMENTAI_BATCH_TABLE_NAME                               = module.document_batches.table_name
     DOCUMENTAI_DOCUMENT_BUILD_TABLE_NAME                      = module.document_builds.table_name
     DOCUMENTAI_INPUT_LOCATION                                 = "s3://${module.input_bucket.bucket_name}/input"
+    DOCUMENTAI_PREPROCESSING_LOCATION                         = "s3://${module.input_bucket.bucket_name}/preprocessing"
     DOCUMENTAI_OUTPUT_LOCATION                                = "s3://${module.output_bucket.bucket_name}/processed"
     DDB_METRICS_INPUT_QUEUE_URL                               = module.metrics_queue.queue_url
     DDB_EXPORT_BUCKET_NAME                                    = module.metrics_bucket.bucket_name
