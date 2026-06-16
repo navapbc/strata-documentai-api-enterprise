@@ -22,7 +22,12 @@ from documentai_api.utils.ddb import (
     update_ddb,
     upsert_ddb,
 )
-from documentai_api.utils.dto import ClassificationData, InternalApiResponse
+from documentai_api.utils.dto import (
+    ClassificationData,
+    InternalApiResponse,
+    PreClassificationData,
+    UpsertDdbData,
+)
 from documentai_api.utils.response_builder import build_v1_api_response, get_internal_api_response
 from documentai_api.utils.response_codes import ResponseCodes
 
@@ -260,21 +265,23 @@ def insert_minimal_ddb_record(record: DocumentRecord) -> None:
     in place (preserving createdAt, job_id, trace_id) rather than overwriting.
     """
     upsert_ddb(
-        object_key=record.ddb_key,
-        original_file_name=record.original_file_name,
-        user_provided_document_category=record.category,
-        process_status=record.process_status,
-        file_size_bytes=record.file_size_bytes,
-        content_type=record.content_type,
-        job_id=record.job_id,
-        trace_id=record.trace_id,
-        batch_id=record.batch_id,
-        external_document_id=record.external_document_id,
-        external_system_id=record.external_system_id,
-        ai_consent_flag=record.ai_consent_flag,
-        upload_method=record.upload_method,
-        tenant_id=record.tenant_id,
-        api_key_name=record.api_key_name,
+        UpsertDdbData(
+            object_key=record.ddb_key,
+            original_file_name=record.original_file_name,
+            user_provided_document_category=record.category,
+            process_status=record.process_status,
+            file_size_bytes=record.file_size_bytes,
+            content_type=record.content_type,
+            job_id=record.job_id,
+            trace_id=record.trace_id,
+            batch_id=record.batch_id,
+            external_document_id=record.external_document_id,
+            external_system_id=record.external_system_id,
+            ai_consent_flag=record.ai_consent_flag,
+            upload_method=record.upload_method,
+            tenant_id=record.tenant_id,
+            api_key_name=record.api_key_name,
+        )
     )
 
     logger.info(
@@ -363,25 +370,29 @@ def upsert_initial_ddb_record(
         )
 
     upsert_ddb(
-        object_key=ddb_key,
-        original_file_name=original_file_name,
-        user_provided_document_category=user_provided_document_category,
-        process_status=process_status,
-        internal_api_response=internal_api_response,
-        file_size_bytes=file_size_bytes,
-        content_type=content_type,
-        pages_detected=pages_detected,
-        job_id=job_id,
-        trace_id=trace_id,
-        batch_id=batch_id,
-        is_document_blurry=is_document_blurry,
-        is_password_protected=is_password_protected,
-        pre_classification_document_type=pre_classification_document_type,
-        pre_classification_confidence=pre_classification_confidence,
-        pre_classification_input_tokens=pre_classification_input_tokens,
-        pre_classification_output_tokens=pre_classification_output_tokens,
-        pre_classification_duration_seconds=pre_classification_duration_seconds,
-        pre_classification_model_id=pre_classification_model_id,
+        UpsertDdbData(
+            object_key=ddb_key,
+            original_file_name=original_file_name,
+            user_provided_document_category=user_provided_document_category,
+            process_status=process_status,
+            internal_api_response=internal_api_response,
+            file_size_bytes=file_size_bytes,
+            content_type=content_type,
+            pages_detected=pages_detected,
+            job_id=job_id,
+            trace_id=trace_id,
+            batch_id=batch_id,
+            is_document_blurry=is_document_blurry,
+            is_password_protected=is_password_protected,
+            pre_classification=PreClassificationData(
+                document_type=pre_classification_document_type,
+                confidence=pre_classification_confidence,
+                input_tokens=pre_classification_input_tokens,
+                output_tokens=pre_classification_output_tokens,
+                duration_seconds=pre_classification_duration_seconds,
+                model_id=pre_classification_model_id,
+            ),
+        )
     )
 
     # explicitly remove file reference to free memory for the lambda

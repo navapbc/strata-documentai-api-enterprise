@@ -5,6 +5,7 @@ import pytest
 from documentai_api.config.constants import ProcessStatus
 from documentai_api.utils import batch_operations as batch_ops
 from documentai_api.utils import ddb as ddb_util
+from documentai_api.utils.dto import UpsertDdbData
 
 
 @pytest.mark.integration
@@ -110,25 +111,31 @@ class TestQueryJobsByBatchId:
     def test_returns_jobs_for_batch(self, ddb_doc_metadata_table):
         """query_jobs_by_batch_id returns all jobs associated with a batch."""
         ddb_util.upsert_ddb(
-            object_key="0-file1.pdf",
-            original_file_name="file1.pdf",
-            process_status=ProcessStatus.SUCCESS.value,
-            job_id="job-1",
-            batch_id="batch-q1",
+            UpsertDdbData(
+                object_key="0-file1.pdf",
+                original_file_name="file1.pdf",
+                process_status=ProcessStatus.SUCCESS.value,
+                job_id="job-1",
+                batch_id="batch-q1",
+            )
         )
         ddb_util.upsert_ddb(
-            object_key="1-file2.pdf",
-            original_file_name="file2.pdf",
-            process_status=ProcessStatus.STARTED.value,
-            job_id="job-2",
-            batch_id="batch-q1",
+            UpsertDdbData(
+                object_key="1-file2.pdf",
+                original_file_name="file2.pdf",
+                process_status=ProcessStatus.STARTED.value,
+                job_id="job-2",
+                batch_id="batch-q1",
+            )
         )
         ddb_util.upsert_ddb(
-            object_key="0-file3.pdf",
-            original_file_name="file3.pdf",
-            process_status=ProcessStatus.SUCCESS.value,
-            job_id="job-3",
-            batch_id="batch-other",
+            UpsertDdbData(
+                object_key="0-file3.pdf",
+                original_file_name="file3.pdf",
+                process_status=ProcessStatus.SUCCESS.value,
+                job_id="job-3",
+                batch_id="batch-other",
+            )
         )
 
         results = batch_ops.query_jobs_by_batch_id("batch-q1")

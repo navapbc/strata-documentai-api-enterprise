@@ -10,6 +10,8 @@ from documentai_api.utils import ddb as ddb_util
 from documentai_api.utils.dto import (
     ClassificationData,
     InternalApiResponse,
+    PreClassificationData,
+    UpsertDdbData,
 )
 from documentai_api.utils.response_codes import ResponseCodes
 
@@ -403,23 +405,27 @@ def test_upsert_ddb(ddb_doc_metadata_table, mocker):
     object_key = "test-file"
 
     ddb_util.upsert_ddb(
-        object_key=object_key,
-        original_file_name="original-test.pdf",
-        user_provided_document_category="income",
-        process_status=ProcessStatus.NOT_STARTED.value,
-        internal_api_response=internal_response,
-        file_size_bytes=1024,
-        content_type="application/pdf",
-        pages_detected=5,
-        job_id="job-123",
-        trace_id="trace-456",
-        is_password_protected=True,
-        is_document_blurry=False,
-        pre_classification_document_type="W2",
-        pre_classification_confidence=".98",
-        external_document_id="ext-doc-789",
-        external_system_id="ext-sys-abc",
-        ai_consent_flag=True,
+        UpsertDdbData(
+            object_key=object_key,
+            original_file_name="original-test.pdf",
+            user_provided_document_category="income",
+            process_status=ProcessStatus.NOT_STARTED.value,
+            internal_api_response=internal_response,
+            file_size_bytes=1024,
+            content_type="application/pdf",
+            pages_detected=5,
+            job_id="job-123",
+            trace_id="trace-456",
+            is_password_protected=True,
+            is_document_blurry=False,
+            pre_classification=PreClassificationData(
+                document_type="W2",
+                confidence=0.98,
+            ),
+            external_document_id="ext-doc-789",
+            external_system_id="ext-sys-abc",
+            ai_consent_flag=True,
+        )
     )
 
     item = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"]
@@ -461,16 +467,74 @@ def test_upsert_ddb_ttl_fixed_from_creation(ddb_doc_metadata_table):
     """TTL is stamped once at create and preserved on later upserts (not extended)."""
     object_key = "ttl-fixed-file"
 
-    ddb_util.upsert_ddb(object_key=object_key, original_file_name="f.pdf")
+    ddb_util.upsert_ddb(UpsertDdbData(object_key=object_key, original_file_name="f.pdf"))
     created_ttl = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"][
         DocumentMetadata.TIME_TO_LIVE
     ]
 
     # a later upsert (simulated 5 days on) must not move the ttl
     with freeze_time("2026-01-06 12:00:00+00:00"):
-        ddb_util.upsert_ddb(object_key=object_key, original_file_name="f.pdf")
+        ddb_util.upsert_ddb(UpsertDdbData(object_key=object_key, original_file_name="f.pdf"))
 
     later_ttl = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"][
         DocumentMetadata.TIME_TO_LIVE
     ]
     assert later_ttl == created_ttl
+
+
+def test_upsert_ddb_consent_set_once_not_overwritten(ddb_doc_metadata_table):
+    """AiConsentFlag is stamped on create and preserved on later upserts.
+
+    A caller that opts out (False) at initial insert must not be silently
+    flipped back to the True default by a later upsert that omits consent.
+    """
+    object_key = "consent-fixed-file"
+
+    # initial insert opts out
+    ddb_util.upsert_ddb(
+        UpsertDdbData(object_key=object_key, original_file_name="f.pdf", ai_consent_flag=False)
+    )
+    assert (
+        ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"][
+            DocumentMetadata.AI_CONSENT_FLAG
+        ]
+        is False
+    )
+
+    # a later upsert that omits consent (defaults True) must not overwrite it
+    ddb_util.upsert_ddb(UpsertDdbData(object_key=object_key, original_file_name="f.pdf"))
+    assert (
+        ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"][
+            DocumentMetadata.AI_CONSENT_FLAG
+        ]
+        is False
+    )
+
+
+def test_upsert_ddb_consent_defaults_true(ddb_doc_metadata_table):
+    """AiConsentFlag defaults to True when the caller omits it."""
+    object_key = "consent-default-file"
+
+    ddb_util.upsert_ddb(UpsertDdbData(object_key=object_key, original_file_name="f.pdf"))
+
+    assert (
+        ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"][
+            DocumentMetadata.AI_CONSENT_FLAG
+        ]
+        is True
+    )
+
+
+def test_upsert_ddb_required_bools_always_written(ddb_doc_metadata_table):
+    """isPasswordProtected/isDocumentBlurry always exist, defaulting to False.
+
+    Callers that omit them must still get the attributes written (False), not
+    a sparse item missing them.
+    """
+    object_key = "required-bools-file"
+
+    ddb_util.upsert_ddb(UpsertDdbData(object_key=object_key, original_file_name="f.pdf"))
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"]
+    assert item[DocumentMetadata.IS_PASSWORD_PROTECTED] is False
+    assert item[DocumentMetadata.IS_DOCUMENT_BLURRY] is False
