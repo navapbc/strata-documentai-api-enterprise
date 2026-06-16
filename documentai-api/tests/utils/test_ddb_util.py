@@ -483,7 +483,7 @@ def test_upsert_ddb_ttl_fixed_from_creation(ddb_doc_metadata_table):
 
 
 def test_upsert_ddb_consent_set_once_not_overwritten(ddb_doc_metadata_table):
-    """aiConsentFlag is stamped on create and preserved on later upserts.
+    """AiConsentFlag is stamped on create and preserved on later upserts.
 
     A caller that opts out (False) at initial insert must not be silently
     flipped back to the True default by a later upsert that omits consent.
@@ -512,7 +512,7 @@ def test_upsert_ddb_consent_set_once_not_overwritten(ddb_doc_metadata_table):
 
 
 def test_upsert_ddb_consent_defaults_true(ddb_doc_metadata_table):
-    """aiConsentFlag defaults to True when the caller omits it."""
+    """AiConsentFlag defaults to True when the caller omits it."""
     object_key = "consent-default-file"
 
     ddb_util.upsert_ddb(UpsertDdbData(object_key=object_key, original_file_name="f.pdf"))
