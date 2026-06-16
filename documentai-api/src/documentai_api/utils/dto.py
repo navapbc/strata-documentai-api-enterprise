@@ -2,6 +2,9 @@
 
 from dataclasses import dataclass
 from decimal import Decimal
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from documentai_api.config.constants import DocumentCategory
 
@@ -83,6 +86,98 @@ class OptimizationResult:
     file_size_bytes: int | None = None
     too_large: bool = False
     failed: bool = False
+
+
+def _ddb_metadata_map(attr: str, param: str) -> dict[str, Any]:
+    """Helper to attach DDB metadata to a Pydantic Field."""
+    return {"ddb_attr": attr, "ddb_param": param}
+
+
+class PreClassificationData(BaseModel):
+    """Pre-classification metrics from Bedrock document analysis.
+
+    Fields annotated with _ddb_metadata_map are automatically mapped to DynamoDB
+    attributes by upsert_ddb. The first arg is the DDB attribute name, the second
+    is the expression parameter placeholder.
+    """
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    document_type: str | None = Field(
+        default=None, json_schema_extra=_ddb_metadata_map("preclassificationCategory", ":pcdt")
+    )
+    confidence: float | None = Field(
+        default=None, json_schema_extra=_ddb_metadata_map("preclassificationConfidence", ":pcc")
+    )
+    input_tokens: int | None = Field(
+        default=None, json_schema_extra=_ddb_metadata_map("preclassificationInputTokens", ":pcit")
+    )
+    output_tokens: int | None = Field(
+        default=None, json_schema_extra=_ddb_metadata_map("preclassificationOutputTokens", ":pcot")
+    )
+    duration_seconds: Decimal | None = Field(
+        default=None,
+        json_schema_extra=_ddb_metadata_map("preclassificationDurationSeconds", ":pcds"),
+    )
+    model_id: str | None = Field(
+        default=None, json_schema_extra=_ddb_metadata_map("preclassificationModelId", ":pcmi")
+    )
+
+
+class UpsertDdbData(BaseModel):
+    """Input DTO for upsert_ddb.
+
+    Fields annotated with _ddb_metadata_map are automatically mapped to DynamoDB
+    attributes by upsert_ddb. The first arg is the DDB attribute name, the second
+    is the expression parameter placeholder.
+    """
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    object_key: str
+    original_file_name: str
+    process_status: str | None = None
+    user_provided_document_category: str | None = None
+    internal_api_response: InternalApiResponse | None = None
+    file_size_bytes: int | None = Field(
+        default=None, json_schema_extra=_ddb_metadata_map("fileSizeBytes", ":fileSize")
+    )
+    content_type: str | None = Field(
+        default=None, json_schema_extra=_ddb_metadata_map("contentType", ":contentType")
+    )
+    pages_detected: int | None = Field(
+        default=None, json_schema_extra=_ddb_metadata_map("pagesDetected", ":pages")
+    )
+    job_id: str | None = Field(default=None, json_schema_extra=_ddb_metadata_map("jobId", ":jobId"))
+    trace_id: str | None = Field(
+        default=None, json_schema_extra=_ddb_metadata_map("traceId", ":traceId")
+    )
+    batch_id: str | None = Field(
+        default=None, json_schema_extra=_ddb_metadata_map("batchId", ":batchId")
+    )
+    # Always written (default False), so handled directly in upsert_ddb rather
+    # than via the exclude_unset ddb-metadata path - intentionally no ddb_attr.
+    is_password_protected: bool = False
+    is_document_blurry: bool = False
+    pre_classification: PreClassificationData | None = None
+    external_document_id: str | None = Field(
+        default=None, json_schema_extra=_ddb_metadata_map("externalDocumentId", ":extDocId")
+    )
+    external_system_id: str | None = Field(
+        default=None, json_schema_extra=_ddb_metadata_map("externalSystemId", ":extSysId")
+    )
+    # Always written (default True), so handled directly in upsert_ddb rather
+    # than via the exclude_unset ddb-metadata path - intentionally no ddb_attr.
+    ai_consent_flag: bool = True
+    upload_method: str | None = Field(
+        default=None, json_schema_extra=_ddb_metadata_map("uploadMethod", ":uploadMethod")
+    )
+    tenant_id: str | None = Field(
+        default=None, json_schema_extra=_ddb_metadata_map("tenantId", ":tenantId")
+    )
+    api_key_name: str | None = Field(
+        default=None, json_schema_extra=_ddb_metadata_map("apiKeyName", ":clientName")
+    )
 
 
 @dataclass

@@ -3,6 +3,8 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
+from pydantic import BaseModel
+
 from documentai_api.config.constants import (
     ConfigDefaults,
     DeletionType,
@@ -25,6 +27,7 @@ from documentai_api.utils.dto import (
     FieldMetrics,
     InternalApiResponse,
     ProcessingTimes,
+    UpsertDdbData,
 )
 from documentai_api.utils.response_builder import build_v1_api_response
 from documentai_api.utils.ttl import ttl_epoch_in_days
@@ -432,33 +435,33 @@ def mark_document_deleted(object_key: str, deletion_type: DeletionType) -> None:
     _execute_ddb_update(object_key, update_expr, expr_values)
 
 
-def upsert_ddb(
-    object_key: str,
-    original_file_name: str,
-    user_provided_document_category: str | None = None,
-    process_status: str | None = None,
-    internal_api_response: InternalApiResponse | None = None,
-    file_size_bytes: int | None = None,
-    content_type: str | None = None,
-    pages_detected: int | None = None,
-    job_id: str | None = None,
-    trace_id: str | None = None,
-    batch_id: str | None = None,
-    is_password_protected: bool | None = False,
-    is_document_blurry: bool | None = False,
-    pre_classification_document_type: str | None = None,
-    pre_classification_confidence: float | None = None,
-    pre_classification_input_tokens: int | None = None,
-    pre_classification_output_tokens: int | None = None,
-    pre_classification_duration_seconds: Decimal | None = None,
-    pre_classification_model_id: str | None = None,
-    external_document_id: str | None = None,
-    external_system_id: str | None = None,
-    ai_consent_flag: bool | None = None,
-    upload_method: str | None = None,
-    tenant_id: str | None = None,
-    api_key_name: str | None = None,
+def _apply_ddb_fields(
+    model: BaseModel,
+    set_fields: dict[str, Any],
+    expr_fields: list[str],
+    expr_values: dict[str, Any],
 ) -> None:
+    """Append DDB expression clauses for fields with ddb metadata that were explicitly set."""
+    for field_name, field_info in type(model).model_fields.items():
+        if field_name not in set_fields:
+            continue
+        extra = field_info.json_schema_extra
+        if not isinstance(extra, dict) or "ddb_attr" not in extra:
+            continue
+        value = set_fields[field_name]
+        # skip explicit None: leave the attribute absent rather than writing a
+        # DynamoDB NULL (sparse items are idiomatic; absent == "not provided")
+        if value is None:
+            continue
+        if isinstance(value, float):
+            value = Decimal(str(value))
+        ddb_attr = str(extra["ddb_attr"])
+        ddb_param = str(extra["ddb_param"])
+        expr_fields.append(f"{ddb_attr} = {ddb_param}")
+        expr_values[ddb_param] = value
+
+
+def upsert_ddb(data: UpsertDdbData) -> None:
     """Upsert a document-metadata DDB row by file name.
 
     Creates the row if missing, updates it in place if present. `createdAt` is
@@ -472,93 +475,55 @@ def upsert_ddb(
             f"{DocumentMetadata.ORIGINAL_FILE_NAME} = :originalFileName",
             f"{DocumentMetadata.PROCESS_STATUS} = :processStatus",
             f"{DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY} = :category",
-            (f"{DocumentMetadata.CREATED_AT} = if_not_exists({DocumentMetadata.CREATED_AT}, :now)"),
+            f"{DocumentMetadata.CREATED_AT} = if_not_exists({DocumentMetadata.CREATED_AT}, :now)",
             f"{DocumentMetadata.UPDATED_AT} = :now",
-            # TTL fixed from creation - preserved on subsequent upserts via if_not_exists.
-            # `ttl` is a DynamoDB reserved word, so reference it via the #ttl alias.
+            f"{DocumentMetadata.IS_PASSWORD_PROTECTED} = :pwProt",
+            f"{DocumentMetadata.IS_DOCUMENT_BLURRY} = :blurry",
+            f"{DocumentMetadata.AI_CONSENT_FLAG} = "
+            f"if_not_exists({DocumentMetadata.AI_CONSENT_FLAG}, :aiConsent)",
             "#ttl = if_not_exists(#ttl, :ttl)",
         ]
         expr_values: dict[str, Any] = {
-            ":originalFileName": original_file_name,
-            ":processStatus": process_status,
+            ":originalFileName": data.original_file_name,
+            ":processStatus": data.process_status,
             ":category": (
-                user_provided_document_category or ConfigDefaults.USER_DOCUMENT_TYPE_NOT_PROVIDED
+                data.user_provided_document_category
+                or ConfigDefaults.USER_DOCUMENT_TYPE_NOT_PROVIDED
             ),
             ":now": now,
+            ":pwProt": bool(data.is_password_protected),
+            ":blurry": bool(data.is_document_blurry),
+            ":aiConsent": bool(data.ai_consent_flag),
             ":ttl": ttl_epoch_in_days(ConfigDefaults.DOCUMENT_METADATA_TTL_DAYS),
         }
 
-        if file_size_bytes is not None:
-            expr_fields.append(f"{DocumentMetadata.FILE_SIZE_BYTES} = :fileSize")
-            expr_values[":fileSize"] = file_size_bytes
-        if content_type:
-            expr_fields.append(f"{DocumentMetadata.CONTENT_TYPE} = :contentType")
-            expr_values[":contentType"] = content_type
-        if pages_detected is not None:
-            expr_fields.append(f"{DocumentMetadata.PAGES_DETECTED} = :pages")
-            expr_values[":pages"] = pages_detected
-        if internal_api_response:
+        # internal_api_response and pre_classification are handled by dedicated
+        # paths below, so exclude them here - dumping them is dead work and would
+        # needlessly re-serialize the nested objects.
+        set_fields = data.model_dump(
+            exclude_unset=True, exclude={"internal_api_response", "pre_classification"}
+        )
+
+        # Dynamically add optional fields that were explicitly set and have ddb metadata
+        _apply_ddb_fields(data, set_fields, expr_fields, expr_values)
+
+        # internal_api_response needs JSON serialization
+        if data.internal_api_response:
             expr_fields.append(f"{DocumentMetadata.RESPONSE_JSON} = :respJson")
-            expr_values[":respJson"] = json.dumps(internal_api_response.__dict__)
-        if job_id:
-            expr_fields.append(f"{DocumentMetadata.JOB_ID} = :jobId")
-            expr_values[":jobId"] = job_id
-        if trace_id:
-            expr_fields.append(f"{DocumentMetadata.TRACE_ID} = :traceId")
-            expr_values[":traceId"] = trace_id
-        if batch_id:
-            expr_fields.append(f"{DocumentMetadata.BATCH_ID} = :batchId")
-            expr_values[":batchId"] = batch_id
-        if is_password_protected is not None:
-            expr_fields.append(f"{DocumentMetadata.IS_PASSWORD_PROTECTED} = :pwProt")
-            expr_values[":pwProt"] = bool(is_password_protected)
-        if is_document_blurry is not None:
-            expr_fields.append(f"{DocumentMetadata.IS_DOCUMENT_BLURRY} = :blurry")
-            expr_values[":blurry"] = bool(is_document_blurry)
-        if pre_classification_document_type is not None:
-            expr_fields.append(f"{DocumentMetadata.PRECLASSIFICATION_CATEGORY} = :pcdt")
-            expr_values[":pcdt"] = pre_classification_document_type
-        if pre_classification_confidence is not None:
-            expr_fields.append(f"{DocumentMetadata.PRECLASSIFICATION_CONFIDENCE} = :pcc")
-            expr_values[":pcc"] = Decimal(str(pre_classification_confidence))
-        if pre_classification_input_tokens is not None:
-            expr_fields.append(f"{DocumentMetadata.PRECLASSIFICATION_INPUT_TOKENS} = :pcit")
-            expr_values[":pcit"] = pre_classification_input_tokens
-        if pre_classification_output_tokens is not None:
-            expr_fields.append(f"{DocumentMetadata.PRECLASSIFICATION_OUTPUT_TOKENS} = :pcot")
-            expr_values[":pcot"] = pre_classification_output_tokens
-        if pre_classification_duration_seconds is not None:
-            expr_fields.append(f"{DocumentMetadata.PRECLASSIFICATION_DURATION_SECONDS} = :pcds")
-            expr_values[":pcds"] = pre_classification_duration_seconds
-        if pre_classification_model_id is not None:
-            expr_fields.append(f"{DocumentMetadata.PRECLASSIFICATION_MODEL_ID} = :pcmi")
-            expr_values[":pcmi"] = pre_classification_model_id
-        if external_document_id is not None:
-            expr_fields.append(f"{DocumentMetadata.EXTERNAL_DOCUMENT_ID} = :extDocId")
-            expr_values[":extDocId"] = external_document_id
-        if external_system_id is not None:
-            expr_fields.append(f"{DocumentMetadata.EXTERNAL_SYSTEM_ID} = :extSysId")
-            expr_values[":extSysId"] = external_system_id
-        if ai_consent_flag is not None:
-            expr_fields.append(f"{DocumentMetadata.AI_CONSENT_FLAG} = :aiConsent")
-            expr_values[":aiConsent"] = ai_consent_flag
-        if upload_method is not None:
-            expr_fields.append(f"{DocumentMetadata.UPLOAD_METHOD} = :uploadMethod")
-            expr_values[":uploadMethod"] = upload_method
-        if tenant_id is not None:
-            expr_fields.append(f"{DocumentMetadata.TENANT_ID} = :tenantId")
-            expr_values[":tenantId"] = tenant_id
-        if api_key_name is not None:
-            expr_fields.append(f"{DocumentMetadata.API_KEY_NAME} = :clientName")
-            expr_values[":clientName"] = api_key_name
+            expr_values[":respJson"] = json.dumps(data.internal_api_response.__dict__)
+
+        # Pre-classification sub-model
+        if data.pre_classification:
+            pc_fields = data.pre_classification.model_dump(exclude_unset=True)
+            _apply_ddb_fields(data.pre_classification, pc_fields, expr_fields, expr_values)
 
         update_expr = "SET " + ", ".join(expr_fields)
         _execute_ddb_update(
-            object_key,
+            data.object_key,
             update_expr,
             expr_values,
             expression_names={"#ttl": DocumentMetadata.TIME_TO_LIVE},
         )
     except Exception as e:
-        logger.error(f"Failed to upsert DDB record for {object_key}: {e}")
+        logger.error(f"Failed to upsert DDB record for {data.object_key}: {e}")
         raise
