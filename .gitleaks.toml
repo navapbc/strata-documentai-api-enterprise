@@ -15,7 +15,7 @@ description = "DocumentAI-issued API key"
 regex = '''docai_[A-Za-z0-9_-]{32}'''
 keywords = ["docai_"]
 
-[allowlist]
+[[allowlists]]
 description = "Known false positives reviewed 2026-05-29 — no real secrets present"
 
 # Match the regexes below against the full matched text, not just the extracted
@@ -34,3 +34,13 @@ regexes = [
   # not a hardcoded secret; the value is fetched from SSM at runtime.
   '''api_auth_insecure_shared_key_param''',
 ]
+
+# tests/jobs/test_document_processor_job.py — generic-api-key false positive: the
+# `.key,` attribute access adjacent to the `apply_grayscale=True` kwarg trips the
+# heuristic. Scoped to BOTH this path AND the token, so the kwarg elsewhere — or a
+# real secret in this same file — is still caught.
+[[allowlists]]
+condition = "AND"
+regexTarget = "match"
+paths = ['''documentai-api/tests/jobs/test_document_processor_job\.py''']
+regexes = ['''\.key,.*apply_grayscale=True''']
