@@ -6,46 +6,18 @@ best-effort: a failure leaves the original object untouched so BDA still runs.
 """
 
 import io
-import os
 from decimal import Decimal
 
 from PIL import Image
 
 from documentai_api.config.constants import ConfigDefaults, FileValidation
-from documentai_api.config.env import EnvVars
 from documentai_api.logging import get_logger
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils.bedrock import detect_document_bbox
-from documentai_api.utils.dto import CropResult
-from documentai_api.utils.s3 import get_bucket_and_key
+from documentai_api.utils.dto import CropResult, OptimizationResult
 from documentai_api.utils.ssm import is_document_crop_enabled
 
 logger = get_logger(__name__)
-
-
-def _save_precrop_original(
-    object_key: str, file_bytes: bytes, content_type: str, tenant_id: str | None = None
-) -> None:
-    """Save the pre-crop image to the preprocessing location for audit/recovery.
-
-    Stored tenant-scoped under a ``precrop/`` sub-prefix - {tenant}/precrop/{file}
-    - so it never collides with the upload-time original audit copy and stays
-    isolated per tenant. Raises if no preprocessing location is configured or the
-    save fails - the caller must abort the crop rather than overwrite the original
-    with no recoverable backup.
-    """
-    location = os.environ.get(EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION)
-    if not location:
-        raise RuntimeError(
-            "DOCUMENTAI_PREPROCESSING_LOCATION is not set; refusing to crop without "
-            "a pre-crop backup of the original"
-        )
-
-    base = os.path.basename(object_key)
-    bucket, key = get_bucket_and_key(location, tenant_id, base, "precrop")
-
-    s3_service.put_object(bucket, key, file_bytes, content_type)
-    logger.info(f"Saved pre-crop original to preprocessing: {key}")
 
 
 def crop_image_to_bbox(
@@ -136,74 +108,82 @@ def convert_to_grayscale(
         return file_bytes, content_type
 
 
-def convert_s3_object_to_grayscale(bucket_name: str, object_key: str) -> bool:
-    """Convert S3 image to grayscale in-place."""
-    try:
-        # download file
-        response = s3_service.get_object(bucket_name, object_key)
-        file_bytes = response["Body"].read()
-        content_type = response.get("ContentType", "application/octet-stream")
+def optimize_s3_image(
+    bucket_name: str,
+    object_key: str,
+    *,
+    apply_grayscale: bool = False,
+) -> OptimizationResult:
+    """Crop and/or grayscale-convert an S3 image in a single download/upload pass.
 
-        # convert to grayscale
-        grayscale_bytes, content_type = convert_to_grayscale(object_key, file_bytes, content_type)
+    Performs both transforms in memory and writes the final result to S3 once,
+    eliminating the redundant GET+PUT that occurred when crop and grayscale were
+    invoked separately.
 
-        # upload back (overwrite)
-        s3_service.put_object(bucket_name, object_key, grayscale_bytes, content_type)
+    Args:
+        bucket_name: S3 bucket containing the image.
+        object_key: S3 object key.
+        apply_grayscale: Whether to apply grayscale conversion.
 
-        # Check final size
-        final_size = len(grayscale_bytes)
-        if is_file_too_large_for_bda(content_type, final_size):
-            logger.error(f"File still too large after conversion: {final_size} bytes")
-            return False
-
-        logger.info(f"Converted {object_key} for BDA processing")
-
-        return True
-    except Exception as e:
-        logger.error(f"Failed to convert {object_key} to grayscale: {e}")
-        return False
-
-
-def crop_image_to_document_roi(
-    bucket_name: str, object_key: str, tenant_id: str | None = None
-) -> CropResult:
-    """Crop an S3 image in-place to the document's region of interest before BDA.
-
-    Uses the Bedrock vision model to locate the document, then crops with PIL and
-    overwrites the S3 object. Best-effort and feature-flag gated: any miss (flag
-    off, non-image, no document found, or error) leaves the object untouched so
-    BDA still runs on the full image. ``tenant_id`` scopes the pre-crop backup.
+    Returns:
+        OptimizationResult with crop metadata, grayscale flag, and final size.
     """
-    if not is_document_crop_enabled():
-        return CropResult()
+    result = OptimizationResult(crop_result=CropResult())
 
     try:
         response = s3_service.get_object(bucket_name, object_key)
         file_bytes = response["Body"].read()
         content_type = response.get("ContentType", "application/octet-stream")
-
-        if not content_type.startswith("image/"):
-            return CropResult()
-
-        bbox, crop_result = detect_document_bbox(file_bytes, content_type)
-
-        if bbox is None:
-            logger.info(f"No document ROI detected for {object_key}; leaving image uncropped")
-            return crop_result
-
-        cropped_bytes = crop_image_to_bbox(file_bytes, bbox)
-        _save_precrop_original(object_key, file_bytes, content_type, tenant_id=tenant_id)
-        s3_service.put_object(bucket_name, object_key, cropped_bytes, content_type)
-
-        x1, y1, x2, y2 = bbox
-        retained = Decimal(str(round((x2 - x1) * (y2 - y1) / 1_000_000 * 100, 2)))
-
-        crop_result.cropped = True
-        crop_result.bounding_box = bbox
-        crop_result.retained_percentage = retained
-
-        logger.info(f"Cropped {object_key} to document ROI before BDA (retained {retained}%)")
-        return crop_result
     except Exception as e:
-        logger.warning(f"Document ROI crop skipped for {object_key}: {e}")
-        return CropResult()
+        logger.error(f"Failed to download {object_key}: {e}")
+        result.failed = True
+        return result
+
+    modified = False
+
+    # --- Crop (best-effort: any failure leaves bytes untouched) ---
+    if is_document_crop_enabled() and content_type.startswith("image/"):
+        try:
+            bbox, crop_result = detect_document_bbox(file_bytes, content_type)
+            result.crop_result = crop_result
+
+            if bbox is not None:
+                cropped_bytes = crop_image_to_bbox(file_bytes, bbox)
+                file_bytes = cropped_bytes
+                modified = True
+
+                x1, y1, x2, y2 = bbox
+                retained = Decimal(str(round((x2 - x1) * (y2 - y1) / 1_000_000 * 100, 2)))
+                crop_result.cropped = True
+                crop_result.bounding_box = bbox
+                crop_result.retained_percentage = retained
+                logger.info(f"Cropped {object_key} to document ROI (retained {retained}%)")
+            else:
+                logger.info(f"No document ROI detected for {object_key}; skipping crop")
+        except Exception as e:
+            logger.warning(f"Document ROI crop skipped for {object_key}: {e}")
+
+    # --- Grayscale ---
+    if apply_grayscale:
+        converted_bytes, converted_type = convert_to_grayscale(object_key, file_bytes, content_type)
+        # convert_to_grayscale returns the same object when content_type is not
+        # convertible or on error; identity check detects actual conversion.
+        if converted_bytes is not file_bytes:
+            file_bytes = converted_bytes
+            content_type = converted_type
+            result.grayscale_applied = True
+            modified = True
+
+    # --- Single write ---
+    if modified:
+        s3_service.put_object(bucket_name, object_key, file_bytes, content_type)
+
+    result.file_size_bytes = len(file_bytes)
+    result.too_large = is_file_too_large_for_bda(content_type, len(file_bytes))
+
+    if result.too_large:
+        logger.error(f"File still too large after optimization: {len(file_bytes)} bytes")
+    else:
+        logger.info(f"Optimized {object_key} for BDA processing ({len(file_bytes)} bytes)")
+
+    return result

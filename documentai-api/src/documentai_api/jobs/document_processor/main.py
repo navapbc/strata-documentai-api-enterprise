@@ -27,15 +27,12 @@ from documentai_api.utils.ddb import get_ddb_record
 from documentai_api.utils.document_lifecycle import (
     classify_as_failed,
     classify_as_not_implemented,
-    set_bda_processing_status_not_started,
     set_bda_processing_status_started,
+    set_processing_status_started,
     upsert_initial_ddb_record,
 )
 from documentai_api.utils.dto import ClassificationData, CropResult
-from documentai_api.utils.image_optimization import (
-    convert_s3_object_to_grayscale,
-    crop_image_to_document_roi,
-)
+from documentai_api.utils.image_optimization import optimize_s3_image
 from documentai_api.utils.s3 import parse_s3_uri
 
 logger = documentai_api.logging.get_logger(__name__)
@@ -207,39 +204,64 @@ def main(
         raise Exception("Could not retrieve DDB record after upsert")
 
     status = existing_record.get(DocumentMetadata.PROCESS_STATUS)
+    logger.info(
+        f"Processing {ddb_key}: status={status}, "
+        f"has_preclassification={'preclassificationCategory' in existing_record}"
+    )
 
     if status == ProcessStatus.PENDING_IMAGE_OPTIMIZATION:
+        # Atomically claim - only one invocation proceeds; duplicates bail.
+        if not set_processing_status_started(
+            ddb_key, ProcessStatus.PENDING_IMAGE_OPTIMIZATION.value
+        ):
+            logger.info(f"{ddb_key} already claimed from PENDING_IMAGE_OPTIMIZATION; skipping")
+            return
+        # JPEG/PNG images always get crop + grayscale before BDA.
+        logger.info(f"Branch: PENDING_IMAGE_OPTIMIZATION (apply_grayscale=True) for {ddb_key}")
         preclassification_category = existing_record.get(
             DocumentMetadata.PRECLASSIFICATION_CATEGORY
         )
-        crop_result = crop_image_to_document_roi(
-            bucket_name, object_key, tenant_id=existing_record.get(DocumentMetadata.TENANT_ID)
+        opt = optimize_s3_image(
+            bucket_name,
+            object_key,
+            apply_grayscale=True,
         )
-        if convert_s3_object_to_grayscale(bucket_name, object_key):
-            processed_size = s3_service.get_file_size_bytes(bucket_name, object_key)
-            _persist_optimization_metrics(ddb_key, crop_result, True, processed_size)
-            set_bda_processing_status_not_started(ddb_key)
+        if not opt.too_large and not opt.failed:
+            _persist_optimization_metrics(
+                ddb_key, opt.crop_result, opt.grayscale_applied, opt.file_size_bytes
+            )
             invoke_bda(bucket_name, object_key, ddb_key, preclassification_category)
-            logger.info(f"Converted {ddb_key} to grayscale and invoked BDA")
+            logger.info(f"Optimized {ddb_key} and invoked BDA")
         else:
-            # Grayscale conversion ran but the result was still too large for BDA.
-            # Record as False since the optimization didn't produce a usable output.
-            _persist_optimization_metrics(ddb_key, crop_result, False, None)
+            _persist_optimization_metrics(ddb_key, opt.crop_result, False, None)
             classify_as_not_implemented(
                 object_key=ddb_key,
-                data=ClassificationData(additional_info="File too large after conversion"),
+                data=ClassificationData(
+                    additional_info="File too large after conversion"
+                    if opt.too_large
+                    else "Failed to download file for optimization"
+                ),
             )
     elif status and ProcessStatus.is_awaiting_processing(status):
+        # Atomically claim - only one invocation proceeds; duplicates bail.
+        if not set_processing_status_started(ddb_key, status):
+            logger.info(f"{ddb_key} already claimed from {status}; skipping")
+            return
+        # Non-grayscale-convertible files (PDFs, TIFFs). Best-effort crop to
+        # isolate the document from background for better extraction quality.
+        logger.info(f"Branch: is_awaiting_processing (apply_grayscale=False) for {ddb_key}")
         preclassification_category = existing_record.get(
             DocumentMetadata.PRECLASSIFICATION_CATEGORY
         )
-        crop_result = crop_image_to_document_roi(
-            bucket_name, object_key, tenant_id=existing_record.get(DocumentMetadata.TENANT_ID)
+        opt = optimize_s3_image(
+            bucket_name,
+            object_key,
+            apply_grayscale=False,
         )
-        processed_size = s3_service.get_file_size_bytes(bucket_name, object_key)
-        _persist_optimization_metrics(ddb_key, crop_result, False, processed_size)
+        _persist_optimization_metrics(ddb_key, opt.crop_result, False, opt.file_size_bytes)
         invoke_bda(bucket_name, object_key, ddb_key, preclassification_category)
     else:
+        # Already processing or terminal (SUCCESS, FAILED, STARTED) - skip.
         logger.info(f"File {ddb_key} already has status: {status}, skipping")
 
 

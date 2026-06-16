@@ -7,13 +7,13 @@ import pytest
 from PIL import Image
 
 from documentai_api.config.constants import ConfigDefaults
+from documentai_api.services import s3 as s3_service
 from documentai_api.utils.dto import CropResult
 from documentai_api.utils.image_optimization import (
-    convert_s3_object_to_grayscale,
     convert_to_grayscale,
     crop_image_to_bbox,
-    crop_image_to_document_roi,
     is_file_too_large_for_bda,
+    optimize_s3_image,
 )
 
 MODULE = "documentai_api.utils.image_optimization"
@@ -34,6 +34,9 @@ def _sized_image(width: int, height: int, fmt: str = "PNG") -> bytes:
     output = io.BytesIO()
     Image.new("RGB", (width, height), color="red").save(output, format=fmt)
     return output.getvalue()
+
+
+# --- crop_image_to_bbox unit tests ---
 
 
 def test_crop_to_bbox_exact_region_no_padding():
@@ -66,6 +69,9 @@ def test_crop_to_bbox_invalid_bytes_raises():
         crop_image_to_bbox(b"not an image", (100, 100, 900, 900))
 
 
+# --- is_file_too_large_for_bda ---
+
+
 @pytest.mark.parametrize(
     ("content_type", "file_size", "expected"),
     [
@@ -85,12 +91,15 @@ def test_is_file_too_large_for_bda(content_type, file_size, expected):
     assert is_file_too_large_for_bda(content_type, file_size) == expected
 
 
+# --- convert_to_grayscale ---
+
+
 def test_convert_to_grayscale_non_image():
     """Test that non-image files are returned unchanged."""
     file_bytes = b"pdf content"
     result_bytes, result_type = convert_to_grayscale("test.pdf", file_bytes, "application/pdf")
 
-    assert result_bytes == file_bytes
+    assert result_bytes is file_bytes
     assert result_type == "application/pdf"
 
 
@@ -99,7 +108,7 @@ def test_convert_to_grayscale_invalid_image():
     file_bytes = b"not an image"
     result_bytes, result_type = convert_to_grayscale("test.jpg", file_bytes, "image/jpeg")
 
-    assert result_bytes == file_bytes
+    assert result_bytes is file_bytes
     assert result_type == "image/jpeg"
 
 
@@ -127,87 +136,50 @@ def test_convert_to_grayscale_large_image_converts_to_pdf():
     assert result_type in ["image/jpeg", "application/pdf"]
 
 
-def test_convert_s3_object_to_grayscale_success(s3_bucket, mocker):
-    """Test successful S3 object grayscale conversion."""
-    s3_bucket.put_object(Key="test.jpg", Body=b"image data", ContentType="image/jpeg")
-
-    mock_convert = mocker.patch(f"{MODULE}.convert_to_grayscale")
-    mock_convert.return_value = (b"grayscale data", "image/jpeg")
-
-    result = convert_s3_object_to_grayscale(s3_bucket.name, "test.jpg")
-
-    current_object = s3_bucket.Object("test.jpg")
-
-    assert result is True
-    mock_convert.assert_called_once_with("test.jpg", b"image data", "image/jpeg")
-    assert current_object.content_type == "image/jpeg"
-    assert current_object.get()["Body"].read() == b"grayscale data"
+# --- optimize_s3_image ---
 
 
-def test_convert_s3_object_to_grayscale_file_too_large(s3_bucket, mocker):
-    """Test S3 conversion returns False when file too large."""
-    s3_bucket.put_object(Key="test.jpg", Body=b"image data", ContentType="image/jpeg")
-
-    large_bytes = b"x" * (ConfigDefaults.BDA_MAX_IMAGE_SIZE_BYTES + 1)
-    mock_convert = mocker.patch(f"{MODULE}.convert_to_grayscale")
-    mock_convert.return_value = (large_bytes, "image/jpeg")
-
-    result = convert_s3_object_to_grayscale(s3_bucket.name, "test.jpg")
-
-    assert result is False
-    # but file is still updated in S3
-    assert s3_bucket.Object("test.jpg").get()["Body"].read() == large_bytes
-
-
-def test_convert_s3_object_to_grayscale_error(s3_bucket):
-    """Test S3 grayscale conversion handles errors gracefully."""
-    result = convert_s3_object_to_grayscale(s3_bucket.name, "file_that_does_not_exist.jpg")
-
-    assert result is False
-
-
-def test_crop_roi_disabled_is_noop(s3_bucket, mocker):
-    """Feature flag off: detection never runs, object untouched."""
+def test_optimize_crop_disabled_is_noop(s3_bucket, mocker):
+    """Feature flag off + no grayscale: object untouched, no write."""
     mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=False)
     detect = mocker.patch(f"{MODULE}.detect_document_bbox")
-    s3_bucket.put_object(Key="a.png", Body=b"orig", ContentType="image/png")
+    original = _png_bytes(100, 100)
+    s3_bucket.put_object(Key="a.png", Body=original, ContentType="image/png")
 
-    crop_image_to_document_roi(s3_bucket.name, "a.png")
+    result = optimize_s3_image(s3_bucket.name, "a.png")
 
     detect.assert_not_called()
-    assert s3_bucket.Object("a.png").get()["Body"].read() == b"orig"
+    assert s3_bucket.Object("a.png").get()["Body"].read() == original
+    assert result.crop_result.cropped is False
+    assert result.grayscale_applied is False
 
 
-def test_crop_roi_skips_non_image(s3_bucket, mocker):
+def test_optimize_skips_crop_for_non_image(s3_bucket, mocker):
     """PDFs are never detected/cropped."""
     mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=True)
     detect = mocker.patch(f"{MODULE}.detect_document_bbox")
     s3_bucket.put_object(Key="a.pdf", Body=b"%PDF-1.4", ContentType="application/pdf")
 
-    crop_image_to_document_roi(s3_bucket.name, "a.pdf")
+    optimize_s3_image(s3_bucket.name, "a.pdf")
 
     detect.assert_not_called()
 
 
-def test_crop_roi_no_document_leaves_object(s3_bucket, mocker):
+def test_optimize_no_bbox_leaves_object(s3_bucket, mocker):
     """No bbox detected: object is left uncropped."""
     mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=True)
     mocker.patch(f"{MODULE}.detect_document_bbox", return_value=(None, CropResult()))
     original = _png_bytes(1000, 1000)
     s3_bucket.put_object(Key="a.png", Body=original, ContentType="image/png")
 
-    crop_image_to_document_roi(s3_bucket.name, "a.png")
+    result = optimize_s3_image(s3_bucket.name, "a.png")
 
     assert s3_bucket.Object("a.png").get()["Body"].read() == original
+    assert result.crop_result.cropped is False
 
 
-def test_crop_roi_happy_path_overwrites_with_cropped(s3_bucket, mocker, monkeypatch):
+def test_optimize_crop_happy_path(s3_bucket, mocker):
     """A detected bbox crops the S3 image in place to a smaller image."""
-    from documentai_api.config.env import EnvVars
-
-    monkeypatch.setenv(
-        EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION, f"s3://{s3_bucket.name}/preprocessing"
-    )
     mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=True)
     mocker.patch(
         f"{MODULE}.detect_document_bbox",
@@ -223,48 +195,91 @@ def test_crop_roi_happy_path_overwrites_with_cropped(s3_bucket, mocker, monkeypa
     )
     s3_bucket.put_object(Key="a.png", Body=_png_bytes(1000, 1000), ContentType="image/png")
 
-    crop_image_to_document_roi(s3_bucket.name, "a.png")
+    result = optimize_s3_image(s3_bucket.name, "a.png")
 
     stored = s3_bucket.Object("a.png").get()["Body"].read()
     cropped = Image.open(io.BytesIO(stored))
     assert cropped.width < 1000
     assert cropped.height < 1000
+    assert result.crop_result.cropped is True
+    assert result.crop_result.bounding_box == (200, 200, 600, 600)
 
 
-def test_crop_roi_aborts_when_no_preprocessing_location(s3_bucket, mocker, monkeypatch):
-    """Without a backup location we must NOT overwrite: original is preserved."""
-    from documentai_api.config.env import EnvVars
-
-    monkeypatch.delenv(EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION, raising=False)
+def test_optimize_detect_bbox_error_is_best_effort(s3_bucket, mocker):
+    """detect_document_bbox failure: object untouched, no crash."""
     mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=True)
-    mocker.patch(
-        f"{MODULE}.detect_document_bbox",
-        return_value=(
-            (200, 200, 600, 600),
-            CropResult(
-                duration_seconds=Decimal("0.5"),
-                input_tokens=100,
-                output_tokens=50,
-                model_id="test-model",
-            ),
-        ),
-    )
-    original = _png_bytes(1000, 1000)
+    mocker.patch(f"{MODULE}.detect_document_bbox", side_effect=RuntimeError("Bedrock timeout"))
+    original = _png_bytes(100, 100)
     s3_bucket.put_object(Key="a.png", Body=original, ContentType="image/png")
 
-    crop_image_to_document_roi(s3_bucket.name, "a.png")  # no exception
+    result = optimize_s3_image(s3_bucket.name, "a.png")
 
-    # original is untouched because the pre-crop backup could not be made
     assert s3_bucket.Object("a.png").get()["Body"].read() == original
+    assert result.crop_result.cropped is False
+    assert result.failed is False
 
 
-def test_crop_roi_saves_precrop_original_to_preprocessing(s3_bucket, mocker, monkeypatch):
-    """The pre-crop image is preserved under preprocessing/precrop/ before overwrite."""
-    from documentai_api.config.env import EnvVars
-
-    monkeypatch.setenv(
-        EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION, f"s3://{s3_bucket.name}/preprocessing"
+def test_optimize_crop_raises_is_best_effort(s3_bucket, mocker):
+    """crop_image_to_bbox failure (e.g. unusable region): object untouched, no crash."""
+    mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=True)
+    mocker.patch(
+        f"{MODULE}.detect_document_bbox",
+        return_value=((200, 200, 600, 600), CropResult()),
     )
+    mocker.patch(f"{MODULE}.crop_image_to_bbox", side_effect=ValueError("empty crop region"))
+    original = _png_bytes(1000, 1000)
+    s3_bucket.put_object(Key="a.png", Body=original, ContentType="image/png")
+
+    result = optimize_s3_image(s3_bucket.name, "a.png")
+
+    assert s3_bucket.Object("a.png").get()["Body"].read() == original
+    assert result.crop_result.cropped is False
+    assert result.failed is False
+
+
+def test_optimize_download_failure_sets_failed(s3_bucket, mocker):
+    """S3 GET failure: failed=True, no crash."""
+    mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=True)
+
+    result = optimize_s3_image(s3_bucket.name, "does_not_exist.png")
+
+    assert result.failed is True
+    assert result.file_size_bytes is None
+
+
+def test_optimize_grayscale_converts_image(s3_bucket, mocker):
+    """apply_grayscale=True converts image and writes once."""
+    mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=False)
+    put_spy = mocker.spy(s3_service, "put_object")
+    original = _sized_image(100, 100, fmt="JPEG")
+    s3_bucket.put_object(Key="a.jpg", Body=original, ContentType="image/jpeg")
+
+    result = optimize_s3_image(s3_bucket.name, "a.jpg", apply_grayscale=True)
+
+    assert result.grayscale_applied is True
+    stored = s3_bucket.Object("a.jpg").get()["Body"].read()
+    img = Image.open(io.BytesIO(stored))
+    assert img.mode == "L"
+    # Single write (grayscale only, no crop)
+    assert put_spy.call_count == 1
+    # file_size_bytes reflects the bytes actually written (no extra S3 HEAD).
+    assert result.file_size_bytes == len(stored)
+
+
+def test_optimize_grayscale_noop_for_pdf(s3_bucket, mocker):
+    """apply_grayscale=True with a PDF: no conversion, no write."""
+    mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=False)
+    original = b"%PDF-1.4 content"
+    s3_bucket.put_object(Key="a.pdf", Body=original, ContentType="application/pdf")
+
+    result = optimize_s3_image(s3_bucket.name, "a.pdf", apply_grayscale=True)
+
+    assert result.grayscale_applied is False
+    assert s3_bucket.Object("a.pdf").get()["Body"].read() == original
+
+
+def test_optimize_crop_and_grayscale_single_write(s3_bucket, mocker):
+    """Both crop and grayscale applied with only one S3 PUT to the live object."""
     mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=True)
     mocker.patch(
         f"{MODULE}.detect_document_bbox",
@@ -278,47 +293,32 @@ def test_crop_roi_saves_precrop_original_to_preprocessing(s3_bucket, mocker, mon
             ),
         ),
     )
+    put_spy = mocker.spy(s3_service, "put_object")
     original = _png_bytes(1000, 1000)
     s3_bucket.put_object(Key="a.png", Body=original, ContentType="image/png")
 
-    crop_image_to_document_roi(s3_bucket.name, "a.png")
+    result = optimize_s3_image(s3_bucket.name, "a.png", apply_grayscale=True)
 
-    # the untouched pre-crop original is preserved
-    assert s3_bucket.Object("preprocessing/precrop/a.png").get()["Body"].read() == original
-    # while the live object is the (smaller) crop
-    assert len(s3_bucket.Object("a.png").get()["Body"].read()) != len(original)
+    assert result.crop_result.cropped is True
+    assert result.grayscale_applied is True
+    stored = s3_bucket.Object("a.png").get()["Body"].read()
+    img = Image.open(io.BytesIO(stored))
+    assert img.width < 1000
+    assert img.mode == "L"
+    # Single write to the live object
+    assert put_spy.call_count == 1
 
 
-def test_crop_roi_saves_precrop_original_tenant_scoped(s3_bucket, mocker, monkeypatch):
-    """With a tenant_id the pre-crop backup is stored under {tenant}/precrop/."""
-    from documentai_api.config.env import EnvVars
-
-    monkeypatch.setenv(
-        EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION, f"s3://{s3_bucket.name}/preprocessing"
-    )
-    mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=True)
+def test_optimize_too_large_after_conversion(s3_bucket, mocker):
+    """File still over BDA limit after grayscale: too_large=True."""
+    mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=False)
     mocker.patch(
-        f"{MODULE}.detect_document_bbox",
-        return_value=(
-            (200, 200, 600, 600),
-            CropResult(
-                duration_seconds=Decimal("0.5"),
-                input_tokens=100,
-                output_tokens=50,
-                model_id="test-model",
-            ),
-        ),
+        f"{MODULE}.convert_to_grayscale",
+        return_value=(b"x" * (ConfigDefaults.BDA_MAX_IMAGE_SIZE_BYTES + 1), "image/jpeg"),
     )
-    original = _png_bytes(1000, 1000)
-    s3_bucket.put_object(Key="a.png", Body=original, ContentType="image/png")
+    s3_bucket.put_object(Key="a.jpg", Body=b"small", ContentType="image/jpeg")
 
-    crop_image_to_document_roi(s3_bucket.name, "a.png", tenant_id="test-tenant")
+    result = optimize_s3_image(s3_bucket.name, "a.jpg", apply_grayscale=True)
 
-    stored = s3_bucket.Object("preprocessing/test-tenant/precrop/a.png").get()["Body"].read()
-    assert stored == original
-
-
-def test_crop_roi_swallows_errors(s3_bucket, mocker):
-    """Missing object: never raises, processing continues."""
-    mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=True)
-    crop_image_to_document_roi(s3_bucket.name, "does_not_exist.png")  # no exception
+    assert result.too_large is True
+    assert result.grayscale_applied is True

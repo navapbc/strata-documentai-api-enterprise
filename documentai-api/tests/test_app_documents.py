@@ -750,11 +750,10 @@ def test_purge_document_s3_artifacts_deletes_all_locations(monkeypatch, mocker):
     failures = purge_document_s3_artifacts(object_key="doc-uuid.pdf", tenant_id="test-tenant")
 
     assert failures == []  # every location purged cleanly
-    # Original upload and both preprocessing copies are tenant-scoped single objects.
+    # Original upload and preprocessing copy are tenant-scoped single objects.
     deleted = [c.args for c in mock_delete.mock_calls]
     assert ("bucket", "input/test-tenant/doc-uuid.pdf") in deleted
     assert ("bucket", "preprocessing/test-tenant/doc-uuid.pdf") in deleted
-    assert ("bucket", "preprocessing/test-tenant/precrop/doc-uuid.pdf") in deleted
     # BDA output is a tree, deleted by prefix - including the truncated variant.
     prefixes = [c.args for c in mock_delete_prefix.mock_calls]
     assert ("bucket", "output/doc-uuid.pdf/") in prefixes

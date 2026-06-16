@@ -105,6 +105,37 @@ async def test_upload_document_for_processing_success(
 
 
 @pytest.mark.asyncio
+async def test_upload_always_saves_original_to_preprocessing(
+    runtime_required_env, blank_pdf_file, s3_bucket, monkeypatch
+):
+    """Every upload writes the original to preprocessing, regardless of file type."""
+    from documentai_api.config.constants import DocumentCategory
+    from documentai_api.config.env import EnvVars
+
+    monkeypatch.setenv(
+        EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION, f"s3://{s3_bucket.name}/preprocessing"
+    )
+
+    await upload_document_for_processing(
+        src_file=blank_pdf_file.open("rb"),
+        dest_path=f"s3://{s3_bucket.name}/input/test-unique.pdf",
+        original_file_name="test.pdf",
+        content_type="application/pdf",
+        user_provided_document_category=DocumentCategory.INCOME,
+        job_id="test-job-id",
+        trace_id="test-trace-id",
+    )
+
+    # Original saved to preprocessing
+    preprocessing_obj = s3_bucket.Object("preprocessing/test-unique.pdf")
+    assert preprocessing_obj.get()["Body"].read() == blank_pdf_file.read_bytes()
+
+    # And also uploaded to input
+    input_obj = s3_bucket.Object("input/test-unique.pdf")
+    assert input_obj.content_type == "application/pdf"
+
+
+@pytest.mark.asyncio
 async def test_poll_for_completion_success(mocker):
     """Test polling returns results when processing completes."""
     mock_get_job_status = mocker.patch("documentai_api.utils.jobs.get_job_status")
@@ -158,11 +189,17 @@ async def test_poll_for_completion_timeout_no_object_key(mocker):
 
 
 @pytest.mark.asyncio
-async def test_upload_document_for_processing_s3_failure(blank_pdf_file, s3_bucket):
-    """Test S3 upload failure raises HTTPException."""
+async def test_upload_document_for_processing_s3_failure(
+    blank_pdf_file, runtime_required_env, s3_bucket
+):
+    """Test S3 (destination) upload failure raises HTTPException.
+
+    The preprocessing backup is configured and succeeds; the destination bucket
+    does not exist, so the dest upload is what fails.
+    """
     with pytest.raises(HTTPException) as exc_info:
         await upload_document_for_processing(
-            src_file=blank_pdf_file,
+            src_file=blank_pdf_file.open("rb"),
             dest_path=f"s3://{s3_bucket.name}-foo/input/test.pdf",
             original_file_name="test.pdf",
             content_type="application/pdf",
@@ -179,7 +216,7 @@ async def test_upload_document_for_processing_invalid_category_type(
     """Test invalid document category type raises ValueError."""
     with pytest.raises(HTTPException):
         await upload_document_for_processing(
-            src_file=blank_pdf_file,
+            src_file=blank_pdf_file.open("rb"),
             dest_path=f"s3://{s3_bucket}-foo/input/test.pdf",
             original_file_name="test.pdf",
             content_type="application/pdf",

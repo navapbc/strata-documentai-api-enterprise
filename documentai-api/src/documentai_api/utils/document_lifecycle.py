@@ -3,11 +3,14 @@
 import json
 from typing import Any
 
+from botocore.exceptions import ClientError
+
 import documentai_api.utils.documents as document_utils
 from documentai_api.config.constants import (
     FileValidation,
     ProcessStatus,
 )
+from documentai_api.config.env import EnvVars, get_required_env
 from documentai_api.logging import get_logger
 from documentai_api.models.document_record import DocumentRecord
 from documentai_api.schemas.document_metadata import DocumentMetadata
@@ -217,6 +220,32 @@ def set_bda_processing_status_not_started(object_key: str) -> None:
         status=ProcessStatus.NOT_STARTED,
         internal_api_response=None,
     )
+
+
+def set_processing_status_started(object_key: str, expected_status: str) -> bool:
+    """Atomically claim a document by transitioning its status to STARTED.
+
+    Uses a DynamoDB conditional update: succeeds only if the current status
+    matches expected_status. Returns True if claimed, False if another
+    invocation already claimed it. This prevents duplicate processing from
+    concurrent S3-triggered Lambda invocations.
+    """
+    from documentai_api.services import ddb as ddb_service
+
+    table_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME)
+    try:
+        ddb_service.update_item(
+            table_name,
+            {"fileName": object_key},
+            "SET processStatus = :new_status",
+            {":new_status": ProcessStatus.STARTED.value, ":expected": expected_status},
+            condition_expression="processStatus = :expected",
+        )
+        return True
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+            return False
+        raise
 
 
 # =============================================================================
