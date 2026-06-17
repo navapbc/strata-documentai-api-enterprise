@@ -125,6 +125,8 @@ class ConfigDefaults:
     BEDROCK_CONVERSE_MAX_IMAGE_DIMENSION_PX = 8000
     DDB_EMIT_CUSTOM_CLOUDWATCH_METRICS = False
     MAX_PAGES_PER_DOCUMENT = 5
+    PRESIGNED_URL_SIGNATURE_VERSION = "s3v4"
+    PRESIGNED_PREVIEW_EXPIRY_SECONDS = 300
 
 
 # Document categories - must match the BDA project keys in infra/environments/*/main.tf
@@ -153,6 +155,12 @@ class FileValidation:
     )
 
     SUPPORTED_CONTENT_TYPES = NO_CONVERSION_NEEDED + REQUIRES_CONVERSION
+
+    PREVIEWABLE_TYPES = (
+        "application/pdf",
+        "image/jpeg",
+        "image/png",
+    )
 
     GRAYSCALE_CONVERTIBLE = (
         "image/jpeg",

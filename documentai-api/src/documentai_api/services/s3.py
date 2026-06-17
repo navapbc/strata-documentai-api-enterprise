@@ -5,7 +5,12 @@ from __future__ import annotations
 from datetime import datetime
 from typing import IO, TYPE_CHECKING, Any
 
+from botocore.config import Config
+
+from documentai_api.config.constants import ConfigDefaults
 from documentai_api.utils.aws_client_factory import AWSClientFactory
+
+_PRESIGN_CONFIG = Config(signature_version=ConfigDefaults.PRESIGNED_URL_SIGNATURE_VERSION)
 
 if TYPE_CHECKING:
     from mypy_boto3_s3.type_defs import (
@@ -113,6 +118,40 @@ def get_last_modified_at(bucket: str, key: str) -> datetime:
     """Get object's last modified timestamp."""
     response = head_object(bucket, key)
     return response["LastModified"]
+
+
+def generate_presigned_get_url(
+    bucket: str,
+    key: str,
+    expiration: int = 300,
+    content_type: str | None = None,
+) -> str:
+    """Generate a presigned GET URL for downloading/viewing an S3 object.
+
+    Args:
+        bucket: S3 bucket name
+        key: S3 object key
+        expiration: URL expiration time in seconds (default: 5 minutes)
+        content_type: If set, overrides Content-Type via response-content-type
+
+    Returns:
+        Presigned URL string.
+    """
+    s3_client = AWSClientFactory.get_session().client(
+        "s3",
+        region_name=AWSClientFactory.get_region(),
+        config=_PRESIGN_CONFIG,
+    )
+
+    params: dict[str, Any] = {"Bucket": bucket, "Key": key}
+    if content_type:
+        params["ResponseContentType"] = content_type
+
+    return s3_client.generate_presigned_url(
+        "get_object",
+        Params=params,
+        ExpiresIn=expiration,
+    )
 
 
 def generate_presigned_post(

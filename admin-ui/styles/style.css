@@ -1575,11 +1575,16 @@ td {
 }
 
 /* Documents View */
-.documents-two-panel {
+.documents-three-panel {
   display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 1.5rem;
+  grid-template-columns: 240px 1fr 1fr;
+  gap: 1rem;
   height: calc(100vh - 14rem);
+  transition: grid-template-columns 0.2s ease;
+}
+
+.documents-three-panel.detail-collapsed {
+  grid-template-columns: 240px 1fr 2.5rem;
 }
 
 .documents-list-panel {
@@ -1673,30 +1678,99 @@ td {
   color: #9ca3af;
 }
 
-.documents-detail-panel {
-  padding-left: 0.5rem;
-  max-height: 70vh;
+.documents-preview-panel {
   overflow-y: auto;
+  border-right: 1px solid var(--color-border);
+  padding: 0 1rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
 }
 
-.documents-detail-panel h4 {
-  margin: 1rem 0 0.5rem;
-  font-size: 0.875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--color-text-secondary, var(--color-text-secondary));
+.documents-preview-panel .empty-state {
+  margin-top: 2rem;
+}
+
+.documents-detail-panel {
+  padding-left: 0.5rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.documents-detail-panel.collapsed #detail-content {
+  display: none;
+}
+
+.detail-collapse-btn {
+  position: absolute;
+  top: 0.25rem;
+  left: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  padding: 0.25rem;
+  line-height: 1;
+  z-index: 1;
+}
+
+.detail-collapse-btn:hover {
+  color: var(--color-text);
+}
+
+.documents-detail-panel.collapsed .detail-collapse-btn.disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.documents-detail-panel.collapsed .detail-collapse-btn.disabled:hover {
+  color: var(--color-text-secondary);
+}
+
+#detail-content {
+  height: 100%;
+  overflow-y: auto;
+  padding-left: 1.25rem;
 }
 
 .detail-table {
   width: 100%;
   font-size: 0.8125rem;
   border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+.extracted-data-table {
+  margin-bottom: 1rem;
+  /* Fixed layout so revealing values (••••• -> real text) doesn't reflow columns. */
+  table-layout: fixed;
+  width: 100%;
+}
+
+.extracted-data-table col.ed-col-field {
+  width: 38%;
+}
+
+.extracted-data-table col.ed-col-conf {
+  width: 7rem;
+}
+
+/* Field names and values are arbitrary length under fixed layout - wrap instead
+   of overflowing the column. */
+.extracted-data-table .detail-label,
+.extracted-data-table .extracted-value {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .detail-table td {
   padding: 0.25rem 0.5rem;
   border-bottom: 1px solid var(--color-border, #f3f4f6);
 }
+
+/* Extracted Data: no overrides - inherit the global table/th/td styling so the
+   header row looks exactly like the API keys table. */
 
 .detail-label {
   font-weight: 500;
@@ -1721,6 +1795,19 @@ td {
 }
 .confidence-low {
   color: #dc2626;
+}
+
+.extracted-data-toggle-cell {
+  text-align: right;
+  /* It lives in an uppercase <th>; render the label normally. */
+  text-transform: none;
+  font-weight: 400;
+}
+
+.extracted-data-toggle {
+  width: 0.875rem;
+  height: 0.875rem;
+  margin: 0;
 }
 
 .search-input {
@@ -1982,4 +2069,18 @@ td {
 /* Pagination hidden state */
 .pagination-controls.hidden {
   display: none;
+}
+
+/* Document Preview */
+.document-preview-frame {
+  width: 100%;
+  height: 100%;
+  min-height: 500px;
+  border: none;
+}
+
+.document-preview-img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
 }

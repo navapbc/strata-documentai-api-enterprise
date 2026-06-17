@@ -1,4 +1,4 @@
-<div class="documents-two-panel">
+<div class="documents-three-panel detail-collapsed">
   <div class="documents-list-panel">
     <div class="documents-search-box">
       <input type="text" id="document-search-input" placeholder="Search by Job ID…" />
@@ -7,5 +7,11 @@
     <p id="no-documents" class="empty-state hidden">No documents yet</p>
     <ul id="documents-list" class="documents-compact-list"></ul>
   </div>
-  <div class="documents-detail-panel" id="document-detail-panel"></div>
+  <div class="documents-preview-panel" id="document-preview-panel">
+    <p class="empty-state">Select a document to preview</p>
+  </div>
+  <div class="documents-detail-panel collapsed" id="document-detail-panel">
+    <button id="detail-collapse-btn" class="detail-collapse-btn" title="Expand details">❮</button>
+    <div id="detail-content"></div>
+  </div>
 </div>

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { buildDocument, buildTenant } from "../factories.js";
 
-let DocumentsView, mockList, mockGet, mockGetTenantId, mockToast;
+let DocumentsView, mockList, mockGet, mockGetPreviewUrl, mockGetTenantId, mockToast;
 
 const { tenantId: TENANT_ID } = buildTenant();
 
@@ -20,12 +20,22 @@ describe("documents view", () => {
       jobId: "j-1",
       fileName: "test.pdf",
       processStatus: "completed",
+      contentType: "application/pdf",
       fields: { ssn: "123" },
+    });
+    mockGetPreviewUrl = vi.fn().mockResolvedValue({
+      url: "https://s3.example.com/presigned",
+      contentType: "application/pdf",
+      expiresIn: 300,
     });
     mockGetTenantId = vi.fn().mockReturnValue(TENANT_ID);
     mockToast = { show: vi.fn() };
 
-    vi.doMock("../../src/services/documents.js", () => ({ list: mockList, get: mockGet }));
+    vi.doMock("../../src/services/documents.js", () => ({
+      list: mockList,
+      get: mockGet,
+      getPreviewUrl: mockGetPreviewUrl,
+    }));
     vi.doMock("../../src/utils/tenant-context.js", () => ({
       getTenantId: mockGetTenantId,
       onChange: vi.fn(() => () => {}),
@@ -92,7 +102,7 @@ describe("documents view", () => {
     await flush();
 
     expect(mockGet).toHaveBeenCalledWith("test-job-id");
-    const detail = root.querySelector("#document-detail-panel");
+    const detail = root.querySelector("#detail-content");
     expect(detail.innerHTML).toContain("test.pdf");
   });
 
@@ -135,7 +145,7 @@ describe("documents view", () => {
     await flush();
 
     expect(mockGet).toHaveBeenCalledWith("j-1");
-    expect(root.querySelector("#document-detail-panel").innerHTML).toContain("test.pdf");
+    expect(root.querySelector("#detail-content").innerHTML).toContain("test.pdf");
   });
 
   it("search shows toast on 404", async () => {
@@ -159,5 +169,89 @@ describe("documents view", () => {
     DocumentsView.mount(root);
     DocumentsView.unmount(root);
     expect(root.children.length).toBe(0);
+  });
+
+  it("renders PDF preview with object tag", async () => {
+    mockList.mockResolvedValue({ documents: [buildDocument({ contentType: "application/pdf" })] });
+    mockGet.mockResolvedValue({
+      jobId: "test-job-id",
+      fileName: "test.pdf",
+      processStatus: "completed",
+      contentType: "application/pdf",
+    });
+    DocumentsView.mount(root);
+    await flush();
+
+    root.querySelector(".doc-list-item").click();
+    await flush();
+    await flush();
+
+    const preview = root.querySelector("#document-preview-panel");
+    expect(preview.querySelector("object")).not.toBeNull();
+    expect(preview.innerHTML).toContain("application/pdf");
+  });
+
+  it("renders image preview with img tag", async () => {
+    mockList.mockResolvedValue({ documents: [buildDocument({ contentType: "image/jpeg" })] });
+    mockGet.mockResolvedValue({
+      jobId: "test-job-id",
+      fileName: "photo.jpg",
+      processStatus: "completed",
+      contentType: "image/jpeg",
+    });
+    mockGetPreviewUrl.mockResolvedValue({
+      url: "https://s3.example.com/photo.jpg",
+      contentType: "image/jpeg",
+      expiresIn: 300,
+    });
+    DocumentsView.mount(root);
+    await flush();
+
+    root.querySelector(".doc-list-item").click();
+    await flush();
+    await flush();
+
+    const preview = root.querySelector("#document-preview-panel");
+    expect(preview.querySelector("img")).not.toBeNull();
+    expect(preview.innerHTML).toContain("photo.jpg");
+  });
+
+  it("shows unavailable message for unsupported content type", async () => {
+    mockList.mockResolvedValue({ documents: [buildDocument({ contentType: "text/csv" })] });
+    mockGet.mockResolvedValue({
+      jobId: "test-job-id",
+      fileName: "data.csv",
+      processStatus: "completed",
+      contentType: "text/csv",
+    });
+    DocumentsView.mount(root);
+    await flush();
+
+    root.querySelector(".doc-list-item").click();
+    await flush();
+    await flush();
+
+    const preview = root.querySelector("#document-preview-panel");
+    expect(preview.innerHTML).toContain("Preview not available");
+  });
+
+  it("shows unavailable message when preview request fails", async () => {
+    mockList.mockResolvedValue({ documents: [buildDocument({ contentType: "application/pdf" })] });
+    mockGet.mockResolvedValue({
+      jobId: "test-job-id",
+      fileName: "test.pdf",
+      processStatus: "completed",
+      contentType: "application/pdf",
+    });
+    mockGetPreviewUrl.mockRejectedValue(new Error("failed"));
+    DocumentsView.mount(root);
+    await flush();
+
+    root.querySelector(".doc-list-item").click();
+    await flush();
+    await flush();
+
+    const preview = root.querySelector("#document-preview-panel");
+    expect(preview.innerHTML).toContain("Preview unavailable");
   });
 });
