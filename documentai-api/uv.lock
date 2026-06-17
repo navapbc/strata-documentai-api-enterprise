@@ -626,7 +626,7 @@ requires-dist = [
     { name = "awslambdaric", marker = "sys_platform == 'linux'", specifier = ">=3.0.0" },
     { name = "boto3", specifier = ">=1.34.0" },
     { name = "boto3-stubs", extras = ["s3", "dynamodb", "bedrock", "bedrock-runtime", "bedrock-data-automation", "bedrock-data-automation-runtime", "sqs", "athena", "ssm", "cognito-idp"], marker = "extra == 'dev'", specifier = ">=1.38.0" },
-    { name = "click", specifier = ">=8.1,<8.3" },
+    { name = "click", specifier = ">=8.1,<8.5" },
     { name = "fastapi", specifier = ">=0.104.0" },
     { name = "filetype", specifier = ">=1.2.0" },
     { name = "freezegun", marker = "extra == 'dev'", specifier = ">=1.2.0" },
