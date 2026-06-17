@@ -24,7 +24,7 @@ test.describe("Navigation", () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
     // Wait for dashboard to fully initialize (default view title set)
-    await expect(page.locator("#view-title")).toHaveText("API Keys");
+    await expect(page.locator("#view-title")).toHaveText("Manage API Keys");
   });
 
   test("dashboard renders sidebar and main content", async ({ page }) => {
@@ -34,7 +34,7 @@ test.describe("Navigation", () => {
   });
 
   test("default view is API Keys", async ({ page }) => {
-    await expect(page.locator("#view-title")).toHaveText("API Keys");
+    await expect(page.locator("#view-title")).toHaveText("Manage API Keys");
     await expect(page.locator("#keys-table")).toBeVisible();
   });
 
@@ -58,16 +58,16 @@ test.describe("Navigation", () => {
     await page.locator('[data-section="docs"]').click();
     await expect(page.locator("#section-docs")).toBeVisible();
     await page.locator('[data-view="documents"]').click({ force: true });
-    await expect(page.locator("#documents-tbody")).toBeAttached();
+    await expect(page.locator("#documents-list")).toBeAttached();
   });
 
   test("view actions update on navigation", async ({ page }) => {
-    await expect(page.locator("#view-actions button").first()).toContainText("+ Create Key");
+    await expect(page.locator("#view-actions button").first()).toContainText("Create Key");
 
     await page.locator('[data-section="tenants"]').click();
     await expect(page.locator("#section-tenants")).toBeVisible();
     await page.locator('[data-view="tenants"]').click({ force: true });
-    await expect(page.locator("#view-actions button").first()).toContainText("+ Create Tenant");
+    await expect(page.locator("#view-actions button").first()).toContainText("Create Tenant");
   });
 
   test("previous view is unmounted on navigation", async ({ page }) => {

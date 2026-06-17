@@ -1,0 +1,54 @@
+name: CI admin-ui
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - admin-ui/**
+      - .github/workflows/ci-admin-ui.yml
+  pull_request:
+    paths:
+      - admin-ui/**
+      - .github/workflows/ci-admin-ui.yml
+
+concurrency:
+  group: ci-admin-ui-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: ./admin-ui
+
+jobs:
+  test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: admin-ui/.nvmrc
+          cache: npm
+          cache-dependency-path: admin-ui/package-lock.json
+
+      - run: npm ci
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+      # e2e tests (Playwright) are not run here - they require browser
+      # binaries and are significantly slower. Run locally with `npm run test:e2e`.

@@ -2,7 +2,6 @@
  * Test documents view - upload and test document extraction via BDA.
  */
 import * as BlueprintTestService from "../../services/blueprint-test.js";
-import * as CategoriesService from "../../services/document-categories.js";
 import * as TenantContext from "../../utils/tenant-context.js";
 import * as Helpers from "../../utils/helpers.js";
 import * as Toast from "../../utils/toast.js";
@@ -13,7 +12,8 @@ import html from "./test-documents.html";
 const tmpl = tpl(html);
 
 let _root = null;
-let _tenantSelect, _categorySelect, _fileInput, _runBtn, _cancelBtn;
+let _fileInput, _runBtn, _cancelBtn;
+let _dropzone, _dropzoneIdle, _dropzoneSelected, _fileName, _fileClear;
 let _elapsed, _results, _historyList;
 let _abortController = null;
 let _startTime = null;
@@ -25,41 +25,58 @@ export function mount(root) {
   _root = root;
   root.replaceChildren(tmpl());
 
-  // Inject actions into shared header
-  _tenantSelect = h(
-    "select",
-    { className: "tenant-select", id: "test-tenant-select" },
-    h("option", { value: "" }, "- Select tenant -"),
-  );
-  _categorySelect = h(
-    "select",
-    { className: "tenant-select", id: "test-category-select" },
-    h("option", { value: "" }, "- Select category -"),
-  );
-  _fileInput = h("input", {
-    type: "file",
-    id: "test-file-input",
-    accept: ".pdf,.png,.jpg,.jpeg,.tiff,.tif",
-  });
-  _runBtn = h("button", { className: "btn-primary", disabled: "true" }, "Run Extraction");
-  _cancelBtn = h("button", { className: "btn-secondary hidden" }, "Cancel");
-  Helpers.setViewActions(_tenantSelect, _categorySelect, _fileInput, _runBtn, _cancelBtn);
+  Helpers.setViewActions(); // no header actions for this view
+
+  _fileInput = root.querySelector("#test-file-input");
+  _runBtn = root.querySelector("#test-run-btn");
+  _cancelBtn = root.querySelector("#test-cancel-btn");
+  _dropzone = root.querySelector("#test-dropzone");
+  _dropzoneIdle = root.querySelector("#test-dropzone-idle");
+  _dropzoneSelected = root.querySelector("#test-dropzone-selected");
+  _fileName = root.querySelector("#test-file-name");
+  _fileClear = root.querySelector("#test-file-clear");
   _elapsed = root.querySelector("#test-elapsed");
   _results = root.querySelector("#test-results");
   _historyList = root.querySelector("#test-history-list");
 
-  _runBtn.addEventListener("click", runTest);
-  _cancelBtn.addEventListener("click", cancelTest);
-  _tenantSelect.addEventListener("change", loadCategories);
-  _fileInput.addEventListener("change", updateRunButton);
-  _categorySelect.addEventListener("change", updateRunButton);
-
-  _tenantUnsub = TenantContext.onChange(() => {
-    _tenantSelect.value = TenantContext.getTenantId() || "";
-    loadCategories();
+  // Click dropzone to browse
+  _dropzone.addEventListener("click", (e) => {
+    if (e.target === _fileClear || _fileClear.contains(e.target)) return;
+    _fileInput.click();
   });
 
-  populateTenantSelect();
+  // File input change
+  _fileInput.addEventListener("change", () => {
+    const file = _fileInput.files[0];
+    if (file) setFile(file);
+  });
+
+  // Clear file
+  _fileClear.addEventListener("click", (e) => {
+    e.stopPropagation();
+    clearFile();
+  });
+
+  // Drag and drop
+  _dropzone.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    _dropzone.classList.add("drag-over");
+  });
+  _dropzone.addEventListener("dragleave", () => {
+    _dropzone.classList.remove("drag-over");
+  });
+  _dropzone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    _dropzone.classList.remove("drag-over");
+    const file = e.dataTransfer?.files[0];
+    if (file) setFile(file);
+  });
+
+  _runBtn.addEventListener("click", runTest);
+  _cancelBtn.addEventListener("click", cancelTest);
+
+  _tenantUnsub = TenantContext.onChange(() => updateRunButton());
+  updateRunButton();
 }
 
 export function unmount(root) {
@@ -71,54 +88,33 @@ export function unmount(root) {
   if (_root) _root.replaceChildren();
 }
 
-function populateTenantSelect() {
-  /** @type {HTMLSelectElement} */
-  const globalSelect = document.querySelector("#global-tenant-select");
-  if (!globalSelect) return;
-  _tenantSelect.innerHTML = '<option value="">- Select tenant -</option>';
-  for (const opt of globalSelect.options) {
-    if (opt.value) {
-      const newOpt = document.createElement("option");
-      newOpt.value = opt.value;
-      newOpt.textContent = opt.textContent;
-      _tenantSelect.appendChild(newOpt);
-    }
-  }
-  const current = TenantContext.getTenantId();
-  if (current) {
-    _tenantSelect.value = current;
-    loadCategories();
-  }
+function setFile(file) {
+  // Transfer to the real input if dropped
+  const dt = new DataTransfer();
+  dt.items.add(file);
+  _fileInput.files = dt.files;
+
+  _fileName.textContent = file.name;
+  _dropzoneIdle.classList.add("hidden");
+  _dropzoneSelected.classList.remove("hidden");
+  updateRunButton();
 }
 
-async function loadCategories() {
-  const tenantId = _tenantSelect.value;
-  _categorySelect.innerHTML = '<option value="">- Select category -</option>';
-  if (!tenantId) return;
-
-  try {
-    const data = await CategoriesService.list(tenantId);
-    for (const cat of data.categories || []) {
-      const opt = document.createElement("option");
-      opt.value = cat.categoryName;
-      opt.textContent = cat.displayName || cat.categoryName;
-      _categorySelect.appendChild(opt);
-    }
-  } catch {
-    // leave empty
-  }
+function clearFile() {
+  _fileInput.value = "";
+  _dropzoneIdle.classList.remove("hidden");
+  _dropzoneSelected.classList.add("hidden");
   updateRunButton();
 }
 
 function updateRunButton() {
-  _runBtn.disabled = !(_tenantSelect.value && _categorySelect.value && _fileInput.files.length > 0);
+  _runBtn.disabled = !(TenantContext.getTenantId() && _fileInput.files.length > 0);
 }
 
 async function runTest() {
-  const tenantId = _tenantSelect.value;
-  const category = _categorySelect.value;
+  const tenantId = TenantContext.getTenantId();
   const file = _fileInput.files[0];
-  if (!tenantId || !category || !file) return;
+  if (!tenantId || !file) return;
 
   _runBtn.disabled = true;
   _cancelBtn.classList.remove("hidden");
@@ -134,7 +130,7 @@ async function runTest() {
     const result = await BlueprintTestService.run(
       file,
       tenantId,
-      category,
+      null,
       null,
       _abortController.signal,
     );
@@ -151,7 +147,7 @@ async function runTest() {
     }
     _cancelBtn.classList.add("hidden");
     _elapsed.classList.add("hidden");
-    _runBtn.disabled = false;
+    updateRunButton();
     _abortController = null;
   }
 }
@@ -163,7 +159,7 @@ function cancelTest() {
 function updateElapsed() {
   if (!_startTime) return;
   const seconds = Math.floor((Date.now() - _startTime) / 1000);
-  _elapsed.textContent = `Elapsed: ${seconds}s`;
+  _elapsed.textContent = `Processing… ${seconds}s`;
 }
 
 function renderResult(result) {

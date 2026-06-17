@@ -1,12 +1,12 @@
 <table id="categories-table">
   <thead>
     <tr>
-      <th>Tenant</th>
-      <th>Name</th>
-      <th>Display Name</th>
-      <th>Description</th>
+      <th data-col="tenantId">Tenant</th>
+      <th data-col="categoryName">Name</th>
+      <th data-col="displayName">Display Name</th>
+      <th data-col="description">Description</th>
       <th>Status</th>
-      <th>Actions</th>
+      <th style="width: 1px; white-space: nowrap">Actions</th>
     </tr>
   </thead>
   <tbody id="categories-tbody"></tbody>
@@ -18,6 +18,11 @@
   <div class="modal-content">
     <h2 id="category-modal-title">Create category</h2>
     <form id="category-form">
+      <label for="category-tenant">Tenant</label>
+      <select id="category-tenant" required>
+        <option value="">- Select tenant -</option>
+      </select>
+
       <label for="category-name">Category name</label>
       <p class="field-hint">Lowercase letters, numbers, dashes, and underscores only.</p>
       <input
@@ -41,5 +46,21 @@
         <button type="submit" class="btn-primary">Save</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- Deactivate Category Modal -->
+<div id="category-deactivate-modal" class="modal hidden">
+  <div class="modal-content">
+    <h2>Deactivate Category</h2>
+    <p>
+      This will deactivate the category <strong id="deactivate-category-name"></strong>. Documents
+      already assigned to this category will not be affected.
+    </p>
+    <p id="category-deactivate-error" class="error hidden"></p>
+    <div class="modal-actions">
+      <button type="button" id="category-deactivate-cancel" class="btn-secondary">Cancel</button>
+      <button type="button" id="category-deactivate-confirm" class="btn-danger">Deactivate</button>
+    </div>
   </div>
 </div>

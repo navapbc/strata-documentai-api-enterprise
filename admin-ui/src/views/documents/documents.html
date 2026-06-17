@@ -1,25 +1,11 @@
 <div class="documents-two-panel">
   <div class="documents-list-panel">
-    <table id="documents-table">
-      <thead>
-        <tr>
-          <th>File Name</th>
-          <th>Job ID</th>
-          <th>Status</th>
-          <th>Category</th>
-          <th>Blueprint</th>
-          <th>Created</th>
-        </tr>
-      </thead>
-      <tbody id="documents-tbody"></tbody>
-    </table>
-    <p id="no-documents" class="empty-state hidden">No documents found.</p>
-    <div class="pagination-controls">
-      <button id="documents-prev-btn" class="btn-secondary" disabled>← Previous</button>
-      <button id="documents-next-btn" class="btn-secondary" disabled>Next →</button>
+    <div class="documents-search-box">
+      <input type="text" id="document-search-input" placeholder="Search by Job ID…" />
+      <button type="button" id="document-search-btn" class="btn-primary">Search</button>
     </div>
+    <p id="no-documents" class="empty-state hidden">No documents yet</p>
+    <ul id="documents-list" class="documents-compact-list"></ul>
   </div>
-  <div class="documents-detail-panel" id="document-detail-panel">
-    <p class="empty-state">Select a document to view details</p>
-  </div>
+  <div class="documents-detail-panel" id="document-detail-panel"></div>
 </div>

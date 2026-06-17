@@ -14,6 +14,10 @@ let _modal, _form, _idInput, _nameInput, _contactInput, _cancelBtn, _errorEl, _t
 let _deleteModal, _deleteName, _deleteError, _deleteCancel, _deleteConfirm;
 let _editingTenant = null;
 let _pendingDeleteId = null;
+let _sortUnsub = null;
+let _allTenants = [];
+let _sortCol = null;
+let _sortDir = "asc";
 
 export function mount(root) {
   _root = root;
@@ -21,7 +25,7 @@ export function mount(root) {
 
   // Inject actions into shared header
   _showInactive = h("input", { type: "checkbox", id: "show-inactive-tenants" });
-  _createBtn = h("button", { className: "btn-primary" }, "+ Create Tenant");
+  _createBtn = h("button", { className: "btn-primary" }, "Create Tenant");
   _refreshBtn = h("button", { className: "btn-secondary" }, "Refresh");
   const label = h(
     "label",
@@ -57,10 +61,20 @@ export function mount(root) {
   _deleteCancel.addEventListener("click", closeDeleteModal);
   _deleteConfirm.addEventListener("click", handleDelete);
 
+  _sortUnsub = Helpers.bindSortHeaders(root.querySelector("thead"), (col, dir) => {
+    _sortCol = col;
+    _sortDir = dir;
+    renderTable(_allTenants);
+  });
+
   load();
 }
 
 export function unmount(root) {
+  if (_sortUnsub) {
+    _sortUnsub();
+    _sortUnsub = null;
+  }
   root.replaceChildren();
 }
 
@@ -69,7 +83,8 @@ export async function load() {
   try {
     const includeInactive = _showInactive?.checked || false;
     const data = await TenantsService.list(!includeInactive);
-    renderTable(data.tenants || []);
+    _allTenants = data.tenants || [];
+    renderTable(_allTenants);
   } catch (e) {
     _tbody.innerHTML = "";
     _noTenants.textContent = e.message;
@@ -78,24 +93,27 @@ export async function load() {
 }
 
 function renderTable(tenants) {
+  const sorted = Helpers.sortRows(tenants, _sortCol, _sortDir);
   _tbody.innerHTML = "";
-  if (tenants.length === 0) {
+  if (sorted.length === 0) {
+    _noTenants.textContent = "No tenants found.";
     _noTenants.classList.remove("hidden");
     return;
   }
   _noTenants.classList.add("hidden");
 
-  for (const t of tenants) {
+  for (const t of sorted) {
     const statusEl = t.isActive
       ? h("span", { className: "badge badge-success" }, "Active")
       : h("span", { className: "badge badge-neutral" }, "Inactive");
     const editBtn = h("button", { className: "btn-sm btn-secondary" }, "Edit");
-    const actionsCell = h("td", null, editBtn);
+    const actionsWrapper = h("div", { className: "row-actions" }, editBtn);
     if (t.isActive) {
-      const delBtn = h("button", { className: "btn-sm btn-danger" }, "Deactivate");
+      const delBtn = h("button", { className: "btn-sm btn-outline-danger" }, "Deactivate");
       delBtn.addEventListener("click", () => openDeleteModal(t));
-      actionsCell.appendChild(delBtn);
+      actionsWrapper.appendChild(delBtn);
     }
+    const actionsCell = h("td", null, actionsWrapper);
 
     const tr = h(
       "tr",

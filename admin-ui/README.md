@@ -4,12 +4,13 @@ Admin console for managing API keys, tenants, users, extraction rules, and docum
 
 ## Prerequisites
 
-- Node.js 18+
+- Node.js 20.19+ (required by Vitest 4 / Rolldown; Node 18 fails at test startup)
 - npm
 
 ## Setup
 
 ```bash
+nvm use                           # selects the version in .nvmrc (Node 22)
 npm install
 npx playwright install chromium  # for e2e tests
 ```

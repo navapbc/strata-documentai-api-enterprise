@@ -8,7 +8,12 @@ describe("http client", () => {
     sessionStorage.clear();
     sessionStorage.setItem(
       "docai_console_session",
-      JSON.stringify({ accessToken: "old", email: "a@b.com", expiresAt: Date.now() + 60000 }),
+      JSON.stringify({
+        accessToken: "old",
+        refreshToken: "refresh-tok",
+        email: "a@b.com",
+        expiresAt: Date.now() + 60000,
+      }),
     );
     delete window.location;
     window.location = { reload: vi.fn() };
@@ -21,14 +26,77 @@ describe("http client", () => {
   });
 
   describe("401 handling", () => {
-    it("clears session and reloads on 401", async () => {
-      global.fetch.mockResolvedValue({ ok: false, status: 401, statusText: "Unauthorized" });
+    it("attempts token refresh on 401 then retries", async () => {
+      // First call returns 401, refresh succeeds, retry succeeds
+      global.fetch
+        .mockResolvedValueOnce({ ok: false, status: 401, statusText: "Unauthorized" })
+        // refreshSession call
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              AuthenticationResult: {
+                AccessToken: "new-access",
+                IdToken: "new-id",
+                ExpiresIn: 3600,
+              },
+            }),
+        })
+        // retried request
+        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ keys: [] }) });
+
+      const result = await adminClient.request("GET", "/v1/admin/api-keys");
+
+      expect(result).toEqual({ keys: [] });
+      expect(window.location.reload).not.toHaveBeenCalled();
+    });
+
+    it("clears session and reloads when refresh fails", async () => {
+      global.fetch
+        .mockResolvedValueOnce({ ok: false, status: 401, statusText: "Unauthorized" })
+        // refreshSession fails
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 400,
+          json: () =>
+            Promise.resolve({ __type: "NotAuthorizedException", message: "Invalid refresh token" }),
+        });
 
       const result = await adminClient.request("GET", "/v1/admin/api-keys");
 
       expect(result).toBeUndefined();
       expect(sessionStorage.getItem("docai_console_session")).toBeNull();
       expect(window.location.reload).toHaveBeenCalled();
+    });
+
+    it("does not retry more than once on 401", async () => {
+      global.fetch
+        .mockResolvedValueOnce({ ok: false, status: 401, statusText: "Unauthorized" })
+        // refreshSession
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              AuthenticationResult: {
+                AccessToken: "new-access",
+                IdToken: "new-id",
+                ExpiresIn: 3600,
+              },
+            }),
+        })
+        // retried request still 401 - treated as a normal error (no second refresh)
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 401,
+          statusText: "Unauthorized",
+          json: () => Promise.resolve({ detail: "Unauthorized" }),
+        });
+
+      await expect(adminClient.request("GET", "/v1/admin/api-keys")).rejects.toThrow(
+        "Unauthorized",
+      );
+      // Should NOT have reloaded - just throws
+      expect(global.fetch).toHaveBeenCalledTimes(3);
     });
 
     it("does not clear session on 403", async () => {

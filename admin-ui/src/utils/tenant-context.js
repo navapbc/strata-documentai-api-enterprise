@@ -9,12 +9,19 @@ let _select = null;
 let _currentTenantId = null;
 const _listeners = [];
 
+const STORAGE_KEY = "docai_selected_tenant";
+
 export function init(selectEl) {
   _select = selectEl;
   _select.innerHTML = '<option value="">Loading tenants...</option>';
   _select.disabled = true;
   _select.addEventListener("change", () => {
     _currentTenantId = _select.value || null;
+    if (_currentTenantId) {
+      sessionStorage.setItem(STORAGE_KEY, _currentTenantId);
+    } else {
+      sessionStorage.removeItem(STORAGE_KEY);
+    }
     _listeners.forEach((fn) => fn(_currentTenantId));
   });
 }
@@ -38,7 +45,15 @@ export async function load() {
   } catch {
     // Tenant list unavailable (tenant-admin)
   }
-  if (current) _select.value = current;
+  // Restore from sessionStorage if no value set yet
+  const saved = sessionStorage.getItem(STORAGE_KEY);
+  if (current) {
+    _select.value = current;
+  } else if (saved && _select.querySelector(`option[value="${saved}"]`)) {
+    _select.value = saved;
+    _currentTenantId = saved;
+    _listeners.forEach((fn) => fn(_currentTenantId));
+  }
   _loading = false;
 }
 

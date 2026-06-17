@@ -8,47 +8,35 @@ import html from "./documents.html";
 
 const tmpl = tpl(html);
 
-let _root, _tbody, _noDocuments, _refreshBtn, _nextBtn, _prevBtn;
+let _root, _listEl, _noDocuments;
 let _searchInput, _searchBtn, _detailPanel;
-let _cursor = null;
-let _cursorStack = [];
+let _activeJobId = null;
 let _tenantUnsub = null;
 
 export function mount(root) {
   _root = root;
   root.replaceChildren(tmpl());
 
-  // Inject actions into shared header
-  _searchInput = h("input", {
-    type: "text",
-    id: "document-search-input",
-    placeholder: "Search by Job ID...",
-    className: "search-input",
-  });
-  _searchBtn = h("button", { className: "btn-secondary" }, "Search");
-  _refreshBtn = h("button", { className: "btn-secondary" }, "Refresh");
-  Helpers.setViewActions(_searchInput, _searchBtn, _refreshBtn);
+  Helpers.setViewActions(); // no header actions for this view
 
-  _tbody = root.querySelector("#documents-tbody");
+  _searchInput = root.querySelector("#document-search-input");
+  _searchBtn = root.querySelector("#document-search-btn");
+  _listEl = root.querySelector("#documents-list");
   _noDocuments = root.querySelector("#no-documents");
-  _nextBtn = root.querySelector("#documents-next-btn");
-  _prevBtn = root.querySelector("#documents-prev-btn");
   _detailPanel = root.querySelector("#document-detail-panel");
 
-  _refreshBtn.addEventListener("click", () => {
-    resetPagination();
-    load();
+  _searchBtn.disabled = true;
+  _searchInput.addEventListener("input", () => {
+    _searchBtn.disabled = !_searchInput.value.trim();
   });
-  _nextBtn.addEventListener("click", loadNext);
-  _prevBtn.addEventListener("click", loadPrev);
   _searchBtn.addEventListener("click", handleSearch);
   _searchInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") handleSearch();
+    if (e.key === "Enter" && _searchInput.value.trim()) handleSearch();
   });
 
   _tenantUnsub = TenantContext.onChange(() => {
-    resetPagination();
     clearDetail();
+    _activeJobId = null;
     load();
   });
   load();
@@ -62,57 +50,30 @@ export function unmount(root) {
   root.replaceChildren();
 }
 
-function resetPagination() {
-  _cursor = null;
-  _cursorStack = [];
-}
-
 function clearDetail() {
-  _detailPanel.innerHTML = '<p class="empty-state">Select a document to view details</p>';
+  _detailPanel.replaceChildren();
 }
 
 export async function load() {
   const tenantId = TenantContext.getTenantId();
   if (!tenantId) {
-    _tbody.innerHTML = "";
+    _listEl.innerHTML = "";
     _noDocuments.textContent = "Select a tenant to view documents.";
     _noDocuments.classList.remove("hidden");
-    _nextBtn.disabled = true;
-    _prevBtn.disabled = true;
     return;
   }
 
-  Helpers.showLoading(_tbody, _noDocuments);
+  _noDocuments.classList.add("hidden");
+  _listEl.innerHTML = '<li class="doc-list-item doc-list-loading">Loading…</li>';
 
   try {
-    const resp = await DocumentsService.list({
-      tenantId,
-      limit: 50,
-      cursor: _cursor || undefined,
-    });
-    renderTable(resp.documents || []);
-    _nextBtn.disabled = !resp.nextCursor;
-    _nextBtn.dataset.cursor = resp.nextCursor || "";
-    _prevBtn.disabled = _cursorStack.length === 0;
+    const resp = await DocumentsService.list({ tenantId, limit: 50 });
+    renderList(resp.documents || []);
   } catch (e) {
-    _tbody.innerHTML = "";
+    _listEl.innerHTML = "";
     _noDocuments.textContent = e.message;
     _noDocuments.classList.remove("hidden");
   }
-}
-
-function loadNext() {
-  const next = _nextBtn.dataset.cursor;
-  if (!next) return;
-  _cursorStack.push(_cursor);
-  _cursor = next;
-  load();
-}
-
-function loadPrev() {
-  if (_cursorStack.length === 0) return;
-  _cursor = _cursorStack.pop();
-  load();
 }
 
 async function handleSearch() {
@@ -131,10 +92,10 @@ async function handleSearch() {
   }
 }
 
-function renderTable(documents) {
-  _tbody.innerHTML = "";
+function renderList(documents) {
+  _listEl.innerHTML = "";
   if (documents.length === 0) {
-    _noDocuments.textContent = "No documents found.";
+    _noDocuments.textContent = "No documents yet";
     _noDocuments.classList.remove("hidden");
     return;
   }
@@ -146,24 +107,27 @@ function renderTable(documents) {
         : doc.processStatus === "failed"
           ? "badge-danger"
           : "badge-neutral";
-    const tr = h(
-      "tr",
-      { className: "clickable-row" },
-      h("td", null, doc.fileName || "-"),
-      h("td", null, h("code", null, doc.jobId?.slice(0, 8) || "-")),
+    const badge = doc.processStatus
+      ? h("span", { className: `badge ${cls}` }, doc.processStatus)
+      : null;
+    const li = h(
+      "li",
+      { className: `doc-list-item${doc.jobId === _activeJobId ? " active" : ""}` },
+      h("div", { className: "doc-list-name" }, doc.fileName || doc.jobId?.slice(0, 8) || "-"),
       h(
-        "td",
-        null,
-        doc.processStatus
-          ? h("span", { className: `badge ${cls}` }, doc.processStatus)
-          : document.createTextNode("-"),
+        "div",
+        { className: "doc-list-meta" },
+        ...(badge ? [badge] : []),
+        h("span", { className: "doc-list-date" }, Helpers.formatDate(doc.createdAt)),
       ),
-      h("td", null, doc.documentCategory || "-"),
-      h("td", null, doc.matchedBlueprint || "-"),
-      h("td", null, Helpers.formatDate(doc.createdAt)),
     );
-    tr.addEventListener("click", () => loadDetail(doc.jobId));
-    _tbody.appendChild(tr);
+    li.addEventListener("click", () => {
+      _activeJobId = doc.jobId;
+      _listEl.querySelectorAll(".doc-list-item").forEach((el) => el.classList.remove("active"));
+      li.classList.add("active");
+      loadDetail(doc.jobId);
+    });
+    _listEl.appendChild(li);
   }
 }
 

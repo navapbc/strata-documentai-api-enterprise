@@ -8,7 +8,7 @@ export async function run(file, tenantId, category, documentType, signal) {
   const formData = new FormData();
   formData.append("file", file);
   if (tenantId) formData.append("tenant_id", tenantId);
-  formData.append("document_category", category);
+  if (category) formData.append("document_category", category);
   if (documentType) formData.append("document_type", documentType);
 
   const baseUrl = adminClient.getBaseUrl();

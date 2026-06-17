@@ -1,6 +1,7 @@
 import * as AuditLogService from "../../services/audit-log.js";
 import * as TenantContext from "../../utils/tenant-context.js";
 import * as Helpers from "../../utils/helpers.js";
+const PAGE_SIZE = 50;
 import { h } from "../../utils/dom.js";
 import { tpl } from "../../utils/tpl.js";
 import html from "./audit-log.html";
@@ -9,8 +10,10 @@ const tmpl = tpl(html);
 
 let _root, _tbody, _noEvents, _refreshBtn, _nextBtn, _prevBtn;
 let _actionFilter, _startDate, _endDate;
+let _pageIndicator;
 let _cursor = null;
 let _cursorStack = [];
+let _pageNum = 1;
 let _actionsLoaded = false;
 let _tenantUnsub = null;
 
@@ -33,6 +36,7 @@ export function mount(root) {
   _noEvents = root.querySelector("#no-audit-events");
   _nextBtn = root.querySelector("#audit-next-btn");
   _prevBtn = root.querySelector("#audit-prev-btn");
+  _pageIndicator = root.querySelector("#audit-page-indicator");
 
   _refreshBtn.addEventListener("click", () => {
     resetPagination();
@@ -72,6 +76,7 @@ export function unmount(root) {
 function resetPagination() {
   _cursor = null;
   _cursorStack = [];
+  _pageNum = 1;
 }
 
 async function loadActions() {
@@ -99,13 +104,17 @@ export async function load() {
       action: _actionFilter.value || undefined,
       startDate: _startDate.value || undefined,
       endDate: _endDate.value || undefined,
-      limit: 50,
+      limit: PAGE_SIZE,
       cursor: _cursor || undefined,
     });
-    render(resp.events || []);
-    _nextBtn.disabled = !resp.nextCursor;
+    const events = resp.events || [];
+    render(events);
+    // Disable Next if no cursor returned OR if fewer results than page size (definitely last page)
+    const hasMore = !!resp.nextCursor && events.length >= PAGE_SIZE;
+    _nextBtn.disabled = !hasMore;
     _nextBtn.dataset.cursor = resp.nextCursor || "";
     _prevBtn.disabled = _cursorStack.length === 0;
+    if (_pageIndicator) _pageIndicator.textContent = events.length > 0 ? `Page ${_pageNum}` : "";
   } catch (e) {
     _tbody.innerHTML = "";
     _noEvents.textContent = e.message;
@@ -118,33 +127,53 @@ function loadNext() {
   if (!next) return;
   _cursorStack.push(_cursor);
   _cursor = next;
+  _pageNum++;
   load();
 }
 
 function loadPrev() {
   if (_cursorStack.length === 0) return;
   _cursor = _cursorStack.pop();
+  _pageNum--;
   load();
 }
 
 function render(events) {
   _tbody.innerHTML = "";
   if (events.length === 0) {
+    _noEvents.textContent = "No audit events found.";
     _noEvents.classList.remove("hidden");
     return;
   }
   _noEvents.classList.add("hidden");
-  for (const ev of events) {
+  const rowOffset = (_pageNum - 1) * PAGE_SIZE;
+  for (const [i, ev] of events.entries()) {
     const tr = h(
       "tr",
       null,
-      h("td", null, Helpers.formatDate(ev.timestamp)),
+      h(
+        "td",
+        { style: "color:#9ca3af;font-size:0.75rem;text-align:right;" },
+        String(rowOffset + i + 1),
+      ),
+      h("td", null, Helpers.formatDateTime(ev.timestamp)),
       h("td", null, ev.actorEmail || "-"),
       h("td", null, h("code", null, ev.action || "-")),
       h("td", null, ev.targetType || "-"),
       h("td", null, ev.targetId || "-"),
       h("td", null, ev.tenantId || "-"),
-      h("td", { className: "audit-meta" }, formatMeta(ev.metadata)),
+      (() => {
+        const metaText = formatMeta(ev.metadata);
+        const td = h(
+          "td",
+          { className: "audit-meta", title: metaText !== "-" ? "Click to expand" : "" },
+          metaText,
+        );
+        if (metaText !== "-") {
+          td.addEventListener("click", () => td.classList.toggle("expanded"));
+        }
+        return td;
+      })(),
     );
     _tbody.appendChild(tr);
   }

@@ -116,13 +116,7 @@ function showDashboard(session) {
 
   // Nav item clicks
   app.querySelectorAll(".nav-item").forEach((/** @type {HTMLElement} */ item) => {
-    item.addEventListener("click", () => {
-      app.querySelectorAll(".nav-item").forEach((i) => i.classList.remove("active"));
-      item.classList.add("active");
-      const title = app.querySelector("#view-title");
-      if (title) title.textContent = item.textContent.trim();
-      navigateTo(item.dataset.view);
-    });
+    item.addEventListener("click", () => activateNavItem(item.dataset.view));
   });
 
   // Logout
@@ -149,10 +143,10 @@ function showDashboard(session) {
     _mainContent.addEventListener("click", closeSidebar);
   }
 
-  // Default view
-  const defaultTitle = app.querySelector("#view-title");
-  if (defaultTitle) defaultTitle.textContent = "API Keys";
-  navigateTo("keys");
+  // Restore view from hash or default to keys
+  const initialHash = location.hash.replace("#", "") || "keys";
+  const initialView = initialHash.split("/")[0];
+  activateNavItem(VIEWS[initialView] ? initialView : "keys");
 }
 
 function navigateTo(viewName) {
@@ -164,12 +158,50 @@ function navigateTo(viewName) {
   const viewActions = document.querySelector("#view-actions");
   if (viewActions) viewActions.replaceChildren();
 
+  // Hide tenant filter bar on tenants view (filtering tenants by tenant doesn't make sense)
+  const filterBar = document.querySelector(".tenant-filter-bar");
+  if (filterBar) filterBar.classList.toggle("hidden", viewName === "tenants");
+
   const entry = VIEWS[viewName];
   if (!entry) return;
 
+  // Preserve sub-path if navigating to the same view (e.g. extraction-rules/pay_stub)
+  const currentBase = location.hash.replace("#", "").split("/")[0];
+  if (currentBase !== viewName) {
+    location.hash = viewName;
+  }
   entry.module.mount(_mainContent);
   _currentView = entry.module;
 }
+
+function activateNavItem(viewName) {
+  const navItem = app.querySelector(`[data-view="${viewName}"]`);
+  if (!navItem) return;
+
+  app.querySelectorAll(".nav-item").forEach((i) => i.classList.remove("active"));
+  navItem.classList.add("active");
+
+  // Expand parent section
+  const sectionBody = navItem.closest(".nav-section-body");
+  if (sectionBody) {
+    sectionBody.classList.remove("hidden");
+    const header = sectionBody.previousElementSibling;
+    if (header) {
+      const arrow = header.querySelector(".nav-arrow");
+      if (arrow) arrow.textContent = "▾";
+      header.classList.add("active");
+    }
+  }
+
+  const title = app.querySelector("#view-title");
+  if (title) title.textContent = navItem.textContent.trim();
+  navigateTo(viewName);
+}
+
+window.addEventListener("hashchange", () => {
+  const viewName = location.hash.replace("#", "").split("/")[0];
+  if (VIEWS[viewName] && _mainContent) activateNavItem(viewName);
+});
 
 // --- Auth flow ---
 
@@ -179,7 +211,6 @@ function routeAfterLogin(session) {
     return;
   }
   showDashboard(session);
-  Audit.reportLogin(session.email);
 }
 
 async function logout() {
@@ -215,6 +246,7 @@ async function init() {
 LoginView.onLoginSuccess(() => {
   const session = Session.get();
   routeAfterLogin(session);
+  Audit.reportLogin(session.email);
 });
 
 // Session expiry

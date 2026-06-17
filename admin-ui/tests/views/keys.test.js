@@ -35,6 +35,8 @@ describe("keys view", () => {
       showLoading: vi.fn(),
       setViewActions: vi.fn(),
       clearViewActions: vi.fn(),
+      bindSortHeaders: vi.fn(() => () => {}),
+      sortRows: (rows) => rows,
     }));
 
     // Mock global tenant select for openCreateModal
@@ -81,7 +83,7 @@ describe("keys view", () => {
     KeysView.render([buildApiKey({ isActive: false })]);
     const tbody = root.querySelector("#keys-tbody");
     expect(tbody.querySelector(".badge-revoked")).toBeTruthy();
-    expect(tbody.querySelector(".btn-danger")).toBeFalsy();
+    expect(tbody.querySelector(".btn-outline-danger")).toBeFalsy();
   });
 
   // --- Revoke interaction ---
@@ -91,7 +93,7 @@ describe("keys view", () => {
     KeysView.mount(root);
     KeysView.render([key]);
 
-    root.querySelector(".btn-danger").click();
+    root.querySelector(".btn-outline-danger").click();
 
     const modal = root.querySelector("#revoke-modal");
     expect(modal.classList.contains("hidden")).toBe(false);
@@ -104,7 +106,7 @@ describe("keys view", () => {
     KeysView.mount(root);
     await flush();
 
-    root.querySelector(".btn-danger").click();
+    root.querySelector(".btn-outline-danger").click();
     root.querySelector("#confirm-revoke").click();
     await flush();
 
@@ -116,7 +118,7 @@ describe("keys view", () => {
     KeysView.mount(root);
     KeysView.render([buildApiKey()]);
 
-    root.querySelector(".btn-danger").click();
+    root.querySelector(".btn-outline-danger").click();
     root.querySelector("#cancel-revoke").click();
 
     expect(root.querySelector("#revoke-modal").classList.contains("hidden")).toBe(true);

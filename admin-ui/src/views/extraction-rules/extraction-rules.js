@@ -37,6 +37,12 @@ export function mount(root) {
   ];
 
   loadSchemas();
+
+  // Restore active blueprint from hash (e.g. #extraction-rules/pay_stub)
+  const hashParts = location.hash.replace("#", "").split("/");
+  if (hashParts[1]) {
+    Store.set({ activeDocType: decodeURIComponent(hashParts[1]) });
+  }
 }
 
 export function unmount(root) {
