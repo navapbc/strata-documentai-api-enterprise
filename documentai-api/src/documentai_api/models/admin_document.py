@@ -47,3 +47,9 @@ class DocumentDetail(BaseApiResponse):
     external_document_id: str
     batch_id: str
     fields: dict[str, Any] | None = None
+
+
+class DocumentPreviewResponse(BaseApiResponse):
+    url: str
+    content_type: str
+    expires_in: int

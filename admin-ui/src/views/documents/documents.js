@@ -9,8 +9,9 @@ import html from "./documents.html";
 const tmpl = tpl(html);
 
 let _root, _listEl, _noDocuments;
-let _searchInput, _searchBtn, _detailPanel;
+let _searchInput, _searchBtn, _detailPanel, _previewPanel, _detailContent, _collapseBtn;
 let _activeJobId = null;
+let _detailCollapsed = true;
 let _tenantUnsub = null;
 
 export function mount(root) {
@@ -24,6 +25,12 @@ export function mount(root) {
   _listEl = root.querySelector("#documents-list");
   _noDocuments = root.querySelector("#no-documents");
   _detailPanel = root.querySelector("#document-detail-panel");
+  _previewPanel = root.querySelector("#document-preview-panel");
+  _detailContent = root.querySelector("#detail-content");
+  _collapseBtn = root.querySelector("#detail-collapse-btn");
+
+  _collapseBtn.addEventListener("click", toggleDetailPanel);
+  _collapseBtn.classList.add("disabled");
 
   _searchBtn.disabled = true;
   _searchInput.addEventListener("input", () => {
@@ -51,7 +58,32 @@ export function unmount(root) {
 }
 
 function clearDetail() {
-  _detailPanel.replaceChildren();
+  _detailContent.innerHTML = "";
+  _previewPanel.innerHTML = '<p class="empty-state">Select a document to preview</p>';
+  // Nothing to show -> the collapse toggle has no purpose.
+  _collapseBtn.classList.add("disabled");
+}
+
+function expandDetailPanel() {
+  if (!_detailCollapsed) return;
+  _detailCollapsed = false;
+  _detailPanel.classList.remove("collapsed");
+  _root.querySelector(".documents-three-panel").classList.remove("detail-collapsed");
+  _collapseBtn.textContent = "\u276F";
+  _collapseBtn.title = "Collapse details";
+  _collapseBtn.classList.remove("disabled");
+}
+
+function toggleDetailPanel() {
+  const hasContent = _detailContent.innerHTML.trim().length > 0;
+  if (_detailCollapsed && !hasContent) return;
+  _detailCollapsed = !_detailCollapsed;
+  _detailPanel.classList.toggle("collapsed", _detailCollapsed);
+  _root
+    .querySelector(".documents-three-panel")
+    .classList.toggle("detail-collapsed", _detailCollapsed);
+  _collapseBtn.textContent = _detailCollapsed ? "\u276E" : "\u276F";
+  _collapseBtn.title = _detailCollapsed ? "Expand details" : "Collapse details";
 }
 
 export async function load() {
@@ -82,7 +114,27 @@ async function handleSearch() {
 
   try {
     const detail = await DocumentsService.get(query);
+    // Add to top of list if not already present
+    const existing = _listEl.querySelector(`[data-job-id="${detail.jobId}"]`);
+    if (existing) {
+      _listEl.querySelectorAll(".doc-list-item").forEach((el) => el.classList.remove("active"));
+      existing.classList.add("active");
+    } else {
+      _listEl.querySelectorAll(".doc-list-item").forEach((el) => el.classList.remove("active"));
+      const li = buildListItem({
+        jobId: detail.jobId,
+        fileName: detail.fileName,
+        processStatus: detail.processStatus,
+        createdAt: detail.createdAt,
+      });
+      li.classList.add("active");
+      _listEl.prepend(li);
+      _noDocuments.classList.add("hidden");
+    }
+    _activeJobId = detail.jobId;
     renderDetail(detail);
+    expandDetailPanel();
+    loadPreview(detail.jobId, detail.contentType);
   } catch (e) {
     if (e.status === 404) {
       Toast.show("Document not found");
@@ -90,6 +142,39 @@ async function handleSearch() {
       Toast.show(`Search failed: ${e.message}`);
     }
   }
+}
+
+function buildListItem(doc) {
+  const cls =
+    doc.processStatus === "completed"
+      ? "badge-success"
+      : doc.processStatus === "failed"
+        ? "badge-danger"
+        : "badge-neutral";
+  const badge = doc.processStatus
+    ? h("span", { className: `badge ${cls}` }, doc.processStatus)
+    : null;
+  const li = h(
+    "li",
+    {
+      className: `doc-list-item${doc.jobId === _activeJobId ? " active" : ""}`,
+      "data-job-id": doc.jobId,
+    },
+    h("div", { className: "doc-list-name" }, doc.fileName || doc.jobId?.slice(0, 8) || "-"),
+    h(
+      "div",
+      { className: "doc-list-meta" },
+      ...(badge ? [badge] : []),
+      h("span", { className: "doc-list-date" }, Helpers.formatDate(doc.createdAt)),
+    ),
+  );
+  li.addEventListener("click", () => {
+    _activeJobId = doc.jobId;
+    _listEl.querySelectorAll(".doc-list-item").forEach((el) => el.classList.remove("active"));
+    li.classList.add("active");
+    loadDetail(doc.jobId);
+  });
+  return li;
 }
 
 function renderList(documents) {
@@ -101,43 +186,43 @@ function renderList(documents) {
   }
   _noDocuments.classList.add("hidden");
   for (const doc of documents) {
-    const cls =
-      doc.processStatus === "completed"
-        ? "badge-success"
-        : doc.processStatus === "failed"
-          ? "badge-danger"
-          : "badge-neutral";
-    const badge = doc.processStatus
-      ? h("span", { className: `badge ${cls}` }, doc.processStatus)
-      : null;
-    const li = h(
-      "li",
-      { className: `doc-list-item${doc.jobId === _activeJobId ? " active" : ""}` },
-      h("div", { className: "doc-list-name" }, doc.fileName || doc.jobId?.slice(0, 8) || "-"),
-      h(
-        "div",
-        { className: "doc-list-meta" },
-        ...(badge ? [badge] : []),
-        h("span", { className: "doc-list-date" }, Helpers.formatDate(doc.createdAt)),
-      ),
-    );
-    li.addEventListener("click", () => {
-      _activeJobId = doc.jobId;
-      _listEl.querySelectorAll(".doc-list-item").forEach((el) => el.classList.remove("active"));
-      li.classList.add("active");
-      loadDetail(doc.jobId);
-    });
-    _listEl.appendChild(li);
+    _listEl.appendChild(buildListItem(doc));
   }
 }
 
 async function loadDetail(jobId) {
-  _detailPanel.textContent = "Loading...";
+  _detailContent.textContent = "Loading...";
   try {
     const detail = await DocumentsService.get(jobId);
     renderDetail(detail);
+    expandDetailPanel();
+    loadPreview(jobId, detail.contentType);
   } catch (e) {
-    _detailPanel.textContent = e.message;
+    _detailContent.textContent = e.message;
+    expandDetailPanel();
+  }
+}
+
+async function loadPreview(jobId, contentType) {
+  const previewable = ["application/pdf", "image/jpeg", "image/png"];
+  if (!previewable.includes(contentType)) {
+    _previewPanel.innerHTML = '<p class="empty-state">Preview not available for this file type</p>';
+    return;
+  }
+
+  _previewPanel.innerHTML = '<p class="empty-state">Loading preview…</p>';
+
+  try {
+    const resp = await DocumentsService.getPreviewUrl(jobId);
+    if (contentType === "application/pdf") {
+      // eslint-disable-next-line no-unsanitized/property -- URL escaped with esc()
+      _previewPanel.innerHTML = `<object data="${Helpers.esc(resp.url)}" type="application/pdf" class="document-preview-frame"><p>Unable to display PDF. <a href="${Helpers.esc(resp.url)}" target="_blank" rel="noopener">Open in new tab</a></p></object>`;
+    } else {
+      // eslint-disable-next-line no-unsanitized/property -- URL escaped with esc()
+      _previewPanel.innerHTML = `<img src="${Helpers.esc(resp.url)}" class="document-preview-img" alt="Document preview" onerror="this.parentElement.innerHTML='<p class=empty-state>Preview unavailable</p>'" />`;
+    }
+  } catch {
+    _previewPanel.innerHTML = '<p class="empty-state">Preview unavailable</p>';
   }
 }
 
@@ -186,12 +271,39 @@ function renderDetail(doc) {
     sections.push(renderExtractedData(doc.fields));
   }
 
-  if (doc.fieldConfidenceScores && Object.keys(doc.fieldConfidenceScores).length > 0) {
-    sections.push(renderConfidenceScores(doc.fieldConfidenceScores));
-  }
-
   // eslint-disable-next-line no-unsanitized/property -- server data rendered with esc()
-  _detailPanel.innerHTML = sections.join("");
+  _detailContent.innerHTML = sections.join("");
+
+  // There's content now, so the collapse toggle is usable.
+  _collapseBtn.classList.remove("disabled");
+
+  bindExtractedDataToggle();
+}
+
+function bindExtractedDataToggle() {
+  const toggle = _detailContent.querySelector(".extracted-data-toggle");
+  if (toggle) {
+    toggle.addEventListener("change", async () => {
+      if (toggle.checked) {
+        try {
+          const detail = await DocumentsService.get(_activeJobId, { includeExtractedData: true });
+          if (detail.fields) {
+            const table = _detailContent.querySelector(".extracted-data-table");
+            // eslint-disable-next-line no-unsanitized/property -- rendered with esc()
+            if (table) table.outerHTML = renderExtractedData(detail.fields, true);
+            bindExtractedDataToggle();
+          }
+        } catch (e) {
+          Toast.show(`Failed to load extracted data: ${e.message}`);
+          toggle.checked = false;
+        }
+      } else {
+        _detailContent.querySelectorAll(".extracted-value").forEach((td) => {
+          td.textContent = "\u2022\u2022\u2022\u2022\u2022";
+        });
+      }
+    });
+  }
 }
 
 function renderSection(title, fields) {
@@ -203,29 +315,39 @@ function renderSection(title, fields) {
     )
     .join("");
   if (!rows) return "";
-  return `<h4>${Helpers.esc(title)}</h4><table class="detail-table"><tbody>${rows}</tbody></table>`;
+  // Section name is the table's own <thead> header (styled by the global `th`
+  // rule), so it reads as part of the table like the API keys table.
+  return `<table class="detail-table"><thead><tr><th colspan="2">${Helpers.esc(title)}</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
-function renderExtractedData(data) {
+function renderExtractedData(data, revealed = false) {
   if (typeof data !== "object" || data === null) return "";
   const rows = Object.entries(data)
     .map(([key, val]) => {
-      const display = typeof val === "object" ? JSON.stringify(val) : String(val ?? "-");
-      return `<tr><td class="detail-label">${Helpers.esc(key)}</td><td>${Helpers.esc(display)}</td></tr>`;
+      const isObj = val != null && typeof val === "object" && !Array.isArray(val);
+      const conf = isObj && typeof val.confidence === "number" ? val.confidence : null;
+      const value = isObj && "value" in val ? val.value : val;
+      const display =
+        value != null && typeof value === "object" ? JSON.stringify(value) : String(value ?? "-");
+      return { key, conf, display };
+    })
+    .sort((a, b) => {
+      if (a.conf == null) return b.conf == null ? 0 : 1;
+      if (b.conf == null) return -1;
+      return a.conf - b.conf;
+    })
+    .map(({ key, conf, display }) => {
+      const confCell =
+        conf == null
+          ? "<td>-</td>"
+          : `<td class="${
+              conf >= 0.9 ? "confidence-high" : conf >= 0.7 ? "confidence-med" : "confidence-low"
+            }">${(conf * 100).toFixed(1)}%</td>`;
+      const valueContent = revealed ? Helpers.esc(display) : "\u2022\u2022\u2022\u2022\u2022";
+      return `<tr><td class="detail-label">${Helpers.esc(key)}</td><td class="extracted-value" data-value="${Helpers.esc(display)}">${valueContent}</td>${confCell}</tr>`;
     })
     .join("");
-  return `<h4>Extracted Data</h4><table class="detail-table"><tbody>${rows}</tbody></table>`;
-}
-
-function renderConfidenceScores(scores) {
-  const rows = Object.entries(scores)
-    .sort(([, a], [, b]) => a - b)
-    .map(([field, score]) => {
-      const pct = (score * 100).toFixed(1);
-      const cls =
-        score >= 0.9 ? "confidence-high" : score >= 0.7 ? "confidence-med" : "confidence-low";
-      return `<tr><td class="detail-label">${Helpers.esc(field)}</td><td class="${cls}">${pct}%</td></tr>`;
-    })
-    .join("");
-  return `<h4>Field Confidence</h4><table class="detail-table"><tbody>${rows}</tbody></table>`;
+  if (!rows) return "";
+  const checked = revealed ? " checked" : "";
+  return `<table class="extracted-data-table"><colgroup><col class="ed-col-field"><col class="ed-col-value"><col class="ed-col-conf"></colgroup><thead><tr><th>Extracted Data</th><th colspan="2" class="extracted-data-toggle-cell"><label class="inline-checkbox"><input type="checkbox" class="extracted-data-toggle"${checked}> Show values</label></th></tr><tr><th>Field</th><th>Value</th><th>Confidence</th></tr></thead><tbody>${rows}</tbody></table>`;
 }

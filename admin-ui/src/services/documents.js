@@ -10,6 +10,11 @@ export async function list({ tenantId, status, limit, cursor } = {}) {
   return adminClient.request("GET", `/v1/admin/documents${qs}`);
 }
 
-export async function get(jobId) {
-  return adminClient.request("GET", `/v1/admin/documents/${encodeURIComponent(jobId)}`);
+export async function get(jobId, { includeExtractedData = false } = {}) {
+  const qs = includeExtractedData ? "?include_extracted_data=true" : "";
+  return adminClient.request("GET", `/v1/admin/documents/${encodeURIComponent(jobId)}${qs}`);
+}
+
+export async function getPreviewUrl(jobId) {
+  return adminClient.request("GET", `/v1/admin/documents/${encodeURIComponent(jobId)}/preview`);
 }

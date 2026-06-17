@@ -350,3 +350,118 @@ def test_detail_malformed_json_returns_null(client, seeded_docs):
     response = client.get(f"{DOCUMENTS_URL}/job-eee-555")
     assert response.status_code == 200
     assert response.json()["fields"] is None
+
+
+##############################################################################
+# GET /v1/admin/documents/{job_id}/preview
+##############################################################################
+
+PREVIEW_URL = "/v1/admin/documents/{job_id}/preview"
+
+
+@pytest.fixture
+def seeded_docs_with_content_type(doc_metadata_table, monkeypatch):
+    """Seed documents with content_type for preview tests."""
+    monkeypatch.setenv(EnvVars.DOCUMENTAI_INPUT_LOCATION, "s3://test-bucket/input")
+
+    doc_metadata_table.put_item(
+        Item={
+            DocumentMetadata.FILE_NAME: "abc123_invoice.pdf",
+            DocumentMetadata.JOB_ID: "job-preview-pdf",
+            DocumentMetadata.ORIGINAL_FILE_NAME: "invoice.pdf",
+            DocumentMetadata.TENANT_ID: "test-tenant",
+            DocumentMetadata.API_KEY_NAME: "my-key",
+            DocumentMetadata.PROCESS_STATUS: "completed",
+            DocumentMetadata.CONTENT_TYPE: "application/pdf",
+            DocumentMetadata.CREATED_AT: "2026-01-01T00:00:00Z",
+        }
+    )
+    doc_metadata_table.put_item(
+        Item={
+            DocumentMetadata.FILE_NAME: "abc456_photo.jpg",
+            DocumentMetadata.JOB_ID: "job-preview-img",
+            DocumentMetadata.ORIGINAL_FILE_NAME: "photo.jpg",
+            DocumentMetadata.TENANT_ID: "test-tenant",
+            DocumentMetadata.API_KEY_NAME: "my-key",
+            DocumentMetadata.PROCESS_STATUS: "completed",
+            DocumentMetadata.CONTENT_TYPE: "image/jpeg",
+            DocumentMetadata.CREATED_AT: "2026-01-02T00:00:00Z",
+        }
+    )
+    doc_metadata_table.put_item(
+        Item={
+            DocumentMetadata.FILE_NAME: "abc789_data.csv",
+            DocumentMetadata.JOB_ID: "job-preview-csv",
+            DocumentMetadata.ORIGINAL_FILE_NAME: "data.csv",
+            DocumentMetadata.TENANT_ID: "test-tenant",
+            DocumentMetadata.API_KEY_NAME: "my-key",
+            DocumentMetadata.PROCESS_STATUS: "completed",
+            DocumentMetadata.CONTENT_TYPE: "text/csv",
+            DocumentMetadata.CREATED_AT: "2026-01-03T00:00:00Z",
+        }
+    )
+    doc_metadata_table.put_item(
+        Item={
+            DocumentMetadata.FILE_NAME: "other_doc.pdf",
+            DocumentMetadata.JOB_ID: "job-preview-other",
+            DocumentMetadata.ORIGINAL_FILE_NAME: "secret.pdf",
+            DocumentMetadata.TENANT_ID: "other-tenant",
+            DocumentMetadata.API_KEY_NAME: "other-key",
+            DocumentMetadata.PROCESS_STATUS: "completed",
+            DocumentMetadata.CONTENT_TYPE: "application/pdf",
+            DocumentMetadata.CREATED_AT: "2026-01-04T00:00:00Z",
+        }
+    )
+
+
+def test_preview_unauthenticated_returns_401(client):
+    response = client.get(PREVIEW_URL.format(job_id="job-preview-pdf"))
+    assert response.status_code == 401
+
+
+def test_preview_not_found(client, doc_metadata_table, monkeypatch):
+    monkeypatch.setenv(EnvVars.DOCUMENTAI_INPUT_LOCATION, "s3://test-bucket/input")
+    _override_jwt(SUPER_ADMIN_CLAIMS)
+    response = client.get(PREVIEW_URL.format(job_id="nonexistent"))
+    assert response.status_code == 404
+
+
+def test_preview_pdf_returns_presigned_url(client, seeded_docs_with_content_type):
+    _override_jwt(SUPER_ADMIN_CLAIMS)
+    response = client.get(PREVIEW_URL.format(job_id="job-preview-pdf"))
+    assert response.status_code == 200
+    data = response.json()
+    assert "url" in data
+    assert data["contentType"] == "application/pdf"
+    assert data["expiresIn"] == 300
+    assert "test-bucket" in data["url"]
+    assert "abc123_invoice.pdf" in data["url"]
+
+
+def test_preview_image_returns_presigned_url(client, seeded_docs_with_content_type):
+    _override_jwt(SUPER_ADMIN_CLAIMS)
+    response = client.get(PREVIEW_URL.format(job_id="job-preview-img"))
+    assert response.status_code == 200
+    data = response.json()
+    assert data["contentType"] == "image/jpeg"
+    assert "abc456_photo.jpg" in data["url"]
+
+
+def test_preview_unsupported_type_returns_422(client, seeded_docs_with_content_type):
+    _override_jwt(SUPER_ADMIN_CLAIMS)
+    response = client.get(PREVIEW_URL.format(job_id="job-preview-csv"))
+    assert response.status_code == 422
+    assert "Preview not available" in response.json()["detail"]
+
+
+def test_preview_tenant_admin_can_view_own(client, seeded_docs_with_content_type):
+    _override_jwt(TENANT_ADMIN_CLAIMS)
+    response = client.get(PREVIEW_URL.format(job_id="job-preview-pdf"))
+    assert response.status_code == 200
+    assert "url" in response.json()
+
+
+def test_preview_tenant_admin_cannot_view_other(client, seeded_docs_with_content_type):
+    _override_jwt(TENANT_ADMIN_CLAIMS)
+    response = client.get(PREVIEW_URL.format(job_id="job-preview-other"))
+    assert response.status_code == 404

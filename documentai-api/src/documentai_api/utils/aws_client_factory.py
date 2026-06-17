@@ -36,7 +36,7 @@ class AWSClientFactory:
         return cls._session
 
     @classmethod
-    def _get_region(cls) -> str:
+    def get_region(cls) -> str:
         return os.getenv("AWS_REGION", "us-east-1")
 
     @classmethod
@@ -52,12 +52,12 @@ class AWSClientFactory:
     @classmethod
     @lru_cache(maxsize=1)
     def get_s3_client(cls) -> S3Client:
-        return cls.get_session().client("s3", region_name=cls._get_region())
+        return cls.get_session().client("s3", region_name=cls.get_region())
 
     @classmethod
     @lru_cache(maxsize=1)
     def get_dynamodb_resource(cls) -> DynamoDBServiceResource:
-        return cls.get_session().resource("dynamodb", region_name=cls._get_region())
+        return cls.get_session().resource("dynamodb", region_name=cls.get_region())
 
     @classmethod
     @lru_cache(maxsize=1)
@@ -79,28 +79,28 @@ class AWSClientFactory:
     @lru_cache(maxsize=1)
     def get_bedrock_runtime_client(cls) -> BedrockRuntimeClient:
         return AWSClientFactory.get_session().client(
-            "bedrock-runtime", region_name=AWSClientFactory._get_region()
+            "bedrock-runtime", region_name=AWSClientFactory.get_region()
         )
 
     @classmethod
     @lru_cache(maxsize=1)
     def get_sqs_client(cls) -> SQSClient:
-        return cls.get_session().client("sqs", region_name=cls._get_region())
+        return cls.get_session().client("sqs", region_name=cls.get_region())
 
     @classmethod
     @lru_cache(maxsize=1)
     def get_athena_client(cls) -> AthenaClient:
-        return cls.get_session().client("athena", region_name=cls._get_region())
+        return cls.get_session().client("athena", region_name=cls.get_region())
 
     @classmethod
     @lru_cache(maxsize=1)
     def get_cognito_client(cls) -> CognitoIdentityProviderClient:
-        return cls.get_session().client("cognito-idp", region_name=cls._get_region())
+        return cls.get_session().client("cognito-idp", region_name=cls.get_region())
 
     @classmethod
     @lru_cache(maxsize=1)
     def get_ssm_client(cls) -> SSMClient:
-        return cls.get_session().client("ssm", region_name=cls._get_region())
+        return cls.get_session().client("ssm", region_name=cls.get_region())
 
     @classmethod
     def get_ddb_table(cls, table_name: str) -> Table:

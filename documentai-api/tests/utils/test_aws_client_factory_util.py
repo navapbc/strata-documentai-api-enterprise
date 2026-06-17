@@ -66,15 +66,15 @@ def test_get_session_singleton(clear_env_vars, mock_boto3_session_class):
 
 
 def test_get_region_default(clear_env_vars):
-    """Test that _get_region() returns default when AWS_REGION not set."""
-    region = AWSClientFactory._get_region()
+    """Test that get_region() returns default when AWS_REGION not set."""
+    region = AWSClientFactory.get_region()
     assert region == "us-east-1"
 
 
 def test_get_region_from_env(monkeypatch):
-    """Test that _get_region() returns value from AWS_REGION env var."""
+    """Test that get_region() returns value from AWS_REGION env var."""
     monkeypatch.setenv("AWS_REGION", "us-west-2")
-    region = AWSClientFactory._get_region()
+    region = AWSClientFactory.get_region()
     assert region == "us-west-2"
 
 
