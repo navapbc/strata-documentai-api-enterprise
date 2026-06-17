@@ -71,6 +71,7 @@ describe("main.js router", () => {
       default: `<div id="connected-url"></div><select id="global-tenant-select"></select>
         <div id="main-content"></div><h2 id="view-title"></h2><div id="view-actions"></div>
         <button id="logout-btn"></button>
+        <div class="nav-section"><button class="nav-section-header" data-section="keys"><span class="nav-arrow">▸</span></button><div class="nav-section-body hidden" id="section-keys"><a class="nav-item" data-view="keys">API Keys</a></div></div>
         <div class="nav-section" id="nav-section-users"><button class="nav-section-header" data-section="users"><span class="nav-arrow">▸</span></button><div class="nav-section-body hidden" id="section-users"><a class="nav-item" data-view="users">Users</a></div></div>
         <div class="nav-section" id="nav-section-tenants"><button class="nav-section-header" data-section="tenants"><span class="nav-arrow">▸</span></button><div class="nav-section-body hidden" id="section-tenants"><a class="nav-item" data-view="tenants">Tenants</a></div></div>`,
     }));
@@ -86,6 +87,7 @@ describe("main.js router", () => {
 
   afterEach(() => {
     document.body.innerHTML = "";
+    location.hash = "";
     vi.unstubAllGlobals();
   });
 
@@ -163,6 +165,46 @@ describe("main.js router", () => {
     expect(HttpClient.configure).toHaveBeenCalledWith(
       expect.objectContaining({ baseUrl: "http://localhost:8000", jwt: "my-jwt" }),
     );
+  });
+
+  it("restores view from hash on refresh", async () => {
+    location.hash = "#audit-log";
+    Session.get.mockReturnValue({ accessToken: "tok", idToken: "id", email: "a@b.com" });
+    Session.isExpired.mockReturnValue(false);
+    Session.isApproved.mockReturnValue(true);
+
+    // Add audit-log nav item to sidebar mock
+    vi.doMock("../../src/views/sidebar/sidebar.html", () => ({
+      default: `<div id="connected-url"></div><select id="global-tenant-select"></select>
+        <div id="main-content"></div><h2 id="view-title"></h2><div id="view-actions"></div>
+        <button id="logout-btn"></button>
+        <div class="nav-section" id="nav-section-users"><button class="nav-section-header" data-section="users"><span class="nav-arrow">▸</span></button><div class="nav-section-body hidden" id="section-users"><a class="nav-item" data-view="users">Users</a></div></div>
+        <div class="nav-section" id="nav-section-tenants"><button class="nav-section-header" data-section="tenants"><span class="nav-arrow">▸</span></button><div class="nav-section-body hidden" id="section-tenants"><a class="nav-item" data-view="tenants">Tenants</a></div></div>
+        <div class="nav-section"><button class="nav-section-header" data-section="audit"><span class="nav-arrow">▸</span></button><div class="nav-section-body hidden" id="section-audit"><a class="nav-item" data-view="audit-log">Audit Log</a></div></div>`,
+    }));
+
+    const AuditLogView = await import("../../src/views/audit-log/audit-log.js");
+    await import("../../src/main.js");
+    await flush();
+
+    expect(AuditLogView.mount).toHaveBeenCalled();
+    expect(KeysView.mount).not.toHaveBeenCalled();
+  });
+
+  it("does not fire reportLogin on page refresh with valid session", async () => {
+    Session.get.mockReturnValue({ accessToken: "tok", idToken: "id", email: "a@b.com" });
+    Session.isExpired.mockReturnValue(false);
+    Session.isApproved.mockReturnValue(true);
+
+    vi.doMock("../../src/services/audit.js", () => ({
+      reportLogin: vi.fn(),
+      reportLogout: vi.fn(),
+    }));
+    const Audit = await import("../../src/services/audit.js");
+    await import("../../src/main.js");
+    await flush();
+
+    expect(Audit.reportLogin).not.toHaveBeenCalled();
   });
 
   it("registers onLoginSuccess callback", async () => {

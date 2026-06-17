@@ -1,10 +1,23 @@
-<p class="test-note">
-  Upload a document to test extraction. Processing takes approximately 30 seconds.
-</p>
-<div id="test-elapsed" class="test-elapsed hidden"></div>
 <div class="test-two-panel">
-  <div class="test-history-panel">
-    <h3>Test History</h3>
+  <div class="test-left-panel">
+    <div class="test-dropzone" id="test-dropzone">
+      <input type="file" id="test-file-input" accept=".pdf,.png,.jpg,.jpeg,.tiff,.tif" />
+      <div class="test-dropzone-idle" id="test-dropzone-idle">
+        <div class="test-dropzone-icon">⬆</div>
+        <p class="test-dropzone-hint">
+          Drop a document here or <span class="test-dropzone-link">browse</span>
+        </p>
+        <p class="test-dropzone-formats">PDF, PNG, JPG, TIFF</p>
+      </div>
+      <div class="test-dropzone-selected hidden" id="test-dropzone-selected">
+        <div class="test-dropzone-icon">📄</div>
+        <p class="test-dropzone-filename" id="test-file-name"></p>
+        <button type="button" class="test-dropzone-clear" id="test-file-clear">✕ Clear</button>
+      </div>
+    </div>
+    <button type="button" id="test-run-btn" class="btn-primary" disabled>Run Extraction</button>
+    <button type="button" id="test-cancel-btn" class="btn-secondary hidden">Cancel</button>
+    <div id="test-elapsed" class="test-elapsed hidden"></div>
     <ul id="test-history-list" class="test-history-list">
       <li class="empty-state">No tests yet</li>
     </ul>

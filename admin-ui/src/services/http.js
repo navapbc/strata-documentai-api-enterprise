@@ -1,3 +1,28 @@
+let _refreshing = null;
+
+async function _tryRefresh() {
+  if (_refreshing) return _refreshing;
+  _refreshing = (async () => {
+    try {
+      const { refreshSession } = await import("./auth.js");
+      const session = JSON.parse(sessionStorage.getItem("docai_console_session"));
+      if (!session?.refreshToken) throw new Error("No refresh token");
+      const tokens = await refreshSession(session.refreshToken);
+      const { update } = await import("../utils/session.js");
+      update(tokens);
+      _jwt = tokens.idToken;
+      return true;
+    } catch {
+      sessionStorage.removeItem("docai_console_session");
+      window.location.reload();
+      return false;
+    } finally {
+      _refreshing = null;
+    }
+  })();
+  return _refreshing;
+}
+
 function createClient(buildAuthHeaders) {
   let baseUrl = "";
 
@@ -9,7 +34,7 @@ function createClient(buildAuthHeaders) {
       return baseUrl;
     },
 
-    async request(method, path, body = null) {
+    async request(method, path, body = null, _retried = false) {
       const url = `${baseUrl}${path}`;
       const opts = {
         method,
@@ -28,14 +53,13 @@ function createClient(buildAuthHeaders) {
       }
 
       if (!res.ok) {
-        if (res.status === 401) {
-          // Token expired - clear session and redirect to login
-          sessionStorage.removeItem("docai_console_session");
-          window.location.reload();
+        if (res.status === 401 && !_retried) {
+          const refreshed = await _tryRefresh();
+          if (refreshed) return this.request(method, path, body, true);
           return;
         }
-        const body = await res.json().catch(() => ({ detail: res.statusText }));
-        const detail = body.detail || body.message || res.statusText;
+        const respBody = await res.json().catch(() => ({ detail: res.statusText }));
+        const detail = respBody.detail || respBody.message || res.statusText;
         const err = new Error(detail);
         err.status = res.status;
         err.method = method;

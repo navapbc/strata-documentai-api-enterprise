@@ -4,6 +4,7 @@ import * as TenantContext from "../../utils/tenant-context.js";
 import { openModal, closeModal } from "../../utils/modal.js";
 import { h } from "../../utils/dom.js";
 import { tpl } from "../../utils/tpl.js";
+import * as Toast from "../../utils/toast.js";
 import html from "./keys.html";
 
 const tmpl = tpl(html);
@@ -16,6 +17,10 @@ let _revokeModal, _revokeKeyPrefix, _cancelRevoke, _confirmRevoke;
 let _pendingRevokeKey = null;
 let _showInactiveToggle;
 let _tenantUnsub = null;
+let _sortUnsub = null;
+let _allKeys = [];
+let _sortCol = null;
+let _sortDir = "asc";
 
 export function mount(root) {
   _root = root;
@@ -23,7 +28,7 @@ export function mount(root) {
 
   // Inject actions into shared header
   _showInactiveToggle = h("input", { type: "checkbox", id: "show-inactive-keys" });
-  _createKeyBtn = h("button", { className: "btn-primary" }, "+ Create Key");
+  _createKeyBtn = h("button", { className: "btn-primary" }, "Create Key");
   _refreshKeysBtn = h("button", { className: "btn-secondary" }, "Refresh");
   const label = h(
     "label",
@@ -61,6 +66,11 @@ export function mount(root) {
   }
 
   _tenantUnsub = TenantContext.onChange(() => load());
+  _sortUnsub = Helpers.bindSortHeaders(root.querySelector("thead"), (col, dir) => {
+    _sortCol = col;
+    _sortDir = dir;
+    renderTable(_allKeys);
+  });
   load();
 }
 
@@ -69,12 +79,22 @@ export function unmount(root) {
     _tenantUnsub();
     _tenantUnsub = null;
   }
+  if (_sortUnsub) {
+    _sortUnsub();
+    _sortUnsub = null;
+  }
   root.replaceChildren();
 }
 
-function openRevokeModal(keyPrefix) {
-  _pendingRevokeKey = keyPrefix;
-  _revokeKeyPrefix.textContent = keyPrefix;
+function openRevokeModal(key) {
+  _pendingRevokeKey = key.keyPrefix;
+  _revokeKeyPrefix.textContent = key.keyPrefix;
+  const nameEl = _revokeModal.querySelector("#revoke-key-name");
+  const tenantEl = _revokeModal.querySelector("#revoke-key-tenant");
+  const envEl = _revokeModal.querySelector("#revoke-key-env");
+  if (nameEl) nameEl.textContent = key.apiKeyName || "-";
+  if (tenantEl) tenantEl.textContent = key.tenantId || "-";
+  if (envEl) envEl.textContent = key.environment || "-";
   openModal(_revokeModal);
 }
 
@@ -89,9 +109,10 @@ async function handleConfirmRevoke() {
   closeRevokeModal();
   try {
     await KeysService.revoke(keyPrefix);
+    Toast.show("API key revoked");
     await load();
   } catch (e) {
-    alert(`Failed to revoke: ${e.message}`);
+    Toast.show(`Failed to revoke: ${e.message}`);
   }
 }
 
@@ -133,9 +154,10 @@ async function handleCreate(e) {
     closeModal(_createModal);
     _newKeyValue.textContent = result.apiKey || "-";
     openModal(_keyCreatedModal);
+    Toast.show("API key created");
     await load();
   } catch (err) {
-    alert(`Failed to create key: ${err.message}`);
+    Toast.show(`Failed to create key: ${err.message}`);
   }
 }
 
@@ -146,16 +168,22 @@ function copyKey() {
 }
 
 export function render(keys) {
+  return renderTable(keys);
+}
+
+function renderTable(keys) {
+  const sorted = Helpers.sortRows(keys, _sortCol, _sortDir);
   _tbody.innerHTML = "";
-  if (keys.length === 0) {
+  if (sorted.length === 0) {
+    _noKeys.textContent = "No API keys found.";
     _noKeys.classList.remove("hidden");
     return;
   }
   _noKeys.classList.add("hidden");
-  for (const key of keys) {
+  for (const key of sorted) {
     const isActive = key.isActive !== false;
     const actionEl = isActive
-      ? h("button", { className: "btn-danger btn-sm" }, "Revoke")
+      ? h("button", { className: "btn-outline-danger btn-sm" }, "Revoke")
       : h("span", { className: "badge badge-revoked" }, "Revoked");
     const tr = h(
       "tr",
@@ -170,7 +198,7 @@ export function render(keys) {
       h("td", null, actionEl),
     );
     if (isActive) {
-      actionEl.addEventListener("click", () => openRevokeModal(key.keyPrefix));
+      actionEl.addEventListener("click", () => openRevokeModal(key));
     }
     _tbody.appendChild(tr);
   }
@@ -182,7 +210,8 @@ export async function load() {
     const includeInactive = _showInactiveToggle?.checked || false;
     const tenantId = TenantContext.getTenantId();
     const data = await KeysService.list({ includeInactive, tenantId });
-    render(data.keys || []);
+    _allKeys = data.keys || [];
+    renderTable(_allKeys);
   } catch (e) {
     _tbody.innerHTML = "";
     _noKeys.textContent = e.message;

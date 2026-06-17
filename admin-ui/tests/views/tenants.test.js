@@ -43,6 +43,8 @@ describe("tenants view", () => {
       showLoading: vi.fn(),
       setViewActions: vi.fn(),
       clearViewActions: vi.fn(),
+      bindSortHeaders: vi.fn(() => () => {}),
+      sortRows: (rows) => rows,
     }));
     vi.doMock("../../src/utils/toast.js", () => mockToast);
 
@@ -142,7 +144,7 @@ describe("tenants view", () => {
     TenantsView.mount(root);
     await flush();
 
-    root.querySelector(".btn-danger").click();
+    root.querySelector(".btn-outline-danger").click();
     expect(root.querySelector("#tenant-delete-modal").classList.contains("hidden")).toBe(false);
     expect(root.querySelector("#tenant-delete-name").textContent).toBe(tenant.displayName);
   });
@@ -153,7 +155,7 @@ describe("tenants view", () => {
     TenantsView.mount(root);
     await flush();
 
-    root.querySelector(".btn-danger").click();
+    root.querySelector(".btn-outline-danger").click();
     root.querySelector("#tenant-delete-confirm").click();
     await flush();
 
@@ -166,7 +168,7 @@ describe("tenants view", () => {
     TenantsView.mount(root);
     await flush();
 
-    root.querySelector(".btn-danger").click();
+    root.querySelector(".btn-outline-danger").click();
     root.querySelector("#tenant-delete-cancel").click();
     expect(root.querySelector("#tenant-delete-modal").classList.contains("hidden")).toBe(true);
     expect(mockRemove).not.toHaveBeenCalled();

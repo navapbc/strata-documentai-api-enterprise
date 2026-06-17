@@ -5,9 +5,6 @@
       <button id="sidebar-close" class="sidebar-close" aria-label="Close menu">✕</button>
       <h1>DocumentAI Console</h1>
       <span id="connected-url"></span>
-      <select id="global-tenant-select" class="global-tenant-select">
-        <option value="">All Tenants</option>
-      </select>
     </div>
 
     <nav class="sidebar-nav">
@@ -16,7 +13,7 @@
           <span class="nav-arrow">▸</span> API Keys
         </button>
         <div class="nav-section-body hidden" id="section-keys">
-          <a class="nav-item" data-view="keys">Manage APIKeys</a>
+          <a class="nav-item" data-view="keys">Manage API Keys</a>
         </div>
       </div>
 
@@ -68,6 +65,12 @@
   <div class="content-header">
     <h2 id="view-title"></h2>
     <div id="view-actions" class="content-actions"></div>
+  </div>
+  <div class="tenant-filter-bar">
+    <label for="global-tenant-select">Tenant</label>
+    <select id="global-tenant-select">
+      <option value="">All Tenants</option>
+    </select>
   </div>
   <main id="main-content" class="main-content"></main>
 </div>

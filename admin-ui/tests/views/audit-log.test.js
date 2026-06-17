@@ -27,9 +27,12 @@ describe("audit-log view", () => {
     vi.doMock("../../src/utils/helpers.js", () => ({
       esc: (s) => s,
       formatDate: (d) => d || "-",
+      formatDateTime: (d) => d || "-",
       showLoading: vi.fn(),
       setViewActions: vi.fn(),
       clearViewActions: vi.fn(),
+      bindSortHeaders: vi.fn(() => () => {}),
+      sortRows: (rows) => rows,
     }));
 
     AuditLogView = await import("../../src/views/audit-log/audit-log.js");
@@ -67,8 +70,9 @@ describe("audit-log view", () => {
   // --- Pagination ---
 
   it("next button enabled when nextCursor present", async () => {
+    const events = Array.from({ length: 50 }, () => buildAuditEvent());
     mockList.mockResolvedValue({
-      events: [buildAuditEvent()],
+      events,
       nextCursor: "cur1",
     });
     AuditLogView.mount(root);
@@ -77,8 +81,9 @@ describe("audit-log view", () => {
   });
 
   it("clicking next loads next page", async () => {
+    const events = Array.from({ length: 50 }, () => buildAuditEvent());
     mockList.mockResolvedValue({
-      events: [buildAuditEvent()],
+      events,
       nextCursor: "page2",
     });
     AuditLogView.mount(root);

@@ -45,6 +45,9 @@ function render(state) {
     a.textContent = docType;
     a.addEventListener("click", () => {
       Store.set({ activeDocType: docType, dirty: false });
+      // Persist selection in hash for refresh
+      const base = location.hash.split("/")[0];
+      location.hash = `${base}/${docType}`;
       const mainArea = document.querySelector("#bp-main-area");
       if (mainArea) mainArea.scrollTop = 0;
     });

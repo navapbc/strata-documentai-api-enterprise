@@ -51,89 +51,111 @@ describe("documents view", () => {
   it("mounts and loads documents", async () => {
     DocumentsView.mount(root);
     await flush();
-    expect(mockList).toHaveBeenCalledWith({ tenantId: TENANT_ID, limit: 50, cursor: undefined });
+    expect(mockList).toHaveBeenCalledWith({ tenantId: TENANT_ID, limit: 50 });
   });
 
-  it("shows no-documents when tenant not selected", async () => {
+  it("shows message when tenant not selected", async () => {
     mockGetTenantId.mockReturnValue(null);
     DocumentsView.mount(root);
-    await DocumentsView.load();
+    await flush();
+    const noDoc = root.querySelector("#no-documents");
+    expect(noDoc.classList.contains("hidden")).toBe(false);
+    expect(noDoc.textContent).toContain("Select a tenant");
+  });
+
+  it("renders document list items", async () => {
+    mockList.mockResolvedValue({
+      documents: [buildDocument(), buildDocument({ jobId: "j-2", fileName: "second.pdf" })],
+      nextCursor: null,
+    });
+    DocumentsView.mount(root);
+    await flush();
+    expect(root.querySelectorAll("#documents-list .doc-list-item").length).toBe(2);
+    expect(root.querySelector("#no-documents").classList.contains("hidden")).toBe(true);
+  });
+
+  it("shows no-documents when list is empty", async () => {
+    mockList.mockResolvedValue({ documents: [] });
+    DocumentsView.mount(root);
+    await flush();
     expect(root.querySelector("#no-documents").classList.contains("hidden")).toBe(false);
   });
 
-  it("renders document rows", async () => {
+  it("clicking a list item loads document detail", async () => {
     mockList.mockResolvedValue({
       documents: [buildDocument()],
-      nextCursor: null,
-    });
-    DocumentsView.mount(root);
-    await flush();
-    expect(root.querySelectorAll("#documents-tbody tr").length).toBe(1);
-  });
-
-  it("clicking a row loads document detail", async () => {
-    const document = buildDocument();
-    mockList.mockResolvedValue({
-      documents: [document],
-      nextCursor: null,
     });
     DocumentsView.mount(root);
     await flush();
 
-    root.querySelector("#documents-tbody tr").click();
+    root.querySelector(".doc-list-item").click();
     await flush();
 
-    expect(mockGet).toHaveBeenCalledWith(document.jobId);
+    expect(mockGet).toHaveBeenCalledWith("test-job-id");
     const detail = root.querySelector("#document-detail-panel");
-    expect(detail.textContent).toContain("test.pdf");
+    expect(detail.innerHTML).toContain("test.pdf");
   });
 
-  it("next button enabled when nextCursor present", async () => {
-    mockList.mockResolvedValue({ documents: [buildDocument()], nextCursor: "cur1" });
-    DocumentsView.mount(root);
-    await flush();
-    expect(root.querySelector("#documents-next-btn").disabled).toBe(false);
-  });
-
-  it("next button disabled when no nextCursor", async () => {
-    mockList.mockResolvedValue({ documents: [buildDocument()], nextCursor: null });
-    DocumentsView.mount(root);
-    await flush();
-    expect(root.querySelector("#documents-next-btn").disabled).toBe(true);
-  });
-
-  it("clicking next loads next page", async () => {
-    mockList.mockResolvedValue({ documents: [buildDocument()], nextCursor: "page2" });
-    DocumentsView.mount(root);
-    await flush();
-
-    mockList.mockResolvedValue({ documents: [buildDocument()], nextCursor: null });
-    root.querySelector("#documents-next-btn").click();
-    await flush();
-
-    expect(mockList).toHaveBeenLastCalledWith({ tenantId: TENANT_ID, limit: 50, cursor: "page2" });
-  });
-
-  it("clicking prev goes back", async () => {
-    mockList.mockResolvedValue({ documents: [buildDocument()], nextCursor: "page2" });
-    DocumentsView.mount(root);
-    await flush();
-
-    mockList.mockResolvedValue({ documents: [buildDocument()], nextCursor: null });
-    root.querySelector("#documents-next-btn").click();
-    await flush();
-
-    root.querySelector("#documents-prev-btn").click();
-    await flush();
-
-    expect(mockList).toHaveBeenLastCalledWith({
-      tenantId: TENANT_ID,
-      limit: 50,
-      cursor: undefined,
+  it("clicking a list item marks it active", async () => {
+    mockList.mockResolvedValue({
+      documents: [buildDocument(), buildDocument({ jobId: "j-2", fileName: "b.pdf" })],
     });
+    DocumentsView.mount(root);
+    await flush();
+
+    const items = root.querySelectorAll(".doc-list-item");
+    items[1].click();
+    await flush();
+
+    expect(items[0].classList.contains("active")).toBe(false);
+    expect(items[1].classList.contains("active")).toBe(true);
   });
 
-  it("unmount cleans up", () => {
+  it("search button disabled when input empty", () => {
+    DocumentsView.mount(root);
+    expect(root.querySelector("#document-search-btn").disabled).toBe(true);
+  });
+
+  it("search button enabled when input has value", () => {
+    DocumentsView.mount(root);
+    const input = root.querySelector("#document-search-input");
+    input.value = "abc";
+    input.dispatchEvent(new Event("input"));
+    expect(root.querySelector("#document-search-btn").disabled).toBe(false);
+  });
+
+  it("search calls get and renders detail", async () => {
+    DocumentsView.mount(root);
+    await flush();
+
+    const input = root.querySelector("#document-search-input");
+    input.value = "j-1";
+    input.dispatchEvent(new Event("input"));
+    root.querySelector("#document-search-btn").click();
+    await flush();
+
+    expect(mockGet).toHaveBeenCalledWith("j-1");
+    expect(root.querySelector("#document-detail-panel").innerHTML).toContain("test.pdf");
+  });
+
+  it("search shows toast on 404", async () => {
+    const err = new Error("Not found");
+    err.status = 404;
+    mockGet.mockRejectedValue(err);
+
+    DocumentsView.mount(root);
+    await flush();
+
+    const input = root.querySelector("#document-search-input");
+    input.value = "missing";
+    input.dispatchEvent(new Event("input"));
+    root.querySelector("#document-search-btn").click();
+    await flush();
+
+    expect(mockToast.show).toHaveBeenCalledWith("Document not found");
+  });
+
+  it("unmount clears root", () => {
     DocumentsView.mount(root);
     DocumentsView.unmount(root);
     expect(root.children.length).toBe(0);

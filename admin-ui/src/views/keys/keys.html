@@ -1,14 +1,14 @@
 <table id="keys-table">
   <thead>
     <tr>
-      <th>Tenant</th>
-      <th>Key Name</th>
-      <th>Email</th>
-      <th>Environment</th>
-      <th>Key (prefix)</th>
-      <th>Created</th>
-      <th>Last Used</th>
-      <th>Actions</th>
+      <th data-col="tenantId">Tenant</th>
+      <th data-col="apiKeyName">Key Name</th>
+      <th data-col="emailAddress">Email</th>
+      <th data-col="environment">Environment</th>
+      <th data-col="keyPrefix">Key (prefix)</th>
+      <th data-col="createdAt">Created</th>
+      <th data-col="lastUsed">Last Used</th>
+      <th style="width: 1px; white-space: nowrap">Actions</th>
     </tr>
   </thead>
   <tbody id="keys-tbody"></tbody>
@@ -61,7 +61,28 @@
       This will immediately deactivate the key. Any service using it will start receiving 401
       errors. This action cannot be undone.
     </p>
-    <p>Key prefix: <code id="revoke-key-prefix"></code></p>
+    <div
+      style="
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 0.75rem 1rem;
+        margin: 0.75rem 0;
+        font-size: 0.875rem;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.3rem 1rem;
+        align-items: baseline;
+      "
+    >
+      <span style="color: #6b7280; font-weight: 500">Name</span><span id="revoke-key-name">-</span>
+      <span style="color: #6b7280; font-weight: 500">Tenant</span
+      ><span id="revoke-key-tenant">-</span>
+      <span style="color: #6b7280; font-weight: 500">Environment</span
+      ><span id="revoke-key-env">-</span>
+      <span style="color: #6b7280; font-weight: 500">Prefix</span
+      ><code id="revoke-key-prefix">-</code>
+    </div>
     <div class="modal-actions">
       <button type="button" id="cancel-revoke" class="btn-secondary">Cancel</button>
       <button type="button" id="confirm-revoke" class="btn-danger">Revoke key</button>

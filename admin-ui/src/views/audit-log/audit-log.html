@@ -1,19 +1,24 @@
 <table id="audit-table">
   <thead>
     <tr>
-      <th>Timestamp</th>
-      <th>Actor</th>
-      <th>Action</th>
-      <th>Target Type</th>
-      <th>Target ID</th>
-      <th>Tenant</th>
+      <th style="width: 2.5rem">#</th>
+      <th class="th-sort-disabled" title="Sorting requires server-side support">Timestamp</th>
+      <th class="th-sort-disabled" title="Sorting requires server-side support">Actor</th>
+      <th class="th-sort-disabled" title="Sorting requires server-side support">Action</th>
+      <th class="th-sort-disabled" title="Sorting requires server-side support">Target Type</th>
+      <th class="th-sort-disabled" title="Sorting requires server-side support">Target ID</th>
+      <th class="th-sort-disabled" title="Sorting requires server-side support">Tenant</th>
       <th>Metadata</th>
     </tr>
   </thead>
   <tbody id="audit-tbody"></tbody>
 </table>
 <p id="no-audit-events" class="empty-state hidden">No audit events found.</p>
-<div class="pagination-controls">
+<div class="pagination-controls" style="align-items: center; gap: 0.75rem">
   <button id="audit-prev-btn" class="btn-secondary" disabled>← Previous</button>
+  <span
+    id="audit-page-indicator"
+    style="font-size: 0.8125rem; color: #6b7280; min-width: 4rem; text-align: center"
+  ></span>
   <button id="audit-next-btn" class="btn-secondary" disabled>Next →</button>
 </div>

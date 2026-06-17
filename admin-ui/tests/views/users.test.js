@@ -33,6 +33,8 @@ describe("users view", () => {
       showLoading: vi.fn(),
       setViewActions: vi.fn(),
       clearViewActions: vi.fn(),
+      bindSortHeaders: vi.fn(() => () => {}),
+      sortRows: (rows) => rows,
     }));
     vi.doMock("../../src/utils/toast.js", () => mockToast);
 
@@ -121,7 +123,7 @@ describe("users view", () => {
     UsersView.mount(root);
     await flush();
 
-    root.querySelector("#users-tbody .btn-danger").click();
+    root.querySelector("#users-tbody .btn-outline-danger").click();
     expect(root.querySelector("#delete-user-modal").classList.contains("hidden")).toBe(false);
     expect(root.querySelector("#delete-user-email").textContent).toBe(user.email);
   });
@@ -132,7 +134,7 @@ describe("users view", () => {
     UsersView.mount(root);
     await flush();
 
-    root.querySelector("#users-tbody .btn-danger").click();
+    root.querySelector("#users-tbody .btn-outline-danger").click();
     root.querySelector("#delete-user-confirm").click();
     await flush();
 
@@ -145,7 +147,7 @@ describe("users view", () => {
     UsersView.mount(root);
     await flush();
 
-    root.querySelector("#users-tbody .btn-danger").click();
+    root.querySelector("#users-tbody .btn-outline-danger").click();
     root.querySelector("#delete-user-cancel").click();
 
     expect(root.querySelector("#delete-user-modal").classList.contains("hidden")).toBe(true);
