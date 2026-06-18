@@ -1,6 +1,6 @@
 // Cognito auth service - sign up, confirm, sign in, sign out
 
-const COGNITO_REGION = "us-east-1";
+export const COGNITO_REGION = "us-east-1";
 let _userPoolId = null;
 let _clientId = null;
 
@@ -161,4 +161,48 @@ export async function confirmForgotPassword(email, code, newPassword) {
     ConfirmationCode: code,
     Password: newPassword,
   });
+}
+
+export async function exchangeCodeForTokens(code, domain, clientId, redirectUri, codeVerifier) {
+  const body = new URLSearchParams({
+    grant_type: "authorization_code",
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    code,
+  });
+  if (codeVerifier) body.set("code_verifier", codeVerifier);
+
+  const response = await fetch(
+    `https://${domain}.auth.${COGNITO_REGION}.amazoncognito.com/oauth2/token`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+    }
+  );
+
+  if (!response.ok) {
+    let detail;
+    try {
+      const err = await response.json();
+      detail = err.error_description || err.error;
+    } catch {
+      detail = response.statusText;
+    }
+    throw new Error(detail || "Token exchange failed");
+  }
+
+  const tokens = await response.json();
+
+  // Decode email from id_token
+  try {
+    const payload = tokens.id_token.split(".")[1];
+    const padded = payload + "=".repeat((4 - (payload.length % 4)) % 4);
+    const claims = JSON.parse(atob(padded.replace(/-/g, "+").replace(/_/g, "/")));
+    tokens.email = claims.email;
+  } catch {
+    tokens.email = null;
+  }
+
+  return tokens;
 }

@@ -85,13 +85,17 @@ resource "aws_cognito_user_pool" "this" {
 
 # --- App Client ---
 
+locals {
+  google_enabled = var.google_client_id != null
+}
+
 resource "aws_cognito_user_pool_client" "this" {
   name         = "${var.name}-client"
   user_pool_id = aws_cognito_user_pool.this.id
 
   callback_urls                = var.callback_urls
   logout_urls                  = var.logout_urls
-  supported_identity_providers = ["COGNITO"]
+  supported_identity_providers = local.google_enabled ? ["COGNITO", "Google"] : ["COGNITO"]
 
   refresh_token_validity = 1
   access_token_validity  = 60
@@ -118,6 +122,40 @@ resource "aws_cognito_user_pool_client" "this" {
   # tenant_id is intentionally NOT in write_attributes - users must not set their
   # own tenant. It's written via AdminUpdateUserAttributes from the backend.
   write_attributes = ["email", "updated_at", "phone_number"]
+
+  depends_on = [aws_cognito_identity_provider.google]
+}
+
+# --- Google Identity Provider (conditional) ---
+
+resource "aws_cognito_user_pool_domain" "this" {
+  count        = local.google_enabled ? 1 : 0
+  domain       = "${var.name}-auth"
+  user_pool_id = aws_cognito_user_pool.this.id
+}
+
+resource "aws_cognito_identity_provider" "google" {
+  count         = local.google_enabled ? 1 : 0
+  user_pool_id  = aws_cognito_user_pool.this.id
+  provider_name = "Google"
+  provider_type = "Google"
+
+  provider_details = {
+    client_id                     = var.google_client_id
+    client_secret                 = var.google_client_secret
+    authorize_scopes              = "openid email profile"
+    attributes_url                = "https://people.googleapis.com/v1/people/me?personFields="
+    attributes_url_add_attributes = "true"
+    authorize_url                 = "https://accounts.google.com/o/oauth2/v2/auth"
+    oidc_issuer                   = "https://accounts.google.com"
+    token_request_method          = "POST"
+    token_url                     = "https://www.googleapis.com/oauth2/v4/token"
+  }
+
+  attribute_mapping = {
+    email    = "email"
+    username = "sub"
+  }
 }
 
 # --- Cognito Groups (roles) ---

@@ -80,3 +80,16 @@ variable "verification_email_subject" {
   description = "Custom subject for the account verification email. Uses the Cognito default when null."
   default     = null
 }
+
+variable "google_client_id" {
+  type        = string
+  description = "Google OAuth 2.0 client ID. When set, enables Google as a federated identity provider."
+  default     = null
+}
+
+variable "google_client_secret" {
+  type        = string
+  description = "Google OAuth 2.0 client secret."
+  default     = null
+  sensitive   = true
+}
