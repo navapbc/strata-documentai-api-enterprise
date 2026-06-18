@@ -19,12 +19,14 @@ architecture-beta
   service apigw(logos:aws-api-gateway)[API Gateway] in api
   service api-lambda(logos:aws-lambda)[API Lambda] in api
   service ddb-apikeys(logos:aws-dynamodb)[API Keys] in api
+  service ddb-audit(logos:aws-dynamodb)[Audit Events] in api
 
   %% Document Processing
   service s3input(logos:aws-s3)[S3 Input] in processing
   service eventbridge1(logos:aws-eventbridge)[EventBridge] in processing
   service document-processor(logos:aws-lambda)[Document Processor] in processing
   service ddb(logos:aws-dynamodb)[Document Metadata] in processing
+  service bedrock-preclassify(server)[AWS Bedrock Preclassify] in processing
 
   %% Data Extraction
   service bedrock(server)[Bedrock Data Automation] in data-extraction
@@ -39,33 +41,43 @@ architecture-beta
   service s3metrics(logos:aws-s3)[S3 Metrics] in metrics
   service glue(logos:aws-glue)[Glue Database] in metrics
   service metrics-aggregator(logos:aws-lambda)[Metrics Aggregator] in metrics
+  service s3aggregated(logos:aws-s3)[S3 Aggregated] in metrics
 
   %% Admin flow
-  cloudfront:T --> B:s3ui
+  user:B --> T:cloudfront
+  cloudfront:B --> T:s3ui
   cloudfront:R --> L:cognito
-  user:B --> T:s3ui
 
   %% API flow
   cognito:R --> L:apigw
   apigw:R --> L:api-lambda
-  api-lambda:R --> L:ddb-apikeys
+  api-lambda:T --> B:ddb-apikeys
+  api-lambda:R --> L:ddb-audit
   api-lambda:B --> T:s3input
 
   %% Processing flow
   s3input:R --> L:eventbridge1
   eventbridge1:R --> L:document-processor
+  document-processor:T --> B:bedrock-preclassify
   document-processor:R --> L:ddb
-  document-processor:B --> T:bedrock
+  %% force mermaid chart to render adequate space between groups by using a junction
+  document-processor:B -- T:processing-junc1
+  junction processing-junc1
+  processing-junc1:B --> T:bedrock
 
   %% Extraction flow
   bedrock:R --> L:s3output
   s3output:R --> L:eventbridge2
   eventbridge2:R --> L:bda-result-processor
   bda-result-processor:R --> L:ddb2
-  bda-result-processor:B --> T:sqs
+  %% force mermaid chart to render adequate space between groups by using a junction
+  bda-result-processor:B -- T:extract-junc1
+  junction extract-junc1
+  extract-junc1:B --> T:sqs
 
   %% Metrics flow
   sqs:R --> L:metrics-processor
   metrics-processor:R --> L:s3metrics
   s3metrics:R --> L:glue
   glue:R --> L:metrics-aggregator
+  metrics-aggregator:R --> L:s3aggregated
