@@ -247,6 +247,74 @@ def test_build_v1_api_response_empty_record(
     }
 
 
+def test_build_v1_api_response_with_bounding_box(
+    s3_bucket,
+    ddb_doc_metadata_table,
+    bda_result_with_geometry,
+):
+    """include_bounding_box=True includes geometry and fieldType in fields."""
+    import json
+
+    bda_obj = s3_bucket.put_object(Key="bbox-test.json", Body=json.dumps(bda_result_with_geometry))
+
+    ddb_record = {
+        DocumentMetadata.FILE_NAME: "bbox-test-key",
+        DocumentMetadata.JOB_ID: "bbox-job-id",
+        DocumentMetadata.BDA_OUTPUT_S3_URI: f"s3://{bda_obj.bucket_name}/{bda_obj.key}",
+        DocumentMetadata.BDA_MATCHED_DOCUMENT_CLASS: "Lease",
+        DocumentMetadata.CREATED_AT: "2025-01-01T00:00:00+00:00",
+        DocumentMetadata.FIELD_CONFIDENCE_SCORES: '[{"tenant_name": 0.93}, {"amount": 0.88}]',
+    }
+    ddb_doc_metadata_table.put_item(Item=ddb_record)
+
+    response = response_builder_util.build_v1_api_response(
+        "bbox-test-key",
+        ProcessStatus.SUCCESS.value,
+        include_extracted_data=True,
+        include_bounding_box=True,
+    )
+
+    # geometry and fieldType present on field with geometry
+    assert "geometry" in response["fields"]["tenantName"]
+    assert response["fields"]["tenantName"]["fieldType"] == "string"
+    assert response["fields"]["tenantName"]["geometry"][0]["boundingBox"]["top"] == 0.31
+
+    # field without geometry in BDA output has no geometry key
+    assert "geometry" not in response["fields"]["amount"]
+    assert "fieldType" not in response["fields"]["amount"]
+
+
+def test_build_v1_api_response_without_bounding_box_no_leakage(
+    s3_bucket,
+    ddb_doc_metadata_table,
+    bda_result_with_geometry,
+):
+    """include_bounding_box=False does not leak geometry into fields."""
+    import json
+
+    bda_obj = s3_bucket.put_object(Key="no-bbox.json", Body=json.dumps(bda_result_with_geometry))
+
+    ddb_record = {
+        DocumentMetadata.FILE_NAME: "no-bbox-key",
+        DocumentMetadata.JOB_ID: "no-bbox-job-id",
+        DocumentMetadata.BDA_OUTPUT_S3_URI: f"s3://{bda_obj.bucket_name}/{bda_obj.key}",
+        DocumentMetadata.BDA_MATCHED_DOCUMENT_CLASS: "Lease",
+        DocumentMetadata.CREATED_AT: "2025-01-01T00:00:00+00:00",
+        DocumentMetadata.FIELD_CONFIDENCE_SCORES: '[{"tenant_name": 0.93}]',
+    }
+    ddb_doc_metadata_table.put_item(Item=ddb_record)
+
+    response = response_builder_util.build_v1_api_response(
+        "no-bbox-key",
+        ProcessStatus.SUCCESS.value,
+        include_extracted_data=True,
+        include_bounding_box=False,
+    )
+
+    assert "geometry" not in response["fields"]["tenantName"]
+    assert "fieldType" not in response["fields"]["tenantName"]
+
+
 def test_build_v1_api_response_applies_extraction_rules(
     s3_bucket,
     ddb_doc_metadata_table,

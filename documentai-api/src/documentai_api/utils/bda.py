@@ -46,6 +46,7 @@ def _extract_fields_recursive(
     empty_fields: list[str],
     field_confidence_map_list: list[dict[str, float]],
     field_values: dict[str, Any] | None = None,
+    field_geometry: dict[str, dict[str, Any]] | None = None,
 ) -> None:
     """Recursively process fields, handling both flat and nested structures."""
     for field_name, field_data in data.items():
@@ -70,6 +71,12 @@ def _extract_fields_recursive(
 
             if field_values is not None:
                 field_values[full_field_name] = field_data.get(BdaResponseFields.FIELD_VALUE)
+
+            if field_geometry is not None and BdaResponseFields.FIELD_GEOMETRY in field_data:
+                field_geometry[full_field_name] = {
+                    "type": field_data.get(BdaResponseFields.FIELD_TYPE),
+                    "geometry": field_data[BdaResponseFields.FIELD_GEOMETRY],
+                }
         else:
             # nested structure - recursion required
             _extract_fields_recursive(
@@ -79,6 +86,7 @@ def _extract_fields_recursive(
                 empty_fields,
                 field_confidence_map_list,
                 field_values,
+                field_geometry,
             )
 
 
@@ -119,10 +127,11 @@ def get_text_from_standard_blueprint(bda_result_json: dict[str, Any]) -> str | N
 
 def extract_field_values_from_bda_results(
     bda_result_json: dict[str, Any],
-) -> tuple[BdaFieldProcessingData, dict[str, Any]]:
-    """Extract both metadata and field values from BDA result."""
+    include_geometry: bool = False,
+) -> tuple[BdaFieldProcessingData, dict[str, Any], dict[str, dict[str, Any]]]:
+    """Extract metadata, field values, and optionally geometry from BDA result."""
     if BdaResponseFields.EXPLAINABILITY_INFO not in bda_result_json:
-        return (BdaFieldProcessingData([], [], []), {})
+        return (BdaFieldProcessingData([], [], []), {}, {})
 
     explainability_info = bda_result_json[BdaResponseFields.EXPLAINABILITY_INFO]
 
@@ -130,11 +139,18 @@ def extract_field_values_from_bda_results(
     empty_fields: list[str] = []
     field_confidence_map_list: list[dict[str, float]] = []
     field_values: dict[str, Any] = {}
+    field_geometry: dict[str, dict[str, Any]] = {}
 
     for item in explainability_info:
         if isinstance(item, dict):
             _extract_fields_recursive(
-                item, "", confidence_scores, empty_fields, field_confidence_map_list, field_values
+                item,
+                "",
+                confidence_scores,
+                empty_fields,
+                field_confidence_map_list,
+                field_values,
+                field_geometry if include_geometry else None,
             )
 
     metadata = BdaFieldProcessingData(
@@ -143,14 +159,14 @@ def extract_field_values_from_bda_results(
         field_confidence_map_list=field_confidence_map_list,
     )
 
-    return (metadata, field_values)
+    return (metadata, field_values, field_geometry)
 
 
 def extract_field_metadata_from_bda_results(
     bda_result_json: dict[str, Any],
 ) -> BdaFieldProcessingData:
     """Extract only metadata (confidence, empty fields) from BDA result."""
-    metadata, _ = extract_field_values_from_bda_results(bda_result_json)
+    metadata, _, _ = extract_field_values_from_bda_results(bda_result_json)
     return metadata
 
 

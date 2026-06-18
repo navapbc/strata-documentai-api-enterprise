@@ -6,6 +6,7 @@ import pytest
 
 from documentai_api.config.constants import DeletionType
 from documentai_api.models.api_responses import JobStatusResponse
+from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.jobs import JobStatus
 
 TEST_JOB_ID = "00000000-0000-4000-8000-000000000001"
@@ -51,6 +52,7 @@ def test_get_document_results_with_extracted_data(api_client, mocker):
         object_key="test.pdf",
         job_status="success",
         include_extracted_data=True,
+        include_bounding_box=False,
     )
 
 
@@ -871,3 +873,54 @@ def test_documents_wait_include_extracted_data_defaults_false(api_client, blank_
 
     assert response.status_code == 200
     assert mock_poll.call_args.kwargs["include_extracted_data"] is False
+
+
+# =============================================================================
+# include_bounding_box implies include_extracted_data
+# =============================================================================
+
+
+def test_get_document_bounding_box_implies_extracted_data(api_client, mocker):
+    """GET with include_bounding_box=true (without include_extracted_data) triggers rebuild."""
+    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status.return_value = JobStatus(
+        ddb_record={
+            DocumentMetadata.TENANT_ID: "test-tenant",
+            DocumentMetadata.FILE_NAME: "test.pdf",
+        },
+        object_key="test.pdf",
+        process_status="success",
+        v1_response_json='{"jobId": "test-job-id", "jobStatus": "success", "message": "ok"}',
+    )
+
+    mock_build_api_response = mocker.patch("documentai_api.app_documents.build_v1_api_response")
+    mock_build_api_response.return_value = {
+        "jobId": "test-job-id",
+        "jobStatus": "success",
+        "message": "Document processed successfully",
+    }
+
+    response = api_client.get(f"/v1/documents/{TEST_JOB_ID}?include_bounding_box=true")
+
+    assert response.status_code == 200
+    mock_build_api_response.assert_called_once_with(
+        object_key="test.pdf",
+        job_status="success",
+        include_extracted_data=True,
+        include_bounding_box=True,
+    )
+
+
+def test_documents_wait_bounding_box_implies_extracted_data(api_client, blank_pdf_bytes, mocker):
+    """Documents /wait with include_bounding_box=true implies include_extracted_data."""
+    mock_poll = mocker.patch("documentai_api.app_documents.poll_for_completion")
+    mock_poll.return_value = JobStatusResponse(
+        job_id="test-id", job_status="success", message="Done"
+    )
+
+    files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
+    response = api_client.post("/v1/documents/wait?include_bounding_box=true", files=files)
+
+    assert response.status_code == 200
+    assert mock_poll.call_args.kwargs["include_extracted_data"] is True
+    assert mock_poll.call_args.kwargs["include_bounding_box"] is True

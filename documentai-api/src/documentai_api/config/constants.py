@@ -91,6 +91,8 @@ class BdaResponseFields:
     EXPLAINABILITY_INFO = "explainability_info"
     FIELD_CONFIDENCE = "confidence"
     FIELD_VALUE = "value"
+    FIELD_TYPE = "type"
+    FIELD_GEOMETRY = "geometry"
     MATCHED_BLUEPRINT = "matched_blueprint"
     MATCHED_BLUEPRINT_NAME = "name"
     MATCHED_BLUEPRINT_CONFIDENCE = "confidence"

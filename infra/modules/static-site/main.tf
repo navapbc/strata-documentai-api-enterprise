@@ -29,7 +29,16 @@ resource "aws_cloudfront_response_headers_policy" "security" {
 
   security_headers_config {
     content_security_policy {
-      content_security_policy = "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.execute-api.us-east-1.amazonaws.com https://cognito-idp.us-east-1.amazonaws.com; img-src 'self' data:; frame-ancestors 'none'"
+      content_security_policy = join("; ", [
+        "default-src 'self'",
+        "script-src 'self'",
+        "style-src 'self' https://fonts.googleapis.com 'unsafe-inline'",
+        "font-src 'self' https://fonts.gstatic.com",
+        "connect-src 'self' https://*.execute-api.us-east-1.amazonaws.com https://cognito-idp.us-east-1.amazonaws.com",
+        "img-src 'self' data: https://*.s3.amazonaws.com https://*.s3.us-east-1.amazonaws.com",
+        "object-src https://*.s3.amazonaws.com https://*.s3.us-east-1.amazonaws.com",
+        "frame-ancestors 'none'",
+      ])
       override                = true
     }
     content_type_options {
