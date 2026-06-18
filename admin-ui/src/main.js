@@ -56,11 +56,11 @@ let _mainContent = null;
 const VIEWS = {
   keys: { module: KeysView },
   users: { module: UsersView },
-  tenants: { module: TenantsView },
+  tenants: { module: TenantsView, hideTenantBar: true },
   "extraction-rules": { module: ExtractionRulesView },
   "doc-categories": { module: DocumentCategoriesView },
   "audit-log": { module: AuditLogView },
-  documents: { module: DocumentsView },
+  documents: { module: DocumentsView, hideTenantBar: true },
   "test-documents": { module: TestDocumentsView },
 };
 
@@ -158,11 +158,11 @@ function navigateTo(viewName) {
   const viewActions = document.querySelector("#view-actions");
   if (viewActions) viewActions.replaceChildren();
 
-  // Hide tenant filter bar on tenants view (filtering tenants by tenant doesn't make sense)
-  const filterBar = document.querySelector(".tenant-filter-bar");
-  if (filterBar) filterBar.classList.toggle("hidden", viewName === "tenants");
-
+  // Hide tenant filter bar on views that don't need it
   const entry = VIEWS[viewName];
+  const filterBar = document.querySelector(".tenant-filter-bar");
+  if (filterBar) filterBar.classList.toggle("hidden", !!entry?.hideTenantBar);
+
   if (!entry) return;
 
   // Preserve sub-path if navigating to the same view (e.g. extraction-rules/pay_stub)

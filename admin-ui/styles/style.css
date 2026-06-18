@@ -1685,6 +1685,23 @@ td {
   display: flex;
   align-items: flex-start;
   justify-content: center;
+  position: relative;
+}
+
+.documents-preview-panel.watermarked::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: var(--watermark-bg);
+  background-repeat: repeat;
+  opacity: 0.15;
+  z-index: 1;
+}
+
+.documents-preview-panel.watermark-block::after {
+  pointer-events: auto;
+  cursor: default;
 }
 
 .documents-preview-panel .empty-state {
@@ -2083,4 +2100,6 @@ td {
   max-width: 100%;
   height: auto;
   border-radius: 4px;
+  user-select: none;
+  -webkit-user-drag: none;
 }

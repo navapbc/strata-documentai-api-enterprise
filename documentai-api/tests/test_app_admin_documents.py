@@ -465,3 +465,94 @@ def test_preview_tenant_admin_cannot_view_other(client, seeded_docs_with_content
     _override_jwt(TENANT_ADMIN_CLAIMS)
     response = client.get(PREVIEW_URL.format(job_id="job-preview-other"))
     assert response.status_code == 404
+
+
+def test_preview_logs_audit_event(client, seeded_docs_with_content_type, mocker):
+    from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
+
+    mock_log = mocker.patch("documentai_api.app_admin_documents.log_event")
+    _override_jwt(SUPER_ADMIN_CLAIMS)
+
+    response = client.get(PREVIEW_URL.format(job_id="job-preview-pdf"))
+    assert response.status_code == 200
+
+    mock_log.assert_called_once_with(
+        SUPER_ADMIN_CLAIMS,
+        action=AuditAction.DOCUMENT_PREVIEW,
+        target_type=AuditTargetType.DOCUMENT,
+        target_id="job-preview-pdf",
+        tenant_id="test-tenant",
+    )
+
+
+def test_preview_not_found_does_not_log_audit_event(
+    client, doc_metadata_table, monkeypatch, mocker
+):
+    monkeypatch.setenv(EnvVars.DOCUMENTAI_INPUT_LOCATION, "s3://test-bucket/input")
+    mock_log = mocker.patch("documentai_api.app_admin_documents.log_event")
+    _override_jwt(SUPER_ADMIN_CLAIMS)
+
+    response = client.get(PREVIEW_URL.format(job_id="nonexistent"))
+    assert response.status_code == 404
+    mock_log.assert_not_called()
+
+
+def test_list_logs_audit_event(client, seeded_docs, mocker):
+    from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
+
+    mock_log = mocker.patch("documentai_api.app_admin_documents.log_event")
+    _override_jwt(SUPER_ADMIN_CLAIMS)
+
+    response = client.get(f"{DOCUMENTS_URL}?tenant_id=test-tenant")
+    assert response.status_code == 200
+
+    mock_log.assert_called_once_with(
+        SUPER_ADMIN_CLAIMS,
+        action=AuditAction.DOCUMENT_LIST,
+        target_type=AuditTargetType.DOCUMENT,
+        target_id="test-tenant",
+        tenant_id="test-tenant",
+        metadata={"count": 4, "status_filter": None},
+    )
+
+
+def test_get_document_logs_search_and_view(client, seeded_docs, mocker):
+    from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
+
+    mock_log = mocker.patch("documentai_api.app_admin_documents.log_event")
+    _override_jwt(SUPER_ADMIN_CLAIMS)
+
+    response = client.get(f"{DOCUMENTS_URL}/job-aaa-111")
+    assert response.status_code == 200
+
+    assert mock_log.call_count == 2
+    mock_log.assert_any_call(
+        SUPER_ADMIN_CLAIMS,
+        action=AuditAction.DOCUMENT_SEARCH,
+        target_type=AuditTargetType.DOCUMENT,
+        target_id="job-aaa-111",
+    )
+    mock_log.assert_any_call(
+        SUPER_ADMIN_CLAIMS,
+        action=AuditAction.DOCUMENT_VIEW,
+        target_type=AuditTargetType.DOCUMENT,
+        target_id="job-aaa-111",
+        tenant_id="test-tenant",
+    )
+
+
+def test_get_document_not_found_logs_search_only(client, doc_metadata_table, mocker):
+    from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
+
+    mock_log = mocker.patch("documentai_api.app_admin_documents.log_event")
+    _override_jwt(SUPER_ADMIN_CLAIMS)
+
+    response = client.get(f"{DOCUMENTS_URL}/nonexistent-job")
+    assert response.status_code == 404
+
+    mock_log.assert_called_once_with(
+        SUPER_ADMIN_CLAIMS,
+        action=AuditAction.DOCUMENT_SEARCH,
+        target_type=AuditTargetType.DOCUMENT,
+        target_id="nonexistent-job",
+    )

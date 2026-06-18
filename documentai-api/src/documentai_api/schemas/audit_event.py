@@ -25,6 +25,11 @@ class AuditAction:
     EXTRACTION_RULE_DELETE = "extraction_rule.delete"
     AUTH_LOGIN = "auth.login"
     AUTH_LOGOUT = "auth.logout"
+    DOCUMENT_VIEW = "document.view"
+    DOCUMENT_VIEW_EXTRACTED_DATA = "document.view_extracted_data"
+    DOCUMENT_SEARCH = "document.search"
+    DOCUMENT_LIST = "document.list"
+    DOCUMENT_PREVIEW = "document.preview"
 
 
 class AuditTargetType:
@@ -33,6 +38,7 @@ class AuditTargetType:
     TENANT = "tenant"
     KEY = "key"
     USER = "user"
+    DOCUMENT = "document"
     DOCUMENT_CATEGORY = "document_category"
     EXTRACTION_RULE = "extraction_rule"
     SESSION = "session"

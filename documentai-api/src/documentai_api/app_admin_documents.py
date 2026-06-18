@@ -16,8 +16,10 @@ from documentai_api.models.admin_document import (
     DocumentListResponse,
     DocumentPreviewResponse,
 )
+from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import s3 as s3_service
+from documentai_api.utils.audit import log_event
 from documentai_api.utils.base_readonly_table import ReadOnlyTable
 from documentai_api.utils.jwt_auth import tenant_scope
 from documentai_api.utils.pagination import decode_cursor, encode_cursor
@@ -200,6 +202,15 @@ async def list_documents(
         documents = [_record_to_item(item) for item in documents_raw]
         next_cursor = encode_cursor(last_key) if last_key else None
 
+        log_event(
+            claims,
+            action=AuditAction.DOCUMENT_LIST,
+            target_type=AuditTargetType.DOCUMENT,
+            target_id=tenant_id,
+            tenant_id=tenant_id,
+            metadata={"count": len(documents), "status_filter": status_filter},
+        )
+
         return DocumentListResponse(
             documents=documents, count=len(documents), next_cursor=next_cursor
         )
@@ -226,6 +237,13 @@ async def get_document(
     """
     scope = tenant_scope(claims)
 
+    log_event(
+        claims,
+        action=AuditAction.DOCUMENT_SEARCH,
+        target_type=AuditTargetType.DOCUMENT,
+        target_id=job_id,
+    )
+
     try:
         record = _table.query_by_job_id(job_id)
         if not record:
@@ -236,7 +254,22 @@ async def get_document(
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
 
         # jobId is unique by design (UUID generated upstream); first match is safe.
-        return _record_to_detail(record, include_extracted_data)
+        detail = _record_to_detail(record, include_extracted_data)
+
+        action = (
+            AuditAction.DOCUMENT_VIEW_EXTRACTED_DATA
+            if include_extracted_data
+            else AuditAction.DOCUMENT_VIEW
+        )
+        log_event(
+            claims,
+            action=action,
+            target_type=AuditTargetType.DOCUMENT,
+            target_id=job_id,
+            tenant_id=record.get(DocumentMetadata.TENANT_ID),
+        )
+
+        return detail
 
     except HTTPException:
         raise
@@ -296,6 +329,14 @@ async def get_document_preview(
             key=object_key,
             content_type=content_type,
             expiration=ConfigDefaults.PRESIGNED_PREVIEW_EXPIRY_SECONDS,
+        )
+
+        log_event(
+            claims,
+            action=AuditAction.DOCUMENT_PREVIEW,
+            target_type=AuditTargetType.DOCUMENT,
+            target_id=job_id,
+            tenant_id=tenant_id,
         )
 
         return DocumentPreviewResponse(

@@ -146,6 +146,7 @@ def generate_presigned_get_url(
     params: dict[str, Any] = {"Bucket": bucket, "Key": key}
     if content_type:
         params["ResponseContentType"] = content_type
+        params["ResponseContentDisposition"] = "inline"
 
     return s3_client.generate_presigned_url(
         "get_object",
