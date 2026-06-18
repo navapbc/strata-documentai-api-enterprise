@@ -10,7 +10,10 @@ export async function list({ tenantId, status, limit, cursor } = {}) {
   return adminClient.request("GET", `/v1/admin/documents${qs}`);
 }
 
-export async function get(jobId, { includeExtractedData = false, includeBoundingBox = false } = {}) {
+export async function get(
+  jobId,
+  { includeExtractedData = false, includeBoundingBox = false } = {},
+) {
   const params = new URLSearchParams();
   if (includeExtractedData) params.set("include_extracted_data", "true");
   if (includeBoundingBox) params.set("include_bounding_box", "true");

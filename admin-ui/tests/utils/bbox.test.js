@@ -42,7 +42,9 @@ describe("computeIoU", () => {
 
 describe("mergeOverlappingBoxes", () => {
   it("returns single box unchanged", () => {
-    const boxes = [{ left: 0, top: 0, width: 0.1, height: 0.1, fieldName: "a", fieldType: "string" }];
+    const boxes = [
+      { left: 0, top: 0, width: 0.1, height: 0.1, fieldName: "a", fieldType: "string" },
+    ];
     const result = mergeOverlappingBoxes(boxes);
     expect(result).toHaveLength(1);
     expect(result[0].fields).toEqual([{ fieldName: "a", fieldType: "string" }]);

@@ -427,9 +427,10 @@ function _renderBboxOverlay() {
     const merged = mergeOverlappingBoxes(boxes);
 
     for (const box of merged) {
-      const color = box.fields.length > 1
-        ? typeColors.merged
-        : typeColors[box.fields[0].fieldType] || typeColors.unknown;
+      const color =
+        box.fields.length > 1
+          ? typeColors.merged
+          : typeColors[box.fields[0].fieldType] || typeColors.unknown;
       const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
       rect.setAttribute("x", box.left);
       rect.setAttribute("y", box.top);
@@ -444,16 +445,22 @@ function _renderBboxOverlay() {
 
     svg.addEventListener("mouseenter", handleTooltip);
     svg.addEventListener("mousemove", handleTooltip);
-    svg.addEventListener("mouseleave", () => { tooltip.style.display = "none"; });
+    svg.addEventListener("mouseleave", () => {
+      tooltip.style.display = "none";
+    });
 
     function handleTooltip(e) {
       const rect = e.target.closest("rect");
-      if (!rect) { tooltip.style.display = "none"; return; }
+      if (!rect) {
+        tooltip.style.display = "none";
+        return;
+      }
+      // eslint-disable-next-line no-unsanitized/property -- field names from server, not user input
       tooltip.innerHTML = rect.dataset.field.replace(/\n/g, "<br>");
       tooltip.style.display = "block";
       const wrapRect = wrap.getBoundingClientRect();
-      tooltip.style.left = (e.clientX - wrapRect.left + 8) + "px";
-      tooltip.style.top = (e.clientY - wrapRect.top - 24) + "px";
+      tooltip.style.left = e.clientX - wrapRect.left + 8 + "px";
+      tooltip.style.top = e.clientY - wrapRect.top - 24 + "px";
     }
 
     wrap.appendChild(svg);
