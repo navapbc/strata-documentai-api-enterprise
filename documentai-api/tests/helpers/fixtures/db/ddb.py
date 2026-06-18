@@ -22,6 +22,7 @@ def ddb_doc_metadata_table_resource(aws_credentials):
                 {"AttributeName": "fileName", "AttributeType": "S"},
                 {"AttributeName": "jobId", "AttributeType": "S"},
                 {"AttributeName": "batchId", "AttributeType": "S"},
+                {"AttributeName": "bdaInvocationId", "AttributeType": "S"},
             ],
             GlobalSecondaryIndexes=[
                 {
@@ -32,6 +33,11 @@ def ddb_doc_metadata_table_resource(aws_credentials):
                 {
                     "IndexName": "batch-id-index",
                     "KeySchema": [{"AttributeName": "batchId", "KeyType": "HASH"}],
+                    "Projection": {"ProjectionType": "ALL"},
+                },
+                {
+                    "IndexName": "bda-inv-index",
+                    "KeySchema": [{"AttributeName": "bdaInvocationId", "KeyType": "HASH"}],
                     "Projection": {"ProjectionType": "ALL"},
                 },
             ],
@@ -121,6 +127,9 @@ def set_ddb_doc_metadata_table_env_vars(ddb_doc_metadata_table_resource, monkeyp
     )
     monkeypatch.setenv(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_JOB_ID_INDEX_NAME, "job-id-index")
     monkeypatch.setenv(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_BATCH_ID_INDEX_NAME, "batch-id-index")
+    monkeypatch.setenv(
+        EnvVars.DOCUMENTAI_DOCUMENT_METADATA_BDA_INVOCATION_ID_INDEX_NAME, "bda-inv-index"
+    )
     monkeypatch.setenv(EnvVars.DOCUMENTAI_INPUT_LOCATION, "s3://test/input")
     monkeypatch.setenv(EnvVars.DOCUMENTAI_OUTPUT_LOCATION, "s3://test/output")
     monkeypatch.setenv(EnvVars.BDA_PROJECT_ARN, "arn:aws:test")

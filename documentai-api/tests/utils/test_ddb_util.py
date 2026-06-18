@@ -538,3 +538,74 @@ def test_upsert_ddb_required_bools_always_written(ddb_doc_metadata_table):
     item = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"]
     assert item[DocumentMetadata.IS_PASSWORD_PROTECTED] is False
     assert item[DocumentMetadata.IS_DOCUMENT_BLURRY] is False
+
+
+# =============================================================================
+# get_ddb_key_from_bda_output / get_ddb_record_from_bda_output
+# =============================================================================
+
+BDA_INVOCATION_UUID = "de8464af-d53e-44dc-a9f7-ad5360530210"
+BDA_OUTPUT_BUCKET = "output-bucket"
+BDA_OUTPUT_KEY = (
+    f"processed/input/test-tenant/doc.pdf/{BDA_INVOCATION_UUID}/0/custom_output/job_metadata.json"
+)
+BDA_DDB_FILE_NAME = "input/test-tenant/doc.pdf"
+
+
+def test_get_ddb_key_from_bda_output_returns_file_name(ddb_doc_metadata_table):
+    """Realistic key with seeded record returns the correct file_name."""
+    ddb_doc_metadata_table.put_item(
+        Item={
+            DocumentMetadata.FILE_NAME: BDA_DDB_FILE_NAME,
+            DocumentMetadata.BDA_INVOCATION_ID: BDA_INVOCATION_UUID,
+        }
+    )
+
+    result = ddb_util.get_ddb_key_from_bda_output(BDA_OUTPUT_BUCKET, BDA_OUTPUT_KEY)
+    assert result == BDA_DDB_FILE_NAME
+
+
+def test_get_ddb_key_from_bda_output_returns_none_no_uuid(ddb_doc_metadata_table):
+    """Key with no UUID segment returns None."""
+    result = ddb_util.get_ddb_key_from_bda_output(
+        BDA_OUTPUT_BUCKET, "processed/no-uuid-here/job_metadata.json"
+    )
+    assert result is None
+
+
+def test_get_ddb_key_from_bda_output_returns_none_no_record(ddb_doc_metadata_table):
+    """Valid UUID in key but no DDB record with that invocation ID returns None."""
+    result = ddb_util.get_ddb_key_from_bda_output(BDA_OUTPUT_BUCKET, BDA_OUTPUT_KEY)
+    assert result is None
+
+
+def test_get_ddb_record_from_bda_output_returns_record(ddb_doc_metadata_table):
+    """Realistic key with seeded record returns the full DDB record."""
+    ddb_doc_metadata_table.put_item(
+        Item={
+            DocumentMetadata.FILE_NAME: BDA_DDB_FILE_NAME,
+            DocumentMetadata.BDA_INVOCATION_ID: BDA_INVOCATION_UUID,
+            DocumentMetadata.TENANT_ID: "test-tenant",
+            DocumentMetadata.PROCESS_STATUS: ProcessStatus.STARTED.value,
+        }
+    )
+
+    result = ddb_util.get_ddb_record_from_bda_output(BDA_OUTPUT_BUCKET, BDA_OUTPUT_KEY)
+    assert result is not None
+    assert result[DocumentMetadata.FILE_NAME] == BDA_DDB_FILE_NAME
+    assert result[DocumentMetadata.TENANT_ID] == "test-tenant"
+    assert result[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.STARTED.value
+
+
+def test_get_ddb_record_from_bda_output_returns_none_no_uuid(ddb_doc_metadata_table):
+    """Key with no UUID segment returns None."""
+    result = ddb_util.get_ddb_record_from_bda_output(
+        BDA_OUTPUT_BUCKET, "processed/no-uuid/job_metadata.json"
+    )
+    assert result is None
+
+
+def test_get_ddb_record_from_bda_output_returns_none_no_record(ddb_doc_metadata_table):
+    """Valid UUID in key but no DDB record with that invocation ID returns None."""
+    result = ddb_util.get_ddb_record_from_bda_output(BDA_OUTPUT_BUCKET, BDA_OUTPUT_KEY)
+    assert result is None

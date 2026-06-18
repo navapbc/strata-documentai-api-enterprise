@@ -710,7 +710,7 @@ module "workers" {
 
   s3_trigger = lookup({
     "document-processor"   = { source_bucket = module.input_bucket.bucket_name, path_prefix = "input/" }
-    "bda-result-processor" = { source_bucket = module.output_bucket.bucket_name, path_prefix = "processed/" }
+    "bda-result-processor" = { source_bucket = module.output_bucket.bucket_name, path_prefix = "processed/", path_suffix = "job_metadata.json" }
   }, each.key, null)
 
   sqs_trigger = lookup({

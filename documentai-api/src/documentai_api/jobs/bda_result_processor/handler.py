@@ -1,10 +1,10 @@
 """Lambda handler for BDA output processing."""
 
-import os
 from typing import Any
 
 from documentai_api.jobs.bda_result_processor.main import main
 from documentai_api.logging import get_logger, init
+from documentai_api.utils.ddb import get_ddb_key_from_bda_output
 from documentai_api.utils.document_lifecycle import classify_as_failed
 from documentai_api.utils.dto import ClassificationData
 from documentai_api.utils.lambda_error_handler import handle_lambda_errors
@@ -23,14 +23,17 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
             main(bucket_name=bucket, object_key=key)
     except Exception as e:
         logger.error(f"BDA result processing failed for {key}: {e}")
-        ddb_key = os.path.basename(key)
         try:
+            ddb_key = get_ddb_key_from_bda_output(bucket, key)
+            if not ddb_key:
+                logger.error(f"Unable to resolve DDB key from BDA output: s3://{bucket}/{key}")
+                raise
             classify_as_failed(
                 object_key=ddb_key,
                 error_message=str(e),
                 data=ClassificationData(additional_info="Unhandled error in BDA result processor"),
             )
         except Exception as ddb_err:
-            logger.error(f"Failed to mark {ddb_key} as failed in DDB: {ddb_err}")
+            logger.error(f"Failed to mark document as failed in DDB: {ddb_err}")
         raise
     return {"statusCode": 200}
