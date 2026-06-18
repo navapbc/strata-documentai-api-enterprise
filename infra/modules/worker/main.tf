@@ -92,6 +92,14 @@ resource "aws_sqs_queue" "dlq" {
 
 # --- EventBridge Rule (S3 → Lambda) ---
 
+locals {
+  s3_key_filter = var.s3_trigger == null ? [] : (
+    var.s3_trigger.path_suffix != null
+    ? [{ wildcard = "${var.s3_trigger.path_prefix}*${var.s3_trigger.path_suffix}" }]
+    : [{ prefix = var.s3_trigger.path_prefix }]
+  )
+}
+
 resource "aws_cloudwatch_event_rule" "s3_trigger" {
   count = var.s3_trigger != null ? 1 : 0
   name  = "${var.function_name}-s3-trigger"
@@ -101,7 +109,7 @@ resource "aws_cloudwatch_event_rule" "s3_trigger" {
     detail-type = ["Object Created"]
     detail = {
       bucket = { name = [var.s3_trigger.source_bucket] }
-      object = { key = [{ prefix = var.s3_trigger.path_prefix }] }
+      object = { key = local.s3_key_filter }
     }
   })
 }

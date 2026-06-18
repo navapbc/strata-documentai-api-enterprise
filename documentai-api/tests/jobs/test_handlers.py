@@ -17,11 +17,25 @@ EVENTBRIDGE_S3_EVENT = {
     }
 }
 
+BDA_INVOCATION_ID = "de8464af-d53e-44dc-a9f7-ad5360530210"
+BDA_EVENT = {
+    "detail": {
+        "bucket": {"name": "output-bucket"},
+        "object": {
+            "key": f"processed/input/test-tenant/doc.pdf/{BDA_INVOCATION_ID}/0/custom_output/job_metadata.json"
+        },
+    }
+}
+BDA_DDB_FILE_NAME = "input/test-tenant/doc.pdf"
+
 
 @pytest.fixture(autouse=True)
 def mock_env(monkeypatch):
     monkeypatch.setenv(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME, "metadata")
     monkeypatch.setenv(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_JOB_ID_INDEX_NAME, "job-id-index")
+    monkeypatch.setenv(
+        EnvVars.DOCUMENTAI_DOCUMENT_METADATA_BDA_INVOCATION_ID_INDEX_NAME, "bda-inv-index"
+    )
     monkeypatch.setenv(EnvVars.DOCUMENTAI_INPUT_LOCATION, "s3://test-bucket/input")
     monkeypatch.setenv(EnvVars.DOCUMENTAI_OUTPUT_LOCATION, "s3://test-bucket/output")
     monkeypatch.setenv(EnvVars.BDA_PROJECT_ARN, "arn:aws:test")
@@ -52,25 +66,23 @@ def test_document_processor_marks_failed_on_error():
 
 
 def test_bda_result_processor_marks_failed_on_error():
-    bda_event = {
-        "detail": {
-            "bucket": {"name": "test-bucket"},
-            "object": {"key": "processed/test-tenant/result.json"},
-        }
-    }
     with (
         patch(
             "documentai_api.jobs.bda_result_processor.handler.main",
             side_effect=RuntimeError("bda crash"),
         ),
+        patch(
+            "documentai_api.jobs.bda_result_processor.handler.get_ddb_key_from_bda_output",
+            return_value=BDA_DDB_FILE_NAME,
+        ),
         patch("documentai_api.jobs.bda_result_processor.handler.classify_as_failed") as mock_fail,
     ):
-        result = bda_handler(bda_event, None)
+        result = bda_handler(BDA_EVENT, None)
 
         assert result["statusCode"] == 500
         mock_fail.assert_called_once()
         call_kwargs = mock_fail.call_args.kwargs
-        assert call_kwargs["object_key"] == "result.json"
+        assert call_kwargs["object_key"] == BDA_DDB_FILE_NAME
         assert "bda crash" in call_kwargs["error_message"]
 
 
@@ -87,17 +99,11 @@ def test_document_processor_success_does_not_mark_failed():
 
 
 def test_bda_result_processor_success_does_not_mark_failed():
-    bda_event = {
-        "detail": {
-            "bucket": {"name": "test-bucket"},
-            "object": {"key": "processed/test-tenant/result.json"},
-        }
-    }
     with (
         patch("documentai_api.jobs.bda_result_processor.handler.main") as mock_main,
         patch("documentai_api.jobs.bda_result_processor.handler.classify_as_failed") as mock_fail,
     ):
-        result = bda_handler(bda_event, None)
+        result = bda_handler(BDA_EVENT, None)
 
         mock_main.assert_called_once()
         mock_fail.assert_not_called()
@@ -131,33 +137,53 @@ def test_document_processor_updates_ddb_to_failed(ddb_doc_metadata_table):
     assert "integration boom" in record.get(DocumentMetadata.ERROR_MESSAGE, "")
 
 
-def test_bda_result_processor_updates_ddb_to_failed(ddb_doc_metadata_table):
-    """Integration: BDA handler error → DDB record marked as FAILED."""
+@pytest.mark.parametrize(
+    "initial_status",
+    [
+        ProcessStatus.NOT_STARTED.value,
+        ProcessStatus.STARTED.value,
+    ],
+)
+def test_bda_result_processor_updates_ddb_to_failed(initial_status, ddb_doc_metadata_table):
+    """Integration: BDA handler error → DDB record marked as FAILED via invocation ID lookup."""
     ddb_doc_metadata_table.put_item(
         Item={
-            DocumentMetadata.FILE_NAME: "result.json",
-            DocumentMetadata.PROCESS_STATUS: ProcessStatus.NOT_STARTED.value,
+            DocumentMetadata.FILE_NAME: BDA_DDB_FILE_NAME,
+            DocumentMetadata.BDA_INVOCATION_ID: BDA_INVOCATION_ID,
+            DocumentMetadata.PROCESS_STATUS: initial_status,
         }
     )
-
-    bda_event = {
-        "detail": {
-            "bucket": {"name": "test-bucket"},
-            "object": {"key": "processed/test-tenant/result.json"},
-        }
-    }
 
     with patch(
         "documentai_api.jobs.bda_result_processor.handler.main",
         side_effect=RuntimeError("bda integration crash"),
     ):
-        result = bda_handler(bda_event, None)
+        result = bda_handler(BDA_EVENT, None)
 
     assert result["statusCode"] == 500
 
-    record = ddb_doc_metadata_table.get_item(Key={"fileName": "result.json"})["Item"]
+    record = ddb_doc_metadata_table.get_item(Key={"fileName": BDA_DDB_FILE_NAME})["Item"]
     assert record[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.FAILED.value
     assert "bda integration crash" in record.get(DocumentMetadata.ERROR_MESSAGE, "")
+
+
+def test_bda_result_processor_returns_500_when_ddb_key_unresolvable():
+    """If get_ddb_key_from_bda_output returns None, handler still returns 500."""
+    with (
+        patch(
+            "documentai_api.jobs.bda_result_processor.handler.main",
+            side_effect=RuntimeError("crash"),
+        ),
+        patch(
+            "documentai_api.jobs.bda_result_processor.handler.get_ddb_key_from_bda_output",
+            return_value=None,
+        ),
+        patch("documentai_api.jobs.bda_result_processor.handler.classify_as_failed") as mock_fail,
+    ):
+        result = bda_handler(BDA_EVENT, None)
+
+        assert result["statusCode"] == 500
+        mock_fail.assert_not_called()
 
 
 def test_handler_returns_500_with_original_error_when_classify_fails():

@@ -1,4 +1,6 @@
 import json
+import re
+import uuid as uuid_mod
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
@@ -6,6 +8,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from documentai_api.config.constants import (
+    UUID_PATTERN,
     ConfigDefaults,
     DeletionType,
     DocumentCategory,
@@ -527,3 +530,47 @@ def upsert_ddb(data: UpsertDdbData) -> None:
     except Exception as e:
         logger.error(f"Failed to upsert DDB record for {data.object_key}: {e}")
         raise
+
+
+def get_ddb_key_from_bda_output(output_bucket_name: str, output_object_key: str) -> str | None:
+    """Resolve the DDB file_name key from a BDA output S3 location.
+
+    Extracts the BDA invocation ID (last UUID in the path) and queries DDB
+    to find the associated document record's file_name (partition key).
+
+    Returns None if the invocation ID cannot be extracted or no record is found.
+    """
+    record = get_ddb_record_from_bda_output(output_bucket_name, output_object_key)
+    if not record:
+        return None
+    return record.get(DocumentMetadata.FILE_NAME)
+
+
+def get_ddb_record_from_bda_output(
+    output_bucket_name: str, output_object_key: str
+) -> dict[str, Any] | None:
+    """Resolve the full DDB record from a BDA output S3 location.
+
+    Extracts the BDA invocation ID (last UUID in the path) and queries DDB
+    to find the associated document record.
+
+    Returns None if the invocation ID cannot be extracted or no record is found.
+    """
+    bda_output_s3_uri = f"s3://{output_bucket_name}/{output_object_key}"
+    uuid_matches = re.findall(UUID_PATTERN, bda_output_s3_uri)
+    if not uuid_matches:
+        return None
+
+    bda_invocation_id = str(uuid_mod.UUID(uuid_matches[-1]))
+
+    table_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME)
+    index_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_BDA_INVOCATION_ID_INDEX_NAME)
+
+    items = ddb_service.query_by_key(
+        table_name, index_name, DocumentMetadata.BDA_INVOCATION_ID, bda_invocation_id
+    )
+
+    if not items:
+        return None
+
+    return items[0]

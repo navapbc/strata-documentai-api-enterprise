@@ -54,6 +54,7 @@ variable "s3_trigger" {
   type = object({
     source_bucket = string
     path_prefix   = string
+    path_suffix   = optional(string)
   })
   description = "S3 event trigger config routed through EventBridge. Null disables the S3 trigger."
   default     = null
