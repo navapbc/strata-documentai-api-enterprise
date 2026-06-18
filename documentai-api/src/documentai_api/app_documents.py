@@ -217,10 +217,13 @@ async def create_document_wait(
     external_system_id: ExternalSystemId = None,
     ai_consent_flag: AiConsentFlag = True,
     include_extracted_data: bool = False,
+    include_bounding_box: bool = False,
     timeout: Annotated[int, Query(ge=1)] = ConfigDefaults.MAX_WAIT_SECONDS
     - ConfigDefaults.ALB_TIMEOUT_BUFFER_SECONDS,
 ) -> JobStatusResponse:
     """Upload a document and poll until processing completes or timeout."""
+    if include_bounding_box:
+        include_extracted_data = True
     result = await _upload_document(
         response,
         file,
@@ -242,7 +245,11 @@ async def create_document_wait(
         timeout, ConfigDefaults.MAX_WAIT_SECONDS - ConfigDefaults.ALB_TIMEOUT_BUFFER_SECONDS
     )
     return await poll_for_completion(
-        result.job_id, safe_timeout, request=request, include_extracted_data=include_extracted_data
+        result.job_id,
+        safe_timeout,
+        request=request,
+        include_extracted_data=include_extracted_data,
+        include_bounding_box=include_bounding_box,
     )
 
 
@@ -255,9 +262,12 @@ async def get_document_results(
     response: Response,
     auth: AuthUser,
     include_extracted_data: bool = False,
+    include_bounding_box: bool = False,
     trace_id: TraceId = None,
 ) -> JobStatusResponse:
     """Get processing results by job ID."""
+    if include_bounding_box:
+        include_extracted_data = True
     if not trace_id:
         trace_id = str(uuid.uuid4())
     response.headers["X-Trace-ID"] = trace_id
@@ -291,6 +301,7 @@ async def get_document_results(
                 object_key=job_status.object_key,
                 job_status=job_status.process_status,
                 include_extracted_data=True,
+                include_bounding_box=include_bounding_box,
             )
             return JobStatusResponse(**result)
         else:

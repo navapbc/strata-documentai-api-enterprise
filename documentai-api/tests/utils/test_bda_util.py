@@ -49,7 +49,7 @@ def test_extract_field_values_from_bda_results():
             }
         ]
     }
-    metadata, field_values = bda_util.extract_field_values_from_bda_results(bda_result)
+    metadata, field_values, _ = bda_util.extract_field_values_from_bda_results(bda_result)
 
     assert len(metadata.confidence_scores) == 2
     assert len(metadata.empty_fields) == 0
@@ -60,3 +60,37 @@ def test_extract_field_values_from_bda_results():
     metadata_only = bda_util.extract_field_metadata_from_bda_results(bda_result)
     assert metadata_only.confidence_scores == metadata.confidence_scores
     assert metadata_only.empty_fields == metadata.empty_fields
+
+
+def test_extract_field_values_with_geometry(bda_result_with_geometry):
+    _, field_values, geometry = bda_util.extract_field_values_from_bda_results(
+        bda_result_with_geometry, include_geometry=True
+    )
+
+    assert field_values["tenant_name"] == "Jane Smith"
+    assert field_values["amount"] == "100.00"
+    assert "tenant_name" in geometry
+    assert geometry["tenant_name"]["type"] == "string"
+    assert geometry["tenant_name"]["geometry"][0]["boundingBox"]["top"] == 0.31
+    # amount has no geometry key in the source
+    assert "amount" not in geometry
+
+
+def test_extract_field_values_geometry_not_included_by_default(bda_result_with_geometry):
+    _, _, geometry = bda_util.extract_field_values_from_bda_results(bda_result_with_geometry)
+    # geometry dict is empty when include_geometry is False (default)
+    assert geometry == {}
+
+
+def test_extract_field_values_with_geometry_nested(bda_result_with_geometry):
+    """Nested fields carry geometry with the full dotted field name as key."""
+    _, field_values, geometry = bda_util.extract_field_values_from_bda_results(
+        bda_result_with_geometry, include_geometry=True
+    )
+
+    assert field_values["payment_details.base_rent"] == "1200"
+    assert "payment_details.base_rent" in geometry
+    assert geometry["payment_details.base_rent"]["type"] == "currency"
+    assert geometry["payment_details.base_rent"]["geometry"][0]["boundingBox"]["left"] == 0.3
+    # fees has no geometry
+    assert "payment_details.fees" not in geometry

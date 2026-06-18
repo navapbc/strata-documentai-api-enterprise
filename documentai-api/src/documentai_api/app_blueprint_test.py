@@ -200,7 +200,7 @@ async def get_blueprint_test_result(
             )
 
         matched_blueprint = get_matched_blueprint(bda_result_json)
-        metadata, field_values = extract_field_values_from_bda_results(bda_result_json)
+        metadata, field_values, _ = extract_field_values_from_bda_results(bda_result_json)
 
         # Build confidence map from the list of {field: score} dicts
         field_confidences: dict[str, float] = {}

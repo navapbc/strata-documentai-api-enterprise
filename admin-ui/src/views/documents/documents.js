@@ -4,6 +4,7 @@ import * as Toast from "../../utils/toast.js";
 import * as Session from "../../utils/session.js";
 import { h } from "../../utils/dom.js";
 import { tpl } from "../../utils/tpl.js";
+import { mergeOverlappingBoxes } from "../../utils/bbox.js";
 import html from "./documents.html";
 
 const tmpl = tpl(html);
@@ -34,6 +35,8 @@ let _root, _listEl, _noDocuments;
 let _searchInput, _searchBtn, _detailPanel, _previewPanel, _detailContent, _collapseBtn;
 let _activeJobId = null;
 let _detailCollapsed = true;
+let _fieldGeometry = null;
+let _resizeObserver = null;
 
 export function mount(root) {
   _root = root;
@@ -66,6 +69,10 @@ export function mount(root) {
 }
 
 export function unmount(root) {
+  if (_resizeObserver) {
+    _resizeObserver.disconnect();
+    _resizeObserver = null;
+  }
   root.replaceChildren();
 }
 
@@ -217,6 +224,8 @@ function renderList(documents) {
 
 async function loadDetail(jobId) {
   _detailContent.textContent = "Loading...";
+  _fieldGeometry = null;
+  _clearBboxOverlay();
   try {
     const detail = await DocumentsService.get(jobId);
     renderDetail(detail);
@@ -318,12 +327,17 @@ function bindExtractedDataToggle() {
     toggle.addEventListener("change", async () => {
       if (toggle.checked) {
         try {
-          const detail = await DocumentsService.get(_activeJobId, { includeExtractedData: true });
+          const detail = await DocumentsService.get(_activeJobId, {
+            includeExtractedData: true,
+            includeBoundingBox: true,
+          });
           if (detail.fields) {
+            _fieldGeometry = _extractGeometry(detail.fields);
             const table = _detailContent.querySelector(".extracted-data-table");
             // eslint-disable-next-line no-unsanitized/property -- rendered with esc()
             if (table) table.outerHTML = renderExtractedData(detail.fields, true);
             bindExtractedDataToggle();
+            _renderBboxOverlay();
           }
         } catch (e) {
           Toast.show(`Failed to load extracted data: ${e.message}`);
@@ -333,9 +347,137 @@ function bindExtractedDataToggle() {
         _detailContent.querySelectorAll(".extracted-value").forEach((td) => {
           td.textContent = "\u2022\u2022\u2022\u2022\u2022";
         });
+        _clearBboxOverlay();
+        _fieldGeometry = null;
       }
     });
   }
+}
+
+function _extractGeometry(fields) {
+  const geo = {};
+  for (const [key, val] of Object.entries(fields)) {
+    if (val && typeof val === "object" && Array.isArray(val.geometry) && val.geometry.length) {
+      geo[key] = { geometry: val.geometry, fieldType: val.fieldType || "unknown" };
+    }
+  }
+  return Object.keys(geo).length ? geo : null;
+}
+
+function _clearBboxOverlay() {
+  const existing = _previewPanel.querySelector(".bbox-overlay-wrap");
+  if (existing) existing.remove();
+}
+
+function _renderBboxOverlay() {
+  _clearBboxOverlay();
+  if (!_fieldGeometry) return;
+
+  const img = _previewPanel.querySelector(".document-preview-img");
+  if (!img) {
+    // PDF object or unsupported preview - can't overlay
+    return;
+  }
+
+  // Wait for image to have dimensions
+  const doRender = () => {
+    _clearBboxOverlay();
+    const wrap = document.createElement("div");
+    wrap.className = "bbox-overlay-wrap";
+    // Match the image's rendered size and position within the panel
+    wrap.style.width = img.offsetWidth + "px";
+    wrap.style.height = img.offsetHeight + "px";
+    wrap.style.top = img.offsetTop + "px";
+    wrap.style.left = img.offsetLeft + "px";
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.classList.add("bbox-overlay");
+    svg.setAttribute("viewBox", "0 0 1 1");
+    svg.setAttribute("preserveAspectRatio", "none");
+
+    const tooltip = document.createElement("div");
+    tooltip.className = "bbox-tooltip";
+    tooltip.style.display = "none";
+
+    const typeColors = {
+      string: "#44aaff",
+      number: "#ff8c00",
+      integer: "#ff8c00",
+      date: "#ffaa00",
+      boolean: "#aa44ff",
+      currency: "#44cc44",
+      array: "#ff44aa",
+      object: "#ff44aa",
+      unknown: "#ff4444",
+      merged: "#888888",
+    };
+
+    // Build flat list of boxes for the currently visible page
+    const visiblePage = 1; // TODO: update when multi-page navigation is added
+    const boxes = [];
+    for (const [fieldName, { geometry: geoList, fieldType }] of Object.entries(_fieldGeometry)) {
+      for (const geo of geoList) {
+        if (!geo.boundingBox) continue;
+        if (geo.page && geo.page !== visiblePage) continue;
+        const { left, top, width, height } = geo.boundingBox;
+        boxes.push({ left, top, width, height, fieldName, fieldType });
+      }
+    }
+
+    // Merge overlapping boxes (IoU > 0.5)
+    const merged = mergeOverlappingBoxes(boxes);
+
+    for (const box of merged) {
+      const color = box.fields.length > 1
+        ? typeColors.merged
+        : typeColors[box.fields[0].fieldType] || typeColors.unknown;
+      const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      rect.setAttribute("x", box.left);
+      rect.setAttribute("y", box.top);
+      rect.setAttribute("width", box.width);
+      rect.setAttribute("height", box.height);
+      rect.setAttribute("fill", "none");
+      rect.setAttribute("stroke", color);
+      rect.setAttribute("stroke-width", "0.003");
+      rect.dataset.field = box.fields.map((f) => `${f.fieldName} (${f.fieldType})`).join("\n");
+      svg.appendChild(rect);
+    }
+
+    svg.addEventListener("mouseenter", handleTooltip);
+    svg.addEventListener("mousemove", handleTooltip);
+    svg.addEventListener("mouseleave", () => { tooltip.style.display = "none"; });
+
+    function handleTooltip(e) {
+      const rect = e.target.closest("rect");
+      if (!rect) { tooltip.style.display = "none"; return; }
+      tooltip.innerHTML = rect.dataset.field.replace(/\n/g, "<br>");
+      tooltip.style.display = "block";
+      const wrapRect = wrap.getBoundingClientRect();
+      tooltip.style.left = (e.clientX - wrapRect.left + 8) + "px";
+      tooltip.style.top = (e.clientY - wrapRect.top - 24) + "px";
+    }
+
+    wrap.appendChild(svg);
+    wrap.appendChild(tooltip);
+    _previewPanel.appendChild(wrap);
+  };
+
+  if (img.complete && img.naturalWidth) {
+    doRender();
+  } else {
+    img.addEventListener("load", doRender, { once: true });
+  }
+
+  // Re-render on resize so overlay stays aligned
+  if (_resizeObserver) {
+    _resizeObserver.disconnect();
+  }
+  _resizeObserver = new ResizeObserver(() => {
+    const currentImg = _previewPanel.querySelector(".document-preview-img");
+    if (_fieldGeometry && currentImg) {
+      doRender();
+    }
+  });
+  _resizeObserver.observe(_previewPanel);
 }
 
 function renderSection(title, fields) {

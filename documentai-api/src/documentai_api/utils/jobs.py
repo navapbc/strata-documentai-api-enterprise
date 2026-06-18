@@ -42,7 +42,11 @@ def get_job_status(job_id: str) -> JobStatus:
 
 
 async def poll_for_completion(
-    job_id: str, timeout: int, request: Any = None, include_extracted_data: bool = False
+    job_id: str,
+    timeout: int,
+    request: Any = None,
+    include_extracted_data: bool = False,
+    include_bounding_box: bool = False,
 ) -> JobStatusResponse:
     """Poll for document processing completion with timeout."""
     elapsed_time = 0
@@ -71,6 +75,7 @@ async def poll_for_completion(
                         object_key=job_status.object_key,
                         job_status=job_status.process_status,
                         include_extracted_data=True,
+                        include_bounding_box=include_bounding_box,
                     )
                     return JobStatusResponse(**result)
                 return JobStatusResponse(**json.loads(job_status.v1_response_json))

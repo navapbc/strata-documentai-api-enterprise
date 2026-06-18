@@ -91,11 +91,13 @@ def _record_to_item(record: dict[str, Any]) -> DocumentListItem:
 
 
 def _record_to_detail(
-    record: dict[str, Any], include_extracted_data: bool = False
+    record: dict[str, Any],
+    include_extracted_data: bool = False,
+    include_bounding_box: bool = False,
 ) -> DocumentDetail:
     """Convert a DDB record to a full detail response."""
     fields = (
-        _extract_field_values(record, True)
+        _extract_field_values(record, True, include_bounding_box)
         if include_extracted_data
         else _parse_extracted_data(record)
     )
@@ -230,11 +232,14 @@ async def get_document(
     job_id: str,
     claims: AdminClaims,
     include_extracted_data: bool = False,
+    include_bounding_box: bool = False,
 ) -> DocumentDetail:
     """Get full document detail by job ID.
 
     Super-admins can view any document. Tenant-admins can only view their own.
     """
+    if include_bounding_box:
+        include_extracted_data = True
     scope = tenant_scope(claims)
 
     log_event(
@@ -254,7 +259,7 @@ async def get_document(
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
 
         # jobId is unique by design (UUID generated upstream); first match is safe.
-        detail = _record_to_detail(record, include_extracted_data)
+        detail = _record_to_detail(record, include_extracted_data, include_bounding_box)
 
         action = (
             AuditAction.DOCUMENT_VIEW_EXTRACTED_DATA

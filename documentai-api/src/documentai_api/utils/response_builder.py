@@ -23,7 +23,7 @@ logger = get_logger(__name__)
 # TODO: Refactor to improve testability - consider making public along with
 # restructuring to reduce mocking in tests
 def _extract_field_values(
-    ddb_record: dict[str, Any], include_extracted_data: bool
+    ddb_record: dict[str, Any], include_extracted_data: bool, include_bounding_box: bool = False
 ) -> dict[str, Any]:
     """Extract field data for API response."""
     if not ddb_record:
@@ -41,23 +41,32 @@ def _extract_field_values(
         if not bda_results:
             return {}
 
-        metadata, field_values = extract_field_values_from_bda_results(bda_results)
+        metadata, field_values, field_geometry = extract_field_values_from_bda_results(
+            bda_results, include_geometry=include_bounding_box
+        )
         field_confidence_map_list = metadata.field_confidence_map_list
     else:
         field_confidence_map_list = json.loads(
             ddb_record.get(DocumentMetadata.FIELD_CONFIDENCE_SCORES, "[]")
         )
         field_values = {}
+        field_geometry = {}
 
     # build response
     fields = {}
     for field_item in field_confidence_map_list:
         for field_name, confidence in field_item.items():
             camel_field = snake_to_camel(field_name)
-            fields[camel_field] = {
+            entry: dict[str, Any] = {
                 "confidence": round(confidence, 2),
                 "value": field_values.get(field_name) if include_extracted_data else "<redacted>",
             }
+            if include_bounding_box and field_name in field_geometry:
+                geo_data = field_geometry[field_name]
+                entry["geometry"] = geo_data["geometry"]
+                if geo_data.get("type"):
+                    entry["fieldType"] = geo_data["type"]
+            fields[camel_field] = entry
 
     return fields
 
@@ -101,6 +110,7 @@ def build_v1_api_response(
     data: ClassificationData | None = None,
     error_message: str | None = None,
     include_extracted_data: bool = False,
+    include_bounding_box: bool = False,
 ) -> dict[str, Any]:
     """Build API response dict for DDB storage.
 
@@ -143,7 +153,7 @@ def build_v1_api_response(
         if job_status == ProcessStatus.SUCCESS.value:
             base_response["message"] = "Document processed successfully"
 
-            fields = _extract_field_values(ddb_record, include_extracted_data)
+            fields = _extract_field_values(ddb_record, include_extracted_data, include_bounding_box)
 
             tenant_id = ddb_record.get("tenantId")
             document_type = ddb_record.get(DocumentMetadata.BDA_MATCHED_DOCUMENT_CLASS)
