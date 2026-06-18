@@ -1,18 +1,39 @@
 import * as DocumentsService from "../../services/documents.js";
-import * as TenantContext from "../../utils/tenant-context.js";
 import * as Helpers from "../../utils/helpers.js";
 import * as Toast from "../../utils/toast.js";
+import * as Session from "../../utils/session.js";
 import { h } from "../../utils/dom.js";
 import { tpl } from "../../utils/tpl.js";
 import html from "./documents.html";
 
 const tmpl = tpl(html);
 
+const STORAGE_KEY_ACTIVE = "docai_documents_active_job";
+const STORAGE_KEY_SEARCHES = "docai_documents_searches";
+
+// Saved searches are stored as lightweight row objects (jobId, fileName,
+// processStatus, createdAt) so the sidebar can be rebuilt without re-fetching
+// each document - which would otherwise log a view/search audit event per row.
+function _getSavedSearches() {
+  try {
+    const parsed = JSON.parse(sessionStorage.getItem(STORAGE_KEY_SEARCHES)) || [];
+    // Tolerate the legacy bare-string format from earlier sessions.
+    return parsed.filter((row) => row && typeof row === "object" && row.jobId);
+  } catch {
+    return [];
+  }
+}
+
+function _saveSearch(row) {
+  const searches = _getSavedSearches().filter((r) => r.jobId !== row.jobId);
+  searches.unshift(row);
+  sessionStorage.setItem(STORAGE_KEY_SEARCHES, JSON.stringify(searches.slice(0, 20)));
+}
+
 let _root, _listEl, _noDocuments;
 let _searchInput, _searchBtn, _detailPanel, _previewPanel, _detailContent, _collapseBtn;
 let _activeJobId = null;
 let _detailCollapsed = true;
-let _tenantUnsub = null;
 
 export function mount(root) {
   _root = root;
@@ -41,19 +62,10 @@ export function mount(root) {
     if (e.key === "Enter" && _searchInput.value.trim()) handleSearch();
   });
 
-  _tenantUnsub = TenantContext.onChange(() => {
-    clearDetail();
-    _activeJobId = null;
-    load();
-  });
   load();
 }
 
 export function unmount(root) {
-  if (_tenantUnsub) {
-    _tenantUnsub();
-    _tenantUnsub = null;
-  }
   root.replaceChildren();
 }
 
@@ -87,24 +99,29 @@ function toggleDetailPanel() {
 }
 
 export async function load() {
-  const tenantId = TenantContext.getTenantId();
-  if (!tenantId) {
-    _listEl.innerHTML = "";
-    _noDocuments.textContent = "Select a tenant to view documents.";
-    _noDocuments.classList.remove("hidden");
-    return;
+  _listEl.innerHTML = "";
+
+  // Rebuild the sidebar from cached row data - no document fetch, so no audit
+  // event is logged for merely repopulating the list. Detail/preview (and their
+  // audit events) only fire when a document is actually opened below.
+  for (const row of _getSavedSearches()) {
+    _listEl.appendChild(buildListItem(row));
   }
 
-  _noDocuments.classList.add("hidden");
-  _listEl.innerHTML = '<li class="doc-list-item doc-list-loading">Loading…</li>';
-
-  try {
-    const resp = await DocumentsService.list({ tenantId, limit: 50 });
-    renderList(resp.documents || []);
-  } catch (e) {
-    _listEl.innerHTML = "";
-    _noDocuments.textContent = e.message;
+  if (!_listEl.children.length) {
+    _noDocuments.textContent = "Search for a document by Job ID";
     _noDocuments.classList.remove("hidden");
+  } else {
+    _noDocuments.classList.add("hidden");
+  }
+
+  // Restore active document
+  const savedActive = sessionStorage.getItem(STORAGE_KEY_ACTIVE);
+  if (savedActive) {
+    _activeJobId = savedActive;
+    const el = _listEl.querySelector(`[data-job-id="${savedActive}"]`);
+    if (el) el.classList.add("active");
+    loadDetail(savedActive);
   }
 }
 
@@ -132,6 +149,13 @@ async function handleSearch() {
       _noDocuments.classList.add("hidden");
     }
     _activeJobId = detail.jobId;
+    sessionStorage.setItem(STORAGE_KEY_ACTIVE, detail.jobId);
+    _saveSearch({
+      jobId: detail.jobId,
+      fileName: detail.fileName,
+      processStatus: detail.processStatus,
+      createdAt: detail.createdAt,
+    });
     renderDetail(detail);
     expandDetailPanel();
     loadPreview(detail.jobId, detail.contentType);
@@ -170,6 +194,7 @@ function buildListItem(doc) {
   );
   li.addEventListener("click", () => {
     _activeJobId = doc.jobId;
+    sessionStorage.setItem(STORAGE_KEY_ACTIVE, doc.jobId);
     _listEl.querySelectorAll(".doc-list-item").forEach((el) => el.classList.remove("active"));
     li.classList.add("active");
     loadDetail(doc.jobId);
@@ -216,13 +241,20 @@ async function loadPreview(jobId, contentType) {
     const resp = await DocumentsService.getPreviewUrl(jobId);
     if (contentType === "application/pdf") {
       // eslint-disable-next-line no-unsanitized/property -- URL escaped with esc()
-      _previewPanel.innerHTML = `<object data="${Helpers.esc(resp.url)}" type="application/pdf" class="document-preview-frame"><p>Unable to display PDF. <a href="${Helpers.esc(resp.url)}" target="_blank" rel="noopener">Open in new tab</a></p></object>`;
+      _previewPanel.innerHTML = `<object data="${Helpers.esc(resp.url)}" type="application/pdf" class="document-preview-frame"><p>Unable to display PDF preview.</p></object>`;
     } else {
       // eslint-disable-next-line no-unsanitized/property -- URL escaped with esc()
-      _previewPanel.innerHTML = `<img src="${Helpers.esc(resp.url)}" class="document-preview-img" alt="Document preview" onerror="this.parentElement.innerHTML='<p class=empty-state>Preview unavailable</p>'" />`;
+      _previewPanel.innerHTML = `<img src="${Helpers.esc(resp.url)}" class="document-preview-img" alt="Document preview" draggable="false" oncontextmenu="return false" onerror="this.parentElement.innerHTML='<p class=empty-state>Preview unavailable</p>'" />`;
+      _previewPanel.classList.add("watermark-block");
     }
+    _previewPanel.style.setProperty(
+      "--watermark-bg",
+      `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='300' height='150'><text x='50%' y='50%' font-family='sans-serif' font-size='18' fill='black' text-anchor='middle' dominant-baseline='middle' transform='rotate(-30 150 75)'>${Session.getEmail() || ""}</text></svg>`)}")`,
+    );
+    _previewPanel.classList.add("watermarked");
   } catch {
     _previewPanel.innerHTML = '<p class="empty-state">Preview unavailable</p>';
+    _previewPanel.classList.remove("watermarked", "watermark-block");
   }
 }
 
