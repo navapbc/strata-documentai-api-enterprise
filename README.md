@@ -136,7 +136,7 @@ cp config.example.json config.json
 npm run dev
 ```
 
-The demo UI will run at `localhost:3001`. It provides document upload and extraction with bounding box overlay — no admin features.
+The demo UI will run at `localhost:3001`. It provides document upload and extraction with bounding box overlay - no admin features.
 
 ### Deploy
 

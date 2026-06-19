@@ -1679,12 +1679,14 @@ td {
 }
 
 .documents-preview-panel {
-  overflow-y: auto;
+  overflow: auto;
   border-right: 1px solid var(--color-border);
   padding: 0 1rem;
   display: flex;
   align-items: flex-start;
-  justify-content: center;
+  /* safe center: centers when the image fits, but aligns to the start edge when
+     zoomed past the panel width so the left/top edges stay scrollable. */
+  justify-content: safe center;
   position: relative;
 }
 
@@ -2104,6 +2106,43 @@ td {
   -webkit-user-drag: none;
 }
 
+.preview-zoom-controls {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 3;
+  display: flex;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  will-change: transform;
+}
+.documents-preview-panel.preview-zoomed,
+.documents-preview-panel.preview-zoomed .bbox-overlay rect {
+  cursor: grab;
+}
+.documents-preview-panel.preview-dragging,
+.documents-preview-panel.preview-dragging .bbox-overlay rect {
+  cursor: grabbing;
+}
+.preview-zoom-controls .zoom-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  color: #374151;
+}
+.preview-zoom-controls .zoom-btn:hover {
+  background: rgba(0, 0, 0, 0.07);
+}
+
 .bbox-overlay-wrap {
   position: absolute;
   pointer-events: none;
@@ -2125,9 +2164,12 @@ td {
   transition: stroke-width 0.1s;
 }
 
-.bbox-overlay rect:hover {
-  stroke-width: 0.005;
-  fill: rgba(255, 255, 255, 0.15);
+/* Highlight a box on direct hover, or when its field row is hovered. */
+.bbox-overlay rect:hover,
+.bbox-overlay rect.bbox-highlight {
+  fill: rgba(255, 214, 0, 0.35);
+  stroke: #f5c000;
+  stroke-width: 0.006;
 }
 
 .bbox-tooltip {
@@ -2141,4 +2183,20 @@ td {
   pointer-events: none;
   z-index: 10;
   max-width: 300px;
+}
+
+/* Field rows whose value is locatable in the preview: a left accent (at rest)
+   plus a pointer cursor signal "hover me to find the box". */
+.extracted-data-table tr.has-geometry {
+  cursor: pointer;
+}
+.extracted-data-table tr.has-geometry .detail-label {
+  box-shadow: inset 3px 0 0 var(--field-color, #f5c000);
+}
+.extracted-data-table tr.has-geometry:hover {
+  background: rgba(255, 214, 0, 0.08);
+}
+/* Reverse link: highlight the row when its box is hovered in the preview. */
+.extracted-data-table tr.row-highlight {
+  background: rgba(255, 214, 0, 0.22);
 }

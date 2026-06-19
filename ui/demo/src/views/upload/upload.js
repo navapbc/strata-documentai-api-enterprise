@@ -3,12 +3,14 @@ import * as Toast from "../../../../shared/utils/toast.js";
 import * as Documents from "../../services/documents.js";
 import { h } from "../../../../shared/utils/dom.js";
 import { tpl } from "../../../../shared/utils/tpl.js";
-import { formatDate } from "../../../../shared/utils/helpers.js";
+import { formatDate, esc } from "../../../../shared/utils/helpers.js";
 import {
   extractGeometry,
   renderBboxOverlay,
-  clearBboxOverlay,
-  renderFieldsTable,
+  renderExtractedData,
+  markFieldsWithGeometry,
+  renderPreview,
+  linkFieldHighlighting,
 } from "../../../../shared/components/document-viewer.js";
 import html from "./upload.html";
 
@@ -20,6 +22,7 @@ const POLL_TIMEOUT_MS = 120000;
 let _root = null;
 let _fileInput, _runBtn, _dropzone, _dropzoneIdle, _dropzoneSelected;
 let _fileName, _fileClear, _elapsed, _results, _previewPanel, _detailPanel, _historyList;
+let _selectedFile = null;
 let _abortController = null;
 let _startTime = null;
 let _elapsedTimer = null;
@@ -50,6 +53,9 @@ export function mount(root) {
   _previewPanel = root.querySelector("#demo-preview-panel");
   _detailPanel = root.querySelector("#demo-detail-panel");
   _historyList = root.querySelector("#demo-history-list");
+
+  // Hover a field row -> highlight its bounding box in the preview.
+  linkFieldHighlighting(_results, _previewPanel);
 
   _dropzone.addEventListener("click", (e) => {
     if (e.target === _fileClear || _fileClear.contains(e.target)) return;
@@ -86,9 +92,10 @@ export function unmount() {
 }
 
 function setFile(file) {
-  const dt = new DataTransfer();
-  dt.items.add(file);
-  _fileInput.files = dt.files;
+  // Track the selected file directly rather than round-tripping through
+  // _fileInput.files (which would require DataTransfer). The demo reads the
+  // file in JS and uploads via fetch, so the native input never needs it.
+  _selectedFile = file;
   _fileName.textContent = file.name;
   _dropzoneIdle.classList.add("hidden");
   _dropzoneSelected.classList.remove("hidden");
@@ -96,6 +103,7 @@ function setFile(file) {
 }
 
 function clearFile() {
+  _selectedFile = null;
   _fileInput.value = "";
   _dropzoneIdle.classList.remove("hidden");
   _dropzoneSelected.classList.add("hidden");
@@ -104,6 +112,9 @@ function clearFile() {
 
 async function loadHistory() {
   if (!_historyList) return;
+  _historyList.replaceChildren(
+    h("li", { className: "empty-state" }, "Loading documents…"),
+  );
   try {
     const resp = await Documents.list({ isDemo: true, limit: 20 });
     const docs = resp.documents || [];
@@ -117,18 +128,23 @@ async function loadHistory() {
         "li",
         { className: "demo-history-item" },
         h("span", { className: "demo-history-name" }, doc.fileName || doc.jobId?.slice(0, 8)),
-        h("span", { className: "demo-history-meta" }, `${doc.processStatus} · ${formatDate(doc.createdAt)}`),
+        h(
+          "span",
+          { className: "demo-history-meta" },
+          `${doc.processStatus} · ${formatDate(doc.createdAt)}`,
+        ),
       );
       li.addEventListener("click", () => loadDocument(doc.jobId));
       _historyList.appendChild(li);
     }
   } catch {
-    // silent - history is optional
+    // History is optional - clear the loading placeholder and stay quiet.
+    _historyList.replaceChildren();
   }
 }
 
 async function runExtraction() {
-  const file = _fileInput.files[0];
+  const file = _selectedFile;
   if (!file) return;
 
   _runBtn.disabled = true;
@@ -143,7 +159,7 @@ async function runExtraction() {
     const { jobId } = await Documents.upload(file);
     const result = await pollForCompletion(jobId);
     renderResults(result);
-    renderPreview(result);
+    loadPreview(result);
     loadHistory();
   } catch (e) {
     if (e.name !== "AbortError") {
@@ -153,21 +169,29 @@ async function runExtraction() {
     clearInterval(_elapsedTimer);
     _elapsedTimer = null;
     _elapsed.classList.add("hidden");
-    _runBtn.disabled = !_fileInput.files.length;
+    _runBtn.disabled = !_selectedFile;
     _abortController = null;
   }
 }
 
 async function pollForCompletion(jobId) {
   const deadline = Date.now() + POLL_TIMEOUT_MS;
-  const PENDING = new Set(["not_started", "started", "pending_image_optimization", "pending_upload"]);
+  const PENDING = new Set([
+    "not_started",
+    "started",
+    "pending_image_optimization",
+    "pending_upload",
+  ]);
 
   while (Date.now() < deadline) {
     if (_abortController?.signal.aborted) throw new DOMException("Aborted", "AbortError");
     await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
     if (_abortController?.signal.aborted) throw new DOMException("Aborted", "AbortError");
 
-    const doc = await Documents.get(jobId, { includeExtractedData: true, includeBoundingBox: true });
+    const doc = await Documents.get(jobId, {
+      includeExtractedData: true,
+      includeBoundingBox: true,
+    });
     if (!PENDING.has(doc.processStatus)) return doc;
   }
 
@@ -178,9 +202,12 @@ async function loadDocument(jobId) {
   _results.classList.add("hidden");
   _previewPanel.innerHTML = '<p class="empty-state">Loading…</p>';
   try {
-    const doc = await Documents.get(jobId, { includeExtractedData: true, includeBoundingBox: true });
+    const doc = await Documents.get(jobId, {
+      includeExtractedData: true,
+      includeBoundingBox: true,
+    });
     renderResults(doc);
-    renderPreview(doc);
+    loadPreview(doc);
   } catch (e) {
     Toast.show(`Failed to load document: ${e.message}`);
   }
@@ -196,25 +223,22 @@ let _resizeObserver = null;
 function renderResults(doc) {
   _results.classList.remove("hidden");
 
-  if (doc.matchedBlueprint) {
-    const header = h("p", { className: "demo-matched" }, `Blueprint: ${doc.matchedBlueprint}`);
-    _results.replaceChildren(header);
-    const tableContainer = h("div", null);
-    _results.appendChild(tableContainer);
-    renderFieldsTable(tableContainer, doc.fields);
-  } else {
-    renderFieldsTable(_results, doc.fields);
-  }
+  const tableHtml = renderExtractedData(doc.fields, { maskable: false });
+  const body = tableHtml || '<p class="empty-state">No fields extracted</p>';
+  const header = doc.matchedBlueprint
+    ? `<p class="demo-matched">Blueprint: ${esc(doc.matchedBlueprint)}</p>`
+    : "";
+  // eslint-disable-next-line no-unsanitized/property -- values escaped in renderExtractedData/esc
+  _results.innerHTML = header + body;
 }
 
-async function renderPreview(doc) {
+async function loadPreview(doc) {
   _previewPanel.replaceChildren();
   if (_resizeObserver) {
     _resizeObserver.disconnect();
     _resizeObserver = null;
   }
 
-  // Get preview image
   let previewUrl = null;
   try {
     const resp = await Documents.getPreviewUrl(doc.jobId);
@@ -228,12 +252,15 @@ async function renderPreview(doc) {
     return;
   }
 
-  const img = h("img", { className: "document-preview-img", src: previewUrl, alt: "Document" });
-  _previewPanel.appendChild(img);
+  renderPreview(_previewPanel, {
+    url: previewUrl,
+    contentType: doc.contentType,
+    watermarkEmail: Session.getEmail() || "",
+  });
 
-  const fields = doc.fields || {};
-  const geo = extractGeometry(fields);
+  const geo = extractGeometry(doc.fields || {});
   if (geo) {
     _resizeObserver = renderBboxOverlay(_previewPanel, geo);
   }
+  markFieldsWithGeometry(_results, geo);
 }

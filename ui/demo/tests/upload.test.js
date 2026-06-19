@@ -1,25 +1,25 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // Mock shared modules
-vi.mock("../../../../shared/utils/session.js", () => ({
+vi.mock("../../shared/utils/session.js", () => ({
   getEmail: () => "test@example.com",
   get: () => ({ idToken: "fake-token" }),
 }));
 
-vi.mock("../../../../shared/utils/toast.js", () => ({
+vi.mock("../../shared/utils/toast.js", () => ({
   show: vi.fn(),
 }));
 
-vi.mock("../../services/documents.js", () => ({
+vi.mock("../src/services/documents.js", () => ({
   upload: vi.fn(),
   list: vi.fn().mockResolvedValue({ documents: [] }),
   get: vi.fn(),
   getPreviewUrl: vi.fn(),
 }));
 
-import * as UploadView from "../../src/views/upload/upload.js";
-import * as Documents from "../../src/services/documents.js";
-import * as Toast from "../../../../shared/utils/toast.js";
+import * as UploadView from "../src/views/upload/upload.js";
+import * as Documents from "../src/services/documents.js";
+import * as Toast from "../../shared/utils/toast.js";
 
 describe("upload view", () => {
   let root;
@@ -53,9 +53,7 @@ describe("upload view", () => {
     UploadView.mount(root);
     const input = root.querySelector("#demo-file-input");
     const file = new File(["content"], "test.pdf", { type: "application/pdf" });
-    const dt = new DataTransfer();
-    dt.items.add(file);
-    input.files = dt.files;
+    Object.defineProperty(input, "files", { value: [file], configurable: true });
     input.dispatchEvent(new Event("change"));
 
     expect(root.querySelector("#demo-run-btn").disabled).toBe(false);
@@ -66,9 +64,7 @@ describe("upload view", () => {
     UploadView.mount(root);
     const input = root.querySelector("#demo-file-input");
     const file = new File(["content"], "test.pdf", { type: "application/pdf" });
-    const dt = new DataTransfer();
-    dt.items.add(file);
-    input.files = dt.files;
+    Object.defineProperty(input, "files", { value: [file], configurable: true });
     input.dispatchEvent(new Event("change"));
 
     root.querySelector("#demo-file-clear").click();
@@ -88,9 +84,7 @@ describe("upload view", () => {
     // Select file
     const input = root.querySelector("#demo-file-input");
     const file = new File(["content"], "test.pdf", { type: "application/pdf" });
-    const dt = new DataTransfer();
-    dt.items.add(file);
-    input.files = dt.files;
+    Object.defineProperty(input, "files", { value: [file], configurable: true });
     input.dispatchEvent(new Event("change"));
 
     // Click extract
@@ -109,9 +103,7 @@ describe("upload view", () => {
 
     const input = root.querySelector("#demo-file-input");
     const file = new File(["content"], "test.pdf", { type: "application/pdf" });
-    const dt = new DataTransfer();
-    dt.items.add(file);
-    input.files = dt.files;
+    Object.defineProperty(input, "files", { value: [file], configurable: true });
     input.dispatchEvent(new Event("change"));
 
     root.querySelector("#demo-run-btn").click();
