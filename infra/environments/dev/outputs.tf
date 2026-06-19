@@ -70,3 +70,15 @@ output "admin_ui_url" {
   value = module.admin_ui.url
 }
 
+output "demo_ui_bucket" {
+  value = module.demo_ui.bucket_name
+}
+
+output "demo_ui_distribution_id" {
+  value = module.demo_ui.distribution_id
+}
+
+output "demo_ui_url" {
+  value = module.demo_ui.url
+}
+

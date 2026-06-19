@@ -14,11 +14,22 @@ updates:
 
   # Admin UI (npm)
   - package-ecosystem: "npm"
-    directory: "/admin-ui"
+    directory: "/ui/admin"
     schedule:
       interval: "weekly"
     groups:
       npm-dependencies:
+        patterns:
+          - "*"
+    open-pull-requests-limit: 5
+
+  # Demo UI (npm)
+  - package-ecosystem: "npm"
+    directory: "/ui/demo"
+    schedule:
+      interval: "weekly"
+    groups:
+      npm-demo-dependencies:
         patterns:
           - "*"
     open-pull-requests-limit: 5

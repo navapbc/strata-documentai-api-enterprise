@@ -34,6 +34,7 @@ class EnvVars(StrEnum):
         "DOCUMENTAI_DOCUMENT_METADATA_TENANT_INDEX_NAME"
     )
     DOCUMENTAI_INPUT_LOCATION = "DOCUMENTAI_INPUT_LOCATION"
+    DOCUMENTAI_DEMO_INPUT_LOCATION = "DOCUMENTAI_DEMO_INPUT_LOCATION"
     DOCUMENTAI_OUTPUT_LOCATION = "DOCUMENTAI_OUTPUT_LOCATION"
     DOCUMENTAI_PREPROCESSING_LOCATION = "DOCUMENTAI_PREPROCESSING_LOCATION"
 
@@ -119,6 +120,7 @@ class AWSEnvConfig(PydanticBaseEnvConfig):
     documentai_document_metadata_batch_id_index_name: str | None = None
     documentai_document_batches_table_name: str | None = None
     documentai_input_location: str | None = None
+    documentai_demo_input_location: str | None = None
     documentai_output_location: str | None = None
 
     # Auth / API keys

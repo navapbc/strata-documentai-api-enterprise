@@ -22,6 +22,7 @@ class DocumentMetadata:
     UPLOAD_METHOD = "uploadMethod"
     TENANT_ID = "tenantId"
     API_KEY_NAME = "apiKeyName"
+    IS_DEMO = "isDemo"
     V1_API_RESPONSE_JSON = "v1ApiResponseJson"
     CREATED_AT = "createdAt"
     UPDATED_AT = "updatedAt"
@@ -82,3 +83,4 @@ class DocumentMetadata:
         "matchedBlueprintFieldNotEmptyAvgConfidence"
     )
     BELOW_EXTRACTION_CONFIDENCE_FLOOR = "belowExtractionConfidenceFloor"
+

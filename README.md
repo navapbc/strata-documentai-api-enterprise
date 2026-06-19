@@ -44,7 +44,10 @@ For Strata template applications, see [`navapbc/strata`](https://github.com/nava
 ### Repo structure
 ```
 ├── documentai-api/     # Python API using FastAPI on Lambda
-├── admin-ui/           # Admin console (vanilla JS SPA)
+├── ui/
+│   ├── shared/         # Shared services, utils, and styles
+│   ├── admin/          # Admin console (vanilla JS SPA)
+│   └── demo/           # Demo UI (upload + extraction with bbox overlay)
 ├── infra/              # Terraform infrastructure
 ├── docs/               # Architecture diagrams and specs
 ├── .github/            # CI/CD workflows
@@ -116,13 +119,24 @@ make start-local
 #### Admin UI
 
 ```bash
-cd admin-ui
+cd ui/admin
 npm install
 cp config.example.json config.json
 npm run dev
 ```
 
-The admin UI will run at `localhost:3000`. If you have not deployed the infrastructure yet, update `admin-ui/config.json` with the API endpoint and Cognito values you want to use.
+The admin UI will run at `localhost:3000`. If you have not deployed the infrastructure yet, update `ui/admin/config.json` with the API endpoint and Cognito values you want to use.
+
+#### Demo UI
+
+```bash
+cd ui/demo
+npm install
+cp config.example.json config.json
+npm run dev
+```
+
+The demo UI will run at `localhost:3001`. It provides document upload and extraction with bounding box overlay — no admin features.
 
 ### Deploy
 
@@ -177,15 +191,25 @@ make lint         # Ruff + mypy
 > [test-documents/README.md](documentai-api/tests/helpers/fixtures/test-documents/README.md)
 > for details on the test data and how to report a concern.
 
-### admin-ui/
+### ui/admin/
 
 Single-page admin console for managing the platform. Features API key lifecycle management, tenant and user management with role-based access, extraction rule editor, document viewer, and Cognito auth with TOTP MFA.
 
 ```bash
-cd admin-ui
+cd ui/admin
 npm run dev       # Dev server at localhost:3000
 npm test          # Unit tests (Vitest)
 npm run test:e2e  # e2e tests (Playwright)
+```
+
+### ui/demo/
+
+Minimal demo app for uploading documents and viewing extraction results with bounding box overlays. Same Cognito auth, auto-scoped to the user's tenant.
+
+```bash
+cd ui/demo
+npm run dev       # Dev server at localhost:3001
+npm test          # Unit tests (Vitest)
 ```
 
 ### infra/

@@ -47,6 +47,12 @@ locals {
   # SSM
   ssm_prefix = "/${var.project_name}/${var.environment}"
 
+  # S3 path prefixes - single source of truth for env vars + lifecycle rules
+  input_prefix             = "input"
+  demo_input_prefix        = "${local.input_prefix}/demo"
+  output_prefix            = "processed"
+  demo_output_prefix       = "${local.output_prefix}/${local.demo_input_prefix}"
+
   # App defaults
   max_bda_invoke_retry_attempts = "3"
   api_auth_enabled              = "true"
@@ -80,8 +86,13 @@ module "input_bucket" {
   lifecycle_rules = [
     {
       id              = "expire-processed"
-      prefix          = "input/"
+      prefix          = "${local.input_prefix}/"
       expiration_days = 7
+    },
+    {
+      id              = "expire-demo-uploads"
+      prefix          = "${local.demo_input_prefix}/"
+      expiration_days = 3
     },
     {
       id              = "expire-preprocessing-originals"
@@ -104,6 +115,11 @@ module "output_bucket" {
   lifecycle_rules = [{
     id              = "expire-results"
     expiration_days = 30
+  },
+  {
+    id              = "expire-demo-results"
+    prefix          = "${local.demo_output_prefix}/"
+    expiration_days = 3
   }]
 }
 
@@ -283,6 +299,11 @@ module "admin_ui" {
   name   = "${local.service_name}-admin-ui"
 }
 
+module "demo_ui" {
+  source = "../../modules/static-site"
+  name   = "${local.service_name}-demo-ui"
+}
+
 module "identity_provider" {
   source = "../../modules/identity-provider"
   name   = "${local.service_name}-console"
@@ -395,7 +416,8 @@ locals {
     DOCUMENT_CATEGORIES_TABLE_NAME                            = module.document_categories.table_name
     DOCUMENTAI_BATCH_TABLE_NAME                               = module.document_batches.table_name
     DOCUMENTAI_DOCUMENT_BUILD_TABLE_NAME                      = module.document_builds.table_name
-    DOCUMENTAI_INPUT_LOCATION                                 = "s3://${module.input_bucket.bucket_name}/input"
+    DOCUMENTAI_INPUT_LOCATION                                 = "s3://${module.input_bucket.bucket_name}/${local.input_prefix}"
+    DOCUMENTAI_DEMO_INPUT_LOCATION                             = "s3://${module.input_bucket.bucket_name}/${local.demo_input_prefix}"
     DOCUMENTAI_PREPROCESSING_LOCATION                         = "s3://${module.input_bucket.bucket_name}/preprocessing"
     DOCUMENTAI_OUTPUT_LOCATION                                = "s3://${module.output_bucket.bucket_name}/processed"
     DDB_METRICS_INPUT_QUEUE_URL                               = module.metrics_queue.queue_url

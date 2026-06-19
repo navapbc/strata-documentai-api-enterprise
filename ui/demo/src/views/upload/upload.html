@@ -1,0 +1,35 @@
+<header class="demo-header">
+  <div class="demo-header-inner">
+    <strong>DocumentAI Demo</strong>
+    <span class="demo-user" id="demo-user-email"></span>
+    <button type="button" id="demo-logout-btn" class="btn-sm btn-secondary">Sign out</button>
+  </div>
+</header>
+<div class="demo-three-panel">
+  <div class="demo-list-panel">
+    <div class="demo-dropzone" id="demo-dropzone">
+      <input type="file" id="demo-file-input" accept=".pdf,.png,.jpg,.jpeg,.tiff,.tif" />
+      <div id="demo-dropzone-idle">
+        <div class="demo-dropzone-icon">⬆</div>
+        <p class="demo-dropzone-hint">Drop a document here or <span class="demo-dropzone-link">browse</span></p>
+        <p class="demo-dropzone-formats">PDF, PNG, JPG, TIFF</p>
+      </div>
+      <div id="demo-dropzone-selected" class="hidden">
+        <p class="demo-dropzone-filename" id="demo-file-name"></p>
+        <button type="button" class="demo-dropzone-clear" id="demo-file-clear">✕ Clear</button>
+      </div>
+    </div>
+    <button type="button" id="demo-run-btn" class="btn-primary btn-block" disabled>Extract</button>
+    <p id="demo-elapsed" class="demo-elapsed hidden"></p>
+    <p class="demo-history-label">Recent</p>
+    <ul id="demo-history-list" class="demo-history-list">
+      <li class="empty-state">No documents yet</li>
+    </ul>
+  </div>
+  <div class="demo-preview-panel" id="demo-preview-panel">
+    <p class="empty-state">Upload a document to see results</p>
+  </div>
+  <div class="demo-detail-panel" id="demo-detail-panel">
+    <div id="demo-results" class="demo-results hidden"></div>
+  </div>
+</div>

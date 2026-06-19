@@ -924,3 +924,57 @@ def test_documents_wait_bounding_box_implies_extracted_data(api_client, blank_pd
     assert response.status_code == 200
     assert mock_poll.call_args.kwargs["include_extracted_data"] is True
     assert mock_poll.call_args.kwargs["include_bounding_box"] is True
+
+
+# =============================================================================
+# Demo upload flag
+# =============================================================================
+
+
+@pytest.mark.parametrize(
+    "use_demo_endpoint,expected_is_demo",
+    [(True, True), (False, False)],
+    ids=["demo=true", "standard"],
+)
+def test_create_document_demo_flag(api_client, blank_pdf_bytes, mocker, use_demo_endpoint, expected_is_demo):
+    """Demo endpoint sets is_demo=True, standard endpoint does not."""
+    mock_insert = mocker.patch("documentai_api.app_documents.insert_minimal_ddb_record")
+    mocker.patch("documentai_api.app_documents.dispatch_upload", new_callable=AsyncMock)
+
+    files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
+    endpoint = "/v1/demo/documents" if use_demo_endpoint else "/v1/documents"
+    response = api_client.post(endpoint, files=files)
+
+    assert response.status_code == 202
+    record = mock_insert.call_args[0][0]
+    assert record.is_demo is expected_is_demo
+
+
+@pytest.mark.parametrize(
+    "use_demo_endpoint,expect_demo_path",
+    [(True, True), (False, False)],
+    ids=["demo-upload", "standard-upload"],
+)
+def test_create_document_demo_routes_to_correct_location(
+    api_client, blank_pdf_bytes, mocker, use_demo_endpoint, expect_demo_path
+):
+    """Upload routes to demo or standard input location based on endpoint."""
+    mock_config = mocker.patch("documentai_api.app_documents.get_aws_config")
+    mock_config.return_value.documentai_input_location = "s3://bucket/input"
+    mock_config.return_value.documentai_demo_input_location = "s3://bucket/input/demo"
+
+    mock_dispatch = mocker.patch(
+        "documentai_api.app_documents.dispatch_upload", new_callable=AsyncMock
+    )
+
+    files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
+    endpoint = "/v1/demo/documents" if use_demo_endpoint else "/v1/documents"
+    response = api_client.post(endpoint, files=files)
+
+    assert response.status_code == 202
+    dest_path = mock_dispatch.call_args.kwargs["dest_path"]
+    if expect_demo_path:
+        assert dest_path.startswith("s3://bucket/input/demo/")
+    else:
+        assert dest_path.startswith("s3://bucket/input/")
+        assert "/input/demo/" not in dest_path

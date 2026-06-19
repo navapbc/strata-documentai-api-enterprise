@@ -281,6 +281,8 @@ def insert_minimal_ddb_record(record: DocumentRecord) -> None:
             upload_method=record.upload_method,
             tenant_id=record.tenant_id,
             api_key_name=record.api_key_name,
+            is_demo=record.is_demo,
+            ttl_days=record.ttl_days,
         )
     )
 

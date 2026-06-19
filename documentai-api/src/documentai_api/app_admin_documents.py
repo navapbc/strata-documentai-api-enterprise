@@ -3,7 +3,7 @@
 import json
 from typing import Any
 
-from boto3.dynamodb.conditions import Attr, Key
+from boto3.dynamodb.conditions import Attr
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from documentai_api.annotations import AdminClaims, PageLimit, verify_jwt_with_role
@@ -20,7 +20,7 @@ from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils.audit import log_event
-from documentai_api.utils.base_readonly_table import ReadOnlyTable
+from documentai_api.utils.document_metadata_table import DocumentMetadataTable
 from documentai_api.utils.jwt_auth import tenant_scope
 from documentai_api.utils.pagination import decode_cursor, encode_cursor
 from documentai_api.utils.response_builder import _extract_field_values
@@ -34,45 +34,7 @@ router = APIRouter(
     dependencies=[Depends(verify_jwt_with_role)],
 )
 
-
-class _DocumentMetadataTable(ReadOnlyTable):
-    table_name_env = "documentai_document_metadata_table_name"
-    pk_field = "fileName"
-
-    def _get_index(self, attr: str) -> str:
-        name: str | None = getattr(get_aws_config(), attr, None)
-        if not name:
-            raise ValueError(f"{attr} not configured")
-        return name
-
-    def query_by_tenant(
-        self,
-        tenant_id: str,
-        *,
-        filter_expression: Any | None = None,
-        limit: int = 50,
-        scan_forward: bool = False,
-        start_key: dict[str, Any] | None = None,
-    ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
-        return self.query(
-            key_condition=Key(DocumentMetadata.TENANT_ID).eq(tenant_id),
-            filter_expression=filter_expression,
-            index_name=self._get_index("documentai_document_metadata_tenant_index_name"),
-            limit=limit,
-            scan_forward=scan_forward,
-            start_key=start_key,
-        )
-
-    def query_by_job_id(self, job_id: str) -> dict[str, Any] | None:
-        items, _ = self.query(
-            key_condition=Key(DocumentMetadata.JOB_ID).eq(job_id),
-            index_name=self._get_index("documentai_document_metadata_job_id_index_name"),
-            limit=1,
-        )
-        return items[0] if items else None
-
-
-_table = _DocumentMetadataTable()
+_table = DocumentMetadataTable()
 
 
 def _record_to_item(record: dict[str, Any]) -> DocumentListItem:
@@ -162,6 +124,7 @@ async def list_documents(
     claims: AdminClaims,
     tenant_id: str | None = None,
     status_filter: str | None = None,
+    is_demo: bool | None = None,
     limit: PageLimit = 50,
     cursor: str | None = None,
 ) -> DocumentListResponse:
@@ -190,9 +153,17 @@ async def list_documents(
 
     try:
         exclusive_start_key = decode_cursor(cursor) if cursor else None
-        filter_expr = (
-            Attr(DocumentMetadata.PROCESS_STATUS).eq(status_filter) if status_filter else None
-        )
+        filter_parts = []
+        if status_filter:
+            filter_parts.append(Attr(DocumentMetadata.PROCESS_STATUS).eq(status_filter))
+        if is_demo is not None:
+            filter_parts.append(Attr(DocumentMetadata.IS_DEMO).eq(is_demo))
+
+        filter_expr = None
+        if filter_parts:
+            filter_expr = filter_parts[0]
+            for part in filter_parts[1:]:
+                filter_expr = filter_expr & part
 
         documents_raw, last_key = _table.query_by_tenant(
             tenant_id,
