@@ -143,7 +143,6 @@ describe("document-viewer", () => {
   });
 });
 
-
 describe("markFieldsWithGeometry", () => {
   let container;
 

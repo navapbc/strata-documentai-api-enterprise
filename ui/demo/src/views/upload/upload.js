@@ -112,9 +112,7 @@ function clearFile() {
 
 async function loadHistory() {
   if (!_historyList) return;
-  _historyList.replaceChildren(
-    h("li", { className: "empty-state" }, "Loading documents…"),
-  );
+  _historyList.replaceChildren(h("li", { className: "empty-state" }, "Loading documents…"));
   try {
     const resp = await Documents.list({ isDemo: true, limit: 20 });
     const docs = resp.documents || [];

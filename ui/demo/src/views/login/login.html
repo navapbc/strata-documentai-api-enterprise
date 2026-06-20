@@ -25,9 +25,7 @@
       <p class="form-footer-link">
         <a href="#" id="show-forgot-password">Forgot password?</a>
       </p>
-      <p class="form-footer-link">
-        New here? <a href="#" id="show-sign-up">Create account</a>.
-      </p>
+      <p class="form-footer-link">New here? <a href="#" id="show-sign-up">Create account</a>.</p>
     </div>
 
     <div id="forgot-password-card" class="login-form-container hidden">
@@ -48,15 +46,28 @@
       <h1>Enter new password</h1>
       <p class="form-intro">Check your email for the verification code.</p>
       <form id="reset-password-form" novalidate>
-        <label for="reset-code">Verification code <abbr title="required" class="req">*</abbr></label>
-        <input type="text" id="reset-code" placeholder="123456" required pattern="[0-9]{6}" inputmode="numeric" />
+        <label for="reset-code"
+          >Verification code <abbr title="required" class="req">*</abbr></label
+        >
+        <input
+          type="text"
+          id="reset-code"
+          placeholder="123456"
+          required
+          pattern="[0-9]{6}"
+          inputmode="numeric"
+        />
         <label for="reset-new-password">
           New password <abbr title="required" class="req">*</abbr>
           <span class="field-hint-inline">Must be at least 12 characters.</span>
         </label>
         <input type="password" id="reset-new-password" required minlength="12" />
-        <button type="button" class="show-password" data-target="reset-new-password">Show password</button>
-        <label for="reset-confirm-password">Re-type password <abbr title="required" class="req">*</abbr></label>
+        <button type="button" class="show-password" data-target="reset-new-password">
+          Show password
+        </button>
+        <label for="reset-confirm-password"
+          >Re-type password <abbr title="required" class="req">*</abbr></label
+        >
         <input type="password" id="reset-confirm-password" required minlength="12" />
         <button type="submit" class="btn-primary btn-block">Reset password</button>
         <p id="reset-password-error" class="error hidden"></p>
@@ -77,8 +88,12 @@
           <span class="field-hint-inline">Must be at least 12 characters.</span>
         </label>
         <input type="password" id="sign-up-password" required minlength="12" />
-        <button type="button" class="show-password" data-target="sign-up-password">Show password</button>
-        <label for="sign-up-password-confirm">Re-type password <abbr title="required" class="req">*</abbr></label>
+        <button type="button" class="show-password" data-target="sign-up-password">
+          Show password
+        </button>
+        <label for="sign-up-password-confirm"
+          >Re-type password <abbr title="required" class="req">*</abbr></label
+        >
         <input type="password" id="sign-up-password-confirm" required minlength="12" />
         <button type="submit" class="btn-primary btn-block">Create account</button>
         <p id="sign-up-error" class="error hidden"></p>
@@ -94,8 +109,17 @@
         We sent a verification code to <strong id="confirm-email-display"></strong>
       </p>
       <form id="confirm-form" novalidate>
-        <label for="confirm-code">Verification code <abbr title="required" class="req">*</abbr></label>
-        <input type="text" id="confirm-code" placeholder="123456" required pattern="[0-9]{6}" inputmode="numeric" />
+        <label for="confirm-code"
+          >Verification code <abbr title="required" class="req">*</abbr></label
+        >
+        <input
+          type="text"
+          id="confirm-code"
+          placeholder="123456"
+          required
+          pattern="[0-9]{6}"
+          inputmode="numeric"
+        />
         <button type="submit" class="btn-primary btn-block">Confirm</button>
         <p id="confirm-error" class="error hidden"></p>
       </form>
@@ -105,8 +129,18 @@
       <h1>Two-factor authentication</h1>
       <p class="form-intro">Enter the 6-digit code from your authenticator app.</p>
       <form id="mfa-form" novalidate>
-        <label for="mfa-code">Authentication code <abbr title="required" class="req">*</abbr></label>
-        <input type="text" id="mfa-code" placeholder="123456" required pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code" />
+        <label for="mfa-code"
+          >Authentication code <abbr title="required" class="req">*</abbr></label
+        >
+        <input
+          type="text"
+          id="mfa-code"
+          placeholder="123456"
+          required
+          pattern="[0-9]{6}"
+          inputmode="numeric"
+          autocomplete="one-time-code"
+        />
         <button type="submit" class="btn-primary btn-block">Verify</button>
         <p id="mfa-error" class="error hidden"></p>
       </form>
@@ -123,8 +157,18 @@
         <code id="mfa-secret-code"></code>
       </div>
       <form id="mfa-setup-form" novalidate>
-        <label for="mfa-setup-code">Verification code <abbr title="required" class="req">*</abbr></label>
-        <input type="text" id="mfa-setup-code" placeholder="123456" required pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code" />
+        <label for="mfa-setup-code"
+          >Verification code <abbr title="required" class="req">*</abbr></label
+        >
+        <input
+          type="text"
+          id="mfa-setup-code"
+          placeholder="123456"
+          required
+          pattern="[0-9]{6}"
+          inputmode="numeric"
+          autocomplete="one-time-code"
+        />
         <button type="submit" class="btn-primary btn-block">Verify &amp; activate</button>
         <button type="button" id="mfa-setup-cancel" class="btn-secondary btn-block">Cancel</button>
         <p id="mfa-setup-error" class="error hidden"></p>
@@ -136,7 +180,8 @@
     <div class="login-marketing">
       <h2 class="marketing-tagline">Test document extraction without the setup.</h2>
       <p class="marketing-intro">
-        Upload a document and see extracted fields with bounding box overlays - no API keys or configuration required.
+        Upload a document and see extracted fields with bounding box overlays - no API keys or
+        configuration required.
       </p>
     </div>
   </div>
