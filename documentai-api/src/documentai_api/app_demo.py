@@ -1,10 +1,4 @@
-"""Demo router - JWT-authenticated document upload and read.
-
-Write: forces is_demo=True, tenant_id=demo-{sub}
-Read: scoped to demo-{sub} tenant, filters is_demo=True
-
-Reuses core logic from app_documents (upload) and app_admin_documents (read).
-"""
+"""Demo router - JWT-authenticated document upload and read."""
 
 from typing import Annotated, Any
 
@@ -19,6 +13,7 @@ from documentai_api.app_admin_documents import (
 from documentai_api.app_documents import upload_document
 from documentai_api.config.constants import ConfigDefaults, FileValidation
 from documentai_api.config.env import get_aws_config
+from documentai_api.logging import get_logger
 from documentai_api.models.admin_document import (
     DocumentDetail,
     DocumentListResponse,
@@ -34,6 +29,7 @@ from documentai_api.utils.s3 import get_bucket_and_key
 
 router = APIRouter(prefix="/v1/demo")
 
+logger = get_logger(__name__)
 _bearer_scheme = HTTPBearer(auto_error=False)
 _table = DocumentMetadataTable()
 
@@ -72,7 +68,9 @@ def _get_demo_input_location() -> str:
     return location
 
 
-# --- Upload ---
+# =============================================================================
+# Upload
+# =============================================================================
 
 
 @router.post("/documents", status_code=status.HTTP_202_ACCEPTED)
@@ -90,7 +88,9 @@ async def create_demo_document(
     )
 
 
-# --- List ---
+# =============================================================================
+# List
+# =============================================================================
 
 
 @router.get("/documents")
@@ -100,6 +100,7 @@ async def list_demo_documents(
     cursor: str | None = None,
 ) -> DocumentListResponse:
     """List demo documents for the authenticated user."""
+    logger.info("Demo list", extra={"tenant_id": auth.tenant_id})
     start_key = decode_cursor(cursor) if cursor else None
 
     documents_raw, last_key = _table.query_by_tenant(
@@ -117,7 +118,9 @@ async def list_demo_documents(
     )
 
 
-# --- Get ---
+# =============================================================================
+# Get
+# =============================================================================
 
 
 @router.get("/documents/{job_id}")
@@ -137,10 +140,13 @@ async def get_demo_document(
     if record.get(DocumentMetadata.TENANT_ID) != auth.tenant_id:
         raise HTTPException(status_code=404, detail="Document not found")
 
+    logger.info("Demo document viewed", extra={"tenant_id": auth.tenant_id, "job_id": job_id})
     return _record_to_detail(record, include_extracted_data, include_bounding_box)
 
 
-# --- Preview ---
+# =============================================================================
+# Preview
+# =============================================================================
 
 
 @router.get("/documents/{job_id}/preview")
@@ -174,6 +180,7 @@ async def get_demo_document_preview(
         expiration=ConfigDefaults.PRESIGNED_PREVIEW_EXPIRY_SECONDS,
     )
 
+    logger.info("Demo preview generated", extra={"tenant_id": auth.tenant_id, "job_id": job_id})
     return DocumentPreviewResponse(
         url=url,
         content_type=content_type,
