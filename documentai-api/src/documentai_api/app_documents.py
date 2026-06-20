@@ -70,7 +70,7 @@ router = APIRouter(dependencies=[Depends(get_user_context_from_api_key)])
 
 
 class _UploadResult:
-    """Result of _upload_document: job_id + status/message."""
+    """Result of upload_document: job_id + status/message."""
 
     __slots__ = ("job_id", "job_status", "message")
 
@@ -80,7 +80,7 @@ class _UploadResult:
         self.message = message
 
 
-async def _upload_document(
+async def upload_document(
     response: Response,
     file: UploadFile,
     auth: AuthUser,
@@ -89,6 +89,7 @@ async def _upload_document(
     external_document_id: ExternalDocumentId = None,
     external_system_id: ExternalSystemId = None,
     ai_consent_flag: AiConsentFlag = True,
+    is_demo: bool = False,
 ) -> _UploadResult:
     """Shared upload logic. Returns an _UploadResult with job_id, status, and message."""
     if not trace_id:
@@ -105,6 +106,7 @@ async def _upload_document(
             "upload_filename": filename,
             "category": category.value if category else None,
             "content_type": actual_content_type,
+            "is_demo": is_demo,
         },
     )
 
@@ -112,7 +114,10 @@ async def _upload_document(
     unique_file_name = generate_unique_filename(filename, job_id)
     ddb_key = unique_file_name
 
-    input_location = get_aws_config().documentai_input_location
+    if is_demo:
+        input_location = get_aws_config().documentai_demo_input_location
+    else:
+        input_location = get_aws_config().documentai_input_location
     dest_path = f"{input_location}/{auth.tenant_id}/{unique_file_name}"
 
     try:
@@ -129,6 +134,8 @@ async def _upload_document(
             upload_method=UploadMethod.DIRECT,
             tenant_id=auth.tenant_id,
             api_key_name=auth.api_key_name,
+            is_demo=is_demo,
+            ttl_days=ConfigDefaults.DEMO_DOCUMENT_TTL_DAYS if is_demo else None,
         )
         await asyncio.to_thread(insert_minimal_ddb_record, record)
     except Exception:
@@ -185,7 +192,7 @@ async def create_document(
     ai_consent_flag: AiConsentFlag = True,
 ) -> UploadAsyncResponse:
     """Upload a document for processing (fire-and-forget)."""
-    result = await _upload_document(
+    result = await upload_document(
         response,
         file,
         auth,
@@ -221,10 +228,15 @@ async def create_document_wait(
     timeout: Annotated[int, Query(ge=1)] = ConfigDefaults.MAX_WAIT_SECONDS
     - ConfigDefaults.ALB_TIMEOUT_BUFFER_SECONDS,
 ) -> JobStatusResponse:
-    """Upload a document and poll until processing completes or timeout."""
+    """Upload a document and poll until processing completes or timeout.
+
+    Note: does not accept the `demo` flag. Demo uploads use the async endpoint
+    with client-side polling so the Lambda doesn't hold a connection open for
+    the full processing duration.
+    """
     if include_bounding_box:
         include_extracted_data = True
-    result = await _upload_document(
+    result = await upload_document(
         response,
         file,
         auth,

@@ -4,7 +4,16 @@ import * as Toast from "../../utils/toast.js";
 import * as Session from "../../utils/session.js";
 import { h } from "../../utils/dom.js";
 import { tpl } from "../../utils/tpl.js";
-import { mergeOverlappingBoxes } from "../../utils/bbox.js";
+import {
+  extractGeometry,
+  renderBboxOverlay,
+  clearBboxOverlay,
+  renderExtractedData,
+  renderPreview,
+  linkFieldHighlighting,
+  markFieldsWithGeometry,
+  PREVIEWABLE_TYPES,
+} from "../../../../shared/components/document-viewer.js";
 import html from "./documents.html";
 
 const tmpl = tpl(html);
@@ -55,6 +64,10 @@ export function mount(root) {
 
   _collapseBtn.addEventListener("click", toggleDetailPanel);
   _collapseBtn.classList.add("disabled");
+
+  // Hovering a field row highlights its bbox in the preview. Delegated on the
+  // containers, so it survives detail/table re-renders and async overlay render.
+  linkFieldHighlighting(_detailContent, _previewPanel);
 
   _searchBtn.disabled = true;
   _searchInput.addEventListener("input", () => {
@@ -225,7 +238,11 @@ function renderList(documents) {
 async function loadDetail(jobId) {
   _detailContent.textContent = "Loading...";
   _fieldGeometry = null;
-  _clearBboxOverlay();
+  if (_resizeObserver) {
+    _resizeObserver.disconnect();
+    _resizeObserver = null;
+  }
+  clearBboxOverlay(_previewPanel);
   try {
     const detail = await DocumentsService.get(jobId);
     renderDetail(detail);
@@ -238,8 +255,7 @@ async function loadDetail(jobId) {
 }
 
 async function loadPreview(jobId, contentType) {
-  const previewable = ["application/pdf", "image/jpeg", "image/png"];
-  if (!previewable.includes(contentType)) {
+  if (!PREVIEWABLE_TYPES.includes(contentType)) {
     _previewPanel.innerHTML = '<p class="empty-state">Preview not available for this file type</p>';
     return;
   }
@@ -248,19 +264,11 @@ async function loadPreview(jobId, contentType) {
 
   try {
     const resp = await DocumentsService.getPreviewUrl(jobId);
-    if (contentType === "application/pdf") {
-      // eslint-disable-next-line no-unsanitized/property -- URL escaped with esc()
-      _previewPanel.innerHTML = `<object data="${Helpers.esc(resp.url)}" type="application/pdf" class="document-preview-frame"><p>Unable to display PDF preview.</p></object>`;
-    } else {
-      // eslint-disable-next-line no-unsanitized/property -- URL escaped with esc()
-      _previewPanel.innerHTML = `<img src="${Helpers.esc(resp.url)}" class="document-preview-img" alt="Document preview" draggable="false" oncontextmenu="return false" onerror="this.parentElement.innerHTML='<p class=empty-state>Preview unavailable</p>'" />`;
-      _previewPanel.classList.add("watermark-block");
-    }
-    _previewPanel.style.setProperty(
-      "--watermark-bg",
-      `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='300' height='150'><text x='50%' y='50%' font-family='sans-serif' font-size='18' fill='black' text-anchor='middle' dominant-baseline='middle' transform='rotate(-30 150 75)'>${Session.getEmail() || ""}</text></svg>`)}")`,
-    );
-    _previewPanel.classList.add("watermarked");
+    renderPreview(_previewPanel, {
+      url: resp.url,
+      contentType,
+      watermarkEmail: Session.getEmail() || "",
+    });
   } catch {
     _previewPanel.innerHTML = '<p class="empty-state">Preview unavailable</p>';
     _previewPanel.classList.remove("watermarked", "watermark-block");
@@ -332,12 +340,14 @@ function bindExtractedDataToggle() {
             includeBoundingBox: true,
           });
           if (detail.fields) {
-            _fieldGeometry = _extractGeometry(detail.fields);
+            _fieldGeometry = extractGeometry(detail.fields);
             const table = _detailContent.querySelector(".extracted-data-table");
             // eslint-disable-next-line no-unsanitized/property -- rendered with esc()
-            if (table) table.outerHTML = renderExtractedData(detail.fields, true);
+            if (table) table.outerHTML = renderExtractedData(detail.fields, { revealed: true });
             bindExtractedDataToggle();
-            _renderBboxOverlay();
+            if (_resizeObserver) _resizeObserver.disconnect();
+            _resizeObserver = renderBboxOverlay(_previewPanel, _fieldGeometry);
+            markFieldsWithGeometry(_detailContent, _fieldGeometry);
           }
         } catch (e) {
           Toast.show(`Failed to load extracted data: ${e.message}`);
@@ -347,144 +357,16 @@ function bindExtractedDataToggle() {
         _detailContent.querySelectorAll(".extracted-value").forEach((td) => {
           td.textContent = "\u2022\u2022\u2022\u2022\u2022";
         });
-        _clearBboxOverlay();
+        clearBboxOverlay(_previewPanel);
+        if (_resizeObserver) {
+          _resizeObserver.disconnect();
+          _resizeObserver = null;
+        }
         _fieldGeometry = null;
+        markFieldsWithGeometry(_detailContent, null);
       }
     });
   }
-}
-
-function _extractGeometry(fields) {
-  const geo = {};
-  for (const [key, val] of Object.entries(fields)) {
-    if (val && typeof val === "object" && Array.isArray(val.geometry) && val.geometry.length) {
-      geo[key] = { geometry: val.geometry, fieldType: val.fieldType || "unknown" };
-    }
-  }
-  return Object.keys(geo).length ? geo : null;
-}
-
-function _clearBboxOverlay() {
-  const existing = _previewPanel.querySelector(".bbox-overlay-wrap");
-  if (existing) existing.remove();
-}
-
-function _renderBboxOverlay() {
-  _clearBboxOverlay();
-  if (!_fieldGeometry) return;
-
-  const img = _previewPanel.querySelector(".document-preview-img");
-  if (!img) {
-    // PDF object or unsupported preview - can't overlay
-    return;
-  }
-
-  // Wait for image to have dimensions
-  const doRender = () => {
-    _clearBboxOverlay();
-    const wrap = document.createElement("div");
-    wrap.className = "bbox-overlay-wrap";
-    // Match the image's rendered size and position within the panel
-    wrap.style.width = img.offsetWidth + "px";
-    wrap.style.height = img.offsetHeight + "px";
-    wrap.style.top = img.offsetTop + "px";
-    wrap.style.left = img.offsetLeft + "px";
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.classList.add("bbox-overlay");
-    svg.setAttribute("viewBox", "0 0 1 1");
-    svg.setAttribute("preserveAspectRatio", "none");
-
-    const tooltip = document.createElement("div");
-    tooltip.className = "bbox-tooltip";
-    tooltip.style.display = "none";
-
-    const typeColors = {
-      string: "#44aaff",
-      number: "#ff8c00",
-      integer: "#ff8c00",
-      date: "#ffaa00",
-      boolean: "#aa44ff",
-      currency: "#44cc44",
-      array: "#ff44aa",
-      object: "#ff44aa",
-      unknown: "#ff4444",
-      merged: "#888888",
-    };
-
-    // Build flat list of boxes for the currently visible page
-    const visiblePage = 1; // TODO: update when multi-page navigation is added
-    const boxes = [];
-    for (const [fieldName, { geometry: geoList, fieldType }] of Object.entries(_fieldGeometry)) {
-      for (const geo of geoList) {
-        if (!geo.boundingBox) continue;
-        if (geo.page && geo.page !== visiblePage) continue;
-        const { left, top, width, height } = geo.boundingBox;
-        boxes.push({ left, top, width, height, fieldName, fieldType });
-      }
-    }
-
-    // Merge overlapping boxes (IoU > 0.5)
-    const merged = mergeOverlappingBoxes(boxes);
-
-    for (const box of merged) {
-      const color =
-        box.fields.length > 1
-          ? typeColors.merged
-          : typeColors[box.fields[0].fieldType] || typeColors.unknown;
-      const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-      rect.setAttribute("x", box.left);
-      rect.setAttribute("y", box.top);
-      rect.setAttribute("width", box.width);
-      rect.setAttribute("height", box.height);
-      rect.setAttribute("fill", "none");
-      rect.setAttribute("stroke", color);
-      rect.setAttribute("stroke-width", "0.003");
-      rect.dataset.field = box.fields.map((f) => `${f.fieldName} (${f.fieldType})`).join("\n");
-      svg.appendChild(rect);
-    }
-
-    svg.addEventListener("mouseenter", handleTooltip);
-    svg.addEventListener("mousemove", handleTooltip);
-    svg.addEventListener("mouseleave", () => {
-      tooltip.style.display = "none";
-    });
-
-    function handleTooltip(e) {
-      const rect = e.target.closest("rect");
-      if (!rect) {
-        tooltip.style.display = "none";
-        return;
-      }
-      // eslint-disable-next-line no-unsanitized/property -- field names from server, not user input
-      tooltip.innerHTML = rect.dataset.field.replace(/\n/g, "<br>");
-      tooltip.style.display = "block";
-      const wrapRect = wrap.getBoundingClientRect();
-      tooltip.style.left = e.clientX - wrapRect.left + 8 + "px";
-      tooltip.style.top = e.clientY - wrapRect.top - 24 + "px";
-    }
-
-    wrap.appendChild(svg);
-    wrap.appendChild(tooltip);
-    _previewPanel.appendChild(wrap);
-  };
-
-  if (img.complete && img.naturalWidth) {
-    doRender();
-  } else {
-    img.addEventListener("load", doRender, { once: true });
-  }
-
-  // Re-render on resize so overlay stays aligned
-  if (_resizeObserver) {
-    _resizeObserver.disconnect();
-  }
-  _resizeObserver = new ResizeObserver(() => {
-    const currentImg = _previewPanel.querySelector(".document-preview-img");
-    if (_fieldGeometry && currentImg) {
-      doRender();
-    }
-  });
-  _resizeObserver.observe(_previewPanel);
 }
 
 function renderSection(title, fields) {
@@ -499,36 +381,4 @@ function renderSection(title, fields) {
   // Section name is the table's own <thead> header (styled by the global `th`
   // rule), so it reads as part of the table like the API keys table.
   return `<table class="detail-table"><thead><tr><th colspan="2">${Helpers.esc(title)}</th></tr></thead><tbody>${rows}</tbody></table>`;
-}
-
-function renderExtractedData(data, revealed = false) {
-  if (typeof data !== "object" || data === null) return "";
-  const rows = Object.entries(data)
-    .map(([key, val]) => {
-      const isObj = val != null && typeof val === "object" && !Array.isArray(val);
-      const conf = isObj && typeof val.confidence === "number" ? val.confidence : null;
-      const value = isObj && "value" in val ? val.value : val;
-      const display =
-        value != null && typeof value === "object" ? JSON.stringify(value) : String(value ?? "-");
-      return { key, conf, display };
-    })
-    .sort((a, b) => {
-      if (a.conf == null) return b.conf == null ? 0 : 1;
-      if (b.conf == null) return -1;
-      return a.conf - b.conf;
-    })
-    .map(({ key, conf, display }) => {
-      const confCell =
-        conf == null
-          ? "<td>-</td>"
-          : `<td class="${
-              conf >= 0.9 ? "confidence-high" : conf >= 0.7 ? "confidence-med" : "confidence-low"
-            }">${(conf * 100).toFixed(1)}%</td>`;
-      const valueContent = revealed ? Helpers.esc(display) : "\u2022\u2022\u2022\u2022\u2022";
-      return `<tr><td class="detail-label">${Helpers.esc(key)}</td><td class="extracted-value" data-value="${Helpers.esc(display)}">${valueContent}</td>${confCell}</tr>`;
-    })
-    .join("");
-  if (!rows) return "";
-  const checked = revealed ? " checked" : "";
-  return `<table class="extracted-data-table"><colgroup><col class="ed-col-field"><col class="ed-col-value"><col class="ed-col-conf"></colgroup><thead><tr><th>Extracted Data</th><th colspan="2" class="extracted-data-toggle-cell"><label class="inline-checkbox"><input type="checkbox" class="extracted-data-toggle"${checked}> Show values</label></th></tr><tr><th>Field</th><th>Value</th><th>Confidence</th></tr></thead><tbody>${rows}</tbody></table>`;
 }

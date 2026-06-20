@@ -497,7 +497,7 @@ def upsert_ddb(data: UpsertDdbData) -> None:
             ":pwProt": bool(data.is_password_protected),
             ":blurry": bool(data.is_document_blurry),
             ":aiConsent": bool(data.ai_consent_flag),
-            ":ttl": ttl_epoch_in_days(ConfigDefaults.DOCUMENT_METADATA_TTL_DAYS),
+            ":ttl": ttl_epoch_in_days(data.ttl_days or ConfigDefaults.DOCUMENT_METADATA_TTL_DAYS),
         }
 
         # internal_api_response and pre_classification are handled by dedicated

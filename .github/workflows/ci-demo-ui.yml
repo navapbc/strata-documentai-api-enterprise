@@ -1,0 +1,53 @@
+name: CI demo-ui
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ui/demo/**
+      - ui/shared/**
+      - .github/workflows/ci-demo-ui.yml
+  pull_request:
+    paths:
+      - ui/demo/**
+      - ui/shared/**
+      - .github/workflows/ci-demo-ui.yml
+
+concurrency:
+  group: ci-demo-ui-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: ./ui/demo
+
+jobs:
+  test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: ui/demo/package-lock.json
+
+      - run: npm ci
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test

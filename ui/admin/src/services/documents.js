@@ -1,9 +1,10 @@
 import { adminClient } from "./http.js";
 
-export async function list({ tenantId, status, limit, cursor } = {}) {
+export async function list({ tenantId, status, isDemo, limit, cursor } = {}) {
   const params = new URLSearchParams();
   if (tenantId) params.set("tenant_id", tenantId);
   if (status) params.set("status_filter", status);
+  if (isDemo != null) params.set("is_demo", String(isDemo));
   if (limit) params.set("limit", String(limit));
   if (cursor) params.set("cursor", cursor);
   const qs = params.toString() ? `?${params}` : "";

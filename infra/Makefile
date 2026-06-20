@@ -22,8 +22,10 @@ define WRITE_CONFIG
 	@API=$$(terraform -chdir="$(TF_DIR)" output -raw api_endpoint) && \
 	POOL=$$(terraform -chdir="$(TF_DIR)" output -raw cognito_user_pool_id) && \
 	CLIENT=$$(terraform -chdir="$(TF_DIR)" output -raw cognito_client_id) && \
-	printf '{\n  "api_endpoint": {"value": "%s"},\n  "cognito_user_pool_id": {"value": "%s"},\n  "cognito_client_id": {"value": "%s"}\n}\n' \
-		"$$API" "$$POOL" "$$CLIENT" > ../admin-ui/config.json
+	for dir in ../ui/admin ../ui/demo; do \
+		printf '{\n  "api_endpoint": {"value": "%s"},\n  "cognito_user_pool_id": {"value": "%s"},\n  "cognito_client_id": {"value": "%s"}\n}\n' \
+			"$$API" "$$POOL" "$$CLIENT" > "$$dir/config.json"; \
+	done
 endef
 
 infra-bootstrap: ## Create S3 state bucket for $ENVIRONMENT

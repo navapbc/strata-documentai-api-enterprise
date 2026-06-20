@@ -8,11 +8,13 @@ on:
     branches:
       - main
     paths:
-      - admin-ui/**
+      - ui/admin/**
+      - ui/shared/**
       - .github/workflows/ci-admin-ui.yml
   pull_request:
     paths:
-      - admin-ui/**
+      - ui/admin/**
+      - ui/shared/**
       - .github/workflows/ci-admin-ui.yml
 
 concurrency:
@@ -21,7 +23,7 @@ concurrency:
 
 defaults:
   run:
-    working-directory: ./admin-ui
+    working-directory: ./ui/admin
 
 jobs:
   test:
@@ -32,9 +34,9 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version-file: admin-ui/.nvmrc
+          node-version-file: ui/admin/.nvmrc
           cache: npm
-          cache-dependency-path: admin-ui/package-lock.json
+          cache-dependency-path: ui/admin/package-lock.json
 
       - run: npm ci
 
@@ -49,6 +51,3 @@ jobs:
 
       - name: Test
         run: npm test
-
-      # e2e tests (Playwright) are not run here - they require browser
-      # binaries and are significantly slower. Run locally with `npm run test:e2e`.

@@ -53,7 +53,7 @@ All commands accept `ENVIRONMENT=dev|staging|prod` and `AWS_PROFILE=your-profile
 | `queue` | SQS queues + DLQs (metrics pipeline) |
 | `analytics` | S3 metrics bucket, Glue database with partition projection |
 | `identity-provider` | Cognito User Pool (MFA optional, email verification) |
-| `static-site` | S3 + CloudFront with OAC for admin UI |
+| `static-site` | S3 + CloudFront with OAC for admin UI and demo UI |
 | `secrets` | Secrets Manager entries |
 | `config` | SSM parameters, shared configuration |
 
@@ -89,7 +89,7 @@ To add a new environment, copy `environments/dev/`, update `terraform.tfvars` (r
 2. Builds Docker image from `documentai-api/Dockerfile.lambda`
 3. Pushes to ECR with git short SHA as tag
 4. Applies all Terraform with `image_tag` variable
-5. Writes `admin-ui/config.json` from Terraform outputs
+5. Writes `ui/admin/config.json` from Terraform outputs
 
 Override the image tag: `make infra-deploy IMAGE_TAG=abc1234`
 
