@@ -65,26 +65,30 @@ def test_demo_list_returns_empty(api_client, ddb_doc_metadata_table):
 def test_demo_list_filters_to_is_demo(api_client, ddb_doc_metadata_table):
     """GET /v1/demo/documents only returns docs with isDemo=True."""
     # Insert a demo doc and a non-demo doc for the same tenant
-    ddb_doc_metadata_table.put_item(Item={
-        DocumentMetadata.FILE_NAME: "demo-doc.pdf",
-        DocumentMetadata.JOB_ID: "job-demo",
-        DocumentMetadata.TENANT_ID: "demo-test-sub",
-        DocumentMetadata.IS_DEMO: True,
-        DocumentMetadata.ORIGINAL_FILE_NAME: "demo-doc.pdf",
-        DocumentMetadata.PROCESS_STATUS: "success",
-        DocumentMetadata.CREATED_AT: "2024-01-01T00:00:00Z",
-        DocumentMetadata.API_KEY_NAME: "test-sub",
-    })
-    ddb_doc_metadata_table.put_item(Item={
-        DocumentMetadata.FILE_NAME: "real-doc.pdf",
-        DocumentMetadata.JOB_ID: "job-real",
-        DocumentMetadata.TENANT_ID: "demo-test-sub",
-        DocumentMetadata.IS_DEMO: False,
-        DocumentMetadata.ORIGINAL_FILE_NAME: "real-doc.pdf",
-        DocumentMetadata.PROCESS_STATUS: "success",
-        DocumentMetadata.CREATED_AT: "2024-01-01T00:00:01Z",
-        DocumentMetadata.API_KEY_NAME: "test-sub",
-    })
+    ddb_doc_metadata_table.put_item(
+        Item={
+            DocumentMetadata.FILE_NAME: "demo-doc.pdf",
+            DocumentMetadata.JOB_ID: "job-demo",
+            DocumentMetadata.TENANT_ID: "demo-test-sub",
+            DocumentMetadata.IS_DEMO: True,
+            DocumentMetadata.ORIGINAL_FILE_NAME: "demo-doc.pdf",
+            DocumentMetadata.PROCESS_STATUS: "success",
+            DocumentMetadata.CREATED_AT: "2024-01-01T00:00:00Z",
+            DocumentMetadata.API_KEY_NAME: "test-sub",
+        }
+    )
+    ddb_doc_metadata_table.put_item(
+        Item={
+            DocumentMetadata.FILE_NAME: "real-doc.pdf",
+            DocumentMetadata.JOB_ID: "job-real",
+            DocumentMetadata.TENANT_ID: "demo-test-sub",
+            DocumentMetadata.IS_DEMO: False,
+            DocumentMetadata.ORIGINAL_FILE_NAME: "real-doc.pdf",
+            DocumentMetadata.PROCESS_STATUS: "success",
+            DocumentMetadata.CREATED_AT: "2024-01-01T00:00:01Z",
+            DocumentMetadata.API_KEY_NAME: "test-sub",
+        }
+    )
 
     response = api_client.get("/v1/demo/documents")
 
@@ -103,14 +107,16 @@ def test_demo_get_not_found(api_client, ddb_doc_metadata_table):
 
 def test_demo_get_wrong_tenant_returns_404(api_client, ddb_doc_metadata_table):
     """GET /v1/demo/documents/{jobId} returns 404 if doc belongs to different tenant."""
-    ddb_doc_metadata_table.put_item(Item={
-        DocumentMetadata.FILE_NAME: "other.pdf",
-        DocumentMetadata.JOB_ID: "job-other",
-        DocumentMetadata.TENANT_ID: "demo-other-user",
-        DocumentMetadata.ORIGINAL_FILE_NAME: "other.pdf",
-        DocumentMetadata.PROCESS_STATUS: "success",
-        DocumentMetadata.CREATED_AT: "2024-01-01T00:00:00Z",
-    })
+    ddb_doc_metadata_table.put_item(
+        Item={
+            DocumentMetadata.FILE_NAME: "other.pdf",
+            DocumentMetadata.JOB_ID: "job-other",
+            DocumentMetadata.TENANT_ID: "demo-other-user",
+            DocumentMetadata.ORIGINAL_FILE_NAME: "other.pdf",
+            DocumentMetadata.PROCESS_STATUS: "success",
+            DocumentMetadata.CREATED_AT: "2024-01-01T00:00:00Z",
+        }
+    )
 
     response = api_client.get("/v1/demo/documents/job-other")
 
@@ -119,15 +125,17 @@ def test_demo_get_wrong_tenant_returns_404(api_client, ddb_doc_metadata_table):
 
 def test_demo_get_success(api_client, ddb_doc_metadata_table):
     """GET /v1/demo/documents/{jobId} returns detail for matching tenant."""
-    ddb_doc_metadata_table.put_item(Item={
-        DocumentMetadata.FILE_NAME: "mine.pdf",
-        DocumentMetadata.JOB_ID: "job-mine",
-        DocumentMetadata.TENANT_ID: "demo-test-sub",
-        DocumentMetadata.ORIGINAL_FILE_NAME: "mine.pdf",
-        DocumentMetadata.PROCESS_STATUS: "success",
-        DocumentMetadata.CREATED_AT: "2024-01-01T00:00:00Z",
-        DocumentMetadata.API_KEY_NAME: "test-sub",
-    })
+    ddb_doc_metadata_table.put_item(
+        Item={
+            DocumentMetadata.FILE_NAME: "mine.pdf",
+            DocumentMetadata.JOB_ID: "job-mine",
+            DocumentMetadata.TENANT_ID: "demo-test-sub",
+            DocumentMetadata.ORIGINAL_FILE_NAME: "mine.pdf",
+            DocumentMetadata.PROCESS_STATUS: "success",
+            DocumentMetadata.CREATED_AT: "2024-01-01T00:00:00Z",
+            DocumentMetadata.API_KEY_NAME: "test-sub",
+        }
+    )
 
     response = api_client.get("/v1/demo/documents/job-mine")
 
@@ -138,14 +146,16 @@ def test_demo_get_success(api_client, ddb_doc_metadata_table):
 
 def test_demo_preview_wrong_tenant_returns_404(api_client, ddb_doc_metadata_table):
     """GET /v1/demo/documents/{jobId}/preview returns 404 for wrong tenant."""
-    ddb_doc_metadata_table.put_item(Item={
-        DocumentMetadata.FILE_NAME: "other.pdf",
-        DocumentMetadata.JOB_ID: "job-other",
-        DocumentMetadata.TENANT_ID: "demo-other-user",
-        DocumentMetadata.CONTENT_TYPE: "application/pdf",
-        DocumentMetadata.ORIGINAL_FILE_NAME: "other.pdf",
-        DocumentMetadata.CREATED_AT: "2024-01-01T00:00:00Z",
-    })
+    ddb_doc_metadata_table.put_item(
+        Item={
+            DocumentMetadata.FILE_NAME: "other.pdf",
+            DocumentMetadata.JOB_ID: "job-other",
+            DocumentMetadata.TENANT_ID: "demo-other-user",
+            DocumentMetadata.CONTENT_TYPE: "application/pdf",
+            DocumentMetadata.ORIGINAL_FILE_NAME: "other.pdf",
+            DocumentMetadata.CREATED_AT: "2024-01-01T00:00:00Z",
+        }
+    )
 
     response = api_client.get("/v1/demo/documents/job-other/preview")
 

@@ -178,9 +178,7 @@ class UpsertDdbData(BaseModel):
     api_key_name: str | None = Field(
         default=None, json_schema_extra=_ddb_metadata_map("apiKeyName", ":clientName")
     )
-    is_demo: bool = Field(
-        default=False, json_schema_extra=_ddb_metadata_map("isDemo", ":isDemo")
-    )
+    is_demo: bool = Field(default=False, json_schema_extra=_ddb_metadata_map("isDemo", ":isDemo"))
     ttl_days: int | None = None  # override default TTL (e.g. 3 for demo uploads)
 
 

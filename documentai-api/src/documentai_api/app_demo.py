@@ -1,6 +1,6 @@
 """Demo router - JWT-authenticated document upload and read."""
 
-from typing import Annotated, Any
+from typing import Annotated
 
 from boto3.dynamodb.conditions import Attr
 from fastapi import APIRouter, Depends, HTTPException, Response, UploadFile, status
@@ -33,10 +33,15 @@ logger = get_logger(__name__)
 _bearer_scheme = HTTPBearer(auto_error=False)
 _table = DocumentMetadataTable()
 
+# Auth types live here (not annotations.py) to avoid circular imports -
+# _resolve_demo_context depends on app-level logic that annotations can't import.
+_FallbackAuth = Annotated[UserContext, Depends(get_user_context_with_fallback)]
+_BearerCredentials = Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer_scheme)]
+
 
 async def _resolve_demo_context(
-    auth: UserContext = Depends(get_user_context_with_fallback),
-    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer_scheme)] = None,
+    auth: _FallbackAuth,
+    credentials: _BearerCredentials = None,
 ) -> UserContext:
     """Reuse standard auth verification, then override tenant_id to demo-{sub}."""
     from documentai_api.utils.jwt_auth import _decode_and_verify
@@ -61,6 +66,9 @@ async def _resolve_demo_context(
     )
 
 
+DemoAuth = Annotated[UserContext, Depends(_resolve_demo_context)]
+
+
 def _get_demo_input_location() -> str:
     location = get_aws_config().documentai_demo_input_location
     if not location:
@@ -77,7 +85,7 @@ def _get_demo_input_location() -> str:
 async def create_demo_document(
     response: Response,
     file: UploadFile,
-    auth: UserContext = Depends(_resolve_demo_context),
+    auth: DemoAuth,
 ) -> UploadAsyncResponse:
     """Upload a document via the demo pipeline."""
     result = await upload_document(response, file, auth, is_demo=True)
@@ -95,7 +103,7 @@ async def create_demo_document(
 
 @router.get("/documents")
 async def list_demo_documents(
-    auth: UserContext = Depends(_resolve_demo_context),
+    auth: DemoAuth,
     limit: int = 50,
     cursor: str | None = None,
 ) -> DocumentListResponse:
@@ -126,7 +134,7 @@ async def list_demo_documents(
 @router.get("/documents/{job_id}")
 async def get_demo_document(
     job_id: str,
-    auth: UserContext = Depends(_resolve_demo_context),
+    auth: DemoAuth,
     include_extracted_data: bool = False,
     include_bounding_box: bool = False,
 ) -> DocumentDetail:
@@ -152,7 +160,7 @@ async def get_demo_document(
 @router.get("/documents/{job_id}/preview")
 async def get_demo_document_preview(
     job_id: str,
-    auth: UserContext = Depends(_resolve_demo_context),
+    auth: DemoAuth,
 ) -> DocumentPreviewResponse:
     """Get presigned URL for previewing a demo document."""
     record = _table.query_by_job_id(job_id)
@@ -169,9 +177,7 @@ async def get_demo_document_preview(
     if not file_name:
         raise HTTPException(status_code=500, detail="Incomplete document record")
 
-    bucket, object_key = get_bucket_and_key(
-        _get_demo_input_location(), auth.tenant_id, file_name
-    )
+    bucket, object_key = get_bucket_and_key(_get_demo_input_location(), auth.tenant_id, file_name)
 
     url = s3_service.generate_presigned_get_url(
         bucket=bucket,

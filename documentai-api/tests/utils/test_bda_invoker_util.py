@@ -87,8 +87,10 @@ def test_invoke_bedrock_data_automation_document_truncation():
 
 
 def test_demo_upload_output_key_starts_with_expected_prefix():
-    """Lock the cross-system contract: BDA output for demo uploads lands under
-    processed/input/demo/ - matching the infra lifecycle rule prefix.
+    """Lock the cross-system contract: BDA output for demo uploads.
+
+    Demo uploads land under processed/input/demo/ - matching the infra
+    lifecycle rule prefix.
 
     BDA output is written to {DOCUMENTAI_OUTPUT_LOCATION}/{source_object_name}.
     For demo uploads, source_object_name is the full S3 key:

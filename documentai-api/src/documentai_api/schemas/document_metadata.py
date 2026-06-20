@@ -83,4 +83,3 @@ class DocumentMetadata:
         "matchedBlueprintFieldNotEmptyAvgConfidence"
     )
     BELOW_EXTRACTION_CONFIDENCE_FLOOR = "belowExtractionConfidenceFloor"
-

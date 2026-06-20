@@ -932,11 +932,13 @@ def test_documents_wait_bounding_box_implies_extracted_data(api_client, blank_pd
 
 
 @pytest.mark.parametrize(
-    "use_demo_endpoint,expected_is_demo",
+    ("use_demo_endpoint", "expected_is_demo"),
     [(True, True), (False, False)],
     ids=["demo=true", "standard"],
 )
-def test_create_document_demo_flag(api_client, blank_pdf_bytes, mocker, use_demo_endpoint, expected_is_demo):
+def test_create_document_demo_flag(
+    api_client, blank_pdf_bytes, mocker, use_demo_endpoint, expected_is_demo
+):
     """Demo endpoint sets is_demo=True, standard endpoint does not."""
     mock_insert = mocker.patch("documentai_api.app_documents.insert_minimal_ddb_record")
     mocker.patch("documentai_api.app_documents.dispatch_upload", new_callable=AsyncMock)
@@ -951,7 +953,7 @@ def test_create_document_demo_flag(api_client, blank_pdf_bytes, mocker, use_demo
 
 
 @pytest.mark.parametrize(
-    "use_demo_endpoint,expect_demo_path",
+    ("use_demo_endpoint", "expect_demo_path"),
     [(True, True), (False, False)],
     ids=["demo-upload", "standard-upload"],
 )
