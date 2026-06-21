@@ -102,7 +102,8 @@ async function handleGoogleSignIn() {
   sessionStorage.setItem("oauth_code_verifier", verifier);
   sessionStorage.setItem("oauth_state", state);
 
-  const url = `https://${cognitoDomain}.auth.${COGNITO_REGION}.amazoncognito.com/oauth2/authorize?` +
+  const url =
+    `https://${cognitoDomain}.auth.${COGNITO_REGION}.amazoncognito.com/oauth2/authorize?` +
     new URLSearchParams({
       identity_provider: "Google",
       response_type: "code",

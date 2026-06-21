@@ -83,13 +83,13 @@ variable "verification_email_subject" {
 
 variable "google_client_id" {
   type        = string
-  description = "Google OAuth 2.0 client ID. When set, enables Google as a federated identity provider. Store in SSM and pass via data source — never commit to the repo."
+  description = "Google OAuth 2.0 client ID. When set, enables Google as a federated identity provider. Store in SSM and pass via data source - never commit to the repo."
   default     = null
 }
 
 variable "google_client_secret" {
   type        = string
-  description = "Google OAuth 2.0 client secret. Store in SSM and pass via data source — never commit to the repo."
+  description = "Google OAuth 2.0 client secret. Store in SSM and pass via data source - never commit to the repo."
   default     = null
   sensitive   = true
 }

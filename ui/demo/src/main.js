@@ -73,7 +73,7 @@ async function init() {
     sessionStorage.removeItem("oauth_code_verifier");
 
     if (!savedState || savedState !== returnedState) {
-      console.error("OAuth state mismatch — possible CSRF");
+      console.error("OAuth state mismatch - possible CSRF");
       window.history.replaceState({}, "", "/");
       showLogin();
       return;

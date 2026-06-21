@@ -3,7 +3,7 @@ import * as Toast from "../../../../shared/utils/toast.js";
 import * as Documents from "../../services/documents.js";
 import { h } from "../../../../shared/utils/dom.js";
 import { tpl } from "../../../../shared/utils/tpl.js";
-import { formatDate, esc } from "../../../../shared/utils/helpers.js";
+import { esc } from "../../../../shared/utils/helpers.js";
 import {
   extractGeometry,
   renderBboxOverlay,
@@ -17,6 +17,37 @@ import html from "./upload.html";
 const tmpl = tpl(html);
 
 const POLL_INTERVAL_MS = 3000;
+
+function formatRelativeDate(iso) {
+  if (!iso) return "-";
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "yesterday";
+  if (days < 7) return `${days} days ago`;
+  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+const STATUS_LABELS = {
+  success: "Extracted",
+  no_custom_blueprint_matched: "No blueprint",
+  not_started: "Pending",
+  started: "Processing",
+  pending_upload: "Uploading",
+  pending_image_optimization: "Processing",
+  failed: "Failed",
+};
+
+function formatStatus(doc) {
+  if (doc.processStatus === "success" && doc.matchedBlueprint) {
+    return doc.matchedBlueprint;
+  }
+  return STATUS_LABELS[doc.processStatus] ?? doc.processStatus;
+}
 const POLL_TIMEOUT_MS = 120000;
 
 let _root = null;
@@ -122,14 +153,15 @@ async function loadHistory() {
       return;
     }
     for (const doc of docs) {
+      const name = doc.fileName || doc.jobId?.slice(0, 8);
       const li = h(
         "li",
         { className: "demo-history-item" },
-        h("span", { className: "demo-history-name" }, doc.fileName || doc.jobId?.slice(0, 8)),
+        h("span", { className: "demo-history-name", title: name }, name),
         h(
           "span",
           { className: "demo-history-meta" },
-          `${doc.processStatus} · ${formatDate(doc.createdAt)}`,
+          `${formatStatus(doc)} · ${formatRelativeDate(doc.createdAt)}`,
         ),
       );
       li.addEventListener("click", () => loadDocument(doc.jobId));
