@@ -52,7 +52,7 @@ All commands accept `ENVIRONMENT=dev|staging|prod` and `AWS_PROFILE=your-profile
 | `storage` | S3 buckets (input, output) |
 | `queue` | SQS queues + DLQs (metrics pipeline) |
 | `analytics` | S3 metrics bucket, Glue database with partition projection |
-| `identity-provider` | Cognito User Pool (MFA optional, email verification) |
+| `identity-provider` | Cognito User Pool (MFA optional, email verification, optional Google SSO via federated IdP) |
 | `static-site` | S3 + CloudFront with OAC for admin UI and demo UI |
 | `secrets` | Secrets Manager entries |
 | `config` | SSM parameters, shared configuration |

@@ -39,6 +39,18 @@ variable "slack_config" {
   default     = null
 }
 
+variable "google_sso_enabled" {
+  type        = bool
+  description = "Enable Google SSO. Requires SSM params /{project}/{env}/google-oauth-client-id and google-oauth-client-secret to be pre-created."
+  default     = true
+}
+
+variable "google_allowed_domains" {
+  type        = list(string)
+  description = "Email domains allowed for Google SSO (e.g. ['example.com']). Empty list allows all domains."
+  default     = []
+}
+
 variable "bda_projects" {
   type = map(object({
     managed_blueprint_arns = list(string)

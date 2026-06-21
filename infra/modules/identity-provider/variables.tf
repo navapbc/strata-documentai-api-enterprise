@@ -80,3 +80,34 @@ variable "verification_email_subject" {
   description = "Custom subject for the account verification email. Uses the Cognito default when null."
   default     = null
 }
+
+variable "google_client_id" {
+  type        = string
+  description = "Google OAuth 2.0 client ID. When set, enables Google as a federated identity provider. Store in SSM and pass via data source - never commit to the repo."
+  default     = null
+}
+
+variable "google_client_secret" {
+  type        = string
+  description = "Google OAuth 2.0 client secret. Store in SSM and pass via data source - never commit to the repo."
+  default     = null
+  sensitive   = true
+}
+
+variable "google_client_id_ssm_param" {
+  type        = string
+  description = "SSM parameter name containing the Google client ID. Used instead of google_client_id when you want to read the value from SSM at plan time."
+  default     = null
+}
+
+variable "google_client_secret_ssm_param" {
+  type        = string
+  description = "SSM parameter name containing the Google client secret. Used instead of google_client_secret when you want to read the value from SSM at plan time."
+  default     = null
+}
+
+variable "google_allowed_domains" {
+  type        = list(string)
+  description = "Email domains allowed for Google SSO (e.g. ['example.com']). Empty list allows all domains."
+  default     = []
+}

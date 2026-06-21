@@ -190,6 +190,10 @@ API_AUTH_INSECURE_SHARED_KEY = {
 - Deactivation takes effect immediately (cache is invalidated on deactivate)
 - Auth failures are logged with client name (where available) but never the key itself
 
+## Google SSO (Federated Sign-In)
+
+The admin and demo UIs also support optional "Sign in with Google" via Cognito federation. See [Google SSO](google-sso.md) for setup instructions.
+
 ## Known Limitations
 
 The following are known gaps in the v0.1 implementation. They are suitable for internal service-to-service use with a small number of known calling systems, but should be addressed before broader rollout.

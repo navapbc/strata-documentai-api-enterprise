@@ -8,6 +8,16 @@ output "client_id" {
   value       = aws_cognito_user_pool_client.this.id
 }
 
+output "user_pool_domain" {
+  description = "Cognito user pool domain for OAuth flows. Null if Google SSO is not configured."
+  value       = local.google_enabled ? nonsensitive(aws_cognito_user_pool_domain.this[0].domain) : null
+}
+
+output "google_enabled" {
+  description = "Whether Google SSO is configured."
+  value       = nonsensitive(local.google_enabled)
+}
+
 output "access_policy_arn" {
   description = "ARN of the IAM policy granting access to the user pool."
   value       = aws_iam_policy.access.arn

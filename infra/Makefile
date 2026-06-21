@@ -22,9 +22,13 @@ define WRITE_CONFIG
 	@API=$$(terraform -chdir="$(TF_DIR)" output -raw api_endpoint) && \
 	POOL=$$(terraform -chdir="$(TF_DIR)" output -raw cognito_user_pool_id) && \
 	CLIENT=$$(terraform -chdir="$(TF_DIR)" output -raw cognito_client_id) && \
+	DOMAIN=$$(terraform -chdir="$(TF_DIR)" output -raw cognito_domain 2>/dev/null || echo "") && \
+	GOOGLE=$$(terraform -chdir="$(TF_DIR)" output -json cognito_google_enabled 2>/dev/null || echo "false") && \
 	for dir in ../ui/admin ../ui/demo; do \
-		printf '{\n  "api_endpoint": {"value": "%s"},\n  "cognito_user_pool_id": {"value": "%s"},\n  "cognito_client_id": {"value": "%s"}\n}\n' \
-			"$$API" "$$POOL" "$$CLIENT" > "$$dir/config.json"; \
+		printf '{\n  "api_endpoint": {"value": "%s"},\n  "cognito_user_pool_id": {"value": "%s"},\n  "cognito_client_id": {"value": "%s"},\n  "cognito_domain": {"value": %s},\n  "cognito_google_enabled": {"value": %s}\n}\n' \
+			"$$API" "$$POOL" "$$CLIENT" \
+			"$$([ -n "$$DOMAIN" ] && echo '"'$$DOMAIN'"' || echo 'null')" \
+			"$$GOOGLE" > "$$dir/config.json"; \
 	done
 endef
 

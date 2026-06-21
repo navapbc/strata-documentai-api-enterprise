@@ -38,7 +38,7 @@ For Strata template applications, see [`navapbc/strata`](https://github.com/nava
 - Admin console for managing tenants, users, API keys, and extraction rules
 - Terraform infrastructure for the full serverless stack
 - Metrics pipeline for document processing and platform usage
-- Cognito-backed admin authentication with MFA support
+- Cognito-backed admin authentication with MFA and Google SSO support
 
 ## Getting Started
 ### Repo structure
@@ -244,6 +244,7 @@ The diagram source lives in [`architecture.mmd`](docs/documentai-api/diagrams/ar
 
 - **API clients**: `API-Key` header, DynamoDB-backed and tenant-scoped
 - **Admin users**: Cognito JWT with super-admin or tenant-admin roles
+- **Google SSO**: Optional federated sign-in via Cognito (admin + demo UIs)
 - **Dual auth**: Endpoints support both via `get_user_context_with_fallback`
 
 ## Contributing
