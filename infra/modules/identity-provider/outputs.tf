@@ -10,12 +10,12 @@ output "client_id" {
 
 output "user_pool_domain" {
   description = "Cognito user pool domain for OAuth flows. Null if Google SSO is not configured."
-  value       = local.google_enabled ? aws_cognito_user_pool_domain.this[0].domain : null
+  value       = local.google_enabled ? nonsensitive(aws_cognito_user_pool_domain.this[0].domain) : null
 }
 
 output "google_enabled" {
   description = "Whether Google SSO is configured."
-  value       = local.google_enabled
+  value       = nonsensitive(local.google_enabled)
 }
 
 output "access_policy_arn" {

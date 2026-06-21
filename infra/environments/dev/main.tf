@@ -48,10 +48,10 @@ locals {
   ssm_prefix = "/${var.project_name}/${var.environment}"
 
   # S3 path prefixes - single source of truth for env vars + lifecycle rules
-  input_prefix             = "input"
-  demo_input_prefix        = "${local.input_prefix}/demo"
-  output_prefix            = "processed"
-  demo_output_prefix       = "${local.output_prefix}/${local.demo_input_prefix}"
+  input_prefix       = "input"
+  demo_input_prefix  = "${local.input_prefix}/demo"
+  output_prefix      = "processed"
+  demo_output_prefix = "${local.output_prefix}/${local.demo_input_prefix}"
 
   # App defaults
   max_bda_invoke_retry_attempts = "3"
@@ -115,11 +115,11 @@ module "output_bucket" {
   lifecycle_rules = [{
     id              = "expire-results"
     expiration_days = 30
-  },
-  {
-    id              = "expire-demo-results"
-    prefix          = "${local.demo_output_prefix}/"
-    expiration_days = 3
+    },
+    {
+      id              = "expire-demo-results"
+      prefix          = "${local.demo_output_prefix}/"
+      expiration_days = 3
   }]
 }
 
@@ -295,13 +295,15 @@ module "config" {
 # --- Identity Provider (Cognito) ---
 
 module "admin_ui" {
-  source = "../../modules/static-site"
-  name   = "${local.service_name}-admin-ui"
+  source      = "../../modules/static-site"
+  name        = "${local.service_name}-admin-ui"
+  description = "DocumentAI Admin Console (${var.environment})"
 }
 
 module "demo_ui" {
-  source = "../../modules/static-site"
-  name   = "${local.service_name}-demo-ui"
+  source      = "../../modules/static-site"
+  name        = "${local.service_name}-demo-ui"
+  description = "DocumentAI Demo (${var.environment})"
 }
 
 module "identity_provider" {
@@ -310,11 +312,23 @@ module "identity_provider" {
 
   callback_urls = [
     "http://localhost:3000/callback",
-    "https://${local.service_name}-console.${var.region}.amazonaws.com/callback",
+    "http://localhost:3001/callback",
+    "https://${module.admin_ui.distribution_domain}/callback",
+    "https://${module.demo_ui.distribution_domain}/callback",
   ]
   logout_urls = [
     "http://localhost:3000",
+    "http://localhost:3001",
+    "https://${module.admin_ui.distribution_domain}",
+    "https://${module.demo_ui.distribution_domain}",
   ]
+
+  # Google SSO: credentials stored in SSM SecureString parameters (created
+  # manually via console/CLI, never committed to the repo). Set to null to
+  # disable Google sign-in.
+  google_client_id_ssm_param     = var.google_sso_enabled ? "/${var.project_name}/${var.environment}/google-oauth-client-id" : null
+  google_client_secret_ssm_param = var.google_sso_enabled ? "/${var.project_name}/${var.environment}/google-oauth-client-secret" : null
+  google_allowed_domains         = var.google_allowed_domains
 }
 
 # --- Secrets ---
@@ -417,7 +431,7 @@ locals {
     DOCUMENTAI_BATCH_TABLE_NAME                               = module.document_batches.table_name
     DOCUMENTAI_DOCUMENT_BUILD_TABLE_NAME                      = module.document_builds.table_name
     DOCUMENTAI_INPUT_LOCATION                                 = "s3://${module.input_bucket.bucket_name}/${local.input_prefix}"
-    DOCUMENTAI_DEMO_INPUT_LOCATION                             = "s3://${module.input_bucket.bucket_name}/${local.demo_input_prefix}"
+    DOCUMENTAI_DEMO_INPUT_LOCATION                            = "s3://${module.input_bucket.bucket_name}/${local.demo_input_prefix}"
     DOCUMENTAI_PREPROCESSING_LOCATION                         = "s3://${module.input_bucket.bucket_name}/preprocessing"
     DOCUMENTAI_OUTPUT_LOCATION                                = "s3://${module.output_bucket.bucket_name}/processed"
     DDB_METRICS_INPUT_QUEUE_URL                               = module.metrics_queue.queue_url

@@ -1,4 +1,5 @@
 export {
+  COGNITO_REGION,
   configure,
   signUp,
   confirmSignUp,
@@ -10,4 +11,5 @@ export {
   signOut,
   forgotPassword,
   confirmForgotPassword,
+  exchangeCodeForTokens,
 } from "../../../shared/services/auth.js";

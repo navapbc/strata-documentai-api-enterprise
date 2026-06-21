@@ -1,5 +1,7 @@
 {
   "api_endpoint": { "value": "https://your-api.execute-api.us-east-1.amazonaws.com" },
   "cognito_user_pool_id": { "value": "us-east-1_XXXXXXXXX" },
-  "cognito_client_id": { "value": "xxxxxxxxxxxxxxxxxxxxxxxxxx" }
+  "cognito_client_id": { "value": "xxxxxxxxxxxxxxxxxxxxxxxxxx" },
+  "cognito_domain": { "value": null },
+  "cognito_google_enabled": { "value": false }
 }

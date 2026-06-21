@@ -81,12 +81,39 @@ resource "aws_cognito_user_pool" "this" {
     email_message        = var.verification_email_message
     email_subject        = var.verification_email_subject
   }
+
+  dynamic "lambda_config" {
+    for_each = local.domain_restriction_enabled ? [1] : []
+    content {
+      pre_sign_up = aws_lambda_function.pre_signup[0].arn
+    }
+  }
 }
 
 # --- App Client ---
 
+# --- Google OAuth credentials (resolved from SSM or direct variable) ---
+
+data "aws_ssm_parameter" "google_client_id" {
+  count = var.google_client_id_ssm_param != null ? 1 : 0
+  name  = var.google_client_id_ssm_param
+}
+
+data "aws_ssm_parameter" "google_client_secret" {
+  count = var.google_client_secret_ssm_param != null ? 1 : 0
+  name  = var.google_client_secret_ssm_param
+}
+
 locals {
-  google_enabled = var.google_client_id != null
+  resolved_google_client_id = coalesce(
+    var.google_client_id,
+    try(data.aws_ssm_parameter.google_client_id[0].value, null),
+  )
+  resolved_google_client_secret = coalesce(
+    var.google_client_secret,
+    try(data.aws_ssm_parameter.google_client_secret[0].value, null),
+  )
+  google_enabled = local.resolved_google_client_id != null
 }
 
 resource "aws_cognito_user_pool_client" "this" {
@@ -141,8 +168,8 @@ resource "aws_cognito_identity_provider" "google" {
   provider_type = "Google"
 
   provider_details = {
-    client_id                     = var.google_client_id
-    client_secret                 = var.google_client_secret
+    client_id                     = local.resolved_google_client_id
+    client_secret                 = local.resolved_google_client_secret
     authorize_scopes              = "openid email profile"
     attributes_url                = "https://people.googleapis.com/v1/people/me?personFields="
     attributes_url_add_attributes = "true"
@@ -172,6 +199,82 @@ resource "aws_cognito_user_group" "tenant_admin" {
   user_pool_id = aws_cognito_user_pool.this.id
   description  = "Scoped to a single tenant. Can manage API keys for that tenant."
   precedence   = 10
+}
+
+# --- Pre Sign-Up Lambda (email domain restriction for federated users) ---
+
+locals {
+  domain_restriction_enabled = local.google_enabled && length(var.google_allowed_domains) > 0
+}
+
+data "archive_file" "pre_signup" {
+  count       = local.domain_restriction_enabled ? 1 : 0
+  type        = "zip"
+  output_path = "${path.module}/.build/pre_signup.zip"
+
+  source {
+    content  = <<-PYTHON
+import os, json
+
+ALLOWED_DOMAINS = json.loads(os.environ.get("ALLOWED_DOMAINS", "[]"))
+
+def handler(event, context):
+    email = event["request"]["userAttributes"].get("email", "")
+    if ALLOWED_DOMAINS:
+        domain = email.split("@")[-1].lower() if "@" in email else ""
+        if domain not in ALLOWED_DOMAINS:
+            raise Exception(f"Email domain '{domain}' is not allowed.")
+    return event
+PYTHON
+    filename = "index.py"
+  }
+}
+
+resource "aws_lambda_function" "pre_signup" {
+  count         = local.domain_restriction_enabled ? 1 : 0
+  function_name = "${var.name}-pre-signup"
+  role          = aws_iam_role.pre_signup[0].arn
+  handler       = "index.handler"
+  runtime       = "python3.11"
+  timeout       = 5
+  filename      = data.archive_file.pre_signup[0].output_path
+
+  source_code_hash = data.archive_file.pre_signup[0].output_base64sha256
+
+  environment {
+    variables = {
+      ALLOWED_DOMAINS = jsonencode([for d in var.google_allowed_domains : lower(d)])
+    }
+  }
+}
+
+resource "aws_iam_role" "pre_signup" {
+  count = local.domain_restriction_enabled ? 1 : 0
+  name  = "${var.name}-pre-signup"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "pre_signup_logs" {
+  count      = local.domain_restriction_enabled ? 1 : 0
+  role       = aws_iam_role.pre_signup[0].name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_lambda_permission" "pre_signup" {
+  count         = local.domain_restriction_enabled ? 1 : 0
+  statement_id  = "AllowCognitoInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.pre_signup[0].function_name
+  principal     = "cognito-idp.amazonaws.com"
+  source_arn    = aws_cognito_user_pool.this.arn
 }
 
 # --- IAM Policy ---

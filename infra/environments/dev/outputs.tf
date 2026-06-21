@@ -82,3 +82,11 @@ output "demo_ui_url" {
   value = module.demo_ui.url
 }
 
+
+output "cognito_domain" {
+  value = nonsensitive(module.identity_provider.user_pool_domain)
+}
+
+output "cognito_google_enabled" {
+  value = nonsensitive(module.identity_provider.google_enabled)
+}

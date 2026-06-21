@@ -1,4 +1,5 @@
 import * as Auth from "../../../../shared/services/auth.js";
+import { COGNITO_REGION } from "../../../../shared/services/auth.js";
 import * as Session from "../../../../shared/utils/session.js";
 import QRCode from "qrcode";
 import { tpl } from "../../../../shared/utils/tpl.js";
@@ -10,14 +11,27 @@ let _onLogin = null;
 let _pendingEmail = null;
 let _mfaSession = null;
 let _root = null;
+let _ssoConfig = null;
 
 export function onLoginSuccess(callback) {
   _onLogin = callback;
 }
 
-export function mount(root) {
+export function mount(root, ssoConfig = {}) {
   _root = root;
+  _ssoConfig = ssoConfig;
   root.replaceChildren(tmpl());
+
+  // Show Google SSO button if configured
+  if (_ssoConfig.googleEnabled && _ssoConfig.cognitoDomain) {
+    const ssoBtn = root.querySelector("#google-sso-btn");
+    const divider = root.querySelector("#login-divider");
+    if (ssoBtn) {
+      ssoBtn.classList.remove("hidden");
+      ssoBtn.addEventListener("click", handleGoogleSignIn);
+    }
+    if (divider) divider.classList.remove("hidden");
+  }
 
   root.querySelector("#sign-in-form").addEventListener("submit", handleSignIn);
   root.querySelector("#sign-up-form").addEventListener("submit", handleSignUp);
@@ -68,6 +82,53 @@ export function unmount(root) {
   root.replaceChildren();
   _pendingEmail = null;
   _mfaSession = null;
+}
+
+async function handleGoogleSignIn() {
+  const { cognitoDomain, cognitoClientId, redirectUri } = _ssoConfig;
+
+  // PKCE: generate code_verifier and code_challenge
+  const verifier = generateCodeVerifier();
+  const challenge = await generateCodeChallenge(verifier);
+
+  // CSRF: generate state
+  const state = crypto.randomUUID();
+
+  // Persist for callback validation
+  sessionStorage.setItem("oauth_code_verifier", verifier);
+  sessionStorage.setItem("oauth_state", state);
+
+  const url =
+    `https://${cognitoDomain}.auth.${COGNITO_REGION}.amazoncognito.com/oauth2/authorize?` +
+    new URLSearchParams({
+      identity_provider: "Google",
+      response_type: "code",
+      client_id: cognitoClientId,
+      redirect_uri: redirectUri,
+      scope: "openid email profile",
+      code_challenge: challenge,
+      code_challenge_method: "S256",
+      state,
+    });
+  window.location.href = url;
+}
+
+function generateCodeVerifier() {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return btoa(String.fromCharCode(...array))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
+
+async function generateCodeChallenge(verifier) {
+  const encoded = new TextEncoder().encode(verifier);
+  const hash = await crypto.subtle.digest("SHA-256", encoded);
+  return btoa(String.fromCharCode(...new Uint8Array(hash)))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
 }
 
 function hideAll() {
