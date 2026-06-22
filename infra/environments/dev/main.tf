@@ -461,7 +461,6 @@ locals {
     SSM_PREFIX                                                = local.ssm_prefix
     MAX_BDA_INVOKE_RETRY_ATTEMPTS                             = local.max_bda_invoke_retry_attempts
     API_AUTH_ENABLED                                          = local.api_auth_enabled
-    API_AUTH_ALLOW_INSECURE_FALLBACK                          = "true"
     API_AUTH_CACHE_TTL                                        = local.api_auth_cache_ttl
     API_AUTH_INSECURE_SHARED_KEY_PARAM                        = "/${var.project_name}/${var.environment}/api-auth-insecure-shared-key"
     COGNITO_USER_POOL_ID                                      = module.identity_provider.user_pool_id

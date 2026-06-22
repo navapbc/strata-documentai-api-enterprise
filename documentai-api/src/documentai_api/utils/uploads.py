@@ -9,6 +9,7 @@ import filetype  # type: ignore[import-untyped]
 from fastapi import HTTPException, UploadFile
 
 from documentai_api.config.constants import (
+    MAX_UPLOAD_SIZE_BYTES,
     DocumentCategory,
     FileValidation,
     S3MetadataKeys,
@@ -121,15 +122,32 @@ async def validate_file_type(file: UploadFile) -> str:
 
 
 async def validate_upload(file: UploadFile) -> str:
-    """Full upload validation: filename, MIME detection, mismatch warning.
+    """Full upload validation: filename, size, MIME detection, mismatch warning.
 
     Returns the detected content type string.
 
     Raises:
-        HTTPException 400: if filename is missing or type isn't supported.
+        HTTPException 400: if filename is missing, file too large, or type isn't supported.
     """
     if not file.filename:
         raise HTTPException(status_code=400, detail="Filename is required")
+
+    # Size check: use Content-Length if available, otherwise probe the stream
+    if file.size is not None:
+        if file.size > MAX_UPLOAD_SIZE_BYTES:
+            raise HTTPException(
+                status_code=400,
+                detail=f"File too large ({file.size} bytes). Maximum is {MAX_UPLOAD_SIZE_BYTES} bytes.",
+            )
+    else:
+        # No Content-Length header — read one byte past the limit to detect oversized files
+        probe = await file.read(MAX_UPLOAD_SIZE_BYTES + 1)
+        if len(probe) > MAX_UPLOAD_SIZE_BYTES:
+            raise HTTPException(
+                status_code=400,
+                detail=f"File too large. Maximum is {MAX_UPLOAD_SIZE_BYTES} bytes.",
+            )
+        await file.seek(0)
 
     actual_content_type = await validate_file_type(file)
 

@@ -115,8 +115,11 @@ async def update_tenant(
     """Update a tenant's metadata."""
     _enforce_scope(claims, tenant_id)
 
-    # Tenant-admins cannot change activation status
+    # Tenant-admins cannot change activation status or extraction confidence floor
     is_active = body.is_active if is_super_admin(claims) else None
+    extraction_confidence_floor = (
+        body.extraction_confidence_floor if is_super_admin(claims) else None
+    )
 
     try:
         updated = tenants_util.update_tenant(
@@ -124,7 +127,7 @@ async def update_tenant(
             display_name=body.display_name,
             primary_contact=body.primary_contact,
             is_active=is_active,
-            extraction_confidence_floor=body.extraction_confidence_floor,
+            extraction_confidence_floor=extraction_confidence_floor,
         )
     except ValueError as e:
         msg = str(e)

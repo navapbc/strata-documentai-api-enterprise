@@ -144,7 +144,6 @@ class AppEnvConfig(PydanticBaseEnvConfig):
     api_auth_insecure_shared_key: str = ""
     api_auth_insecure_shared_key_param: str | None = None
     api_auth_enabled: bool = False
-    api_auth_allow_insecure_fallback: bool = False
     api_auth_cache_ttl: int = 300
     presigned_url_expiry_seconds: int = 900
     api_base_url: str = "http://localhost:8000"

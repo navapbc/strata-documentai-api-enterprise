@@ -382,8 +382,9 @@ def test_users_super_admin_returns_200(client):
     assert response.status_code == 200
 
 
-def test_users_approve_happy_path(client):
+def test_users_approve_happy_path(client, tenants_table):
     _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
+    tenants_table.put_item(Item={"tenantId": "acme"})
     with (
         patch("documentai_api.services.cognito.replace_role") as mock_role,
         patch("documentai_api.services.cognito.set_tenant") as mock_tenant,
@@ -437,12 +438,36 @@ def test_users_change_role_revoke(client):
     mock_role.assert_called_once_with("some-user", None)
 
 
-def test_users_change_tenant(client):
+def test_users_change_tenant(client, tenants_table):
     _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
+    tenants_table.put_item(Item={"tenantId": "new-tenant"})
     with patch("documentai_api.services.cognito.set_tenant") as mock_tenant:
         response = client.post(f"{USERS_URL}/some-user/tenant", json={"tenant_id": "new-tenant"})
     assert response.status_code == 200
     mock_tenant.assert_called_once_with("some-user", "new-tenant")
+
+
+def test_users_change_tenant_nonexistent_returns_400(client, tenants_table):
+    _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
+    with patch("documentai_api.services.cognito.set_tenant") as mock_tenant:
+        response = client.post(f"{USERS_URL}/some-user/tenant", json={"tenant_id": "ghost"})
+    assert response.status_code == 400
+    mock_tenant.assert_not_called()
+
+
+def test_users_approve_nonexistent_tenant_returns_400(client, tenants_table):
+    _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
+    with (
+        patch("documentai_api.services.cognito.replace_role") as mock_role,
+        patch("documentai_api.services.cognito.set_tenant") as mock_tenant,
+    ):
+        response = client.post(
+            f"{USERS_URL}/new-user/approve",
+            json={"role": "tenant-admin", "tenant_id": "ghost"},
+        )
+    assert response.status_code == 400
+    mock_role.assert_not_called()
+    mock_tenant.assert_not_called()
 
 
 def test_users_change_tenant_clear(client):
