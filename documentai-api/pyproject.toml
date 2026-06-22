@@ -47,6 +47,7 @@ metrics_processor = "documentai_api.jobs.metrics_processor.cli:app"
 metrics_aggregator = "documentai_api.jobs.metrics_aggregator.cli:app"
 export-openapi = "documentai_api.cli.export_openapi:app"
 api-keys = "documentai_api.cli.api_keys:app"
+tenants = "documentai_api.cli.tenants:app"
 
 [tool.mypy]
 pretty = true
