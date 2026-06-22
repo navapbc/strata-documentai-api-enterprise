@@ -190,12 +190,23 @@ See `/docs` for the complete list. Routes grouped by auth method:
 **Unauthenticated**:
 - `/health`
 
+### Creating Tenants
+
+Tenants can be created via:
+- **Admin API**: `POST /v1/admin/tenants`
+- **CLI**: `uv run tenants create --tenant-id my-tenant --display-name "My Tenant"`
+- **Make**: `make tenant TENANT=my-tenant DISPLAY_NAME="My Tenant"`
+
+Additional CLI commands: `tenants list`, `tenants deactivate`.
+
 ### Creating API Keys
 
 API keys can be created via:
 - **Admin UI**: Keys → Create Key
 - **Admin API**: `POST /v1/admin/api-keys`
 - **CLI**: `uv run api-keys generate --api-key-name my-service --environment dev`
+
+Additional CLI commands: `api-keys list`, `api-keys deactivate`.
 
 ## Testing
 
@@ -271,6 +282,7 @@ src/documentai_api/
 │   └── ...                         # S3, PDF, image, zip, upload utils
 └── cli/
     ├── api_keys.py                 # API key management CLI
+    ├── tenants.py                  # Tenant management CLI
     └── export_openapi.py           # Export OpenAPI spec
 tests/
 ├── conftest.py                     # Shared fixtures (moto, test client)

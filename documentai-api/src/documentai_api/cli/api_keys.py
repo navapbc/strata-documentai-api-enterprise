@@ -165,10 +165,13 @@ def list_keys(
     for record in records:
         client = record.get(ApiKeyRecord.API_KEY_NAME, "unknown")
         environment = record.get(ApiKeyRecord.ENVIRONMENT, "unknown")
-        active = str(record.get(ApiKeyRecord.IS_ACTIVE, False))
+        is_active = record.get(ApiKeyRecord.IS_ACTIVE, False)
+        active_cell = typer.style(
+            f"{is_active!s:<8}", fg=typer.colors.GREEN if is_active else typer.colors.RED
+        )
         created = record.get(ApiKeyRecord.CREATED_AT, "unknown")
         expires = record.get(ApiKeyRecord.EXPIRES_AT, "never")
-        typer.echo(f"{client:<30} {environment:<12} {active:<8} {created:<30} {expires}")
+        typer.echo(f"{client:<30} {environment:<12} {active_cell} {created:<30} {expires}")
     typer.echo("")
 
 
