@@ -63,7 +63,8 @@ def query_by_pk(table_name: str, pk_name: str, pk_value: str) -> list[dict[str, 
     """Query DynamoDB table by partition key."""
     table = AWSClientFactory.get_ddb_table(table_name)
     response = table.query(
-        KeyConditionExpression=f"{pk_name} = :val",
+        KeyConditionExpression="#pk = :val",
+        ExpressionAttributeNames={"#pk": pk_name},
         ExpressionAttributeValues={":val": pk_value},
     )
     return response.get("Items", [])

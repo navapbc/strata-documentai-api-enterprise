@@ -14,6 +14,7 @@ from documentai_api.config.constants import ApiVisualizationTag
 from documentai_api.logging import get_logger
 from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
 from documentai_api.services import cognito as cognito_service
+from documentai_api.utils import tenants as tenants_util
 from documentai_api.utils.audit import log_event
 from documentai_api.utils.jwt_auth import SUPER_ADMIN, TENANT_ADMIN
 
@@ -81,6 +82,11 @@ async def approve_user(
 ) -> dict[str, Any]:
     """Approve a pending user by assigning a role and (for tenant-admin) a tenant."""
     _validate_tenant_for_role(body.role, body.tenant_id)
+    if body.tenant_id and not tenants_util.get_tenant(body.tenant_id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Tenant '{body.tenant_id}' does not exist.",
+        )
     try:
         cognito_service.replace_role(username, body.role)
         # Super-admin is cross-tenant by definition - clear any prior tenant
@@ -139,6 +145,11 @@ async def change_tenant(
     claims: SuperAdminClaims,
 ) -> dict[str, Any]:
     """Set or clear a user's tenant assignment."""
+    if body.tenant_id and not tenants_util.get_tenant(body.tenant_id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Tenant '{body.tenant_id}' does not exist.",
+        )
     try:
         cognito_service.set_tenant(username, body.tenant_id)
     except Exception as e:

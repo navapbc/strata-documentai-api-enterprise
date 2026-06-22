@@ -39,6 +39,7 @@ def _decode_and_verify(token: str) -> dict[str, Any]:
     jwks_client = _get_jwks_client()
     signing_key = jwks_client.get_signing_key_from_jwt(token)
 
+    # First decode without aud to inspect token_use
     payload = jwt.decode(
         token,
         signing_key.key,
@@ -47,7 +48,7 @@ def _decode_and_verify(token: str) -> dict[str, Any]:
         options={
             "verify_exp": True,
             "verify_iss": True,
-            "verify_aud": False,  # Cognito access tokens don't have aud
+            "verify_aud": False,  # checked manually below based on token_use
         },
     )
 
@@ -55,6 +56,17 @@ def _decode_and_verify(token: str) -> dict[str, Any]:
     token_use = payload.get("token_use")
     if token_use not in ("access", "id"):
         raise jwt.InvalidTokenError("Not an access or id token")
+
+    # Cognito access tokens don't carry an aud claim, but id tokens do —
+    # validate audience for id tokens to prevent cross-client token reuse.
+    if token_use == "id":
+        config = get_aws_config()
+        expected_aud = config.cognito_client_id
+        token_aud = payload.get("aud")
+        if expected_aud and token_aud != expected_aud:
+            raise jwt.InvalidTokenError(
+                f"Invalid audience: expected {expected_aud}, got {token_aud}"
+            )
 
     return payload
 

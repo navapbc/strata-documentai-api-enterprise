@@ -371,8 +371,7 @@ def verify_api_key(api_key: str = Depends(api_key_header)) -> None:
     """Verify the API key from the request header.
 
     When API_AUTH_ENABLED is true, validates against DynamoDB api-keys table
-    with in-memory caching. Falls back to insecure shared key in non-prod
-    environments when API_AUTH_ALLOW_INSECURE_FALLBACK is true.
+    with in-memory caching. When disabled (local dev), uses insecure shared key.
     """
     config = get_app_env_config()
 
@@ -380,12 +379,7 @@ def verify_api_key(api_key: str = Depends(api_key_header)) -> None:
         _verify_with_insecure_shared_key(api_key)
         return
 
-    try:
-        _verify_with_ddb(api_key)
-    except HTTPException:
-        if not config.api_auth_allow_insecure_fallback:
-            raise
-        _verify_with_insecure_shared_key(api_key)
+    _verify_with_ddb(api_key)
 
 
 def get_user_context_from_api_key(api_key: str = Depends(api_key_header)) -> UserContext:
