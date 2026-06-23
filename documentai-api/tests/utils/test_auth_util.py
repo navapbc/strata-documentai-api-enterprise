@@ -1,8 +1,6 @@
 """Tests for utils/auth.py."""
 
 import hashlib
-import threading
-import time
 from unittest.mock import patch
 
 import pytest
@@ -14,30 +12,17 @@ from documentai_api.utils import auth as auth_util
 from documentai_api.utils.cache import get_cache
 
 
-def _drain_lastused_threads(timeout: float = 2.0) -> None:
-    """Join any in-flight lastUsed updater threads.
-
-    verify_api_key fires `_update_last_used` in daemon threads; under randomized test
-    ordering one spawned by an earlier test can still be running here and mutate the
-    shared `_last_used_written_at` / config cache mid-assertion. Draining them first
-    makes these tests deterministic.
-    """
-    deadline = time.monotonic() + timeout
-    for thread in threading.enumerate():
-        if thread.name == auth_util._LAST_USED_THREAD_NAME and thread.is_alive():
-            thread.join(timeout=max(0.0, deadline - time.monotonic()))
-
-
 @pytest.fixture(autouse=True)
 def clear_cache():
-    """Clear the in-memory auth cache and lastUsed debounce state between tests."""
-    _drain_lastused_threads()
+    """Clear the in-memory auth key cache between tests.
+
+    Draining leaked lastUsed updater threads and resetting ``_last_used_written_at``
+    is handled suite-wide by the autouse ``drain_lastused_threads`` fixture in
+    tests/conftest.py.
+    """
     get_cache().clear()
-    auth_util._last_used_written_at.clear()
     yield
-    _drain_lastused_threads()
     get_cache().clear()
-    auth_util._last_used_written_at.clear()
 
 
 @pytest.fixture
