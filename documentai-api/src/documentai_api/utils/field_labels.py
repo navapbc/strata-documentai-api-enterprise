@@ -58,11 +58,11 @@ def _to_human_label(field_name: str) -> str:
 
 @lru_cache(maxsize=64)
 def _load_labels(document_type: str) -> dict[str, str]:
-    """Load label map for a document type, cached."""
+    """Load label map for a document type, cached. Keys lowercased for case-insensitive lookup."""
     label_file = LABELS_DIR / f"{document_type.lower()}.json"
     if label_file.exists():
-        labels: dict[str, str] = json.loads(label_file.read_text())
-        return labels
+        raw: dict[str, str] = json.loads(label_file.read_text())
+        return {k.lower(): v for k, v in raw.items()}
     logger.warning(
         "No field-label file for document type %r (looked for %s); "
         "falling back to auto-generated labels",
@@ -76,7 +76,7 @@ def get_field_label(document_type: str | None, field_name: str) -> str:
     """Look up display name for a field. Falls back to auto-generated label."""
     if document_type:
         labels = _load_labels(document_type)
-        label = labels.get(field_name)
+        label = labels.get(field_name.lower())
         if label:
             return label
     return _to_human_label(field_name)

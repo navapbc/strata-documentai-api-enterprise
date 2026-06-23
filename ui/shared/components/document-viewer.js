@@ -227,18 +227,19 @@ export function renderExtractedData(
       const conf =
         isObj && typeof val.confidence === "number" ? val.confidence : null;
       const value = isObj && "value" in val ? val.value : val;
+      const label = isObj && val.displayName ? val.displayName : key;
       const display =
         value != null && typeof value === "object"
           ? JSON.stringify(value)
           : String(value ?? "-");
-      return { key, conf, display };
+      return { key, label, conf, display };
     })
     .sort((a, b) => {
       if (a.conf == null) return b.conf == null ? 0 : 1;
       if (b.conf == null) return -1;
       return a.conf - b.conf;
     })
-    .map(({ key, conf, display }) => {
+    .map(({ key, label, conf, display }) => {
       const confCell =
         conf == null
           ? "<td>-</td>"
@@ -250,7 +251,7 @@ export function renderExtractedData(
                   : "confidence-low"
             }">${(conf * 100).toFixed(1)}%</td>`;
       const valueContent = show ? esc(display) : "•••••";
-      return `<tr data-field="${esc(key)}"><td class="detail-label">${esc(key)}</td><td class="extracted-value" data-value="${esc(display)}">${valueContent}</td>${confCell}</tr>`;
+      return `<tr data-field="${esc(key)}"><td class="detail-label">${esc(label)}</td><td class="extracted-value" data-value="${esc(display)}">${valueContent}</td>${confCell}</tr>`;
     })
     .join("");
   if (!rows) return "";
