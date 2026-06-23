@@ -172,10 +172,12 @@ def test_build_v1_api_response(
         "field_name_1": {
             "confidence": 0.95,
             "value": "value1" if include_extracted_data else "<redacted>",
+            "displayName": "Field Name 1",
         },
         "field_name_2": {
             "confidence": 0.85,
             "value": "value2" if include_extracted_data else "<redacted>",
+            "displayName": "Field Name 2",
         },
     }
 

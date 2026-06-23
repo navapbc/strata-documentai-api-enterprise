@@ -1,0 +1,11 @@
+{
+  "card_number": "Card Number",
+  "uscis_number": "USCIS Number",
+  "category": "Category",
+  "cardholder_name": "Cardholder Name",
+  "date_of_birth": "Date of Birth",
+  "country_of_birth": "Country of Birth",
+  "valid_from": "Valid From",
+  "card_expires": "Card Expires",
+  "sex": "Sex"
+}

@@ -14,6 +14,7 @@ from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services.bda import get_bda_result_json
 from documentai_api.utils.bda import extract_field_values_from_bda_results
 from documentai_api.utils.dto import ClassificationData, InternalApiResponse
+from documentai_api.utils.field_labels import get_field_label
 from documentai_api.utils.response_codes import ResponseCodes
 
 logger = get_logger(__name__)
@@ -22,7 +23,10 @@ logger = get_logger(__name__)
 # TODO: Refactor to improve testability - consider making public along with
 # restructuring to reduce mocking in tests
 def _extract_field_values(
-    ddb_record: dict[str, Any], include_extracted_data: bool, include_bounding_box: bool = False
+    ddb_record: dict[str, Any],
+    include_extracted_data: bool,
+    include_bounding_box: bool = False,
+    document_type: str | None = None,
 ) -> dict[str, Any]:
     """Extract field data for API response."""
     if not ddb_record:
@@ -59,6 +63,7 @@ def _extract_field_values(
             entry: dict[str, Any] = {
                 "confidence": round(confidence, 2),
                 "value": field_values.get(field_name) if include_extracted_data else "<redacted>",
+                "displayName": get_field_label(document_type, field_name),
             }
             if include_bounding_box and field_name in field_geometry:
                 geo_data = field_geometry[field_name]
@@ -164,7 +169,9 @@ def build_v1_api_response(
         if job_status == ProcessStatus.SUCCESS.value:
             base_response["message"] = "Document processed successfully"
 
-            fields = _extract_field_values(ddb_record, include_extracted_data, include_bounding_box)
+            fields = _extract_field_values(
+                ddb_record, include_extracted_data, include_bounding_box, matched_document_class
+            )
 
             tenant_id = ddb_record.get("tenantId")
             document_type = ddb_record.get(DocumentMetadata.BDA_MATCHED_DOCUMENT_CLASS)

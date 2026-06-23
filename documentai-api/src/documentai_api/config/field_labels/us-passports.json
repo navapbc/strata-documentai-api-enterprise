@@ -1,0 +1,13 @@
+{
+  "name.given_name": "Given Name",
+  "name.last_name": "Last Name",
+  "document_number": "Document Number",
+  "expiration_date": "Expiration Date",
+  "date_of_birth": "Date of Birth",
+  "date_of_issue": "Date of Issue",
+  "sex": "Sex",
+  "place_of_birth": "Place of Birth",
+  "passport_type": "Passport Type",
+  "authority": "Authority",
+  "mrz_code": "MRZ Code"
+}

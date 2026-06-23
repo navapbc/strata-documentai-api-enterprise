@@ -1,0 +1,15 @@
+{
+  "VENDORDETAILS.VENDORNAME": "Vendor Name",
+  "VENDORDETAILS.VENDORADDRESS": "Vendor Address",
+  "VENDORDETAILS.VENDORPHONE": "Vendor Phone",
+  "PAYMENTDETAILS.SUBTOTAL": "Subtotal",
+  "PAYMENTDETAILS.TAX": "Tax",
+  "PAYMENTDETAILS.TOTAL": "Total",
+  "PAYMENTDETAILS.AMOUNTPAID": "Amount Paid",
+  "RECEIPT_DATE": "Receipt Date",
+  "RECEIPT_ID": "Receipt ID",
+  "LINEITEMS.QTY": "Line Item Quantity",
+  "LINEITEMS.AMT": "Line Item Amount",
+  "LINEITEMS.PRODUCT_CODE": "Line Item Product Code",
+  "expire": "Expiration Date"
+}

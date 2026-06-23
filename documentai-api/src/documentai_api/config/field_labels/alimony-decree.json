@@ -1,0 +1,17 @@
+{
+  "recipient_name.first_name": "Recipient First Name",
+  "recipient_name.middle_name": "Recipient Middle Name",
+  "recipient_name.last_name": "Recipient Last Name",
+  "recipient_address": "Recipient Address",
+  "recipient_state": "Recipient State",
+  "recipient_zip_code": "Recipient Zip Code",
+  "payer_name": "Payer Name",
+  "case_number": "Case Number",
+  "court_name": "Court Name",
+  "order_date": "Order Date",
+  "payment_amount": "Payment Amount",
+  "payment_frequency": "Payment Frequency",
+  "payment_type": "Payment Type",
+  "effective_start_date": "Effective Start Date",
+  "effective_end_date": "Effective End Date"
+}

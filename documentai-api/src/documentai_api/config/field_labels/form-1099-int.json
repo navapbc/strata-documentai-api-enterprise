@@ -1,0 +1,17 @@
+{
+  "InterestIncomeReporting.InterestIncome": "Interest Income",
+  "InterestIncomeReporting.FixedIncomeInterest": "Interest Income Fixed Income Interest",
+  "InterestIncomeReporting.InvestmentExpenses": "Interest Income Investment Expenses",
+  "InterestIncomeReporting.FederalTaxWithheld": "Interest Income Federal Tax Withheld",
+  "InterestIncomeReporting.ForeignTaxPaid": "Interest Income Foreign Tax Paid",
+  "InterestIncomeReporting.StateofPosession": "Interest Income State of Possession",
+  "InterestIncomeReporting.TaxExemptInterest": "Interest Income Tax Exempt Interest",
+  "InterestIncomeReporting.TaxExemptCUSIP": "Interest Income Tax Exempt CUSIP",
+  "InterestIncomeReporting.StateTaxWithheld": "Interest Income State Tax Withheld",
+  "InterestIncomeReporting.State": "Interest Income State",
+  "InterestIncomeReporting.StateID": "Interest Income State ID",
+  "GeneralInformation.PayerTIN": "Payer TIN",
+  "GeneralInformation.RecipientTIN": "Recipient TIN",
+  "GeneralInformation.AccountNumber": "Account Number",
+  "GeneralInformation.CalendarYear": "Calendar Year"
+}

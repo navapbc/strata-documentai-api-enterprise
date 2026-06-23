@@ -1,0 +1,11 @@
+{
+  "i94_admission_number": "I-94 Admission Number",
+  "traveler_name": "Traveler Name",
+  "passport_number": "Passport Number",
+  "country_of_citizenship": "Country of Citizenship",
+  "date_of_birth": "Date of Birth",
+  "date_of_entry": "Date of Entry",
+  "class_of_admission": "Class of Admission",
+  "admit_until_date": "Admit Until Date",
+  "port_of_entry": "Port of Entry"
+}

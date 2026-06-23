@@ -1,0 +1,17 @@
+{
+  "tenant_name": "Tenant Name",
+  "landlord_name": "Landlord Name",
+  "property_address": "Property Address",
+  "payment_details.base_rent": "Base Rent",
+  "payment_details.utilities": "Utilities",
+  "payment_details.fees": "Fees",
+  "payment_details.total_monthly_payment": "Total Monthly Payment",
+  "security_deposit": "Security Deposit",
+  "lease_start_date": "Lease Start Date",
+  "lease_end_date": "Lease End Date",
+  "payment_due_day": "Payment Due Day",
+  "statement_period.start_date": "Statement Period Start Date",
+  "statement_period.end_date": "Statement Period End Date",
+  "balance_due": "Balance Due",
+  "lease_type": "Lease Type"
+}

@@ -1,0 +1,13 @@
+{
+  "recipient_name.first_name": "Recipient First Name",
+  "recipient_name.last_name": "Recipient Last Name",
+  "recipient_ssn": "Recipient SSN",
+  "payer_name": "Payer Name",
+  "royalties_amount": "Royalties Amount",
+  "payment_frequency": "Payment Frequency",
+  "payment_period_start": "Payment Period Start",
+  "payment_period_end": "Payment Period End",
+  "federal_tax_withheld": "Federal Tax Withheld",
+  "property_or_work_title": "Property or Work Title",
+  "document_date": "Document Date"
+}

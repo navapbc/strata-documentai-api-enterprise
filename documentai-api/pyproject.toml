@@ -48,6 +48,7 @@ metrics_aggregator = "documentai_api.jobs.metrics_aggregator.cli:app"
 export-openapi = "documentai_api.cli.export_openapi:app"
 api-keys = "documentai_api.cli.api_keys:app"
 tenants = "documentai_api.cli.tenants:app"
+pull-blueprint-fields = "documentai_api.cli.pull_blueprint_fields:app"
 
 [tool.mypy]
 pretty = true

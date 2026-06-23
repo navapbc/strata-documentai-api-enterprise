@@ -1,0 +1,20 @@
+{
+  "SERVICES_TABLE.quantity": "Services Quantity",
+  "SERVICES_TABLE.unit price": "Services Unit Price",
+  "SERVICES_TABLE.amount": "Services Amount",
+  "SERVICES_TABLE.product name": "Services Product Name",
+  "SERVICES_TABLE.product description": "Services Product Description",
+  "ID": "ID",
+  "DATE": "Date",
+  "PO": "PO",
+  "SUBTOTAL": "Subtotal",
+  "TAX": "Tax",
+  "TOTAL": "Total",
+  "VENDORNAME": "Vendor Name",
+  "VENDORADDRESS": "Vendor Address",
+  "RECIPIENTNAME": "Recipient Name",
+  "RECIPIENTADDRESS": "Recipient Address",
+  "VALIDATION": "Validation",
+  "VENDOR_TAX_ID": "Vendor Tax ID",
+  "RECEIVER_TAX_ID": "Receiver Tax ID"
+}

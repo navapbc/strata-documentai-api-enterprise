@@ -1,0 +1,15 @@
+{
+  "sevis_id": "SEVIS ID",
+  "student_name": "Student Name",
+  "date_of_birth": "Date of Birth",
+  "country_of_birth": "Country of Birth",
+  "country_of_citizenship": "Country of Citizenship",
+  "school_name": "School Name",
+  "school_code": "School Code",
+  "program_of_study": "Program of Study",
+  "education_level": "Education Level",
+  "program_start_date": "Program Start Date",
+  "program_end_date": "Program End Date",
+  "dso_name": "DSO Name",
+  "issue_date": "Issue Date"
+}

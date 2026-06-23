@@ -1,0 +1,11 @@
+{
+  "employee_name": "Employee Name",
+  "employer_name": "Employer Name",
+  "job_title": "Job Title",
+  "employment_start_date": "Employment Start Date",
+  "employment_end_date": "Employment End Date",
+  "termination_reason": "Termination Reason",
+  "issuer_name": "Issuer Name",
+  "issuer_title": "Issuer Title",
+  "letter_date": "Letter Date"
+}
