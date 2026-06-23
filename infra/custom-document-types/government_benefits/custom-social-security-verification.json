@@ -3,32 +3,80 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "class": "Social-Security-Verification",
-  "definitions": {},
+  "definitions": {
+    "recipient_name": {
+      "properties": {
+        "first_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "First name of the SSA benefit recipient."
+        },
+        "middle_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "Middle name of the recipient."
+        },
+        "last_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "Last name of the recipient."
+        }
+      }
+    }
+  },
   "properties": {
-    "beneficiary_name": {
-      "type": "string",
-      "inferenceType": "explicit",
-      "instruction": "The full name of the individual receiving the Social Security benefits."
+    "recipient_name": {
+      "$ref": "#/definitions/recipient_name"
     },
-    "ssn_last_four": {
+    "recipient_ssn": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The last four digits of the beneficiary's Social Security Number, if visible on the document."
+      "instruction": "Social Security Number. Reformat as XXX-XX-XXXX."
     },
-    "monthly_benefit_amount": {
+    "recipient_address": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The current gross monthly dollar amount paid to the individual before any deductions (like Medicare premiums)."
+      "instruction": "Mailing address of the recipient."
     },
     "benefit_type": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The specific type of benefit being received, such as Retirement, Disability (SSDI), or Supplemental Security Income (SSI)."
+      "instruction": "Type of SSA benefit (retirement, disability, SSI, survivor)."
+    },
+    "monthly_benefit_amount": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "Current monthly benefit payment amount."
+    },
+    "monthly_gross_amount": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "Current monthly gross benefit payment amount before deductions. Necessary to track in the event of overpayment."
     },
     "effective_date": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The date the current payment amount went into effect, typically found near the top or within the payment breakdown text."
+      "instruction": "Date the current payment amount went into effect. YYYY-MM-DD format."
+    },
+    "medicare_deduction": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "Medicare premium deducted from benefit if applicable."
+    },
+    "net_payment_amount": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "Net payment after deductions."
+    },
+    "letter_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Date the SSA letter was issued. YYYY-MM-DD format."
+    },
+    "claim_number": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "SSA claim number or BIC."
     }
   }
 }

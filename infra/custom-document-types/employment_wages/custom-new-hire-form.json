@@ -3,32 +3,125 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "class": "New-Hire-Form",
-  "definitions": {},
+  "definitions": {
+    "employee_name": {
+      "properties": {
+        "first_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "First name of the new hire."
+        },
+        "middle_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "Middle name of the new hire."
+        },
+        "last_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "Last name of the new hire."
+        }
+      }
+    }
+  },
   "properties": {
     "employee_name": {
+      "$ref": "#/definitions/employee_name"
+    },
+    "employee_ssn": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The full name of the newly hired employee."
+      "instruction": "Social Security Number of the employee. Reformat as XXX-XX-XXXX."
+    },
+    "employee_address": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Street address of the employee."
+    },
+    "employee_city": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "City of the employee."
+    },
+    "employee_state": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "State of the employee. Two-letter code."
+    },
+    "employee_zip_code": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Zip code of the employee."
+    },
+    "date_of_birth": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Date of birth of the employee. YYYY-MM-DD format."
     },
     "employer_name": {
       "type": "string",
       "inferenceType": "explicit",
       "instruction": "The official name of the hiring company or organization."
     },
+    "employer_federal_ein": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Federal Employer Identification Number."
+    },
+    "employer_state_ein": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "State Employer Identification Number."
+    },
+    "employer_address": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Address of the employer."
+    },
+    "employer_telephone": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Phone number of the employer."
+    },
     "hire_date": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The employee's official first day of work or effective hire date."
+      "instruction": "The employee's official first day of work or effective hire date. YYYY-MM-DD format."
     },
     "job_title": {
       "type": "string",
       "inferenceType": "explicit",
       "instruction": "The position, role, or job title assigned to the new hire."
     },
-    "filing_status": {
+    "salary_or_wage": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The tax withholding filing status chosen by the employee, such as Single, Married filing jointly, or Head of household."
+      "instruction": "Starting salary or hourly wage."
+    },
+    "pay_frequency": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Pay frequency (weekly, biweekly, monthly)."
+    },
+    "health_insurance": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Health insurance provided by employer to employee."
+    },
+    "date_payment": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Date of payment to employee. YYYY-MM-DD format."
+    },
+    "date_first_payment": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Date of first payment to employee. YYYY-MM-DD format."
+    },
+    "weekly_hours_worked": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Number of hours worked per week. May be needed for ABAWD population."
     }
   }
 }

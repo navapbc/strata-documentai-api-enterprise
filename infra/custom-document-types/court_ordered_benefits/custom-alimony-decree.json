@@ -3,37 +3,90 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "class": "Alimony-Decree",
-  "definitions": {},
+  "definitions": {
+    "recipient_name": {
+      "properties": {
+        "first_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "First name of the spouse receiving alimony."
+        },
+        "middle_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "Middle name of the recipient."
+        },
+        "last_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "Last name of the recipient."
+        }
+      }
+    }
+  },
   "properties": {
-    "issuing_court": {
-      "type": "string",
-      "inferenceType": "explicit",
-      "instruction": "The name of the court, county, or state jurisdiction that issued the support decree."
+    "recipient_name": {
+      "$ref": "#/definitions/recipient_name"
     },
-    "payor_spouse": {
+    "recipient_address": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The full name of the spouse ordered to make the maintenance or alimony payments."
+      "instruction": "Address of the recipient."
     },
-    "payee_spouse": {
+    "recipient_state": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The full name of the spouse receiving the maintenance or alimony payments."
+      "instruction": "State of the recipient. Two-letter code."
     },
-    "alimony_amount": {
+    "recipient_zip_code": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The recurring dollar amount ordered for spousal support."
+      "instruction": "Zip code of the recipient."
+    },
+    "payer_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Full name of the spouse ordered to make alimony payments."
+    },
+    "case_number": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Court case or child support enforcement case number."
+    },
+    "court_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Name of the court, county, or state jurisdiction that issued the decree."
+    },
+    "order_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Date the court order was issued. YYYY-MM-DD format."
+    },
+    "payment_amount": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "Recurring dollar amount ordered for spousal support per payment cycle."
     },
     "payment_frequency": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The recurring schedule of the payments, usually Monthly or Bi-Weekly."
+      "instruction": "Recurring schedule of the payments, such as Monthly or Bi-Weekly."
     },
-    "termination_condition": {
+    "payment_type": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The conditions under which alimony ends, such as a specific end date, remarriage of the recipient, or death."
+      "instruction": "Type of support: Alimony, Child Support, or both."
+    },
+    "effective_start_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Date payments are ordered to begin. YYYY-MM-DD format."
+    },
+    "effective_end_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Date payments are ordered to end, if specified. YYYY-MM-DD format."
     }
   }
 }

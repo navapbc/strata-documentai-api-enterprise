@@ -3,32 +3,100 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "class": "Pension-Verification",
-  "definitions": {},
+  "definitions": {
+    "recipient_name": {
+      "properties": {
+        "first_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "First name of the pension recipient."
+        },
+        "middle_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "Middle name of the pension recipient."
+        },
+        "last_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "Last name of the pension recipient."
+        }
+      }
+    }
+  },
   "properties": {
-    "pensioner_name": {
-      "type": "string",
-      "inferenceType": "explicit",
-      "instruction": "The full name of the retired employee receiving the pension benefit."
+    "recipient_name": {
+      "$ref": "#/definitions/recipient_name"
     },
-    "issuing_organization": {
+    "recipient_ssn": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The name of the company, union, or government entity paying out the pension."
+      "instruction": "Social Security Number of the recipient. Reformat as XXX-XX-XXXX."
     },
-    "gross_payout_amount": {
+    "recipient_address": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The total gross dollar amount of the pension benefit before taxes or deductions are removed."
+      "instruction": "Mailing address of the recipient."
     },
-    "payout_frequency": {
+    "recipient_state": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The recurrence interval of the pension payment, typically Monthly."
+      "instruction": "State of the recipient. Two-letter code."
     },
-    "benefit_start_date": {
+    "recipient_zip_code": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The date the pension payments officially commenced or the date of the most recent cost-of-living adjustment."
+      "instruction": "Zip code of the recipient."
+    },
+    "payer_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Name of the pension plan or administering organization."
+    },
+    "payer_ein": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Employer Identification Number of the payer."
+    },
+    "gross_distribution": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "Total gross pension distribution amount."
+    },
+    "taxable_amount": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "Taxable portion of the distribution."
+    },
+    "federal_tax_withheld": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "Federal income tax withheld."
+    },
+    "payment_frequency": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Payment frequency (monthly, quarterly, annually)."
+    },
+    "payment_start_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Date pension payments began. YYYY-MM-DD format."
+    },
+    "distribution_code": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "IRS distribution code (e.g., 7 for normal distribution)."
+    },
+    "tax_year": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Tax year the pension income is reported for."
+    },
+    "document_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Date the statement was issued. YYYY-MM-DD format."
     }
   }
 }

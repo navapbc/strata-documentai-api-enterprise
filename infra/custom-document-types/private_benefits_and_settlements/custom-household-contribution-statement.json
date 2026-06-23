@@ -3,37 +3,65 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "class": "Household-Contribution-Statement",
-  "definitions": {},
+  "definitions": {
+    "recipient_name": {
+      "properties": {
+        "first_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "First name of the household member receiving the contribution."
+        },
+        "last_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "Last name of the household member receiving the contribution."
+        }
+      }
+    }
+  },
   "properties": {
+    "recipient_name": {
+      "$ref": "#/definitions/recipient_name"
+    },
+    "recipient_address": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Address of the recipient household."
+    },
     "contributor_name": {
       "type": "string",
       "inferenceType": "explicit",
       "instruction": "The full name of the person who is contributing money or paying towards the household expenses."
     },
-    "recipient_name": {
+    "contributor_relationship": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The full name of the person receiving the financial help or the primary householder named in the letter."
+      "instruction": "Relationship of the contributor to the household (e.g., parent, friend)."
     },
     "contribution_amount": {
-      "type": "string",
+      "type": "number",
       "inferenceType": "explicit",
-      "instruction": "The dollar amount of financial assistance or expense coverage specified in the statement."
+      "instruction": "Dollar amount of the contribution per period."
     },
     "contribution_frequency": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "How often the money is contributed, such as Monthly, Weekly, or One-time, as described in the text."
+      "instruction": "How often the money is contributed, such as Monthly, Weekly, or One-time."
     },
-    "expense_type": {
+    "contribution_purpose": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The specific expenses the money is intended for, if mentioned (e.g., Rent, Utilities, Groceries, or General support)."
+      "instruction": "What the contribution covers (rent, utilities, food, general expenses)."
     },
     "statement_date": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The date the letter or note was written or signed by the contributor."
+      "instruction": "Date the letter or statement was written or signed by the contributor. YYYY-MM-DD format."
+    },
+    "has_signature": {
+      "type": "boolean",
+      "inferenceType": "explicit",
+      "instruction": "Whether the letter or statement is signed by the contributor."
     }
   }
 }
