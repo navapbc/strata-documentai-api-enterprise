@@ -3,37 +3,95 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "class": "Child-Support-Document",
-  "definitions": {},
+  "definitions": {
+    "recipient_name": {
+      "properties": {
+        "first_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "First name of the person receiving child support."
+        },
+        "middle_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "Middle name of the recipient."
+        },
+        "last_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "Last name of the recipient."
+        }
+      }
+    }
+  },
   "properties": {
+    "recipient_name": {
+      "$ref": "#/definitions/recipient_name"
+    },
+    "recipient_address": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Address of the recipient."
+    },
+    "recipient_state": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "State of the recipient. Two-letter code."
+    },
+    "recipient_zip_code": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Zip code of the recipient."
+    },
+    "payer_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Full name of the person paying child support. May be labeled as Payor, Obligor, or Defendant."
+    },
     "case_number": {
       "type": "string",
       "inferenceType": "explicit",
       "instruction": "The court case number or state registry identification number associated with the child support file."
     },
-    "obligor_name": {
+    "court_name": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The full name of the parent legally obligated to pay the child support. May be labeled as Payor or Defendant."
+      "instruction": "Name of the issuing court."
     },
-    "obligee_name": {
+    "order_date": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The full name of the parent or guardian receiving the child support. May be labeled as Payee, Recipient, or Plaintiff."
+      "instruction": "Date the court order was issued. YYYY-MM-DD format."
+    },
+    "payment_amount": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "Ordered payment amount per period. Presented as lump sum."
     },
     "payment_frequency": {
       "type": "string",
       "inferenceType": "explicit",
       "instruction": "How often payments are due, such as Monthly, Semi-Monthly, or Weekly."
     },
-    "base_support_amount": {
+    "payment_type": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The recurring base dollar amount ordered for child support per payment cycle, excluding arrears or medical add-ons."
+      "instruction": "Type of support: Child Support, Alimony, or both."
     },
-    "effective_date": {
+    "effective_start_date": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The date on which the support obligation begins, or the date the current ledger history starts."
+      "instruction": "Date the support obligation begins. YYYY-MM-DD format."
+    },
+    "effective_end_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Date payments are ordered to end, if specified. YYYY-MM-DD format."
+    },
+    "child_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Name of the child for whom support is ordered. If multiple children, include each child's name."
     }
   }
 }

@@ -3,37 +3,105 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "class": "Annuity-Statement",
-  "definitions": {},
+  "definitions": {
+    "recipient_name": {
+      "properties": {
+        "first_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "First name of the annuity payment recipient."
+        },
+        "middle_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "Middle name of the annuity payment recipient."
+        },
+        "last_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "Last name of the annuity payment recipient."
+        }
+      }
+    }
+  },
   "properties": {
-    "contract_holder": {
+    "recipient_name": {
+      "$ref": "#/definitions/recipient_name"
+    },
+    "recipient_ssn": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The full name of the primary owner or annuitant listed on the contract."
+      "instruction": "Social Security Number of the recipient. Reformat as XXX-XX-XXXX."
+    },
+    "recipient_address": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Mailing address of the recipient."
+    },
+    "recipient_state": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "State of the recipient. Two-letter code."
+    },
+    "recipient_zip_code": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Zip code of the recipient."
     },
     "contract_number": {
       "type": "string",
       "inferenceType": "explicit",
       "instruction": "The unique contract, policy, or account number identifying the annuity."
     },
-    "annuity_provider": {
+    "payer_name": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The name of the insurance company or financial institution issuing the annuity statement."
+      "instruction": "Name of the insurance company or financial institution issuing the annuity."
     },
-    "statement_period": {
+    "payer_ein": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The date range covered by the statement, or the specific statement closing date."
+      "instruction": "Employer Identification Number of the payer."
+    },
+    "payment_amount": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "Gross annuity payment amount per period."
+    },
+    "payment_frequency": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "How often payments are made (monthly, quarterly, annually)."
+    },
+    "annuity_start_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Date annuity payments began. YYYY-MM-DD format."
+    },
+    "tax_year": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Tax year the annuity income is reported for."
+    },
+    "taxable_amount": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "Taxable portion of the annuity distribution."
+    },
+    "federal_tax_withheld": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "Federal income tax withheld from annuity payments."
     },
     "current_contract_value": {
       "type": "string",
       "inferenceType": "explicit",
       "instruction": "The total ending monetary value of the annuity contract for the current period, often labeled Ending Value or Account Balance."
     },
-    "distribution_amount": {
+    "document_date": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The dollar amount of any systematic or scheduled payout distributed during the period, if applicable."
+      "instruction": "Date the statement or form was issued. YYYY-MM-DD format."
     }
   }
 }

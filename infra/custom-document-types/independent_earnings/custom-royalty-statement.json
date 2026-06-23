@@ -3,37 +3,70 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "class": "Royalty-Statement",
-  "definitions": {},
+  "definitions": {
+    "recipient_name": {
+      "properties": {
+        "first_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "First name of the royalty recipient."
+        },
+        "last_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "Last name of the royalty recipient."
+        }
+      }
+    }
+  },
   "properties": {
-    "payee_name": {
-      "type": "string",
-      "inferenceType": "explicit",
-      "instruction": "The full name of the individual or entity earning and receiving the royalty payments."
+    "recipient_name": {
+      "$ref": "#/definitions/recipient_name"
     },
-    "payor_organization": {
+    "recipient_ssn": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The name of the publisher, studio, distributor, or corporation paying out the royalties."
+      "instruction": "Social Security Number of the recipient. Reformat as XXX-XX-XXXX."
+    },
+    "payer_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Name of the publisher, studio, distributor, or corporation paying out the royalties."
+    },
+    "royalties_amount": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "Total royalty income amount for the period."
+    },
+    "payment_frequency": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Frequency of royalty payments (monthly, quarterly, annually)."
+    },
+    "payment_period_start": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Start of the reporting period. YYYY-MM-DD format."
+    },
+    "payment_period_end": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "End of the reporting period. YYYY-MM-DD format."
+    },
+    "federal_tax_withheld": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "Federal income tax withheld."
     },
     "property_or_work_title": {
       "type": "string",
       "inferenceType": "explicit",
       "instruction": "The name of the specific book, song, album, patent, or asset generating the royalty earnings."
     },
-    "statement_period": {
+    "document_date": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The specific time frame or date range covered by the royalty calculations."
-    },
-    "gross_royalty_earnings": {
-      "type": "string",
-      "inferenceType": "explicit",
-      "instruction": "The total gross royalty earnings accrued during the period before any production costs, splits, or taxes are deducted."
-    },
-    "net_payment_amount": {
-      "type": "string",
-      "inferenceType": "explicit",
-      "instruction": "The final net dollar amount being distributed to the payee for the statement period."
+      "instruction": "Date the statement was issued. YYYY-MM-DD format."
     }
   }
 }

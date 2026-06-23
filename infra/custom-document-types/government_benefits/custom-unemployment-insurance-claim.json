@@ -3,27 +3,95 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "class": "Unemployment-Insurance-Claim-Form",
-  "definitions": {},
+  "definitions": {
+    "claimant_name": {
+      "properties": {
+        "first_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "First name of the unemployment claimant."
+        },
+        "middle_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "Middle name of the claimant."
+        },
+        "last_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "Last name of the claimant."
+        }
+      }
+    }
+  },
   "properties": {
     "claimant_name": {
-      "type": "string",
-      "inferenceType": "explicit",
-      "instruction": "The full legal name of the person filing the unemployment claim."
+      "$ref": "#/definitions/claimant_name"
     },
-    "claimant_id": {
+    "claimant_ssn": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The unique identifier for the claimant. This may be labeled as Claimant ID, Customer ID, SSN, or Social Security Number on the document."
+      "instruction": "Social Security Number. Reformat as XXX-XX-XXXX."
     },
-    "date_of_birth": {
+    "claimant_address": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The date of birth of the claimant."
+      "instruction": "Mailing address of the claimant."
     },
-    "claim_date": {
+    "claimant_state": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The date the unemployment claim was filed."
+      "instruction": "State of the claimant. Two-letter code."
+    },
+    "claimant_zip_code": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Zip code of the claimant."
+    },
+    "weekly_benefit_amount": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "Weekly unemployment benefit amount."
+    },
+    "gross_benefit_amount": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "Gross benefit amount. Necessary to collect if there are overpayments on another program, e.g., withholdings for child support."
+    },
+    "total_compensation_paid": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "Total unemployment compensation paid for the period."
+    },
+    "benefit_year_start": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Start of benefit year. YYYY-MM-DD format."
+    },
+    "benefit_year_end": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "End of benefit year. YYYY-MM-DD format."
+    },
+    "federal_tax_withheld": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "Federal income tax withheld."
+    },
+    "state_tax_withheld": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "State income tax withheld."
+    },
+    "issuing_agency": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Name of issuing agency (e.g., MD Department of Labor, Beacon)."
+    },
+    "letter_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Date the letter was issued. YYYY-MM-DD format."
     },
     "employer_name": {
       "type": "string",
@@ -38,12 +106,12 @@
     "employment_start_date": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The date the claimant started working for the employer."
+      "instruction": "The date the claimant started working for the employer. YYYY-MM-DD format."
     },
     "employment_end_date": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The date the claimant stopped working for the employer."
+      "instruction": "The date the claimant stopped working for the employer. YYYY-MM-DD format."
     },
     "job_title": {
       "type": "string",
@@ -54,11 +122,6 @@
       "type": "string",
       "inferenceType": "explicit",
       "instruction": "The reason the claimant is no longer employed such as layoff, termination, resignation, or reduction in hours."
-    },
-    "weekly_benefit_amount": {
-      "type": "string",
-      "inferenceType": "explicit",
-      "instruction": "The weekly unemployment benefit amount approved or requested."
     }
   }
 }

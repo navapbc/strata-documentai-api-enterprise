@@ -3,32 +3,90 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "class": "VA-Benefit-Letter",
-  "definitions": {},
+  "definitions": {
+    "veteran_name": {
+      "properties": {
+        "first_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "First name of the veteran."
+        },
+        "middle_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "Middle name of the veteran."
+        },
+        "last_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "Last name of the veteran."
+        }
+      }
+    }
+  },
   "properties": {
     "veteran_name": {
+      "$ref": "#/definitions/veteran_name"
+    },
+    "veteran_ssn": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The full name of the veteran receiving the benefits."
+      "instruction": "Social Security Number of the veteran. Reformat as XXX-XX-XXXX."
+    },
+    "veteran_address": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Mailing address of the veteran."
+    },
+    "veteran_state": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "State of the veteran. Two-letter code."
+    },
+    "veteran_zip_code": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Zip code of the veteran."
     },
     "va_file_number": {
       "type": "string",
       "inferenceType": "explicit",
       "instruction": "The unique VA file number or service identification number associated with the claim."
     },
-    "monthly_award_amount": {
+    "benefit_type": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The total recurring monthly dollar amount paid to the veteran by the VA."
+      "instruction": "Type of VA benefit (disability compensation, pension, education, etc.)."
     },
-    "combined_evaluation_rating": {
-      "type": "string",
+    "monthly_benefit_amount": {
+      "type": "number",
       "inferenceType": "explicit",
-      "instruction": "The veteran's total combined service-connected disability rating, typically expressed as a percentage (e.g., 70%, 100%)."
+      "instruction": "Monthly benefit payment amount."
     },
     "effective_date": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The date the current monthly payment amount or disability rating went into effect."
+      "instruction": "Date the current monthly payment amount or disability rating went into effect. YYYY-MM-DD format."
+    },
+    "disability_rating": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Combined disability rating percentage if applicable (e.g., 70%, 100%)."
+    },
+    "number_of_dependents": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "Number of dependents factored into benefit calculation."
+    },
+    "letter_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Date the VA letter was issued. YYYY-MM-DD format."
+    },
+    "issuing_office": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "VA Regional Office or issuing entity."
     }
   }
 }

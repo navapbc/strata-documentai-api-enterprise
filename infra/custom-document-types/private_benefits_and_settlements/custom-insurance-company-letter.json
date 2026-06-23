@@ -1,44 +1,107 @@
 {
-  "description": "A formal piece of correspondence or notice sent by an insurance provider regarding policy changes, claim updates, or billing notifications.",
+  "description": "A formal piece of correspondence or notice sent by an insurance provider regarding policy changes, claim updates, billing notifications, or benefit payments.",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "class": "Insurance-Company-Letter",
-  "definitions": {},
+  "definitions": {
+    "recipient_name": {
+      "properties": {
+        "first_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "First name of the policy beneficiary or insured."
+        },
+        "middle_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "Middle name of the recipient."
+        },
+        "last_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "Last name of the recipient."
+        }
+      }
+    }
+  },
   "properties": {
-    "insurance_provider": {
+    "recipient_name": {
+      "$ref": "#/definitions/recipient_name"
+    },
+    "recipient_ssn": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Social Security Number of the recipient. Reformat as XXX-XX-XXXX."
+    },
+    "recipient_address": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Mailing address of the recipient."
+    },
+    "recipient_state": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "State of the recipient. Two-letter code."
+    },
+    "recipient_zip_code": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Zip code of the recipient."
+    },
+    "insurance_company_name": {
       "type": "string",
       "inferenceType": "explicit",
       "instruction": "The official name of the insurance company or provider issuing the letter."
-    },
-    "recipient_name": {
-      "type": "string",
-      "inferenceType": "explicit",
-      "instruction": "The full name of the policyholder, claimant, or individual to whom the letter is addressed."
-    },
-    "letter_date": {
-      "type": "string",
-      "inferenceType": "explicit",
-      "instruction": "The date the letter or notice was officially issued."
     },
     "policy_number": {
       "type": "string",
       "inferenceType": "explicit",
       "instruction": "The insurance policy or member identification number referenced in the text."
     },
-    "claim_number": {
+    "policy_type": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The specific claim reference number mentioned, if the letter is regarding an ongoing or closed insurance claim."
+      "instruction": "Type of insurance (life, disability, settlement, etc.)."
     },
-    "subject_line": {
-      "type": "string",
+    "payment_amount": {
+      "type": "number",
       "inferenceType": "explicit",
-      "instruction": "The title, subject line, or main heading summarizing the purpose of the letter (e.g., Notice of Cancellation, Claim Update)."
+      "instruction": "Lump sum or periodic payment amount."
     },
-    "action_required_date": {
+    "payment_type": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "Any specific deadline or date by which the recipient must respond or take action, if mentioned in the text."
+      "instruction": "Whether payment is lump sum or periodic."
+    },
+    "payment_frequency": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Frequency of payment if periodic (monthly, quarterly, annual)."
+    },
+    "effective_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Date the benefit or payment becomes effective. YYYY-MM-DD format."
+    },
+    "termination_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Date that insurance policy has been terminated. YYYY-MM-DD format."
+    },
+    "expiration_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Date that insurance policy expires. YYYY-MM-DD format."
+    },
+    "letter_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Date the letter or notice was officially issued. YYYY-MM-DD format."
+    },
+    "cash_surrender_value": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "Cash value of life insurance policy if applicable."
     }
   }
 }

@@ -3,42 +3,75 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "class": "Financial-Aid-Award",
-  "definitions": {},
+  "definitions": {
+    "student_name": {
+      "properties": {
+        "first_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "First name of the student receiving financial aid."
+        },
+        "last_name": {
+          "type": "string",
+          "inferenceType": "explicit",
+          "instruction": "Last name of the student."
+        }
+      }
+    }
+  },
   "properties": {
     "student_name": {
-      "type": "string",
-      "inferenceType": "explicit",
-      "instruction": "The full name of the student to whom the financial aid is being awarded."
+      "$ref": "#/definitions/student_name"
     },
-    "institution_name": {
+    "student_id": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The name of the college, university, or school issuing the financial aid award package."
+      "instruction": "Student ID number."
+    },
+    "school_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Name of the college, university, or school issuing the financial aid award package. The school name may indicate if it is located in another state."
     },
     "academic_year": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The specific academic school year the aid applies to, such as 2026-2027."
+      "instruction": "The specific academic school year the aid applies to, such as 2024-2025."
+    },
+    "total_aid_amount": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "Total financial aid awarded."
+    },
+    "grant_amount": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "Grant or scholarship portion (excluded income). Does not need to be repaid."
+    },
+    "loan_amount": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "Loan portion of the aid package."
+    },
+    "work_study_amount": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "Federal work-study amount if applicable."
+    },
+    "disbursement_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Date aid was or will be disbursed. YYYY-MM-DD format."
+    },
+    "aid_type": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Type of aid (Pell Grant, SEOG, state grant, institutional, etc.)."
     },
     "total_cost_of_attendance": {
       "type": "string",
       "inferenceType": "explicit",
       "instruction": "The estimated gross cost to attend the school for the year, including tuition, fees, and housing."
-    },
-    "total_grants_and_scholarships": {
-      "type": "string",
-      "inferenceType": "explicit",
-      "instruction": "The total sum of gift aid that does not need to be repaid, often aggregated from Pell Grants, institutional scholarships, and merit awards."
-    },
-    "total_student_loans_offered": {
-      "type": "string",
-      "inferenceType": "explicit",
-      "instruction": "The total sum of federal or institutional loans offered to the student that require repayment."
-    },
-    "net_price": {
-      "type": "string",
-      "inferenceType": "explicit",
-      "instruction": "The remaining balance the student or family is responsible for paying after grants and scholarships are deducted from the cost of attendance."
     }
   }
 }
