@@ -200,3 +200,26 @@ def test_save_original_to_preprocessing_without_tenant_falls_back(mocker, monkey
     _save_original_to_preprocessing(b"data", "doc-uuid.png", "image/png")
 
     assert mock_upload.call_args.args[1] == "preprocessing/doc-uuid.png"
+
+
+def test_validate_s3_object_is_bda_native_accepts_pdf(s3_bucket, blank_pdf_bytes):
+    """A genuine PDF object passes content sniffing."""
+    from documentai_api.utils.uploads import validate_s3_object_is_bda_native
+
+    s3_bucket.put_object(Key="input/doc.pdf", Body=blank_pdf_bytes, ContentType="application/pdf")
+
+    assert validate_s3_object_is_bda_native(s3_bucket.name, "input/doc.pdf") == "application/pdf"
+
+
+def test_validate_s3_object_is_bda_native_rejects_disguised_content(s3_bucket, empty_zip_bytes):
+    """A non-document uploaded under a document content_type is rejected.
+
+    Covers SEC-HIGH-05: S3's presigned POST policy only enforces the declared
+    Content-Type, so the actual bytes must be re-sniffed after upload.
+    """
+    from documentai_api.utils.uploads import validate_s3_object_is_bda_native
+
+    s3_bucket.put_object(Key="input/evil.pdf", Body=empty_zip_bytes, ContentType="application/pdf")
+
+    with pytest.raises(ValueError, match="not a supported document type"):
+        validate_s3_object_is_bda_native(s3_bucket.name, "input/evil.pdf")

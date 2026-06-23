@@ -22,6 +22,15 @@ from documentai_api.utils.s3 import get_bucket_and_key, parse_s3_uri
 
 logger = get_logger(__name__)
 
+# filetype requires ~261 bytes for detection; 2048 provides margin without
+# reading the full object.
+HEADER_READ_BYTES = 2048
+
+
+def _detect_mime(header_bytes: bytes) -> str:
+    """Guess a MIME type from a file's leading bytes, defaulting to octet-stream."""
+    return filetype.guess_mime(header_bytes) or "application/octet-stream"
+
 
 class ImageConversionError(Exception):
     """Raised when image format conversion fails."""
@@ -97,15 +106,13 @@ def generate_unique_filename(filename: str, job_id: str) -> str:
 async def validate_file_type(file: UploadFile) -> str:
     """Detect MIME type from file header bytes, verify it's supported, reset pointer.
 
-    Only reads the first 2048 bytes for detection (filetype needs ~261).
-
     Returns the detected content type string.
 
     Raises:
         HTTPException 400: if the type isn't in FileValidation.SUPPORTED_CONTENT_TYPES.
     """
-    header_bytes = await file.read(2048)
-    actual_content_type = filetype.guess_mime(header_bytes) or "application/octet-stream"
+    header_bytes = await file.read(HEADER_READ_BYTES)
+    actual_content_type = _detect_mime(header_bytes)
     await file.seek(0)
 
     if not FileValidation.is_supported(actual_content_type):
@@ -119,6 +126,24 @@ async def validate_file_type(file: UploadFile) -> str:
         )
 
     return actual_content_type
+
+
+def validate_s3_object_is_bda_native(bucket: str, object_key: str) -> str:
+    """Detect MIME type from an S3 object's leading bytes and reject non-BDA-native types.
+
+    Returns the detected content type.
+
+    Raises:
+        ValueError: if the detected type is not in FileValidation.NO_CONVERSION_NEEDED.
+    """
+    header_bytes = s3_service.get_object_header_bytes(bucket, object_key, HEADER_READ_BYTES)
+    detected = _detect_mime(header_bytes)
+    if detected not in FileValidation.NO_CONVERSION_NEEDED:
+        raise ValueError(
+            f"Uploaded content is not a supported document type: detected '{detected}'. "
+            f"Must be one of {', '.join(FileValidation.NO_CONVERSION_NEEDED)}."
+        )
+    return detected
 
 
 async def validate_upload(file: UploadFile) -> str:
@@ -140,7 +165,7 @@ async def validate_upload(file: UploadFile) -> str:
                 detail=f"File too large ({file.size} bytes). Maximum is {MAX_UPLOAD_SIZE_BYTES} bytes.",
             )
     else:
-        # No Content-Length header — read one byte past the limit to detect oversized files
+        # No Content-Length header - read one byte past the limit to detect oversized files
         probe = await file.read(MAX_UPLOAD_SIZE_BYTES + 1)
         if len(probe) > MAX_UPLOAD_SIZE_BYTES:
             raise HTTPException(

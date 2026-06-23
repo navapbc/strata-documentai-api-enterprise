@@ -57,7 +57,7 @@ def _decode_and_verify(token: str) -> dict[str, Any]:
     if token_use not in ("access", "id"):
         raise jwt.InvalidTokenError("Not an access or id token")
 
-    # Cognito access tokens don't carry an aud claim, but id tokens do —
+    # Cognito access tokens don't carry an aud claim, but id tokens do -
     # validate audience for id tokens to prevent cross-client token reuse.
     if token_use == "id":
         config = get_aws_config()

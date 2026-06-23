@@ -34,6 +34,7 @@ from documentai_api.utils.document_lifecycle import (
 from documentai_api.utils.dto import ClassificationData, CropResult
 from documentai_api.utils.image_optimization import optimize_s3_image
 from documentai_api.utils.s3 import parse_s3_uri
+from documentai_api.utils.uploads import validate_s3_object_is_bda_native
 
 logger = documentai_api.logging.get_logger(__name__)
 app = typer.Typer()
@@ -208,6 +209,23 @@ def main(
         f"Processing {ddb_key}: status={status}, "
         f"has_preclassification={'preclassificationCategory' in existing_record}"
     )
+
+    # Validate actual file bytes before processing - presigned uploads skip the
+    # API-layer magic-byte check, so confirm the content is a supported type.
+    requires_bda_native_validation = status == ProcessStatus.PENDING_IMAGE_OPTIMIZATION or (
+        status is not None and ProcessStatus.is_awaiting_processing(status)
+    )
+    if requires_bda_native_validation:
+        try:
+            validate_s3_object_is_bda_native(bucket_name, object_key)
+        except ValueError as e:
+            logger.warning(f"Rejecting {ddb_key}: {e}")
+            classify_as_failed(
+                object_key=ddb_key,
+                error_message="Uploaded file content is not a supported document type",
+                data=ClassificationData(additional_info=str(e)),
+            )
+            return
 
     if status == ProcessStatus.PENDING_IMAGE_OPTIMIZATION:
         # Atomically claim - only one invocation proceeds; duplicates bail.

@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import json
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from documentai_api.logging import get_logger
 from documentai_api.utils.aws_client_factory import AWSClientFactory
+from documentai_api.utils.json_parsing import parse_json_object
 
 if TYPE_CHECKING:
     from mypy_boto3_bedrock_data_automation.type_defs import (
@@ -45,9 +45,7 @@ def get_bda_result_json(bda_result_uri: str) -> dict[str, Any] | None:
 
         s3 = AWSClientFactory.get_s3_client()
         bda_result_object = s3.get_object(Bucket=result_bucket, Key=result_key)
-        bda_result_json = json.loads(bda_result_object["Body"].read().decode("utf-8"))
-
-        return cast(dict[str, Any], bda_result_json)
+        return parse_json_object(bda_result_object["Body"].read(), context="BDA result JSON")
     except Exception as e:
         logger.error(f"Failed to read result JSON: {e}")
         return None
@@ -69,7 +67,9 @@ def extract_bda_output_s3_uri(
     """Read and parse BDA job metadata from S3."""
     s3 = AWSClientFactory.get_s3_client()
     metadata_response = s3.get_object(Bucket=bda_output_bucket_name, Key=bda_output_object_key)
-    job_metadata = json.loads(metadata_response["Body"].read().decode("utf-8"))
+    job_metadata = parse_json_object(metadata_response["Body"].read(), context="BDA job metadata")
+    if job_metadata is None:
+        return None
 
     # extract bda result uri from job metadata
     try:
