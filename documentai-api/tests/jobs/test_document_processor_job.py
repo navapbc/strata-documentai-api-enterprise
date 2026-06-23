@@ -51,11 +51,18 @@ def mock_detect_bbox(mocker):
     )
 
 
+# Minimal leading bytes that filetype.guess_mime detects as the right format.
+# The processor now sniffs uploaded content before processing (SEC-HIGH-05), so
+# fixtures must carry real magic bytes, not placeholder text.
+JPEG_MAGIC = b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01"
+PDF_MAGIC = b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n"
+
+
 @pytest.fixture
 def input_image(s3_bucket):
     return s3_bucket.put_object(
         Key="input/test.jpg",
-        Body=b"image data",
+        Body=JPEG_MAGIC,
         ContentType="image/jpeg",
         Metadata={
             "job-id": "test-job-id",
@@ -70,7 +77,7 @@ def input_image(s3_bucket):
 def input_pdf(s3_bucket):
     return s3_bucket.put_object(
         Key="input/test.pdf",
-        Body=b"PDF data",
+        Body=PDF_MAGIC,
         ContentType="application/pdf",
         Metadata={
             "job-id": "test-job-id",
@@ -155,7 +162,7 @@ def test_main_strips_tenant_prefix_for_ddb_key(s3_bucket, ddb_doc_metadata_table
     tenant_key = "input/test-tenant/document-build-abc.pdf"
     obj = s3_bucket.put_object(
         Key=tenant_key,
-        Body=b"PDF data",
+        Body=PDF_MAGIC,
         ContentType="application/pdf",
         Metadata={
             "job-id": "test-job-id",
@@ -230,6 +237,35 @@ def test_main_grayscale_conversion_fails(input_image, mocker, mock_invoke):
 
     mock_classify.assert_called_once()
     mock_invoke.assert_not_called()
+
+
+def test_main_rejects_disguised_content(s3_bucket, mocker, mock_invoke):
+    """A presigned upload whose bytes aren't BDA-native is failed before BDA.
+
+    S3's POST policy only enforces the declared Content-Type, so a caller can
+    store arbitrary bytes under content_type=application/pdf. The processor must
+    re-sniff the actual content and reject non-document uploads (SEC-HIGH-05).
+    """
+    obj = s3_bucket.put_object(
+        Key="input/evil.pdf",
+        Body=b"MZ\x90\x00\x03\x00\x00\x00",  # PE/exe magic, not a document
+        ContentType="application/pdf",
+        Metadata={
+            "job-id": "test-job-id",
+            "trace-id": "test-trace-id",
+            "original-file-name": "evil.pdf",
+        },
+    )
+    mocker.patch("documentai_api.jobs.document_processor.main.upsert_initial_ddb_record")
+    mock_classify = mocker.patch("documentai_api.jobs.document_processor.main.classify_as_failed")
+    mock_get = mocker.patch("documentai_api.jobs.document_processor.main.get_ddb_record")
+    mock_get.return_value = {DocumentMetadata.PROCESS_STATUS: ProcessStatus.NOT_STARTED.value}
+
+    main(obj.key, obj.bucket_name)
+
+    mock_invoke.assert_not_called()
+    mock_classify.assert_called_once()
+    assert mock_classify.call_args.kwargs["object_key"] == "evil.pdf"
 
 
 def test_main_already_processed(input_pdf, mocker, mock_invoke):

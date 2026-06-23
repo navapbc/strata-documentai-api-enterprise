@@ -1,11 +1,11 @@
 import io
-import json
 import re
 import time
 from decimal import Decimal
 from typing import Any
 
 from PIL import Image
+from pydantic import BaseModel, ConfigDict, ValidationError
 
 from documentai_api.config.constants import (
     ConfigDefaults,
@@ -20,6 +20,24 @@ from documentai_api.utils.dto import BedrockClassificationResult, CropResult
 from documentai_api.utils.ssm import get_parameter_value
 
 logger = get_logger(__name__)
+
+
+# Pydantic used here intentionally for LLM output validation - stricter than
+# the .get() pattern used elsewhere because this output is shaped by user-supplied documents.
+class _PreclassificationResponse(BaseModel):
+    """Expected shape of the Bedrock vision classifier's JSON output.
+
+    Fields default so a partial or malformed response yields a safe result.
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    document_type: str = "other_document"
+    confidence: float = 0.0
+    document_count: int = 1
+    is_document: bool = True
+    is_blurry: bool = False
+
 
 DEFAULT_PRECLASSIFICATION_MODEL_ID = PreClassificationDefaults.MODEL_ID
 DEFAULT_PRECLASSIFICATION_PROMPT = PreClassificationDefaults.PROMPT
@@ -220,19 +238,26 @@ def preclassify_document(document_bytes: bytes, content_type: str) -> BedrockCla
 
         usage = response.get("usage", {})
         text = response["output"]["message"]["content"][0]["text"]
-        parsed = json.loads(text)
 
-        document_type = parsed.get("document_type", "other_document")
+        try:
+            parsed = _PreclassificationResponse.model_validate_json(text)
+        except ValidationError as e:
+            logger.warning(f"Bedrock classification returned output failing schema validation: {e}")
+            return BedrockClassificationResult(
+                document_type="other_document", confidence=0.0, document_count=1, is_document=True
+            )
+
+        document_type = parsed.document_type
         valid_types = [e.value for e in PreclassificationCategory] + ["other_document"]
         if document_type not in valid_types:
             document_type = "other_document"
 
         classification = BedrockClassificationResult(
             document_type=document_type,
-            confidence=max(0.0, min(1.0, float(parsed.get("confidence", 0.0)))),
-            document_count=max(0, int(parsed.get("document_count", 1))),
-            is_document=str(parsed.get("is_document", True)).lower() == "true",
-            is_blurry=str(parsed.get("is_blurry", False)).lower() == "true",
+            confidence=max(0.0, min(1.0, parsed.confidence)),
+            document_count=max(0, parsed.document_count),
+            is_document=parsed.is_document,
+            is_blurry=parsed.is_blurry,
             input_tokens=usage.get("inputTokens"),
             output_tokens=usage.get("outputTokens"),
             duration_seconds=Decimal(str(elapsed)),

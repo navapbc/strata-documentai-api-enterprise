@@ -103,6 +103,16 @@ def get_file_bytes(bucket: str, key: str) -> bytes:
     return bytes(response["Body"].read())
 
 
+def get_object_header_bytes(bucket: str, key: str, num_bytes: int) -> bytes:
+    """Read only the first ``num_bytes`` of an object via a ranged GET.
+
+    Used for magic-byte content sniffing without downloading the whole file.
+    """
+    s3_client = AWSClientFactory.get_s3_client()
+    response = s3_client.get_object(Bucket=bucket, Key=key, Range=f"bytes=0-{num_bytes - 1}")
+    return bytes(response["Body"].read())
+
+
 def is_password_protected(bucket: str, key: str) -> bool:
     """Check if PDF is password protected."""
     content_type = get_content_type(bucket, key)

@@ -190,6 +190,25 @@ def test_invalid_json_response_returns_default(monkeypatch):
     assert result.confidence == 0.0
 
 
+def test_non_object_json_response_returns_default(monkeypatch):
+    """A well-formed but non-object JSON output (e.g. a list) fails schema validation."""
+    monkeypatch.setattr(
+        "documentai_api.utils.bedrock._invoke",
+        lambda **kwargs: {
+            "output": {"message": {"content": [{"text": '["tax_documents", 0.9]'}]}},
+            "usage": {"inputTokens": 1, "outputTokens": 1},
+        },
+    )
+    monkeypatch.setattr(
+        "documentai_api.utils.bedrock._get_classification_prompt", lambda: "test prompt"
+    )
+
+    result = preclassify_document(SAMPLE_IMAGE, "image/png")
+
+    assert result.document_type == "other_document"
+    assert result.confidence == 0.0
+
+
 def test_parse_defaults_when_fields_missing(monkeypatch):
     """bedrock.py .get() calls supply defaults when model omits fields."""
     response = _mock_invoke_response({"document_type": "tax_documents"})
