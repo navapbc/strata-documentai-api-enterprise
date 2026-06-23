@@ -62,6 +62,52 @@ def clear_config_cache():
     get_app_env_config.cache_clear()
 
 
+@pytest.fixture(autouse=True)
+def drain_lastused_threads():
+    """Drain leaked lastUsed updater threads and reset shared state.
+
+    Any successful auth spawns a daemon thread that mutates
+    ``_last_used_written_at`` and calls ``ddb.update_item``. Without draining,
+    a thread from one test can inflate another test's patched call counts or
+    corrupt shared state, causing intermittent failures under different
+    ordering. Applied suite-wide as most requests authenticate via the
+    FastAPI test client.
+    """
+    import threading
+    import time
+    import warnings
+
+    from documentai_api.utils import auth as auth_util
+
+    def _drain(timeout: float = 2.0) -> None:
+        deadline = time.monotonic() + timeout
+        for thread in threading.enumerate():
+            if thread.name == auth_util._LAST_USED_THREAD_NAME and thread.is_alive():
+                thread.join(timeout=max(0.0, deadline - time.monotonic()))
+
+        # A thread still alive past the timeout means a mock likely leaked a real
+        # call (e.g. an un-patched ddb.update_item). Surface it instead of silently
+        # passing - a plain warning, not an error, so we don't trade a flaky failure
+        # for a flaky hang on the very thread we couldn't join.
+        stuck = sum(
+            1
+            for t in threading.enumerate()
+            if t.name == auth_util._LAST_USED_THREAD_NAME and t.is_alive()
+        )
+        if stuck:
+            warnings.warn(
+                f"{stuck} lastUsed updater thread(s) did not drain within {timeout}s "
+                "- a mock may be leaking a real call",
+                stacklevel=2,
+            )
+
+    _drain()
+    auth_util._last_used_written_at.clear()
+    yield
+    _drain()
+    auth_util._last_used_written_at.clear()
+
+
 @pytest.fixture
 def runtime_required_env(monkeypatch, s3_bucket, ddb_doc_metadata_table):
     """Required configuration to run the application in general."""
