@@ -59,7 +59,14 @@ def _record_to_detail(
 ) -> DocumentDetail:
     """Convert a DDB record to a full detail response."""
     fields = (
-        nest_fields(_extract_field_values(record, True, include_bounding_box))
+        nest_fields(
+            _extract_field_values(
+                record,
+                True,
+                include_bounding_box,
+                document_type=record.get(DocumentMetadata.BDA_MATCHED_DOCUMENT_CLASS),
+            )
+        )
         if include_extracted_data
         else _parse_extracted_data(record)
     )

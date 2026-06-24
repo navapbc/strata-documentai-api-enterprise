@@ -26,6 +26,7 @@ def _extract_field_values(
     ddb_record: dict[str, Any],
     include_extracted_data: bool,
     include_bounding_box: bool = False,
+    *,
     document_type: str | None = None,
 ) -> dict[str, Any]:
     """Extract field data for API response."""
@@ -170,7 +171,8 @@ def build_v1_api_response(
             base_response["message"] = "Document processed successfully"
 
             fields = _extract_field_values(
-                ddb_record, include_extracted_data, include_bounding_box, matched_document_class
+                ddb_record, include_extracted_data, include_bounding_box,
+                document_type=matched_document_class,
             )
 
             tenant_id = ddb_record.get("tenantId")
