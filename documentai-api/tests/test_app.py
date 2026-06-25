@@ -152,6 +152,27 @@ async def test_poll_for_completion_success(mocker):
 
 
 @pytest.mark.asyncio
+async def test_poll_for_completion_nests_stored_fields(mocker):
+    """The /wait path nests the stored flat fields, like the GET endpoints."""
+    mock_get_job_status = mocker.patch("documentai_api.utils.jobs.get_job_status")
+    mock_get_job_status.return_value = JobStatus(
+        ddb_record={"fileName": "test.pdf"},
+        object_key="test.pdf",
+        process_status="success",
+        v1_response_json=(
+            '{"jobId": "test-job-id", "jobStatus": "success", "message": "Done", "fields": '
+            '{"amount": {"confidence": 0.9, "value": "1"}, '
+            '"payment_details.base_rent": {"confidence": 0.91, "value": "1200"}}}'
+        ),
+    )
+
+    result = await poll_for_completion("test-job-id", timeout=10)
+
+    assert result.fields["amount"] == {"confidence": 0.9, "value": "1"}
+    assert result.fields["payment_details"]["base_rent"]["value"] == "1200"
+
+
+@pytest.mark.asyncio
 async def test_poll_for_completion_timeout(mocker):
     """Test polling timeout with object_key."""
     mock_get_job_status = mocker.patch("documentai_api.utils.jobs.get_job_status")

@@ -23,13 +23,49 @@ const TYPE_COLORS = {
 };
 
 /**
+ * Does this entry carry a field payload (a leaf), vs. being a group of nested
+ * fields? The presentation layer nests dotted field names (e.g. `employer.address`)
+ * into a tree, so a group is a plain object whose members are themselves entries.
+ * A scalar, an array, or an object bearing the field shape (value/confidence/
+ * geometry) is a leaf.
+ * @param {*} val
+ * @returns {boolean}
+ */
+function isLeafField(val) {
+  if (val == null || typeof val !== "object" || Array.isArray(val)) return true;
+  return "value" in val || "confidence" in val || "geometry" in val;
+}
+
+/**
+ * Flatten a nested fields tree back to a flat map of dot-joined names → leaf.
+ * The viewer (table rows, geometry, hover-linking) keys everything on a flat
+ * field name, while the API nests the `fields` block for presentation; this
+ * bridges the two and yields the canonical dotted name as the key.
+ * @param {Object} fields - API response fields object (possibly nested)
+ * @param {string} [prefix] - accumulated dotted prefix (internal)
+ * @param {Object} [out] - accumulator (internal)
+ * @returns {Object} - flat map of dottedName → leaf entry
+ */
+export function flattenFields(fields, prefix = "", out = {}) {
+  for (const [key, val] of Object.entries(fields || {})) {
+    const name = prefix ? `${prefix}.${key}` : key;
+    if (isLeafField(val)) {
+      out[name] = val;
+    } else {
+      flattenFields(val, name, out);
+    }
+  }
+  return out;
+}
+
+/**
  * Extract geometry data from fields response.
  * @param {Object} fields - API response fields object
  * @returns {Object|null} - map of fieldName → { geometry, fieldType }
  */
 export function extractGeometry(fields) {
   const geo = {};
-  for (const [key, val] of Object.entries(fields || {})) {
+  for (const [key, val] of Object.entries(flattenFields(fields))) {
     if (
       val &&
       typeof val === "object" &&
@@ -184,7 +220,7 @@ export function renderExtractedData(
 ) {
   if (typeof data !== "object" || data === null) return "";
   const show = revealed || !maskable;
-  const rows = Object.entries(data)
+  const rows = Object.entries(flattenFields(data))
     .map(([key, val]) => {
       const isObj =
         val != null && typeof val === "object" && !Array.isArray(val);

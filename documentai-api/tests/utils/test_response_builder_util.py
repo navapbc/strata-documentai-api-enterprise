@@ -166,12 +166,14 @@ def test_build_v1_api_response(
     }
     ddb_doc_metadata_table.put_item(Item=ddb_record)
 
+    # build_v1_api_response stores the flat, verbatim canonical form; camelCase +
+    # nesting is applied later at the presentation boundary (present_v1_response).
     expected_fields_value = {
-        "fieldName1": {
+        "field_name_1": {
             "confidence": 0.95,
             "value": "value1" if include_extracted_data else "<redacted>",
         },
-        "fieldName2": {
+        "field_name_2": {
             "confidence": 0.85,
             "value": "value2" if include_extracted_data else "<redacted>",
         },
@@ -274,10 +276,10 @@ def test_build_v1_api_response_with_bounding_box(
         include_bounding_box=True,
     )
 
-    # geometry and fieldType present on field with geometry
-    assert "geometry" in response["fields"]["tenantName"]
-    assert response["fields"]["tenantName"]["fieldType"] == "string"
-    assert response["fields"]["tenantName"]["geometry"][0]["boundingBox"]["top"] == 0.31
+    # fields are stored flat/verbatim; geometry + fieldType present on field with geometry
+    assert "geometry" in response["fields"]["tenant_name"]
+    assert response["fields"]["tenant_name"]["fieldType"] == "string"
+    assert response["fields"]["tenant_name"]["geometry"][0]["boundingBox"]["top"] == 0.31
 
     # field without geometry in BDA output has no geometry key
     assert "geometry" not in response["fields"]["amount"]
@@ -311,8 +313,8 @@ def test_build_v1_api_response_without_bounding_box_no_leakage(
         include_bounding_box=False,
     )
 
-    assert "geometry" not in response["fields"]["tenantName"]
-    assert "fieldType" not in response["fields"]["tenantName"]
+    assert "geometry" not in response["fields"]["tenant_name"]
+    assert "fieldType" not in response["fields"]["tenant_name"]
 
 
 def test_build_v1_api_response_applies_extraction_rules(
@@ -369,3 +371,115 @@ def test_build_v1_api_response_applies_extraction_rules(
     assert "ssn" in response["fields"] or "Ssn" in response["fields"]
     assert response["missingRequiredFieldList"] == ["federal_tax"]
     assert response["responseCode"] == ResponseCodes.MISSING_FIELDS
+
+
+def test_build_v1_api_response_extraction_rules_match_nested_fields(
+    s3_bucket,
+    ddb_doc_metadata_table,
+    extraction_rules_table,
+    mocker,
+):
+    """Extraction rules match on verbatim dotted names; kept fields nest in the response."""
+    import json
+
+    year = datetime.now().year
+    created_at = datetime(year, 1, 1, 12, 0, 0, tzinfo=UTC)
+    bda_completed_at = datetime(year, 1, 1, 12, 0, 10, tzinfo=UTC)
+
+    bda_results = {
+        BdaResponseFields.EXPLAINABILITY_INFO: [
+            {
+                "applicant": {
+                    "first_name": {"confidence": 0.95, "value": "Ada"},
+                    "last_name": {"confidence": 0.9, "value": "Lovelace"},
+                },
+                "extra_field": {"confidence": 0.8, "value": "ignored"},
+            }
+        ]
+    }
+    bda_results_object = s3_bucket.put_object(Key="key.json", Body=json.dumps(bda_results))
+
+    ddb_record = {
+        DocumentMetadata.FILE_NAME: "test-key",
+        DocumentMetadata.JOB_ID: "test-job-id",
+        DocumentMetadata.BDA_OUTPUT_S3_URI: f"s3://{bda_results_object.bucket_name}/{bda_results_object.key}",
+        DocumentMetadata.BDA_MATCHED_DOCUMENT_CLASS: "W2",
+        DocumentMetadata.TOTAL_PROCESSING_TIME_SECONDS: 10,
+        DocumentMetadata.BDA_COMPLETED_AT: bda_completed_at.isoformat(),
+        DocumentMetadata.CREATED_AT: created_at.isoformat(),
+        DocumentMetadata.FIELD_CONFIDENCE_SCORES: (
+            '[{"applicant.first_name": 0.95}, {"applicant.last_name": 0.9}, {"extra_field": 0.8}]'
+        ),
+        "tenantId": "t1",
+    }
+    ddb_doc_metadata_table.put_item(Item=ddb_record)
+
+    extraction_rules_table.put_item(
+        Item={
+            "tenantId": "t1",
+            "documentType": "W2",
+            "requiredFields": ["applicant.first_name", "applicant.middle_name"],
+            "optionalFields": ["applicant.last_name"],
+            "createdAt": "2026-01-01",
+            "updatedAt": "2026-01-01",
+        }
+    )
+
+    response = response_builder_util.build_v1_api_response(
+        "test-key", ProcessStatus.SUCCESS.value, include_extracted_data=True
+    )
+
+    # Stored form is flat + verbatim: extra_field filtered out (not in rules), the
+    # required/optional fields kept under their dotted blueprint names.
+    assert "extra_field" not in response["fields"]
+    assert response["fields"]["applicant.first_name"]["value"] == "Ada"
+    assert response["fields"]["applicant.last_name"]["value"] == "Lovelace"
+    # only the genuinely absent required field is reported missing (verbatim name)
+    assert response["missingRequiredFieldList"] == ["applicant.middle_name"]
+    assert response["responseCode"] == ResponseCodes.MISSING_FIELDS
+
+    # The presentation boundary nests for the client, preserving verbatim names.
+    presented = response_builder_util.present_v1_response(response)
+    assert presented["fields"]["applicant"]["first_name"]["value"] == "Ada"
+    assert presented["fields"]["applicant"]["last_name"]["value"] == "Lovelace"
+    # non-fields keys pass through untouched
+    assert presented["missingRequiredFieldList"] == ["applicant.middle_name"]
+
+
+def test_nest_fields_shapes_and_is_idempotent():
+    """nest_fields splits dotted names into nesting verbatim and no-ops when nested."""
+    flat = {
+        "amount": {"confidence": 0.9, "value": "1"},
+        "payment_details.base_rent": {"confidence": 0.91, "value": "1200"},
+        "payment_details.fees": {"confidence": 0.9, "value": ""},
+    }
+
+    nested = response_builder_util.nest_fields(flat)
+
+    assert nested["amount"] == {"confidence": 0.9, "value": "1"}
+    # segments are preserved verbatim (no case conversion)
+    assert nested["payment_details"]["base_rent"]["value"] == "1200"
+    assert nested["payment_details"]["fees"]["value"] == ""
+
+    # already-nested input (e.g. a record from an earlier version) passes through unchanged
+    assert response_builder_util.nest_fields(nested) == nested
+
+
+def test_present_v1_response_without_fields_passes_through():
+    """Responses without a fields block (errors, in-progress) are returned unchanged."""
+    resp = {"jobId": "j1", "jobStatus": "failed", "error": "boom"}
+    assert response_builder_util.present_v1_response(resp) == resp
+
+
+def test_nest_fields_preserves_legacy_camelcase_keys():
+    """Old camelCase-dotted records nest without casing being mangled."""
+    legacy = {
+        "tenantName": {"confidence": 0.93, "value": "Jane"},
+        "paymentDetails.baseRent": {"confidence": 0.91, "value": "1200"},
+    }
+
+    nested = response_builder_util.nest_fields(legacy)
+
+    # camelCase segments are preserved verbatim (not lowercased) and still nest
+    assert nested["tenantName"] == {"confidence": 0.93, "value": "Jane"}
+    assert nested["paymentDetails"]["baseRent"]["value"] == "1200"

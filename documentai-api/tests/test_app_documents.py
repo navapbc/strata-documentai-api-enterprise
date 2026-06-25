@@ -691,6 +691,51 @@ def test_get_document_completed_without_extracted_data(api_client, mocker):
     assert response.json()["jobStatus"] == "success"
 
 
+def test_get_document_results_nests_stored_flat_fields(api_client, mocker):
+    """Default GET applies presentation nesting to the stored flat/verbatim fields."""
+    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status.return_value = JobStatus(
+        ddb_record={"fileName": "test.pdf", "tenantId": "test-tenant"},
+        object_key="test.pdf",
+        process_status="success",
+        v1_response_json=(
+            '{"jobId": "job-1", "jobStatus": "success", "message": "Done", "fields": '
+            '{"amount": {"confidence": 0.9, "value": "1"}, '
+            '"payment_details.base_rent": {"confidence": 0.91, "value": "1200"}}}'
+        ),
+    )
+
+    response = api_client.get(f"/v1/documents/{TEST_JOB_ID}")
+
+    assert response.status_code == 200
+    fields = response.json()["fields"]
+    # verbatim names, nested on the dot
+    assert fields["amount"] == {"confidence": 0.9, "value": "1"}
+    assert fields["payment_details"]["base_rent"]["value"] == "1200"
+
+
+def test_get_document_results_serves_legacy_camelcase_record(api_client, mocker):
+    """No-backfill: old camelCase-dotted records still serve correctly."""
+    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status.return_value = JobStatus(
+        ddb_record={"fileName": "test.pdf", "tenantId": "test-tenant"},
+        object_key="test.pdf",
+        process_status="success",
+        v1_response_json=(
+            '{"jobId": "job-1", "jobStatus": "success", "message": "Done", "fields": '
+            '{"tenantName": {"confidence": 0.93, "value": "Jane"}, '
+            '"paymentDetails.baseRent": {"confidence": 0.91, "value": "1200"}}}'
+        ),
+    )
+
+    response = api_client.get(f"/v1/documents/{TEST_JOB_ID}")
+
+    assert response.status_code == 200
+    fields = response.json()["fields"]
+    assert fields["tenantName"] == {"confidence": 0.93, "value": "Jane"}
+    assert fields["paymentDetails"]["baseRent"]["value"] == "1200"
+
+
 def test_search_documents_mixed_success_and_failure(api_client, mocker):
     """Test search with one successful and one erroring job preserves both results."""
     mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")

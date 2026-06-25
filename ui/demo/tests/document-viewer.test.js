@@ -4,6 +4,7 @@ import {
   renderExtractedData,
   markFieldsWithGeometry,
   linkFieldHighlighting,
+  flattenFields,
 } from "../../shared/components/document-viewer.js";
 
 describe("document-viewer", () => {
@@ -58,9 +59,71 @@ describe("document-viewer", () => {
       };
       expect(extractGeometry(fields)).toBeNull();
     });
+
+    it("extracts geometry from nested field groups under dotted keys", () => {
+      const fields = {
+        employer: {
+          address: {
+            value: "123 Main St",
+            geometry: [{ boundingBox: { left: 0.1, top: 0.2, width: 0.3, height: 0.04 } }],
+            fieldType: "string",
+          },
+        },
+      };
+      const result = extractGeometry(fields);
+      expect(result["employer.address"]).toBeDefined();
+      expect(result["employer.address"].geometry).toHaveLength(1);
+    });
+  });
+
+  describe("flattenFields", () => {
+    it("returns flat fields unchanged", () => {
+      const fields = {
+        name: { value: "John", confidence: 0.9 },
+        age: { value: "30" },
+      };
+      expect(flattenFields(fields)).toEqual(fields);
+    });
+
+    it("joins nested groups into dotted keys", () => {
+      const fields = {
+        employer: {
+          address: { value: "123 Main St", confidence: 0.77 },
+          control_number: { value: "A1B2", confidence: 0.95 },
+        },
+        other: { value: "x", confidence: 0.94 },
+      };
+      expect(flattenFields(fields)).toEqual({
+        "employer.address": { value: "123 Main St", confidence: 0.77 },
+        "employer.control_number": { value: "A1B2", confidence: 0.95 },
+        other: { value: "x", confidence: 0.94 },
+      });
+    });
+
+    it("treats objects with a value/confidence/geometry key as leaves", () => {
+      const leaf = {
+        value: "x",
+        geometry: [{ boundingBox: { left: 0, top: 0, width: 1, height: 1 } }],
+      };
+      expect(flattenFields({ a: { b: leaf } })).toEqual({ "a.b": leaf });
+    });
   });
 
   describe("renderExtractedData", () => {
+    it("flattens nested field groups into dotted rows", () => {
+      const data = {
+        employer: {
+          address: { value: "123 Main St", confidence: 0.77 },
+        },
+        other: { value: "x", confidence: 0.94 },
+      };
+      const html = renderExtractedData(data, { revealed: true, maskable: false });
+      expect(html).toContain("employer.address");
+      expect(html).toContain("123 Main St");
+      // The group must not be dumped as raw JSON.
+      expect(html).not.toContain('{"address"');
+    });
+
     it("returns empty string for null data", () => {
       expect(renderExtractedData(null)).toBe("");
     });

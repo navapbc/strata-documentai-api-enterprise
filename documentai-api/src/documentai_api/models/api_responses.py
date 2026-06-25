@@ -27,6 +27,13 @@ class JobStatusResponse(BaseApiResponse):
     error: str | None = None
     additional_info: str | None = None
 
+    @classmethod
+    def from_v1(cls, v1_response: dict[str, Any]) -> "JobStatusResponse":
+        """Construct from a stored/built v1 response dict, applying presentation nesting."""
+        from documentai_api.utils.response_builder import present_v1_response
+
+        return cls(**present_v1_response(v1_response))
+
 
 class HealthResponse(BaseApiResponse):
     message: str

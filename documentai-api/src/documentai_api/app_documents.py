@@ -315,9 +315,9 @@ async def get_document_results(
                 include_extracted_data=True,
                 include_bounding_box=include_bounding_box,
             )
-            return JobStatusResponse(**result)
+            return JobStatusResponse.from_v1(result)
         else:
-            return JobStatusResponse(**json.loads(job_status.v1_response_json))
+            return JobStatusResponse.from_v1(json.loads(job_status.v1_response_json))
 
     except HTTPException:
         raise
@@ -455,9 +455,9 @@ async def search_documents(body: DocumentSearchRequest, auth: AuthUser) -> Docum
                         job_status=job_status.process_status,
                         include_extracted_data=True,
                     )
-                    results.append(JobStatusResponse(**result))
+                    results.append(JobStatusResponse.from_v1(result))
             else:
-                results.append(JobStatusResponse(**json.loads(job_status.v1_response_json)))
+                results.append(JobStatusResponse.from_v1(json.loads(job_status.v1_response_json)))
         except Exception:
             logger.exception("Error retrieving job in search", extra={"job_id": job_id})
             results.append(

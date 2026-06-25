@@ -48,11 +48,22 @@ def _extract_fields_recursive(
     field_values: dict[str, Any] | None = None,
     field_geometry: dict[str, dict[str, Any]] | None = None,
 ) -> None:
-    """Recursively process fields, handling both flat and nested structures."""
+    """Recursively process fields, handling both flat and nested structures.
+
+    BDA returns nested objects (e.g. ``payment_details: {base_rent: {...}}``). We
+    flatten them into dot-joined path names (``payment_details.base_rent``) because
+    the flat form is the vocabulary every internal consumer wants: confidence
+    averaging and empty-field counting iterate a flat ``[{name: conf}]`` list,
+    ``FIELD_CONFIDENCE_SCORES`` is stored flat in DDB, and extraction-rule matching
+    is plain set membership over these names. The API response re-nests these dotted
+    names at the edge (``_nest_fields`` in response_builder); do not push the nested
+    shape back through here.
+    """
     for field_name, field_data in data.items():
         if not isinstance(field_data, dict):
             continue
 
+        # Dot-join the parent path into the child name to flatten nested BDA fields.
         full_field_name = f"{parent_key}.{field_name}" if parent_key else field_name
 
         # check field is an actual extracted value (e.g. confidence score or value) or a nested structure
