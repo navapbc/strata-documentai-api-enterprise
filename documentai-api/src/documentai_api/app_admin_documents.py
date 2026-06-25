@@ -23,7 +23,7 @@ from documentai_api.utils.audit import log_event
 from documentai_api.utils.document_metadata_table import DocumentMetadataTable
 from documentai_api.utils.jwt_auth import tenant_scope
 from documentai_api.utils.pagination import decode_cursor, encode_cursor
-from documentai_api.utils.response_builder import _extract_field_values
+from documentai_api.utils.response_builder import _extract_field_values, nest_fields
 from documentai_api.utils.s3 import get_bucket_and_key
 
 logger = get_logger(__name__)
@@ -59,7 +59,7 @@ def _record_to_detail(
 ) -> DocumentDetail:
     """Convert a DDB record to a full detail response."""
     fields = (
-        _extract_field_values(record, True, include_bounding_box)
+        nest_fields(_extract_field_values(record, True, include_bounding_box))
         if include_extracted_data
         else _parse_extracted_data(record)
     )
@@ -112,8 +112,9 @@ def _parse_extracted_data(record: dict[str, Any]) -> dict[str, Any] | None:
         return None
     try:
         parsed = json.loads(raw) if isinstance(raw, str) else raw
-        result: dict[str, Any] | None = parsed.get("fields")
-        return result
+        fields: dict[str, Any] | None = parsed.get("fields")
+        # Stored fields are flat/dotted; nest + camelCase at the presentation boundary.
+        return nest_fields(fields) if isinstance(fields, dict) else fields
     except (json.JSONDecodeError, AttributeError):
         logger.warning(f"Failed to parse extracted data for {record.get(DocumentMetadata.JOB_ID)}")
         return None

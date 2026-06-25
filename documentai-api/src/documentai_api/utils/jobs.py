@@ -77,8 +77,8 @@ async def poll_for_completion(
                         include_extracted_data=True,
                         include_bounding_box=include_bounding_box,
                     )
-                    return JobStatusResponse(**result)
-                return JobStatusResponse(**json.loads(job_status.v1_response_json))
+                    return JobStatusResponse.from_v1(result)
+                return JobStatusResponse.from_v1(json.loads(job_status.v1_response_json))
 
             await asyncio.sleep(polling_interval)
             elapsed_time += polling_interval

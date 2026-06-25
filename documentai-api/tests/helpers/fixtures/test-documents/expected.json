@@ -126,17 +126,16 @@
   },
   "synthetic-wic-certification-pregnancy-verification-clinic-note.jpg": {
     "//": [
-      "Bedrock Data Automation is incorrectly classifying this document as Proof-of-Loss-of-Health-Coverage. ",
-      "Additional investigation is needed to determine why. ",
-      "Including in tests as-is to avoid blocking other work. ",
-      "Marking e2e_enabled: true to flag for follow-up and prevent accidental regressions."
+      "Previously misclassified as Proof-of-Loss-of-Health-Coverage. ",
+      "Adding fields to blueprints resolved the false match - BDA now correctly ",
+      "returns no blueprint match for this pregnancy verification clinic note."
     ],
-    "bdaMatchedDocumentClass": "Proof-of-Loss-of-Health-Coverage",
+    "bdaMatchedDocumentClass": null,
     "content_type": "image/jpeg",
     "e2e_enabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "government_benefits",
-    "responseCode": "000"
+    "responseCode": "002"
   }
 }

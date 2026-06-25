@@ -344,6 +344,38 @@ def test_detail_extracted_data_redacted_values(client, seeded_docs):
     assert response.json()["fields"] == {"ssn": {"confidence": 0.99, "value": "<redacted>"}}
 
 
+def test_detail_extracted_data_nests_dotted_fields(client, doc_metadata_table):
+    """Admin detail nests verbatim, dot-separated stored field names for the client."""
+    doc_metadata_table.put_item(
+        Item={
+            DocumentMetadata.FILE_NAME: "input/test-tenant/nested.pdf",
+            DocumentMetadata.JOB_ID: "job-nested-1",
+            DocumentMetadata.ORIGINAL_FILE_NAME: "lease.pdf",
+            DocumentMetadata.TENANT_ID: "test-tenant",
+            DocumentMetadata.PROCESS_STATUS: "completed",
+            DocumentMetadata.CREATED_AT: "2026-01-06T00:00:00Z",
+            DocumentMetadata.V1_API_RESPONSE_JSON: json.dumps(
+                {
+                    "jobId": "job-nested-1",
+                    "jobStatus": "completed",
+                    "fields": {
+                        "amount": {"confidence": 0.9, "value": "1"},
+                        "payment_details.base_rent": {"confidence": 0.91, "value": "1200"},
+                    },
+                }
+            ),
+        }
+    )
+    _override_jwt(SUPER_ADMIN_CLAIMS)
+
+    response = client.get(f"{DOCUMENTS_URL}/job-nested-1")
+
+    assert response.status_code == 200
+    fields = response.json()["fields"]
+    assert fields["amount"] == {"confidence": 0.9, "value": "1"}
+    assert fields["payment_details"]["base_rent"]["value"] == "1200"
+
+
 def test_detail_malformed_json_returns_null(client, seeded_docs):
     """Corrupt V1_API_RESPONSE_JSON yields fields: null, not 500."""
     _override_jwt(SUPER_ADMIN_CLAIMS)

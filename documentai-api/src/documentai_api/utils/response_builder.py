@@ -15,7 +15,6 @@ from documentai_api.services.bda import get_bda_result_json
 from documentai_api.utils.bda import extract_field_values_from_bda_results
 from documentai_api.utils.dto import ClassificationData, InternalApiResponse
 from documentai_api.utils.response_codes import ResponseCodes
-from documentai_api.utils.strings import snake_to_camel
 
 logger = get_logger(__name__)
 
@@ -52,11 +51,11 @@ def _extract_field_values(
         field_values = {}
         field_geometry = {}
 
-    # build response
-    fields = {}
+    # Flat map keyed by verbatim blueprint names - matches FIELD_CONFIDENCE_SCORES
+    # and extraction rules. Nesting is deferred to present_v1_response.
+    fields: dict[str, Any] = {}
     for field_item in field_confidence_map_list:
         for field_name, confidence in field_item.items():
-            camel_field = snake_to_camel(field_name)
             entry: dict[str, Any] = {
                 "confidence": round(confidence, 2),
                 "value": field_values.get(field_name) if include_extracted_data else "<redacted>",
@@ -66,9 +65,30 @@ def _extract_field_values(
                 entry["geometry"] = geo_data["geometry"]
                 if geo_data.get("type"):
                     entry["fieldType"] = geo_data["type"]
-            fields[camel_field] = entry
+
+            fields[field_name] = entry
 
     return fields
+
+
+def nest_fields(flat_fields: dict[str, Any]) -> dict[str, Any]:
+    """Split dot-separated field names into a nested dict."""
+    nested: dict[str, Any] = {}
+    for field_name, entry in flat_fields.items():
+        parts = field_name.split(".")
+        target = nested
+        for part in parts[:-1]:
+            target = target.setdefault(part, {})
+        target[parts[-1]] = entry
+    return nested
+
+
+def present_v1_response(v1_response: dict[str, Any]) -> dict[str, Any]:
+    """Nest the 'fields' block for client presentation."""
+    fields = v1_response.get("fields")
+    if isinstance(fields, dict):
+        return {**v1_response, "fields": nest_fields(fields)}
+    return v1_response
 
 
 def get_internal_api_response(
@@ -112,16 +132,7 @@ def build_v1_api_response(
     include_extracted_data: bool = False,
     include_bounding_box: bool = False,
 ) -> dict[str, Any]:
-    """Build API response dict for DDB storage.
-
-    Args:
-        status: Processing status
-        data: Classification data with field results
-        error_message: Error details if failed
-
-    Returns:
-        dict: Response data for DDB JSON storage
-    """
+    """Build API response dict for DDB storage."""
     job_status = job_status.value if isinstance(job_status, ProcessStatus) else job_status
     from documentai_api.utils.ddb import get_ddb_record
 
@@ -279,4 +290,6 @@ __all__ = [
     "build_flat_file",
     "build_v1_api_response",
     "get_internal_api_response",
+    "nest_fields",
+    "present_v1_response",
 ]
