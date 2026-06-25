@@ -3,6 +3,7 @@
 resource "aws_sqs_queue" "dlq" {
   name                      = "${var.name}-dlq"
   message_retention_seconds = var.dlq_retention_seconds
+  tags                      = var.tags
 
   sqs_managed_sse_enabled = true
 }

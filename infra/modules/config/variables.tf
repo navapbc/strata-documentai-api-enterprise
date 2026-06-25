@@ -9,6 +9,11 @@ variable "prefix" {
   description = "SSM parameter path prefix (e.g. /docai/dev)."
 }
 
+variable "name_prefix" {
+  type        = string
+  description = "Naming prefix for IAM resources (e.g. project-env-accountid)."
+}
+
 variable "tags" {
   description = "Additional tags to apply to resources"
   type        = map(string)

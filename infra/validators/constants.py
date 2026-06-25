@@ -1,6 +1,16 @@
 """Infrastructure validation constants."""
 
 
+class DriftStatus:
+    PRESENT = "PRESENT"
+    MISSING = "MISSING"
+    DRIFTED = "DRIFTED"
+
+
+class Tag:
+    UNTAGGED = "_untagged"
+
+
 class AwsErrorCode:
     REPOSITORY_NOT_FOUND = "RepositoryNotFoundException"
     RESOURCE_NOT_FOUND = "ResourceNotFoundException"

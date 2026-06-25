@@ -297,9 +297,10 @@ module "analytics" {
 # --- Config (SSM Parameters) ---
 
 module "config" {
-  source = "../../modules/config"
-  prefix = local.ssm_prefix
-  tags   = { component = "config" }
+  source      = "../../modules/config"
+  prefix      = local.ssm_prefix
+  name_prefix = local.service_name
+  tags        = { component = "config" }
 
   parameters = {
     "feature-flags/preclassification-based-routing" = "false"
@@ -507,6 +508,7 @@ module "monitoring" {
 
   name_prefix = local.service_name
   region      = var.region
+  tags        = { component = "monitoring" }
 
   # Dashboard in every env; alarms only in prd.
   create_dashboard = true

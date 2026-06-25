@@ -4,6 +4,7 @@ module "results_bucket" {
   source       = "../storage"
   name         = var.results_bucket_name
   is_temporary = var.is_temporary
+  tags         = var.tags
 
   lifecycle_rules = [{
     id              = "expire-query-results"

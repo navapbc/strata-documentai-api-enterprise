@@ -8,32 +8,45 @@ from validators.discovery import extract_name_from_arn, filter_arns_by_service
 
 
 class SqsValidator(BaseValidator):
+    category = "SQS"
     def _check_sqs(self, name: str):
-        cat = "SQS"
         try:
             self.sqs.get_queue_url(QueueName=name)
-            self.ok(cat, "SQS Queue", name)
+            self.ok(self.category, "SQS Queue", name)
         except ClientError as e:
             code = e.response["Error"]["Code"]
             if code == AwsErrorCode.SQS_NON_EXISTENT_QUEUE:
-                self.missing(cat, "SQS Queue", name)
+                self.missing(self.category, "SQS Queue", name)
             else:
-                self.missing(cat, "SQS Queue", name, str(e))
+                self.missing(self.category, "SQS Queue", name, str(e))
 
     def check_sqs(self):
-        # Main metrics queue
-        name = self.get_resource_name_by_component_tag("metrics-queue")
-        if not name:
-            self.missing("SQS", "SQS Queue", "component=metrics-queue (not discovered)")
-        else:
-            self._check_sqs(name)
-            # DLQ is conventionally named with -dlq suffix
-            self._check_sqs(f"{name}-dlq")
 
-        # Worker DLQs (S3-triggered workers have DLQs)
-        for component_tag in ["document-processor", "bda-result-processor"]:
-            arns = self.component_resources.get(component_tag, [])
-            lambda_arns = filter_arns_by_service(arns, "lambda")
-            if lambda_arns:
-                worker_name = extract_name_from_arn(lambda_arns[0])
-                self._check_sqs(f"{worker_name}-dlq")
+        # Derive SQS specs from expected.json
+        for component_name, spec in sorted(self.planned_tf_resources.items()):
+            queues = spec.get_all_by_type("aws_sqs_queue")
+            if not queues:
+                continue
+
+            arns = self.component_resources.get(component_name, [])
+            sqs_arns = filter_arns_by_service(arns, "sqs")
+
+            for queue in queues:
+                v = queue.values
+                queue_name = v.get("name")
+
+                # Try to match by name from discovered SQS ARNs
+                if sqs_arns:
+                    matched = next(
+                        (extract_name_from_arn(a) for a in sqs_arns
+                         if extract_name_from_arn(a) == queue_name),
+                        None,
+                    )
+                    if matched:
+                        queue_name = matched
+
+                if not queue_name:
+                    self.missing(self.category, "SQS Queue", f"component={component_name} (not discovered)")
+                    continue
+
+                self._check_sqs(queue_name)

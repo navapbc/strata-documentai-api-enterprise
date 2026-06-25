@@ -3,6 +3,7 @@ resource "aws_kms_key" "this" {
   description             = "KMS key for ${var.table_name}"
   deletion_window_in_days = 10
   enable_key_rotation     = true
+  tags                    = var.tags
 }
 
 locals {

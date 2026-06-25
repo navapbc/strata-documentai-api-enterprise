@@ -69,6 +69,7 @@ resource "aws_cloudfront_distribution" "site" {
   comment             = var.description
   default_root_object = var.default_root_object
   price_class         = "PriceClass_100"
+  tags                = var.tags
 
   origin {
     domain_name              = aws_s3_bucket.site.bucket_regional_domain_name

@@ -20,6 +20,6 @@ data "aws_iam_policy_document" "read" {
 }
 
 resource "aws_iam_policy" "read" {
-  name   = replace("${var.prefix}-ssm-read", "/", "-")
+  name   = "${var.name_prefix}-ssm-read"
   policy = data.aws_iam_policy_document.read.json
 }

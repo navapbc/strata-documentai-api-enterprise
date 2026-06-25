@@ -1,9 +1,6 @@
 """IAM policy and role validation.
 
-Note: IAM resources are global and the Resource Groups Tagging API coverage
-for IAM is limited. This validator still uses convention-based name lookup
-for roles and policies, as these are derived from the Lambda function names
-which we discover via tags.
+IAM roles are derived from Lambda function names (function-name + "-role").
 """
 
 from botocore.exceptions import ClientError
@@ -14,30 +11,33 @@ from validators.discovery import extract_name_from_arn, filter_arns_by_service
 
 
 class IamValidator(BaseValidator):
+    category = "IAM"
     def check_iam(self):
-        cat = "IAM"
 
-        # IAM roles - derived from discovered Lambda function names
-        lambda_components = [
-            "api-gateway",
-            "document-processor",
-            "bda-result-processor",
-            "metrics-processor",
-            "metrics-aggregator",
-        ]
-        for component_tag in lambda_components:
-            arns = self.component_resources.get(component_tag, [])
-            lambda_arns = filter_arns_by_service(arns, "lambda")
-            if not lambda_arns:
+        # Find all components that have Lambda functions
+        for component_name, spec in sorted(self.planned_tf_resources.items()):
+            lmb = spec.get_by_type("aws_lambda_function")
+            if not lmb:
                 continue
-            name = extract_name_from_arn(lambda_arns[0])
+
+            # Get Lambda name from discovery or spec
+            arns = self.component_resources.get(component_name, [])
+            lambda_arns = filter_arns_by_service(arns, "lambda")
+            if lambda_arns:
+                name = extract_name_from_arn(lambda_arns[0])
+            else:
+                name = lmb.values.get("function_name")
+
+            if not name:
+                continue
+
             role_name = f"{name}-role"
             try:
                 self.iam.get_role(RoleName=role_name)
-                self.ok(cat, "IAM Role", role_name)
+                self.ok(self.category, "IAM Role", role_name)
             except ClientError as e:
                 code = e.response["Error"]["Code"]
                 if code == AwsErrorCode.NO_SUCH_ENTITY:
-                    self.missing(cat, "IAM Role", role_name)
+                    self.missing(self.category, "IAM Role", role_name)
                 else:
-                    self.missing(cat, "IAM Role", role_name, str(e))
+                    self.missing(self.category, "IAM Role", role_name, str(e))

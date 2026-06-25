@@ -3,12 +3,14 @@
 from botocore.exceptions import ClientError
 
 from validators import BaseValidator
+from validators.discovery import extract_name_from_arn, filter_arns_by_service
 
 
 class S3Validator(BaseValidator):
+    category = "S3"
+
     def _check_s3(
         self,
-        cat: str,
         name: str,
         expect_kms: bool = True,
         expect_public_block: bool = True,
@@ -18,9 +20,9 @@ class S3Validator(BaseValidator):
         except ClientError as e:
             code = e.response["Error"]["Code"]
             if code in ("404", "403", "NoSuchBucket"):
-                self.missing(cat, "S3 Bucket", name)
+                self.missing(self.category, "S3 Bucket", name)
             else:
-                self.missing(cat, "S3 Bucket", name, str(e))
+                self.missing(self.category, "S3 Bucket", name, str(e))
             return
 
         drift = []
@@ -56,22 +58,28 @@ class S3Validator(BaseValidator):
             except ClientError:
                 drift.append("No KMS encryption configuration found")
 
-        self.check_or_drift(cat, "S3 Bucket", name, drift)
+        self.check_or_drift(self.category, "S3 Bucket", name, drift)
 
     def check_s3(self):
-        cat = "S3"
-        # Storage buckets (KMS + public access block)
-        for component_tag in ["input-bucket", "output-bucket", "metrics-bucket"]:
-            name = self.get_resource_name_by_component_tag(component_tag)
-            if not name:
-                self.missing(cat, "S3 Bucket", f"component={component_tag} (not discovered)")
-            else:
-                self._check_s3(cat, name, expect_kms=True)
+        for component_name, spec in sorted(self.planned_tf_resources.items()):
+            bucket = spec.get_by_type("aws_s3_bucket")
+            if not bucket:
+                continue
 
-        # Static site buckets (no KMS)
-        for component_tag in ["admin-ui", "demo-ui"]:
-            name = self.get_resource_name_by_component_tag(component_tag)
-            if not name:
-                self.missing(cat, "S3 Bucket", f"component={component_tag} (not discovered)")
+            v = bucket.values
+            arns = self.component_resources.get(component_name, [])
+            s3_arns = filter_arns_by_service(arns, "s3")
+            if s3_arns:
+                name = extract_name_from_arn(s3_arns[0])
             else:
-                self._check_s3(cat, name, expect_kms=False)
+                name = v.get("bucket")
+
+            if not name:
+                self.missing(
+                    self.category, "S3 Bucket",
+                    f"component={component_name} (not discovered)",
+                )
+                continue
+
+            is_static_site = component_name in ("admin-ui", "demo-ui")
+            self._check_s3(name, expect_kms=not is_static_site)

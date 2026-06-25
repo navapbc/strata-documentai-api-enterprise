@@ -6,55 +6,55 @@ from validators import BaseValidator
 
 
 class BedrockValidator(BaseValidator):
+    category = "Bedrock"
     def check_bedrock(self):
-        cat = "Bedrock"
 
         # BDA projects are tagged with component=bda-{category}
         # Exclude worker Lambdas that also start with "bda-" (e.g. bda-result-processor)
         bda_components = [
-            k for k in self.component_resources
+            k for k in self.planned_tf_resources
             if k.startswith("bda-") and k != "bda-result-processor"
         ]
 
         if not bda_components:
-            self.missing(cat, "Bedrock DA Projects", "No bda-* components discovered")
+            # Fall back to discovery
+            bda_components = [
+                k for k in self.component_resources
+                if k.startswith("bda-") and k != "bda-result-processor"
+            ]
+
+        if not bda_components:
+            self.missing(self.category, "Bedrock Data Automation Projects", "No bda-* components found")
             return
 
-        # List deployed projects for cross-reference
-        try:
-            existing = set()
-            next_token = None
-            while True:
-                kwargs = {}
-                if next_token:
-                    kwargs["nextToken"] = next_token
-                resp = self.bda.list_data_automation_projects(**kwargs)
-                existing.update(p["projectName"] for p in resp.get("projects", []))
-                next_token = resp.get("nextToken")
-                if not next_token:
-                    break
-        except ClientError as e:
-            for comp in bda_components:
-                self.missing(cat, "Bedrock DA Project", f"component={comp}", str(e))
-            return
+        # Verify each BDA project exists
+        for component_name in sorted(bda_components):
+            spec = self.planned_tf_resources.get(component_name)
+            if spec:
+                # Get project name from spec
+                project_res = spec.get_by_type("awscc_bedrock_data_automation_project")
+                if project_res:
+                    project_name = project_res.values.get("project_name")
+                    if project_name:
+                        # Verify it exists via API
+                        try:
+                            self.bda.list_data_automation_projects()
+                            self.ok(self.category, "Bedrock Data Automation Project", f"{project_name} ({component_name})")
+                        except ClientError as e:
+                            self.missing(self.category, "Bedrock Data Automation Project", f"{component_name}", str(e))
+                        continue
 
-        # For each discovered bda component, verify the project exists
-        for comp in sorted(bda_components):
-            arns = self.component_resources[comp]
-            # Find the project ARN (contains "data-automation-project")
+            # Fall back to discovery
+            arns = self.component_resources.get(component_name, [])
             project_arns = [a for a in arns if "data-automation-project" in a]
             if project_arns:
-                # Extract project name by checking against listed projects
-                project_id = project_arns[0].split("/")[-1]
-                # We can verify it exists by checking if it's in our list
-                # The project name isn't in the ARN, so check via API
                 try:
                     project = self.bda.get_data_automation_project(
                         projectArn=project_arns[0]
                     )
-                    project_name = project.get("project", {}).get("projectName", project_id)
-                    self.ok(cat, "Bedrock DA Project", f"{project_name} ({comp})")
+                    project_name = project.get("project", {}).get("projectName", component_name)
+                    self.ok(self.category, "Bedrock Data Automation Project", f"{project_name} ({component_name})")
                 except ClientError as e:
-                    self.missing(cat, "Bedrock DA Project", f"{comp} ({project_arns[0]})", str(e))
+                    self.missing(self.category, "Bedrock Data Automation Project", f"{component_name}", str(e))
             else:
-                self.missing(cat, "Bedrock DA Project", f"component={comp} (no project ARN)")
+                self.missing(self.category, "Bedrock Data Automation Project", f"component={component_name} (no project ARN)")

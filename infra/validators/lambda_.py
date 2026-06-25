@@ -8,16 +8,16 @@ from validators.discovery import extract_name_from_arn, filter_arns_by_service
 
 
 class LambdaValidator(BaseValidator):
+    category = "Lambda"
     def _check_lambda(self, name: str, memory: int, timeout: int):
-        cat = "Lambda"
         try:
-            cfg = self.lmb.get_function(FunctionName=name)["Configuration"]
+            cfg = self.lambda_client.get_function(FunctionName=name)["Configuration"]
         except ClientError as e:
             code = e.response["Error"]["Code"]
             if code == AwsErrorCode.RESOURCE_NOT_FOUND:
-                self.missing(cat, "Lambda Function", name)
+                self.missing(self.category, "Lambda Function", name)
             else:
-                self.missing(cat, "Lambda Function", name, str(e))
+                self.missing(self.category, "Lambda Function", name, str(e))
             return
 
         drift = []
@@ -28,7 +28,7 @@ class LambdaValidator(BaseValidator):
         if cfg.get("Timeout") != timeout:
             drift.append(f"timeout: expected {timeout}, got {cfg.get('Timeout')}")
 
-        self.check_or_drift(cat, "Lambda Function", name, drift)
+        self.check_or_drift(self.category, "Lambda Function", name, drift)
 
     def _get_lambda_name(self, component_tag: str) -> str | None:
         """Get the Lambda function name for a component, filtering out non-Lambda ARNs."""
@@ -39,18 +39,24 @@ class LambdaValidator(BaseValidator):
         return extract_name_from_arn(lambda_arns[0])
 
     def check_lambdas(self):
-        lambdas = {
-            "api-gateway": {"memory": 1024, "timeout": 30},
-            "document-processor": {"memory": 512, "timeout": 300},
-            "bda-result-processor": {"memory": 512, "timeout": 300},
-            "metrics-processor": {"memory": 512, "timeout": 300},
-            "metrics-aggregator": {"memory": 512, "timeout": 300},
-        }
-        for component_tag, config in lambdas.items():
-            name = self._get_lambda_name(component_tag)
+
+        # Derive Lambda specs from expected.json
+        for component_name, spec in sorted(self.planned_tf_resources.items()):
+            lmb = spec.get_by_type("aws_lambda_function")
+            if not lmb:
+                continue
+
+            v = lmb.values
+            name = self._get_lambda_name(component_name)
             if not name:
-                self.missing(
-                    "Lambda", "Lambda Function", f"component={component_tag} (not discovered)"
-                )
-            else:
-                self._check_lambda(name, **config)
+                # Fall back to name from spec
+                name = v.get("function_name")
+                if not name:
+                    self.missing(self.category, "Lambda Function", f"component={component_name} (not discovered)")
+                    continue
+
+            self._check_lambda(
+                name,
+                memory=v.get("memory_size", 512),
+                timeout=v.get("timeout", 300),
+            )

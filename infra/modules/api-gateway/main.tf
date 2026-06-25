@@ -86,6 +86,7 @@ resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.this.id
   name        = "$default"
   auto_deploy = true
+  tags        = var.tags
 
   access_log_settings {
     destination_arn = aws_cloudwatch_log_group.api.arn
@@ -104,6 +105,7 @@ resource "aws_apigatewayv2_stage" "default" {
 resource "aws_cloudwatch_log_group" "api" {
   name              = "/aws/apigateway/${var.function_name}"
   retention_in_days = 30
+  tags              = var.tags
 }
 
 resource "aws_apigatewayv2_integration" "lambda" {

@@ -4,9 +4,12 @@ from botocore.exceptions import ClientError
 
 from validators import BaseValidator
 from validators.constants import AwsErrorCode
+from validators.discovery import extract_name_from_arn, filter_arns_by_service
 
 
 class DynamoDBValidator(BaseValidator):
+    category = "DynamoDB"
+
     def _check_ddb(
         self,
         name: str,
@@ -15,15 +18,14 @@ class DynamoDBValidator(BaseValidator):
         gsi_names: list[str] | None = None,
         ttl_attr: str | None = None,
     ):
-        cat = "DynamoDB"
         try:
             table = self.ddb.describe_table(TableName=name)["Table"]
         except ClientError as e:
             code = e.response["Error"]["Code"]
             if code == AwsErrorCode.RESOURCE_NOT_FOUND:
-                self.missing(cat, "DynamoDB Table", name)
+                self.missing(self.category, "DynamoDB Table", name)
             else:
-                self.missing(cat, "DynamoDB Table", name, str(e))
+                self.missing(self.category, "DynamoDB Table", name, str(e))
             return
 
         drift = []
@@ -73,48 +75,34 @@ class DynamoDBValidator(BaseValidator):
             except ClientError:
                 drift.append("Cannot read TTL configuration")
 
-        self.check_or_drift(cat, "DynamoDB Table", name, drift)
+        self.check_or_drift(self.category, "DynamoDB Table", name, drift)
 
     def check_dynamodb(self):
-        tables = {
-            "document-metadata": {
-                "hash_key": "fileName",
-                "gsi_names": [
-                    "JobIdIndex",
-                    "ExternalDocumentIdIndex",
-                    "BdaInvocationIdIndex",
-                    "TenantIdIndex",
-                ],
-                "ttl_attr": "ttl",
-            },
-            "api-keys": {"hash_key": "keyHash"},
-            "tenants": {"hash_key": "tenantId"},
-            "audit-events": {
-                "hash_key": "tenantId",
-                "sort_key": "timestamp#eventId",
-                "gsi_names": ["action-timestamp-index"],
-                "ttl_attr": "ttl",
-            },
-            "extraction-rules": {"hash_key": "tenantId", "sort_key": "documentType"},
-            "document-categories": {"hash_key": "tenantId", "sort_key": "categoryName"},
-            "document-batches": {
-                "hash_key": "batchId",
-                "gsi_names": ["StatusCreatedAtIndex", "TenantIndex"],
-                "ttl_attr": "ttl",
-            },
-            "document-builds": {
-                "hash_key": "buildId",
-                "sort_key": "pageNumber",
-                "gsi_names": ["TenantIndex", "ExternalReferenceIdIndex"],
-                "ttl_attr": "ttl",
-            },
-        }
+        for component_name, spec in sorted(self.planned_tf_resources.items()):
+            ddb = spec.get_by_type("aws_dynamodb_table")
+            if not ddb:
+                continue
 
-        for component_tag, config in tables.items():
-            name = self.get_resource_name_by_component_tag(component_tag)
-            if not name:
-                self.missing(
-                    "DynamoDB", "DynamoDB Table", f"component={component_tag} (not discovered)"
-                )
+            v = ddb.values
+            arns = self.component_resources.get(component_name, [])
+            ddb_arns = filter_arns_by_service(arns, "dynamodb")
+            if ddb_arns:
+                name = extract_name_from_arn(ddb_arns[0])
             else:
-                self._check_ddb(name, **config)
+                name = v.get("name")
+
+            if not name:
+                self.missing(self.category, "DynamoDB Table", f"component={component_name} (not discovered)")
+                continue
+
+            gsi_names = [g["name"] for g in v.get("global_secondary_index", [])]
+            ttl_list = v.get("ttl", [])
+            ttl_attr = ttl_list[0].get("attribute_name") if ttl_list else None
+
+            self._check_ddb(
+                name,
+                hash_key=v["hash_key"],
+                sort_key=v.get("range_key"),
+                gsi_names=gsi_names or None,
+                ttl_attr=ttl_attr,
+            )

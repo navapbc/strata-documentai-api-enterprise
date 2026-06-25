@@ -87,6 +87,7 @@ resource "aws_lambda_function" "this" {
 resource "aws_sqs_queue" "dlq" {
   count = var.s3_trigger != null ? 1 : 0
   name  = "${var.function_name}-dlq"
+  tags  = var.tags
 
   message_retention_seconds = 1209600 # 14 days
 }
@@ -104,6 +105,7 @@ locals {
 resource "aws_cloudwatch_event_rule" "s3_trigger" {
   count = var.s3_trigger != null ? 1 : 0
   name  = "${var.function_name}-s3-trigger"
+  tags  = var.tags
 
   event_pattern = jsonencode({
     source      = ["aws.s3"]
@@ -156,6 +158,7 @@ resource "aws_cloudwatch_event_rule" "schedules" {
   for_each            = { for s in var.schedules : s.name => s }
   name                = "${var.function_name}-${each.key}"
   schedule_expression = each.value.schedule_expression
+  tags                = var.tags
 }
 
 resource "aws_cloudwatch_event_target" "schedules" {

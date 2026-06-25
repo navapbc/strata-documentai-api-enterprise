@@ -33,6 +33,7 @@ locals {
 
 resource "aws_sns_topic" "alarms" {
   name = "${var.name_prefix}-alarms"
+  tags = var.tags
 }
 
 resource "aws_sns_topic_subscription" "email" {

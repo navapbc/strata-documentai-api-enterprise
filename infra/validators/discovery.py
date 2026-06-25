@@ -2,6 +2,8 @@
 
 from collections import defaultdict
 
+from validators.constants import Tag
+
 
 def discover_resources(
     session,
@@ -11,7 +13,7 @@ def discover_resources(
     """Discover all resources matching project + stage tags, grouped by component.
 
     Returns a dict mapping component tag values to lists of resource ARNs.
-    Resources without a component tag are grouped under "_untagged".
+    Resources without a component tag are grouped under Tag.UNTAGGED.
     """
     client = session.client("resourcegroupstaggingapi")
 
@@ -33,7 +35,7 @@ def discover_resources(
         for item in resp.get("ResourceTagMappingList", []):
             arn = item["ResourceARN"]
             tags = {t["Key"]: t["Value"] for t in item.get("Tags", [])}
-            component = tags.get("component", "_untagged")
+            component = tags.get("component", Tag.UNTAGGED)
             resources[component].append(arn)
 
         pagination_token = resp.get("PaginationToken", "")

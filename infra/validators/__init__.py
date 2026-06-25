@@ -4,27 +4,23 @@ import json
 import sys
 from dataclasses import dataclass, field
 
+from validators.constants import DriftStatus
+
 _TTY = sys.stdout.isatty()
 
 
-def _c(text: str, code: str) -> str:
-    return f"{code}{text}\033[0m" if _TTY else text
+class Color:
+    GREEN = "\033[92m"
+    RED = "\033[91m"
+    YELLOW = "\033[93m"
+    BOLD = "\033[1m"
+    RESET = "\033[0m"
 
 
-def green(t: str) -> str:
-    return _c(t, "\033[92m")
-
-
-def red(t: str) -> str:
-    return _c(t, "\033[91m")
-
-
-def yellow(t: str) -> str:
-    return _c(t, "\033[93m")
-
-
-def bold(t: str) -> str:
-    return _c(t, "\033[1m")
+def style(text: str, *codes: str) -> str:
+    if not _TTY:
+        return text
+    return "".join(codes) + text + Color.RESET
 
 
 @dataclass
@@ -32,7 +28,7 @@ class Result:
     category: str
     rtype: str
     name: str
-    status: str  # PRESENT | MISSING | DRIFTED
+    status: str
     drift: list[str] = field(default_factory=list)
     error: str | None = None
 
@@ -46,7 +42,8 @@ class BaseValidator:
 
     results: list[Result]
     component_resources: dict[str, list[str]]
-    sn: str
+    planned_tf_resources: dict
+    service_name: str
     project: str
     env: str
     ssm_prefix: str
@@ -64,13 +61,13 @@ class BaseValidator:
         self.results.append(Result(category, rtype, name, status, drift or [], error))
 
     def ok(self, cat: str, rtype: str, name: str):
-        self.record(cat, rtype, name, "PRESENT")
+        self.record(cat, rtype, name, DriftStatus.PRESENT)
 
     def missing(self, cat: str, rtype: str, name: str, error: str | None = None):
-        self.record(cat, rtype, name, "MISSING", error=error)
+        self.record(cat, rtype, name, DriftStatus.MISSING, error=error)
 
     def drifted(self, cat: str, rtype: str, name: str, drift: list[str]):
-        self.record(cat, rtype, name, "DRIFTED", drift=drift)
+        self.record(cat, rtype, name, DriftStatus.DRIFTED, drift=drift)
 
     def check_or_drift(self, cat: str, rtype: str, name: str, drift: list[str]):
         if drift:
@@ -98,36 +95,36 @@ def print_report(results: list[Result], as_json: bool) -> int:
                 indent=2,
             )
         )
-        missing = sum(1 for r in results if r.status == "MISSING")
-        drifted = sum(1 for r in results if r.status == "DRIFTED")
+        missing = sum(1 for r in results if r.status == DriftStatus.MISSING)
+        drifted = sum(1 for r in results if r.status == DriftStatus.DRIFTED)
         return 0 if (missing + drifted) == 0 else 1
 
-    counts = {"PRESENT": 0, "MISSING": 0, "DRIFTED": 0}
+    counts = {DriftStatus.PRESENT: 0, DriftStatus.MISSING: 0, DriftStatus.DRIFTED: 0}
     for r in results:
         counts[r.status] += 1
-        if r.status == "PRESENT":
-            icon = green("✓")
-        elif r.status == "MISSING":
-            icon = red("✗")
+        if r.status == DriftStatus.PRESENT:
+            icon = style("✓", Color.GREEN)
+        elif r.status == DriftStatus.MISSING:
+            icon = style("✗", Color.RED)
         else:
-            icon = yellow("~")
-        print(f"  {icon}  {bold(r.rtype):40s}  {r.name}")
+            icon = style("~", Color.YELLOW)
+        print(f"  {icon}  {style(r.rtype, Color.BOLD):40s}  {r.name}")
         for d in r.drift:
-            print(f"       {yellow('DRIFT')}  {d}")
+            print(f"       {style('DRIFT', Color.YELLOW)}  {d}")
         if r.error:
-            print(f"       {red('ERROR')}  {r.error}")
+            print(f"       {style('ERROR', Color.RED)}  {r.error}")
 
     total = sum(counts.values())
-    present = f"{counts['PRESENT']} present"
-    missing_str = f"{counts['MISSING']} missing"
-    drifted_str = f"{counts['DRIFTED']} drifted"
+    present = f"{counts[DriftStatus.PRESENT]} present"
+    missing_str = f"{counts[DriftStatus.MISSING]} missing"
+    drifted_str = f"{counts[DriftStatus.DRIFTED]} drifted"
     print(f"\n{'─' * 70}")
     print(
         f"  {total} checks:  "
-        f"{green(present)}  ·  "
-        f"{red(missing_str)}  ·  "
-        f"{yellow(drifted_str)}"
+        f"{style(present, Color.GREEN)}  ·  "
+        f"{style(missing_str, Color.RED)}  ·  "
+        f"{style(drifted_str, Color.YELLOW)}"
     )
     print(f"{'─' * 70}\n")
 
-    return 0 if (counts["MISSING"] + counts["DRIFTED"]) == 0 else 1
+    return 0 if (counts[DriftStatus.MISSING] + counts[DriftStatus.DRIFTED]) == 0 else 1

@@ -8,16 +8,24 @@ from validators.discovery import filter_arns_by_service
 
 
 class CognitoValidator(BaseValidator):
+    category = "Cognito"
     def check_cognito(self):
-        cat = "Cognito"
         arns = self.component_resources.get("identity-provider", [])
         pool_arns = filter_arns_by_service(arns, "cognito-idp")
 
         if not pool_arns:
-            self.missing(cat, "Cognito User Pool", "component=identity-provider (not discovered)")
+            # Fall back to expected.json for the pool name
+            spec = self.planned_tf_resources.get("identity-provider")
+            if spec:
+                pool_res = spec.get_by_type("aws_cognito_user_pool")
+                pool_name = pool_res.values.get("name") if pool_res else None
+                if pool_name:
+                    self.missing(self.category, "Cognito User Pool", f"{pool_name} (not discovered)")
+                    return
+            self.missing(self.category, "Cognito User Pool", "component=identity-provider (not discovered)")
             return
 
-        # Extract pool ID from ARN: arn:aws:cognito-idp:region:acct:userpool/pool-id
+        # Extract pool ID from ARN
         pool_id = pool_arns[0].split("/")[-1]
 
         try:
@@ -33,29 +41,29 @@ class CognitoValidator(BaseValidator):
             adv = detail.get("UserPoolAddOns", {}).get("AdvancedSecurityMode", "OFF")
             if adv not in ("AUDIT", "ENFORCED"):
                 drift.append(f"advanced_security_mode: expected AUDIT or ENFORCED, got {adv}")
-            self.check_or_drift(cat, "Cognito User Pool", pool_name, drift)
+            self.check_or_drift(self.category, "Cognito User Pool", pool_name, drift)
 
             # Check client exists
             clients = self.cognito.list_user_pool_clients(
                 UserPoolId=pool_id, MaxResults=60
             )["UserPoolClients"]
             if clients:
-                self.ok(cat, "Cognito User Pool Client", clients[0]["ClientName"])
+                self.ok(self.category, "Cognito User Pool Client", clients[0]["ClientName"])
             else:
-                self.missing(cat, "Cognito User Pool Client", f"{pool_name}-client")
+                self.missing(self.category, "Cognito User Pool Client", f"{pool_name}-client")
 
             # Cognito groups
             for group_name in ["super-admin", "tenant-admin"]:
                 try:
                     self.cognito.get_group(GroupName=group_name, UserPoolId=pool_id)
-                    self.ok(cat, "Cognito Group", f"{pool_name}/{group_name}")
+                    self.ok(self.category, "Cognito Group", f"{pool_name}/{group_name}")
                 except ClientError as e:
                     if e.response["Error"]["Code"] == AwsErrorCode.RESOURCE_NOT_FOUND:
-                        self.missing(cat, "Cognito Group", f"{pool_name}/{group_name}")
+                        self.missing(self.category, "Cognito Group", f"{pool_name}/{group_name}")
                     else:
                         self.missing(
-                            cat, "Cognito Group", f"{pool_name}/{group_name}", str(e)
+                            self.category, "Cognito Group", f"{pool_name}/{group_name}", str(e)
                         )
 
         except ClientError as e:
-            self.missing(cat, "Cognito User Pool", pool_id, str(e))
+            self.missing(self.category, "Cognito User Pool", pool_id, str(e))
