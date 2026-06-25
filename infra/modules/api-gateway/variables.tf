@@ -58,3 +58,9 @@ variable "vpc_config" {
   description = "Optional VPC configuration for the Lambda function. When null, the function runs outside a VPC."
   default     = null
 }
+
+variable "tags" {
+  description = "Additional tags to apply to resources"
+  type        = map(string)
+  default     = {}
+}

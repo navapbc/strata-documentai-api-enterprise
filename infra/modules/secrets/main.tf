@@ -23,6 +23,7 @@ resource "aws_ssm_parameter" "generated" {
   name  = each.value.secret_store_name
   type  = "SecureString"
   value = random_password.this[each.key].result
+  tags  = var.tags
 }
 
 data "aws_ssm_parameter" "manual" {

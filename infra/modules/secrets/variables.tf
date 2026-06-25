@@ -10,3 +10,9 @@ variable "secrets" {
     error_message = "manage_method must be 'manual' or 'generated'"
   }
 }
+
+variable "tags" {
+  description = "Additional tags to apply to resources"
+  type        = map(string)
+  default     = {}
+}

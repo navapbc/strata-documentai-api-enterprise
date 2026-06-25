@@ -3,6 +3,7 @@
 	infra-bootstrap \
 	infra-deploy \
 	infra-destroy \
+	infra-drift \
 	infra-format \
 	infra-init \
 	infra-lint \
@@ -91,6 +92,9 @@ infra-validate: ## Validate Terraform modules
 		terraform -chdir="$$dir" init -backend=false > /dev/null 2>&1; \
 		terraform -chdir="$$dir" validate; \
 	done
+
+infra-drift: ## Validate deployed resources against Terraform-defined expected state
+	python validate_infra.py --env $(ENVIRONMENT) $(if $(AWS_PROFILE),--profile $(AWS_PROFILE))
 
 help: ## Show help
 	@grep -Eh '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'

@@ -1,6 +1,7 @@
 resource "aws_s3_bucket" "this" {
   bucket        = var.name
   force_destroy = var.is_temporary
+  tags          = var.tags
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "this" {

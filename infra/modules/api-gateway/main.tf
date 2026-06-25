@@ -41,6 +41,7 @@ resource "aws_lambda_function" "this" {
   image_uri     = var.image_uri
   timeout       = var.timeout
   memory_size   = var.memory_size
+  tags          = var.tags
 
   image_config {
     command = var.command
@@ -70,6 +71,7 @@ resource "aws_lambda_function" "this" {
 resource "aws_apigatewayv2_api" "this" {
   name          = var.function_name
   protocol_type = "HTTP"
+  tags          = var.tags
 
   cors_configuration {
     allow_origins  = ["*"]

@@ -61,3 +61,9 @@ variable "is_temporary" {
   description = "When true, marks resources as ephemeral so they can be force-destroyed."
   default     = false
 }
+
+variable "tags" {
+  description = "Additional tags to apply to resources"
+  type        = map(string)
+  default     = {}
+}

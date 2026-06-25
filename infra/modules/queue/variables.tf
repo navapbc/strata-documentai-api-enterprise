@@ -31,3 +31,9 @@ variable "dlq_retention_seconds" {
   description = "How long messages are retained in the dead-letter queue, in seconds."
   default     = 1209600 # 14 days
 }
+
+variable "tags" {
+  description = "Additional tags to apply to resources"
+  type        = map(string)
+  default     = {}
+}

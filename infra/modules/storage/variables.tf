@@ -37,3 +37,9 @@ variable "lifecycle_rules" {
   description = "Lifecycle rules for object expiration and storage-class transitions."
   default     = []
 }
+
+variable "tags" {
+  description = "Additional tags to apply to resources"
+  type        = map(string)
+  default     = {}
+}

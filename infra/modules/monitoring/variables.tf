@@ -130,3 +130,9 @@ variable "api_p99_latency_threshold_ms" {
   description = "API Gateway p99 integration latency (milliseconds) that triggers an alarm."
   default     = 3000
 }
+
+variable "tags" {
+  description = "Additional tags to apply to resources"
+  type        = map(string)
+  default     = {}
+}

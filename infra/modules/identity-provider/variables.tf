@@ -111,3 +111,9 @@ variable "google_allowed_domains" {
   description = "Email domains allowed for Google SSO (e.g. ['example.com']). Empty list allows all domains."
   default     = []
 }
+
+variable "tags" {
+  description = "Additional tags to apply to resources"
+  type        = map(string)
+  default     = {}
+}

@@ -8,3 +8,9 @@ variable "prefix" {
   type        = string
   description = "SSM parameter path prefix (e.g. /docai/dev)."
 }
+
+variable "tags" {
+  description = "Additional tags to apply to resources"
+  type        = map(string)
+  default     = {}
+}

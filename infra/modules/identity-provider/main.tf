@@ -2,6 +2,7 @@
 
 resource "aws_cognito_user_pool" "this" {
   name = var.name
+  tags = var.tags
 
   deletion_protection = var.is_temporary ? "INACTIVE" : "ACTIVE"
 

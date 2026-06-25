@@ -24,3 +24,9 @@ variable "max_image_count" {
     error_message = "max_image_count must be at least 1."
   }
 }
+
+variable "tags" {
+  description = "Additional tags to apply to resources"
+  type        = map(string)
+  default     = {}
+}

@@ -14,3 +14,9 @@ variable "default_root_object" {
   description = "Object CloudFront serves for requests to the root path."
   default     = "index.html"
 }
+
+variable "tags" {
+  description = "Additional tags to apply to resources"
+  type        = map(string)
+  default     = {}
+}

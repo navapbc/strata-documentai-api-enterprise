@@ -23,7 +23,11 @@ provider "aws" {
     tags = {
       project     = var.project_name
       environment = var.environment
-      managed_by  = "terraform"
+      # stage: deployment instance identifier, shared with infra team for
+      # cross-stack resource discovery. Same as environment for Terraform-managed
+      # stacks; infra team's manual deployments may use different values (e.g. DEV1).
+      stage      = var.environment
+      managed_by = "terraform"
     }
   }
 }
@@ -74,6 +78,7 @@ locals {
 module "ecr" {
   source = "../../modules/container-image-repository"
   name   = "${var.project_name}-${var.environment}"
+  tags   = { component = "ecr" }
 }
 
 # --- Storage ---
@@ -82,6 +87,7 @@ module "input_bucket" {
   source                         = "../../modules/storage"
   name                           = "${local.service_name}-dde-input"
   service_principals_with_access = ["bedrock.amazonaws.com"]
+  tags                           = { component = "input-bucket" }
 
   lifecycle_rules = [
     {
@@ -111,6 +117,7 @@ module "output_bucket" {
   source                         = "../../modules/storage"
   name                           = "${local.service_name}-dde-output"
   service_principals_with_access = ["bedrock.amazonaws.com"]
+  tags                           = { component = "output-bucket" }
 
   lifecycle_rules = [{
     id              = "expire-results"
@@ -130,6 +137,7 @@ module "document_metadata" {
   table_name    = "${local.service_name}-document-metadata"
   hash_key      = "fileName"
   ttl_attribute = "ttl"
+  tags          = { component = "document-metadata" }
 
   global_secondary_indexes = [
     {
@@ -161,6 +169,7 @@ module "api_keys" {
   source     = "../../modules/nosql"
   table_name = "${local.service_name}-api-keys"
   hash_key   = "keyHash"
+  tags       = { component = "api-keys" }
 }
 
 
@@ -168,6 +177,7 @@ module "tenants" {
   source     = "../../modules/nosql"
   table_name = "${local.service_name}-tenants"
   hash_key   = "tenantId"
+  tags       = { component = "tenants" }
 }
 
 module "audit_events" {
@@ -176,6 +186,7 @@ module "audit_events" {
   hash_key      = "tenantId"
   sort_key      = "timestamp#eventId"
   ttl_attribute = "ttl"
+  tags          = { component = "audit-events" }
 
   global_secondary_indexes = [
     {
@@ -192,6 +203,7 @@ module "extraction_rules" {
   table_name = "${local.service_name}-extraction-rules"
   hash_key   = "tenantId"
   sort_key   = "documentType"
+  tags       = { component = "extraction-rules" }
 }
 
 module "document_categories" {
@@ -199,6 +211,7 @@ module "document_categories" {
   table_name = "${local.service_name}-document-categories"
   hash_key   = "tenantId"
   sort_key   = "categoryName"
+  tags       = { component = "document-categories" }
 }
 
 module "document_batches" {
@@ -206,6 +219,7 @@ module "document_batches" {
   table_name    = "${local.service_name}-document-batches"
   hash_key      = "batchId"
   ttl_attribute = "ttl"
+  tags          = { component = "document-batches" }
 
   global_secondary_indexes = [
     {
@@ -232,6 +246,7 @@ module "document_builds" {
   sort_key      = "pageNumber"
   sort_key_type = "N"
   ttl_attribute = "ttl"
+  tags          = { component = "document-builds" }
 
   global_secondary_indexes = [
     {
@@ -254,6 +269,7 @@ module "document_builds" {
 module "metrics_queue" {
   source = "../../modules/queue"
   name   = "${local.service_name}-metrics"
+  tags   = { component = "metrics-queue" }
 }
 
 # --- Analytics (Athena + Glue) ---
@@ -261,6 +277,7 @@ module "metrics_queue" {
 module "metrics_bucket" {
   source = "../../modules/storage"
   name   = "${local.service_name}-metrics"
+  tags   = { component = "metrics-bucket" }
 
   lifecycle_rules = [{
     id                    = "archive-metrics"
@@ -274,6 +291,7 @@ module "analytics" {
   name                = "${local.service_name}-analytics"
   results_bucket_name = "${local.service_name}-athena-results"
   metrics_bucket_name = module.metrics_bucket.bucket_name
+  tags                = { component = "analytics" }
 }
 
 # --- Config (SSM Parameters) ---
@@ -281,6 +299,7 @@ module "analytics" {
 module "config" {
   source = "../../modules/config"
   prefix = local.ssm_prefix
+  tags   = { component = "config" }
 
   parameters = {
     "feature-flags/preclassification-based-routing" = "false"
@@ -298,17 +317,20 @@ module "admin_ui" {
   source      = "../../modules/static-site"
   name        = "${local.service_name}-admin-ui"
   description = "DocumentAI Admin Console (${var.environment})"
+  tags        = { component = "admin-ui" }
 }
 
 module "demo_ui" {
   source      = "../../modules/static-site"
   name        = "${local.service_name}-demo-ui"
   description = "DocumentAI Demo (${var.environment})"
+  tags        = { component = "demo-ui" }
 }
 
 module "identity_provider" {
   source = "../../modules/identity-provider"
   name   = "${local.service_name}-console"
+  tags   = { component = "identity-provider" }
 
   callback_urls = [
     "http://localhost:3000/callback",
@@ -335,6 +357,7 @@ module "identity_provider" {
 
 module "secrets" {
   source = "../../modules/secrets"
+  tags   = { component = "secrets" }
 
   secrets = {
     API_AUTH_INSECURE_SHARED_KEY = {
@@ -390,6 +413,7 @@ module "bedrock_data_automation" {
     project     = var.project_name
     environment = var.environment
     category    = each.key
+    component   = "bda-${each.key}"
   }
 }
 
@@ -403,6 +427,7 @@ module "api_gateway" {
   image_uri     = "${module.ecr.repository_url}:${var.image_tag}"
   timeout       = 30
   memory_size   = 1024
+  tags          = { component = "api-gateway" }
 
   environment_variables = local.lambda_env_vars
 
@@ -747,6 +772,8 @@ module "workers" {
     "document-processor"   = { source_bucket = module.input_bucket.bucket_name, path_prefix = "input/" }
     "bda-result-processor" = { source_bucket = module.output_bucket.bucket_name, path_prefix = "processed/", path_suffix = "job_metadata.json" }
   }, each.key, null)
+
+  tags = { component = each.key }
 
   sqs_trigger = lookup({
     "metrics-processor" = { queue_arn = module.metrics_queue.queue_arn, batch_size = 10, max_batching_window_seconds = 300 }

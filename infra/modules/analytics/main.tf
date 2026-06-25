@@ -15,6 +15,7 @@ module "results_bucket" {
 
 resource "aws_glue_catalog_database" "this" {
   name = replace(var.name, "-", "_")
+  tags = var.tags
 }
 
 # --- Athena Workgroup ---
@@ -22,6 +23,7 @@ resource "aws_glue_catalog_database" "this" {
 resource "aws_athena_workgroup" "this" {
   name          = var.name
   force_destroy = var.is_temporary
+  tags          = var.tags
 
   configuration {
     result_configuration {

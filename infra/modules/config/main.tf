@@ -4,6 +4,7 @@ resource "aws_ssm_parameter" "this" {
   name  = "${var.prefix}/${each.key}"
   type  = "String"
   value = each.value
+  tags  = var.tags
 }
 
 # IAM policy to read all parameters under the prefix
