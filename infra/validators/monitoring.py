@@ -14,7 +14,7 @@ class MonitoringValidator(BaseValidator):
         if not spec:
             return
 
-        # SNS topics — verify via tag discovery
+        # SNS topics - verify via tag discovery
         for topic in spec.get_all_by_type("aws_sns_topic"):
             topic_name = topic.values.get("name")
             if not topic_name:

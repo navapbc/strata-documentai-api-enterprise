@@ -55,7 +55,7 @@ def _component_boundary_pattern(component_name: str) -> re.Pattern:
     Matches when component_name appears bounded by non-alphanumeric chars (or
     start/end of string). NOTE: because component names are hyphen-delimited,
     this alone does NOT stop 'metrics' from matching 'metrics-aggregator' (the
-    hyphen counts as a boundary) — use _references_component for that.
+    hyphen counts as a boundary) - use _references_component for that.
     """
     escaped = re.escape(component_name)
     return re.compile(rf"(?:^|[^a-zA-Z0-9]){escaped}(?:$|[^a-zA-Z0-9])")
