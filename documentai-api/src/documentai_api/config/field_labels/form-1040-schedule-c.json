@@ -1,0 +1,15 @@
+{
+  "ProprietorInformation.ProprietorName": "Proprietor Name",
+  "ProprietorInformation.SSN": "Proprietor SSN",
+  "ProprietorInformation.PrincipalBusinessProfession": "Proprietor Principal Business Profession",
+  "ProprietorInformation.PrincipalBusinessProfessionActivityCode": "Proprietor Principal Business Profession Activity Code",
+  "ProprietorInformation.BusinessName": "Proprietor Business Name",
+  "ProprietorInformation.EIN": "Proprietor EIN",
+  "ProprietorInformation.BusinessAddress": "Proprietor Business Address",
+  "ProprietorInformation.BusinessAddress2": "Proprietor Business Address 2",
+  "ProprietorInformation.Accounting method": "Proprietor Accounting Method",
+  "ProprietorInformation.MaterialParticipation": "Proprietor Material Participation",
+  "ProprietorInformation.BusinessAcquisition": "Proprietor Business Acquisition",
+  "ProprietorInformation.Form1099Required": "Proprietor Form 1099 Required",
+  "ProprietorInformation.Form1099Filed": "Proprietor Form 1099 Filed"
+}

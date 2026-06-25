@@ -75,6 +75,7 @@ export function extractGeometry(fields) {
       geo[key] = {
         geometry: val.geometry,
         fieldType: val.fieldType || "unknown",
+        displayName: val.displayName,
       };
     }
   }
@@ -117,14 +118,23 @@ export function renderBboxOverlay(container, fieldGeometry, { page = 1 } = {}) {
     tooltip.style.display = "none";
 
     const boxes = [];
-    for (const [fieldName, { geometry: geoList, fieldType }] of Object.entries(
-      fieldGeometry,
-    )) {
+    for (const [
+      fieldName,
+      { geometry: geoList, fieldType, displayName },
+    ] of Object.entries(fieldGeometry)) {
       for (const geo of geoList) {
         if (!geo.boundingBox) continue;
         if (geo.page && geo.page !== page) continue;
         const { left, top, width, height } = geo.boundingBox;
-        boxes.push({ left, top, width, height, fieldName, fieldType });
+        boxes.push({
+          left,
+          top,
+          width,
+          height,
+          fieldName,
+          fieldType,
+          displayName,
+        });
       }
     }
 
@@ -146,8 +156,9 @@ export function renderBboxOverlay(container, fieldGeometry, { page = 1 } = {}) {
       rect.setAttribute("fill", "none");
       rect.setAttribute("stroke", color);
       rect.setAttribute("stroke-width", "0.003");
+      // Human-readable label for the tooltip; falls back to the raw name.
       rect.dataset.field = box.fields
-        .map((f) => `${f.fieldName} (${f.fieldType})`)
+        .map((f) => f.displayName || f.fieldName)
         .join("\n");
       // Raw field names (newline-separated) for matching against table rows.
       rect.dataset.fields = box.fields.map((f) => f.fieldName).join("\n");
@@ -227,18 +238,19 @@ export function renderExtractedData(
       const conf =
         isObj && typeof val.confidence === "number" ? val.confidence : null;
       const value = isObj && "value" in val ? val.value : val;
+      const label = isObj && val.displayName ? val.displayName : key;
       const display =
         value != null && typeof value === "object"
           ? JSON.stringify(value)
           : String(value ?? "-");
-      return { key, conf, display };
+      return { key, label, conf, display };
     })
     .sort((a, b) => {
       if (a.conf == null) return b.conf == null ? 0 : 1;
       if (b.conf == null) return -1;
       return a.conf - b.conf;
     })
-    .map(({ key, conf, display }) => {
+    .map(({ key, label, conf, display }) => {
       const confCell =
         conf == null
           ? "<td>-</td>"
@@ -250,7 +262,7 @@ export function renderExtractedData(
                   : "confidence-low"
             }">${(conf * 100).toFixed(1)}%</td>`;
       const valueContent = show ? esc(display) : "•••••";
-      return `<tr data-field="${esc(key)}"><td class="detail-label">${esc(key)}</td><td class="extracted-value" data-value="${esc(display)}">${valueContent}</td>${confCell}</tr>`;
+      return `<tr data-field="${esc(key)}"><td class="detail-label">${esc(label)}</td><td class="extracted-value" data-value="${esc(display)}">${valueContent}</td>${confCell}</tr>`;
     })
     .join("");
   if (!rows) return "";
@@ -277,13 +289,24 @@ function addImageZoom(container, img) {
   const btn = (label, glyph) =>
     h(
       "button",
-      { type: "button", className: "zoom-btn", "aria-label": label, title: label },
+      {
+        type: "button",
+        className: "zoom-btn",
+        "aria-label": label,
+        title: label,
+      },
       glyph,
     );
   const out = btn("Zoom out", "−");
   const reset = btn("Reset zoom", "↺");
   const inn = btn("Zoom in", "+");
-  const controls = h("div", { className: "preview-zoom-controls" }, out, reset, inn);
+  const controls = h(
+    "div",
+    { className: "preview-zoom-controls" },
+    out,
+    reset,
+    inn,
+  );
   container.appendChild(controls);
 
   // The controls live inside the scroll container, so they'd scroll out of view

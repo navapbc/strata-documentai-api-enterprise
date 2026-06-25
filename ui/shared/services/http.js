@@ -5,7 +5,9 @@ async function _tryRefresh() {
   _refreshing = (async () => {
     try {
       const { refreshSession } = await import("./auth.js");
-      const session = JSON.parse(sessionStorage.getItem("docai_console_session"));
+      const session = JSON.parse(
+        sessionStorage.getItem("docai_console_session"),
+      );
       if (!session?.refreshToken) throw new Error("No refresh token");
       const tokens = await refreshSession(session.refreshToken);
       const { update } = await import("../utils/session.js");
@@ -58,7 +60,9 @@ function createClient(buildAuthHeaders) {
           if (refreshed) return this.request(method, path, body, true);
           return;
         }
-        const respBody = await res.json().catch(() => ({ detail: res.statusText }));
+        const respBody = await res
+          .json()
+          .catch(() => ({ detail: res.statusText }));
         const detail = respBody.detail || respBody.message || res.statusText;
         const err = new Error(detail);
         err.status = res.status;
@@ -81,7 +85,9 @@ export function setApiKey(key) {
   _apiKey = key;
 }
 
-export const adminClient = createClient(() => ({ Authorization: `Bearer ${_jwt}` }));
+export const adminClient = createClient(() => ({
+  Authorization: `Bearer ${_jwt}`,
+}));
 export const dataClient = createClient(() => ({ "API-Key": _apiKey }));
 
 export function configure({ baseUrl, jwt, apiKey }) {

@@ -1,0 +1,10 @@
+{
+  "account_holder_name": "Account Holder Name",
+  "account_number": "Account Number",
+  "financial_institution": "Financial Institution",
+  "account_type": "Account Type",
+  "contribution_dates": "Contribution Dates",
+  "distribution_dates": "Distribution Dates",
+  "account_balance": "Account Balance",
+  "tax_year": "Tax Year"
+}

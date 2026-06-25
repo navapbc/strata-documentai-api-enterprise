@@ -1,0 +1,15 @@
+{
+  "recipient_name.first_name": "Recipient First Name",
+  "recipient_name.middle_name": "Recipient Middle Name",
+  "recipient_name.last_name": "Recipient Last Name",
+  "recipient_ssn": "Recipient SSN",
+  "recipient_address": "Recipient Address",
+  "benefit_type": "Benefit Type",
+  "monthly_benefit_amount": "Monthly Benefit Amount",
+  "monthly_gross_amount": "Monthly Gross Amount",
+  "effective_date": "Effective Date",
+  "medicare_deduction": "Medicare Deduction",
+  "net_payment_amount": "Net Payment Amount",
+  "letter_date": "Letter Date",
+  "claim_number": "Claim Number"
+}

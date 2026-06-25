@@ -1,0 +1,14 @@
+{
+  "student_name.first_name": "Student First Name",
+  "student_name.last_name": "Student Last Name",
+  "student_id": "Student ID",
+  "school_name": "School Name",
+  "academic_year": "Academic Year",
+  "total_aid_amount": "Total Aid Amount",
+  "grant_amount": "Grant Amount",
+  "loan_amount": "Loan Amount",
+  "work_study_amount": "Work Study Amount",
+  "disbursement_date": "Disbursement Date",
+  "aid_type": "Aid Type",
+  "total_cost_of_attendance": "Total Cost of Attendance"
+}

@@ -1,0 +1,12 @@
+{
+  "account_holder_name": "Account Holder Name",
+  "account_number": "Account Number",
+  "financial_institution": "Financial Institution",
+  "tax_year": "Tax Year",
+  "dividend_income": "Dividend Income",
+  "interest_income": "Interest Income",
+  "misc_income": "Miscellaneous Income",
+  "federal_tax_withheld": "Federal Tax Withheld",
+  "state_tax_withheld": "State Tax Withheld",
+  "form_types": "Form Types"
+}

@@ -1,0 +1,17 @@
+{
+  "veteran_name.first_name": "Veteran First Name",
+  "veteran_name.middle_name": "Veteran Middle Name",
+  "veteran_name.last_name": "Veteran Last Name",
+  "veteran_ssn": "Veteran SSN",
+  "veteran_address": "Veteran Address",
+  "veteran_state": "Veteran State",
+  "veteran_zip_code": "Veteran Zip Code",
+  "va_file_number": "VA File Number",
+  "benefit_type": "Benefit Type",
+  "monthly_benefit_amount": "Monthly Benefit Amount",
+  "effective_date": "Effective Date",
+  "disability_rating": "Disability Rating",
+  "number_of_dependents": "Number of Dependents",
+  "letter_date": "Letter Date",
+  "issuing_office": "Issuing Office"
+}

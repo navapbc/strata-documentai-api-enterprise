@@ -1,0 +1,11 @@
+{
+  "policyholder_name": "Policyholder Name",
+  "insurance_provider": "Insurance Provider",
+  "group_name": "Group Name",
+  "group_number": "Group Number",
+  "policy_number": "Policy Number",
+  "coverage_begin_date": "Coverage Begin Date",
+  "coverage_end_date": "Coverage End Date",
+  "termination_reason": "Termination Reason",
+  "employer_name": "Employer Name"
+}

@@ -13,8 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "format": "prettier --write src/ styles/ tests/ e2e/",
-    "format:check": "prettier --check src/ styles/ tests/ e2e/",
+    "format": "prettier --write src/ styles/ tests/ e2e/ ../shared/",
+    "format:check": "prettier --check src/ styles/ tests/ e2e/ ../shared/",
     "preview": "python3 -m http.server 3000"
   },
   "devDependencies": {

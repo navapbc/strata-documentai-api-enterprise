@@ -1,0 +1,12 @@
+{
+  "recipient_name.first_name": "Recipient First Name",
+  "recipient_name.last_name": "Recipient Last Name",
+  "recipient_address": "Recipient Address",
+  "contributor_name": "Contributor Name",
+  "contributor_relationship": "Contributor Relationship",
+  "contribution_amount": "Contribution Amount",
+  "contribution_frequency": "Contribution Frequency",
+  "contribution_purpose": "Contribution Purpose",
+  "statement_date": "Statement Date",
+  "has_signature": "Has Signature"
+}

@@ -1,0 +1,17 @@
+{
+  "account_number": "Account Number",
+  "branch_transit_number": "Branch Transit Number",
+  "account_summary.summary_desc": "Account Summary Desc",
+  "account_summary.summary_amount": "Account Summary Amount",
+  "account_holder_name": "Account Holder Name",
+  "account_holder_address": "Account Holder Address",
+  "bank_name": "Bank Name",
+  "account_type": "Account Type",
+  "transaction_details.date": "Transaction Date",
+  "transaction_details.description": "Transaction Description",
+  "transaction_details.withdrawals": "Transaction Withdrawals",
+  "transaction_details.deposits": "Transaction Deposits",
+  "transaction_details.balance": "Transaction Balance",
+  "statement_start_date": "Statement Start Date",
+  "statement_end_date": "Statement End Date"
+}

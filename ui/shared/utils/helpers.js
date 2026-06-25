@@ -75,7 +75,9 @@ export function sortRows(rows, col, dir = "asc") {
  * @param {(col: string, dir: 'asc'|'desc') => void} onChange
  */
 export function bindSortHeaders(thead, onChange) {
-  thead.querySelectorAll("th[data-col]").forEach((th) => th.classList.add("th-sortable"));
+  thead
+    .querySelectorAll("th[data-col]")
+    .forEach((th) => th.classList.add("th-sortable"));
   function handleClick(e) {
     const th = e.target.closest("th[data-col]");
     if (!th) return;

@@ -1,0 +1,16 @@
+{
+  "borrower_name": "Borrower Name",
+  "property_address": "Property Address",
+  "lender_name": "Lender Name",
+  "loan_number": "Loan Number",
+  "principal_balance": "Principal Balance",
+  "interest_rate": "Interest Rate",
+  "monthly_payment.principal": "Monthly Payment Principal",
+  "monthly_payment.interest": "Monthly Payment Interest",
+  "monthly_payment.escrow": "Monthly Payment Escrow",
+  "monthly_payment.total": "Monthly Payment Total",
+  "escrow_balance": "Escrow Balance",
+  "payment_due_date": "Payment Due Date",
+  "statement_date": "Statement Date",
+  "maturity_date": "Maturity Date"
+}

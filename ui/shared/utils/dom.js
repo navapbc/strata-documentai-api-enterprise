@@ -19,7 +19,8 @@ export function h(tag, attrs, ...children) {
   }
   for (const child of children) {
     if (child == null) continue;
-    if (typeof child === "string") el.appendChild(document.createTextNode(child));
+    if (typeof child === "string")
+      el.appendChild(document.createTextNode(child));
     else el.appendChild(child);
   }
   return el;

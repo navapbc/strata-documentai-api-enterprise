@@ -34,7 +34,13 @@ export function mergeOverlappingBoxes(boxes) {
     top: b.top,
     width: b.width,
     height: b.height,
-    fields: [{ fieldName: b.fieldName, fieldType: b.fieldType }],
+    fields: [
+      {
+        fieldName: b.fieldName,
+        fieldType: b.fieldType,
+        displayName: b.displayName,
+      },
+    ],
   }));
 
   let merged = true;

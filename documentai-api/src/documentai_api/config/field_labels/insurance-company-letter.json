@@ -1,0 +1,20 @@
+{
+  "recipient_name.first_name": "Recipient First Name",
+  "recipient_name.middle_name": "Recipient Middle Name",
+  "recipient_name.last_name": "Recipient Last Name",
+  "recipient_ssn": "Recipient SSN",
+  "recipient_address": "Recipient Address",
+  "recipient_state": "Recipient State",
+  "recipient_zip_code": "Recipient Zip Code",
+  "insurance_company_name": "Insurance Company Name",
+  "policy_number": "Policy Number",
+  "policy_type": "Policy Type",
+  "payment_amount": "Payment Amount",
+  "payment_type": "Payment Type",
+  "payment_frequency": "Payment Frequency",
+  "effective_date": "Effective Date",
+  "termination_date": "Termination Date",
+  "expiration_date": "Expiration Date",
+  "letter_date": "Letter Date",
+  "cash_surrender_value": "Cash Surrender Value"
+}

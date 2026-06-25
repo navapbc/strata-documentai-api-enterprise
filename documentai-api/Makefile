@@ -21,6 +21,7 @@
 	lint-uv \
 	login \
 	openapi-spec \
+	pull-blueprint-fields \
 	release-build \
 	run-logs \
 	setup-env \
@@ -217,6 +218,10 @@ tenant-list: ## List tenants ([INCLUDE_INACTIVE=1]).
 tenant-deactivate: ## Deactivate a tenant (TENANT=tenant-id).
 	@:$(call check_defined, TENANT, tenant ID, e.g. TENANT=my-tenant)
 	uv run --frozen tenants deactivate --tenant-id "$(TENANT)"
+
+pull-blueprint-fields: ## Write blueprint field labels (ARN=project-arn required)
+	@:$(call check_defined, ARN, BDA project ARN, e.g. ARN=arn:aws:bedrock:us-east-1:123:data-automation-project/abc)
+	uv run --frozen pull-blueprint-fields --project-arn "$(ARN)"
 
 openapi-spec: ## Export openapi spec to docs directory
 	$(PY_RUN_CMD) export-openapi > $(APP_DOCS_DIR)/openapi.json
