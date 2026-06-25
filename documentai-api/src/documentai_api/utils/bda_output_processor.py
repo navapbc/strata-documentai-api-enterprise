@@ -141,6 +141,21 @@ def process_bda_output(bda_output_bucket_name: str, bda_output_object_key: str) 
         if below_floor:
             response_code = ResponseCodes.LOW_EXTRACTION_CONFIDENCE
 
+        # TODO: Miscategorization check (response code 102)
+        # Compare user-provided document category against BDA matched document class.
+        # Requires a mapping from bdaMatchedDocumentClass (e.g. "w2") to
+        # DocumentCategory (e.g. "income") to determine if the user's upload-time
+        # category was correct. When implemented:
+        # - Status remains "completed" (extraction still succeeds)
+        # - response_code becomes ResponseCodes.MISCATEGORIZED ("102")
+        # - Precedence TBD vs missing-fields (101) and low-confidence (105)
+        #
+        # user_category = ddb_record.get(DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY)
+        # if user_category and document_class:
+        #     expected_category = get_category_for_document_class(document_class)
+        #     if expected_category and user_category != expected_category:
+        #         response_code = ResponseCodes.MISCATEGORIZED
+
         return classify_as_success(
             object_key=file_name,
             response_code=response_code,

@@ -3,9 +3,11 @@ class ResponseCodes:
     DOCUMENT_TYPE_NOT_IMPLEMENTED = "002"
     AI_CONSENT_DECLINED = "003"
     MISSING_FIELDS = "101"
+    MISCATEGORIZED = "102"
     NO_DOCUMENT_DETECTED = "103"
     BLURRY_DOCUMENT_DETECTED = "104"
     LOW_EXTRACTION_CONFIDENCE = "105"
+    PASSWORD_PROTECTED = "106"
     MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE = "400"
     INTERNAL_PROCESSING_ERROR = "999"
 
@@ -17,7 +19,9 @@ class ResponseCodes:
             cls.DOCUMENT_TYPE_NOT_IMPLEMENTED: "Document type not implemented",
             cls.AI_CONSENT_DECLINED: "Document not processed - AI consent not provided",
             cls.MISSING_FIELDS: "Missing fields",
+            cls.MISCATEGORIZED: "Document category mismatch",
             cls.LOW_EXTRACTION_CONFIDENCE: "Average field confidence below tenant threshold",
+            cls.PASSWORD_PROTECTED: "Password protected document",
             cls.NO_DOCUMENT_DETECTED: "No document detected",
             cls.BLURRY_DOCUMENT_DETECTED: "Document is blurry",
             cls.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE: "Multiple documents detected on single page",
@@ -27,7 +31,7 @@ class ResponseCodes:
 
     @classmethod
     def is_success_response_code(cls, code: str) -> bool:
-        """Get message for response code."""
+        """Check if response code indicates success (0xx codes)."""
         return code.startswith("0")
 
     @classmethod
