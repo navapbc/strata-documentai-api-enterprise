@@ -330,7 +330,7 @@ def upsert_initial_ddb_record(
 
     if is_password_protected:
         process_status = ProcessStatus.PASSWORD_PROTECTED
-        response_code = ResponseCodes.MISSING_FIELDS
+        response_code = ResponseCodes.PASSWORD_PROTECTED
 
     else:
         result = preclassify_document(file_bytes, content_type)

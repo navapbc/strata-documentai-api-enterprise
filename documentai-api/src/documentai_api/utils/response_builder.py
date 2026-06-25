@@ -169,6 +169,8 @@ def build_v1_api_response(
 
         if job_status == ProcessStatus.SUCCESS.value:
             base_response["message"] = "Document processed successfully"
+            base_response["responseCode"] = ResponseCodes.SUCCESS
+            base_response["responseMessage"] = ResponseCodes.get_message(ResponseCodes.SUCCESS)
 
             fields = _extract_field_values(
                 ddb_record,
@@ -213,6 +215,10 @@ def build_v1_api_response(
         elif job_status == ProcessStatus.NO_CUSTOM_BLUEPRINT_MATCHED.value:
             base_response["message"] = "Document processed but no matching template found"
             base_response["fields"] = {}
+            base_response["responseCode"] = ResponseCodes.DOCUMENT_TYPE_NOT_IMPLEMENTED
+            base_response["responseMessage"] = ResponseCodes.get_message(
+                ResponseCodes.DOCUMENT_TYPE_NOT_IMPLEMENTED
+            )
 
     # error responses
     elif job_status == ProcessStatus.FAILED.value:
@@ -221,6 +227,10 @@ def build_v1_api_response(
                 "jobStatus": "failed",
                 "error": error_message or "Processing failed",
                 "additionalInfo": data.additional_info if data else None,
+                "responseCode": ResponseCodes.INTERNAL_PROCESSING_ERROR,
+                "responseMessage": ResponseCodes.get_message(
+                    ResponseCodes.INTERNAL_PROCESSING_ERROR
+                ),
             }
         )
 
@@ -230,6 +240,8 @@ def build_v1_api_response(
                 "jobStatus": "not_supported",
                 "message": "Unable to extract meaningful document content",
                 "additionalInfo": data.additional_info if data else None,
+                "responseCode": ResponseCodes.NO_DOCUMENT_DETECTED,
+                "responseMessage": ResponseCodes.get_message(ResponseCodes.NO_DOCUMENT_DETECTED),
             }
         )
 
@@ -238,6 +250,8 @@ def build_v1_api_response(
             {
                 "jobStatus": "ai_consent_declined",
                 "message": "Document not processed - AI consent not provided",
+                "responseCode": ResponseCodes.AI_CONSENT_DECLINED,
+                "responseMessage": ResponseCodes.get_message(ResponseCodes.AI_CONSENT_DECLINED),
             }
         )
 
@@ -254,15 +268,25 @@ def build_v1_api_response(
             {
                 "jobStatus": "conversion_failed",
                 "message": "Image format conversion failed",
+                "responseCode": ResponseCodes.INTERNAL_PROCESSING_ERROR,
+                "responseMessage": ResponseCodes.get_message(
+                    ResponseCodes.INTERNAL_PROCESSING_ERROR
+                ),
             }
         )
 
     elif ProcessStatus.is_not_supported(job_status):
+        if job_status == ProcessStatus.PASSWORD_PROTECTED.value:
+            response_code = ResponseCodes.PASSWORD_PROTECTED
+        else:
+            response_code = ResponseCodes.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE
         base_response.update(
             {
                 "jobStatus": "not_supported",
                 "message": "Document type not supported",
                 "additionalInfo": data.additional_info if data else None,
+                "responseCode": response_code,
+                "responseMessage": ResponseCodes.get_message(response_code),
             }
         )
 

@@ -26,6 +26,10 @@ class JobStatusResponse(BaseApiResponse):
     fields: dict[str, Any] | None = None
     error: str | None = None
     additional_info: str | None = None
+    response_code: str | None = None
+    response_message: str | None = None
+    missing_required_field_list: list[str] | None = None
+    below_extraction_confidence_floor: bool | None = None
 
     @classmethod
     def from_v1(cls, v1_response: dict[str, Any]) -> "JobStatusResponse":

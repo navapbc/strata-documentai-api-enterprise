@@ -46,6 +46,7 @@ def test_get_internal_api_response(response_code, matched_document_class, ddb_do
         "expected_status",
         "expected_message",
         "expected_error",
+        "expected_response_code",
     ),
     [
         (
@@ -56,6 +57,7 @@ def test_get_internal_api_response(response_code, matched_document_class, ddb_do
             "completed",
             "Document processed successfully",
             None,
+            ResponseCodes.SUCCESS,
         ),
         (
             ProcessStatus.SUCCESS.value,
@@ -65,6 +67,7 @@ def test_get_internal_api_response(response_code, matched_document_class, ddb_do
             "completed",
             "Document processed successfully",
             None,
+            ResponseCodes.SUCCESS,
         ),
         (
             ProcessStatus.NO_CUSTOM_BLUEPRINT_MATCHED.value,
@@ -74,6 +77,7 @@ def test_get_internal_api_response(response_code, matched_document_class, ddb_do
             "completed",
             "Document processed but no matching template found",
             None,
+            ResponseCodes.DOCUMENT_TYPE_NOT_IMPLEMENTED,
         ),
         (
             ProcessStatus.FAILED.value,
@@ -83,6 +87,7 @@ def test_get_internal_api_response(response_code, matched_document_class, ddb_do
             "failed",
             None,
             "Test error",
+            ResponseCodes.INTERNAL_PROCESSING_ERROR,
         ),
         (
             ProcessStatus.NO_DOCUMENT_DETECTED.value,
@@ -92,6 +97,7 @@ def test_get_internal_api_response(response_code, matched_document_class, ddb_do
             "not_supported",
             "Unable to extract meaningful document content",
             None,
+            ResponseCodes.NO_DOCUMENT_DETECTED,
         ),
         (
             ProcessStatus.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE.value,
@@ -101,6 +107,7 @@ def test_get_internal_api_response(response_code, matched_document_class, ddb_do
             "not_supported",
             "Document type not supported",
             None,
+            ResponseCodes.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
         ),
         (
             ProcessStatus.PASSWORD_PROTECTED.value,
@@ -110,6 +117,7 @@ def test_get_internal_api_response(response_code, matched_document_class, ddb_do
             "not_supported",
             "Document type not supported",
             None,
+            ResponseCodes.PASSWORD_PROTECTED,
         ),
         (
             ProcessStatus.STARTED.value,
@@ -118,6 +126,7 @@ def test_get_internal_api_response(response_code, matched_document_class, ddb_do
             False,
             "processing",
             "Document processing in progress",
+            None,
             None,
         ),
     ],
@@ -130,6 +139,7 @@ def test_build_v1_api_response(
     expected_status: str | None,
     expected_message: str | None,
     expected_error: str | None,
+    expected_response_code: str | None,
     s3_bucket,
     ddb_doc_metadata_table,
     mocker,
@@ -208,6 +218,10 @@ def test_build_v1_api_response(
     elif ProcessStatus.is_successful(job_status):
         expected_response["fields"] = {}
 
+    if expected_response_code:
+        expected_response["responseCode"] = expected_response_code
+        expected_response["responseMessage"] = ResponseCodes.get_message(expected_response_code)
+
     assert response == expected_response
 
 
@@ -248,6 +262,8 @@ def test_build_v1_api_response_empty_record(
         "fields": dict(),
         "message": "Document processed successfully",
         "jobStatus": "completed",
+        "responseCode": ResponseCodes.SUCCESS,
+        "responseMessage": ResponseCodes.get_message(ResponseCodes.SUCCESS),
     }
 
 
