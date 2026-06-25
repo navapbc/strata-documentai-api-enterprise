@@ -74,6 +74,19 @@ describe("document-viewer", () => {
       expect(result["employer.address"]).toBeDefined();
       expect(result["employer.address"].geometry).toHaveLength(1);
     });
+
+    it("surfaces displayName for the bbox tooltip", () => {
+      const fields = {
+        employee_number: {
+          value: "EMP-78245",
+          displayName: "Employee Number",
+          geometry: [{ boundingBox: { left: 0.1, top: 0.2, width: 0.3, height: 0.04 } }],
+          fieldType: "string",
+        },
+      };
+      const result = extractGeometry(fields);
+      expect(result.employee_number.displayName).toBe("Employee Number");
+    });
   });
 
   describe("flattenFields", () => {

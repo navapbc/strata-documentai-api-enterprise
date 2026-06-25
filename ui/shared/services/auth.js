@@ -10,14 +10,17 @@ export function configure(userPoolId, clientId) {
 }
 
 async function cognitoFetch(action, body) {
-  const response = await fetch(`https://cognito-idp.${COGNITO_REGION}.amazonaws.com/`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-amz-json-1.1",
-      "X-Amz-Target": `AWSCognitoIdentityProviderService.${action}`,
+  const response = await fetch(
+    `https://cognito-idp.${COGNITO_REGION}.amazonaws.com/`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-amz-json-1.1",
+        "X-Amz-Target": `AWSCognitoIdentityProviderService.${action}`,
+      },
+      body: JSON.stringify(body),
     },
-    body: JSON.stringify(body),
-  });
+  );
 
   const data = await response.json();
 
@@ -163,7 +166,13 @@ export async function confirmForgotPassword(email, code, newPassword) {
   });
 }
 
-export async function exchangeCodeForTokens(code, domain, clientId, redirectUri, codeVerifier) {
+export async function exchangeCodeForTokens(
+  code,
+  domain,
+  clientId,
+  redirectUri,
+  codeVerifier,
+) {
   const body = new URLSearchParams({
     grant_type: "authorization_code",
     client_id: clientId,
@@ -178,7 +187,7 @@ export async function exchangeCodeForTokens(code, domain, clientId, redirectUri,
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body,
-    }
+    },
   );
 
   if (!response.ok) {
@@ -198,7 +207,9 @@ export async function exchangeCodeForTokens(code, domain, clientId, redirectUri,
   try {
     const payload = tokens.id_token.split(".")[1];
     const padded = payload + "=".repeat((4 - (payload.length % 4)) % 4);
-    const claims = JSON.parse(atob(padded.replace(/-/g, "+").replace(/_/g, "/")));
+    const claims = JSON.parse(
+      atob(padded.replace(/-/g, "+").replace(/_/g, "/")),
+    );
     tokens.email = claims.email;
   } catch {
     tokens.email = null;
