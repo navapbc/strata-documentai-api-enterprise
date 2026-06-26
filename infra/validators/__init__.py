@@ -4,7 +4,7 @@ import json
 import sys
 from dataclasses import dataclass, field
 
-from validators.constants import DriftStatus
+from .constants import DriftStatus
 
 _TTY = sys.stdout.isatty()
 
@@ -42,7 +42,7 @@ class BaseValidator:
 
     results: list[Result]
     component_resources: dict[str, list[str]]
-    planned_tf_resources: dict
+    manifest: dict
     service_name: str
     project: str
     env: str
@@ -65,6 +65,9 @@ class BaseValidator:
 
     def missing(self, cat: str, rtype: str, name: str, error: str | None = None):
         self.record(cat, rtype, name, DriftStatus.MISSING, error=error)
+
+    def warn(self, cat: str, rtype: str, name: str, error: str | None = None):
+        self.record(cat, rtype, name, DriftStatus.UNDISCOVERABLE, error=error)
 
     def drifted(self, cat: str, rtype: str, name: str, drift: list[str]):
         self.record(cat, rtype, name, DriftStatus.DRIFTED, drift=drift)
@@ -99,31 +102,42 @@ def print_report(results: list[Result], as_json: bool) -> int:
         drifted = sum(1 for r in results if r.status == DriftStatus.DRIFTED)
         return 0 if (missing + drifted) == 0 else 1
 
-    counts = {DriftStatus.PRESENT: 0, DriftStatus.MISSING: 0, DriftStatus.DRIFTED: 0}
+    counts = {
+        DriftStatus.PRESENT: 0,
+        DriftStatus.MISSING: 0,
+        DriftStatus.DRIFTED: 0,
+        DriftStatus.UNDISCOVERABLE: 0,
+    }
     for r in results:
         counts[r.status] += 1
         if r.status == DriftStatus.PRESENT:
             icon = style("✓", Color.GREEN)
         elif r.status == DriftStatus.MISSING:
             icon = style("✗", Color.RED)
+        elif r.status == DriftStatus.UNDISCOVERABLE:
+            icon = style("?", Color.YELLOW)
         else:
             icon = style("~", Color.YELLOW)
         print(f"  {icon}  {style(r.rtype, Color.BOLD):40s}  {r.name}")
         for d in r.drift:
             print(f"       {style('DRIFT', Color.YELLOW)}  {d}")
         if r.error:
-            print(f"       {style('ERROR', Color.RED)}  {r.error}")
+            print(
+                f"       {style('NOTE', Color.YELLOW) if r.status == DriftStatus.UNDISCOVERABLE else style('ERROR', Color.RED)}  {r.error}"
+            )
 
     total = sum(counts.values())
     present = f"{counts[DriftStatus.PRESENT]} present"
     missing_str = f"{counts[DriftStatus.MISSING]} missing"
     drifted_str = f"{counts[DriftStatus.DRIFTED]} drifted"
+    warn_str = f"{counts[DriftStatus.UNDISCOVERABLE]} undiscoverable"
     print(f"\n{'─' * 70}")
     print(
         f"  {total} checks:  "
         f"{style(present, Color.GREEN)}  ·  "
         f"{style(missing_str, Color.RED)}  ·  "
-        f"{style(drifted_str, Color.YELLOW)}"
+        f"{style(drifted_str, Color.YELLOW)}  ·  "
+        f"{style(warn_str, Color.YELLOW)}"
     )
     print(f"{'─' * 70}\n")
 

@@ -2,8 +2,8 @@
 
 from botocore.exceptions import ClientError
 
-from validators import BaseValidator
-from validators.discovery import extract_name_from_arn, filter_arns_by_service
+from . import BaseValidator
+from .discovery import extract_name_from_arn, filter_arns_by_service
 
 
 class S3Validator(BaseValidator):
@@ -61,25 +61,22 @@ class S3Validator(BaseValidator):
         self.check_or_drift(self.category, "S3 Bucket", name, drift)
 
     def check_s3(self):
-        for component_name, spec in sorted(self.planned_tf_resources.items()):
-            bucket = spec.get_by_type("aws_s3_bucket")
+        for component_name, component in sorted(self.manifest.items()):
+            bucket = component.get_by_type("aws_s3_bucket")
             if not bucket:
                 continue
 
-            v = bucket.values
             arns = self.component_resources.get(component_name, [])
             s3_arns = filter_arns_by_service(arns, "s3")
-            if s3_arns:
-                name = extract_name_from_arn(s3_arns[0])
-            else:
-                name = v.get("bucket")
-
-            if not name:
-                self.missing(
-                    self.category, "S3 Bucket",
-                    f"component={component_name} (not discovered)",
+            if not s3_arns:
+                self.warn(
+                    self.category,
+                    "S3 Bucket",
+                    f"component={component_name}",
+                    "not discovered via tags",
                 )
                 continue
 
+            name = extract_name_from_arn(s3_arns[0])
             is_static_site = component_name in ("admin-ui", "demo-ui")
             self._check_s3(name, expect_kms=not is_static_site)

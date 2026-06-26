@@ -3,6 +3,6 @@
 *.tfstate.backup
 *.tfplan
 .terraform.lock.hcl
-expected.json
+tfplan.json
 backend_override.tf
 __pycache__/

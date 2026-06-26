@@ -2,9 +2,9 @@
 
 from botocore.exceptions import ClientError
 
-from validators import BaseValidator
-from validators.constants import AwsErrorCode
-from validators.discovery import extract_name_from_arn, filter_arns_by_service
+from . import BaseValidator
+from .constants import AwsErrorCode
+from .discovery import extract_name_from_arn, filter_arns_by_service
 
 
 class DynamoDBValidator(BaseValidator):
@@ -46,9 +46,9 @@ class DynamoDBValidator(BaseValidator):
 
         try:
             pitr = self.ddb.describe_continuous_backups(TableName=name)
-            pitr_status = pitr["ContinuousBackupsDescription"][
-                "PointInTimeRecoveryDescription"
-            ]["PointInTimeRecoveryStatus"]
+            pitr_status = pitr["ContinuousBackupsDescription"]["PointInTimeRecoveryDescription"][
+                "PointInTimeRecoveryStatus"
+            ]
             if pitr_status != "ENABLED":
                 drift.append("point_in_time_recovery: not enabled")
         except ClientError:
@@ -59,9 +59,7 @@ class DynamoDBValidator(BaseValidator):
 
         if gsi_names:
             actual_gsis = {g["IndexName"] for g in table.get("GlobalSecondaryIndexes", [])}
-            drift.extend(
-                f"GSI missing: '{gsi}'" for gsi in gsi_names if gsi not in actual_gsis
-            )
+            drift.extend(f"GSI missing: '{gsi}'" for gsi in gsi_names if gsi not in actual_gsis)
 
         if ttl_attr:
             try:
@@ -78,26 +76,26 @@ class DynamoDBValidator(BaseValidator):
         self.check_or_drift(self.category, "DynamoDB Table", name, drift)
 
     def check_dynamodb(self):
-        for component_name, spec in sorted(self.planned_tf_resources.items()):
-            ddb = spec.get_by_type("aws_dynamodb_table")
+        for component_name, component in sorted(self.manifest.items()):
+            ddb = component.get_by_type("aws_dynamodb_table")
             if not ddb:
                 continue
 
             v = ddb.values
             arns = self.component_resources.get(component_name, [])
             ddb_arns = filter_arns_by_service(arns, "dynamodb")
-            if ddb_arns:
-                name = extract_name_from_arn(ddb_arns[0])
-            else:
-                name = v.get("name")
-
-            if not name:
-                self.missing(self.category, "DynamoDB Table", f"component={component_name} (not discovered)")
+            if not ddb_arns:
+                self.warn(
+                    self.category,
+                    "DynamoDB Table",
+                    f"component={component_name}",
+                    "not discovered via tags",
+                )
                 continue
 
-            gsi_names = [g["name"] for g in v.get("global_secondary_index", [])]
-            ttl_list = v.get("ttl", [])
-            ttl_attr = ttl_list[0].get("attribute_name") if ttl_list else None
+            name = extract_name_from_arn(ddb_arns[0])
+            gsi_names = v.get("gsi_names")
+            ttl_attr = v.get("ttl_attribute")
 
             self._check_ddb(
                 name,

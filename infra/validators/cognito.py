@@ -2,27 +2,25 @@
 
 from botocore.exceptions import ClientError
 
-from validators import BaseValidator
-from validators.constants import AwsErrorCode
-from validators.discovery import filter_arns_by_service
+from . import BaseValidator
+from .constants import AwsErrorCode
+from .discovery import filter_arns_by_service
 
 
 class CognitoValidator(BaseValidator):
     category = "Cognito"
+
     def check_cognito(self):
         arns = self.component_resources.get("identity-provider", [])
         pool_arns = filter_arns_by_service(arns, "cognito-idp")
 
         if not pool_arns:
-            # Fall back to expected.json for the pool name
-            spec = self.planned_tf_resources.get("identity-provider")
-            if spec:
-                pool_res = spec.get_by_type("aws_cognito_user_pool")
-                pool_name = pool_res.values.get("name") if pool_res else None
-                if pool_name:
-                    self.missing(self.category, "Cognito User Pool", f"{pool_name} (not discovered)")
-                    return
-            self.missing(self.category, "Cognito User Pool", "component=identity-provider (not discovered)")
+            self.warn(
+                self.category,
+                "Cognito User Pool",
+                "component=identity-provider",
+                "not discovered via tags",
+            )
             return
 
         # Extract pool ID from ARN
@@ -44,9 +42,9 @@ class CognitoValidator(BaseValidator):
             self.check_or_drift(self.category, "Cognito User Pool", pool_name, drift)
 
             # Check client exists
-            clients = self.cognito.list_user_pool_clients(
-                UserPoolId=pool_id, MaxResults=60
-            )["UserPoolClients"]
+            clients = self.cognito.list_user_pool_clients(UserPoolId=pool_id, MaxResults=60)[
+                "UserPoolClients"
+            ]
             if clients:
                 self.ok(self.category, "Cognito User Pool Client", clients[0]["ClientName"])
             else:

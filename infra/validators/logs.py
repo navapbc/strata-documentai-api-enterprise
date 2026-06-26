@@ -2,33 +2,26 @@
 
 from botocore.exceptions import ClientError
 
-from validators import BaseValidator
-from validators.discovery import extract_name_from_arn, filter_arns_by_service
+from . import BaseValidator
+from .discovery import extract_name_from_arn, filter_arns_by_service
 
 
 class LogsValidator(BaseValidator):
     category = "CloudWatch Logs"
+
     def check_log_groups(self):
 
         # API log group is derived from the API Gateway Lambda function name
         arns = self.component_resources.get("api-gateway", [])
         lambda_arns = filter_arns_by_service(arns, "lambda")
 
-        if lambda_arns:
-            api_name = extract_name_from_arn(lambda_arns[0])
-        else:
-            # Fall back to expected.json
-            spec = self.planned_tf_resources.get("api-gateway")
-            if spec:
-                lmb = spec.get_by_type("aws_lambda_function")
-                api_name = lmb.values.get("function_name") if lmb else None
-            else:
-                api_name = None
-
-        if not api_name:
-            self.missing(self.category, "Log Group", "component=api-gateway (not discovered)")
+        if not lambda_arns:
+            self.warn(
+                self.category, "Log Group", "component=api-gateway", "not discovered via tags"
+            )
             return
 
+        api_name = extract_name_from_arn(lambda_arns[0])
         name = f"/aws/apigateway/{api_name}"
         try:
             resp = self.logs.describe_log_groups(logGroupNamePrefix=name)

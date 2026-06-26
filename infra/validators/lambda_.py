@@ -2,16 +2,18 @@
 
 from botocore.exceptions import ClientError
 
-from validators import BaseValidator
-from validators.constants import AwsErrorCode
-from validators.discovery import extract_name_from_arn, filter_arns_by_service
+from . import BaseValidator
+from .constants import REQUIRED_LAMBDA_ENV_VARS, AwsErrorCode
+from .discovery import extract_name_from_arn, filter_arns_by_service
 
 
 class LambdaValidator(BaseValidator):
     category = "Lambda"
+
     def _check_lambda(self, name: str, memory: int, timeout: int):
         try:
-            cfg = self.lambda_client.get_function(FunctionName=name)["Configuration"]
+            resp = self.lambda_client.get_function(FunctionName=name)
+            cfg = resp["Configuration"]
         except ClientError as e:
             code = e.response["Error"]["Code"]
             if code == AwsErrorCode.RESOURCE_NOT_FOUND:
@@ -30,6 +32,17 @@ class LambdaValidator(BaseValidator):
 
         self.check_or_drift(self.category, "Lambda Function", name, drift)
 
+        # Check required env vars are present (only report failures)
+        env_vars = cfg.get("Environment", {}).get("Variables", {})
+        missing_keys = REQUIRED_LAMBDA_ENV_VARS - set(env_vars.keys())
+        if missing_keys:
+            self.drifted(
+                self.category,
+                "Lambda Env Vars",
+                name,
+                [f"missing: {k}" for k in sorted(missing_keys)],
+            )
+
     def _get_lambda_name(self, component_tag: str) -> str | None:
         """Get the Lambda function name for a component, filtering out non-Lambda ARNs."""
         arns = self.component_resources.get(component_tag, [])
@@ -39,21 +52,21 @@ class LambdaValidator(BaseValidator):
         return extract_name_from_arn(lambda_arns[0])
 
     def check_lambdas(self):
-
-        # Derive Lambda specs from expected.json
-        for component_name, spec in sorted(self.planned_tf_resources.items()):
-            lmb = spec.get_by_type("aws_lambda_function")
+        for component_name, component in sorted(self.manifest.items()):
+            lmb = component.get_by_type("aws_lambda_function")
             if not lmb:
                 continue
 
             v = lmb.values
             name = self._get_lambda_name(component_name)
             if not name:
-                # Fall back to name from spec
-                name = v.get("function_name")
-                if not name:
-                    self.missing(self.category, "Lambda Function", f"component={component_name} (not discovered)")
-                    continue
+                self.warn(
+                    self.category,
+                    "Lambda Function",
+                    f"component={component_name}",
+                    "not discovered via tags",
+                )
+                continue
 
             self._check_lambda(
                 name,

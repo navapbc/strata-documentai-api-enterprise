@@ -1,7 +1,10 @@
-"""Load and flatten expected.json (Terraform plan output) into a resource spec.
+"""Load infrastructure manifest into a resource model for validators.
 
-The spec is keyed by component tag value and contains the planned resource
-configurations that validators can compare against live AWS state.
+Supports two formats:
+1. manifest.json (curated, committed) - name-agnostic, tag-based resource manifest
+2. tfplan.json (generated from terraform plan) - full plan output, gitignored
+
+manifest.json is preferred. tfplan.json is used as fallback or to regenerate manifest.json.
 """
 
 import json
@@ -11,23 +14,23 @@ from pathlib import Path
 
 @dataclass
 class ExpectedResource:
-    """A single resource from the Terraform plan."""
+    """A single expected resource."""
 
-    resource_type: str  # e.g. aws_dynamodb_table, aws_s3_bucket
-    name: str  # resource name/identifier
-    module: str  # module address (e.g. module.document_metadata)
-    values: dict  # full planned values
+    resource_type: str
+    name: str
+    module: str
+    values: dict
 
 
 @dataclass
-class ComponentSpec:
+class ComponentManifest:
     """All expected resources for a single component."""
 
     component: str
     resources: list[ExpectedResource] = field(default_factory=list)
 
     def get_by_type(self, resource_type: str) -> ExpectedResource | None:
-        """Get the first resource matching a type (e.g. aws_dynamodb_table)."""
+        """Get the first resource matching a type."""
         return next((r for r in self.resources if r.resource_type == resource_type), None)
 
     def get_all_by_type(self, resource_type: str) -> list[ExpectedResource]:
@@ -35,8 +38,37 @@ class ComponentSpec:
         return [r for r in self.resources if r.resource_type == resource_type]
 
 
-def load_expected(path: str | Path = "expected.json") -> dict[str, ComponentSpec]:
-    """Load expected.json and return specs keyed by component tag.
+def load_manifest(path: str | Path, account_id: str, env: str) -> dict[str, ComponentManifest]:
+    """Load manifest.json (name-agnostic, tag-based resource manifest).
+
+    account_id and env are accepted for interface compatibility but manifest.json
+    no longer contains templates - resources are identified by tags, not names.
+    """
+    path = Path(path)
+    if not path.exists():
+        return {}
+
+    data = json.loads(path.read_text())
+    result: dict[str, ComponentManifest] = {}
+
+    for component_name, resources in data.items():
+        manifest = ComponentManifest(component=component_name)
+        for r in resources:
+            manifest.resources.append(
+                ExpectedResource(
+                    resource_type=r["type"],
+                    name="",
+                    module="",
+                    values=r,
+                )
+            )
+        result[component_name] = manifest
+
+    return result
+
+
+def load_tfplan(path: str | Path) -> dict[str, ComponentManifest]:
+    """Load tfplan.json (full Terraform plan output).
 
     Walks the planned_values tree, extracts the component tag from each resource,
     and groups resources by component.
@@ -48,14 +80,13 @@ def load_expected(path: str | Path = "expected.json") -> dict[str, ComponentSpec
     data = json.loads(path.read_text())
     planned = data.get("planned_values", {}).get("root_module", {})
 
-    specs: dict[str, ComponentSpec] = {}
+    result: dict[str, ComponentManifest] = {}
 
     def process_resources(resources: list[dict], module_address: str):
         for r in resources:
             values = r.get("values", {})
             tags = values.get("tags") or values.get("tags_all") or {}
 
-            # Handle awscc-style tags: [{"key": "k", "value": "v"}, ...]
             if isinstance(tags, list):
                 tags = {t["key"]: t["value"] for t in tags if "key" in t and "value" in t}
 
@@ -70,21 +101,18 @@ def load_expected(path: str | Path = "expected.json") -> dict[str, ComponentSpec
                 values=values,
             )
 
-            if component not in specs:
-                specs[component] = ComponentSpec(component=component)
-            specs[component].resources.append(resource)
+            if component not in result:
+                result[component] = ComponentManifest(component=component)
+            result[component].resources.append(resource)
 
-    # Process root-level resources
     process_resources(planned.get("resources", []), "root")
 
-    # Process child modules (recursively handles nested modules)
     def walk_modules(modules: list[dict]):
         for module in modules:
             address = module.get("address", "")
             process_resources(module.get("resources", []), address)
-            # Recurse into nested child modules
             walk_modules(module.get("child_modules", []))
 
     walk_modules(planned.get("child_modules", []))
 
-    return specs
+    return result

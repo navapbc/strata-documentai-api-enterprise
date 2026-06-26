@@ -2,31 +2,38 @@
 
 from botocore.exceptions import ClientError
 
-from validators import BaseValidator
-from validators.constants import AwsErrorCode
-from validators.discovery import filter_arns_by_service
+from . import BaseValidator
+from .constants import AwsErrorCode
+from .discovery import filter_arns_by_service
 
 
 class SsmValidator(BaseValidator):
     category = "SSM"
+
     def check_ssm(self):
-
         # Config parameters (String type)
-        config_spec = self.planned_tf_resources.get("config")
-        if config_spec:
-            ssm_params = config_spec.get_all_by_type("aws_ssm_parameter")
-            config_param_names = [r.values.get("name") for r in ssm_params if r.values.get("name")]
-        else:
-            config_arns = self.component_resources.get("config", [])
-            config_param_names = [
-                arn.split(":parameter")[-1]
-                for arn in filter_arns_by_service(config_arns, "ssm")
-            ]
+        config_manifest = self.manifest.get("config")
+        config_arns = self.component_resources.get("config", [])
+        config_ssm_arns = filter_arns_by_service(config_arns, "ssm")
 
-        if not config_param_names:
-            self.missing(self.category, "SSM Parameter", "component=config (not discovered)")
+        if not config_ssm_arns:
+            self.warn(self.category, "SSM Parameter", "component=config", "not discovered via tags")
         else:
-            for param in config_param_names:
+            if config_manifest:
+                expected_count = sum(
+                    r.values.get("count", 1)
+                    for r in config_manifest.get_all_by_type("aws_ssm_parameter")
+                )
+                if len(config_ssm_arns) < expected_count:
+                    self.drifted(
+                        self.category,
+                        "SSM Parameter",
+                        "component=config",
+                        [f"count: expected {expected_count}, found {len(config_ssm_arns)}"],
+                    )
+
+            for arn in config_ssm_arns:
+                param = arn.split(":parameter")[-1]
                 try:
                     p = self.ssm.get_parameter(Name=param)["Parameter"]
                     drift = []
@@ -41,21 +48,19 @@ class SsmValidator(BaseValidator):
                         self.missing(self.category, "SSM Parameter", param, str(e))
 
         # Secret parameters (SecureString type)
-        secrets_spec = self.planned_tf_resources.get("secrets")
-        if secrets_spec:
-            ssm_params = secrets_spec.get_all_by_type("aws_ssm_parameter")
-            secret_param_names = [r.values.get("name") for r in ssm_params if r.values.get("name")]
-        else:
-            secret_arns = self.component_resources.get("secrets", [])
-            secret_param_names = [
-                arn.split(":parameter")[-1]
-                for arn in filter_arns_by_service(secret_arns, "ssm")
-            ]
+        secret_arns = self.component_resources.get("secrets", [])
+        secret_ssm_arns = filter_arns_by_service(secret_arns, "ssm")
 
-        if not secret_param_names:
-            self.missing(self.category, "SSM Parameter (SecureString)", "component=secrets (not discovered)")
+        if not secret_ssm_arns:
+            self.warn(
+                self.category,
+                "SSM Parameter (SecureString)",
+                "component=secrets",
+                "not discovered via tags",
+            )
         else:
-            for param in secret_param_names:
+            for arn in secret_ssm_arns:
+                param = arn.split(":parameter")[-1]
                 try:
                     p = self.ssm.get_parameter(Name=param, WithDecryption=False)["Parameter"]
                     drift = []

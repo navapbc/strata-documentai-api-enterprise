@@ -1,6 +1,7 @@
 .PHONY: \
 	infra-apply \
 	infra-bootstrap \
+	infra-check \
 	infra-deploy \
 	infra-destroy \
 	infra-drift \
@@ -9,12 +10,16 @@
 	infra-lint \
 	infra-output \
 	infra-plan \
+	infra-manifest \
+	infra-setup \
 	infra-validate \
 	help
 
 .DEFAULT_GOAL := help
 
 ENVIRONMENT ?= dev
+PROJECT ?= docai
+STAGE ?=
 TF_DIR := environments/$(ENVIRONMENT)
 STATE_BUCKET ?= $(shell echo "docai-tfstate-$$(aws sts get-caller-identity $(if $(AWS_PROFILE),--profile $(AWS_PROFILE)) --query Account --output text)-$(ENVIRONMENT)")
 AWS_ARGS := $(if $(AWS_PROFILE),--profile $(AWS_PROFILE))
@@ -80,11 +85,16 @@ infra-destroy: ## Destroy infrastructure for $ENVIRONMENT
 infra-output: ## Show Terraform outputs for $ENVIRONMENT
 	terraform -chdir="$(TF_DIR)" output
 
-infra-format: ## Format Terraform code
-	terraform fmt -recursive .
+infra-setup: ## Install Python dependencies (validators + dev tools)
+	uv sync --extra dev
 
-infra-lint: ## Lint Terraform code (check formatting)
+infra-format: ## Format Terraform and Python code
+	terraform fmt -recursive .
+	uv run ruff format validators/
+
+infra-lint: ## Lint Terraform and Python code
 	terraform fmt -recursive -check .
+	uv run ruff check validators/
 
 infra-validate: ## Validate Terraform modules
 	@for dir in modules/*/; do \
@@ -93,23 +103,29 @@ infra-validate: ## Validate Terraform modules
 		terraform -chdir="$$dir" validate; \
 	done
 
-infra-drift: ## Validate deployed infrastructure (run infra-expected first if Terraform available)
-	python validate_infra.py --env $(ENVIRONMENT) $(if $(AWS_PROFILE),--profile $(AWS_PROFILE))
+infra-manifest: infra-expected ## Regenerate manifest.json from tfplan.json (requires TF)
+	uv run python -m validators.generate --expected tfplan.json --output manifest.json
 
-infra-expected: ## Generate expected.json from Terraform plan (read-only, no remote state)
-	@echo "Generating expected.json from Terraform modules..."
+infra-check: ## Validate deployed infra against manifest.json (no TF needed)
+	uv run python -m validators --env $(ENVIRONMENT) --project $(PROJECT) $(if $(STAGE),--stage $(STAGE)) $(if $(AWS_PROFILE),--profile $(AWS_PROFILE))
+
+infra-drift: ## Alias for infra-check
+	uv run python -m validators --env $(ENVIRONMENT) --project $(PROJECT) $(if $(STAGE),--stage $(STAGE)) $(if $(AWS_PROFILE),--profile $(AWS_PROFILE))
+
+infra-expected: ## Generate tfplan.json from Terraform plan (read-only, no remote state)
+	@echo "Generating tfplan.json from Terraform modules..."
 	@printf 'terraform {\n  backend "local" {\n    path = "/tmp/docai-validate-tfstate"\n  }\n}\n' > $(TF_DIR)/backend_override.tf
 	@terraform -chdir="$(TF_DIR)" init -reconfigure -input=false > /dev/null 2>&1
 	@IMAGE_TAG=$${IMAGE_TAG:-$$(git -C .. rev-parse --short HEAD)} && \
 		terraform -chdir="$(TF_DIR)" plan -refresh=false -var="image_tag=$$IMAGE_TAG" -out=/tmp/docai-validate.tfplan > /dev/null 2>&1
-	@terraform -chdir="$(TF_DIR)" show -json /tmp/docai-validate.tfplan > expected.json
+	@terraform -chdir="$(TF_DIR)" show -json /tmp/docai-validate.tfplan > tfplan.json
 	@rm -f $(TF_DIR)/backend_override.tf /tmp/docai-validate-tfstate /tmp/docai-validate.tfplan
 	@terraform -chdir="$(TF_DIR)" init -reconfigure -input=false \
 		-backend-config="bucket=$$(echo docai-tfstate-$$(aws sts get-caller-identity $(AWS_ARGS) --query Account --output text)-$(ENVIRONMENT))" \
 		-backend-config="key=docai/$(ENVIRONMENT)/terraform.tfstate" \
 		-backend-config="region=us-east-1" \
 		-backend-config="use_lockfile=true" > /dev/null 2>&1
-	@echo "Generated: expected.json ($$(python3 -c "import json; d=json.load(open('expected.json')); print(sum(len(m.get('resources',[])) for m in d['planned_values']['root_module'].get('child_modules',[])))" ) resources)"
+	@echo "Generated: tfplan.json ($$(python3 -c "import json; d=json.load(open('tfplan.json')); print(sum(len(m.get('resources',[])) for m in d['planned_values']['root_module'].get('child_modules',[])))" ) resources)"
 
 help: ## Show help
 	@grep -Eh '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'

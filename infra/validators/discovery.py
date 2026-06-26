@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 
-from validators.constants import Tag
+from .constants import Tag
 
 
 def discover_resources(
@@ -80,7 +80,7 @@ def extract_name_from_arn(arn: str) -> str:
     if service == "ssm":
         resource = parts[5]
         if resource.startswith("parameter"):
-            return resource[len("parameter"):]
+            return resource[len("parameter") :]
         return resource
 
     # Cognito: arn:aws:cognito-idp:region:acct:userpool/pool-id

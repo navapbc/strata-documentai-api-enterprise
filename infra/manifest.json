@@ -1,0 +1,274 @@
+{
+  "admin-ui": [
+    {
+      "type": "aws_s3_bucket"
+    }
+  ],
+  "analytics": [
+    {
+      "type": "aws_athena_workgroup"
+    },
+    {
+      "type": "aws_glue_catalog_database"
+    },
+    {
+      "type": "aws_s3_bucket"
+    }
+  ],
+  "api-gateway": [
+    {
+      "type": "aws_apigatewayv2_api",
+      "protocol_type": "HTTP"
+    },
+    {
+      "type": "aws_cloudwatch_log_group",
+      "retention_in_days": 30
+    },
+    {
+      "type": "aws_lambda_function",
+      "memory_size": 1024,
+      "timeout": 30
+    }
+  ],
+  "api-keys": [
+    {
+      "type": "aws_dynamodb_table",
+      "hash_key": "keyHash"
+    }
+  ],
+  "audit-events": [
+    {
+      "type": "aws_dynamodb_table",
+      "hash_key": "tenantId",
+      "range_key": "timestamp#eventId",
+      "gsi_names": [
+        "action-timestamp-index"
+      ],
+      "ttl_attribute": "ttl"
+    }
+  ],
+  "bda-all": [
+    {
+      "type": "awscc_bedrock_data_automation_project"
+    }
+  ],
+  "bda-court_ordered_benefits": [
+    {
+      "type": "awscc_bedrock_data_automation_project"
+    }
+  ],
+  "bda-debt_obligations": [
+    {
+      "type": "awscc_bedrock_data_automation_project"
+    }
+  ],
+  "bda-employment_wages": [
+    {
+      "type": "awscc_bedrock_data_automation_project"
+    }
+  ],
+  "bda-financial_assets": [
+    {
+      "type": "awscc_bedrock_data_automation_project"
+    }
+  ],
+  "bda-government_benefits": [
+    {
+      "type": "awscc_bedrock_data_automation_project"
+    }
+  ],
+  "bda-housing_expenses": [
+    {
+      "type": "awscc_bedrock_data_automation_project"
+    }
+  ],
+  "bda-identity_verification": [
+    {
+      "type": "awscc_bedrock_data_automation_project"
+    }
+  ],
+  "bda-independent_earnings": [
+    {
+      "type": "awscc_bedrock_data_automation_project"
+    }
+  ],
+  "bda-private_benefits_and_settlements": [
+    {
+      "type": "awscc_bedrock_data_automation_project"
+    }
+  ],
+  "bda-receipts_and_invoices": [
+    {
+      "type": "awscc_bedrock_data_automation_project"
+    }
+  ],
+  "bda-recurring_bills": [
+    {
+      "type": "awscc_bedrock_data_automation_project"
+    }
+  ],
+  "bda-result-processor": [
+    {
+      "type": "aws_cloudwatch_event_rule"
+    },
+    {
+      "type": "aws_lambda_function",
+      "memory_size": 512,
+      "timeout": 300
+    },
+    {
+      "type": "aws_sqs_queue"
+    }
+  ],
+  "bda-right_to_work": [
+    {
+      "type": "awscc_bedrock_data_automation_project"
+    }
+  ],
+  "bda-tax_documents": [
+    {
+      "type": "awscc_bedrock_data_automation_project"
+    }
+  ],
+  "config": [
+    {
+      "type": "aws_ssm_parameter",
+      "parameter_type": "String",
+      "count": 4
+    }
+  ],
+  "demo-ui": [
+    {
+      "type": "aws_s3_bucket"
+    }
+  ],
+  "document-batches": [
+    {
+      "type": "aws_dynamodb_table",
+      "hash_key": "batchId",
+      "gsi_names": [
+        "StatusCreatedAtIndex",
+        "TenantIndex"
+      ],
+      "ttl_attribute": "ttl"
+    }
+  ],
+  "document-builds": [
+    {
+      "type": "aws_dynamodb_table",
+      "hash_key": "buildId",
+      "range_key": "pageNumber",
+      "gsi_names": [
+        "ExternalReferenceIdIndex",
+        "TenantIndex"
+      ],
+      "ttl_attribute": "ttl"
+    }
+  ],
+  "document-categories": [
+    {
+      "type": "aws_dynamodb_table",
+      "hash_key": "tenantId",
+      "range_key": "categoryName"
+    }
+  ],
+  "document-metadata": [
+    {
+      "type": "aws_dynamodb_table",
+      "hash_key": "fileName",
+      "gsi_names": [
+        "BdaInvocationIdIndex",
+        "ExternalDocumentIdIndex",
+        "JobIdIndex",
+        "TenantIdIndex"
+      ],
+      "ttl_attribute": "ttl"
+    }
+  ],
+  "document-processor": [
+    {
+      "type": "aws_cloudwatch_event_rule"
+    },
+    {
+      "type": "aws_lambda_function",
+      "memory_size": 512,
+      "timeout": 300
+    },
+    {
+      "type": "aws_sqs_queue"
+    }
+  ],
+  "ecr": [
+    {
+      "type": "aws_ecr_repository"
+    }
+  ],
+  "extraction-rules": [
+    {
+      "type": "aws_dynamodb_table",
+      "hash_key": "tenantId",
+      "range_key": "documentType"
+    }
+  ],
+  "identity-provider": [
+    {
+      "type": "aws_cognito_user_pool"
+    }
+  ],
+  "input-bucket": [
+    {
+      "type": "aws_s3_bucket"
+    }
+  ],
+  "metrics-aggregator": [
+    {
+      "type": "aws_cloudwatch_event_rule",
+      "count": 2
+    },
+    {
+      "type": "aws_lambda_function",
+      "memory_size": 512,
+      "timeout": 300
+    }
+  ],
+  "metrics-bucket": [
+    {
+      "type": "aws_s3_bucket"
+    }
+  ],
+  "metrics-processor": [
+    {
+      "type": "aws_lambda_function",
+      "memory_size": 512,
+      "timeout": 300
+    }
+  ],
+  "metrics-queue": [
+    {
+      "type": "aws_sqs_queue",
+      "count": 2
+    }
+  ],
+  "monitoring": [
+    {
+      "type": "aws_sns_topic"
+    }
+  ],
+  "output-bucket": [
+    {
+      "type": "aws_s3_bucket"
+    }
+  ],
+  "secrets": [
+    {
+      "type": "aws_ssm_parameter",
+      "parameter_type": "SecureString"
+    }
+  ],
+  "tenants": [
+    {
+      "type": "aws_dynamodb_table",
+      "hash_key": "tenantId"
+    }
+  ]
+}
