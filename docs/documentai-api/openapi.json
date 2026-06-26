@@ -77,7 +77,7 @@
           "Documents:Upload"
         ],
         "summary": "Create Document Wait",
-        "description": "Upload a document and poll until processing completes or timeout.",
+        "description": "Upload a document and poll until processing completes or timeout.\n\nNote: does not accept the `demo` flag. Demo uploads use the async endpoint\nwith client-side polling so the Lambda doesn't hold a connection open for\nthe full processing duration.",
         "operationId": "create_document_wait_v1_documents_wait_post",
         "security": [
           {
@@ -93,6 +93,16 @@
               "type": "boolean",
               "default": false,
               "title": "Include Extracted Data"
+            }
+          },
+          {
+            "name": "include_bounding_box",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include Bounding Box"
             }
           },
           {
@@ -192,6 +202,16 @@
             }
           },
           {
+            "name": "include_bounding_box",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include Bounding Box"
+            }
+          },
+          {
             "name": "X-Trace-ID",
             "in": "header",
             "required": false,
@@ -236,7 +256,7 @@
           "Documents:Delete"
         ],
         "summary": "Delete Document",
-        "description": "Delete a document by job ID. Removes S3 file and marks DDB record as deleted.",
+        "description": "Delete a document by job ID.\n\nsoft_delete=True (default): retain the S3 files, mark the record DELETED\n(recoverable). soft_delete=False: also purge every S3 copy of the document -\noriginal upload, preprocessing copies, and BDA output (hard delete).",
         "operationId": "delete_document_v1_documents__job_id__delete",
         "security": [
           {
@@ -252,6 +272,16 @@
               "type": "string",
               "format": "uuid",
               "title": "Job Id"
+            }
+          },
+          {
+            "name": "soft_delete",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Soft Delete"
             }
           }
         ],
@@ -2487,6 +2517,22 @@
             }
           },
           {
+            "name": "is_demo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Demo"
+            }
+          },
+          {
             "name": "limit",
             "in": "query",
             "required": false,
@@ -2561,6 +2607,26 @@
               "type": "string",
               "title": "Job Id"
             }
+          },
+          {
+            "name": "include_extracted_data",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include Extracted Data"
+            }
+          },
+          {
+            "name": "include_bounding_box",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include Bounding Box"
+            }
           }
         ],
         "responses": {
@@ -2570,6 +2636,54 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DocumentDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/documents/{job_id}/preview": {
+      "get": {
+        "tags": [
+          "Admin:Documents"
+        ],
+        "summary": "Get Document Preview",
+        "description": "Get a short-lived presigned URL for previewing the original document.\n\nReturns a URL valid for 5 minutes. Only supports PDF and image files.",
+        "operationId": "get_document_preview_v1_admin_documents__job_id__preview_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentPreviewResponse"
                 }
               }
             }
@@ -2984,6 +3098,232 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BlueprintTestResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/demo/documents": {
+      "post": {
+        "summary": "Create Demo Document",
+        "description": "Upload a document via the demo pipeline.",
+        "operationId": "create_demo_document_v1_demo_documents_post",
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_demo_document_v1_demo_documents_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadAsyncResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List Demo Documents",
+        "description": "List demo documents for the authenticated user.",
+        "operationId": "list_demo_documents_v1_demo_documents_get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/demo/documents/{job_id}": {
+      "get": {
+        "summary": "Get Demo Document",
+        "description": "Get demo document detail by job ID.",
+        "operationId": "get_demo_document_v1_demo_documents__job_id__get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "include_extracted_data",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include Extracted Data"
+            }
+          },
+          {
+            "name": "include_bounding_box",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include Bounding Box"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/demo/documents/{job_id}/preview": {
+      "get": {
+        "summary": "Get Demo Document Preview",
+        "description": "Get presigned URL for previewing a demo document.",
+        "operationId": "get_demo_document_preview_v1_demo_documents__job_id__preview_get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentPreviewResponse"
                 }
               }
             }
@@ -3841,6 +4181,20 @@
         },
         "type": "object",
         "title": "Body_create_build_v1_builds_post"
+      },
+      "Body_create_demo_document_v1_demo_documents_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_create_demo_document_v1_demo_documents_post"
       },
       "Body_create_document_v1_documents_post": {
         "properties": {
@@ -4719,6 +5073,20 @@
               }
             ],
             "title": "Primarycontact"
+          },
+          "extractionConfidenceFloor": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "description": "Minimum average non-empty field confidence (0.0-1.0) below which an extraction is flagged. When null, the platform default applies."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extractionconfidencefloor"
           }
         },
         "type": "object",
@@ -5129,6 +5497,29 @@
         ],
         "title": "DocumentListResponse"
       },
+      "DocumentPreviewResponse": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "contentType": {
+            "type": "string",
+            "title": "Contenttype"
+          },
+          "expiresIn": {
+            "type": "integer",
+            "title": "Expiresin"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url",
+          "contentType",
+          "expiresIn"
+        ],
+        "title": "DocumentPreviewResponse"
+      },
       "DocumentSearchRequest": {
         "properties": {
           "jobIds": {
@@ -5414,6 +5805,53 @@
               }
             ],
             "title": "Additionalinfo"
+          },
+          "responseCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsecode"
+          },
+          "responseMessage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsemessage"
+          },
+          "missingRequiredFieldList": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Missingrequiredfieldlist"
+          },
+          "belowExtractionConfidenceFloor": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Belowextractionconfidencefloor"
           }
         },
         "type": "object",
@@ -5623,6 +6061,15 @@
               "bdaWaitTimeSum": 0.0,
               "bdaWaitTimeCount": 0
             }
+          },
+          "usageStats": {
+            "$ref": "#/components/schemas/UsageStats",
+            "default": {
+              "totalFileSizeBytes": 0,
+              "totalPages": 0,
+              "totalBedrockInputTokens": 0,
+              "totalBedrockOutputTokens": 0
+            }
           }
         },
         "type": "object",
@@ -5696,6 +6143,15 @@
               "bdaWaitTimeSum": 0.0,
               "bdaWaitTimeCount": 0
             }
+          },
+          "usageStats": {
+            "$ref": "#/components/schemas/UsageStats",
+            "default": {
+              "totalFileSizeBytes": 0,
+              "totalPages": 0,
+              "totalBedrockInputTokens": 0,
+              "totalBedrockOutputTokens": 0
+            }
           }
         },
         "type": "object",
@@ -5767,6 +6223,18 @@
             "type": "boolean",
             "title": "Isactive",
             "default": true
+          },
+          "extractionConfidenceFloor": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extractionconfidencefloor",
+            "description": "Tenant override for the extraction confidence floor (0.0-1.0). Null means no override is set and the platform default applies."
           },
           "createdAt": {
             "anyOf": [
@@ -5926,6 +6394,20 @@
               }
             ],
             "title": "Isactive"
+          },
+          "extractionConfidenceFloor": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "description": "Minimum average non-empty field confidence (0.0-1.0) below which an extraction is flagged. When null, the platform default applies."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extractionconfidencefloor"
           }
         },
         "type": "object",
@@ -5953,6 +6435,32 @@
           "message"
         ],
         "title": "UploadAsyncResponse"
+      },
+      "UsageStats": {
+        "properties": {
+          "totalFileSizeBytes": {
+            "type": "integer",
+            "title": "Totalfilesizebytes",
+            "default": 0
+          },
+          "totalPages": {
+            "type": "integer",
+            "title": "Totalpages",
+            "default": 0
+          },
+          "totalBedrockInputTokens": {
+            "type": "integer",
+            "title": "Totalbedrockinputtokens",
+            "default": 0
+          },
+          "totalBedrockOutputTokens": {
+            "type": "integer",
+            "title": "Totalbedrockoutputtokens",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "UsageStats"
       },
       "ValidationError": {
         "properties": {

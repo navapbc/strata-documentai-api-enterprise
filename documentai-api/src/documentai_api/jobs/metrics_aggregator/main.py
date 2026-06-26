@@ -4,6 +4,7 @@ Aggregates previous day's metrics data from S3 via Athena queries.
 Writes aggregated stats to S3 for historical analysis.
 """
 
+import contextlib
 import json
 import time
 from datetime import datetime, timedelta
@@ -13,8 +14,8 @@ from botocore.exceptions import ClientError
 
 from documentai_api.config.constants import (
     ATHENA_QUERY_TIMEOUT_SECONDS,
-    S3_AGG_DDB_DATA_DAILY_PREFIX,
-    S3_AGG_DDB_DATA_MONTHLY_PREFIX,
+    METRICS_AGG_DDB_DAILY_S3_PREFIX,
+    METRICS_AGG_DDB_MONTHLY_S3_PREFIX,
     AthenaQueryStatus,
     TimingMetrics,
 )
@@ -144,7 +145,7 @@ def _get_athena_results(execution_id: str) -> list[dict[str, Any]]:
 def _check_if_previously_aggregated(bucket: str, target_date: str) -> bool:
     """Check if stats already exist for the given date."""
     s3 = AWSClientFactory.get_s3_client()
-    s3_key = f"{S3_AGG_DDB_DATA_DAILY_PREFIX}={target_date}/stats.json"
+    s3_key = f"{METRICS_AGG_DDB_DAILY_S3_PREFIX}={target_date}/stats.json"
 
     try:
         s3.head_object(Bucket=bucket, Key=s3_key)
@@ -176,6 +177,12 @@ def _initialize_stats(target_date: str) -> dict[str, Any]:
             "bda_wait_time_avg": 0,
             "bda_wait_time_sum": 0,
             "bda_wait_time_count": 0,
+        },
+        "usage_stats": {
+            "total_file_size_bytes": 0,
+            "total_pages": 0,
+            "total_bedrock_input_tokens": 0,
+            "total_bedrock_output_tokens": 0,
         },
     }
 
@@ -211,6 +218,29 @@ def _process_record(record: dict[str, Any], stats: dict[str, Any]) -> None:
             stats["by_hour"][hour] = stats["by_hour"].get(hour, 0) + 1
         except (ValueError, TypeError):
             pass
+
+    # usage stats (for cost allocation)
+    file_size = record.get("file_size_bytes")
+    if file_size:
+        with contextlib.suppress(ValueError, TypeError):
+            stats["usage_stats"]["total_file_size_bytes"] += int(file_size)
+
+    pages = record.get("pages_detected")
+    if pages:
+        with contextlib.suppress(ValueError, TypeError):
+            stats["usage_stats"]["total_pages"] += int(pages)
+
+    for col in ("preclassification_input_tokens", "crop_input_tokens"):
+        val = record.get(col)
+        if val:
+            with contextlib.suppress(ValueError, TypeError):
+                stats["usage_stats"]["total_bedrock_input_tokens"] += int(val)
+
+    for col in ("preclassification_output_tokens", "crop_output_tokens"):
+        val = record.get(col)
+        if val:
+            with contextlib.suppress(ValueError, TypeError):
+                stats["usage_stats"]["total_bedrock_output_tokens"] += int(val)
 
     # timing stats
     total_time = record.get("total_processing_time_seconds")
@@ -263,9 +293,11 @@ def _write_aggregated_stats(
         )
 
         if tenant_id == "__global__":
-            s3_key = f"{S3_AGG_DDB_DATA_DAILY_PREFIX}={target_date}/stats.json"
+            s3_key = f"{METRICS_AGG_DDB_DAILY_S3_PREFIX}={target_date}/stats.json"
         else:
-            s3_key = f"{S3_AGG_DDB_DATA_DAILY_PREFIX}={target_date}/tenant={tenant_id}/stats.json"
+            s3_key = (
+                f"{METRICS_AGG_DDB_DAILY_S3_PREFIX}={target_date}/tenant={tenant_id}/stats.json"
+            )
 
         s3.put_object(
             Bucket=bucket,
@@ -275,7 +307,7 @@ def _write_aggregated_stats(
         )
         logger.info(f"Aggregated stats written to s3://{bucket}/{s3_key}")
 
-    global_key = f"{S3_AGG_DDB_DATA_DAILY_PREFIX}={target_date}/stats.json"
+    global_key = f"{METRICS_AGG_DDB_DAILY_S3_PREFIX}={target_date}/stats.json"
     return global_key
 
 
@@ -286,7 +318,7 @@ def _get_daily_stats_for_month(bucket: str, yyyymm: str) -> dict[str, list[dict[
     the global (non-tenant-scoped) daily stats.
     """
     s3 = AWSClientFactory.get_s3_client()
-    prefix = f"{S3_AGG_DDB_DATA_DAILY_PREFIX}={yyyymm}-"
+    prefix = f"{METRICS_AGG_DDB_DAILY_S3_PREFIX}={yyyymm}-"
 
     by_tenant: dict[str, list[dict[str, Any]]] = {}
     paginator = s3.get_paginator("list_objects_v2")
@@ -327,9 +359,9 @@ def _aggregate_monthly(bucket: str, yyyymm: str) -> dict[str, Any] | None:
         monthly_stats["month"] = yyyymm
 
         if tenant_id == "__global__":
-            s3_key = f"{S3_AGG_DDB_DATA_MONTHLY_PREFIX}={yyyymm}/stats.json"
+            s3_key = f"{METRICS_AGG_DDB_MONTHLY_S3_PREFIX}={yyyymm}/stats.json"
         else:
-            s3_key = f"{S3_AGG_DDB_DATA_MONTHLY_PREFIX}={yyyymm}/tenant={tenant_id}/stats.json"
+            s3_key = f"{METRICS_AGG_DDB_MONTHLY_S3_PREFIX}={yyyymm}/tenant={tenant_id}/stats.json"
 
         s3.put_object(
             Bucket=bucket,
@@ -340,7 +372,7 @@ def _aggregate_monthly(bucket: str, yyyymm: str) -> dict[str, Any] | None:
         logger.info(f"Monthly stats written to s3://{bucket}/{s3_key}")
         days_processed = max(days_processed, len(daily_stats))
 
-    global_key = f"{S3_AGG_DDB_DATA_MONTHLY_PREFIX}={yyyymm}/stats.json"
+    global_key = f"{METRICS_AGG_DDB_MONTHLY_S3_PREFIX}={yyyymm}/stats.json"
     return {
         "month": yyyymm,
         "outputLocation": f"s3://{bucket}/{global_key}",
@@ -368,7 +400,7 @@ def main(target_date: str, overwrite: bool = False) -> dict[str, Any]:
 
     # --- daily aggregation ---
     if not overwrite and _check_if_previously_aggregated(metrics_bucket, target_date):
-        s3_key = f"{S3_AGG_DDB_DATA_DAILY_PREFIX}={target_date}/stats.json"
+        s3_key = f"{METRICS_AGG_DDB_DAILY_S3_PREFIX}={target_date}/stats.json"
         logger.info(f"Stats for {target_date} already exist, skipping daily aggregation")
         s3 = AWSClientFactory.get_s3_client()
         existing_stats = json.loads(

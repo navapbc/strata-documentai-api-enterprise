@@ -7,8 +7,8 @@ from typing import Any
 from botocore.exceptions import ClientError
 
 from documentai_api.config.constants import (
-    S3_AGG_DDB_DATA_DAILY_PREFIX,
-    S3_AGG_DDB_DATA_MONTHLY_PREFIX,
+    METRICS_AGG_DDB_DAILY_S3_PREFIX,
+    METRICS_AGG_DDB_MONTHLY_S3_PREFIX,
     MetricsGranularity,
     TimingMetrics,
 )
@@ -54,9 +54,9 @@ def _get_daily_metrics(
     while current_dt <= end_dt:
         date_str = current_dt.strftime("%Y-%m-%d")
         if tenant_id:
-            s3_key = f"{S3_AGG_DDB_DATA_DAILY_PREFIX}={date_str}/tenant={tenant_id}/stats.json"
+            s3_key = f"{METRICS_AGG_DDB_DAILY_S3_PREFIX}={date_str}/tenant={tenant_id}/stats.json"
         else:
-            s3_key = f"{S3_AGG_DDB_DATA_DAILY_PREFIX}={date_str}/stats.json"
+            s3_key = f"{METRICS_AGG_DDB_DAILY_S3_PREFIX}={date_str}/stats.json"
 
         logger.info(f"Reading metrics for {date_str}")
 
@@ -104,9 +104,9 @@ def _get_monthly_metrics(
     monthly_stats = []
     for yyyymm in sorted(months):
         if tenant_id:
-            s3_key = f"{S3_AGG_DDB_DATA_MONTHLY_PREFIX}={yyyymm}/tenant={tenant_id}/stats.json"
+            s3_key = f"{METRICS_AGG_DDB_MONTHLY_S3_PREFIX}={yyyymm}/tenant={tenant_id}/stats.json"
         else:
-            s3_key = f"{S3_AGG_DDB_DATA_MONTHLY_PREFIX}={yyyymm}/stats.json"
+            s3_key = f"{METRICS_AGG_DDB_MONTHLY_S3_PREFIX}={yyyymm}/stats.json"
 
         try:
             obj = s3_service.get_object(bucket, s3_key)
@@ -192,6 +192,22 @@ def build_summary(stats_list: list[dict[str, Any]]) -> dict[str, Any]:
             round(timing_stats[f"{prefix}_sum"] / count, 2) if count > 0 else 0
         )
 
+    usage_stats: dict[str, int] = {
+        "total_file_size_bytes": 0,
+        "total_pages": 0,
+        "total_bedrock_input_tokens": 0,
+        "total_bedrock_output_tokens": 0,
+    }
+    for stats in stats_list:
+        if "usage_stats" in stats:
+            usage = stats["usage_stats"]
+            usage_stats["total_file_size_bytes"] += usage.get("total_file_size_bytes", 0)
+            usage_stats["total_pages"] += usage.get("total_pages", 0)
+            usage_stats["total_bedrock_input_tokens"] += usage.get("total_bedrock_input_tokens", 0)
+            usage_stats["total_bedrock_output_tokens"] += usage.get(
+                "total_bedrock_output_tokens", 0
+            )
+
     return {
         "total_records": total_records,
         "total_bda_invocations": total_bda_invocations,
@@ -199,4 +215,5 @@ def build_summary(stats_list: list[dict[str, Any]]) -> dict[str, Any]:
         "by_classification": by_classification,
         "by_response_code": by_response_code,
         "timing_stats": timing_stats,
+        "usage_stats": usage_stats,
     }

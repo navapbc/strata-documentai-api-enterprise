@@ -17,6 +17,13 @@ class TimingStats(BaseApiResponse):
     bda_wait_time_count: int = 0
 
 
+class UsageStats(BaseApiResponse):
+    total_file_size_bytes: int = 0
+    total_pages: int = 0
+    total_bedrock_input_tokens: int = 0
+    total_bedrock_output_tokens: int = 0
+
+
 class MetricsSummary(BaseApiResponse):
     total_records: int = 0
     total_bda_invocations: int = 0
@@ -24,6 +31,7 @@ class MetricsSummary(BaseApiResponse):
     by_classification: dict[str, int] = Field(default_factory=dict)
     by_response_code: dict[str, int] = Field(default_factory=dict)
     timing_stats: TimingStats = TimingStats()
+    usage_stats: UsageStats = UsageStats()
 
 
 class PeriodStats(BaseApiResponse):
@@ -35,6 +43,7 @@ class PeriodStats(BaseApiResponse):
     by_classification: dict[str, int] = Field(default_factory=dict)
     by_response_code: dict[str, int] = Field(default_factory=dict)
     timing_stats: TimingStats = TimingStats()
+    usage_stats: UsageStats = UsageStats()
 
 
 class MetricsResponse(BaseApiResponse):

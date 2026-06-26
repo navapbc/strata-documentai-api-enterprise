@@ -57,6 +57,11 @@ class DocumentMetadata:
     FILE_SIZE_BYTES = "fileSizeBytes"
     CONTENT_TYPE = "contentType"
     PAGES_DETECTED = "pagesDetected"
+    # TODO: Add PAGES_SENT_TO_BDA field to track actual pages processed by BDA.
+    # pages_detected is the total page count of the uploaded file (from
+    # get_page_count), not the number of pages BDA processed. Since
+    # MAX_PAGES_PER_DOCUMENT truncates what's sent to BDA, a 20-page PDF has
+    # pages_detected=20 but only 5 pages are billed by BDA.
     IS_DOCUMENT_BLURRY = "isDocumentBlurry"
     IS_PASSWORD_PROTECTED = "isPasswordProtected"
     DOCUMENT_METRICS_RAW = "documentMetricsRaw"

@@ -131,3 +131,87 @@ def test_get_aggregated_metrics_non_nosuchkey_error_raises(granularity):
         mock_get.side_effect = ClientError({"Error": {"Code": "AccessDenied"}}, "GetObject")
         with pytest.raises(ClientError):
             get_aggregated_metrics("bucket", "2026-01-01", "2026-01-01", granularity)
+
+
+def test_build_summary_with_usage_stats():
+    """Test build_summary aggregates usage_stats across periods."""
+    stats_list = [
+        {
+            "total_records": 10,
+            "total_bda_invocations": 8,
+            "by_status": {"success": 10},
+            "by_classification": {"W2": 10},
+            "by_response_code": {"000": 10},
+            "timing_stats": {
+                f"{TimingMetrics.TOTAL_PROCESSING_TIME}_sum": 100,
+                f"{TimingMetrics.TOTAL_PROCESSING_TIME}_count": 10,
+                f"{TimingMetrics.BDA_PROCESSING_TIME}_sum": 80,
+                f"{TimingMetrics.BDA_PROCESSING_TIME}_count": 10,
+                f"{TimingMetrics.BDA_WAIT_TIME}_sum": 20,
+                f"{TimingMetrics.BDA_WAIT_TIME}_count": 10,
+            },
+            "usage_stats": {
+                "total_file_size_bytes": 5000000,
+                "total_pages": 10,
+                "total_bedrock_input_tokens": 2000,
+                "total_bedrock_output_tokens": 100,
+            },
+        },
+        {
+            "total_records": 5,
+            "total_bda_invocations": 5,
+            "by_status": {"success": 5},
+            "by_classification": {"1099": 5},
+            "by_response_code": {"000": 5},
+            "timing_stats": {
+                f"{TimingMetrics.TOTAL_PROCESSING_TIME}_sum": 50,
+                f"{TimingMetrics.TOTAL_PROCESSING_TIME}_count": 5,
+                f"{TimingMetrics.BDA_PROCESSING_TIME}_sum": 40,
+                f"{TimingMetrics.BDA_PROCESSING_TIME}_count": 5,
+                f"{TimingMetrics.BDA_WAIT_TIME}_sum": 10,
+                f"{TimingMetrics.BDA_WAIT_TIME}_count": 5,
+            },
+            "usage_stats": {
+                "total_file_size_bytes": 3000000,
+                "total_pages": 5,
+                "total_bedrock_input_tokens": 1000,
+                "total_bedrock_output_tokens": 50,
+            },
+        },
+    ]
+
+    summary = build_summary(stats_list)
+
+    assert summary["usage_stats"]["total_file_size_bytes"] == 8000000
+    assert summary["usage_stats"]["total_pages"] == 15
+    assert summary["usage_stats"]["total_bedrock_input_tokens"] == 3000
+    assert summary["usage_stats"]["total_bedrock_output_tokens"] == 150
+
+
+def test_build_summary_without_usage_stats():
+    """Test build_summary handles stats dicts that lack usage_stats (backward compat)."""
+    stats_list = [
+        {
+            "total_records": 5,
+            "total_bda_invocations": 3,
+            "by_status": {"success": 5},
+            "by_classification": {"W2": 5},
+            "by_response_code": {"000": 5},
+            "timing_stats": {
+                f"{TimingMetrics.TOTAL_PROCESSING_TIME}_sum": 50,
+                f"{TimingMetrics.TOTAL_PROCESSING_TIME}_count": 5,
+                f"{TimingMetrics.BDA_PROCESSING_TIME}_sum": 40,
+                f"{TimingMetrics.BDA_PROCESSING_TIME}_count": 5,
+                f"{TimingMetrics.BDA_WAIT_TIME}_sum": 10,
+                f"{TimingMetrics.BDA_WAIT_TIME}_count": 5,
+            },
+        },
+    ]
+
+    summary = build_summary(stats_list)
+
+    assert summary["total_records"] == 5
+    assert summary["usage_stats"]["total_file_size_bytes"] == 0
+    assert summary["usage_stats"]["total_pages"] == 0
+    assert summary["usage_stats"]["total_bedrock_input_tokens"] == 0
+    assert summary["usage_stats"]["total_bedrock_output_tokens"] == 0
