@@ -3,7 +3,7 @@
 import json
 from unittest.mock import patch
 
-from documentai_api.config.constants import S3_RAW_DDB_DATA_PREFIX
+from documentai_api.config.constants import METRICS_RAW_DDB_DATA_S3_PREFIX
 from documentai_api.jobs.metrics_processor.main import (
     camel_to_snake,
     convert_keys_to_snake_case,
@@ -49,7 +49,7 @@ def test_write_to_s3(s3_client, s3_bucket):
 
     # verify file was written with correct partitioning
     objects = s3_client.list_objects_v2(
-        Bucket="test-bucket", Prefix=f"{S3_RAW_DDB_DATA_PREFIX}=2026-02-20/hour=10/"
+        Bucket="test-bucket", Prefix=f"{METRICS_RAW_DDB_DATA_S3_PREFIX}=2026-02-20/hour=10/"
     )
     assert objects["KeyCount"] == 1
 

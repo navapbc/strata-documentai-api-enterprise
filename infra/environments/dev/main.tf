@@ -262,11 +262,24 @@ module "metrics_bucket" {
   source = "../../modules/storage"
   name   = "${local.service_name}-metrics"
 
-  lifecycle_rules = [{
-    id                    = "archive-metrics"
-    transition_to_ia_days = 30
-    expiration_days       = 365
-  }]
+  lifecycle_rules = [
+    {
+      id                    = "expire-raw-metrics"
+      prefix                = "raw/"
+      transition_to_ia_days = 30
+      expiration_days       = 365
+    },
+    {
+      id                    = "archive-aggregated"
+      prefix                = "aggregated/"
+      transition_to_ia_days = 90
+    },
+    {
+      id                    = "archive-usage-reports"
+      prefix                = "usage-report/"
+      transition_to_ia_days = 30
+    },
+  ]
 }
 
 module "analytics" {
@@ -728,6 +741,7 @@ locals {
     "bda-result-processor" = ["documentai_api.jobs.bda_result_processor.handler.handler"]
     "metrics-processor"    = ["documentai_api.jobs.metrics_processor.handler.handler"]
     "metrics-aggregator"   = ["documentai_api.jobs.metrics_aggregator.handler.handler"]
+    "usage-report"         = ["documentai_api.jobs.usage_report.handler.handler"]
   }
 }
 
@@ -756,6 +770,10 @@ module "workers" {
     "metrics-aggregator" = [
       { name = "current-day", schedule_expression = "rate(5 minutes)", input = { mode = "today", overwrite = "true" } },
       { name = "prior-day", schedule_expression = "cron(0 2 * * ? *)", input = { mode = "yesterday", overwrite = "true" } },
+    ]
+    "usage-report" = [
+      { name = "current-month", schedule_expression = "cron(0 6 * * ? *)", input = { month = "current" } },
+      { name = "previous-month", schedule_expression = "cron(0 6 1-5 * ? *)", input = { month = "previous" } },
     ]
   }, each.key, [])
 }

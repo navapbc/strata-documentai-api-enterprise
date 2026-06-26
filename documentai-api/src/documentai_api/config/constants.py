@@ -49,9 +49,10 @@ MAX_ZIP_DECOMPRESSION_RATIO = 100
 MAX_ZIP_EXTRACTED_BYTES = 500 * 1024 * 1024  # 500MB
 
 # === Metric aggregates (S3 prefixes) ===
-S3_RAW_DDB_DATA_PREFIX = "raw/utc/date"
-S3_AGG_DDB_DATA_DAILY_PREFIX = "aggregated/utc/date"
-S3_AGG_DDB_DATA_MONTHLY_PREFIX = "aggregated/utc/month"
+METRICS_RAW_DDB_DATA_S3_PREFIX = "raw/utc/date"
+METRICS_AGG_DDB_DAILY_S3_PREFIX = "aggregated/utc/date"
+METRICS_AGG_DDB_MONTHLY_S3_PREFIX = "aggregated/utc/month"
+METRICS_USAGE_REPORT_S3_PREFIX = "usage-report/month"
 
 # === Grouped BDA job statuses ===
 BDA_JOB_STATUS_RUNNING = ["Created", "InProgress"]

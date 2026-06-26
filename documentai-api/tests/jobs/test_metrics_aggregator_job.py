@@ -7,8 +7,8 @@ import pytest
 from moto import mock_aws
 
 from documentai_api.config.constants import (
-    S3_AGG_DDB_DATA_DAILY_PREFIX,
-    S3_AGG_DDB_DATA_MONTHLY_PREFIX,
+    METRICS_AGG_DDB_DAILY_S3_PREFIX,
+    METRICS_AGG_DDB_MONTHLY_S3_PREFIX,
 )
 from documentai_api.jobs.metrics_aggregator.main import (
     _aggregate_records,
@@ -74,9 +74,9 @@ def create_daily_stats(s3_client, date, total_records=5, tenant_id=None):
     }
 
     if tenant_id:
-        key = f"{S3_AGG_DDB_DATA_DAILY_PREFIX}={date}/tenant={tenant_id}/stats.json"
+        key = f"{METRICS_AGG_DDB_DAILY_S3_PREFIX}={date}/tenant={tenant_id}/stats.json"
     else:
-        key = f"{S3_AGG_DDB_DATA_DAILY_PREFIX}={date}/stats.json"
+        key = f"{METRICS_AGG_DDB_DAILY_S3_PREFIX}={date}/stats.json"
 
     s3_client.put_object(
         Bucket="test-bucket",
@@ -262,7 +262,7 @@ def test_check_if_previously_aggregated(s3_client, s3_bucket):
     # create the aggregated stats file
     s3_client.put_object(
         Bucket="test-bucket",
-        Key=f"{S3_AGG_DDB_DATA_DAILY_PREFIX}=2026-02-20/stats.json",
+        Key=f"{METRICS_AGG_DDB_DAILY_S3_PREFIX}=2026-02-20/stats.json",
         Body=b'{"date": "2026-02-20"}',
     )
 
@@ -311,7 +311,7 @@ def test_write_aggregated_stats(s3_client, s3_bucket):
 
     s3_key = _write_aggregated_stats("test-bucket", stats_by_tenant, "2026-02-20")
 
-    assert s3_key == f"{S3_AGG_DDB_DATA_DAILY_PREFIX}=2026-02-20/stats.json"
+    assert s3_key == f"{METRICS_AGG_DDB_DAILY_S3_PREFIX}=2026-02-20/stats.json"
 
     # verify global file was written
     obj = s3_client.get_object(Bucket="test-bucket", Key=s3_key)
@@ -320,7 +320,7 @@ def test_write_aggregated_stats(s3_client, s3_bucket):
     assert "total_records" in content
 
     # verify tenant file was written
-    tenant_key = f"{S3_AGG_DDB_DATA_DAILY_PREFIX}=2026-02-20/tenant=test-tenant/stats.json"
+    tenant_key = f"{METRICS_AGG_DDB_DAILY_S3_PREFIX}=2026-02-20/tenant=test-tenant/stats.json"
     obj = s3_client.get_object(Bucket="test-bucket", Key=tenant_key)
     content = obj["Body"].read().decode()
     assert "total_records" in content
@@ -382,7 +382,7 @@ def test_aggregate_monthly_success(s3_client, s3_bucket):
 
     # verify monthly stats were written
     obj = s3_client.get_object(
-        Bucket="test-bucket", Key=f"{S3_AGG_DDB_DATA_MONTHLY_PREFIX}=2026-02/stats.json"
+        Bucket="test-bucket", Key=f"{METRICS_AGG_DDB_MONTHLY_S3_PREFIX}=2026-02/stats.json"
     )
     monthly_stats = json.loads(obj["Body"].read().decode())
 
@@ -410,11 +410,13 @@ def test_aggregate_monthly_multi_tenant(s3_client, s3_bucket):
     # daysProcessed reflects the tenant with the most days
     assert result["daysProcessed"] == 3
     # outputLocation always points at the global monthly file
-    assert result["outputLocation"].endswith(f"{S3_AGG_DDB_DATA_MONTHLY_PREFIX}=2026-02/stats.json")
+    assert result["outputLocation"].endswith(
+        f"{METRICS_AGG_DDB_MONTHLY_S3_PREFIX}=2026-02/stats.json"
+    )
 
     # global monthly stats
     obj = s3_client.get_object(
-        Bucket="test-bucket", Key=f"{S3_AGG_DDB_DATA_MONTHLY_PREFIX}=2026-02/stats.json"
+        Bucket="test-bucket", Key=f"{METRICS_AGG_DDB_MONTHLY_S3_PREFIX}=2026-02/stats.json"
     )
     global_monthly = json.loads(obj["Body"].read().decode())
     assert global_monthly["month"] == "2026-02"
@@ -423,7 +425,7 @@ def test_aggregate_monthly_multi_tenant(s3_client, s3_bucket):
     # per-tenant monthly stats
     obj = s3_client.get_object(
         Bucket="test-bucket",
-        Key=f"{S3_AGG_DDB_DATA_MONTHLY_PREFIX}=2026-02/tenant=tenant-a/stats.json",
+        Key=f"{METRICS_AGG_DDB_MONTHLY_S3_PREFIX}=2026-02/tenant=tenant-a/stats.json",
     )
     tenant_monthly = json.loads(obj["Body"].read().decode())
     assert tenant_monthly["month"] == "2026-02"
@@ -435,7 +437,7 @@ def test_main_already_aggregated(s3_client, s3_bucket):
     existing_stats = create_aggregated_stats(date="2026-02-20", total_records=10)
     s3_client.put_object(
         Bucket="test-bucket",
-        Key=f"{S3_AGG_DDB_DATA_DAILY_PREFIX}=2026-02-20/stats.json",
+        Key=f"{METRICS_AGG_DDB_DAILY_S3_PREFIX}=2026-02-20/stats.json",
         Body=json.dumps(existing_stats).encode(),
     )
 
@@ -461,7 +463,7 @@ def test_main_already_aggregated_still_runs_monthly(
     existing_stats = create_aggregated_stats(date="2026-02-20", total_records=10)
     s3_client.put_object(
         Bucket="test-bucket",
-        Key=f"{S3_AGG_DDB_DATA_DAILY_PREFIX}=2026-02-20/stats.json",
+        Key=f"{METRICS_AGG_DDB_DAILY_S3_PREFIX}=2026-02-20/stats.json",
         Body=json.dumps(existing_stats).encode(),
     )
 
@@ -557,7 +559,7 @@ def test_main_success(s3_client, s3_bucket, mock_metrics_aggregator_env, overwri
     existing_stats = create_aggregated_stats(date="2026-02-20", total_records=10)
     s3_client.put_object(
         Bucket="test-bucket",
-        Key=f"{S3_AGG_DDB_DATA_DAILY_PREFIX}=2026-02-20/stats.json",
+        Key=f"{METRICS_AGG_DDB_DAILY_S3_PREFIX}=2026-02-20/stats.json",
         Body=json.dumps(existing_stats).encode(),
     )
 
@@ -627,32 +629,32 @@ def test_main_multi_tenant_daily_and_monthly(s3_client, s3_bucket, mock_metrics_
         )
 
     # daily files: global + one per tenant
-    assert read(f"{S3_AGG_DDB_DATA_DAILY_PREFIX}=2026-02-15/stats.json")["total_records"] == 3
+    assert read(f"{METRICS_AGG_DDB_DAILY_S3_PREFIX}=2026-02-15/stats.json")["total_records"] == 3
     assert (
-        read(f"{S3_AGG_DDB_DATA_DAILY_PREFIX}=2026-02-15/tenant=tenant-a/stats.json")[
+        read(f"{METRICS_AGG_DDB_DAILY_S3_PREFIX}=2026-02-15/tenant=tenant-a/stats.json")[
             "total_records"
         ]
         == 2
     )
     assert (
-        read(f"{S3_AGG_DDB_DATA_DAILY_PREFIX}=2026-02-15/tenant=tenant-b/stats.json")[
+        read(f"{METRICS_AGG_DDB_DAILY_S3_PREFIX}=2026-02-15/tenant=tenant-b/stats.json")[
             "total_records"
         ]
         == 1
     )
 
     # monthly rollup: global + one per tenant
-    global_monthly = read(f"{S3_AGG_DDB_DATA_MONTHLY_PREFIX}=2026-02/stats.json")
+    global_monthly = read(f"{METRICS_AGG_DDB_MONTHLY_S3_PREFIX}=2026-02/stats.json")
     assert global_monthly["month"] == "2026-02"
     assert global_monthly["total_records"] == 3
     assert (
-        read(f"{S3_AGG_DDB_DATA_MONTHLY_PREFIX}=2026-02/tenant=tenant-a/stats.json")[
+        read(f"{METRICS_AGG_DDB_MONTHLY_S3_PREFIX}=2026-02/tenant=tenant-a/stats.json")[
             "total_records"
         ]
         == 2
     )
     assert (
-        read(f"{S3_AGG_DDB_DATA_MONTHLY_PREFIX}=2026-02/tenant=tenant-b/stats.json")[
+        read(f"{METRICS_AGG_DDB_MONTHLY_S3_PREFIX}=2026-02/tenant=tenant-b/stats.json")[
             "total_records"
         ]
         == 1
@@ -679,3 +681,89 @@ def test_main_first_day_of_month(s3_client, s3_bucket, mock_metrics_aggregator_e
     months = [agg["month"] for agg in result["monthlyAggregations"]]
     assert "2026-02" in months
     assert "2026-01" in months
+
+
+def test_process_record_usage_stats():
+    """Test _process_record accumulates usage_stats fields including both token legs."""
+    from documentai_api.jobs.metrics_aggregator.main import _initialize_stats, _process_record
+
+    stats = _initialize_stats("2026-02-20")
+    record = {
+        "file_name": "test.pdf",
+        "process_status": "success",
+        "created_at": "2026-02-20T10:00:00Z",
+        "bda_invocation_arn": "arn:aws:bedrock:us-east-1:123:invocation/abc",
+        "file_size_bytes": "1500000",
+        "pages_detected": "3",
+        "preclassification_input_tokens": "1000",
+        "preclassification_output_tokens": "50",
+        "crop_input_tokens": "800",
+        "crop_output_tokens": "30",
+    }
+
+    _process_record(record, stats)
+
+    assert stats["usage_stats"]["total_file_size_bytes"] == 1500000
+    assert stats["usage_stats"]["total_pages"] == 3
+    # Both token legs sum together
+    assert stats["usage_stats"]["total_bedrock_input_tokens"] == 1800  # 1000 + 800
+    assert stats["usage_stats"]["total_bedrock_output_tokens"] == 80  # 50 + 30
+
+
+def test_process_record_usage_stats_invalid_values_skipped():
+    """Test _process_record skips invalid usage values via contextlib.suppress."""
+    from documentai_api.jobs.metrics_aggregator.main import _initialize_stats, _process_record
+
+    stats = _initialize_stats("2026-02-20")
+    record = {
+        "file_name": "bad.pdf",
+        "process_status": "success",
+        "created_at": "2026-02-20T10:00:00Z",
+        "file_size_bytes": "not-a-number",
+        "pages_detected": "NaN",
+        "preclassification_input_tokens": "",
+        "crop_input_tokens": "invalid",
+    }
+
+    _process_record(record, stats)
+
+    assert stats["usage_stats"]["total_file_size_bytes"] == 0
+    assert stats["usage_stats"]["total_pages"] == 0
+    assert stats["usage_stats"]["total_bedrock_input_tokens"] == 0
+    assert stats["usage_stats"]["total_bedrock_output_tokens"] == 0
+
+
+def test_process_record_usage_stats_multiple_records():
+    """Test _process_record accumulates across multiple records."""
+    from documentai_api.jobs.metrics_aggregator.main import _initialize_stats, _process_record
+
+    stats = _initialize_stats("2026-02-20")
+
+    records = [
+        {
+            "file_name": "a.pdf",
+            "process_status": "success",
+            "created_at": "2026-02-20T10:00:00Z",
+            "file_size_bytes": "500000",
+            "pages_detected": "2",
+            "preclassification_input_tokens": "1000",
+            "preclassification_output_tokens": "50",
+        },
+        {
+            "file_name": "b.pdf",
+            "process_status": "success",
+            "created_at": "2026-02-20T11:00:00Z",
+            "file_size_bytes": "300000",
+            "pages_detected": "1",
+            "crop_input_tokens": "600",
+            "crop_output_tokens": "25",
+        },
+    ]
+
+    for record in records:
+        _process_record(record, stats)
+
+    assert stats["usage_stats"]["total_file_size_bytes"] == 800000
+    assert stats["usage_stats"]["total_pages"] == 3
+    assert stats["usage_stats"]["total_bedrock_input_tokens"] == 1600  # 1000 + 600
+    assert stats["usage_stats"]["total_bedrock_output_tokens"] == 75  # 50 + 25
