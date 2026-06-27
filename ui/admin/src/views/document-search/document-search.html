@@ -1,6 +1,14 @@
 <div class="documents-three-panel detail-collapsed">
   <div class="documents-list-panel">
     <div class="documents-filter-bar">
+      <div class="documents-search-row">
+        <input
+          type="text"
+          id="document-search-input"
+          placeholder="Search by file name or Job ID…"
+        />
+        <button type="button" id="document-search-btn" class="btn-icon" title="Search">🔍</button>
+      </div>
       <select id="document-status-filter">
         <option value="">All statuses</option>
         <option value="success">Success</option>
@@ -15,7 +23,7 @@
         <option value="deleted">Deleted</option>
       </select>
     </div>
-    <p id="no-documents" class="empty-state hidden">No documents yet</p>
+    <p id="no-documents" class="empty-state">Search for documents by file name or Job ID</p>
     <ul id="documents-list" class="documents-compact-list"></ul>
   </div>
   <div class="documents-preview-panel" id="document-preview-panel">
