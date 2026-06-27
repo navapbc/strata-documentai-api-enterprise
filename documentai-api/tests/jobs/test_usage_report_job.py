@@ -33,10 +33,8 @@ def test_build_usage_query_structure():
     # Deduplication
     assert "ROW_NUMBER() OVER" in query
     assert "PARTITION BY file_name" in query
-    # BDA page cap applied (not raw pages_detected)
-    assert "LEAST" in query
-    # Only counts pages for BDA-processed docs
-    assert "bda_invocation_arn IS NOT NULL" in query
+    # BDA pages tracked directly (not derived from pages_detected)
+    assert "pages_sent_to_bda" in query
     # Both token sources included
     assert "preclassification_input_tokens" in query
     assert "crop_input_tokens" in query

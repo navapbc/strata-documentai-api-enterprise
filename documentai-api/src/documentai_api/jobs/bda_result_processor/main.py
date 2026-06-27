@@ -13,12 +13,15 @@ logger = documentai_api.logging.get_logger(__name__)
 app = typer.Typer()
 
 
-def main(bucket_name: str, object_key: str) -> dict[str, Any]:
+def main(
+    bucket_name: str, object_key: str, result_processor_started_at: str | None = None
+) -> dict[str, Any]:
     """Process BDA output file.
 
     Args:
         bucket_name: S3 bucket containing BDA output
         object_key: S3 object key of BDA output file
+        result_processor_started_at: ISO timestamp when the result processor Lambda started
 
     Returns:
         API response data dictionary
@@ -30,7 +33,9 @@ def main(bucket_name: str, object_key: str) -> dict[str, Any]:
         logger.info(f"Skipping non-metadata file: {object_key}")
         return {}
 
-    result = process_bda_output(bucket_name, object_key)
+    result = process_bda_output(
+        bucket_name, object_key, result_processor_started_at=result_processor_started_at
+    )
     logger.info(f"Successfully processed BDA output for s3://{bucket_name}/{object_key}")
 
     return result

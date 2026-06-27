@@ -181,6 +181,7 @@ def _initialize_stats(target_date: str) -> dict[str, Any]:
         "usage_stats": {
             "total_file_size_bytes": 0,
             "total_pages": 0,
+            "total_bda_pages": 0,
             "total_bedrock_input_tokens": 0,
             "total_bedrock_output_tokens": 0,
         },
@@ -229,6 +230,11 @@ def _process_record(record: dict[str, Any], stats: dict[str, Any]) -> None:
     if pages:
         with contextlib.suppress(ValueError, TypeError):
             stats["usage_stats"]["total_pages"] += int(pages)
+
+    bda_pages = record.get("pages_sent_to_bda")
+    if bda_pages:
+        with contextlib.suppress(ValueError, TypeError):
+            stats["usage_stats"]["total_bda_pages"] += int(bda_pages)
 
     for col in ("preclassification_input_tokens", "crop_input_tokens"):
         val = record.get(col)

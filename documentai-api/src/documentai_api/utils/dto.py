@@ -180,6 +180,14 @@ class UpsertDdbData(BaseModel):
     )
     is_demo: bool = Field(default=False, json_schema_extra=_ddb_metadata_map("isDemo", ":isDemo"))
     ttl_days: int | None = None  # override default TTL (e.g. 3 for demo uploads)
+    document_processor_started_at: str | None = Field(
+        default=None,
+        json_schema_extra=_ddb_metadata_map("documentProcessorStartedAt", ":dpStartedAt"),
+    )
+    is_document_processor_cold_start: bool | None = Field(
+        default=None,
+        json_schema_extra=_ddb_metadata_map("isDocumentProcessorColdStart", ":dpColdStart"),
+    )
 
 
 @dataclass

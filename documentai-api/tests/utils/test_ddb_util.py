@@ -387,6 +387,27 @@ def test_update_ddb(status, has_timing, ddb_doc_metadata_table, mocker):
         assert item["timing"] == "val"
 
 
+def test_update_ddb_writes_pages_sent_and_result_processor_started_at(
+    ddb_doc_metadata_table, mocker
+):
+    """update_ddb with pages_sent_to_bda and result_processor_started_at writes both."""
+    mocker.patch("documentai_api.utils.ddb._build_timing_updates", return_value=("", {}))
+    mocker.patch("documentai_api.utils.ddb.build_v1_api_response", return_value={})
+
+    object_key = "update-ddb-new-fields"
+
+    ddb_util.update_ddb(
+        object_key,
+        ProcessStatus.STARTED,
+        pages_sent_to_bda=3,
+        result_processor_started_at="2026-01-01T12:00:05+00:00",
+    )
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"]
+    assert item[DocumentMetadata.PAGES_SENT_TO_BDA] == 3
+    assert item[DocumentMetadata.RESULT_PROCESSOR_STARTED_AT] == "2026-01-01T12:00:05+00:00"
+
+
 def test_upsert_ddb(ddb_doc_metadata_table, mocker):
     """Test DDB insert with all fields."""
     mock_raw_metrics = mocker.MagicMock()
@@ -538,6 +559,44 @@ def test_upsert_ddb_required_bools_always_written(ddb_doc_metadata_table):
     item = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"]
     assert item[DocumentMetadata.IS_PASSWORD_PROTECTED] is False
     assert item[DocumentMetadata.IS_DOCUMENT_BLURRY] is False
+
+
+def test_upsert_ddb_cold_start_false_persists(ddb_doc_metadata_table):
+    """is_document_processor_cold_start=False is written (not dropped as falsy).
+
+    _apply_ddb_fields skips None but must NOT skip False - the attribute should
+    appear in DDB with value False.
+    """
+    object_key = "cold-start-false"
+
+    ddb_util.upsert_ddb(
+        UpsertDdbData(
+            object_key=object_key,
+            original_file_name="f.pdf",
+            is_document_processor_cold_start=False,
+            document_processor_started_at="2026-01-01T12:00:00+00:00",
+        )
+    )
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"]
+    assert item[DocumentMetadata.IS_DOCUMENT_PROCESSOR_COLD_START] is False
+    assert item[DocumentMetadata.DOCUMENT_PROCESSOR_STARTED_AT] == "2026-01-01T12:00:00+00:00"
+
+
+def test_upsert_ddb_cold_start_true_persists(ddb_doc_metadata_table):
+    """is_document_processor_cold_start=True is also written."""
+    object_key = "cold-start-true"
+
+    ddb_util.upsert_ddb(
+        UpsertDdbData(
+            object_key=object_key,
+            original_file_name="f.pdf",
+            is_document_processor_cold_start=True,
+        )
+    )
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"]
+    assert item[DocumentMetadata.IS_DOCUMENT_PROCESSOR_COLD_START] is True
 
 
 # =============================================================================

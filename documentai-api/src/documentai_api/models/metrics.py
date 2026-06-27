@@ -20,6 +20,7 @@ class TimingStats(BaseApiResponse):
 class UsageStats(BaseApiResponse):
     total_file_size_bytes: int = 0
     total_pages: int = 0
+    total_bda_pages: int = 0
     total_bedrock_input_tokens: int = 0
     total_bedrock_output_tokens: int = 0
 

@@ -39,12 +39,7 @@ def _build_usage_query(database_name: str, table_name: str, yyyymm: str) -> str:
         COUNT(*) AS total_records,
         COUNT(bda_invocation_arn) AS total_bda_invocations,
         COALESCE(SUM(CAST(file_size_bytes AS BIGINT)), 0) AS total_file_size_bytes,
-        COALESCE(
-            SUM(CASE WHEN bda_invocation_arn IS NOT NULL
-                THEN LEAST(CAST(pages_detected AS BIGINT), 5)
-                ELSE 0 END),
-            0
-        ) AS total_bda_pages,
+        COALESCE(SUM(CAST(pages_sent_to_bda AS BIGINT)), 0) AS total_bda_pages,
         COALESCE(
             SUM(CAST(preclassification_input_tokens AS BIGINT))
             + SUM(CAST(crop_input_tokens AS BIGINT)),

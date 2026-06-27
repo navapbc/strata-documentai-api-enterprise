@@ -153,6 +153,7 @@ def test_build_summary_with_usage_stats():
             "usage_stats": {
                 "total_file_size_bytes": 5000000,
                 "total_pages": 10,
+                "total_bda_pages": 8,
                 "total_bedrock_input_tokens": 2000,
                 "total_bedrock_output_tokens": 100,
             },
@@ -174,6 +175,7 @@ def test_build_summary_with_usage_stats():
             "usage_stats": {
                 "total_file_size_bytes": 3000000,
                 "total_pages": 5,
+                "total_bda_pages": 5,
                 "total_bedrock_input_tokens": 1000,
                 "total_bedrock_output_tokens": 50,
             },
@@ -184,6 +186,7 @@ def test_build_summary_with_usage_stats():
 
     assert summary["usage_stats"]["total_file_size_bytes"] == 8000000
     assert summary["usage_stats"]["total_pages"] == 15
+    assert summary["usage_stats"]["total_bda_pages"] == 13
     assert summary["usage_stats"]["total_bedrock_input_tokens"] == 3000
     assert summary["usage_stats"]["total_bedrock_output_tokens"] == 150
 
@@ -213,5 +216,6 @@ def test_build_summary_without_usage_stats():
     assert summary["total_records"] == 5
     assert summary["usage_stats"]["total_file_size_bytes"] == 0
     assert summary["usage_stats"]["total_pages"] == 0
+    assert summary["usage_stats"]["total_bda_pages"] == 0
     assert summary["usage_stats"]["total_bedrock_input_tokens"] == 0
     assert summary["usage_stats"]["total_bedrock_output_tokens"] == 0

@@ -47,21 +47,20 @@ class DocumentMetadata:
     PROCESSED_FILE_SIZE_BYTES = "processedFileSizeBytes"
 
     # performance tracking
+    DOCUMENT_PROCESSOR_STARTED_AT = "documentProcessorStartedAt"
     BDA_STARTED_AT = "bdaStartedAt"
     BDA_COMPLETED_AT = "bdaCompletedAt"
+    RESULT_PROCESSOR_STARTED_AT = "resultProcessorStartedAt"
     TOTAL_PROCESSING_TIME_SECONDS = "totalProcessingTimeSeconds"
     BDA_PROCESSING_TIME_SECONDS = "bdaProcessingTimeSeconds"  # time bda took to process the file
     BDA_WAIT_TIME_SECONDS = "bdaWaitTimeSeconds"  # time between s3 write and bda invocation
+    IS_DOCUMENT_PROCESSOR_COLD_START = "isDocumentProcessorColdStart"
+    PAGES_SENT_TO_BDA = "pagesSentToBda"
 
     # file metadata
     FILE_SIZE_BYTES = "fileSizeBytes"
     CONTENT_TYPE = "contentType"
     PAGES_DETECTED = "pagesDetected"
-    # TODO: Add PAGES_SENT_TO_BDA field to track actual pages processed by BDA.
-    # pages_detected is the total page count of the uploaded file (from
-    # get_page_count), not the number of pages BDA processed. Since
-    # MAX_PAGES_PER_DOCUMENT truncates what's sent to BDA, a 20-page PDF has
-    # pages_detected=20 but only 5 pages are billed by BDA.
     IS_DOCUMENT_BLURRY = "isDocumentBlurry"
     IS_PASSWORD_PROTECTED = "isPasswordProtected"
     DOCUMENT_METRICS_RAW = "documentMetricsRaw"
