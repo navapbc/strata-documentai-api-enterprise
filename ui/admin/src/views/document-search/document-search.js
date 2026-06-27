@@ -1,5 +1,6 @@
 import * as DocumentsService from "../../services/documents.js";
 import * as Helpers from "../../utils/helpers.js";
+import * as Toast from "../../utils/toast.js";
 import * as Session from "../../utils/session.js";
 import * as TenantContext from "../../utils/tenant-context.js";
 import { h } from "../../utils/dom.js";
@@ -14,20 +15,18 @@ import {
   markFieldsWithGeometry,
   PREVIEWABLE_TYPES,
 } from "../../../../shared/components/document-viewer.js";
-import html from "./documents.html";
+import html from "./document-search.html";
 
 const tmpl = tpl(html);
 
-const STORAGE_KEY_ACTIVE = "docai_documents_active_job";
-
 let _root, _listEl, _noDocuments;
-let _statusFilter, _detailPanel, _previewPanel, _detailContent, _collapseBtn;
+let _searchInput, _searchBtn, _statusFilter;
+let _detailPanel, _previewPanel, _detailContent, _collapseBtn;
 let _activeJobId = null;
 let _detailCollapsed = true;
 let _fieldGeometry = null;
 let _resizeObserver = null;
-let _unsubTenant = null;
-let _recentDocuments = [];
+let _searchResults = [];
 
 export function mount(root) {
   _root = root;
@@ -35,12 +34,8 @@ export function mount(root) {
 
   Helpers.setViewActions();
 
-  _activeJobId = null;
-  _detailCollapsed = true;
-  _fieldGeometry = null;
-  _resizeObserver = null;
-  _recentDocuments = [];
-
+  _searchInput = root.querySelector("#document-search-input");
+  _searchBtn = root.querySelector("#document-search-btn");
   _statusFilter = root.querySelector("#document-status-filter");
   _listEl = root.querySelector("#documents-list");
   _noDocuments = root.querySelector("#no-documents");
@@ -54,39 +49,17 @@ export function mount(root) {
 
   linkFieldHighlighting(_detailContent, _previewPanel);
 
-  _statusFilter.addEventListener("change", () => load());
-
-  _unsubTenant = TenantContext.onChange(() => {
-    _activeJobId = null;
-    sessionStorage.removeItem(STORAGE_KEY_ACTIVE);
-    clearDetail();
-    // Collapse the detail panel
-    _detailCollapsed = true;
-    _detailPanel.classList.add("collapsed");
-    _root.querySelector(".documents-three-panel").classList.add("detail-collapsed");
-    _collapseBtn.textContent = "\u276E";
-    _collapseBtn.title = "Expand details";
-    // Clear bbox overlay
-    clearBboxOverlay(_previewPanel);
-    if (_resizeObserver) {
-      _resizeObserver.disconnect();
-      _resizeObserver = null;
-    }
-    _fieldGeometry = null;
-    load();
+  _searchBtn.addEventListener("click", handleSearch);
+  _searchInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") handleSearch();
   });
-
-  load();
+  _statusFilter.addEventListener("change", () => renderList());
 }
 
 export function unmount(root) {
   if (_resizeObserver) {
     _resizeObserver.disconnect();
     _resizeObserver = null;
-  }
-  if (_unsubTenant) {
-    _unsubTenant();
-    _unsubTenant = null;
   }
   root.replaceChildren();
 }
@@ -120,50 +93,76 @@ function toggleDetailPanel() {
   _collapseBtn.title = _detailCollapsed ? "Expand details" : "Collapse details";
 }
 
-export async function load() {
-  const tenantId = TenantContext.getTenantId();
-  if (!tenantId) {
-    _recentDocuments = [];
-    renderList();
-    _noDocuments.textContent = "Select a tenant to view recent documents";
-    _noDocuments.classList.remove("hidden");
-    return;
-  }
+async function handleSearch() {
+  const query = _searchInput.value.trim();
+  if (!query) return;
 
-  const status = _statusFilter?.value || undefined;
+  _listEl.innerHTML = "";
+  _noDocuments.textContent = "Searching…";
+  _noDocuments.classList.remove("hidden");
 
   try {
-    const resp = await DocumentsService.list({ tenantId, status, limit: 25 });
-    _recentDocuments = resp.documents || resp || [];
-  } catch {
-    _recentDocuments = [];
+    // If it looks like a UUID/job ID, do a direct lookup
+    const isJobId = /^[0-9a-f-]{20,}$/i.test(query);
+    if (isJobId) {
+      const detail = await DocumentsService.get(query);
+      _searchResults = [
+        {
+          jobId: detail.jobId,
+          fileName: detail.fileName,
+          processStatus: detail.processStatus,
+          createdAt: detail.createdAt,
+          contentType: detail.contentType,
+        },
+      ];
+    } else {
+      // Filename search - load from API and filter client-side
+      const tenantId = TenantContext.getTenantId();
+      const resp = await DocumentsService.list({ tenantId, limit: 50 });
+      const docs = resp.documents || resp || [];
+      _searchResults = docs.filter((d) =>
+        (d.fileName || "").toLowerCase().includes(query.toLowerCase()),
+      );
+    }
+  } catch (e) {
+    if (e.status === 404) {
+      _searchResults = [];
+    } else {
+      Toast.show(`Search failed: ${e.message}`);
+      _searchResults = [];
+    }
   }
 
   renderList();
 
-  const savedActive = sessionStorage.getItem(STORAGE_KEY_ACTIVE);
-  if (savedActive) {
-    _activeJobId = savedActive;
-    const el = _listEl.querySelector(`[data-job-id="${savedActive}"]`);
+  // Auto-select if single result
+  if (_searchResults.length === 1) {
+    const doc = _searchResults[0];
+    _activeJobId = doc.jobId;
+    const el = _listEl.querySelector(`[data-job-id="${doc.jobId}"]`);
     if (el) el.classList.add("active");
-    loadDetail(savedActive);
+    loadDetail(doc.jobId);
   }
 }
 
 function renderList() {
   _listEl.innerHTML = "";
+  const statusFilter = _statusFilter?.value || "";
+  const filtered = _searchResults.filter((doc) => {
+    if (statusFilter && doc.processStatus !== statusFilter) return false;
+    return true;
+  });
 
-  if (!_recentDocuments.length) {
-    const msg = TenantContext.getTenantId()
-      ? "No documents found"
-      : "Select a tenant to view recent documents";
-    _noDocuments.textContent = msg;
+  if (!filtered.length) {
+    _noDocuments.textContent = !_searchResults.length
+      ? "No results found"
+      : "No matching documents";
     _noDocuments.classList.remove("hidden");
     return;
   }
 
   _noDocuments.classList.add("hidden");
-  for (const doc of _recentDocuments) {
+  for (const doc of filtered) {
     _listEl.appendChild(buildListItem(doc));
   }
 }
@@ -194,7 +193,6 @@ function buildListItem(doc) {
   );
   li.addEventListener("click", () => {
     _activeJobId = doc.jobId;
-    sessionStorage.setItem(STORAGE_KEY_ACTIVE, doc.jobId);
     _listEl.querySelectorAll(".doc-list-item").forEach((el) => el.classList.remove("active"));
     li.classList.add("active");
     loadDetail(doc.jobId);
