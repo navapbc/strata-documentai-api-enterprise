@@ -2,6 +2,7 @@
 """Process uploaded documents: insert to DDB, convert if needed, invoke BDA."""
 
 import os
+from datetime import UTC, datetime
 from typing import Any
 
 import typer
@@ -90,7 +91,7 @@ def _invoke_bda(
         retry=retry_if_exception_type(ClientError),
     ):
         with attempt:
-            invocation_arn, project_arn = invoke_bedrock_data_automation(
+            invocation_arn, project_arn, pages_sent = invoke_bedrock_data_automation(
                 bucket_name, object_key, preclassification_category
             )
 
@@ -98,6 +99,7 @@ def _invoke_bda(
                 object_key=ddb_key,
                 bda_invocation_arn=invocation_arn,
                 bda_project_arn_used=project_arn,
+                pages_sent_to_bda=pages_sent,
             )
 
             logger.info(f"BDA job started for {ddb_key}, ARN: {invocation_arn}")
@@ -132,6 +134,7 @@ def main(
     job_id: str | None = None,
     trace_id: str | None = None,
     batch_id: str | None = None,
+    is_cold_start: bool = False,
 ) -> None:
     """Process uploaded document and invoke BDA.
 
@@ -145,7 +148,9 @@ def main(
         job_id: Optional job ID (will be read from S3 metadata if not provided)
         trace_id: Optional trace ID (will be read from S3 metadata if not provided)
         batch_id: Optional batch ID (will be read from S3 metadata if not provided)
+        is_cold_start: Whether this is the Lambda container's first invocation
     """
+    processor_started_at = datetime.now(UTC)
     if bucket_name is None:
         input_location = get_required_env(EnvVars.DOCUMENTAI_INPUT_LOCATION)
         bucket_name, _ = parse_s3_uri(input_location)
@@ -198,6 +203,8 @@ def main(
             job_id=job_id,
             trace_id=trace_id,
             batch_id=batch_id,
+            document_processor_started_at=processor_started_at.isoformat(),
+            is_document_processor_cold_start=is_cold_start,
         )
         existing_record = get_ddb_record(ddb_key)
 

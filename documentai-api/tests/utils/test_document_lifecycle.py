@@ -182,6 +182,7 @@ def test_set_bda_processing_status_started(mocker):
         internal_api_response=None,
         bda_invocation_arn="arn:aws:bda:us-east-1:123:job/1",
         bda_project_arn_used="arn:aws:project/123",
+        pages_sent_to_bda=None,
     )
 
 
@@ -328,6 +329,14 @@ def test_classify_functions(
 
     if function == lifecycle_util.classify_as_success:
         expected_call["below_extraction_confidence_floor"] = False
+        expected_call["result_processor_started_at"] = None
+
+    if function in (
+        lifecycle_util.classify_as_failed,
+        lifecycle_util.classify_as_no_document_detected,
+        lifecycle_util.classify_as_no_custom_blueprint_matched,
+    ):
+        expected_call["result_processor_started_at"] = None
 
     mock_update.assert_called_once_with(**expected_call)
 

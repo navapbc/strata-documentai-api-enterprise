@@ -1,5 +1,7 @@
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from documentai_api.config.constants import ConfigDefaults
 from documentai_api.utils import bda_invoker as bda_invoker_util
 
@@ -35,9 +37,10 @@ def test_invoke_bedrock_data_automation_single_page():
 
         result = bda_invoker_util.invoke_bedrock_data_automation("test-bucket", "test.pdf")
 
-        invocation_arn, project_arn = result
+        invocation_arn, project_arn, pages_sent = result
         assert invocation_arn == bda_invocation_arn
         assert project_arn == "arn:aws:project"
+        assert pages_sent == 3
         mock_bda.invoke_data_automation_async.assert_called_once()
 
 
@@ -75,9 +78,10 @@ def test_invoke_bedrock_data_automation_document_truncation():
 
         result = bda_invoker_util.invoke_bedrock_data_automation("test-bucket", "test.pdf")
 
-        invocation_arn, project_arn = result
+        invocation_arn, project_arn, pages_sent = result
         assert invocation_arn == bda_invocation_arn
         assert project_arn == "arn:aws:project"
+        assert pages_sent == int(ConfigDefaults.MAX_PAGES_PER_DOCUMENT)
         mock_truncate.assert_called_once_with(
             b"file_content", max_pages=int(ConfigDefaults.MAX_PAGES_PER_DOCUMENT)
         )
@@ -148,3 +152,47 @@ def test_demo_upload_output_key_starts_with_expected_prefix():
             f"Demo output key '{output_key}' does not start with 'processed/input/demo/'. "
             "This means the infra lifecycle rule (expire-demo-results) won't match."
         )
+
+
+@pytest.mark.parametrize(
+    ("page_count_return", "expected_pages_sent"),
+    [
+        (None, 1),
+        (0, 1),
+    ],
+)
+def test_invoke_bedrock_data_automation_pages_sent_fallback(page_count_return, expected_pages_sent):
+    """When get_page_count returns None or 0, pages_sent defaults to 1."""
+    bda_invocation_arn = "arn:aws:invocation:fallback"
+
+    with (
+        patch.dict(
+            "os.environ",
+            {
+                "BDA_PROJECT_ARN": "arn:aws:project",
+                "BDA_PROJECT_ARN_ALL": "arn:aws:project",
+                "BDA_PROFILE_ARN": "arn:aws:profile",
+                "DOCUMENTAI_OUTPUT_LOCATION": "s3://output-bucket/path",
+            },
+        ),
+        patch.object(bda_invoker_util, "_project_arns_cache", None),
+        patch(
+            "documentai_api.utils.bda_invoker.AWSClientFactory.get_bda_runtime_client"
+        ) as mock_get_bda_client,
+        patch("documentai_api.services.s3.get_file_bytes") as mock_get_file_bytes,
+        patch(
+            "documentai_api.utils.bda_invoker.document_utils.get_page_count"
+        ) as mock_get_page_count,
+    ):
+        mock_bda = MagicMock()
+        mock_bda.invoke_data_automation_async.return_value = {"invocationArn": bda_invocation_arn}
+        mock_get_bda_client.return_value = mock_bda
+
+        mock_get_file_bytes.return_value = b"file_content"
+        mock_get_page_count.return_value = page_count_return
+
+        _, _, pages_sent = bda_invoker_util.invoke_bedrock_data_automation(
+            "test-bucket", "test.pdf"
+        )
+
+        assert pages_sent == expected_pages_sent

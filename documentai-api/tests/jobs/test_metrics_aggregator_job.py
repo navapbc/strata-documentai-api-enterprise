@@ -695,6 +695,7 @@ def test_process_record_usage_stats():
         "bda_invocation_arn": "arn:aws:bedrock:us-east-1:123:invocation/abc",
         "file_size_bytes": "1500000",
         "pages_detected": "3",
+        "pages_sent_to_bda": "2",
         "preclassification_input_tokens": "1000",
         "preclassification_output_tokens": "50",
         "crop_input_tokens": "800",
@@ -705,6 +706,7 @@ def test_process_record_usage_stats():
 
     assert stats["usage_stats"]["total_file_size_bytes"] == 1500000
     assert stats["usage_stats"]["total_pages"] == 3
+    assert stats["usage_stats"]["total_bda_pages"] == 2
     # Both token legs sum together
     assert stats["usage_stats"]["total_bedrock_input_tokens"] == 1800  # 1000 + 800
     assert stats["usage_stats"]["total_bedrock_output_tokens"] == 80  # 50 + 30
@@ -746,6 +748,7 @@ def test_process_record_usage_stats_multiple_records():
             "created_at": "2026-02-20T10:00:00Z",
             "file_size_bytes": "500000",
             "pages_detected": "2",
+            "pages_sent_to_bda": "2",
             "preclassification_input_tokens": "1000",
             "preclassification_output_tokens": "50",
         },
@@ -755,6 +758,7 @@ def test_process_record_usage_stats_multiple_records():
             "created_at": "2026-02-20T11:00:00Z",
             "file_size_bytes": "300000",
             "pages_detected": "1",
+            "pages_sent_to_bda": "1",
             "crop_input_tokens": "600",
             "crop_output_tokens": "25",
         },
@@ -765,5 +769,6 @@ def test_process_record_usage_stats_multiple_records():
 
     assert stats["usage_stats"]["total_file_size_bytes"] == 800000
     assert stats["usage_stats"]["total_pages"] == 3
+    assert stats["usage_stats"]["total_bda_pages"] == 3
     assert stats["usage_stats"]["total_bedrock_input_tokens"] == 1600  # 1000 + 600
     assert stats["usage_stats"]["total_bedrock_output_tokens"] == 75  # 50 + 25

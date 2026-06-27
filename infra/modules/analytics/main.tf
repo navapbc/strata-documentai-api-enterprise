@@ -146,6 +146,18 @@ resource "aws_glue_catalog_table" "raw_metrics" {
       type = "double"
     }
     columns {
+      name = "document_processor_started_at"
+      type = "string"
+    }
+    columns {
+      name = "is_document_processor_cold_start"
+      type = "boolean"
+    }
+    columns {
+      name = "result_processor_started_at"
+      type = "string"
+    }
+    columns {
       name = "file_size_bytes"
       type = "bigint"
     }
@@ -155,6 +167,10 @@ resource "aws_glue_catalog_table" "raw_metrics" {
     }
     columns {
       name = "pages_detected"
+      type = "int"
+    }
+    columns {
+      name = "pages_sent_to_bda"
       type = "int"
     }
     columns {

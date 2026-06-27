@@ -377,6 +377,8 @@ def update_ddb(
     bda_project_arn_used: str | None = None,
     error_message: str | None = None,
     below_extraction_confidence_floor: bool = False,
+    pages_sent_to_bda: int | None = None,
+    result_processor_started_at: str | None = None,
 ) -> None:
     """Update DynamoDB processing status for a file."""
     try:
@@ -391,6 +393,14 @@ def update_ddb(
             error_message=error_message,
             below_extraction_confidence_floor=below_extraction_confidence_floor,
         )
+
+        if pages_sent_to_bda is not None:
+            update_expr += f", {DocumentMetadata.PAGES_SENT_TO_BDA} = :pagesSentToBda"
+            expr_values[":pagesSentToBda"] = pages_sent_to_bda
+
+        if result_processor_started_at is not None:
+            update_expr += f", {DocumentMetadata.RESULT_PROCESSOR_STARTED_AT} = :rpStartedAt"
+            expr_values[":rpStartedAt"] = result_processor_started_at
 
         # add timing updates
         timing_updates, timing_values = _build_timing_updates(

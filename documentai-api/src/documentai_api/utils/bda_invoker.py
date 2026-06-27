@@ -58,8 +58,8 @@ def resolve_project_arn(category: str | None) -> str:
 
 def invoke_bedrock_data_automation(
     source_bucket_name: str, source_object_name: str, category: str | None = None
-) -> tuple[str, str]:
-    """Invoke BDA and return (invocation_arn, project_arn)."""
+) -> tuple[str, str, int]:
+    """Invoke BDA and return (invocation_arn, project_arn, pages_sent_to_bda)."""
     bda_project_arn = resolve_project_arn(category)
     bda_profile_arn = get_required_env(EnvVars.BDA_PROFILE_ARN)
     documentai_output_location = get_required_env(EnvVars.DOCUMENTAI_OUTPUT_LOCATION).replace(
@@ -81,6 +81,9 @@ def invoke_bedrock_data_automation(
 
         file_bytes = s3_service.get_file_bytes(source_bucket_name, source_object_name)
         page_count = document_utils.get_page_count(file_bytes)
+        pages_sent = (
+            min(page_count, int(ConfigDefaults.MAX_PAGES_PER_DOCUMENT)) if page_count else 1
+        )
 
         if page_count and page_count > int(ConfigDefaults.MAX_PAGES_PER_DOCUMENT):
             logger.info(
@@ -111,7 +114,7 @@ def invoke_bedrock_data_automation(
             },
         )
         logger.info(f"BDA response: {response}")
-        return str(response.get("invocationArn")), bda_project_arn
+        return str(response.get("invocationArn")), bda_project_arn, pages_sent
     except Exception as e:
         logger.error(f"BDA API call failed: {e}")
         raise

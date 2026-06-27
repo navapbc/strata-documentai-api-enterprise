@@ -12,15 +12,22 @@ from documentai_api.utils.s3 import extract_s3_info_from_event
 
 logger = get_logger(__name__)
 
+# Module-level state: True on first invocation (cold start), False thereafter.
+lifecycle = {"is_cold_start": True}
+
 
 @handle_lambda_errors
 def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    is_cold_start = lifecycle["is_cold_start"]
+    if is_cold_start:
+        lifecycle["is_cold_start"] = False
+
     key, bucket, *_ = extract_s3_info_from_event(event)
 
     try:
         with init(__package__):
             logger.info(f"Processing S3 upload: s3://{bucket}/{key}")
-            main(object_key=key, bucket_name=bucket)
+            main(object_key=key, bucket_name=bucket, is_cold_start=is_cold_start)
     except Exception as e:
         logger.error(f"Document processing failed for {key}: {e}")
         ddb_key = os.path.basename(key)

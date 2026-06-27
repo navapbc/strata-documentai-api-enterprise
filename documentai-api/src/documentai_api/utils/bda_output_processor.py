@@ -73,7 +73,11 @@ def get_matched_blueprint(bda_result_json: dict[str, Any]) -> MatchedBlueprintIn
     return MatchedBlueprintInfo(matched_blueprint_name, matched_blueprint_confidence)
 
 
-def process_bda_output(bda_output_bucket_name: str, bda_output_object_key: str) -> dict[str, Any]:
+def process_bda_output(
+    bda_output_bucket_name: str,
+    bda_output_object_key: str,
+    result_processor_started_at: str | None = None,
+) -> dict[str, Any]:
     from documentai_api.utils.ddb import get_ddb_record_from_bda_output
 
     bda_output_s3_uri = extract_bda_output_s3_uri(bda_output_bucket_name, bda_output_object_key)
@@ -117,13 +121,19 @@ def process_bda_output(bda_output_bucket_name: str, bda_output_object_key: str) 
             logger.info(msg)
             classification_data.additional_info = msg
             return classify_as_no_custom_blueprint_matched(
-                object_key=file_name, data=classification_data
+                object_key=file_name,
+                data=classification_data,
+                result_processor_started_at=result_processor_started_at,
             )
         else:
             msg += "Unable to extract meaningful document content."
             logger.info(msg)
             classification_data.additional_info = msg
-            return classify_as_no_document_detected(object_key=file_name, data=classification_data)
+            return classify_as_no_document_detected(
+                object_key=file_name,
+                data=classification_data,
+                result_processor_started_at=result_processor_started_at,
+            )
     else:
         msg = "Custom matching blueprint found, and document type matches. Success."
         logger.info(msg)
@@ -161,6 +171,7 @@ def process_bda_output(bda_output_bucket_name: str, bda_output_object_key: str) 
             response_code=response_code,
             data=classification_data,
             below_extraction_confidence_floor=below_floor,
+            result_processor_started_at=result_processor_started_at,
         )
 
 

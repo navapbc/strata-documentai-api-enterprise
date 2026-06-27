@@ -100,6 +100,7 @@ def test_invoke_bda_success(input_pdf, mocker):
     mock_low_level_invoke.return_value = (
         "arn:aws:bedrock:us-east-1:123456789012:job/abc123",
         "arn:aws:bedrock:us-east-1:123456789012:project/test",
+        1,
     )
 
     result = invoke_bda(input_pdf.bucket_name, input_pdf.key, "test.pdf", "tax_documents")
@@ -109,6 +110,7 @@ def test_invoke_bda_success(input_pdf, mocker):
         object_key="test.pdf",
         bda_invocation_arn="arn:aws:bedrock:us-east-1:123456789012:job/abc123",
         bda_project_arn_used="arn:aws:bedrock:us-east-1:123456789012:project/test",
+        pages_sent_to_bda=1,
     )
 
 

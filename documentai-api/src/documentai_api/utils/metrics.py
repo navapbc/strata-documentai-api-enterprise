@@ -195,6 +195,7 @@ def build_summary(stats_list: list[dict[str, Any]]) -> dict[str, Any]:
     usage_stats: dict[str, int] = {
         "total_file_size_bytes": 0,
         "total_pages": 0,
+        "total_bda_pages": 0,
         "total_bedrock_input_tokens": 0,
         "total_bedrock_output_tokens": 0,
     }
@@ -203,6 +204,7 @@ def build_summary(stats_list: list[dict[str, Any]]) -> dict[str, Any]:
             usage = stats["usage_stats"]
             usage_stats["total_file_size_bytes"] += usage.get("total_file_size_bytes", 0)
             usage_stats["total_pages"] += usage.get("total_pages", 0)
+            usage_stats["total_bda_pages"] += usage.get("total_bda_pages", 0)
             usage_stats["total_bedrock_input_tokens"] += usage.get("total_bedrock_input_tokens", 0)
             usage_stats["total_bedrock_output_tokens"] += usage.get(
                 "total_bedrock_output_tokens", 0

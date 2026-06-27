@@ -44,6 +44,7 @@ def classify_as_success(
     response_code: str,
     data: ClassificationData,
     below_extraction_confidence_floor: bool = False,
+    result_processor_started_at: str | None = None,
 ) -> dict[str, Any]:
     """Mark file processing as completed."""
     internal_api_response: InternalApiResponse = get_internal_api_response(
@@ -58,6 +59,7 @@ def classify_as_success(
         internal_api_response=internal_api_response,
         data=data,
         below_extraction_confidence_floor=below_extraction_confidence_floor,
+        result_processor_started_at=result_processor_started_at,
     )
 
     # convert dataclass to dict for JSON serialization
@@ -65,7 +67,10 @@ def classify_as_success(
 
 
 def classify_as_failed(
-    object_key: str, error_message: str, data: ClassificationData
+    object_key: str,
+    error_message: str,
+    data: ClassificationData,
+    result_processor_started_at: str | None = None,
 ) -> dict[str, Any]:
     """Mark file processing as failed with error message."""
     internal_api_response: InternalApiResponse = get_internal_api_response(
@@ -80,6 +85,7 @@ def classify_as_failed(
         internal_api_response=internal_api_response,
         error_message=error_message,
         data=data,
+        result_processor_started_at=result_processor_started_at,
     )
 
     # convert dataclass to dict for JSON serialization
@@ -105,7 +111,9 @@ def classify_as_not_implemented(object_key: str, data: ClassificationData) -> di
     return internal_api_response.__dict__
 
 
-def classify_as_no_document_detected(object_key: str, data: ClassificationData) -> dict[str, Any]:
+def classify_as_no_document_detected(
+    object_key: str, data: ClassificationData, result_processor_started_at: str | None = None
+) -> dict[str, Any]:
     """Mark file processing as no document detected."""
     internal_api_response: InternalApiResponse = get_internal_api_response(
         object_key=object_key,
@@ -118,6 +126,7 @@ def classify_as_no_document_detected(object_key: str, data: ClassificationData) 
         status=ProcessStatus.NO_DOCUMENT_DETECTED,
         internal_api_response=internal_api_response,
         data=data,
+        result_processor_started_at=result_processor_started_at,
     )
 
     # convert dataclass to dict for JSON serialization
@@ -160,7 +169,7 @@ def classify_as_conversion_failed(object_key: str, error_message: str) -> dict[s
 
 
 def classify_as_no_custom_blueprint_matched(
-    object_key: str, data: ClassificationData
+    object_key: str, data: ClassificationData, result_processor_started_at: str | None = None
 ) -> dict[str, Any]:
     """Mark file processing as not implemented."""
     internal_api_response: InternalApiResponse = get_internal_api_response(
@@ -174,6 +183,7 @@ def classify_as_no_custom_blueprint_matched(
         status=ProcessStatus.NO_CUSTOM_BLUEPRINT_MATCHED,
         internal_api_response=internal_api_response,
         data=data,
+        result_processor_started_at=result_processor_started_at,
     )
 
     # convert dataclass to dict for JSON serialization
@@ -207,7 +217,10 @@ def classify_as_multiple_documents_on_page(
 
 
 def set_bda_processing_status_started(
-    object_key: str, bda_invocation_arn: str, bda_project_arn_used: str | None = None
+    object_key: str,
+    bda_invocation_arn: str,
+    bda_project_arn_used: str | None = None,
+    pages_sent_to_bda: int | None = None,
 ) -> None:
     """Mark file processing as started with BDA job ARN."""
     update_ddb(
@@ -216,6 +229,7 @@ def set_bda_processing_status_started(
         internal_api_response=None,
         bda_invocation_arn=bda_invocation_arn,
         bda_project_arn_used=bda_project_arn_used,
+        pages_sent_to_bda=pages_sent_to_bda,
     )
 
 
@@ -300,6 +314,8 @@ def upsert_initial_ddb_record(
     job_id: str | None = None,
     trace_id: str | None = None,
     batch_id: str | None = None,
+    document_processor_started_at: str | None = None,
+    is_document_processor_cold_start: bool | None = None,
 ) -> None:
     """Run preclassification on the S3 object and upsert its DDB record.
 
@@ -394,6 +410,8 @@ def upsert_initial_ddb_record(
                 duration_seconds=pre_classification_duration_seconds,
                 model_id=pre_classification_model_id,
             ),
+            document_processor_started_at=document_processor_started_at,
+            is_document_processor_cold_start=is_document_processor_cold_start,
         )
     )
 
