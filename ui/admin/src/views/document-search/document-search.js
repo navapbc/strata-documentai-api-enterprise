@@ -64,13 +64,6 @@ export function unmount(root) {
   root.replaceChildren();
 }
 
-function clearDetail() {
-  _detailContent.innerHTML = "";
-  _previewPanel.innerHTML = '<p class="empty-state">Select a document to preview</p>';
-  _previewPanel.classList.remove("watermarked", "watermark-block");
-  _collapseBtn.classList.add("disabled");
-}
-
 function expandDetailPanel() {
   if (!_detailCollapsed) return;
   _detailCollapsed = false;

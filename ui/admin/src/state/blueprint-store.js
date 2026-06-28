@@ -11,6 +11,7 @@ let _state = {
   schemasLoading: true, // true until initial load completes
   activeDocType: null, // currently selected document type
   rules: {}, // { fieldName: "required"|"optional"|"excluded" }
+  ruleExists: false, // whether a rule row exists in DDB for this tenant/docType
   dirty: false, // unsaved changes in editor
   tenantId: null, // selected tenant for rules
 };
@@ -35,6 +36,7 @@ export function reset() {
     schemasLoading: true,
     activeDocType: null,
     rules: {},
+    ruleExists: false,
     dirty: false,
     tenantId: null,
   };
