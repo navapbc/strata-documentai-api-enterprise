@@ -92,7 +92,7 @@ module "input_bucket" {
     {
       id              = "expire-demo-uploads"
       prefix          = "${local.demo_input_prefix}/"
-      expiration_days = 3
+      expiration_days = 7
     },
     {
       id              = "expire-preprocessing-originals"
@@ -119,7 +119,7 @@ module "output_bucket" {
     {
       id              = "expire-demo-results"
       prefix          = "${local.demo_output_prefix}/"
-      expiration_days = 3
+      expiration_days = 7
   }]
 }
 
@@ -753,7 +753,7 @@ module "workers" {
   image_uri             = local.lambda_image_uri
   command               = each.value
   timeout               = 300
-  memory_size           = 512
+  memory_size           = 1024
   environment_variables = local.lambda_env_vars
   policy_arns           = local.lambda_policy_arns
 
