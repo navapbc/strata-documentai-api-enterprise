@@ -6,7 +6,6 @@
 import * as Store from "../state/blueprint-store.js";
 import * as RulesService from "../services/rules.js";
 import * as TenantContext from "../utils/tenant-context.js";
-import * as Helpers from "../utils/helpers.js";
 import * as Toast from "../utils/toast.js";
 import { h } from "../utils/dom.js";
 

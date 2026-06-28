@@ -287,7 +287,7 @@ async function handleConfirm(e) {
       email: _pendingEmail,
     });
     if (_onLogin) _onLogin();
-  } catch (err) {
+  } catch (_err) {
     error.textContent = "That code didn't work. Please check your email and try again.";
     error.classList.remove("hidden");
   }
