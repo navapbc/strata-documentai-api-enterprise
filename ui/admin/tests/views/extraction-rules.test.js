@@ -14,7 +14,10 @@ describe("extraction-rules view", () => {
 
     mockGetAllFields = vi.fn().mockResolvedValue({ fields: [field] });
 
-    vi.doMock("../../src/services/schemas.js", () => ({ getAllFields: mockGetAllFields }));
+    vi.doMock("../../src/services/schemas.js", async () => ({
+      ...(await vi.importActual("../../src/services/schemas.js")),
+      getAllFields: mockGetAllFields,
+    }));
     vi.doMock("../../src/services/rules.js", () => ({
       get: vi.fn().mockResolvedValue({ rules: [] }),
       put: vi.fn().mockResolvedValue({}),
@@ -54,6 +57,13 @@ describe("extraction-rules view", () => {
     await new Promise((r) => setTimeout(r, 0));
     const state = Store.get();
     expect(state.schemas[field.documentType]).toEqual([field]);
+  });
+
+  it("skips fetch when schemas are already preloaded", async () => {
+    Store.set({ schemas: { [field.documentType]: [field] } });
+    ExtractionRulesView.mount(root);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(mockGetAllFields).not.toHaveBeenCalled();
   });
 
   it("unmount resets store and clears root", () => {

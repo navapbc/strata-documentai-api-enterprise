@@ -20,6 +20,8 @@ const dashboardTmpl = tpl(dashboardHtml);
 
 import * as KeysView from "./views/keys/keys.js";
 import * as ExtractionRulesView from "./views/extraction-rules/extraction-rules.js";
+import * as SchemasService from "./services/schemas.js";
+import * as Store from "./state/blueprint-store.js";
 import * as UsersView from "./views/users/users.js";
 import * as TenantsView from "./views/tenants/tenants.js";
 import * as DocumentCategoriesView from "./views/document-categories/document-categories.js";
@@ -158,6 +160,13 @@ function showDashboard(session) {
   const initialHash = location.hash.replace("#", "") || "keys";
   const initialView = initialHash.split("/")[0];
   activateNavItem(VIEWS[initialView] ? initialView : "keys");
+
+  // Preload blueprint schemas so extraction-rules view renders instantly
+  SchemasService.getAllFields()
+    .then((data) => {
+      Store.set({ schemas: SchemasService.groupFieldsByDocType(data), schemasLoading: false });
+    })
+    .catch(() => Store.set({ schemasLoading: false }));
 }
 
 function navigateTo(viewName) {

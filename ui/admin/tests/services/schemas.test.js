@@ -38,4 +38,16 @@ describe("schemas service", () => {
     await SchemasService.getCategories();
     expect(mockRequest).toHaveBeenCalledWith("GET", "/v1/dictionary/document-categories");
   });
+
+  it("groupFieldsByDocType groups fields by documentType", () => {
+    const w2a = { name: "ssn", documentType: "W2" };
+    const w2b = { name: "wages", documentType: "W2" };
+    const i9 = { name: "name", documentType: "I9" };
+    const result = SchemasService.groupFieldsByDocType({ fields: [w2a, w2b, i9] });
+    expect(result).toEqual({ W2: [w2a, w2b], I9: [i9] });
+  });
+
+  it("groupFieldsByDocType returns empty object when fields missing", () => {
+    expect(SchemasService.groupFieldsByDocType({})).toEqual({});
+  });
 });
