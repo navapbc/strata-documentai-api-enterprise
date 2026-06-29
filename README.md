@@ -70,13 +70,19 @@ You will also need an AWS profile with permission to create the required infrast
 
 To set up the application for the first time:
 
-1. Configure your AWS profile.
+1. Enable the local git hooks. This runs a [gitleaks](https://github.com/gitleaks/gitleaks) secret scan on staged changes before each commit, so secrets never reach the (public) remote. Run once per clone:
+
+```bash
+make install-hooks
+```
+
+2. Configure your AWS profile.
 
 ```bash
 export AWS_PROFILE=your-profile
 ```
 
-2. Create the Terraform state bucket. This only needs to happen once per environment.
+3. Create the Terraform state bucket. This only needs to happen once per environment.
 
 ```bash
 cd infra
@@ -84,7 +90,7 @@ make infra-bootstrap ENVIRONMENT=dev
 make infra-init ENVIRONMENT=dev
 ```
 
-3. Deploy the infrastructure and admin UI.
+4. Deploy the infrastructure and admin UI.
 
 ```bash
 cd ..

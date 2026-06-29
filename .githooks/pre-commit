@@ -1,0 +1,23 @@
+#!/bin/sh
+# Pre-commit secret scan: blocks secrets from entering history at all, so there's
+# never anything to push to the public remote or scrub afterward. Scans only the
+# staged diff, so it's fast. Mirrors the gitleaks version CI runs (secret-scan.yml).
+#
+# Enable with: make install-hooks   (sets core.hooksPath to .githooks/)
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+	echo "⚠️  gitleaks not installed - skipping local secret scan."
+	echo "    CI (secret-scan.yml) will still catch leaks, but install it for pre-push protection:"
+	echo "      brew install gitleaks"
+	exit 0
+fi
+
+gitleaks git --staged --redact --verbose
+status=$?
+if [ "$status" -ne 0 ]; then
+	echo ""
+	echo "❌ gitleaks found a potential secret in your staged changes (see above)."
+	echo "   Remove it, or if it's a false positive, allowlist it in .gitleaks.toml."
+	echo "   To bypass in a genuine emergency: git commit --no-verify"
+	exit 1
+fi

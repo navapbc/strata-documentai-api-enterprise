@@ -10,6 +10,7 @@ from fastapi.routing import APIRoute
 from mangum import Mangum
 
 from documentai_api.app_admin_documents import router as admin_documents_router
+from documentai_api.app_admin_usage import router as admin_usage_router
 from documentai_api.app_api_keys import router as api_keys_router
 from documentai_api.app_audit_log import router as audit_log_router
 from documentai_api.app_auth_events import router as auth_events_router
@@ -59,6 +60,7 @@ app.include_router(tenants_router)
 app.include_router(users_router)
 app.include_router(audit_log_router)
 app.include_router(admin_documents_router)
+app.include_router(admin_usage_router)
 app.include_router(document_categories_router)
 app.include_router(blueprint_test_router)
 app.include_router(demo_router)

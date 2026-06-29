@@ -390,7 +390,7 @@ class PreprocessingBoundingBoxDefault:
     )
 
 
-class DictionaryFormatType(StrEnum):
+class OutputFormatType(StrEnum):
     JSON = "json"
     CSV = "csv"
 

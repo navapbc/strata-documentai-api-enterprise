@@ -1,0 +1,37 @@
+<div class="usage-view">
+  <div class="usage-controls">
+    <div class="usage-field">
+      <label for="usage-year">Year</label>
+      <select id="usage-year"></select>
+    </div>
+    <div class="usage-field">
+      <label for="usage-month">Month</label>
+      <select id="usage-month">
+        <option value="01">January</option>
+        <option value="02">February</option>
+        <option value="03">March</option>
+        <option value="04">April</option>
+        <option value="05">May</option>
+        <option value="06">June</option>
+        <option value="07">July</option>
+        <option value="08">August</option>
+        <option value="09">September</option>
+        <option value="10">October</option>
+        <option value="11">November</option>
+        <option value="12">December</option>
+      </select>
+    </div>
+    <div class="usage-field">
+      <label for="usage-granularity">Granularity</label>
+      <select id="usage-granularity">
+        <option value="monthly">Monthly</option>
+        <!-- TODO: Daily granularity reads from metrics aggregator (not Athena) and may not reconcile with monthly totals. Re-enable once usage_report job produces daily files. -->
+        <!-- <option value="daily">Daily</option> -->
+      </select>
+    </div>
+    <button id="usage-download-btn" class="btn-secondary">Download CSV</button>
+  </div>
+  <div id="usage-table-container">
+    <p id="usage-empty" class="empty-state">Loading...</p>
+  </div>
+</div>
