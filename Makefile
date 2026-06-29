@@ -4,6 +4,11 @@
 	deploy-admin-ui \
 	deploy-demo-ui \
 	deploy-ui \
+	format \
+	lint \
+	test \
+	secret-scan \
+	install-hooks \
 	help
 
 .DEFAULT_GOAL := help
@@ -79,3 +84,25 @@ help: ## Show help
 	@grep -Eh '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 	@echo ""
 	@echo "ENVIRONMENT=$(ENVIRONMENT)  AWS_PROFILE=$(AWS_PROFILE)"
+
+format: ## Format all code
+	cd documentai-api && .venv/bin/ruff format src/ tests/
+	cd ui/admin && npm run format
+	cd ui/demo && npm run format
+
+lint: ## Run all linters
+	cd documentai-api && .venv/bin/ruff check src/ tests/
+	cd ui/admin && npx eslint src/ tests/ e2e/
+	cd ui/demo && npx eslint src/ tests/ e2e/
+
+test: ## Run all tests
+	cd documentai-api && .venv/bin/pytest
+	cd ui/admin && npm test
+	cd ui/demo && npm test
+
+secret-scan: ## Scan full git history for secrets (matches CI secret-scan.yml)
+	gitleaks git --redact --verbose --log-opts="--all" .
+
+install-hooks: ## Enable the local pre-commit secret scan (.githooks/)
+	git config core.hooksPath .githooks
+	@echo "Hooks installed. Pre-commit will run gitleaks on staged changes."

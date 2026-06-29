@@ -642,6 +642,7 @@ td {
   padding: 0.75rem 1rem;
   text-align: left;
   border-bottom: 1px solid var(--color-border);
+  font-variant-numeric: tabular-nums;
 }
 
 th {
@@ -1654,6 +1655,46 @@ td {
   box-shadow: none;
 }
 
+/* Usage tracking */
+.usage-controls {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.usage-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.usage-field label {
+  margin-bottom: 0;
+}
+
+.usage-controls input[type="month"],
+.usage-controls select {
+  width: auto;
+  margin-bottom: 0;
+  padding: 0.375rem 0.5rem;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  box-sizing: border-box;
+  background: white;
+}
+
+.usage-controls input[type="month"] {
+  min-width: 9rem;
+}
+
+.usage-controls #usage-download-btn {
+  margin-left: auto;
+}
+
 /* List tabs */
 /* Compact document list */
 .documents-compact-list {
@@ -2229,4 +2270,16 @@ td {
 /* Reverse link: highlight the row when its box is hovered in the preview. */
 .extracted-data-table tr.row-highlight {
   background: rgba(255, 214, 0, 0.22);
+}
+
+.usage-table td:not(:first-child) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.usage-table th:not(:first-child) {
+  text-align: right;
+}
+.usage-table .totals-row {
+  font-weight: 600;
+  border-top: 2px solid var(--border, #ddd);
 }

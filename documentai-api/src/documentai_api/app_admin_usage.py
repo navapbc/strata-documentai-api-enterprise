@@ -130,6 +130,10 @@ async def get_usage(
     effective_tenant = scope or tenant_id
 
     if granularity == MetricsGranularity.DAILY:
+        # Daily is intentionally parked in the UI: reads from the metrics aggregator
+        # (not Athena) and may not reconcile with monthly totals. Endpoint stays
+        # functional so re-enabling is a one-line uncomment in usage.html once the
+        # usage_report job emits deduped daily files.
         data = await _read_daily_usage(bucket, month, effective_tenant)
         if output_format == OutputFormatType.CSV:
             return build_csv_response(data)
@@ -143,9 +147,4 @@ async def get_usage(
     if output_format == OutputFormatType.CSV:
         return build_csv_response(tenants)
 
-    return {
-        "month": month,
-        "granularity": "monthly",
-        "tenants": tenants,
-        "note": "Monthly totals are produced on a schedule; the current month may be incomplete or absent until the next run. Daily stats are real-time and may not sum to the monthly total.",
-    }
+    return {"month": month, "granularity": "monthly", "tenants": tenants}

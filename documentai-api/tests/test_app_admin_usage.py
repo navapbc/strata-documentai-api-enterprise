@@ -116,7 +116,9 @@ def seeded_monthly(metrics_bucket):
 @pytest.fixture
 def seeded_daily(metrics_bucket):
     for day in range(1, 4):
-        _put_daily_stats(metrics_bucket, f"2026-06-{day:02d}", _make_daily_stats(f"2026-06-{day:02d}", 10))
+        _put_daily_stats(
+            metrics_bucket, f"2026-06-{day:02d}", _make_daily_stats(f"2026-06-{day:02d}", 10)
+        )
     _put_daily_stats(
         metrics_bucket, "2026-06-01", _make_daily_stats("2026-06-01", 5), tenant_id="tenant-a"
     )
@@ -152,6 +154,15 @@ def test_monthly_defaults_to_current_month(as_super_admin, metrics_bucket):
 
 def test_monthly_tenant_scoping(as_tenant_admin, seeded_monthly):
     response = as_tenant_admin.get(USAGE_URL, params={"month": "2026-06"})
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["tenants"]) == 1
+    assert data["tenants"][0]["tenant_id"] == "tenant-a"
+
+
+def test_tenant_admin_cannot_see_other_tenant(as_tenant_admin, seeded_monthly):
+    """Tenant-admin passing another tenant_id still only sees their own data."""
+    response = as_tenant_admin.get(USAGE_URL, params={"month": "2026-06", "tenant_id": "tenant-b"})
     assert response.status_code == 200
     data = response.json()
     assert len(data["tenants"]) == 1
