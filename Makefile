@@ -92,8 +92,8 @@ format: ## Format all code
 
 lint: ## Run all linters
 	$(MAKE) -C documentai-api lint
-	cd ui/admin && npx eslint src/ tests/ e2e/
-	cd ui/demo && npx eslint src/ tests/ e2e/
+	cd ui/admin && npm run lint
+	cd ui/demo && npm run lint
 
 test: ## Run all tests
 	$(MAKE) -C documentai-api test
