@@ -304,7 +304,7 @@ def build_flat_file(field_names: list[str], data: list[dict[str, Any]], delim: s
         if s is None:
             return '""'
 
-        escaped = s.replace('"', '""')
+        escaped = str(s).replace('"', '""')
         return f'"{escaped}"'
 
     header = delim.join(escape_value(name) for name in field_names)
