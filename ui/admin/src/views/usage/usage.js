@@ -25,10 +25,10 @@ export function mount(root) {
   _tableContainer = root.querySelector("#usage-table-container");
   _empty = root.querySelector("#usage-empty");
 
-  // Populate year select (current year back 5 years)
+  // Populate year select (current year back to 2025)
   const now = new Date();
   const currentYear = now.getFullYear();
-  for (let y = currentYear; y >= currentYear - 5; y--) {
+  for (let y = currentYear; y >= 2025; y--) {
     const opt = document.createElement("option");
     opt.value = String(y);
     opt.textContent = String(y);

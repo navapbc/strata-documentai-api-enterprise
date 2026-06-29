@@ -2283,3 +2283,145 @@ td {
   font-weight: 600;
   border-top: 2px solid var(--border, #ddd);
 }
+
+/* Metrics Dashboard */
+.metrics-controls {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.metrics-controls input[type="date"] {
+  width: auto;
+  margin-bottom: 0;
+  padding: 0.375rem 0.5rem;
+  border: 1px solid var(--border, #dfe1e2);
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  background: white;
+}
+
+.metrics-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.metric-card {
+  background: var(--white, #fff);
+  border: 1px solid var(--border, #dfe1e2);
+  border-radius: 8px;
+  padding: 20px 16px;
+  text-align: center;
+  border-top: 3px solid var(--border, #dfe1e2);
+}
+
+.metric-card--good {
+  border-top-color: #00a91c;
+}
+.metric-card--warn {
+  border-top-color: #ffbe2e;
+}
+.metric-card--bad {
+  border-top-color: #d54309;
+}
+.metric-card--neutral {
+  border-top-color: #005ea2;
+}
+
+.metric-card-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 4px;
+}
+
+.metric-card-label {
+  font-size: 0.8rem;
+  color: #71767a;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.metrics-panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.metrics-panel {
+  background: var(--white, #fff);
+  border: 1px solid var(--border, #dfe1e2);
+  border-radius: 8px;
+  padding: 20px;
+  display: grid;
+  grid-template-columns: fit-content(220px) 1fr max-content;
+  column-gap: 10px;
+  row-gap: 8px;
+  align-items: center;
+}
+
+.metrics-panel:empty {
+  display: none;
+}
+
+.metrics-panel-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0;
+  grid-column: 1 / -1;
+}
+
+.metrics-bar-row {
+  display: contents;
+}
+
+.metrics-bar-label {
+  font-size: 0.78rem;
+  color: #565c65;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.metrics-bar-track {
+  height: 8px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.metrics-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s;
+}
+
+.metrics-bar-fill--success {
+  background: #00a91c;
+}
+.metrics-bar-fill--warn {
+  background: #ffbe2e;
+}
+.metrics-bar-fill--danger {
+  background: #d54309;
+}
+.metrics-bar-fill--neutral {
+  background: #71767a;
+}
+.metrics-bar-fill--primary {
+  background: #005ea2;
+}
+
+.metrics-bar-value {
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  min-width: 48px;
+  text-align: right;
+}
