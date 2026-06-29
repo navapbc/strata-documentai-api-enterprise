@@ -103,19 +103,19 @@ function renderTable() {
     _currentGranularity === "daily"
       ? [
           { key: "date", label: "Date" },
-          { key: "total_records", label: "Documents Processed" },
-          { key: "total_bda_pages", label: "Pages Processed" },
-          { key: "total_file_size_bytes", label: "Total Size" },
-          { key: "total_bedrock_input_tokens", label: "Input Tokens" },
-          { key: "total_bedrock_output_tokens", label: "Output Tokens" },
+          { key: "totalRecords", label: "Documents Processed" },
+          { key: "totalBdaPages", label: "Pages Processed" },
+          { key: "totalFileSizeBytes", label: "Total Size" },
+          { key: "totalBedrockInputTokens", label: "Input Tokens" },
+          { key: "totalBedrockOutputTokens", label: "Output Tokens" },
         ]
       : [
-          { key: "tenant_id", label: "Tenant" },
-          { key: "total_records", label: "Documents Processed" },
-          { key: "total_bda_pages", label: "Pages Processed" },
-          { key: "total_file_size_bytes", label: "Total Size" },
-          { key: "total_bedrock_input_tokens", label: "Input Tokens" },
-          { key: "total_bedrock_output_tokens", label: "Output Tokens" },
+          { key: "tenantId", label: "Tenant" },
+          { key: "totalRecords", label: "Documents Processed" },
+          { key: "totalBdaPages", label: "Pages Processed" },
+          { key: "totalFileSizeBytes", label: "Total Size" },
+          { key: "totalBedrockInputTokens", label: "Input Tokens" },
+          { key: "totalBedrockOutputTokens", label: "Output Tokens" },
         ];
 
   const thead = h("thead", {}, h("tr", {}, ...columns.map((col) => h("th", {}, col.label))));
@@ -132,7 +132,7 @@ function renderTable() {
   if (_currentData.length > 1) {
     const totals = {};
     for (const col of columns) {
-      if (col.key === "date" || col.key === "tenant_id") {
+      if (col.key === "date" || col.key === "tenantId") {
         totals[col.key] = "Total";
       } else {
         totals[col.key] = _currentData.reduce((sum, row) => sum + (row[col.key] || 0), 0);
@@ -149,13 +149,19 @@ function renderTable() {
     );
   }
 
-  const table = h("table", { className: "detail-table usage-table" }, thead, tbody, ...(tfoot ? [tfoot] : []));
+  const table = h(
+    "table",
+    { className: "detail-table usage-table" },
+    thead,
+    tbody,
+    ...(tfoot ? [tfoot] : []),
+  );
   _tableContainer.appendChild(table);
 }
 
 function formatCell(key, value) {
   if (value == null) return "-";
-  if (key === "total_file_size_bytes") {
+  if (key === "totalFileSizeBytes") {
     return `${(value / 1024 / 1024).toFixed(1)} MB`;
   }
   if (typeof value === "number") {
@@ -182,11 +188,11 @@ export function _fillDailyGaps(month, days) {
     result.push(
       byDate[date] || {
         date,
-        total_records: 0,
-        total_bda_pages: 0,
-        total_file_size_bytes: 0,
-        total_bedrock_input_tokens: 0,
-        total_bedrock_output_tokens: 0,
+        totalRecords: 0,
+        totalBdaPages: 0,
+        totalFileSizeBytes: 0,
+        totalBedrockInputTokens: 0,
+        totalBedrockOutputTokens: 0,
       },
     );
   }
@@ -200,19 +206,19 @@ function downloadCsv() {
     _currentGranularity === "daily"
       ? [
           "date",
-          "total_records",
-          "total_bda_pages",
-          "total_file_size_bytes",
-          "total_bedrock_input_tokens",
-          "total_bedrock_output_tokens",
+          "totalRecords",
+          "totalBdaPages",
+          "totalFileSizeBytes",
+          "totalBedrockInputTokens",
+          "totalBedrockOutputTokens",
         ]
       : [
-          "tenant_id",
-          "total_records",
-          "total_bda_pages",
-          "total_file_size_bytes",
-          "total_bedrock_input_tokens",
-          "total_bedrock_output_tokens",
+          "tenantId",
+          "totalRecords",
+          "totalBdaPages",
+          "totalFileSizeBytes",
+          "totalBedrockInputTokens",
+          "totalBedrockOutputTokens",
         ];
 
   const header = columns.map((col) => `"${col}"`).join(",");

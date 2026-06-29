@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from botocore.exceptions import ClientError
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from documentai_api.annotations import AdminClaims, OutputFormat, verify_jwt_with_role
 from documentai_api.config.constants import (
@@ -18,6 +18,12 @@ from documentai_api.config.constants import (
 )
 from documentai_api.config.env import get_aws_config
 from documentai_api.logging import get_logger
+from documentai_api.models.usage import (
+    DailyUsage,
+    DailyUsageResponse,
+    MonthlyUsageResponse,
+    TenantUsage,
+)
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils.jwt_auth import tenant_scope
 from documentai_api.utils.response_builder import build_csv_response
@@ -35,8 +41,9 @@ def _read_monthly_report(bucket: str, month: str) -> list[dict[str, Any]]:
     s3_key = f"{METRICS_USAGE_REPORT_S3_PREFIX}={month}/report.json"
     try:
         obj = s3_service.get_object(bucket, s3_key)
-        report = json.loads(obj["Body"].read().decode())
-        return report.get("tenants", [])
+        report: dict[str, Any] = json.loads(obj["Body"].read().decode())
+        tenants: list[dict[str, Any]] = report.get("tenants", [])
+        return tenants
     except ClientError as e:
         if e.response["Error"]["Code"] == "NoSuchKey":
             return []
@@ -89,14 +96,14 @@ async def _read_daily_usage(bucket: str, month: str, tenant_id: str | None) -> l
     return [r for r in results if r is not None]
 
 
-@router.get("")
+@router.get("", response_model=None)
 async def get_usage(
     claims: AdminClaims,
     month: str | None = None,
     tenant_id: str | None = None,
     granularity: MetricsGranularity = MetricsGranularity.MONTHLY,
     output_format: OutputFormat = OutputFormatType.JSON,
-):
+) -> MonthlyUsageResponse | DailyUsageResponse | Response:
     """Get usage report for a given month.
 
     granularity=monthly: per-tenant totals for the month.
@@ -135,16 +142,18 @@ async def get_usage(
         # functional so re-enabling is a one-line uncomment in usage.html once the
         # usage_report job emits deduped daily files.
         data = await _read_daily_usage(bucket, month, effective_tenant)
+        days = [DailyUsage(**d) for d in data]
         if output_format == OutputFormatType.CSV:
-            return build_csv_response(data)
-        return {"month": month, "granularity": "daily", "days": data}
+            return build_csv_response([d.model_dump(by_alias=True) for d in days])
+        return DailyUsageResponse(month=month, days=days)
 
     # Monthly
-    tenants = _read_monthly_report(bucket, month)
+    tenants_raw = _read_monthly_report(bucket, month)
     if effective_tenant:
-        tenants = [t for t in tenants if t.get("tenant_id") == effective_tenant]
+        tenants_raw = [t for t in tenants_raw if t.get("tenant_id") == effective_tenant]
+    tenants = [TenantUsage(**t) for t in tenants_raw]
 
     if output_format == OutputFormatType.CSV:
-        return build_csv_response(tenants)
+        return build_csv_response([t.model_dump(by_alias=True) for t in tenants])
 
-    return {"month": month, "granularity": "monthly", "tenants": tenants}
+    return MonthlyUsageResponse(month=month, tenants=tenants)

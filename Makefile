@@ -86,17 +86,17 @@ help: ## Show help
 	@echo "ENVIRONMENT=$(ENVIRONMENT)  AWS_PROFILE=$(AWS_PROFILE)"
 
 format: ## Format all code
-	cd documentai-api && .venv/bin/ruff format src/ tests/
+	$(MAKE) -C documentai-api format
 	cd ui/admin && npm run format
 	cd ui/demo && npm run format
 
 lint: ## Run all linters
-	cd documentai-api && .venv/bin/ruff check src/ tests/
+	$(MAKE) -C documentai-api lint
 	cd ui/admin && npx eslint src/ tests/ e2e/
 	cd ui/demo && npx eslint src/ tests/ e2e/
 
 test: ## Run all tests
-	cd documentai-api && .venv/bin/pytest
+	$(MAKE) -C documentai-api test
 	cd ui/admin && npm test
 	cd ui/demo && npm test
 

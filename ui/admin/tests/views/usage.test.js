@@ -7,7 +7,7 @@ describe("_fillDailyGaps", () => {
     expect(result.length).toBe(31);
     expect(result[0].date).toBe("2026-01-01");
     expect(result[30].date).toBe("2026-01-31");
-    expect(result[0].total_records).toBe(0);
+    expect(result[0].totalRecords).toBe(0);
   });
 
   it("handles February (non-leap year)", () => {
@@ -22,13 +22,20 @@ describe("_fillDailyGaps", () => {
 
   it("overlays existing data onto zero-filled days", () => {
     const existing = [
-      { date: "2026-03-05", total_records: 10, total_bda_pages: 8, total_file_size_bytes: 5000, total_bedrock_input_tokens: 100, total_bedrock_output_tokens: 50 },
+      {
+        date: "2026-03-05",
+        totalRecords: 10,
+        totalBdaPages: 8,
+        totalFileSizeBytes: 5000,
+        totalBedrockInputTokens: 100,
+        totalBedrockOutputTokens: 50,
+      },
     ];
     const result = _fillDailyGaps("2026-03", existing);
     expect(result.length).toBe(31);
     expect(result[4].date).toBe("2026-03-05");
-    expect(result[4].total_records).toBe(10);
-    expect(result[3].total_records).toBe(0);
+    expect(result[4].totalRecords).toBe(10);
+    expect(result[3].totalRecords).toBe(0);
   });
 
   it("stops at today for current month", () => {

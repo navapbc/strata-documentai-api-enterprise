@@ -157,7 +157,7 @@ def test_monthly_tenant_scoping(as_tenant_admin, seeded_monthly):
     assert response.status_code == 200
     data = response.json()
     assert len(data["tenants"]) == 1
-    assert data["tenants"][0]["tenant_id"] == "tenant-a"
+    assert data["tenants"][0]["tenantId"] == "tenant-a"
 
 
 def test_tenant_admin_cannot_see_other_tenant(as_tenant_admin, seeded_monthly):
@@ -166,7 +166,7 @@ def test_tenant_admin_cannot_see_other_tenant(as_tenant_admin, seeded_monthly):
     assert response.status_code == 200
     data = response.json()
     assert len(data["tenants"]) == 1
-    assert data["tenants"][0]["tenant_id"] == "tenant-a"
+    assert data["tenants"][0]["tenantId"] == "tenant-a"
 
 
 def test_monthly_csv_format(as_super_admin, seeded_monthly):
@@ -175,6 +175,8 @@ def test_monthly_csv_format(as_super_admin, seeded_monthly):
     assert "text/csv" in response.headers["content-type"]
     lines = response.text.strip().split("\n")
     assert len(lines) == 3  # header + 2 tenants
+    assert "tenantId" in lines[0]
+    assert "totalRecords" in lines[0]
 
 
 ##############################################################################
@@ -195,7 +197,7 @@ def test_daily_tenant_scoped(as_tenant_admin, seeded_daily):
     assert response.status_code == 200
     data = response.json()
     assert len(data["days"]) == 1
-    assert data["days"][0]["total_records"] == 5
+    assert data["days"][0]["totalRecords"] == 5
 
 
 def test_daily_super_admin_filters_by_tenant_id(as_super_admin, seeded_daily):
@@ -205,7 +207,7 @@ def test_daily_super_admin_filters_by_tenant_id(as_super_admin, seeded_daily):
     assert response.status_code == 200
     data = response.json()
     assert len(data["days"]) == 1
-    assert data["days"][0]["total_records"] == 5
+    assert data["days"][0]["totalRecords"] == 5
 
 
 def test_daily_csv_format(as_super_admin, seeded_daily):
@@ -214,6 +216,8 @@ def test_daily_csv_format(as_super_admin, seeded_daily):
     )
     assert response.status_code == 200
     assert "text/csv" in response.headers["content-type"]
+    lines = response.text.strip().split("\n")
+    assert "totalRecords" in lines[0]
 
 
 ##############################################################################
