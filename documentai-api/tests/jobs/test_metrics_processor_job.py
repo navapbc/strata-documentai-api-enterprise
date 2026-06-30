@@ -5,21 +5,11 @@ from unittest.mock import patch
 
 from documentai_api.config.constants import METRICS_RAW_DDB_DATA_S3_PREFIX
 from documentai_api.jobs.metrics_processor.main import (
-    camel_to_snake,
     convert_keys_to_snake_case,
     main,
     process_batch,
     write_to_s3,
 )
-
-
-def test_camel_to_snake():
-    """Test camelCase to snake_case conversion."""
-    assert camel_to_snake("fileName") == "file_name"
-    assert camel_to_snake("processStatus") == "process_status"
-    assert camel_to_snake("bdaInvocationArn") == "bda_invocation_arn"
-    assert camel_to_snake("createdAt") == "created_at"
-    assert camel_to_snake("alreadySnake") == "already_snake"
 
 
 def test_convert_keys_to_snake_case():

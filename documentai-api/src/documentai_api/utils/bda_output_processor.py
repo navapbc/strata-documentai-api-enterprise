@@ -9,6 +9,7 @@ from documentai_api.utils.bda import (
     BdaFieldProcessingData,
     calculate_average_non_empty_confidence,
     extract_field_metadata_from_bda_results,
+    get_ddb_record_from_bda_output,
     get_text_from_standard_blueprint,
 )
 from documentai_api.utils.document_lifecycle import (
@@ -78,8 +79,6 @@ def process_bda_output(
     bda_output_object_key: str,
     result_processor_started_at: str | None = None,
 ) -> dict[str, Any]:
-    from documentai_api.utils.ddb import get_ddb_record_from_bda_output
-
     bda_output_s3_uri = extract_bda_output_s3_uri(bda_output_bucket_name, bda_output_object_key)
 
     if not bda_output_s3_uri:

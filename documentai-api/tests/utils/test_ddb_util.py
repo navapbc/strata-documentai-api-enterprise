@@ -16,87 +16,6 @@ from documentai_api.utils.dto import (
 from documentai_api.utils.response_codes import ResponseCodes
 
 
-def test_get_elapsed_time_seconds():
-    """Test elapsed time calculation."""
-    year = datetime.now().year
-    start = datetime(year, 1, 1, 12, 0, 0, tzinfo=UTC)
-    end = datetime(year, 1, 1, 12, 0, 5, 500000, tzinfo=UTC)  # 5.5 seconds later
-
-    result = ddb_util.get_elapsed_time_seconds(start, end)
-
-    assert result == Decimal("5.5")
-    assert isinstance(result, Decimal)
-
-
-def test_calculate_bda_processing_times(ddb_doc_metadata_table):
-    """Test BDA processing time calculation."""
-    year = datetime.now().year
-    created_at = datetime(year, 1, 1, 12, 0, 0, tzinfo=UTC)
-    bda_started_at = datetime(year, 1, 1, 12, 0, 5, tzinfo=UTC)
-    completion_time = datetime(year, 1, 1, 12, 0, 15, tzinfo=UTC)
-
-    ddb_record = {
-        DocumentMetadata.FILE_NAME: "test-file",
-        DocumentMetadata.CREATED_AT: created_at.isoformat(),
-        DocumentMetadata.BDA_STARTED_AT: bda_started_at.isoformat(),
-    }
-
-    ddb_doc_metadata_table.put_item(Item=ddb_record)
-
-    result = ddb_util.calculate_bda_processing_times("test-file", completion_time)
-
-    assert result.total_processing_time_seconds == Decimal("15.0")
-    assert result.bda_processing_time_seconds == Decimal("10.0")
-
-
-@freeze_time("2026-01-01 12:00:10+00:00")
-def test_calculate_wait_time(ddb_doc_metadata_table):
-    """Test BDA wait time calculation."""
-    created_at = datetime(2026, 1, 1, 12, 0, 0, tzinfo=UTC)
-
-    ddb_record = {
-        DocumentMetadata.FILE_NAME: "test-file",
-        DocumentMetadata.CREATED_AT: created_at.isoformat(),
-    }
-
-    ddb_doc_metadata_table.put_item(Item=ddb_record)
-
-    wait_time = ddb_util._calculate_wait_time("test-file")
-    assert wait_time == Decimal("10.0")
-
-
-@pytest.mark.parametrize(
-    (
-        "field_confidence_scores",
-        "field_empty_list",
-        "expected_count",
-        "expected_non_empty",
-        "expected_avg",
-    ),
-    [
-        (None, None, 0, 0, None),
-        ([], None, 0, 0, None),
-        ([{"field1": 0.95}, {"field2": 0.85}], None, 2, 2, 0.9),
-        ([{"field1": 0.95}, {"field2": 0.85}, {"field3": 0.75}], ["field3"], 3, 2, 0.9),
-        ([{"field1": 0.8}], ["field1"], 1, 0, None),
-    ],
-)
-def test_calculate_field_metrics(
-    field_confidence_scores, field_empty_list, expected_count, expected_non_empty, expected_avg
-):
-    """Test field metrics calculation."""
-    data = ClassificationData(
-        field_confidence_scores=field_confidence_scores,
-        field_empty_list=field_empty_list,
-    )
-
-    metrics = ddb_util._calculate_field_metrics(data)
-
-    assert metrics.field_count == expected_count
-    assert metrics.field_count_not_empty == expected_non_empty
-    assert metrics.field_not_empty_avg_confidence == pytest.approx(expected_avg)
-
-
 @pytest.mark.parametrize("has_bda_started_at", [True, False])
 @freeze_time("2026-01-01 12:00:15+00:00")
 def test_build_completion_timing(has_bda_started_at, ddb_doc_metadata_table, mocker):
@@ -600,71 +519,109 @@ def test_upsert_ddb_cold_start_true_persists(ddb_doc_metadata_table):
 
 
 # =============================================================================
-# get_ddb_key_from_bda_output / get_ddb_record_from_bda_output
+# mark_document_deleted
 # =============================================================================
 
-BDA_INVOCATION_UUID = "de8464af-d53e-44dc-a9f7-ad5360530210"
-BDA_OUTPUT_BUCKET = "output-bucket"
-BDA_OUTPUT_KEY = (
-    f"processed/input/test-tenant/doc.pdf/{BDA_INVOCATION_UUID}/0/custom_output/job_metadata.json"
+
+@pytest.mark.parametrize("deletion_type", ["soft", "hard"])
+def test_mark_document_deleted(deletion_type, ddb_doc_metadata_table):
+    """mark_document_deleted sets status=DELETED, deletionType, and updatedAt."""
+    from documentai_api.config.constants import DeletionType
+
+    ddb_doc_metadata_table.put_item(
+        Item={
+            DocumentMetadata.FILE_NAME: "delete-test",
+            DocumentMetadata.PROCESS_STATUS: ProcessStatus.SUCCESS.value,
+        }
+    )
+
+    ddb_util.mark_document_deleted("delete-test", DeletionType(deletion_type))
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": "delete-test"})["Item"]
+    assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.DELETED.value
+    assert item[DocumentMetadata.DELETION_TYPE] == deletion_type
+    assert DocumentMetadata.UPDATED_AT in item
+
+
+# =============================================================================
+# Metrics enqueue policy
+# =============================================================================
+
+
+@pytest.mark.parametrize(
+    ("status", "should_enqueue"),
+    [(s, ProcessStatus.is_classified(s)) for s in ProcessStatus],
 )
-BDA_DDB_FILE_NAME = "input/test-tenant/doc.pdf"
+def test_update_ddb_metrics_enqueue_policy(
+    status, should_enqueue, ddb_doc_metadata_table, mocker, monkeypatch
+):
+    """Metrics enqueue for classified (terminal) statuses, never for in-progress."""
+    monkeypatch.setenv("DDB_METRICS_INPUT_QUEUE_URL", "https://sqs.us-east-1.amazonaws.com/queue")
+    mocker.patch("documentai_api.utils.ddb._build_timing_updates", return_value=("", {}))
+    mocker.patch("documentai_api.utils.ddb.build_v1_api_response", return_value={})
+    mock_sqs = mocker.patch("documentai_api.services.sqs.send_message")
+
+    ddb_util.update_ddb("metrics-policy-test", status)
+
+    if should_enqueue:
+        mock_sqs.assert_called_once()
+    else:
+        mock_sqs.assert_not_called()
 
 
-def test_get_ddb_key_from_bda_output_returns_file_name(ddb_doc_metadata_table):
-    """Realistic key with seeded record returns the correct file_name."""
-    ddb_doc_metadata_table.put_item(
-        Item={
-            DocumentMetadata.FILE_NAME: BDA_DDB_FILE_NAME,
-            DocumentMetadata.BDA_INVOCATION_ID: BDA_INVOCATION_UUID,
-        }
+@pytest.mark.parametrize(
+    ("status", "should_enqueue"),
+    [(s, ProcessStatus.is_classified(s)) for s in ProcessStatus],
+)
+def test_upsert_ddb_metrics_enqueue_policy(
+    status, should_enqueue, ddb_doc_metadata_table, mocker, monkeypatch
+):
+    """Metrics enqueue for classified (terminal) statuses, never for in-progress."""
+    monkeypatch.setenv("DDB_METRICS_INPUT_QUEUE_URL", "https://sqs.us-east-1.amazonaws.com/queue")
+    mocker.patch("documentai_api.utils.ddb.build_v1_api_response", return_value={})
+    mock_sqs = mocker.patch("documentai_api.services.sqs.send_message")
+
+    ddb_util.upsert_ddb(
+        UpsertDdbData(
+            object_key="metrics-upsert-test",
+            original_file_name="test.pdf",
+            process_status=status.value,
+        )
     )
 
-    result = ddb_util.get_ddb_key_from_bda_output(BDA_OUTPUT_BUCKET, BDA_OUTPUT_KEY)
-    assert result == BDA_DDB_FILE_NAME
+    if should_enqueue:
+        mock_sqs.assert_called_once()
+    else:
+        mock_sqs.assert_not_called()
 
 
-def test_get_ddb_key_from_bda_output_returns_none_no_uuid(ddb_doc_metadata_table):
-    """Key with no UUID segment returns None."""
-    result = ddb_util.get_ddb_key_from_bda_output(
-        BDA_OUTPUT_BUCKET, "processed/no-uuid-here/job_metadata.json"
-    )
-    assert result is None
+@pytest.mark.parametrize(
+    ("status", "should_enqueue"),
+    [
+        (ProcessStatus.SUCCESS, True),
+        (ProcessStatus.FAILED, True),
+        (ProcessStatus.PASSWORD_PROTECTED, True),
+        (ProcessStatus.NO_DOCUMENT_DETECTED, True),
+        (ProcessStatus.STARTED, False),
+        (ProcessStatus.NOT_STARTED, False),
+        (ProcessStatus.PENDING_IMAGE_OPTIMIZATION, False),
+    ],
+)
+def test_metrics_enqueue_contract(
+    status, should_enqueue, ddb_doc_metadata_table, mocker, monkeypatch
+):
+    """Hardcoded contract: these specific statuses must always enqueue (or not).
 
+    Independent of is_classified - fails loudly if the predicate changes.
+    """
+    monkeypatch.setenv("DDB_METRICS_INPUT_QUEUE_URL", "https://sqs.us-east-1.amazonaws.com/queue")
+    mocker.patch("documentai_api.utils.ddb._build_timing_updates", return_value=("", {}))
+    mocker.patch("documentai_api.utils.ddb.build_v1_api_response", return_value={})
+    mock_sqs = mocker.patch("documentai_api.services.sqs.send_message")
 
-def test_get_ddb_key_from_bda_output_returns_none_no_record(ddb_doc_metadata_table):
-    """Valid UUID in key but no DDB record with that invocation ID returns None."""
-    result = ddb_util.get_ddb_key_from_bda_output(BDA_OUTPUT_BUCKET, BDA_OUTPUT_KEY)
-    assert result is None
+    ddb_util.update_ddb("metrics-contract-test", status)
 
-
-def test_get_ddb_record_from_bda_output_returns_record(ddb_doc_metadata_table):
-    """Realistic key with seeded record returns the full DDB record."""
-    ddb_doc_metadata_table.put_item(
-        Item={
-            DocumentMetadata.FILE_NAME: BDA_DDB_FILE_NAME,
-            DocumentMetadata.BDA_INVOCATION_ID: BDA_INVOCATION_UUID,
-            DocumentMetadata.TENANT_ID: "test-tenant",
-            DocumentMetadata.PROCESS_STATUS: ProcessStatus.STARTED.value,
-        }
-    )
-
-    result = ddb_util.get_ddb_record_from_bda_output(BDA_OUTPUT_BUCKET, BDA_OUTPUT_KEY)
-    assert result is not None
-    assert result[DocumentMetadata.FILE_NAME] == BDA_DDB_FILE_NAME
-    assert result[DocumentMetadata.TENANT_ID] == "test-tenant"
-    assert result[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.STARTED.value
-
-
-def test_get_ddb_record_from_bda_output_returns_none_no_uuid(ddb_doc_metadata_table):
-    """Key with no UUID segment returns None."""
-    result = ddb_util.get_ddb_record_from_bda_output(
-        BDA_OUTPUT_BUCKET, "processed/no-uuid/job_metadata.json"
-    )
-    assert result is None
-
-
-def test_get_ddb_record_from_bda_output_returns_none_no_record(ddb_doc_metadata_table):
-    """Valid UUID in key but no DDB record with that invocation ID returns None."""
-    result = ddb_util.get_ddb_record_from_bda_output(BDA_OUTPUT_BUCKET, BDA_OUTPUT_KEY)
-    assert result is None
+    if should_enqueue:
+        mock_sqs.assert_called_once()
+    else:
+        mock_sqs.assert_not_called()

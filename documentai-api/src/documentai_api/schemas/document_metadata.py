@@ -50,6 +50,10 @@ class DocumentMetadata:
     DOCUMENT_PROCESSOR_STARTED_AT = "documentProcessorStartedAt"
     BDA_STARTED_AT = "bdaStartedAt"
     BDA_COMPLETED_AT = "bdaCompletedAt"
+    EXTRACTION_STARTED_AT = "extractionStartedAt"
+    EXTRACTION_COMPLETED_AT = "extractionCompletedAt"
+    EXTRACTION_PROCESSING_TIME_SECONDS = "extractionProcessingTimeSeconds"
+    EXTRACTION_WAIT_TIME_SECONDS = "extractionWaitTimeSeconds"
     RESULT_PROCESSOR_STARTED_AT = "resultProcessorStartedAt"
     TOTAL_PROCESSING_TIME_SECONDS = "totalProcessingTimeSeconds"
     BDA_PROCESSING_TIME_SECONDS = "bdaProcessingTimeSeconds"  # time bda took to process the file
@@ -87,3 +91,6 @@ class DocumentMetadata:
         "matchedBlueprintFieldNotEmptyAvgConfidence"
     )
     BELOW_EXTRACTION_CONFIDENCE_FLOOR = "belowExtractionConfidenceFloor"
+
+    # extraction method
+    EXTRACT_METHOD = "extractMethod"

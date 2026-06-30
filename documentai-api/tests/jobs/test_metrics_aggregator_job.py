@@ -538,8 +538,8 @@ def test_process_record_logs_warning_for_invalid_timing(caplog):
 
     warning_messages = [r.message for r in caplog.records if r.levelno == logging.WARNING]
     assert any("total_processing_time_seconds" in msg for msg in warning_messages)
-    assert any("bda_processing_time_seconds" in msg for msg in warning_messages)
-    assert any("bda_wait_time_seconds" in msg for msg in warning_messages)
+    assert any("processing time" in msg for msg in warning_messages)
+    assert any("wait time" in msg for msg in warning_messages)
     assert stats["timing_stats"]["total_processing_time_count"] == 0
     assert stats["timing_stats"]["bda_processing_time_count"] == 0
     assert stats["timing_stats"]["bda_wait_time_count"] == 0

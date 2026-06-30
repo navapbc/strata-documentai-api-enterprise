@@ -127,7 +127,7 @@ def test_upsert_initial_ddb_record(
         mock_preclassify.return_value = preclassify_result
 
     mocker.patch(
-        "documentai_api.utils.document_lifecycle.build_v1_api_response",
+        "documentai_api.utils.ddb.build_v1_api_response",
         return_value={"status": "completed"},
     )
 
