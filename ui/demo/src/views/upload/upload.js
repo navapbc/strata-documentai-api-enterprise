@@ -291,6 +291,11 @@ async function loadPreview(doc) {
   const geo = extractGeometry(doc.fields || {});
   if (geo) {
     _resizeObserver = renderBboxOverlay(_previewPanel, geo);
+  } else if (doc.fields && Object.keys(doc.fields).length) {
+    const note = document.createElement("p");
+    note.className = "empty-state bbox-unavailable-note";
+    note.textContent = "Bounding boxes not available for this document";
+    _previewPanel.appendChild(note);
   }
   markFieldsWithGeometry(_results, geo);
 }

@@ -200,6 +200,20 @@ class FileValidation:
         return FileValidation.CONTENT_TYPE_TO_EXT.get(content_type, "bin")
 
 
+class TextractConfig:
+    """Textract AnalyzeID configuration."""
+
+    # Preclassification categories eligible for Textract identity extraction
+    IDENTITY_PRECLASSIFICATION_CATEGORIES = ("identity_verification",)
+
+    # Content types supported by Textract AnalyzeID (inline bytes)
+    SUPPORTED_CONTENT_TYPES = (
+        "image/jpeg",
+        "image/png",
+        "application/pdf",
+    )
+
+
 class DeletionType(StrEnum):
     """How a document was deleted, recorded on the DDB record when DELETED."""
 
@@ -470,6 +484,7 @@ class ExtractMethod(StrEnum):
     """Which extraction engine produced the result."""
 
     BDA = "bda"
+    TEXTRACT = "textract"
 
 
 ATHENA_QUERY_TIMEOUT_SECONDS = 300

@@ -48,6 +48,9 @@ class DocumentMetadata:
 
     # performance tracking
     DOCUMENT_PROCESSOR_STARTED_AT = "documentProcessorStartedAt"
+    # TODO: Rename BDA_STARTED_AT/BDA_COMPLETED_AT/BDA_PROCESSING_TIME_SECONDS to
+    # generic extract timing fields (extractStartedAt, extractCompletedAt, etc.)
+    # now that Textract also uses them. EXTRACT_METHOD disambiguates the source.
     BDA_STARTED_AT = "bdaStartedAt"
     BDA_COMPLETED_AT = "bdaCompletedAt"
     EXTRACTION_STARTED_AT = "extractionStartedAt"

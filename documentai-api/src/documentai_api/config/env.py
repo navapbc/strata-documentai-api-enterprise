@@ -92,6 +92,9 @@ class AWSEnvConfig(PydanticBaseEnvConfig):
     # Image pipeline
     document_crop_param: str | None = None
 
+    # Textract identity extraction (feature flag)
+    textract_identity_param: str | None = None
+
     # BDA project ARNs (per preclassification category)
     preclassification_routing_param: str | None = None
     bda_project_arn_tax_documents: str | None = None

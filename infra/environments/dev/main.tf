@@ -298,6 +298,7 @@ module "config" {
   parameters = {
     "feature-flags/preclassification-based-routing" = "false"
     "feature-flags/document-crop"                   = "true"
+    "feature-flags/textract-identity"               = "false"
     # Vision model ids - swappable at runtime via SSM (no redeploy). Kept as
     # separate params so preclassification and bbox detection can be tuned apart.
     "models/classification-model-id" = "us.amazon.nova-lite-v1:0"
@@ -431,6 +432,7 @@ locals {
     ENVIRONMENT                                               = var.environment
     PRECLASSIFICATION_ROUTING_PARAM                           = "${local.ssm_prefix}/feature-flags/preclassification-based-routing"
     DOCUMENT_CROP_PARAM                                       = "${local.ssm_prefix}/feature-flags/document-crop"
+    TEXTRACT_IDENTITY_PARAM                                   = "${local.ssm_prefix}/feature-flags/textract-identity"
     DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME                   = module.document_metadata.table_name
     DOCUMENTAI_DOCUMENT_METADATA_JOB_ID_INDEX_NAME            = local.gsi_job_id
     DOCUMENTAI_DOCUMENT_METADATA_EXTERNAL_DOC_ID_INDEX_NAME   = local.gsi_external_document_id
@@ -651,6 +653,14 @@ data "aws_iam_policy_document" "bedrock_all" {
       "arn:aws:bedrock:${var.region}:*:inference-profile/*",
       "arn:aws:bedrock:*::foundation-model/*",
     ]
+  }
+
+  # Textract (AnalyzeID for identity documents)
+  statement {
+    actions = [
+      "textract:AnalyzeID",
+    ]
+    resources = ["*"]
   }
 }
 

@@ -7,6 +7,7 @@ from fastapi import Response
 
 from documentai_api.config.constants import (
     DocumentCategory,
+    ExtractMethod,
     ProcessStatus,
 )
 from documentai_api.logging import get_logger
@@ -16,6 +17,7 @@ from documentai_api.utils.bda import extract_field_values_from_bda_results
 from documentai_api.utils.dto import ClassificationData, InternalApiResponse
 from documentai_api.utils.field_labels import get_field_label
 from documentai_api.utils.response_codes import ResponseCodes
+from documentai_api.utils.textract import extract_field_values_from_textract_results
 
 logger = get_logger(__name__)
 
@@ -45,10 +47,17 @@ def _extract_field_values(
         if not bda_results:
             return {}
 
-        metadata, field_values, field_geometry = extract_field_values_from_bda_results(
-            bda_results, include_geometry=include_bounding_box
-        )
-        field_confidence_map_list = metadata.field_confidence_map_list
+        extract_method = ddb_record.get(DocumentMetadata.EXTRACT_METHOD)
+
+        if extract_method == ExtractMethod.TEXTRACT:
+            metadata, field_values = extract_field_values_from_textract_results(bda_results)
+            field_confidence_map_list = metadata["field_confidence_map_list"]
+            field_geometry: dict[str, Any] = {}
+        else:
+            metadata, field_values, field_geometry = extract_field_values_from_bda_results(
+                bda_results, include_geometry=include_bounding_box
+            )
+            field_confidence_map_list = metadata.field_confidence_map_list
     else:
         field_confidence_map_list = json.loads(
             ddb_record.get(DocumentMetadata.FIELD_CONFIDENCE_SCORES, "[]")

@@ -26,6 +26,7 @@ from documentai_api.utils.dto import (
 )
 from documentai_api.utils.response_builder import get_internal_api_response
 from documentai_api.utils.response_codes import ResponseCodes
+from documentai_api.utils.textract import finalize_textract_result, try_textract_identity
 
 logger = get_logger(__name__)
 
@@ -343,6 +344,7 @@ def upsert_initial_ddb_record(
     if is_password_protected:
         process_status = ProcessStatus.PASSWORD_PROTECTED
         response_code = ResponseCodes.PASSWORD_PROTECTED
+        textract_result = None
 
     else:
         result = preclassify_document(file_bytes, content_type)
@@ -357,21 +359,34 @@ def upsert_initial_ddb_record(
         if not result.is_document:
             process_status = ProcessStatus.NO_DOCUMENT_DETECTED
             response_code = ResponseCodes.NO_DOCUMENT_DETECTED
+            textract_result = None
 
         elif result.is_blurry:
             process_status = ProcessStatus.BLURRY_DOCUMENT_DETECTED
             response_code = ResponseCodes.BLURRY_DOCUMENT_DETECTED
             is_document_blurry = True
+            textract_result = None
 
         elif result.document_count > 1:
             process_status = ProcessStatus.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE
             response_code = ResponseCodes.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE
+            textract_result = None
 
         else:
-            if content_type in FileValidation.GRAYSCALE_CONVERTIBLE:
-                process_status = ProcessStatus.PENDING_IMAGE_OPTIMIZATION
+            # Check if this is an identity document eligible for Textract
+            textract_result = try_textract_identity(
+                result.document_type, content_type, file_bytes, ddb_key
+            )
+
+            if textract_result is None:
+                # Not a Textract-eligible doc or flag is off; route to BDA
+                if content_type in FileValidation.GRAYSCALE_CONVERTIBLE:
+                    process_status = ProcessStatus.PENDING_IMAGE_OPTIMIZATION
+                else:
+                    process_status = ProcessStatus.NOT_STARTED
             else:
-                process_status = ProcessStatus.NOT_STARTED
+                # Textract succeeded inline; mark as success for the upsert
+                process_status = ProcessStatus.SUCCESS
 
     # initial status does not qualify for bda processing
     # create the json response signaling the process is complete
@@ -413,3 +428,9 @@ def upsert_initial_ddb_record(
 
     # explicitly remove file reference to free memory for the lambda
     del file_bytes
+
+    # Textract completed inline -- finalize the record with extraction results
+    if textract_result is not None:
+        finalize_textract_result(ddb_key, textract_result, user_provided_document_category)
+        return
+

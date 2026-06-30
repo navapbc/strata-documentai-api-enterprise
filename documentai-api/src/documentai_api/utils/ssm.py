@@ -41,3 +41,18 @@ def is_document_crop_enabled() -> bool:
     if not config.document_crop_param:
         return False
     return get_parameter_value(config.document_crop_param, default="false").lower() == "true"
+
+
+def is_textract_identity_enabled() -> bool:
+    """Whether Textract AnalyzeID is used for identity documents (DL/passport).
+
+    When enabled, documents preclassified as identity_verification are routed to
+    Textract AnalyzeID instead of BDA. Controlled via an SSM parameter so it can
+    be toggled per-environment without redeploying. Defaults to off.
+    """
+    from documentai_api.config.env import get_aws_config
+
+    config = get_aws_config()
+    if not config.textract_identity_param:
+        return False
+    return get_parameter_value(config.textract_identity_param, default="false").lower() == "true"

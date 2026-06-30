@@ -395,6 +395,27 @@ def update_ddb(
         raise
 
 
+def set_extract_method(object_key: str, method: ExtractMethod, started_at: str) -> None:
+    """Record which extraction engine is processing this document and when it started.
+
+    Used by non-BDA extraction engines (e.g. Textract) that need to stamp the
+    method independently of the standard update_ddb/STARTED flow, which handles
+    the BDA case inline via _build_update_expression.
+    """
+    _execute_ddb_update(
+        object_key,
+        (
+            f"SET {DocumentMetadata.EXTRACTION_STARTED_AT} = :start, "
+            f"{DocumentMetadata.BDA_STARTED_AT} = :start, "
+            f"{DocumentMetadata.EXTRACT_METHOD} = :method"
+        ),
+        {
+            ":start": started_at,
+            ":method": method.value,
+        },
+    )
+
+
 def _apply_ddb_fields(
     model: BaseModel,
     set_fields: dict[str, Any],

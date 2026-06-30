@@ -360,3 +360,112 @@ def test_classify_as_ai_consent_declined(mocker):
         status=ProcessStatus.AI_CONSENT_DECLINED,
         internal_api_response=mock_get_response.return_value,
     )
+
+
+# =============================================================================
+# Textract identity routing
+# =============================================================================
+
+
+def test_upsert_initial_ddb_record_routes_to_textract_when_enabled(
+    ddb_doc_metadata_table,
+    s3_bucket,
+    mocker,
+):
+    """When textract flag is on and preclassification = identity_verification, routes to Textract."""
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.document_utils.get_page_count", return_value=1
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.document_utils.is_password_protected",
+        return_value=False,
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.preclassify_document",
+        return_value=BedrockClassificationResult(
+            document_type="identity_verification",
+            confidence=0.95,
+            document_count=1,
+            is_document=True,
+            is_blurry=False,
+        ),
+    )
+
+    mock_textract = mocker.patch(
+        "documentai_api.utils.document_lifecycle.try_textract_identity",
+        return_value={
+            "matched_document_class": "US-drivers-licenses",
+            "field_confidence_scores": [{"NAME_DETAILS.FIRST_NAME": 0.99}],
+            "textract_s3_uri": "s3://test-bucket/output/textract/test-file.json",
+            "extract_started_at": "2025-01-01T00:00:00+00:00",
+            "extract_completed_at": "2025-01-01T00:00:02+00:00",
+            "extract_time": "2.00",
+        },
+    )
+    mock_finalize = mocker.patch("documentai_api.utils.document_lifecycle.finalize_textract_result")
+
+    s3_bucket.put_object(Key="input/test-file", Body=b"bytes", ContentType="image/jpeg")
+
+    lifecycle_util.upsert_initial_ddb_record(
+        source_bucket_name="test-bucket",
+        source_object_key="input/test-file",
+        original_file_name="license.jpg",
+        ddb_key="test-file",
+        user_provided_document_category="identity",
+        job_id="test-job-id",
+        trace_id="test-trace-id",
+    )
+
+    mock_textract.assert_called_once()
+    mock_finalize.assert_called_once_with("test-file", mock_textract.return_value, "identity")
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
+    assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.SUCCESS
+
+
+def test_upsert_initial_ddb_record_falls_through_when_textract_returns_none(
+    ddb_doc_metadata_table,
+    s3_bucket,
+    mocker,
+):
+    """When textract returns None (flag off or failure), falls through to BDA path."""
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.document_utils.get_page_count", return_value=1
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.document_utils.is_password_protected",
+        return_value=False,
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.preclassify_document",
+        return_value=BedrockClassificationResult(
+            document_type="identity_verification",
+            confidence=0.95,
+            document_count=1,
+            is_document=True,
+            is_blurry=False,
+        ),
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.try_textract_identity",
+        return_value=None,
+    )
+    mock_finalize = mocker.patch("documentai_api.utils.document_lifecycle.finalize_textract_result")
+
+    s3_bucket.put_object(Key="input/test-file", Body=b"bytes", ContentType="image/jpeg")
+
+    lifecycle_util.upsert_initial_ddb_record(
+        source_bucket_name="test-bucket",
+        source_object_key="input/test-file",
+        original_file_name="license.jpg",
+        ddb_key="test-file",
+        user_provided_document_category="identity",
+        job_id="test-job-id",
+        trace_id="test-trace-id",
+    )
+
+    mock_finalize.assert_not_called()
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
+    # JPEG -> goes to image optimization, not Textract
+    assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.PENDING_IMAGE_OPTIMIZATION
