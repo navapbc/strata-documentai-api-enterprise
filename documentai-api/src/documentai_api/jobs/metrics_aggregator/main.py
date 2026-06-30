@@ -259,24 +259,26 @@ def _process_record(record: dict[str, Any], stats: dict[str, Any]) -> None:
                 f"Invalid total_processing_time_seconds value for file {record.get('file_name')!r}: {total_time!r}, skipping"
             )
 
-    bda_time = record.get("bda_processing_time_seconds")
+    bda_time = record.get("extraction_processing_time_seconds") or record.get(
+        "bda_processing_time_seconds"
+    )
     if bda_time:
         try:
             stats["timing_stats"]["bda_processing_time_sum"] += float(bda_time)
             stats["timing_stats"]["bda_processing_time_count"] += 1
         except (ValueError, TypeError):
             logger.warning(
-                f"Invalid bda_processing_time_seconds value for file {record.get('file_name')!r}: {bda_time!r}, skipping"
+                f"Invalid extraction/bda processing time value for file {record.get('file_name')!r}: {bda_time!r}, skipping"
             )
 
-    bda_wait = record.get("bda_wait_time_seconds")
+    bda_wait = record.get("extraction_wait_time_seconds") or record.get("bda_wait_time_seconds")
     if bda_wait:
         try:
             stats["timing_stats"]["bda_wait_time_sum"] += float(bda_wait)
             stats["timing_stats"]["bda_wait_time_count"] += 1
         except (ValueError, TypeError):
             logger.warning(
-                f"Invalid bda_wait_time_seconds value for file {record.get('file_name')!r}: {bda_wait!r}, skipping"
+                f"Invalid extraction/bda wait time value for file {record.get('file_name')!r}: {bda_wait!r}, skipping"
             )
 
 

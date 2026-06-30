@@ -466,4 +466,10 @@ class AthenaQueryStatus:
         }
 
 
+class ExtractMethod(StrEnum):
+    """Which extraction engine produced the result."""
+
+    BDA = "bda"
+
+
 ATHENA_QUERY_TIMEOUT_SECONDS = 300

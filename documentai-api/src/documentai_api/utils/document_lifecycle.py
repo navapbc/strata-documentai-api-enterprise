@@ -1,6 +1,5 @@
 """Document classification state machine and initial record creation."""
 
-import json
 from typing import Any
 
 from botocore.exceptions import ClientError
@@ -13,12 +12,9 @@ from documentai_api.config.constants import (
 from documentai_api.config.env import EnvVars, get_required_env
 from documentai_api.logging import get_logger
 from documentai_api.models.document_record import DocumentRecord
-from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils.bedrock import preclassify_document
 from documentai_api.utils.ddb import (
-    _execute_ddb_update,
-    _send_record_to_metrics_queue,
     update_ddb,
     upsert_ddb,
 )
@@ -28,7 +24,7 @@ from documentai_api.utils.dto import (
     PreClassificationData,
     UpsertDdbData,
 )
-from documentai_api.utils.response_builder import build_v1_api_response, get_internal_api_response
+from documentai_api.utils.response_builder import get_internal_api_response
 from documentai_api.utils.response_codes import ResponseCodes
 
 logger = get_logger(__name__)
@@ -417,13 +413,3 @@ def upsert_initial_ddb_record(
 
     # explicitly remove file reference to free memory for the lambda
     del file_bytes
-
-    # document did not qualify for bda, processing complete
-    # create the v1 api response here and save to ddb
-    # write to sqs as the file was received, but no data extracted
-    if not ProcessStatus.is_pending_extraction(process_status):
-        v1_response = build_v1_api_response(ddb_key, process_status)
-        update_expr = f"SET {DocumentMetadata.V1_API_RESPONSE_JSON} = :v1ResponseJson"
-        expr_values = {":v1ResponseJson": json.dumps(v1_response)}
-        _execute_ddb_update(ddb_key, update_expr, expr_values)
-        _send_record_to_metrics_queue(ddb_key)

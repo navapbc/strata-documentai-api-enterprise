@@ -1,6 +1,4 @@
 import json
-import re
-import uuid as uuid_mod
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
@@ -8,10 +6,10 @@ from typing import Any
 from pydantic import BaseModel
 
 from documentai_api.config.constants import (
-    UUID_PATTERN,
     ConfigDefaults,
     DeletionType,
     DocumentCategory,
+    ExtractMethod,
     ProcessStatus,
 )
 from documentai_api.config.env import EnvVars, get_aws_config, get_required_env
@@ -21,16 +19,19 @@ from documentai_api.services import ddb as ddb_service
 from documentai_api.services import s3 as s3_service
 from documentai_api.services import sqs as sqs_service
 from documentai_api.utils import s3 as s3_utils
-from documentai_api.utils.bda import (
-    calculate_average_non_empty_confidence,
-    extract_region_from_bda_arn,
-)
+from documentai_api.utils.bda import extract_region_from_bda_arn
 from documentai_api.utils.dto import (
     ClassificationData,
-    FieldMetrics,
     InternalApiResponse,
     ProcessingTimes,
     UpsertDdbData,
+)
+from documentai_api.utils.extraction_timing import (
+    calculate_field_metrics as _calculate_field_metrics,
+)
+from documentai_api.utils.extraction_timing import (
+    calculate_processing_times,
+    calculate_wait_time,
 )
 from documentai_api.utils.response_builder import build_v1_api_response
 from documentai_api.utils.ttl import ttl_epoch_in_days
@@ -38,73 +39,23 @@ from documentai_api.utils.ttl import ttl_epoch_in_days
 logger = get_logger(__name__)
 
 
-def get_elapsed_time_seconds(start_time: datetime, end_time: datetime) -> Decimal:
-    """Calculate elapsed time in seconds with 2 decimal precision."""
-    return Decimal(str(round((end_time - start_time).total_seconds(), 2)))
-
-
-def calculate_bda_processing_times(object_key: str, completion_time: datetime) -> ProcessingTimes:
+def _calculate_bda_processing_times(object_key: str, completion_time: datetime) -> ProcessingTimes:
     """Calculate BDA processing timing metrics.
 
-    Returns dict with timing data to add to DDB update, or empty dict if calculation fails.
+    Delegates to extraction.calculate_processing_times with the DDB record.
     """
     ddb_record = get_ddb_record(object_key)
     if ddb_record is None:
         return ProcessingTimes()
-
-    created_at_str = ddb_record.get(DocumentMetadata.CREATED_AT)
-    bda_started_at_str = ddb_record.get(DocumentMetadata.BDA_STARTED_AT)
-
-    timing_data = ProcessingTimes()
-
-    if created_at_str:
-        created_at = datetime.fromisoformat(created_at_str)
-        total_processing_time_seconds = get_elapsed_time_seconds(created_at, completion_time)
-        timing_data.total_processing_time_seconds = total_processing_time_seconds
-        logger.info(f"Total processing time: {total_processing_time_seconds:.2f} seconds")
-
-    if bda_started_at_str:
-        bda_started_at = datetime.fromisoformat(bda_started_at_str)
-        bda_processing_time_seconds = get_elapsed_time_seconds(bda_started_at, completion_time)
-        timing_data.bda_processing_time_seconds = bda_processing_time_seconds
-        logger.info(f"BDA processing time: {bda_processing_time_seconds:.2f} seconds")
-
-    return timing_data
+    return calculate_processing_times(ddb_record, completion_time)
 
 
 def _calculate_wait_time(object_key: str) -> Decimal | None:
-    """Calculate BDA wait time from file creation to BDA start."""
+    """Calculate wait time from file creation to extraction start."""
     ddb_record = get_ddb_record(object_key)
     if ddb_record is None:
         return None
-
-    created_at_str = ddb_record.get(DocumentMetadata.CREATED_AT)
-
-    if not created_at_str:
-        return None
-
-    created_at = datetime.fromisoformat(created_at_str)
-    return get_elapsed_time_seconds(created_at, datetime.now(UTC))
-
-
-def _calculate_field_metrics(data: ClassificationData) -> FieldMetrics:
-    """Calculate field count metrics from classification data."""
-    if not data.field_confidence_scores:
-        return FieldMetrics(0, 0, None)
-
-    field_count = len(data.field_confidence_scores)
-    empty_fields = set(data.field_empty_list or [])
-
-    non_empty_count = sum(
-        1
-        for field_data in data.field_confidence_scores
-        if next(iter(field_data.keys())) not in empty_fields
-    )
-    avg_confidence = calculate_average_non_empty_confidence(
-        data.field_confidence_scores, data.field_empty_list
-    )
-
-    return FieldMetrics(field_count, non_empty_count, avg_confidence)
+    return calculate_wait_time(ddb_record)
 
 
 def _build_completion_timing(
@@ -119,7 +70,9 @@ def _build_completion_timing(
     if ddb_record is None:
         return updates, values
 
-    if ddb_record.get(DocumentMetadata.BDA_STARTED_AT):
+    if ddb_record.get(DocumentMetadata.BDA_STARTED_AT) or ddb_record.get(
+        DocumentMetadata.EXTRACTION_STARTED_AT
+    ):
         completed_time = datetime.now(UTC)
 
         # use S3 LastModified timestamp if available
@@ -135,11 +88,13 @@ def _build_completion_timing(
 
         updates.append(f"{DocumentMetadata.BDA_COMPLETED_AT} = :bdaCompletedAt")
         values[":bdaCompletedAt"] = completed_time.isoformat()
+        updates.append(f"{DocumentMetadata.EXTRACTION_COMPLETED_AT} = :extractionCompletedAt")
+        values[":extractionCompletedAt"] = completed_time.isoformat()
 
         updates.append(f"{DocumentMetadata.PROCESSED_DATE} = :processedDate")
         values[":processedDate"] = completed_time.strftime("%Y-%m-%d")
 
-        timing_data = calculate_bda_processing_times(object_key, completed_time)
+        timing_data = _calculate_bda_processing_times(object_key, completed_time)
 
         if timing_data.total_processing_time_seconds:
             updates.append(
@@ -150,6 +105,10 @@ def _build_completion_timing(
         if timing_data.bda_processing_time_seconds:
             updates.append(f"{DocumentMetadata.BDA_PROCESSING_TIME_SECONDS} = :bdaProcessingTime")
             values[":bdaProcessingTime"] = timing_data.bda_processing_time_seconds
+            updates.append(
+                f"{DocumentMetadata.EXTRACTION_PROCESSING_TIME_SECONDS} = :extractionProcessingTime"
+            )
+            values[":extractionProcessingTime"] = timing_data.bda_processing_time_seconds
 
     return updates, values
 
@@ -164,13 +123,22 @@ def _build_timing_updates(
     values: dict[str, Any] = {}
 
     if status == ProcessStatus.STARTED:
+        # TODO: Drop bda* writes once all readers (UI, response_builder) are migrated
+        # to extraction* fields. The bda* fields are the legacy bridge for old records.
+        now_iso = datetime.now(UTC).isoformat()
         updates.append(f"{DocumentMetadata.BDA_STARTED_AT} = :bdaStartedAt")
-        values[":bdaStartedAt"] = datetime.now(UTC).isoformat()
+        values[":bdaStartedAt"] = now_iso
+        updates.append(f"{DocumentMetadata.EXTRACTION_STARTED_AT} = :extractionStartedAt")
+        values[":extractionStartedAt"] = now_iso
 
         try:
             wait_time = _calculate_wait_time(object_key)
             updates.append(f"{DocumentMetadata.BDA_WAIT_TIME_SECONDS} = :bdaWaitTimeSeconds")
             values[":bdaWaitTimeSeconds"] = wait_time
+            updates.append(
+                f"{DocumentMetadata.EXTRACTION_WAIT_TIME_SECONDS} = :extractionWaitTimeSeconds"
+            )
+            values[":extractionWaitTimeSeconds"] = wait_time
         except Exception as e:
             logger.error(f"Failed to calculate bda wait time for {object_key}: {e}")
 
@@ -259,6 +227,9 @@ def _build_update_expression(
 
         updates.append(f"{DocumentMetadata.BDA_REGION_USED} = :bdaRegion")
         values[":bdaRegion"] = bda_region
+
+        updates.append(f"{DocumentMetadata.EXTRACT_METHOD} = :extractMethod")
+        values[":extractMethod"] = ExtractMethod.BDA.value
 
     if bda_project_arn_used:
         updates.append(f"{DocumentMetadata.BDA_PROJECT_ARN_USED} = :bdaProjectArn")
@@ -412,40 +383,16 @@ def update_ddb(
 
         _execute_ddb_update(object_key, update_expr, expr_values)
 
-        # build v1 response after ddb has been updated
-        v1_response = build_v1_api_response(object_key, status, data, error_message=error_message)
+        # finalize: build v1 response, sync responseCode
+        _finalize_v1_response(object_key, status, data, error_message)
 
-        # update ddb again with v1_response. The v1 builder is the single authority for
-        # response-code precedence (e.g. missing-fields wins over low-confidence), keep
-        # the DDB RESPONSE_CODE in sync with the code determined by response builder.
-        update_expr = f"SET {DocumentMetadata.V1_API_RESPONSE_JSON} = :v1ResponseJson"
-        expr_values = {":v1ResponseJson": json.dumps(v1_response)}
-        if "responseCode" in v1_response:
-            update_expr += f", {DocumentMetadata.RESPONSE_CODE} = :responseCode"
-            expr_values[":responseCode"] = v1_response["responseCode"]
-        _execute_ddb_update(object_key, update_expr, expr_values)
-
-        if ProcessStatus.is_completed(status):
+        # metrics: enqueue for any terminal (classified) status
+        if ProcessStatus.is_classified(status):
             _send_record_to_metrics_queue(object_key)
 
     except Exception as e:
         logger.error(f"Failed to update DDB status: {e}")
         raise
-
-
-def mark_document_deleted(object_key: str, deletion_type: DeletionType) -> None:
-    """Mark a document-metadata record DELETED and record soft vs hard delete."""
-    update_expr = (
-        f"SET {DocumentMetadata.PROCESS_STATUS} = :status, "
-        f"{DocumentMetadata.DELETION_TYPE} = :deletionType, "
-        f"{DocumentMetadata.UPDATED_AT} = :updatedAt"
-    )
-    expr_values: dict[str, Any] = {
-        ":status": ProcessStatus.DELETED.value,
-        ":deletionType": deletion_type.value,
-        ":updatedAt": datetime.now(UTC).isoformat(),
-    }
-    _execute_ddb_update(object_key, update_expr, expr_values)
 
 
 def _apply_ddb_fields(
@@ -472,6 +419,43 @@ def _apply_ddb_fields(
         ddb_param = str(extra["ddb_param"])
         expr_fields.append(f"{ddb_attr} = {ddb_param}")
         expr_values[ddb_param] = value
+
+
+def mark_document_deleted(object_key: str, deletion_type: DeletionType) -> None:
+    """Mark a document-metadata record DELETED and record soft vs hard delete."""
+    update_expr = (
+        f"SET {DocumentMetadata.PROCESS_STATUS} = :status, "
+        f"{DocumentMetadata.DELETION_TYPE} = :deletionType, "
+        f"{DocumentMetadata.UPDATED_AT} = :updatedAt"
+    )
+    expr_values: dict[str, Any] = {
+        ":status": ProcessStatus.DELETED.value,
+        ":deletionType": deletion_type.value,
+        ":updatedAt": datetime.now(UTC).isoformat(),
+    }
+    _execute_ddb_update(object_key, update_expr, expr_values)
+
+
+def _finalize_v1_response(
+    object_key: str,
+    status: str,
+    data: ClassificationData | None = None,
+    error_message: str | None = None,
+) -> None:
+    """Build and persist the v1 API response and sync responseCode.
+
+    This is the single authority for v1 response finalization - called by both
+    update_ddb (extraction completion) and upsert_ddb (terminal pre-extraction statuses).
+    Does NOT enqueue metrics - callers own that policy.
+    """
+    v1_response = build_v1_api_response(object_key, status, data, error_message=error_message)
+
+    update_expr = f"SET {DocumentMetadata.V1_API_RESPONSE_JSON} = :v1ResponseJson"
+    expr_values: dict[str, Any] = {":v1ResponseJson": json.dumps(v1_response)}
+    if "responseCode" in v1_response:
+        update_expr += f", {DocumentMetadata.RESPONSE_CODE} = :responseCode"
+        expr_values[":responseCode"] = v1_response["responseCode"]
+    _execute_ddb_update(object_key, update_expr, expr_values)
 
 
 def upsert_ddb(data: UpsertDdbData) -> None:
@@ -537,50 +521,12 @@ def upsert_ddb(data: UpsertDdbData) -> None:
             expr_values,
             expression_names={"#ttl": DocumentMetadata.TIME_TO_LIVE},
         )
+
+        # finalize terminal statuses: build v1 response, sync responseCode, enqueue metrics
+        if data.process_status and ProcessStatus.is_classified(data.process_status):
+            _finalize_v1_response(data.object_key, data.process_status)
+            _send_record_to_metrics_queue(data.object_key)
+
     except Exception as e:
         logger.error(f"Failed to upsert DDB record for {data.object_key}: {e}")
         raise
-
-
-def get_ddb_key_from_bda_output(output_bucket_name: str, output_object_key: str) -> str | None:
-    """Resolve the DDB file_name key from a BDA output S3 location.
-
-    Extracts the BDA invocation ID (last UUID in the path) and queries DDB
-    to find the associated document record's file_name (partition key).
-
-    Returns None if the invocation ID cannot be extracted or no record is found.
-    """
-    record = get_ddb_record_from_bda_output(output_bucket_name, output_object_key)
-    if not record:
-        return None
-    return record.get(DocumentMetadata.FILE_NAME)
-
-
-def get_ddb_record_from_bda_output(
-    output_bucket_name: str, output_object_key: str
-) -> dict[str, Any] | None:
-    """Resolve the full DDB record from a BDA output S3 location.
-
-    Extracts the BDA invocation ID (last UUID in the path) and queries DDB
-    to find the associated document record.
-
-    Returns None if the invocation ID cannot be extracted or no record is found.
-    """
-    bda_output_s3_uri = f"s3://{output_bucket_name}/{output_object_key}"
-    uuid_matches = re.findall(UUID_PATTERN, bda_output_s3_uri)
-    if not uuid_matches:
-        return None
-
-    bda_invocation_id = str(uuid_mod.UUID(uuid_matches[-1]))
-
-    table_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME)
-    index_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_BDA_INVOCATION_ID_INDEX_NAME)
-
-    items = ddb_service.query_by_key(
-        table_name, index_name, DocumentMetadata.BDA_INVOCATION_ID, bda_invocation_id
-    )
-
-    if not items:
-        return None
-
-    return items[0]

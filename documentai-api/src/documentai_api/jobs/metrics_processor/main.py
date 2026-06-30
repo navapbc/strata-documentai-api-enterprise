@@ -6,7 +6,6 @@ and deletes processed messages from the queue.
 """
 
 import json
-import re
 import uuid
 from datetime import UTC, datetime
 from typing import Any
@@ -16,14 +15,9 @@ from documentai_api.logging import get_logger
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import s3 as s3_service
 from documentai_api.services import sqs as sqs_service
+from documentai_api.utils.strings import camel_to_snake
 
 logger = get_logger(__name__)
-
-
-def camel_to_snake(name: str) -> str:
-    """Convert camelCase to snake_case."""
-    name = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
-    return re.sub("([a-z0-9])([A-Z])", r"\1_\2", name).lower()
 
 
 def convert_keys_to_snake_case(data: dict[str, Any]) -> dict[str, Any]:
