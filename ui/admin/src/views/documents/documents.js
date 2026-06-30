@@ -220,7 +220,7 @@ async function loadDetail(jobId) {
     }
     renderDetail(detail);
     expandDetailPanel();
-    loadPreview(jobId, detail.contentType);
+    await loadPreview(jobId, detail.contentType);
     if (_fieldGeometry) {
       _resizeObserver = renderBboxOverlay(_previewPanel, _fieldGeometry);
       markFieldsWithGeometry(_detailContent, _fieldGeometry);
