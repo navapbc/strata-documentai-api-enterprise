@@ -112,7 +112,7 @@ def drain_lastused_threads():
 def runtime_required_env(monkeypatch, s3_bucket, ddb_doc_metadata_table):
     """Required configuration to run the application in general."""
     monkeypatch.setenv(EnvVars.BDA_PROFILE_ARN, "arn:aws:profile")
-    monkeypatch.setenv(EnvVars.BDA_PROJECT_ARN, "arn:aws:project")
+    monkeypatch.setenv(EnvVars.BDA_PROJECT_ARN_ALL, "arn:aws:project")
     monkeypatch.setenv(EnvVars.BDA_REGION, "us-east-1")
     monkeypatch.setenv(EnvVars.DOCUMENTAI_INPUT_LOCATION, f"s3://{s3_bucket.name}/input")
     monkeypatch.setenv(EnvVars.DOCUMENTAI_OUTPUT_LOCATION, f"s3://{s3_bucket.name}/output")

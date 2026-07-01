@@ -475,7 +475,6 @@ locals {
     BDA_PROJECT_ARN_IDENTITY_VERIFICATION                     = module.bedrock_data_automation["identity_verification"].project_arn
     BDA_PROJECT_ARN_RIGHT_TO_WORK                             = module.bedrock_data_automation["right_to_work"].project_arn
     BDA_PROJECT_ARN_ALL                                       = module.bedrock_data_automation["all"].project_arn
-    BDA_PROJECT_ARN                                           = module.bedrock_data_automation["all"].project_arn
     BDA_PROFILE_ARN                                           = module.bedrock_data_automation["all"].profile_arn
     BDA_REGION                                                = var.bda_region
     BEDROCK_CLASSIFICATION_MODEL_ID_PARAM                     = "${local.ssm_prefix}/models/classification-model-id"

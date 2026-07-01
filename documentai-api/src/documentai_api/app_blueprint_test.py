@@ -99,7 +99,7 @@ async def start_blueprint_test(
                     detail=f"Unknown document category: {document_category}",
                 )
         else:
-            bda_project_arn = get_required_env(EnvVars.BDA_PROJECT_ARN)
+            bda_project_arn = get_required_env(EnvVars.BDA_PROJECT_ARN_ALL)
 
         bda_profile_arn = get_required_env(EnvVars.BDA_PROFILE_ARN)
 
