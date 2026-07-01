@@ -87,7 +87,10 @@ def _record_to_detail(
         file_size_bytes=record.get(DocumentMetadata.FILE_SIZE_BYTES),
         pages_detected=record.get(DocumentMetadata.PAGES_DETECTED),
         total_processing_time_seconds=record.get(DocumentMetadata.TOTAL_PROCESSING_TIME_SECONDS),
-        bda_processing_time_seconds=record.get(DocumentMetadata.BDA_PROCESSING_TIME_SECONDS),
+        # Coalesce: new records write extractionProcessingTimeSeconds; legacy have bdaProcessingTimeSeconds
+        bda_processing_time_seconds=record.get(
+            DocumentMetadata.EXTRACTION_PROCESSING_TIME_SECONDS
+        ) or record.get(DocumentMetadata.BDA_PROCESSING_TIME_SECONDS),
         bda_region_used=record.get(DocumentMetadata.BDA_REGION_USED, ""),
         retry_count=record.get(DocumentMetadata.RETRY_COUNT, 0),
         field_confidence_scores=_parse_confidence_scores(record),

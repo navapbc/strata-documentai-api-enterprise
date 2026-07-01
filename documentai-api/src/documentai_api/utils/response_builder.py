@@ -160,7 +160,10 @@ def build_v1_api_response(
     matched_document_class = ddb_record.get(DocumentMetadata.BDA_MATCHED_DOCUMENT_CLASS)
     total_time = ddb_record.get(DocumentMetadata.TOTAL_PROCESSING_TIME_SECONDS)
     created_at = ddb_record.get(DocumentMetadata.CREATED_AT)
-    completed_at = ddb_record.get(DocumentMetadata.BDA_COMPLETED_AT)
+    # Coalesce: new records write extractionCompletedAt; legacy records have bdaCompletedAt
+    completed_at = ddb_record.get(DocumentMetadata.EXTRACTION_COMPLETED_AT) or ddb_record.get(
+        DocumentMetadata.BDA_COMPLETED_AT
+    )
 
     base_response = {"jobId": job_id, "jobStatus": job_status, "createdAt": created_at}
 
