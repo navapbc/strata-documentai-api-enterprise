@@ -385,12 +385,14 @@ def upsert_initial_ddb_record(
                 else:
                     process_status = ProcessStatus.NOT_STARTED
             else:
-                # Textract succeeded inline; mark as success for the upsert
-                process_status = ProcessStatus.SUCCESS
+                # Textract succeeded inline; upsert as STARTED, finalize_textract_result
+                # will transition to SUCCESS after the upsert
+                process_status = ProcessStatus.STARTED
 
     # initial status does not qualify for bda processing
     # create the json response signaling the process is complete
-    if not ProcessStatus.is_pending_extraction(process_status):
+    # (skip for Textract -- finalize_textract_result handles its own response)
+    if not ProcessStatus.is_pending_extraction(process_status) and textract_result is None:
         internal_api_response = get_internal_api_response(
             object_key=ddb_key,
             response_code=response_code,

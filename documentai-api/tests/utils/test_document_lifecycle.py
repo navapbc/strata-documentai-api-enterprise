@@ -420,7 +420,7 @@ def test_upsert_initial_ddb_record_routes_to_textract_when_enabled(
     mock_finalize.assert_called_once_with("test-file", mock_textract.return_value, "identity")
 
     item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
-    assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.SUCCESS
+    assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.STARTED
 
 
 def test_upsert_initial_ddb_record_falls_through_when_textract_returns_none(
