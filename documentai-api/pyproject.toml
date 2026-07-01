@@ -125,6 +125,7 @@ markers = [
     "audit: mark a test as a security audit log test, to be run isolated from other tests",
     "integration: tests that use moto or real external services",
     "e2e: end-to-end tests against real deployed AWS infrastructure (require .env.e2e)",
+    "flaky: mark a test as flaky with automatic reruns",
 ]
 
 [build-system]
