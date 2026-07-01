@@ -8,6 +8,7 @@ class DocumentMetadata:
     BDA_INVOCATION_ARN = "bdaInvocationArn"
     BDA_INVOCATION_ID = "bdaInvocationId"
     BDA_PROJECT_ARN_USED = "bdaProjectArn"
+    # TODO: Rename to extractionOutputS3Uri -- used by both BDA and Textract paths
     BDA_OUTPUT_S3_URI = "bdaOutputS3Uri"
     ERROR_MESSAGE = "errorMessage"
     RESPONSE_JSON = "responseJson"
@@ -48,8 +49,8 @@ class DocumentMetadata:
 
     # performance tracking
     DOCUMENT_PROCESSOR_STARTED_AT = "documentProcessorStartedAt"
-    BDA_STARTED_AT = "bdaStartedAt"
-    BDA_COMPLETED_AT = "bdaCompletedAt"
+    BDA_STARTED_AT = "bdaStartedAt"  # legacy read-only (metrics aggregator fallback)
+    BDA_COMPLETED_AT = "bdaCompletedAt"  # legacy read-only (metrics aggregator fallback)
     EXTRACTION_STARTED_AT = "extractionStartedAt"
     EXTRACTION_COMPLETED_AT = "extractionCompletedAt"
     EXTRACTION_PROCESSING_TIME_SECONDS = "extractionProcessingTimeSeconds"
@@ -93,4 +94,4 @@ class DocumentMetadata:
     BELOW_EXTRACTION_CONFIDENCE_FLOOR = "belowExtractionConfidenceFloor"
 
     # extraction method
-    EXTRACT_METHOD = "extractMethod"
+    EXTRACT_METHOD = "extractionMethod"

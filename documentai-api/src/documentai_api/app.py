@@ -114,7 +114,7 @@ _cached_endpoints: dict[str, str] | None = None
 
 
 def discover_endpoints(app: FastAPI) -> dict[str, str]:
-    """Build a sorted map of operation name → path for all non-excluded routes. Cached after first call."""
+    """Build a sorted map of operation name -> path for all non-excluded routes. Cached after first call."""
     global _cached_endpoints
     if _cached_endpoints is not None:
         return dict(_cached_endpoints)

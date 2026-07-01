@@ -14,7 +14,7 @@ class EnvVars(StrEnum):
     """
 
     # === AWS / BDA ===
-    BDA_PROJECT_ARN = "BDA_PROJECT_ARN"
+    BDA_PROJECT_ARN_ALL = "BDA_PROJECT_ARN_ALL"
     BDA_PROFILE_ARN = "BDA_PROFILE_ARN"
     BDA_REGION = "BDA_REGION"
     MAX_BDA_INVOKE_RETRY_ATTEMPTS = "MAX_BDA_INVOKE_RETRY_ATTEMPTS"
@@ -88,9 +88,13 @@ class AWSEnvConfig(PydanticBaseEnvConfig):
     bedrock_classification_model_id_param: str | None = None
     bedrock_classification_prompt_param: str | None = None
     bedrock_bounding_box_model_id_param: str | None = None
+    bedrock_supplemental_extraction_model_id_param: str | None = None
 
     # Image pipeline
     document_crop_param: str | None = None
+
+    # Textract identity extraction (feature flag)
+    textract_identity_param: str | None = None
 
     # BDA project ARNs (per preclassification category)
     preclassification_routing_param: str | None = None

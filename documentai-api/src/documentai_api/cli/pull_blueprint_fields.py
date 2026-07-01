@@ -55,7 +55,7 @@ def write(
         if project_arns_json:
             arns = json.loads(project_arns_json)
         else:
-            single = os.environ.get("BDA_PROJECT_ARN")
+            single = os.environ.get("BDA_PROJECT_ARN_ALL")
             if single:
                 arns = {"default": single}
             else:

@@ -80,14 +80,12 @@ def _build_completion_timing(
             try:
                 bucket, key = s3_utils.parse_s3_uri(bda_output_s3_uri)
                 completed_time = s3_service.get_last_modified_at(bucket, key)
-                logger.info(f"Using S3 LastModified for bdaCompletedAt: {completed_time}")
+                logger.info(f"Using S3 LastModified for extractionCompletedAt: {completed_time}")
             except Exception as e:
                 logger.warning(
-                    f"Failed to get S3 timestamp for bdaCompletedAt, using current time: {e}"
+                    f"Failed to get S3 timestamp for extractionCompletedAt, using current time: {e}"
                 )
 
-        updates.append(f"{DocumentMetadata.BDA_COMPLETED_AT} = :bdaCompletedAt")
-        values[":bdaCompletedAt"] = completed_time.isoformat()
         updates.append(f"{DocumentMetadata.EXTRACTION_COMPLETED_AT} = :extractionCompletedAt")
         values[":extractionCompletedAt"] = completed_time.isoformat()
 
@@ -103,8 +101,6 @@ def _build_completion_timing(
             values[":totalProcessingTime"] = timing_data.total_processing_time_seconds
 
         if timing_data.bda_processing_time_seconds:
-            updates.append(f"{DocumentMetadata.BDA_PROCESSING_TIME_SECONDS} = :bdaProcessingTime")
-            values[":bdaProcessingTime"] = timing_data.bda_processing_time_seconds
             updates.append(
                 f"{DocumentMetadata.EXTRACTION_PROCESSING_TIME_SECONDS} = :extractionProcessingTime"
             )
@@ -123,24 +119,18 @@ def _build_timing_updates(
     values: dict[str, Any] = {}
 
     if status == ProcessStatus.STARTED:
-        # TODO: Drop bda* writes once all readers (UI, response_builder) are migrated
-        # to extraction* fields. The bda* fields are the legacy bridge for old records.
         now_iso = datetime.now(UTC).isoformat()
-        updates.append(f"{DocumentMetadata.BDA_STARTED_AT} = :bdaStartedAt")
-        values[":bdaStartedAt"] = now_iso
         updates.append(f"{DocumentMetadata.EXTRACTION_STARTED_AT} = :extractionStartedAt")
         values[":extractionStartedAt"] = now_iso
 
         try:
             wait_time = _calculate_wait_time(object_key)
-            updates.append(f"{DocumentMetadata.BDA_WAIT_TIME_SECONDS} = :bdaWaitTimeSeconds")
-            values[":bdaWaitTimeSeconds"] = wait_time
             updates.append(
                 f"{DocumentMetadata.EXTRACTION_WAIT_TIME_SECONDS} = :extractionWaitTimeSeconds"
             )
             values[":extractionWaitTimeSeconds"] = wait_time
         except Exception as e:
-            logger.error(f"Failed to calculate bda wait time for {object_key}: {e}")
+            logger.error(f"Failed to calculate extraction wait time for {object_key}: {e}")
 
     elif ProcessStatus.is_completed(status):
         completion_updates, completion_values = _build_completion_timing(
@@ -393,6 +383,26 @@ def update_ddb(
     except Exception as e:
         logger.error(f"Failed to update DDB status: {e}")
         raise
+
+
+def set_extract_method(object_key: str, method: ExtractMethod, started_at: str) -> None:
+    """Record which extraction engine is processing this document and when it started.
+
+    Used by non-BDA extraction engines (e.g. Textract) that need to stamp the
+    method independently of the standard update_ddb/STARTED flow, which handles
+    the BDA case inline via _build_update_expression.
+    """
+    _execute_ddb_update(
+        object_key,
+        (
+            f"SET {DocumentMetadata.EXTRACTION_STARTED_AT} = :start, "
+            f"{DocumentMetadata.EXTRACT_METHOD} = :method"
+        ),
+        {
+            ":start": started_at,
+            ":method": method.value,
+        },
+    )
 
 
 def _apply_ddb_fields(

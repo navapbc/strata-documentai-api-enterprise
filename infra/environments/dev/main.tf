@@ -298,10 +298,18 @@ module "config" {
   parameters = {
     "feature-flags/preclassification-based-routing" = "false"
     "feature-flags/document-crop"                   = "true"
+    "feature-flags/textract-identity-enabled"       = "true"
     # Vision model ids - swappable at runtime via SSM (no redeploy). Kept as
     # separate params so preclassification and bbox detection can be tuned apart.
-    "models/classification-model-id" = "us.amazon.nova-lite-v1:0"
-    "models/bounding-box-model-id"   = "us.amazon.nova-lite-v1:0"
+    "models/classification-model-id"    = "us.amazon.nova-lite-v1:0"
+    "models/bounding-box-model-id"      = "us.amazon.nova-lite-v1:0"
+    "models/supplemental-extraction-model-id" = "us.amazon.nova-micro-v1:0"
+  }
+
+  allowed_patterns = {
+    "feature-flags/preclassification-based-routing" = "^(true|false)$"
+    "feature-flags/document-crop"                   = "^(true|false)$"
+    "feature-flags/textract-identity-enabled"       = "^(true|false)$"
   }
 }
 
@@ -431,6 +439,7 @@ locals {
     ENVIRONMENT                                               = var.environment
     PRECLASSIFICATION_ROUTING_PARAM                           = "${local.ssm_prefix}/feature-flags/preclassification-based-routing"
     DOCUMENT_CROP_PARAM                                       = "${local.ssm_prefix}/feature-flags/document-crop"
+    TEXTRACT_IDENTITY_PARAM                                   = "${local.ssm_prefix}/feature-flags/textract-identity-enabled"
     DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME                   = module.document_metadata.table_name
     DOCUMENTAI_DOCUMENT_METADATA_JOB_ID_INDEX_NAME            = local.gsi_job_id
     DOCUMENTAI_DOCUMENT_METADATA_EXTERNAL_DOC_ID_INDEX_NAME   = local.gsi_external_document_id
@@ -466,11 +475,11 @@ locals {
     BDA_PROJECT_ARN_IDENTITY_VERIFICATION                     = module.bedrock_data_automation["identity_verification"].project_arn
     BDA_PROJECT_ARN_RIGHT_TO_WORK                             = module.bedrock_data_automation["right_to_work"].project_arn
     BDA_PROJECT_ARN_ALL                                       = module.bedrock_data_automation["all"].project_arn
-    BDA_PROJECT_ARN                                           = module.bedrock_data_automation["all"].project_arn
     BDA_PROFILE_ARN                                           = module.bedrock_data_automation["all"].profile_arn
     BDA_REGION                                                = var.bda_region
     BEDROCK_CLASSIFICATION_MODEL_ID_PARAM                     = "${local.ssm_prefix}/models/classification-model-id"
     BEDROCK_BOUNDING_BOX_MODEL_ID_PARAM                       = "${local.ssm_prefix}/models/bounding-box-model-id"
+    BEDROCK_SUPPLEMENTAL_EXTRACTION_MODEL_ID_PARAM            = "${local.ssm_prefix}/models/supplemental-extraction-model-id"
     SSM_PREFIX                                                = local.ssm_prefix
     MAX_BDA_INVOKE_RETRY_ATTEMPTS                             = local.max_bda_invoke_retry_attempts
     API_AUTH_ENABLED                                          = local.api_auth_enabled
@@ -651,6 +660,14 @@ data "aws_iam_policy_document" "bedrock_all" {
       "arn:aws:bedrock:${var.region}:*:inference-profile/*",
       "arn:aws:bedrock:*::foundation-model/*",
     ]
+  }
+
+  # Textract (AnalyzeID for identity documents)
+  statement {
+    actions = [
+      "textract:AnalyzeID",
+    ]
+    resources = ["*"]
   }
 }
 

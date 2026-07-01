@@ -224,6 +224,13 @@ async function loadDetail(jobId) {
     if (_fieldGeometry) {
       _resizeObserver = renderBboxOverlay(_previewPanel, _fieldGeometry);
       markFieldsWithGeometry(_detailContent, _fieldGeometry);
+    } else if (detail.fields) {
+      // Textract AnalyzeID doesn't return geometry; show a note so the
+      // absence of bounding boxes isn't mistaken for a bug.
+      const note = document.createElement("p");
+      note.className = "empty-state bbox-unavailable-note";
+      note.textContent = "Bounding boxes not available for this document";
+      _previewPanel.appendChild(note);
     }
   } catch (e) {
     _detailContent.textContent = e.message;
