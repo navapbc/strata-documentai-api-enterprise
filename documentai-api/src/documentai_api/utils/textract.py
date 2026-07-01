@@ -227,8 +227,8 @@ def _call_nova_supplemental(word_blocks: list[dict[str, Any]]) -> list[dict[str,
     # Embed an explicit block index so Nova can reference blocks by position.
     # Text-based matching proved brittle - synthetic-drivers-license-desk-background.jpg
     # eye color block contained full text "18 EYES:BRO" (field 18, value "BRO" = brown),
-    # Nova Micro consistently extracted "BRO" even after numerous prompt iterations. 
-    # Indexing by position ties extracted values to specific blocks regardless of 
+    # Nova Micro consistently extracted "BRO" even after numerous prompt iterations.
+    # Indexing by position ties extracted values to specific blocks regardless of
     # how the model reads the surrounding text.
     indexed_blocks = [{"index": i, **b} for i, b in enumerate(word_blocks)]
 
