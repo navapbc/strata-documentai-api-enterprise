@@ -7,11 +7,17 @@ from typing import Any
 from documentai_api.config.constants import ExtractMethod, TextractConfig
 from documentai_api.config.env import EnvVars, get_required_env
 from documentai_api.logging import get_logger
+from documentai_api.mappings.textract.us_drivers_licenses import (
+    NON_NORMALIZED_ANALYZE_ID_FIELDS,
+    NOVA_SUPPLEMENTAL_PROMPT,
+)
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.dates import strip_time
 from documentai_api.utils.response_codes import ResponseCodes
 
 logger = get_logger(__name__)
+
+NOVA_MICRO_MODEL_ID = "us.amazon.nova-micro-v1:0"
 
 
 def extract_fields_from_analyze_id(
@@ -23,16 +29,16 @@ def extract_fields_from_analyze_id(
         response: Raw Textract AnalyzeID response
         field_map: Maps Textract field type (e.g. "FIRST_NAME") to BDA field name
 
-    Returns dict of {bda_field_name: {"confidence": float, "value": str}}
-
-    TODO: AnalyzeID returns a Blocks array (LINE/WORD) with full BoundingBox geometry.
-    These aren't linked to IdentityDocumentFields directly, but field values could be
-    matched to blocks by text content to provide bounding boxes in the UI. Requires
-    fuzzy text matching since some fields span multiple words/lines.
+    Returns dict of {bda_field_name: {"confidence": float, "value": str, "geometry": list | None}}
     """
     fields = {}
 
     for doc in response.get("IdentityDocuments", []):
+        # build text-to-geometry lookup from Blocks
+        all_blocks = doc.get("Blocks", [])
+        block_geometry = _build_block_geometry_index(all_blocks)
+        word_blocks = [b for b in all_blocks if b.get("BlockType") == "WORD"]
+
         for field in doc.get("IdentityDocumentFields", []):
             field_type = field.get("Type", {}).get("Text", "")
 
@@ -49,12 +55,100 @@ def extract_fields_from_analyze_id(
             if normalized.get("Value"):
                 value = strip_time(normalized["Value"])
 
-            fields[bda_name] = {
+            # match geometry from blocks by raw text (pre-normalization)
+            raw_text = value_detection.get("Text", "")
+            geometry = (
+                _find_geometry_with_fallback(raw_text, block_geometry, word_blocks)
+                if raw_text
+                else None
+            )
+
+            field_data: dict[str, Any] = {
                 "confidence": round(confidence / 100.0, 2),
                 "value": value,
             }
+            if geometry:
+                field_data["geometry"] = geometry
+
+            fields[bda_name] = field_data
 
     return fields
+
+
+def _build_block_geometry_index(blocks: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    """Build a text-to-geometry lookup from Textract Blocks.
+
+    Indexes LINE blocks first (for multi-word matches), then WORD blocks.
+    Returns {text: [{"boundingBox": {...}}]} matching the BDA geometry format.
+    """
+    index: dict[str, list[dict[str, Any]]] = {}
+
+    # LINE blocks first -- these cover multi-word field values (e.g. "100 MARKET STREET")
+    for block in blocks:
+        if block.get("BlockType") != "LINE":
+            continue
+        text = block.get("Text", "")
+        bbox = block.get("Geometry", {}).get("BoundingBox")
+        if text and bbox and text not in index:
+            index[text] = [{"boundingBox": bbox}]
+
+    # WORD blocks -- fill in single-word values not already covered by LINE
+    for block in blocks:
+        if block.get("BlockType") != "WORD":
+            continue
+        text = block.get("Text", "")
+        bbox = block.get("Geometry", {}).get("BoundingBox")
+        if text and bbox and text not in index:
+            index[text] = [{"boundingBox": bbox}]
+
+    return index
+
+
+def _clean_text(text: str) -> str:
+    """Normalize text for geometry matching: lowercase, strip punctuation and whitespace."""
+    import string
+
+    return text.lower().strip().translate(str.maketrans("", "", string.punctuation))
+
+
+def _find_geometry_with_fallback(
+    field_value: str,
+    block_index: dict[str, list[dict[str, Any]]],
+    word_blocks: list[dict[str, Any]],
+) -> list[dict[str, Any]] | None:
+    """Find geometry for a field value with exact match then cleaned-text fallback.
+
+    1. Exact match against the block index (LINE then WORD priority).
+    2. Cleaned fallback: strip punctuation from both sides and compare against
+       WORD blocks. Picks the shortest matching block text for tightest bbox.
+    """
+    # exact match
+    if field_value in block_index:
+        return block_index[field_value]
+
+    if not field_value:
+        return None
+
+    # cleaned-text fallback on WORD blocks
+    cleaned_value = _clean_text(field_value)
+    if not cleaned_value:
+        return None
+
+    best_match: dict[str, Any] | None = None
+    best_length = float("inf")
+
+    for block in word_blocks:
+        block_text = block.get("Text", "")
+        if _clean_text(block_text) == cleaned_value and len(block_text) < best_length:
+            best_match = block
+            best_length = len(block_text)
+
+    if best_match:
+        bbox = best_match.get("Geometry", {}).get("BoundingBox")
+        if bbox:
+            return [{"boundingBox": bbox}]
+
+    return None
 
 
 def get_id_type(response: dict[str, Any]) -> str | None:
@@ -67,12 +161,124 @@ def get_id_type(response: dict[str, Any]) -> str | None:
     return None
 
 
+def extract_supplemental_fields_via_nova(
+    blocks: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Extract physical descriptor fields from Blocks via Nova Micro.
+
+    Sends WORD blocks (text + bounding box) to Nova Micro and asks it to identify
+    fields not normalized by AnalyzeID (sex, height, eye color, etc.).
+
+    Returns dict of {bda_field_name: {"confidence": float, "value": str, "geometry": list | None}}
+    """
+    word_blocks = _get_word_blocks(blocks)
+    if not word_blocks:
+        return {}
+
+    try:
+        extracted_fields = _call_nova_supplemental(word_blocks)
+    except Exception as e:
+        logger.warning(f"Nova supplemental field extraction failed: {e}")
+        return {}
+
+    if not extracted_fields:
+        return {}
+
+    fields = _match_nova_results_to_blocks(extracted_fields, word_blocks)
+    logger.info(f"Nova supplemental: extracted {len(fields)} physical descriptor fields")
+    return fields
+
+
+def _get_word_blocks(blocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Extract WORD blocks with text, bounding box, and confidence."""
+    return [
+        {
+            "text": b["Text"],
+            "boundingBox": b["Geometry"]["BoundingBox"],
+            "confidence": b.get("Confidence", 0.0),
+        }
+        for b in blocks
+        if b.get("BlockType") == "WORD"
+        and b.get("Text")
+        and b.get("Geometry", {}).get("BoundingBox")
+    ]
+
+
+def _call_nova_supplemental(word_blocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Call Nova Micro to identify physical descriptor fields from word blocks."""
+    from documentai_api.services.bedrock import invoke_model
+    from documentai_api.utils.json_parsing import parse_llm_json
+
+    field_descriptions = "\n".join(
+        f"- {name}: {desc}" for name, desc in NON_NORMALIZED_ANALYZE_ID_FIELDS.items()
+    )
+
+    prompt = NOVA_SUPPLEMENTAL_PROMPT.format(
+        field_descriptions=field_descriptions,
+        blocks_json=json.dumps(word_blocks),
+    )
+
+    response = invoke_model(
+        model_id=NOVA_MICRO_MODEL_ID,
+        messages=[{"role": "user", "content": [{"text": prompt}]}],
+        max_tokens=512,
+        temperature=0.0,
+    )
+
+    output_text = response["output"]["message"]["content"][0]["text"]
+    result = parse_llm_json(output_text, context="Nova supplemental fields")
+    if not result:
+        return []
+
+    return list(result.get("fields", []))
+
+
+def _match_nova_results_to_blocks(
+    extracted_fields: list[dict[str, Any]],
+    word_blocks: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Match Nova's identified fields back to block geometry and confidence."""
+    block_lookup = {b["text"]: b for b in word_blocks}
+
+    fields: dict[str, Any] = {}
+    for item in extracted_fields:
+        field_name = item.get("field_name", "")
+        value = item.get("value", "")
+        block_text = item.get("block_text", "")
+
+        if field_name not in NON_NORMALIZED_ANALYZE_ID_FIELDS or not value:
+            continue
+
+        # match block: exact first, then cleaned-text fallback
+        matched_block = block_lookup.get(block_text)
+        if not matched_block and block_text:
+            cleaned = _clean_text(block_text)
+            for b in word_blocks:
+                if _clean_text(b["text"]) == cleaned:
+                    matched_block = b
+                    break
+
+        # no matched block = no OCR verification, skip the field
+        if not matched_block:
+            continue
+
+        field_data: dict[str, Any] = {
+            "confidence": round(matched_block["confidence"] / 100.0, 2),
+            "value": value,
+            "geometry": [{"boundingBox": matched_block["boundingBox"]}],
+        }
+
+        fields[field_name] = field_data
+
+    return fields
+
+
 def extract_field_values_from_textract_results(
     result_json: dict[str, Any],
-) -> tuple[dict[str, Any], dict[str, str]]:
-    """Extract field confidence metadata and values from stored Textract results.
+) -> tuple[dict[str, Any], dict[str, str], dict[str, dict[str, Any]]]:
+    """Extract field confidence metadata, values, and geometry from stored Textract results.
 
-    Returns (metadata_dict, field_values_dict) where metadata_dict has:
+    Returns (metadata_dict, field_values_dict, field_geometry_dict) where metadata_dict has:
       - field_confidence_map_list: list of {name: confidence}
       - empty_fields: list of field names with no value
     """
@@ -82,6 +288,7 @@ def extract_field_values_from_textract_results(
     empty_fields: list[str] = []
     field_confidence_map_list: list[dict[str, float]] = []
     field_values: dict[str, str] = {}
+    field_geometry: dict[str, dict[str, Any]] = {}
 
     for name, data in fields.items():
         conf = data["confidence"]
@@ -96,11 +303,14 @@ def extract_field_values_from_textract_results(
 
         field_values[name] = value
 
+        if "geometry" in data:
+            field_geometry[name] = {"geometry": data["geometry"]}
+
     metadata = {
         "field_confidence_map_list": field_confidence_map_list,
         "empty_fields": empty_fields,
     }
-    return metadata, field_values
+    return metadata, field_values, field_geometry
 
 
 # =============================================================================
@@ -136,7 +346,8 @@ def try_textract_identity(
         from documentai_api.services import s3 as s3_service
         from documentai_api.services.textract import analyze_id
         from documentai_api.utils import s3 as s3_utils
-        from documentai_api.utils.ddb import get_elapsed_time_seconds, set_extract_method
+        from documentai_api.utils.ddb import set_extract_method
+        from documentai_api.utils.extraction_timing import get_elapsed_time_seconds
 
         extract_started_at = datetime.now(UTC)
         textract_response = analyze_id(file_bytes)
@@ -148,7 +359,15 @@ def try_textract_identity(
 
         fields = extract_fields_from_analyze_id(textract_response, field_map)
 
-        # Unrecognized ID type or no mapped fields — fall through to BDA
+        # Supplemental pass: extract physical descriptors via Nova Micro
+        all_blocks = []
+        for doc in textract_response.get("IdentityDocuments", []):
+            all_blocks.extend(doc.get("Blocks", []))
+        if all_blocks:
+            supplemental = extract_supplemental_fields_via_nova(all_blocks)
+            fields.update(supplemental)
+
+        # Unrecognized ID type or no mapped fields -- fall through to BDA
         if not matched_document_class or not fields:
             logger.info(
                 f"Textract could not map document for {ddb_key} "

@@ -8,6 +8,7 @@ class DocumentMetadata:
     BDA_INVOCATION_ARN = "bdaInvocationArn"
     BDA_INVOCATION_ID = "bdaInvocationId"
     BDA_PROJECT_ARN_USED = "bdaProjectArn"
+    # TODO: Rename to extractionOutputS3Uri -- used by both BDA and Textract paths
     BDA_OUTPUT_S3_URI = "bdaOutputS3Uri"
     ERROR_MESSAGE = "errorMessage"
     RESPONSE_JSON = "responseJson"

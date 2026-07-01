@@ -433,4 +433,3 @@ def upsert_initial_ddb_record(
     if textract_result is not None:
         finalize_textract_result(ddb_key, textract_result, user_provided_document_category)
         return
-

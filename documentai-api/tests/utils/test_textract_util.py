@@ -1,10 +1,13 @@
 """Tests for utils/textract.py."""
 
+import json
 from datetime import UTC, datetime
 from decimal import Decimal
+from pathlib import Path
 
 import pytest
 
+from documentai_api.mappings.textract.us_drivers_licenses import FIELD_MAP as DL_FIELD_MAP
 from documentai_api.utils.textract import (
     extract_field_values_from_textract_results,
     extract_fields_from_analyze_id,
@@ -14,126 +17,29 @@ from documentai_api.utils.textract import (
 )
 
 # =============================================================================
+# Fixtures
+# =============================================================================
+
+FIXTURE_DIR = Path(__file__).parent.parent / "helpers" / "fixtures" / "textract"
+
+
+@pytest.fixture
+def analyze_id_response():
+    return json.loads((FIXTURE_DIR / "analyze_id_drivers_license.json").read_text())
+
+
+@pytest.fixture
+def analyze_id_response_fields_only():
+    return json.loads((FIXTURE_DIR / "analyze_id_drivers_license_fields_only.json").read_text())
+
+
+# =============================================================================
 # extract_fields_from_analyze_id
 # =============================================================================
 
-SAMPLE_ANALYZE_ID_RESPONSE = {
-    "IdentityDocuments": [
-        {
-            "IdentityDocumentFields": [
-                {
-                    "Type": {"Text": "FIRST_NAME"},
-                    "ValueDetection": {"Text": "ANDREW", "Confidence": 98.0},
-                },
-                {
-                    "Type": {"Text": "LAST_NAME"},
-                    "ValueDetection": {"Text": "SAMPLE", "Confidence": 80.0},
-                },
-                {
-                    "Type": {"Text": "MIDDLE_NAME"},
-                    "ValueDetection": {"Text": "JASON", "Confidence": 98.0},
-                },
-                {
-                    "Type": {"Text": "SUFFIX"},
-                    "ValueDetection": {"Text": "", "Confidence": 99.0},
-                },
-                {
-                    "Type": {"Text": "CITY_IN_ADDRESS"},
-                    "ValueDetection": {"Text": "HARRISBURG", "Confidence": 98.0},
-                },
-                {
-                    "Type": {"Text": "ZIP_CODE_IN_ADDRESS"},
-                    "ValueDetection": {"Text": "171010000", "Confidence": 98.0},
-                },
-                {
-                    "Type": {"Text": "STATE_IN_ADDRESS"},
-                    "ValueDetection": {"Text": "PA", "Confidence": 85.0},
-                },
-                {
-                    "Type": {"Text": "STATE_NAME"},
-                    "ValueDetection": {"Text": "PENNSYLVANIA", "Confidence": 96.0},
-                },
-                {
-                    "Type": {"Text": "DOCUMENT_NUMBER"},
-                    "ValueDetection": {"Text": "99999999", "Confidence": 97.0},
-                },
-                {
-                    "Type": {"Text": "EXPIRATION_DATE"},
-                    "ValueDetection": {
-                        "Text": "01/08/2026",
-                        "Confidence": 97.0,
-                        "NormalizedValue": {"Value": "2026-01-08T00:00:00"},
-                    },
-                },
-                {
-                    "Type": {"Text": "DATE_OF_BIRTH"},
-                    "ValueDetection": {
-                        "Text": "01/07/1973",
-                        "Confidence": 96.0,
-                        "NormalizedValue": {"Value": "1973-01-07T00:00:00"},
-                    },
-                },
-                {
-                    "Type": {"Text": "DATE_OF_ISSUE"},
-                    "ValueDetection": {
-                        "Text": "01/07/2022",
-                        "Confidence": 97.0,
-                        "NormalizedValue": {"Value": "2022-01-07T00:00:00"},
-                    },
-                },
-                {
-                    "Type": {"Text": "ENDORSEMENTS"},
-                    "ValueDetection": {"Text": "NONE", "Confidence": 98.0},
-                },
-                {
-                    "Type": {"Text": "RESTRICTIONS"},
-                    "ValueDetection": {"Text": "NONE", "Confidence": 98.0},
-                },
-                {
-                    "Type": {"Text": "CLASS"},
-                    "ValueDetection": {"Text": "D", "Confidence": 59.0},
-                },
-                {
-                    "Type": {"Text": "ADDRESS"},
-                    "ValueDetection": {"Text": "123 MAIN STREET APT", "Confidence": 94.0},
-                },
-                {
-                    "Type": {"Text": "COUNTY"},
-                    "ValueDetection": {"Text": "", "Confidence": 99.0},
-                },
-                {
-                    "Type": {"Text": "ID_TYPE"},
-                    "ValueDetection": {"Text": "DRIVER LICENSE FRONT", "Confidence": 99.0},
-                },
-            ]
-        }
-    ]
-}
 
-DL_FIELD_MAP = {
-    "FIRST_NAME": "NAME_DETAILS.FIRST_NAME",
-    "LAST_NAME": "NAME_DETAILS.LAST_NAME",
-    "MIDDLE_NAME": "NAME_DETAILS.MIDDLE_NAME",
-    "SUFFIX": "NAME_DETAILS.SUFFIX",
-    "ADDRESS": "ADDRESS_DETAILS.STREET_ADDRESS",
-    "CITY_IN_ADDRESS": "ADDRESS_DETAILS.CITY",
-    "ZIP_CODE_IN_ADDRESS": "ADDRESS_DETAILS.ZIP_CODE",
-    "STATE_IN_ADDRESS": "ADDRESS_DETAILS.STATE",
-    "COUNTY": "COUNTY",
-    "DOCUMENT_NUMBER": "ID_NUMBER",
-    "EXPIRATION_DATE": "EXPIRATION_DATE",
-    "DATE_OF_BIRTH": "DATE_OF_BIRTH",
-    "STATE_NAME": "STATE_NAME",
-    "DATE_OF_ISSUE": "DATE_OF_ISSUE",
-    "CLASS": "CLASS",
-    "RESTRICTIONS": "RESTRICTIONS",
-    "ENDORSEMENTS": "ENDORSEMENTS",
-    "SEX": "PERSONAL_DETAILS.SEX",
-}
-
-
-def test_extract_fields_from_analyze_id_maps_to_bda_names():
-    fields = extract_fields_from_analyze_id(SAMPLE_ANALYZE_ID_RESPONSE, DL_FIELD_MAP)
+def test_extract_fields_from_analyze_id_maps_to_bda_names(analyze_id_response_fields_only):
+    fields = extract_fields_from_analyze_id(analyze_id_response_fields_only, DL_FIELD_MAP)
 
     assert "NAME_DETAILS.FIRST_NAME" in fields
     assert fields["NAME_DETAILS.FIRST_NAME"]["value"] == "ANDREW"
@@ -146,17 +52,17 @@ def test_extract_fields_from_analyze_id_maps_to_bda_names():
     assert fields["ID_NUMBER"]["value"] == "99999999"
 
 
-def test_extract_fields_from_analyze_id_uses_normalized_date():
-    fields = extract_fields_from_analyze_id(SAMPLE_ANALYZE_ID_RESPONSE, DL_FIELD_MAP)
+def test_extract_fields_from_analyze_id_uses_normalized_date(analyze_id_response_fields_only):
+    fields = extract_fields_from_analyze_id(analyze_id_response_fields_only, DL_FIELD_MAP)
     # T00:00:00 stripped to date-only
     assert fields["DATE_OF_BIRTH"]["value"] == "1973-01-07"
     assert fields["EXPIRATION_DATE"]["value"] == "2026-01-08"
     assert fields["DATE_OF_ISSUE"]["value"] == "2022-01-07"
 
 
-def test_extract_fields_from_analyze_id_skips_unmapped_fields():
+def test_extract_fields_from_analyze_id_skips_unmapped_fields(analyze_id_response_fields_only):
     """Fields not in the map (e.g. ID_TYPE) are excluded from output."""
-    fields = extract_fields_from_analyze_id(SAMPLE_ANALYZE_ID_RESPONSE, DL_FIELD_MAP)
+    fields = extract_fields_from_analyze_id(analyze_id_response_fields_only, DL_FIELD_MAP)
     # ID_TYPE is in the response but not in DL_FIELD_MAP
     for bda_name in fields:
         assert "idType" not in bda_name
@@ -168,9 +74,39 @@ def test_extract_fields_from_analyze_id_empty_response():
     assert fields == {}
 
 
-def test_extract_fields_from_analyze_id_empty_field_map():
-    fields = extract_fields_from_analyze_id(SAMPLE_ANALYZE_ID_RESPONSE, {})
+def test_extract_fields_from_analyze_id_empty_field_map(analyze_id_response_fields_only):
+    fields = extract_fields_from_analyze_id(analyze_id_response_fields_only, {})
     assert fields == {}
+
+
+def test_extract_fields_from_analyze_id_geometry(analyze_id_response):
+    """Fields matched to Blocks get bounding box geometry."""
+    fields = extract_fields_from_analyze_id(analyze_id_response, DL_FIELD_MAP)
+
+    # GARCIA (FIRST_NAME) -- exact match to WORD block
+    assert "geometry" in fields["NAME_DETAILS.FIRST_NAME"]
+    bbox = fields["NAME_DETAILS.FIRST_NAME"]["geometry"][0]["boundingBox"]
+    assert bbox["Left"] == pytest.approx(0.4058, abs=0.01)
+
+    # MARIA (LAST_NAME) -- exact match to LINE block
+    assert "geometry" in fields["NAME_DETAILS.LAST_NAME"]
+
+    # 736HDV7874JSB -- exact match to LINE block
+    assert "geometry" in fields["ID_NUMBER"]
+    bbox = fields["ID_NUMBER"]["geometry"][0]["boundingBox"]
+    assert bbox["Width"] == pytest.approx(0.2097, abs=0.001)
+
+    # D (CLASS) -- exact match to WORD block
+    assert "geometry" in fields["CLASS"]
+
+    # 02801 (ZIP) -- exact match to WORD block
+    assert "geometry" in fields["ADDRESS_DETAILS.ZIP_CODE"]
+
+    # BIGTOWN (CITY) -- cleaned fallback: "bigtown" == clean("BIGTOWN,")
+    assert "geometry" in fields["ADDRESS_DETAILS.CITY"]
+
+    # MA (STATE) -- cleaned fallback: "ma" == clean("MA,")
+    assert "geometry" in fields["ADDRESS_DETAILS.STATE"]
 
 
 # =============================================================================
@@ -178,8 +114,8 @@ def test_extract_fields_from_analyze_id_empty_field_map():
 # =============================================================================
 
 
-def test_get_id_type_returns_type():
-    assert get_id_type(SAMPLE_ANALYZE_ID_RESPONSE) == "DRIVER LICENSE FRONT"
+def test_get_id_type_returns_type(analyze_id_response_fields_only):
+    assert get_id_type(analyze_id_response_fields_only) == "DRIVER LICENSE FRONT"
 
 
 def test_get_id_type_returns_none_when_missing():
@@ -200,24 +136,41 @@ def test_extract_field_values_from_textract_results():
     stored = {
         "source": "textract",
         "fields": {
-            "NAME_DETAILS.FIRST_NAME": {"confidence": 0.99, "value": "John"},
+            "NAME_DETAILS.FIRST_NAME": {
+                "confidence": 0.99,
+                "value": "John",
+                "geometry": [
+                    {"boundingBox": {"Width": 0.1, "Height": 0.05, "Left": 0.4, "Top": 0.5}}
+                ],
+            },
             "NAME_DETAILS.LAST_NAME": {"confidence": 0.98, "value": "Doe"},
             "ID_NUMBER": {"confidence": 0.97, "value": ""},
         },
     }
-    metadata, field_values = extract_field_values_from_textract_results(stored)
+    metadata, field_values, field_geometry = extract_field_values_from_textract_results(stored)
 
     assert len(metadata["field_confidence_map_list"]) == 3
     assert "ID_NUMBER" in metadata["empty_fields"]
     assert field_values["NAME_DETAILS.FIRST_NAME"] == "John"
     assert field_values["ID_NUMBER"] == ""
 
+    # geometry present for fields that have it, absent for those that don't
+    assert "NAME_DETAILS.FIRST_NAME" in field_geometry
+    assert field_geometry["NAME_DETAILS.FIRST_NAME"]["geometry"] == [
+        {"boundingBox": {"Width": 0.1, "Height": 0.05, "Left": 0.4, "Top": 0.5}}
+    ]
+    assert "NAME_DETAILS.LAST_NAME" not in field_geometry
+    assert "ID_NUMBER" not in field_geometry
+
 
 def test_extract_field_values_from_textract_results_empty():
-    metadata, field_values = extract_field_values_from_textract_results({"fields": {}})
+    metadata, field_values, field_geometry = extract_field_values_from_textract_results(
+        {"fields": {}}
+    )
     assert metadata["field_confidence_map_list"] == []
     assert metadata["empty_fields"] == []
     assert field_values == {}
+    assert field_geometry == {}
 
 
 # =============================================================================
@@ -229,7 +182,7 @@ def test_extract_field_values_from_textract_results_empty():
     ("category", "content_type", "flag_on"),
     [
         ("identity_verification", "image/jpeg", False),  # flag off
-        ("tax_documents", "image/jpeg", True),  # wrong category
+        ("tax_documents", "image/jpeg", True),  # incorrect category
         ("identity_verification", "image/tiff", True),  # unsupported content type
     ],
 )
@@ -254,7 +207,9 @@ def test_try_textract_identity_returns_result_on_success(mocker, monkeypatch):
     )
     mocker.patch(
         "documentai_api.services.textract.analyze_id",
-        return_value=SAMPLE_ANALYZE_ID_RESPONSE,
+        return_value=json.loads(
+            (FIXTURE_DIR / "analyze_id_drivers_license_fields_only.json").read_text()
+        ),
     )
     mocker.patch("documentai_api.services.s3.put_object")
     mock_set_method = mocker.patch("documentai_api.utils.ddb.set_extract_method")
@@ -349,3 +304,222 @@ def test_finalize_textract_result_sets_below_floor_when_low_confidence(mocker):
 
     call_kwargs = mock_classify.call_args[1]
     assert call_kwargs["below_extraction_confidence_floor"] is True  # 0.70 < 0.90
+
+
+# =============================================================================
+# Supplemental Nova extraction pipeline
+# =============================================================================
+
+
+def test_extract_supplemental_fields_via_nova(analyze_id_response, mocker):
+    """Nova supplemental extraction identifies physical descriptor fields from Blocks."""
+    from documentai_api.utils.textract import extract_supplemental_fields_via_nova
+
+    # Simulate Nova returning identified fields with block_text references
+    nova_response = {
+        "output": {
+            "message": {
+                "content": [
+                    {
+                        "text": json.dumps(
+                            {
+                                "fields": [
+                                    {
+                                        "field_name": "PERSONAL_DETAILS.SEX",
+                                        "value": "F",
+                                        "block_text": "F",
+                                    },
+                                    {
+                                        "field_name": "PERSONAL_DETAILS.EYE_COLOR",
+                                        "value": "BLK",
+                                        "block_text": "BLK",
+                                    },
+                                ]
+                            }
+                        )
+                    }
+                ]
+            }
+        }
+    }
+    mocker.patch("documentai_api.services.bedrock.invoke_model", return_value=nova_response)
+
+    all_blocks = analyze_id_response["IdentityDocuments"][0]["Blocks"]
+    fields = extract_supplemental_fields_via_nova(all_blocks)
+
+    # SEX field extracted with geometry from the "F" WORD block
+    assert "PERSONAL_DETAILS.SEX" in fields
+    assert fields["PERSONAL_DETAILS.SEX"]["value"] == "F"
+    assert "geometry" in fields["PERSONAL_DETAILS.SEX"]
+    # confidence from the Textract WORD block for "F"
+    assert fields["PERSONAL_DETAILS.SEX"]["confidence"] == pytest.approx(1.0, abs=0.01)
+
+    # EYE_COLOR extracted with geometry from the "BLK" WORD block
+    assert "PERSONAL_DETAILS.EYE_COLOR" in fields
+    assert fields["PERSONAL_DETAILS.EYE_COLOR"]["value"] == "BLK"
+    assert "geometry" in fields["PERSONAL_DETAILS.EYE_COLOR"]
+
+
+def test_full_textract_pipeline_with_nova_supplemental(analyze_id_response, mocker, monkeypatch):
+    """Full pipeline: AnalyzeID fields + Nova supplemental merged into single result."""
+    from documentai_api.utils.textract import (
+        extract_fields_from_analyze_id,
+        extract_supplemental_fields_via_nova,
+    )
+
+    # Nova returns physical descriptors
+    nova_response = {
+        "output": {
+            "message": {
+                "content": [
+                    {
+                        "text": json.dumps(
+                            {
+                                "fields": [
+                                    {
+                                        "field_name": "PERSONAL_DETAILS.SEX",
+                                        "value": "F",
+                                        "block_text": "F",
+                                    },
+                                    {
+                                        "field_name": "PERSONAL_DETAILS.HEIGHT",
+                                        "value": "4-6",
+                                        "block_text": '4-6"',
+                                    },
+                                ]
+                            }
+                        )
+                    }
+                ]
+            }
+        }
+    }
+    mocker.patch("documentai_api.services.bedrock.invoke_model", return_value=nova_response)
+
+    # Step 1: AnalyzeID extraction
+    fields = extract_fields_from_analyze_id(analyze_id_response, DL_FIELD_MAP)
+
+    # Step 2: Nova supplemental
+    all_blocks = analyze_id_response["IdentityDocuments"][0]["Blocks"]
+    supplemental = extract_supplemental_fields_via_nova(all_blocks)
+    fields.update(supplemental)
+
+    # AnalyzeID fields present
+    assert "NAME_DETAILS.FIRST_NAME" in fields
+    assert fields["NAME_DETAILS.FIRST_NAME"]["value"] == "GARCIA"
+    assert "ID_NUMBER" in fields
+    assert fields["EXPIRATION_DATE"]["value"] == "2028-01-20"
+
+    # Nova supplemental fields merged in
+    assert "PERSONAL_DETAILS.SEX" in fields
+    assert fields["PERSONAL_DETAILS.SEX"]["value"] == "F"
+    assert "PERSONAL_DETAILS.HEIGHT" in fields
+    assert fields["PERSONAL_DETAILS.HEIGHT"]["value"] == "4-6"
+
+    # Both have geometry
+    assert "geometry" in fields["NAME_DETAILS.FIRST_NAME"]
+    assert "geometry" in fields["PERSONAL_DETAILS.SEX"]
+
+
+def test_extract_supplemental_fields_nova_failure_returns_empty(analyze_id_response, mocker):
+    """Nova failure gracefully returns empty dict -- doesn't break the pipeline."""
+    from documentai_api.utils.textract import extract_supplemental_fields_via_nova
+
+    mocker.patch(
+        "documentai_api.services.bedrock.invoke_model",
+        side_effect=Exception("Bedrock timeout"),
+    )
+
+    all_blocks = analyze_id_response["IdentityDocuments"][0]["Blocks"]
+    fields = extract_supplemental_fields_via_nova(all_blocks)
+
+    assert fields == {}
+
+
+def test_extract_supplemental_fields_unmatched_block_omits_field(analyze_id_response, mocker):
+    """When Nova returns a block_text that doesn't match any block, the field is omitted."""
+    from documentai_api.utils.textract import extract_supplemental_fields_via_nova
+
+    nova_response = {
+        "output": {
+            "message": {
+                "content": [
+                    {
+                        "text": json.dumps(
+                            {
+                                "fields": [
+                                    {
+                                        "field_name": "PERSONAL_DETAILS.SEX",
+                                        "value": "M",
+                                        "block_text": "NONEXISTENT_BLOCK_TEXT",
+                                    },
+                                ]
+                            }
+                        )
+                    }
+                ]
+            }
+        }
+    }
+    mocker.patch("documentai_api.services.bedrock.invoke_model", return_value=nova_response)
+
+    all_blocks = analyze_id_response["IdentityDocuments"][0]["Blocks"]
+    fields = extract_supplemental_fields_via_nova(all_blocks)
+
+    # unmatched block_text = field omitted entirely
+    assert "PERSONAL_DETAILS.SEX" not in fields
+
+
+# =============================================================================
+# Integration: Nova Micro supplemental extraction (requires AWS credentials)
+# Run with: uv run pytest tests/utils/test_textract_util.py -m integration
+# =============================================================================
+
+
+@pytest.mark.integration
+def test_nova_extracts_physical_descriptors_from_real_dl(analyze_id_response, monkeypatch):
+    """Hit real Nova Micro and verify it identifies physical descriptor fields."""
+    from documentai_api.utils.aws_client_factory import AWSClientFactory
+    from documentai_api.utils.textract import extract_supplemental_fields_via_nova
+
+    # Clear cached clients so the profile env var takes effect
+    AWSClientFactory._session = None
+    AWSClientFactory.get_bedrock_runtime_client.cache_clear()
+
+    monkeypatch.setenv("AWS_PROFILE", "nava-sandbox")
+    monkeypatch.setenv("AWS_REGION", "us-east-1")
+
+    # Re-clear after monkeypatch sets the env
+    AWSClientFactory._session = None
+    AWSClientFactory.get_bedrock_runtime_client.cache_clear()
+
+    all_blocks = analyze_id_response["IdentityDocuments"][0]["Blocks"]
+    fields = extract_supplemental_fields_via_nova(all_blocks)
+
+    # Should find at least sex and eye color from the fixture DL
+    assert len(fields) >= 2, f"Expected at least 2 fields, got: {list(fields.keys())}"
+
+    # SEX should be "F" (from the fixture DL)
+    if "PERSONAL_DETAILS.SEX" in fields:
+        assert fields["PERSONAL_DETAILS.SEX"]["value"] == "F"
+        assert "geometry" in fields["PERSONAL_DETAILS.SEX"]
+        # "F" WORD block is at Left ~0.44, Top ~0.84 on the fixture DL
+        bbox = fields["PERSONAL_DETAILS.SEX"]["geometry"][0]["boundingBox"]
+        assert bbox["Left"] == pytest.approx(0.44, abs=0.02)
+        assert bbox["Top"] == pytest.approx(0.84, abs=0.02)
+        assert fields["PERSONAL_DETAILS.SEX"]["confidence"] > 0.9
+
+    # EYE_COLOR should be "BLK" (from "18 EYES BLK" on the fixture DL)
+    if "PERSONAL_DETAILS.EYE_COLOR" in fields:
+        assert fields["PERSONAL_DETAILS.EYE_COLOR"]["value"] == "BLK"
+        assert "geometry" in fields["PERSONAL_DETAILS.EYE_COLOR"]
+        # "BLK" WORD block is at Left ~0.45, Top ~0.79
+        bbox = fields["PERSONAL_DETAILS.EYE_COLOR"]["geometry"][0]["boundingBox"]
+        assert bbox["Left"] == pytest.approx(0.45, abs=0.02)
+        assert bbox["Top"] == pytest.approx(0.79, abs=0.02)
+
+    # Print results for manual inspection
+    for name, data in fields.items():
+        print(
+            f"  {name}: value={data['value']}, confidence={data['confidence']}, has_geometry={'geometry' in data}"
+        )

@@ -1,12 +1,9 @@
 """Map Textract AnalyzeID field types directly to BDA blueprint field names for US driver's licenses.
 
-Note: AnalyzeID does not return physical descriptor fields (SEX, HEIGHT, WEIGHT,
-EYE_COLOR, HAIR_COLOR) that BDA extracts. These are intentionally omitted from
-the map.
-
 See: https://docs.aws.amazon.com/textract/latest/dg/identitydocumentfields.html
 """
 
+# Fields normalized by AnalyzeID into IdentityDocumentFields
 FIELD_MAP = {
     "FIRST_NAME": "NAME_DETAILS.FIRST_NAME",
     "MIDDLE_NAME": "NAME_DETAILS.MIDDLE_NAME",
@@ -26,3 +23,38 @@ FIELD_MAP = {
     "RESTRICTIONS": "RESTRICTIONS",
     "ENDORSEMENTS": "ENDORSEMENTS",
 }
+
+# Fields present in AnalyzeID raw OCR (Blocks) but not normalized into
+# IdentityDocumentFields. Extracted via Nova Micro as a supplemental pass.
+NON_NORMALIZED_ANALYZE_ID_FIELDS = {
+    "PERSONAL_DETAILS.SEX": "Sex/Gender (e.g. M, F)",
+    "PERSONAL_DETAILS.HEIGHT": "Height (e.g. 5-06, 5'06\")",
+    "PERSONAL_DETAILS.EYE_COLOR": "Eye color (e.g. BRN, BLK, BLU, GRN, HAZ)",
+    "PERSONAL_DETAILS.HAIR_COLOR": "Hair color (e.g. BRN, BLK, BLN, RED, GRY)",
+    "PERSONAL_DETAILS.WEIGHT": "Weight in pounds (e.g. 150)",
+}
+
+# Prompt for Nova Micro to extract NON_NORMALIZED_ANALYZE_ID_FIELDS from Blocks.
+# DL-specific: references physical descriptor label conventions on US licenses.
+NOVA_SUPPLEMENTAL_PROMPT = """Given the following OCR word blocks from a US driver's license, extract these physical descriptor fields:
+
+{field_descriptions}
+
+Word blocks (text and bounding box):
+{blocks_json}
+
+Respond in JSON only:
+{{
+  "fields": [
+    {{"field_name": "<field_name>", "value": "<extracted_value>", "block_text": "<exact block text matched>"}}
+  ]
+}}
+
+Rules:
+- Physical descriptors (SEX, HGT, EYES, HAIR, WT) are typically grouped together on the lower half of the license, near their label abbreviations.
+- Only extract values that appear immediately adjacent to or below their corresponding label (e.g. "F" next to "SEX", "BLK" next to "EYES").
+- Do NOT use address numbers, document numbers, or date values as physical descriptor values.
+- "block_text" must be the EXACT text of the word block the value came from.
+- If a field cannot be confidently identified from nearby labels, omit it.
+- Do not invent values.
+"""

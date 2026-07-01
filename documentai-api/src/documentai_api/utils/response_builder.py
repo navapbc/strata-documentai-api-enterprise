@@ -50,9 +50,10 @@ def _extract_field_values(
         extract_method = ddb_record.get(DocumentMetadata.EXTRACT_METHOD)
 
         if extract_method == ExtractMethod.TEXTRACT:
-            metadata, field_values = extract_field_values_from_textract_results(bda_results)
+            metadata, field_values, field_geometry = extract_field_values_from_textract_results(
+                bda_results
+            )
             field_confidence_map_list = metadata["field_confidence_map_list"]
-            field_geometry: dict[str, Any] = {}
         else:
             metadata, field_values, field_geometry = extract_field_values_from_bda_results(
                 bda_results, include_geometry=include_bounding_box
