@@ -46,7 +46,7 @@ Word blocks (text and bounding box):
 Respond in JSON only:
 {{
   "fields": [
-    {{"field_name": "<field_name>", "value": "<extracted_value>", "block_text": "<exact block text matched>"}}
+    {{"field_name": "<field_name>", "value": "<extracted_value>", "block_index": <index of block in the array>}}
   ]
 }}
 
@@ -54,7 +54,7 @@ Rules:
 - Physical descriptors (SEX, HGT, EYES, HAIR, WT) are typically grouped together on the lower half of the license, near their label abbreviations.
 - Only extract values that appear immediately adjacent to or below their corresponding label (e.g. "F" next to "SEX", "BLK" next to "EYES").
 - Do NOT use address numbers, document numbers, or date values as physical descriptor values.
-- "block_text" must be the EXACT text of the word block the value came from.
+- "block_index" - return the "index" value from the word block where the value was found.
 - If a field cannot be confidently identified from nearby labels, omit it.
 - Do not invent values.
 """

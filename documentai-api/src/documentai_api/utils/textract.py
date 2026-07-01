@@ -224,9 +224,17 @@ def _call_nova_supplemental(word_blocks: list[dict[str, Any]]) -> list[dict[str,
         f"- {name}: {desc}" for name, desc in NON_NORMALIZED_ANALYZE_ID_FIELDS.items()
     )
 
+    # Embed an explicit block index so Nova can reference blocks by position.
+    # Text-based matching proved brittle - synthetic-drivers-license-desk-background.jpg
+    # eye color block contained full text "18 EYES:BRO" (field 18, value "BRO" = brown),
+    # Nova Micro consistently extracted "BRO" even after numerous prompt iterations. 
+    # Indexing by position ties extracted values to specific blocks regardless of 
+    # how the model reads the surrounding text.
+    indexed_blocks = [{"index": i, **b} for i, b in enumerate(word_blocks)]
+
     prompt = NOVA_SUPPLEMENTAL_PROMPT.format(
         field_descriptions=field_descriptions,
-        blocks_json=json.dumps(word_blocks),
+        blocks_json=json.dumps(indexed_blocks),
     )
 
     response = invoke_model(
@@ -249,29 +257,22 @@ def _match_nova_results_to_blocks(
     word_blocks: list[dict[str, Any]],
 ) -> dict[str, Any]:
     """Match Nova's identified fields back to block geometry and confidence."""
-    block_lookup = {b["text"]: b for b in word_blocks}
-
     fields: dict[str, Any] = {}
     for item in extracted_fields:
         field_name = item.get("field_name", "")
         value = item.get("value", "")
-        block_text = item.get("block_text", "")
+        block_index = item.get("block_index")
 
         if field_name not in NON_NORMALIZED_ANALYZE_ID_FIELDS or not value:
             continue
 
-        # match block: exact first, then cleaned-text fallback
-        matched_block = block_lookup.get(block_text)
-        if not matched_block and block_text:
-            cleaned = _clean_text(block_text)
-            for b in word_blocks:
-                if _clean_text(b["text"]) == cleaned:
-                    matched_block = b
-                    break
-
-        # no matched block = no OCR verification, skip the field
-        if not matched_block:
+        if block_index is None or not isinstance(block_index, int):
             continue
+
+        if block_index < 0 or block_index >= len(word_blocks):
+            continue
+
+        matched_block = word_blocks[block_index]
 
         field_data: dict[str, Any] = {
             "confidence": round(matched_block["confidence"] / 100.0, 2),

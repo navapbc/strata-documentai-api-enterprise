@@ -315,7 +315,7 @@ def test_extract_supplemental_fields_via_nova(analyze_id_response, mocker):
     """Nova supplemental extraction identifies physical descriptor fields from Blocks."""
     from documentai_api.utils.textract import extract_supplemental_fields_via_nova
 
-    # Simulate Nova returning identified fields with block_text references
+    # Simulate Nova returning identified fields with block_index references
     nova_response = {
         "output": {
             "message": {
@@ -327,12 +327,12 @@ def test_extract_supplemental_fields_via_nova(analyze_id_response, mocker):
                                     {
                                         "field_name": "PERSONAL_DETAILS.SEX",
                                         "value": "F",
-                                        "block_text": "F",
+                                        "block_index": 42,
                                     },
                                     {
                                         "field_name": "PERSONAL_DETAILS.EYE_COLOR",
                                         "value": "BLK",
-                                        "block_text": "BLK",
+                                        "block_index": 37,
                                     },
                                 ]
                             }
@@ -379,12 +379,12 @@ def test_full_textract_pipeline_with_nova_supplemental(analyze_id_response, mock
                                     {
                                         "field_name": "PERSONAL_DETAILS.SEX",
                                         "value": "F",
-                                        "block_text": "F",
+                                        "block_index": 42,
                                     },
                                     {
                                         "field_name": "PERSONAL_DETAILS.HEIGHT",
                                         "value": "4-6",
-                                        "block_text": '4-6"',
+                                        "block_index": 45,
                                     },
                                 ]
                             }
@@ -437,7 +437,7 @@ def test_extract_supplemental_fields_nova_failure_returns_empty(analyze_id_respo
 
 
 def test_extract_supplemental_fields_unmatched_block_omits_field(analyze_id_response, mocker):
-    """When Nova returns a block_text that doesn't match any block, the field is omitted."""
+    """When Nova returns an invalid block_index, the field is omitted."""
     from documentai_api.utils.textract import extract_supplemental_fields_via_nova
 
     nova_response = {
@@ -451,7 +451,7 @@ def test_extract_supplemental_fields_unmatched_block_omits_field(analyze_id_resp
                                     {
                                         "field_name": "PERSONAL_DETAILS.SEX",
                                         "value": "M",
-                                        "block_text": "NONEXISTENT_BLOCK_TEXT",
+                                        "block_index": 9999,
                                     },
                                 ]
                             }
@@ -466,7 +466,7 @@ def test_extract_supplemental_fields_unmatched_block_omits_field(analyze_id_resp
     all_blocks = analyze_id_response["IdentityDocuments"][0]["Blocks"]
     fields = extract_supplemental_fields_via_nova(all_blocks)
 
-    # unmatched block_text = field omitted entirely
+    # out-of-bounds block_index = field omitted entirely
     assert "PERSONAL_DETAILS.SEX" not in fields
 
 
