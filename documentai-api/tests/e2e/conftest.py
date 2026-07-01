@@ -28,12 +28,13 @@ def e2e_tenant_id(worker_id):
 def pytest_collection_modifyitems(items):
     """Mark tests under tests/e2e/ as e2e so the default suite skips them.
 
-    This hook receives every collected item in the session, so scope it to
-    files under this directory rather than marking the whole suite.
+    Also applies flaky(reruns=1) to retry environmental failures (cold starts,
+    BDA latency spikes, network blips).
     """
     for item in items:
         if _E2E_DIR in Path(item.fspath).parents:
             item.add_marker(pytest.mark.e2e)
+            item.add_marker(pytest.mark.flaky(reruns=1))
 
 
 @pytest.fixture(scope="session")
