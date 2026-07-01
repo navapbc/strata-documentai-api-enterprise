@@ -16,17 +16,17 @@ from documentai_api.utils.dto import (
 from documentai_api.utils.response_codes import ResponseCodes
 
 
-@pytest.mark.parametrize("has_bda_started_at", [True, False])
+@pytest.mark.parametrize("has_extraction_started_at", [True, False])
 @freeze_time("2026-01-01 12:00:15+00:00")
-def test_build_completion_timing(has_bda_started_at, ddb_doc_metadata_table, mocker):
+def test_build_completion_timing(has_extraction_started_at, ddb_doc_metadata_table, mocker):
     """Test completion timing updates."""
     ddb_record = {
         DocumentMetadata.FILE_NAME: "test-file",
         DocumentMetadata.CREATED_AT: datetime(2026, 1, 1, 12, 0, 0, tzinfo=UTC).isoformat(),
     }
 
-    if has_bda_started_at:
-        ddb_record[DocumentMetadata.BDA_STARTED_AT] = datetime(
+    if has_extraction_started_at:
+        ddb_record[DocumentMetadata.EXTRACTION_STARTED_AT] = datetime(
             2026, 1, 1, 12, 0, 5, tzinfo=UTC
         ).isoformat()
 
@@ -35,17 +35,22 @@ def test_build_completion_timing(has_bda_started_at, ddb_doc_metadata_table, moc
     mock_get_modified = mocker.patch("documentai_api.utils.ddb.s3_service.get_last_modified_at")
     mock_get_modified.return_value = datetime(2026, 1, 1, 12, 0, 15, tzinfo=UTC)
 
-    bda_output_s3_uri = "s3://bucket/key/job_metadata.json" if has_bda_started_at else None
+    bda_output_s3_uri = "s3://bucket/key/job_metadata.json" if has_extraction_started_at else None
     updates, values = ddb_util._build_completion_timing("test-file", bda_output_s3_uri)
 
-    if has_bda_started_at:
-        assert any(DocumentMetadata.BDA_COMPLETED_AT in u for u in updates)
+    if has_extraction_started_at:
+        assert any(DocumentMetadata.EXTRACTION_COMPLETED_AT in u for u in updates)
         assert any(DocumentMetadata.PROCESSED_DATE in u for u in updates)
-        assert ":bdaCompletedAt" in values
+        assert ":extractionCompletedAt" in values
         assert ":processedDate" in values
         assert values[":totalProcessingTime"] == Decimal("15.0")
-        assert values[":bdaProcessingTime"] == Decimal("10.0")
+        assert values[":extractionProcessingTime"] == Decimal("10.0")
         mock_get_modified.assert_called_once_with("bucket", "key/job_metadata.json")
+        # bda* timing fields must NOT be written
+        assert not any(DocumentMetadata.BDA_COMPLETED_AT in u for u in updates)
+        assert not any(DocumentMetadata.BDA_PROCESSING_TIME_SECONDS in u for u in updates)
+        assert ":bdaCompletedAt" not in values
+        assert ":bdaProcessingTime" not in values
     else:
         assert updates == []
         assert values == {}
@@ -70,7 +75,7 @@ def test_build_timing_updates(status, ddb_doc_metadata_table, mocker):
     }
 
     if status in [ProcessStatus.SUCCESS, ProcessStatus.FAILED]:
-        ddb_record[DocumentMetadata.BDA_STARTED_AT] = datetime(
+        ddb_record[DocumentMetadata.EXTRACTION_STARTED_AT] = datetime(
             2026, 1, 1, 12, 0, 5, tzinfo=UTC
         ).isoformat()
 
@@ -90,18 +95,28 @@ def test_build_timing_updates(status, ddb_doc_metadata_table, mocker):
     updates, values = ddb_util._build_timing_updates("test-file", status, bda_output_s3_uri)
 
     if status == ProcessStatus.STARTED:
-        assert DocumentMetadata.BDA_STARTED_AT in updates
-        assert DocumentMetadata.BDA_WAIT_TIME_SECONDS in updates
-        assert DocumentMetadata.BDA_COMPLETED_AT not in updates
+        assert DocumentMetadata.EXTRACTION_STARTED_AT in updates
+        assert DocumentMetadata.EXTRACTION_WAIT_TIME_SECONDS in updates
+        assert DocumentMetadata.EXTRACTION_COMPLETED_AT not in updates
         assert DocumentMetadata.PROCESSED_DATE not in updates
-        assert values[":bdaWaitTimeSeconds"] == Decimal("10.0")
-    elif status in [ProcessStatus.SUCCESS, ProcessStatus.FAILED]:
-        assert DocumentMetadata.BDA_COMPLETED_AT in updates
-        assert DocumentMetadata.PROCESSED_DATE in updates
+        assert values[":extractionWaitTimeSeconds"] == Decimal("10.0")
+        # bda* timing fields must NOT be written
         assert DocumentMetadata.BDA_STARTED_AT not in updates
         assert DocumentMetadata.BDA_WAIT_TIME_SECONDS not in updates
+        assert ":bdaStartedAt" not in values
+        assert ":bdaWaitTimeSeconds" not in values
+    elif status in [ProcessStatus.SUCCESS, ProcessStatus.FAILED]:
+        assert DocumentMetadata.EXTRACTION_COMPLETED_AT in updates
+        assert DocumentMetadata.PROCESSED_DATE in updates
+        assert DocumentMetadata.EXTRACTION_STARTED_AT not in updates
+        assert DocumentMetadata.EXTRACTION_WAIT_TIME_SECONDS not in updates
         assert values[":totalProcessingTime"] == Decimal("10.0")
-        assert values[":bdaProcessingTime"] == Decimal("5.0")
+        assert values[":extractionProcessingTime"] == Decimal("5.0")
+        # bda* timing fields must NOT be written
+        assert DocumentMetadata.BDA_COMPLETED_AT not in updates
+        assert DocumentMetadata.BDA_PROCESSING_TIME_SECONDS not in updates
+        assert ":bdaCompletedAt" not in values
+        assert ":bdaProcessingTime" not in values
     else:
         assert updates == ""
         assert values == {}

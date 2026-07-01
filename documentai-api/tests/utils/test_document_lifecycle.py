@@ -423,6 +423,65 @@ def test_upsert_initial_ddb_record_routes_to_textract_when_enabled(
     assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.STARTED
 
 
+def test_upsert_initial_ddb_record_unknown_category_with_textract_does_not_crash(
+    ddb_doc_metadata_table,
+    s3_bucket,
+    mocker,
+):
+    """Regression: unknown category + Textract must not crash.
+
+    user_provided_document_category=None resolves to 'unknown' which previously
+    raised ValueError via DocumentCategory('unknown').
+    """
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.document_utils.get_page_count", return_value=1
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.document_utils.is_password_protected",
+        return_value=False,
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.preclassify_document",
+        return_value=BedrockClassificationResult(
+            document_type="identity_verification",
+            confidence=0.95,
+            document_count=1,
+            is_document=True,
+            is_blurry=False,
+        ),
+    )
+    mock_textract = mocker.patch(
+        "documentai_api.utils.document_lifecycle.try_textract_identity",
+        return_value={
+            "matched_document_class": "US-drivers-licenses",
+            "field_confidence_scores": [{"NAME_DETAILS.FIRST_NAME": 0.99}],
+            "textract_s3_uri": "s3://bucket/output/textract/test-file.json",
+            "extract_started_at": "2025-01-01T00:00:00+00:00",
+            "extract_completed_at": "2025-01-01T00:00:02+00:00",
+            "extract_time": "2.00",
+        },
+    )
+    mock_finalize = mocker.patch("documentai_api.utils.document_lifecycle.finalize_textract_result")
+
+    s3_bucket.put_object(Key="input/test-file", Body=b"bytes", ContentType="image/jpeg")
+
+    # user_provided_document_category=None triggers the "unknown" default
+    lifecycle_util.upsert_initial_ddb_record(
+        source_bucket_name="test-bucket",
+        source_object_key="input/test-file",
+        original_file_name="license.jpg",
+        ddb_key="test-file",
+        user_provided_document_category=None,
+        job_id="test-job-id",
+        trace_id="test-trace-id",
+    )
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
+    assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.STARTED
+    mock_textract.assert_called_once()
+    mock_finalize.assert_called_once_with("test-file", mock_textract.return_value, "unknown")
+
+
 def test_upsert_initial_ddb_record_falls_through_when_textract_returns_none(
     ddb_doc_metadata_table,
     s3_bucket,

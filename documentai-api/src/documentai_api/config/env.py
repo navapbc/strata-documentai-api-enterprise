@@ -88,6 +88,7 @@ class AWSEnvConfig(PydanticBaseEnvConfig):
     bedrock_classification_model_id_param: str | None = None
     bedrock_classification_prompt_param: str | None = None
     bedrock_bounding_box_model_id_param: str | None = None
+    bedrock_supplemental_extraction_model_id_param: str | None = None
 
     # Image pipeline
     document_crop_param: str | None = None

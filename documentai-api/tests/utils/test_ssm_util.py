@@ -44,7 +44,7 @@ def test_is_textract_identity_enabled_reads_true(mocker):
     mocker.patch(
         "documentai_api.config.env.get_aws_config",
         return_value=SimpleNamespace(
-            textract_identity_param="/docai/dev/feature-flags/textract-identity"
+            textract_identity_param="/docai/dev/feature-flags/textract-identity-enabled"
         ),
     )
     mocker.patch("documentai_api.utils.ssm.get_parameter_value", return_value="true")
@@ -55,7 +55,7 @@ def test_is_textract_identity_enabled_reads_false(mocker):
     mocker.patch(
         "documentai_api.config.env.get_aws_config",
         return_value=SimpleNamespace(
-            textract_identity_param="/docai/dev/feature-flags/textract-identity"
+            textract_identity_param="/docai/dev/feature-flags/textract-identity-enabled"
         ),
     )
     mocker.patch("documentai_api.utils.ssm.get_parameter_value", return_value="false")

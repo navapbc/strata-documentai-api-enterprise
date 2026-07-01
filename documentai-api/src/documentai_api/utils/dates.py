@@ -37,7 +37,7 @@ def validate_date_range(start_date: str, end_date: str | None = None) -> tuple[s
 def strip_time(value: str) -> str:
     """Strip the time component from a datetime string to produce a date-only string.
 
-    '2026-01-08T00:00:00' → '2026-01-08'
+    '2026-01-08T00:00:00' -> '2026-01-08'
     Non-matching strings are returned unchanged.
     """
     if "T" in value:

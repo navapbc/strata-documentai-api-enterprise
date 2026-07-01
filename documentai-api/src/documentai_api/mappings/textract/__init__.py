@@ -18,7 +18,7 @@ def get_document_class(textract_id_type: str | None) -> str | None:
 
 
 def get_bda_field_map(document_class: str) -> dict[str, str]:
-    """Get the Textract field type → BDA field name map for a document class."""
+    """Get the Textract field type -> BDA field name map for a document class."""
     return _FIELD_MAPS.get(document_class, {})
 
 

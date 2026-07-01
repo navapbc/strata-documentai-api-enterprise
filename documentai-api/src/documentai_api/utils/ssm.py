@@ -44,14 +44,11 @@ def is_document_crop_enabled() -> bool:
 
 
 def is_textract_identity_enabled() -> bool:
-    """Whether Textract AnalyzeID is used for identity documents (EXPERIMENTAL).
+    """Whether Textract AnalyzeID is used for identity documents.
 
     When enabled, documents preclassified as identity_verification are routed to
     Textract AnalyzeID instead of BDA. Controlled via an SSM parameter so it can
-    be toggled per-environment without redeploying. Defaults to off.
-
-    This is an experimental feature - geometry extraction uses text matching
-    against OCR blocks which may not resolve for all fields.
+    be toggled per-environment without redeploying.
     """
     from documentai_api.config.env import get_aws_config
 

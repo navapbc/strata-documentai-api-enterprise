@@ -20,6 +20,17 @@ logger = get_logger(__name__)
 NOVA_MICRO_MODEL_ID = "us.amazon.nova-micro-v1:0"
 
 
+def _get_supplemental_model_id() -> str:
+    """Resolve supplemental extraction model ID from SSM, with hardcoded fallback."""
+    from documentai_api.config.env import get_aws_config
+    from documentai_api.utils.ssm import get_parameter_value
+
+    param_name = get_aws_config().bedrock_supplemental_extraction_model_id_param
+    if not param_name:
+        return NOVA_MICRO_MODEL_ID
+    return get_parameter_value(param_name, default=NOVA_MICRO_MODEL_ID)
+
+
 def extract_fields_from_analyze_id(
     response: dict[str, Any], field_map: dict[str, str]
 ) -> dict[str, Any]:
@@ -219,7 +230,7 @@ def _call_nova_supplemental(word_blocks: list[dict[str, Any]]) -> list[dict[str,
     )
 
     response = invoke_model(
-        model_id=NOVA_MICRO_MODEL_ID,
+        model_id=_get_supplemental_model_id(),
         messages=[{"role": "user", "content": [{"text": prompt}]}],
         max_tokens=512,
         temperature=0.0,
@@ -376,7 +387,7 @@ def try_textract_identity(
             )
             return None
 
-        # Textract succeeded — commit extract method + start time
+        # Textract succeeded - commit extract method + start time
         set_extract_method(ddb_key, ExtractMethod.TEXTRACT, extract_started_at.isoformat())
 
         # Write mapped result to S3 (reuses the BDA output location so

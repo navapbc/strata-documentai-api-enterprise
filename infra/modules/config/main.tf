@@ -1,9 +1,10 @@
 resource "aws_ssm_parameter" "this" {
   for_each = var.parameters
 
-  name  = "${var.prefix}/${each.key}"
-  type  = "String"
-  value = each.value
+  name            = "${var.prefix}/${each.key}"
+  type            = "String"
+  value           = each.value
+  allowed_pattern = lookup(var.allowed_patterns, each.key, null)
 }
 
 # IAM policy to read all parameters under the prefix
