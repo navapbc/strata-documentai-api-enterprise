@@ -20,11 +20,11 @@ class DailyUsage(BaseApiResponse):
     date: str = ""
     total_records: int = 0
     total_bda_invocations: int = 0
-    total_pages: int = 0
     total_bda_pages: int = 0
     total_file_size_bytes: int = 0
     total_bedrock_input_tokens: int = 0
     total_bedrock_output_tokens: int = 0
+    partial: bool = False
 
 
 class MonthlyUsageResponse(BaseApiResponse):

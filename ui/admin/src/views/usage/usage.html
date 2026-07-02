@@ -25,8 +25,7 @@
       <label for="usage-granularity">Granularity</label>
       <select id="usage-granularity">
         <option value="monthly">Monthly</option>
-        <!-- TODO: Daily granularity reads from metrics aggregator (not Athena) and may not reconcile with monthly totals. Re-enable once usage_report job produces daily files. -->
-        <!-- <option value="daily">Daily</option> -->
+        <option value="daily">Daily</option>
       </select>
     </div>
     <button id="usage-download-btn" class="btn-secondary">Download CSV</button>

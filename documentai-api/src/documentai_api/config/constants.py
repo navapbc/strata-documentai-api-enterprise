@@ -53,6 +53,7 @@ METRICS_RAW_DDB_DATA_S3_PREFIX = "raw/utc/date"
 METRICS_AGG_DDB_DAILY_S3_PREFIX = "aggregated/utc/date"
 METRICS_AGG_DDB_MONTHLY_S3_PREFIX = "aggregated/utc/month"
 METRICS_USAGE_REPORT_S3_PREFIX = "usage-report/month"
+METRICS_USAGE_REPORT_DAILY_S3_PREFIX = "usage-report/utc/date"
 
 # === Grouped BDA job statuses ===
 BDA_JOB_STATUS_RUNNING = ["Created", "InProgress"]

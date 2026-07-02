@@ -71,10 +71,6 @@ async function load() {
 
     if (thisLoad !== _loadId) return;
 
-    // Daily is intentionally parked: the granularity <option> is commented out in
-    // usage.html because daily reads from the metrics aggregator (not Athena) and may
-    // not reconcile with monthly totals. This branch + _fillDailyGaps stay so re-enabling
-    // is a one-line uncomment once the usage_report job emits deduped daily files.
     if (_currentGranularity === "daily") {
       _currentData = _fillDailyGaps(month, resp.days || []);
     } else {
@@ -124,7 +120,11 @@ function renderTable() {
     "tbody",
     {},
     ..._currentData.map((row) =>
-      h("tr", {}, ...columns.map((col) => h("td", {}, formatCell(col.key, row[col.key])))),
+      h(
+        "tr",
+        { className: row.partial ? "partial-row" : "" },
+        ...columns.map((col) => h("td", {}, formatCell(col.key, row[col.key]))),
+      ),
     ),
   );
 
