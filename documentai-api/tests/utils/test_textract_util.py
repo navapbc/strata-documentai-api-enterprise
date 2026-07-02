@@ -8,6 +8,19 @@ from pathlib import Path
 import pytest
 
 from documentai_api.mappings.textract.us_drivers_licenses import FIELD_MAP as DL_FIELD_MAP
+from documentai_api.mappings.textract.us_drivers_licenses import (
+    NON_NORMALIZED_ANALYZE_ID_FIELDS as DL_SUPPLEMENTAL_FIELDS,
+)
+from documentai_api.mappings.textract.us_drivers_licenses import (
+    NOVA_SUPPLEMENTAL_PROMPT as DL_SUPPLEMENTAL_PROMPT,
+)
+from documentai_api.mappings.textract.us_passports import FIELD_MAP as PASSPORT_FIELD_MAP
+from documentai_api.mappings.textract.us_passports import (
+    NON_NORMALIZED_ANALYZE_ID_FIELDS as PASSPORT_SUPPLEMENTAL_FIELDS,
+)
+from documentai_api.mappings.textract.us_passports import (
+    NOVA_SUPPLEMENTAL_PROMPT as PASSPORT_SUPPLEMENTAL_PROMPT,
+)
 from documentai_api.utils.textract import (
     extract_field_values_from_textract_results,
     extract_fields_from_analyze_id,
@@ -86,7 +99,7 @@ def test_extract_fields_from_analyze_id_geometry(analyze_id_response):
     # GARCIA (FIRST_NAME) -- exact match to WORD block
     assert "geometry" in fields["NAME_DETAILS.FIRST_NAME"]
     bbox = fields["NAME_DETAILS.FIRST_NAME"]["geometry"][0]["boundingBox"]
-    assert bbox["Left"] == pytest.approx(0.4058, abs=0.01)
+    assert bbox["left"] == pytest.approx(0.4058, abs=0.01)
 
     # MARIA (LAST_NAME) -- exact match to LINE block
     assert "geometry" in fields["NAME_DETAILS.LAST_NAME"]
@@ -94,7 +107,7 @@ def test_extract_fields_from_analyze_id_geometry(analyze_id_response):
     # 736HDV7874JSB -- exact match to LINE block
     assert "geometry" in fields["ID_NUMBER"]
     bbox = fields["ID_NUMBER"]["geometry"][0]["boundingBox"]
-    assert bbox["Width"] == pytest.approx(0.2097, abs=0.001)
+    assert bbox["width"] == pytest.approx(0.2097, abs=0.001)
 
     # D (CLASS) -- exact match to WORD block
     assert "geometry" in fields["CLASS"]
@@ -158,7 +171,7 @@ def test_extract_field_values_from_textract_results():
     assert "NAME_DETAILS.FIRST_NAME" in field_geometry
     assert field_geometry["NAME_DETAILS.FIRST_NAME"]["geometry"] == [
         {"boundingBox": {"Width": 0.1, "Height": 0.05, "Left": 0.4, "Top": 0.5}}
-    ]
+    ]  # stored results pass through as-is (already written to S3)
     assert "NAME_DETAILS.LAST_NAME" not in field_geometry
     assert "ID_NUMBER" not in field_geometry
 
@@ -248,7 +261,50 @@ def test_try_textract_identity_returns_none_on_textract_failure(mocker, monkeypa
     assert result is None
 
 
-# =============================================================================
+def test_try_textract_identity_duplicate_dates_falls_back_despite_supplemental(
+    mocker, monkeypatch, analyze_id_passport_response
+):
+    """Duplicate dates trigger BDA fallback even when Nova supplemental would add fields.
+
+    Regression guard: the supplemental pass must not mask the empty-fields signal
+    from extract_fields_from_analyze_id. The fallback check must fire before
+    supplemental merges.
+    """
+    from documentai_api.config.env import EnvVars
+
+    monkeypatch.setenv(EnvVars.DOCUMENTAI_OUTPUT_LOCATION, "s3://test-bucket/output")
+
+    mocker.patch(
+        "documentai_api.utils.ssm.is_textract_identity_enabled",
+        return_value=True,
+    )
+
+    # Inject duplicate dates into the real passport fixture
+    for field in analyze_id_passport_response["IdentityDocuments"][0]["IdentityDocumentFields"]:
+        if field["Type"]["Text"] in ("DATE_OF_ISSUE", "EXPIRATION_DATE"):
+            field["ValueDetection"]["Text"] = "07 AUG 2016"
+            field["ValueDetection"]["NormalizedValue"] = {
+                "Value": "2016-08-07T00:00:00",
+                "ValueType": "Date",
+            }
+
+    mocker.patch(
+        "documentai_api.services.textract.analyze_id",
+        return_value=analyze_id_passport_response,
+    )
+
+    # Nova WOULD return supplemental fields -- the masking trigger
+    mocker.patch(
+        "documentai_api.utils.textract._call_nova_supplemental",
+        return_value=[{"field_name": "sex", "value": "F", "block_index": 0}],
+    )
+
+    result = try_textract_identity("identity_verification", "image/jpeg", b"bytes", "test-key")
+
+    # Must fall back to BDA, NOT commit a supplemental-only record
+    assert result is None
+
+
 # finalize_textract_result
 # =============================================================================
 
@@ -345,7 +401,9 @@ def test_extract_supplemental_fields_via_nova(analyze_id_response, mocker):
     mocker.patch("documentai_api.services.bedrock.invoke_model", return_value=nova_response)
 
     all_blocks = analyze_id_response["IdentityDocuments"][0]["Blocks"]
-    fields = extract_supplemental_fields_via_nova(all_blocks)
+    fields = extract_supplemental_fields_via_nova(
+        all_blocks, DL_SUPPLEMENTAL_FIELDS, DL_SUPPLEMENTAL_PROMPT
+    )
 
     # SEX field extracted with geometry from the "F" WORD block
     assert "PERSONAL_DETAILS.SEX" in fields
@@ -401,7 +459,9 @@ def test_full_textract_pipeline_with_nova_supplemental(analyze_id_response, mock
 
     # Step 2: Nova supplemental
     all_blocks = analyze_id_response["IdentityDocuments"][0]["Blocks"]
-    supplemental = extract_supplemental_fields_via_nova(all_blocks)
+    supplemental = extract_supplemental_fields_via_nova(
+        all_blocks, DL_SUPPLEMENTAL_FIELDS, DL_SUPPLEMENTAL_PROMPT
+    )
     fields.update(supplemental)
 
     # AnalyzeID fields present
@@ -431,7 +491,9 @@ def test_extract_supplemental_fields_nova_failure_returns_empty(analyze_id_respo
     )
 
     all_blocks = analyze_id_response["IdentityDocuments"][0]["Blocks"]
-    fields = extract_supplemental_fields_via_nova(all_blocks)
+    fields = extract_supplemental_fields_via_nova(
+        all_blocks, DL_SUPPLEMENTAL_FIELDS, DL_SUPPLEMENTAL_PROMPT
+    )
 
     assert fields == {}
 
@@ -464,7 +526,9 @@ def test_extract_supplemental_fields_unmatched_block_omits_field(analyze_id_resp
     mocker.patch("documentai_api.services.bedrock.invoke_model", return_value=nova_response)
 
     all_blocks = analyze_id_response["IdentityDocuments"][0]["Blocks"]
-    fields = extract_supplemental_fields_via_nova(all_blocks)
+    fields = extract_supplemental_fields_via_nova(
+        all_blocks, DL_SUPPLEMENTAL_FIELDS, DL_SUPPLEMENTAL_PROMPT
+    )
 
     # out-of-bounds block_index = field omitted entirely
     assert "PERSONAL_DETAILS.SEX" not in fields
@@ -494,7 +558,9 @@ def test_nova_extracts_physical_descriptors_from_real_dl(analyze_id_response, mo
     AWSClientFactory.get_bedrock_runtime_client.cache_clear()
 
     all_blocks = analyze_id_response["IdentityDocuments"][0]["Blocks"]
-    fields = extract_supplemental_fields_via_nova(all_blocks)
+    fields = extract_supplemental_fields_via_nova(
+        all_blocks, DL_SUPPLEMENTAL_FIELDS, DL_SUPPLEMENTAL_PROMPT
+    )
 
     # Should find at least sex and eye color from the fixture DL
     assert len(fields) >= 2, f"Expected at least 2 fields, got: {list(fields.keys())}"
@@ -505,8 +571,8 @@ def test_nova_extracts_physical_descriptors_from_real_dl(analyze_id_response, mo
         assert "geometry" in fields["PERSONAL_DETAILS.SEX"]
         # "F" WORD block is at Left ~0.44, Top ~0.84 on the fixture DL
         bbox = fields["PERSONAL_DETAILS.SEX"]["geometry"][0]["boundingBox"]
-        assert bbox["Left"] == pytest.approx(0.44, abs=0.02)
-        assert bbox["Top"] == pytest.approx(0.84, abs=0.02)
+        assert bbox["left"] == pytest.approx(0.44, abs=0.02)
+        assert bbox["top"] == pytest.approx(0.84, abs=0.02)
         assert fields["PERSONAL_DETAILS.SEX"]["confidence"] > 0.9
 
     # EYE_COLOR should be "BLK" (from "18 EYES BLK" on the fixture DL)
@@ -515,11 +581,207 @@ def test_nova_extracts_physical_descriptors_from_real_dl(analyze_id_response, mo
         assert "geometry" in fields["PERSONAL_DETAILS.EYE_COLOR"]
         # "BLK" WORD block is at Left ~0.45, Top ~0.79
         bbox = fields["PERSONAL_DETAILS.EYE_COLOR"]["geometry"][0]["boundingBox"]
-        assert bbox["Left"] == pytest.approx(0.45, abs=0.02)
-        assert bbox["Top"] == pytest.approx(0.79, abs=0.02)
+        assert bbox["left"] == pytest.approx(0.45, abs=0.02)
+        assert bbox["top"] == pytest.approx(0.79, abs=0.02)
 
     # Print results for manual inspection
     for name, data in fields.items():
         print(
             f"  {name}: value={data['value']}, confidence={data['confidence']}, has_geometry={'geometry' in data}"
         )
+
+
+# =============================================================================
+# US Passport tests
+# =============================================================================
+
+
+@pytest.fixture
+def analyze_id_passport_response():
+    return json.loads((FIXTURE_DIR / "analyze_id_passport.json").read_text())
+
+
+def test_extract_fields_from_analyze_id_passport(analyze_id_passport_response):
+    """Passport fields are mapped to BDA field names correctly."""
+    fields = extract_fields_from_analyze_id(analyze_id_passport_response, PASSPORT_FIELD_MAP)
+
+    assert fields["name.given_name"]["value"] == "LI"
+    assert fields["name.last_name"]["value"] == "JUAN"
+    assert fields["document_number"]["value"] == "0002028373"
+    assert fields["expiration_date"]["value"] == "2029-05-09"
+    assert fields["date_of_birth"]["value"] == "1982-05-01"
+    assert fields["date_of_issue"]["value"] == "2019-05-09"
+    assert fields["place_of_birth"]["value"] == "NEW YORK CITY"
+    assert "mrz_code" in fields
+
+
+def test_extract_fields_from_analyze_id_passport_geometry(analyze_id_passport_response):
+    """Passport fields get geometry from matching WORD blocks."""
+    fields = extract_fields_from_analyze_id(analyze_id_passport_response, PASSPORT_FIELD_MAP)
+
+    # JUAN is a standalone WORD block - should have geometry
+    assert "geometry" in fields["name.last_name"]
+    # LI is a standalone WORD block - should have geometry
+    assert "geometry" in fields["name.given_name"]
+    # 0002028373 is a standalone WORD block - should have geometry
+    assert "geometry" in fields["document_number"]
+
+
+def test_get_id_type_passport(analyze_id_passport_response):
+    """ID_TYPE returns PASSPORT for passport documents."""
+    assert get_id_type(analyze_id_passport_response) == "PASSPORT"
+
+
+def test_passport_supplemental_fields_via_nova(analyze_id_passport_response, mocker):
+    """Nova supplemental extracts sex, passport_type, and authority from passport blocks."""
+    from documentai_api.utils.textract import extract_supplemental_fields_via_nova
+
+    nova_response = {
+        "output": {
+            "message": {
+                "content": [
+                    {
+                        "text": json.dumps(
+                            {
+                                "fields": [
+                                    {
+                                        "field_name": "sex",
+                                        "value": "F",
+                                        "block_index": 7,
+                                    },
+                                    {
+                                        "field_name": "passport_type",
+                                        "value": "P",
+                                        "block_index": 2,
+                                    },
+                                ]
+                            }
+                        )
+                    }
+                ]
+            }
+        }
+    }
+    mocker.patch("documentai_api.services.bedrock.invoke_model", return_value=nova_response)
+
+    all_blocks = analyze_id_passport_response["IdentityDocuments"][0]["Blocks"]
+    fields = extract_supplemental_fields_via_nova(
+        all_blocks, PASSPORT_SUPPLEMENTAL_FIELDS, PASSPORT_SUPPLEMENTAL_PROMPT
+    )
+
+    assert "sex" in fields
+    assert fields["sex"]["value"] == "F"
+    assert fields["sex"]["confidence"] == pytest.approx(0.97, abs=0.01)
+    assert "geometry" in fields["sex"]
+
+    assert "passport_type" in fields
+    assert fields["passport_type"]["value"] == "P"
+    assert "geometry" in fields["passport_type"]
+
+
+def test_passport_nova_supplemental_skips_unrecognized_fields(analyze_id_passport_response, mocker):
+    """Nova returning a field not in PASSPORT_SUPPLEMENTAL_FIELDS is ignored."""
+    from documentai_api.utils.textract import extract_supplemental_fields_via_nova
+
+    nova_response = {
+        "output": {
+            "message": {
+                "content": [
+                    {
+                        "text": json.dumps(
+                            {
+                                "fields": [
+                                    {
+                                        "field_name": "PERSONAL_DETAILS.HEIGHT",
+                                        "value": "5-11",
+                                        "block_index": 0,
+                                    },
+                                ]
+                            }
+                        )
+                    }
+                ]
+            }
+        }
+    }
+    mocker.patch("documentai_api.services.bedrock.invoke_model", return_value=nova_response)
+
+    all_blocks = analyze_id_passport_response["IdentityDocuments"][0]["Blocks"]
+    fields = extract_supplemental_fields_via_nova(
+        all_blocks, PASSPORT_SUPPLEMENTAL_FIELDS, PASSPORT_SUPPLEMENTAL_PROMPT
+    )
+
+    # HEIGHT is a DL field, not a passport field - should be ignored
+    assert "PERSONAL_DETAILS.HEIGHT" not in fields
+    assert fields == {}
+
+
+# =============================================================================
+# Duplicate date resolution
+# =============================================================================
+
+
+def test_duplicate_dates_returns_empty(analyze_id_passport_response):
+    """When AnalyzeID returns the same date for issue and expiration, return empty (fall to BDA)."""
+    # Inject duplicate dates
+    for field in analyze_id_passport_response["IdentityDocuments"][0]["IdentityDocumentFields"]:
+        if field["Type"]["Text"] in ("DATE_OF_ISSUE", "EXPIRATION_DATE"):
+            field["ValueDetection"]["Text"] = "07 AUG 2016"
+            field["ValueDetection"]["NormalizedValue"] = {
+                "Value": "2016-08-07T00:00:00",
+                "ValueType": "Date",
+            }
+
+    fields = extract_fields_from_analyze_id(analyze_id_passport_response, PASSPORT_FIELD_MAP)
+
+    assert fields == {}
+
+
+def test_duplicate_dates_noop_when_correct(analyze_id_passport_response):
+    """When dates are already valid (distinct values), no fallback triggered."""
+    fields = extract_fields_from_analyze_id(analyze_id_passport_response, PASSPORT_FIELD_MAP)
+
+    # Fixture has distinct dates - should pass through normally
+    assert fields["date_of_issue"]["value"] == "2019-05-09"
+    assert fields["expiration_date"]["value"] == "2029-05-09"
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("rotation", [0, 37, 90, 143, 180, 270])
+def test_duplicate_dates_fall_back_to_bda_at_any_rotation(rotation, monkeypatch):
+    """When AnalyzeID returns duplicate dates, return empty to fall through to BDA.
+
+    Textract AnalyzeID has a known issue on this synthetic passport where it assigns
+    the same date to both date_of_issue and expiration_date at certain orientations.
+    When that happens, we return empty rather than guessing the assignment.
+    """
+    import io
+
+    import boto3
+    from PIL import Image
+
+    from documentai_api.utils.textract import extract_fields_from_analyze_id
+
+    img_path = FIXTURE_DIR.parent / "test-documents" / "synthetic-passport.jpg"
+    img = Image.open(img_path)
+    if rotation:
+        img = img.rotate(-rotation, expand=True)
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG")
+
+    session = boto3.Session(profile_name="nava-sandbox", region_name="us-east-1")
+    client = session.client("textract")
+    response = client.analyze_id(DocumentPages=[{"Bytes": buf.getvalue()}])
+
+    fields = extract_fields_from_analyze_id(response, PASSPORT_FIELD_MAP)
+
+    # If dates are duplicated, fields should be empty (BDA fallback).
+    # If Textract got them right at this rotation, fields should have valid dates.
+    if fields:
+        issue_val = fields.get("date_of_issue", {}).get("value", "")
+        exp_val = fields.get("expiration_date", {}).get("value", "")
+        if issue_val and exp_val:
+            # If we got fields back, dates must not be duplicated
+            assert issue_val != exp_val, (
+                f"At {rotation}: duplicate dates should have triggered BDA fallback"
+            )

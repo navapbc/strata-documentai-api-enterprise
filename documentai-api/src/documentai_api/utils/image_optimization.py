@@ -25,12 +25,16 @@ def crop_image_to_bbox(
     bbox: tuple[float, float, float, float],
     *,
     pad_ratio: float = 0.03,
+    skip_threshold: float = 0.75,
 ) -> bytes:
     """Crop an image to a bounding box given on a 0-1000 normalized scale.
 
     The box is rescaled to pixels, padded by ``pad_ratio`` of each dimension (so a
     slightly-loose detection never clips the document), and clamped to the image.
     The output is re-encoded in the source image's format.
+
+    If the bbox already covers more than ``skip_threshold`` of the image area,
+    cropping is skipped (returns the original bytes unchanged).
 
     Raises:
         ValueError: if the image can't be opened or the box is unusable.
@@ -41,6 +45,18 @@ def crop_image_to_bbox(
         width, height = img.size
 
         x1, y1, x2, y2 = bbox
+
+        # Skip crop if document already fills most of the frame
+        bbox_area = (x2 - x1) * (y2 - y1)
+        # bbox coords are on a 0-1000 normalized scale (from Nova bbox detection).
+        # Total image area in this coordinate space is 1000 * 1000.
+        image_area = 1000.0 * 1000.0
+        if bbox_area / image_area >= skip_threshold:
+            logger.info(
+                "Skipping crop - document covers %.0f%% of frame", bbox_area / image_area * 100
+            )
+            return image_bytes
+
         pad_x = (x2 - x1) * pad_ratio
         pad_y = (y2 - y1) * pad_ratio
 
