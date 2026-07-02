@@ -5,8 +5,8 @@ import pytest
 from documentai_api.mappings.textract import get_bda_field_map, get_document_class
 
 
-def test_get_document_class_passport_falls_through():
-    assert get_document_class("PASSPORT") is None
+def test_get_document_class_passport():
+    assert get_document_class("PASSPORT") == "US-passports"
 
 
 def test_get_document_class_driver_license():

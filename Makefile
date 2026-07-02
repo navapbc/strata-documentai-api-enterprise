@@ -1,6 +1,7 @@
 .PHONY: \
 	deploy \
 	deploy-infra \
+	deploy-api \
 	deploy-admin-ui \
 	deploy-demo-ui \
 	deploy-ui \
@@ -23,6 +24,9 @@ deploy: deploy-infra deploy-ui
 
 deploy-infra: ## Deploy infrastructure (Docker image + Terraform)
 	$(MAKE) -C infra infra-deploy ENVIRONMENT=$(ENVIRONMENT) AWS_PROFILE=$(AWS_PROFILE)
+
+deploy-api: ## Build and deploy API from current working directory
+	$(MAKE) -C infra infra-deploy ENVIRONMENT=$(ENVIRONMENT) AWS_PROFILE=$(AWS_PROFILE) IMAGE_TAG=$(ENVIRONMENT)-$$(date +%s)
 
 deploy-ui: ## Build and deploy both UIs
 deploy-ui: deploy-admin-ui deploy-demo-ui

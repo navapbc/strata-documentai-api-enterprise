@@ -47,8 +47,30 @@ def test_crop_to_bbox_exact_region_no_padding():
 
 def test_crop_to_bbox_padding_clamps_to_image_bounds():
     """Padding never pushes the crop outside the image."""
-    result = crop_image_to_bbox(_sized_image(1000, 1000), (0, 0, 1000, 1000), pad_ratio=0.1)
-    assert Image.open(io.BytesIO(result)).size == (1000, 1000)  # clamped, not 1100+
+    # bbox covers 60% of frame (below 75% skip threshold), padding would exceed bounds
+    result = crop_image_to_bbox(_sized_image(1000, 1000), (100, 100, 900, 700), pad_ratio=0.2)
+    img = Image.open(io.BytesIO(result))
+    # Padding would push beyond image bounds but gets clamped
+    assert img.width <= 1000
+    assert img.height <= 1000
+
+
+def test_crop_to_bbox_skip_threshold_returns_original():
+    """Bbox covering >= 75% of frame skips cropping and returns original bytes."""
+    original = _sized_image(1000, 1000)
+    # bbox covers 90% of frame (900 * 1000 / 1_000_000 = 0.9)
+    result = crop_image_to_bbox(original, (50, 0, 950, 1000))
+    assert result is original
+
+
+def test_crop_to_bbox_below_skip_threshold_crops():
+    """Bbox covering < 75% of frame performs the crop."""
+    original = _sized_image(1000, 1000)
+    # bbox covers 25% of frame (500 * 500 / 1_000_000 = 0.25)
+    result = crop_image_to_bbox(original, (250, 250, 750, 750), pad_ratio=0)
+    assert result is not original
+    img = Image.open(io.BytesIO(result))
+    assert img.size == (500, 500)
 
 
 def test_crop_to_bbox_preserves_format():
