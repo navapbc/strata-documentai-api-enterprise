@@ -3,12 +3,12 @@
 import pytest
 
 from documentai_api.config.constants import ProcessStatus
+from documentai_api.dtos.processing import CropResult, OptimizationResult
 from documentai_api.jobs.document_processor.main import (
     invoke_bda,
     main,
 )
 from documentai_api.schemas.document_metadata import DocumentMetadata
-from documentai_api.utils.dto import CropResult, OptimizationResult
 
 
 @pytest.fixture(autouse=True)
@@ -23,7 +23,7 @@ def mock_env(runtime_required_env):
 
 @pytest.fixture(autouse=True)
 def mock_preclassification(mocker):
-    from documentai_api.utils.dto import BedrockClassificationResult
+    from documentai_api.dtos.classification import BedrockClassificationResult
 
     mocker.patch(
         "documentai_api.utils.document_lifecycle.preclassify_document",

@@ -34,6 +34,7 @@ from documentai_api.config.constants import (
     UploadMethod,
 )
 from documentai_api.config.env import get_aws_config
+from documentai_api.dtos.classification import ClassificationData
 from documentai_api.logging import get_logger
 from documentai_api.models.api_responses import (
     BatchJobItem,
@@ -57,7 +58,6 @@ from documentai_api.utils.document_lifecycle import (
     classify_as_failed,
     insert_minimal_ddb_record,
 )
-from documentai_api.utils.dto import ClassificationData
 from documentai_api.utils.tenant_access import validate_batch_tenant_access
 from documentai_api.utils.uploads import (
     ImageConversionError,

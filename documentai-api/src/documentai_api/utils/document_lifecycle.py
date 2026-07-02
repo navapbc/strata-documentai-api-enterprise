@@ -10,6 +10,9 @@ from documentai_api.config.constants import (
     ProcessStatus,
 )
 from documentai_api.config.env import EnvVars, get_required_env
+from documentai_api.dtos.classification import ClassificationData
+from documentai_api.dtos.ddb import PreClassificationDdbFields, UpsertDdbData
+from documentai_api.dtos.processing import InternalApiResponse
 from documentai_api.logging import get_logger
 from documentai_api.models.document_record import DocumentRecord
 from documentai_api.services import s3 as s3_service
@@ -17,12 +20,6 @@ from documentai_api.utils.bedrock import preclassify_document
 from documentai_api.utils.ddb import (
     update_ddb,
     upsert_ddb,
-)
-from documentai_api.utils.dto import (
-    ClassificationData,
-    InternalApiResponse,
-    PreClassificationData,
-    UpsertDdbData,
 )
 from documentai_api.utils.response_builder import get_internal_api_response
 from documentai_api.utils.response_codes import ResponseCodes
@@ -415,7 +412,7 @@ def upsert_initial_ddb_record(
             batch_id=batch_id,
             is_document_blurry=is_document_blurry,
             is_password_protected=is_password_protected,
-            pre_classification=PreClassificationData(
+            pre_classification=PreClassificationDdbFields(
                 document_type=pre_classification_document_type,
                 confidence=pre_classification_confidence,
                 input_tokens=pre_classification_input_tokens,

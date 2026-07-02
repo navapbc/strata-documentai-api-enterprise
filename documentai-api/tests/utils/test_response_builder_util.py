@@ -3,9 +3,10 @@ from datetime import UTC, datetime
 import pytest
 
 from documentai_api.config.constants import BdaResponseFields, ProcessStatus
+from documentai_api.dtos.classification import ClassificationData
+from documentai_api.dtos.processing import InternalApiResponse
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils import response_builder as response_builder_util
-from documentai_api.utils.dto import ClassificationData, InternalApiResponse
 from documentai_api.utils.response_codes import ResponseCodes
 
 

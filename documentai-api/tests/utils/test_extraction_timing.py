@@ -6,8 +6,8 @@ from decimal import Decimal
 import pytest
 from freezegun import freeze_time
 
+from documentai_api.dtos.classification import ClassificationData
 from documentai_api.schemas.document_metadata import DocumentMetadata
-from documentai_api.utils.dto import ClassificationData
 from documentai_api.utils.extraction_timing import (
     calculate_field_metrics,
     calculate_processing_times,
