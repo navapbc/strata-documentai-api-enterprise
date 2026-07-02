@@ -18,6 +18,7 @@ from documentai_api.config.constants import (
     AthenaQueryStatus,
 )
 from documentai_api.config.env import get_aws_config
+from documentai_api.dtos.usage_stats import UsageStats
 from documentai_api.logging import get_logger
 from documentai_api.utils.aws_client_factory import AWSClientFactory
 
@@ -123,31 +124,17 @@ def generate_usage_report(
 ) -> dict[str, Any]:
     """Generate a per-tenant monthly usage report by summing daily data."""
     # Sum across all days per tenant
-    tenant_totals: dict[str, dict[str, int]] = defaultdict(
-        lambda: {
-            "total_records": 0,
-            "total_bda_invocations": 0,
-            "total_file_size_bytes": 0,
-            "total_bda_pages": 0,
-            "total_bedrock_input_tokens": 0,
-            "total_bedrock_output_tokens": 0,
-        }
-    )
+    tenant_totals: dict[str, UsageStats] = defaultdict(UsageStats)
 
     for tenant_rows in daily_data.values():
         for row in tenant_rows:
-            t = tenant_totals[row["tenant_id"]]
-            t["total_records"] += row["total_records"]
-            t["total_bda_invocations"] += row["total_bda_invocations"]
-            t["total_file_size_bytes"] += row["total_file_size_bytes"]
-            t["total_bda_pages"] += row["total_bda_pages"]
-            t["total_bedrock_input_tokens"] += row["total_bedrock_input_tokens"]
-            t["total_bedrock_output_tokens"] += row["total_bedrock_output_tokens"]
+            current = tenant_totals[row["tenant_id"]]
+            tenant_totals[row["tenant_id"]] = UsageStats.sum([current, UsageStats.from_dict(row)])
 
     tenants = [
-        {"tenant_id": tid, **totals}
+        {"tenant_id": tid, **totals.to_dict()}
         for tid, totals in sorted(
-            tenant_totals.items(), key=lambda x: x[1]["total_records"], reverse=True
+            tenant_totals.items(), key=lambda x: x[1].total_records, reverse=True
         )
     ]
 
@@ -192,17 +179,8 @@ def generate_daily_usage(yyyymm: str) -> dict[str, list[dict[str, Any]]]:
 
     by_date: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for row in rows:
-        by_date[row["date"]].append(
-            {
-                "tenant_id": row["tenant_id"],
-                "total_records": int(row["total_records"]),
-                "total_bda_invocations": int(row["total_bda_invocations"]),
-                "total_file_size_bytes": int(row["total_file_size_bytes"]),
-                "total_bda_pages": int(row["total_bda_pages"]),
-                "total_bedrock_input_tokens": int(row["total_bedrock_input_tokens"]),
-                "total_bedrock_output_tokens": int(row["total_bedrock_output_tokens"]),
-            }
-        )
+        stats = UsageStats.from_dict(row)
+        by_date[row["date"]].append({"tenant_id": row["tenant_id"], **stats.to_dict()})
 
     return dict(by_date)
 
@@ -233,17 +211,8 @@ def _write_daily_files(bucket: str, daily_data: dict[str, list[dict[str, Any]]])
             files_written += 1
 
         # Global file (sum across tenants)
-        global_stats = {
-            "date": date_str,
-            "total_records": sum(r["total_records"] for r in tenant_rows),
-            "total_bda_invocations": sum(r["total_bda_invocations"] for r in tenant_rows),
-            "total_file_size_bytes": sum(r["total_file_size_bytes"] for r in tenant_rows),
-            "total_bda_pages": sum(r["total_bda_pages"] for r in tenant_rows),
-            "total_bedrock_input_tokens": sum(r["total_bedrock_input_tokens"] for r in tenant_rows),
-            "total_bedrock_output_tokens": sum(
-                r["total_bedrock_output_tokens"] for r in tenant_rows
-            ),
-        }
+        total = UsageStats.sum(UsageStats.from_dict(r) for r in tenant_rows)
+        global_stats = {"date": date_str, **total.to_dict()}
         global_key = f"{METRICS_USAGE_REPORT_DAILY_S3_PREFIX}={date_str}/stats.json"
         s3.put_object(
             Bucket=bucket,
