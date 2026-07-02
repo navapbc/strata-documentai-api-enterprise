@@ -1,16 +1,19 @@
 """Monthly tenant usage report generator.
 
 Queries raw metrics data directly via Athena and produces a per-tenant usage
-report. No dependency on the metrics aggregator having run.
+report (monthly + daily breakdown). No dependency on the metrics aggregator
+having run.
 """
 
 import json
 import re
 import time
+from collections import defaultdict
 from typing import Any
 
 from documentai_api.config.constants import (
     ATHENA_QUERY_TIMEOUT_SECONDS,
+    METRICS_USAGE_REPORT_DAILY_S3_PREFIX,
     METRICS_USAGE_REPORT_S3_PREFIX,
     AthenaQueryStatus,
 )
@@ -21,8 +24,26 @@ from documentai_api.utils.aws_client_factory import AWSClientFactory
 logger = get_logger(__name__)
 
 
-def _build_usage_query(database_name: str, table_name: str, yyyymm: str) -> str:
-    """Build Athena query to aggregate usage dimensions per tenant for a month."""
+def _build_daily_usage_query(database_name: str, table_name: str, yyyymm: str) -> str:
+    """Build Athena query to aggregate usage per tenant per day for a month.
+
+    For the current month, excludes today (today's data comes from the
+    metrics aggregator at read time to avoid double-counting).
+    """
+    from calendar import monthrange
+    from datetime import UTC, datetime, timedelta
+
+    year, month = int(yyyymm[:4]), int(yyyymm[5:7])
+    last_day = monthrange(year, month)[1]
+    end_date = f"{yyyymm}-{last_day:02d}"
+
+    # For the current month, only query through yesterday
+    today = datetime.now(UTC).strftime("%Y-%m-%d")
+    if today[:7] == yyyymm and today > f"{yyyymm}-01":
+        # Yesterday (or start of month if today is the 1st)
+        yesterday = (datetime.now(UTC) - timedelta(days=1)).strftime("%Y-%m-%d")
+        end_date = yesterday
+
     return f"""
     WITH deduped AS (
         SELECT
@@ -32,9 +53,10 @@ def _build_usage_query(database_name: str, table_name: str, yyyymm: str) -> str:
                 ORDER BY updated_at DESC
             ) AS rn
         FROM {database_name}.{table_name}
-        WHERE date BETWEEN '{yyyymm}-01' AND '{yyyymm}-31'
+        WHERE date BETWEEN '{yyyymm}-01' AND '{end_date}'
     )
     SELECT
+        CAST(date AS VARCHAR) AS date,
         COALESCE(tenant_id, '__unknown__') AS tenant_id,
         COUNT(*) AS total_records,
         COUNT(bda_invocation_arn) AS total_bda_invocations,
@@ -52,8 +74,8 @@ def _build_usage_query(database_name: str, table_name: str, yyyymm: str) -> str:
         ) AS total_bedrock_output_tokens
     FROM deduped
     WHERE rn = 1
-    GROUP BY COALESCE(tenant_id, '__unknown__')
-    ORDER BY total_records DESC
+    GROUP BY CAST(date AS VARCHAR), COALESCE(tenant_id, '__unknown__')
+    ORDER BY date, total_records DESC
     """
 
 
@@ -96,8 +118,59 @@ def _execute_query(query: str, database_name: str, workgroup_name: str) -> list[
     return results
 
 
-def generate_usage_report(yyyymm: str) -> dict[str, Any]:
-    """Generate a per-tenant usage report for a given month via Athena."""
+def generate_usage_report(
+    yyyymm: str, daily_data: dict[str, list[dict[str, Any]]]
+) -> dict[str, Any]:
+    """Generate a per-tenant monthly usage report by summing daily data."""
+    # Sum across all days per tenant
+    tenant_totals: dict[str, dict[str, int]] = defaultdict(
+        lambda: {
+            "total_records": 0,
+            "total_bda_invocations": 0,
+            "total_file_size_bytes": 0,
+            "total_bda_pages": 0,
+            "total_bedrock_input_tokens": 0,
+            "total_bedrock_output_tokens": 0,
+        }
+    )
+
+    for tenant_rows in daily_data.values():
+        for row in tenant_rows:
+            t = tenant_totals[row["tenant_id"]]
+            t["total_records"] += row["total_records"]
+            t["total_bda_invocations"] += row["total_bda_invocations"]
+            t["total_file_size_bytes"] += row["total_file_size_bytes"]
+            t["total_bda_pages"] += row["total_bda_pages"]
+            t["total_bedrock_input_tokens"] += row["total_bedrock_input_tokens"]
+            t["total_bedrock_output_tokens"] += row["total_bedrock_output_tokens"]
+
+    tenants = [
+        {"tenant_id": tid, **totals}
+        for tid, totals in sorted(
+            tenant_totals.items(), key=lambda x: x[1]["total_records"], reverse=True
+        )
+    ]
+
+    if not tenants:
+        return {
+            "month": yyyymm,
+            "report_type": "usage_only",
+            "tenants": [],
+            "message": "No data found",
+        }
+
+    return {
+        "month": yyyymm,
+        "report_type": "usage_only",
+        "tenants": tenants,
+    }
+
+
+def generate_daily_usage(yyyymm: str) -> dict[str, list[dict[str, Any]]]:
+    """Generate per-tenant daily usage for a month via Athena.
+
+    Returns {date: [tenant_stats, ...]} grouped by date.
+    """
     if not re.match(r"^\d{4}-\d{2}$", yyyymm):
         raise ValueError(f"Invalid month format: {yyyymm!r} (expected YYYY-MM)")
 
@@ -113,48 +186,92 @@ def generate_usage_report(yyyymm: str) -> dict[str, Any]:
     if not workgroup_name:
         raise ValueError("ATHENA_WORKGROUP_NAME not configured")
 
-    query = _build_usage_query(database_name, table_name, yyyymm)
-    logger.info(f"Querying usage data for {yyyymm}")
+    query = _build_daily_usage_query(database_name, table_name, yyyymm)
+    logger.info(f"Querying daily usage data for {yyyymm}")
     rows = _execute_query(query, database_name, workgroup_name)
 
-    if not rows:
-        return {
-            "month": yyyymm,
-            "report_type": "usage_only",
-            "tenants": [],
-            "message": "No data found",
-        }
+    by_date: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in rows:
+        by_date[row["date"]].append(
+            {
+                "tenant_id": row["tenant_id"],
+                "total_records": int(row["total_records"]),
+                "total_bda_invocations": int(row["total_bda_invocations"]),
+                "total_file_size_bytes": int(row["total_file_size_bytes"]),
+                "total_bda_pages": int(row["total_bda_pages"]),
+                "total_bedrock_input_tokens": int(row["total_bedrock_input_tokens"]),
+                "total_bedrock_output_tokens": int(row["total_bedrock_output_tokens"]),
+            }
+        )
 
-    tenants = [
-        {
-            "tenant_id": row["tenant_id"],
-            "total_records": int(row["total_records"]),
-            "total_bda_invocations": int(row["total_bda_invocations"]),
-            "total_file_size_bytes": int(row["total_file_size_bytes"]),
-            "total_bda_pages": int(row["total_bda_pages"]),
-            "total_bedrock_input_tokens": int(row["total_bedrock_input_tokens"]),
-            "total_bedrock_output_tokens": int(row["total_bedrock_output_tokens"]),
-        }
-        for row in rows
-    ]
+    return dict(by_date)
 
-    return {
-        "month": yyyymm,
-        "report_type": "usage_only",
-        "tenants": tenants,
-    }
+
+def _write_daily_files(bucket: str, daily_data: dict[str, list[dict[str, Any]]]) -> int:
+    """Write per-day global + per-tenant stats files to S3.
+
+    Writes:
+      usage-report/utc/date={date}/stats.json  (global: all tenants summed)
+      usage-report/utc/date={date}/tenant={id}/stats.json  (per-tenant)
+    """
+    s3 = AWSClientFactory.get_s3_client()
+    files_written = 0
+
+    for date_str, tenant_rows in daily_data.items():
+        # Per-tenant files
+        for row in tenant_rows:
+            tenant_key = (
+                f"{METRICS_USAGE_REPORT_DAILY_S3_PREFIX}={date_str}"
+                f"/tenant={row['tenant_id']}/stats.json"
+            )
+            s3.put_object(
+                Bucket=bucket,
+                Key=tenant_key,
+                Body=json.dumps(row, default=str),
+                ContentType="application/json",
+            )
+            files_written += 1
+
+        # Global file (sum across tenants)
+        global_stats = {
+            "date": date_str,
+            "total_records": sum(r["total_records"] for r in tenant_rows),
+            "total_bda_invocations": sum(r["total_bda_invocations"] for r in tenant_rows),
+            "total_file_size_bytes": sum(r["total_file_size_bytes"] for r in tenant_rows),
+            "total_bda_pages": sum(r["total_bda_pages"] for r in tenant_rows),
+            "total_bedrock_input_tokens": sum(r["total_bedrock_input_tokens"] for r in tenant_rows),
+            "total_bedrock_output_tokens": sum(
+                r["total_bedrock_output_tokens"] for r in tenant_rows
+            ),
+        }
+        global_key = f"{METRICS_USAGE_REPORT_DAILY_S3_PREFIX}={date_str}/stats.json"
+        s3.put_object(
+            Bucket=bucket,
+            Key=global_key,
+            Body=json.dumps(global_stats, default=str),
+            ContentType="application/json",
+        )
+        files_written += 1
+
+    return files_written
 
 
 def main(yyyymm: str) -> dict[str, Any]:
-    """Generate and write usage report to S3."""
+    """Generate and write monthly + daily usage reports to S3."""
     aws_config = get_aws_config()
     bucket = aws_config.ddb_export_bucket_name
     if not bucket:
         raise ValueError("DDB_EXPORT_BUCKET_NAME not configured")
 
-    report = generate_usage_report(yyyymm)
+    # Single Athena query: daily breakdown for the full month
+    daily_data = generate_daily_usage(yyyymm)
 
-    # Write report to S3
+    # Write daily files
+    daily_files = _write_daily_files(bucket, daily_data)
+    logger.info(f"Daily usage: wrote {daily_files} files for {len(daily_data)} days")
+
+    # Derive monthly report by summing daily
+    report = generate_usage_report(yyyymm, daily_data)
     s3 = AWSClientFactory.get_s3_client()
     s3_key = f"{METRICS_USAGE_REPORT_S3_PREFIX}={yyyymm}/report.json"
     s3.put_object(
@@ -170,5 +287,7 @@ def main(yyyymm: str) -> dict[str, Any]:
         "month": yyyymm,
         "report_type": report["report_type"],
         "tenant_count": len(report["tenants"]),
+        "daily_days": len(daily_data),
+        "daily_files": daily_files,
         "output_location": f"s3://{bucket}/{s3_key}",
     }

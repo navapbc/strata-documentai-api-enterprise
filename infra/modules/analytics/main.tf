@@ -146,6 +146,14 @@ resource "aws_glue_catalog_table" "raw_metrics" {
       type = "double"
     }
     columns {
+      name = "extraction_processing_time_seconds"
+      type = "double"
+    }
+    columns {
+      name = "extraction_wait_time_seconds"
+      type = "double"
+    }
+    columns {
       name = "document_processor_started_at"
       type = "string"
     }

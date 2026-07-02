@@ -2284,6 +2284,17 @@ td {
   border-top: 2px solid var(--border, #ddd);
 }
 
+.usage-table .partial-row {
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.usage-table .partial-row td:first-child::after {
+  content: " (in progress)";
+  font-size: 0.8em;
+  opacity: 0.7;
+}
+
 /* Metrics Dashboard */
 .metrics-controls {
   display: flex;
