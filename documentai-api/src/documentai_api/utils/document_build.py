@@ -4,11 +4,11 @@ from typing import Any
 
 from documentai_api.config.constants import ConfigDefaults, DocumentCategory
 from documentai_api.config.env import EnvVars
+from documentai_api.dtos.processing import PageMetadata
 from documentai_api.schemas.document_builds import DocumentBuilds
 from documentai_api.services import ddb as ddb_service
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils import s3 as s3_utils
-from documentai_api.utils.dto import PageMetadata
 from documentai_api.utils.ttl import ttl_epoch_in_days
 
 # Sentinel page number reserved for the per-build metadata record (not a real page).

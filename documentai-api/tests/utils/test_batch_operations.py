@@ -3,9 +3,9 @@ from datetime import UTC, datetime
 import pytest
 
 from documentai_api.config.constants import ProcessStatus
+from documentai_api.dtos.ddb import UpsertDdbData
 from documentai_api.utils import batch_operations as batch_ops
 from documentai_api.utils import ddb as ddb_util
-from documentai_api.utils.dto import UpsertDdbData
 
 
 @pytest.mark.integration

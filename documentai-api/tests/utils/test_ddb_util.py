@@ -5,14 +5,11 @@ import pytest
 from freezegun import freeze_time
 
 from documentai_api.config.constants import ProcessStatus
+from documentai_api.dtos.classification import ClassificationData
+from documentai_api.dtos.ddb import PreClassificationDdbFields, UpsertDdbData
+from documentai_api.dtos.processing import InternalApiResponse
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils import ddb as ddb_util
-from documentai_api.utils.dto import (
-    ClassificationData,
-    InternalApiResponse,
-    PreClassificationData,
-    UpsertDdbData,
-)
 from documentai_api.utils.response_codes import ResponseCodes
 
 
@@ -373,7 +370,7 @@ def test_upsert_ddb(ddb_doc_metadata_table, mocker):
             trace_id="trace-456",
             is_password_protected=True,
             is_document_blurry=False,
-            pre_classification=PreClassificationData(
+            pre_classification=PreClassificationDdbFields(
                 document_type="W2",
                 confidence=0.98,
             ),

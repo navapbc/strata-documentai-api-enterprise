@@ -1,9 +1,9 @@
 import pytest
 
 from documentai_api.config.constants import ProcessStatus
+from documentai_api.dtos.classification import BedrockClassificationResult, ClassificationData
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils import document_lifecycle as lifecycle_util
-from documentai_api.utils.dto import BedrockClassificationResult, ClassificationData
 from documentai_api.utils.response_codes import ResponseCodes
 
 

@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from documentai_api.config.constants import BdaResponseFields, ConfigDefaults
+from documentai_api.dtos.classification import ClassificationData
 from documentai_api.logging import get_logger
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services.bda import extract_bda_output_s3_uri, get_bda_result_json
@@ -17,7 +18,6 @@ from documentai_api.utils.document_lifecycle import (
     classify_as_no_document_detected,
     classify_as_success,
 )
-from documentai_api.utils.dto import ClassificationData
 from documentai_api.utils.response_codes import ResponseCodes
 from documentai_api.utils.tenants import get_extraction_confidence_floor
 

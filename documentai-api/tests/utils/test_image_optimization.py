@@ -7,8 +7,8 @@ import pytest
 from PIL import Image
 
 from documentai_api.config.constants import ConfigDefaults
+from documentai_api.dtos.processing import CropResult
 from documentai_api.services import s3 as s3_service
-from documentai_api.utils.dto import CropResult
 from documentai_api.utils.image_optimization import (
     convert_to_grayscale,
     crop_image_to_bbox,

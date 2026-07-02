@@ -3,11 +3,11 @@
 from datetime import UTC, datetime
 from typing import Any
 
+from documentai_api.dtos.classification import ClassificationData
 from documentai_api.jobs.bda_result_processor.main import main
 from documentai_api.logging import get_logger, init
 from documentai_api.utils.bda import get_ddb_key_from_bda_output
 from documentai_api.utils.document_lifecycle import classify_as_failed
-from documentai_api.utils.dto import ClassificationData
 from documentai_api.utils.lambda_error_handler import handle_lambda_errors
 from documentai_api.utils.s3 import extract_s3_info_from_event
 

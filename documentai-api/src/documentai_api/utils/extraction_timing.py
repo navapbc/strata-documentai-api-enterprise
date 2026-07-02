@@ -4,12 +4,13 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
+from documentai_api.dtos.classification import ClassificationData
+from documentai_api.dtos.processing import FieldMetrics, ProcessingTimes
 from documentai_api.logging import get_logger
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.bda import (
     calculate_average_non_empty_confidence,
 )
-from documentai_api.utils.dto import ClassificationData, FieldMetrics, ProcessingTimes
 
 logger = get_logger(__name__)
 

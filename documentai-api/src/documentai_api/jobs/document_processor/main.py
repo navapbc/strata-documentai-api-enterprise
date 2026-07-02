@@ -21,6 +21,8 @@ from documentai_api.config.constants import (
     S3MetadataKeys,
 )
 from documentai_api.config.env import EnvVars, get_aws_config, get_required_env
+from documentai_api.dtos.classification import ClassificationData
+from documentai_api.dtos.processing import CropResult
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils.bda_invoker import invoke_bedrock_data_automation
@@ -32,7 +34,6 @@ from documentai_api.utils.document_lifecycle import (
     set_processing_status_started,
     upsert_initial_ddb_record,
 )
-from documentai_api.utils.dto import ClassificationData, CropResult
 from documentai_api.utils.image_optimization import optimize_s3_image
 from documentai_api.utils.s3 import parse_s3_uri
 from documentai_api.utils.uploads import validate_s3_object_is_bda_native

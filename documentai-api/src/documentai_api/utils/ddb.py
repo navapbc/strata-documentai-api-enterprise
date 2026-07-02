@@ -13,6 +13,9 @@ from documentai_api.config.constants import (
     ProcessStatus,
 )
 from documentai_api.config.env import EnvVars, get_aws_config, get_required_env
+from documentai_api.dtos.classification import ClassificationData
+from documentai_api.dtos.ddb import UpsertDdbData
+from documentai_api.dtos.processing import InternalApiResponse, ProcessingTimes
 from documentai_api.logging import get_logger
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import ddb as ddb_service
@@ -20,12 +23,6 @@ from documentai_api.services import s3 as s3_service
 from documentai_api.services import sqs as sqs_service
 from documentai_api.utils import s3 as s3_utils
 from documentai_api.utils.bda import extract_region_from_bda_arn
-from documentai_api.utils.dto import (
-    ClassificationData,
-    InternalApiResponse,
-    ProcessingTimes,
-    UpsertDdbData,
-)
 from documentai_api.utils.extraction_timing import (
     calculate_field_metrics as _calculate_field_metrics,
 )

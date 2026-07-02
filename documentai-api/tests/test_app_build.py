@@ -7,7 +7,7 @@ from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from documentai_api.app import app
-from documentai_api.utils.dto import PageMetadata
+from documentai_api.dtos.processing import PageMetadata
 from documentai_api.utils.uploads import ImageConversionError
 
 client = TestClient(app)
@@ -563,7 +563,7 @@ def test_upload_document_build_page_max_pages_cap(
 ):
     """Upload rejects when build already has MAX_PAGES_PER_BUILD pages."""
     from documentai_api.config.constants import MAX_PAGES_PER_BUILD
-    from documentai_api.utils.dto import PageMetadata
+    from documentai_api.dtos.processing import PageMetadata
 
     existing_pages = [
         PageMetadata(
