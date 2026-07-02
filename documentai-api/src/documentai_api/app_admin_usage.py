@@ -17,6 +17,7 @@ from documentai_api.config.constants import (
     OutputFormatType,
 )
 from documentai_api.config.env import get_aws_config
+from documentai_api.dtos.usage_stats import UsageStats
 from documentai_api.logging import get_logger
 from documentai_api.models.usage import (
     DailyUsage,
@@ -76,17 +77,8 @@ async def _read_daily_usage(bucket: str, month: str, tenant_id: str | None) -> l
             )
             daily_stats = metrics.get("daily_stats", [])
             if daily_stats:
-                usage = daily_stats[0].get("usage_stats", {})
-                return {
-                    "date": date_str,
-                    "total_records": daily_stats[0].get("total_records", 0),
-                    "total_bda_invocations": daily_stats[0].get("total_bda_invocations", 0),
-                    "total_bda_pages": usage.get("total_bda_pages", 0),
-                    "total_file_size_bytes": usage.get("total_file_size_bytes", 0),
-                    "total_bedrock_input_tokens": usage.get("total_bedrock_input_tokens", 0),
-                    "total_bedrock_output_tokens": usage.get("total_bedrock_output_tokens", 0),
-                    "partial": True,
-                }
+                stats = UsageStats.from_aggregator(daily_stats[0])
+                return {"date": date_str, **stats.to_dict(), "partial": True}
             return None
 
         # Prior days: read deduped usage-report file
@@ -99,16 +91,9 @@ async def _read_daily_usage(bucket: str, month: str, tenant_id: str | None) -> l
 
         try:
             obj = await asyncio.to_thread(s3_service.get_object, bucket, s3_key)
-            stats = json.loads(obj["Body"].read().decode())
-            return {
-                "date": date_str,
-                "total_records": stats.get("total_records", 0),
-                "total_bda_invocations": stats.get("total_bda_invocations", 0),
-                "total_bda_pages": stats.get("total_bda_pages", 0),
-                "total_file_size_bytes": stats.get("total_file_size_bytes", 0),
-                "total_bedrock_input_tokens": stats.get("total_bedrock_input_tokens", 0),
-                "total_bedrock_output_tokens": stats.get("total_bedrock_output_tokens", 0),
-            }
+            raw = json.loads(obj["Body"].read().decode())
+            stats = UsageStats.from_dict(raw)
+            return {"date": date_str, **stats.to_dict()}
         except ClientError as e:
             if e.response["Error"]["Code"] != "NoSuchKey":
                 raise
@@ -204,21 +189,13 @@ async def get_usage(
             today_stats = today_metrics.get("daily_stats", [])
             if not today_stats:
                 continue
-            usage = today_stats[0].get("usage_stats", {})
-            additions = {
-                "total_records": today_stats[0].get("total_records", 0),
-                "total_bda_invocations": today_stats[0].get("total_bda_invocations", 0),
-                "total_file_size_bytes": usage.get("total_file_size_bytes", 0),
-                "total_bda_pages": usage.get("total_bda_pages", 0),
-                "total_bedrock_input_tokens": usage.get("total_bedrock_input_tokens", 0),
-                "total_bedrock_output_tokens": usage.get("total_bedrock_output_tokens", 0),
-            }
+            additions = UsageStats.from_aggregator(today_stats[0])
             matched = next((t for t in tenants_raw if t.get("tenant_id") == tid), None)
             if matched:
-                for k, v in additions.items():
+                for k, v in additions.to_dict().items():
                     matched[k] = matched.get(k, 0) + v
             else:
-                tenants_raw.append({"tenant_id": tid, **additions})
+                tenants_raw.append({"tenant_id": tid, **additions.to_dict()})
 
     if effective_tenant:
         tenants_raw = [t for t in tenants_raw if t.get("tenant_id") == effective_tenant]
