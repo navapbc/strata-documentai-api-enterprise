@@ -297,6 +297,8 @@ module "config" {
 
   parameters = {
     "feature-flags/preclassification-based-routing" = "false"
+    "feature-flags/skip-bda-if-unclassified" = "false"
+    "feature-flags/enable-preclassification-blueprint-matching" = "true"
     "feature-flags/document-crop"                   = "true"
     "feature-flags/textract-identity-enabled"       = "true"
     # Vision model ids - swappable at runtime via SSM (no redeploy). Kept as
@@ -308,6 +310,8 @@ module "config" {
 
   allowed_patterns = {
     "feature-flags/preclassification-based-routing" = "^(true|false)$"
+    "feature-flags/skip-bda-if-unclassified" = "^(true|false)$"
+    "feature-flags/enable-preclassification-blueprint-matching" = "^(true|false)$"
     "feature-flags/document-crop"                   = "^(true|false)$"
     "feature-flags/textract-identity-enabled"       = "^(true|false)$"
   }
@@ -438,6 +442,8 @@ locals {
   lambda_env_vars = {
     ENVIRONMENT                                               = var.environment
     PRECLASSIFICATION_ROUTING_PARAM                           = "${local.ssm_prefix}/feature-flags/preclassification-based-routing"
+    SKIP_BDA_IF_UNCLASSIFIED_PARAM                    = "${local.ssm_prefix}/feature-flags/skip-bda-if-unclassified"
+    ENABLE_PRECLASSIFICATION_BLUEPRINT_MATCHING_PARAM  = "${local.ssm_prefix}/feature-flags/enable-preclassification-blueprint-matching"
     DOCUMENT_CROP_PARAM                                       = "${local.ssm_prefix}/feature-flags/document-crop"
     TEXTRACT_IDENTITY_PARAM                                   = "${local.ssm_prefix}/feature-flags/textract-identity-enabled"
     DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME                   = module.document_metadata.table_name

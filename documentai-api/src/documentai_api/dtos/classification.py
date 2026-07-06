@@ -29,3 +29,15 @@ class BedrockClassificationResult:
     output_tokens: int | None = None
     duration_seconds: Decimal | None = None
     model_id: str | None = None
+
+
+@dataclass
+class PreclassificationMatchResult:
+    """Result of matching a document against known BDA blueprints during preclassification."""
+
+    matched_document_type: str | None = None
+    confidence: float = 0.0
+    category: str | None = None
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    duration_seconds: Decimal | None = None

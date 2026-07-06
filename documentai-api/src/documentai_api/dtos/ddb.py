@@ -42,6 +42,26 @@ class PreClassificationDdbFields(BaseModel):
     model_id: str | None = Field(
         default=None, json_schema_extra=_ddb_metadata_map("preclassificationModelId", ":pcmi")
     )
+    blueprint_matched_document_type: str | None = Field(
+        default=None,
+        json_schema_extra=_ddb_metadata_map("preclassificationBlueprintMatchedType", ":pcbmt"),
+    )
+    blueprint_match_confidence: float | None = Field(
+        default=None,
+        json_schema_extra=_ddb_metadata_map("preclassificationBlueprintMatchConfidence", ":pcbmc"),
+    )
+    blueprint_match_input_tokens: int | None = Field(
+        default=None,
+        json_schema_extra=_ddb_metadata_map("preclassificationBlueprintMatchInputTokens", ":pcbmit"),
+    )
+    blueprint_match_output_tokens: int | None = Field(
+        default=None,
+        json_schema_extra=_ddb_metadata_map("preclassificationBlueprintMatchOutputTokens", ":pcbmot"),
+    )
+    blueprint_match_duration_seconds: Decimal | None = Field(
+        default=None,
+        json_schema_extra=_ddb_metadata_map("preclassificationBlueprintMatchDurationSeconds", ":pcbmds"),
+    )
 
 
 class UpsertDdbData(BaseModel):

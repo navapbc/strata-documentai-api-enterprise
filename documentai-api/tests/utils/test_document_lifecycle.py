@@ -1,7 +1,11 @@
 import pytest
 
 from documentai_api.config.constants import ProcessStatus
-from documentai_api.dtos.classification import BedrockClassificationResult, ClassificationData
+from documentai_api.dtos.classification import (
+    BedrockClassificationResult,
+    ClassificationData,
+    PreclassificationMatchResult,
+)
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils import document_lifecycle as lifecycle_util
 from documentai_api.utils.response_codes import ResponseCodes
@@ -125,6 +129,11 @@ def test_upsert_initial_ddb_record(
     mock_preclassify = mocker.patch("documentai_api.utils.document_lifecycle.preclassify_document")
     if preclassify_result:
         mock_preclassify.return_value = preclassify_result
+
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.find_matching_blueprint",
+        return_value=PreclassificationMatchResult(),
+    )
 
     mocker.patch(
         "documentai_api.utils.ddb.build_v1_api_response",
@@ -390,6 +399,10 @@ def test_upsert_initial_ddb_record_routes_to_textract_when_enabled(
             is_blurry=False,
         ),
     )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.find_matching_blueprint",
+        return_value=PreclassificationMatchResult(),
+    )
 
     mock_textract = mocker.patch(
         "documentai_api.utils.document_lifecycle.try_textract_identity",
@@ -450,6 +463,10 @@ def test_upsert_initial_ddb_record_unknown_category_with_textract_does_not_crash
             is_blurry=False,
         ),
     )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.find_matching_blueprint",
+        return_value=PreclassificationMatchResult(),
+    )
     mock_textract = mocker.patch(
         "documentai_api.utils.document_lifecycle.try_textract_identity",
         return_value={
@@ -506,6 +523,10 @@ def test_upsert_initial_ddb_record_falls_through_when_textract_returns_none(
         ),
     )
     mocker.patch(
+        "documentai_api.utils.document_lifecycle.find_matching_blueprint",
+        return_value=PreclassificationMatchResult(),
+    )
+    mocker.patch(
         "documentai_api.utils.document_lifecycle.try_textract_identity",
         return_value=None,
     )
@@ -528,3 +549,129 @@ def test_upsert_initial_ddb_record_falls_through_when_textract_returns_none(
     item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
     # JPEG -> goes to image optimization, not Textract
     assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.PENDING_IMAGE_OPTIMIZATION
+
+
+# =============================================================================
+# Blueprint matching integration in upsert_initial_ddb_record
+# =============================================================================
+
+
+def test_upsert_initial_ddb_record_stores_blueprint_match_fields(
+    ddb_doc_metadata_table,
+    s3_bucket,
+    mocker,
+):
+    """Blueprint match result fields are persisted to DDB."""
+    from decimal import Decimal
+
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.document_utils.get_page_count", return_value=1
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.document_utils.is_password_protected",
+        return_value=False,
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.preclassify_document",
+        return_value=BedrockClassificationResult(
+            document_type="tax_documents",
+            confidence=0.95,
+            document_count=1,
+            is_document=True,
+            is_blurry=False,
+        ),
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.find_matching_blueprint",
+        return_value=PreclassificationMatchResult(
+            matched_document_type="W2",
+            confidence=0.92,
+            category="income",
+            input_tokens=150,
+            output_tokens=25,
+            duration_seconds=Decimal("1.23"),
+        ),
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.try_textract_identity",
+        return_value=None,
+    )
+
+    s3_bucket.put_object(Key="input/test-file", Body=b"bytes", ContentType="application/pdf")
+
+    lifecycle_util.upsert_initial_ddb_record(
+        source_bucket_name="test-bucket",
+        source_object_key="input/test-file",
+        original_file_name="w2.pdf",
+        ddb_key="test-file",
+        user_provided_document_category="income",
+        job_id="test-job-id",
+        trace_id="test-trace-id",
+    )
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
+    assert item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCHED_TYPE] == "W2"
+    assert float(item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_CONFIDENCE]) == pytest.approx(0.92)
+    assert item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_INPUT_TOKENS] == 150
+    assert item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_OUTPUT_TOKENS] == 25
+    assert float(item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_DURATION_SECONDS]) == pytest.approx(1.23)
+
+
+def test_upsert_initial_ddb_record_stores_blueprint_no_match(
+    ddb_doc_metadata_table,
+    s3_bucket,
+    mocker,
+):
+    """When blueprint matcher finds no match, fields reflect that."""
+    from decimal import Decimal
+
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.document_utils.get_page_count", return_value=1
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.document_utils.is_password_protected",
+        return_value=False,
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.preclassify_document",
+        return_value=BedrockClassificationResult(
+            document_type="other_document",
+            confidence=0.3,
+            document_count=1,
+            is_document=True,
+            is_blurry=False,
+        ),
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.find_matching_blueprint",
+        return_value=PreclassificationMatchResult(
+            matched_document_type=None,
+            confidence=0.0,
+            input_tokens=120,
+            output_tokens=18,
+            duration_seconds=Decimal("0.95"),
+        ),
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.try_textract_identity",
+        return_value=None,
+    )
+
+    s3_bucket.put_object(Key="input/test-file", Body=b"bytes", ContentType="application/pdf")
+
+    lifecycle_util.upsert_initial_ddb_record(
+        source_bucket_name="test-bucket",
+        source_object_key="input/test-file",
+        original_file_name="random.pdf",
+        ddb_key="test-file",
+        user_provided_document_category=None,
+        job_id="test-job-id",
+        trace_id="test-trace-id",
+    )
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
+    assert DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCHED_TYPE not in item
+    assert float(item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_CONFIDENCE]) == pytest.approx(0.0)
+    assert item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_INPUT_TOKENS] == 120
+    assert item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_OUTPUT_TOKENS] == 18
+    assert float(item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_DURATION_SECONDS]) == pytest.approx(0.95)

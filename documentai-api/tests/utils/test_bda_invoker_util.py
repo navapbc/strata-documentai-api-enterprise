@@ -196,3 +196,56 @@ def test_invoke_bedrock_data_automation_pages_sent_fallback(page_count_return, e
         )
 
         assert pages_sent == expected_pages_sent
+
+
+# =============================================================================
+# skip_bda_if_unclassified tests
+# =============================================================================
+
+
+def test_skip_bda_if_unclassified_defaults_false_when_no_param():
+    """When no SSM param is configured, defaults to False (don't skip BDA)."""
+    with patch.dict("os.environ", {}, clear=True):
+        from documentai_api.config.env import get_aws_config
+
+        get_aws_config.cache_clear()
+        result = bda_invoker_util.skip_bda_if_unclassified()
+        assert result is False
+
+
+def test_skip_bda_if_unclassified_reads_ssm_true():
+    """When SSM param returns 'true', returns True (skip BDA)."""
+    with (
+        patch.dict(
+            "os.environ",
+            {"SKIP_BDA_IF_UNCLASSIFIED_PARAM": "/test/flag"},
+        ),
+        patch(
+            "documentai_api.utils.ssm.get_parameter_value",
+            return_value="true",
+        ),
+    ):
+        from documentai_api.config.env import get_aws_config
+
+        get_aws_config.cache_clear()
+        result = bda_invoker_util.skip_bda_if_unclassified()
+        assert result is True
+
+
+def test_skip_bda_if_unclassified_reads_ssm_false():
+    """When SSM param returns 'false', returns False (don't skip BDA)."""
+    with (
+        patch.dict(
+            "os.environ",
+            {"SKIP_BDA_IF_UNCLASSIFIED_PARAM": "/test/flag"},
+        ),
+        patch(
+            "documentai_api.utils.ssm.get_parameter_value",
+            return_value="false",
+        ),
+    ):
+        from documentai_api.config.env import get_aws_config
+
+        get_aws_config.cache_clear()
+        result = bda_invoker_util.skip_bda_if_unclassified()
+        assert result is False

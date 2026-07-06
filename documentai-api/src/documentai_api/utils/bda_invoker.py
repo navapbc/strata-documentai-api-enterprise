@@ -45,6 +45,20 @@ def _is_preclassification_routing_enabled() -> bool:
     return value.lower() == "true"
 
 
+def skip_bda_if_unclassified() -> bool:
+    """Check SSM feature flag: should BDA be skipped when no blueprint matches?
+
+    Defaults to false (always invoke BDA) if the param is not configured.
+    """
+    config = get_aws_config()
+    if not config.skip_bda_if_unclassified_param:
+        return False
+    from documentai_api.utils.ssm import get_parameter_value
+
+    value = get_parameter_value(config.skip_bda_if_unclassified_param, default="false")
+    return value.lower() == "true"
+
+
 def resolve_project_arn(category: str | None) -> str:
     """Resolve BDA project ARN for a preclassification category."""
     arns = _get_project_arns()
@@ -120,4 +134,4 @@ def invoke_bedrock_data_automation(
         raise
 
 
-__all__ = ["invoke_bedrock_data_automation"]
+__all__ = ["invoke_bedrock_data_automation", "skip_bda_if_unclassified"]

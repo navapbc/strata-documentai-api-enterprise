@@ -12,7 +12,12 @@ from pathlib import Path
 import pytest
 
 from documentai_api.config.constants import ConfigDefaults, PreclassificationCategory
-from documentai_api.utils.bedrock import detect_document_bbox, preclassify_document
+from documentai_api.utils.bedrock import (
+    _build_blueprint_prompt,
+    detect_document_bbox,
+    find_matching_blueprint,
+    preclassify_document,
+)
 
 SAMPLE_IMAGE = b"\x89PNG\r\n" + b"\x00" * 100
 
@@ -513,9 +518,10 @@ def test_invoke_uses_max_tokens(monkeypatch):
     """Verify invoke_model is called with max_tokens=256."""
     captured = {}
 
-    def mock_invoke_model(model_id, messages, max_tokens=256):
+    def mock_invoke_model(model_id, messages, max_tokens=256, temperature=None):
         captured["max_tokens"] = max_tokens
         captured["model_id"] = model_id
+        captured["temperature"] = temperature
         return {
             "content": [
                 {
@@ -832,7 +838,7 @@ def test_detect_document_bbox_oversized_real(monkeypatch, real_aws_credentials):
     image_bytes = buf.getvalue()
     assert len(image_bytes) > int(ConfigDefaults.BEDROCK_CONVERSE_MAX_IMAGE_BYTES)
 
-    bbox = detect_document_bbox(image_bytes, "image/png")
+    bbox, _ = detect_document_bbox(image_bytes, "image/png")
     assert bbox is not None, f"{filename}: no bbox detected on oversized image"
 
     x1, y1, x2, y2 = bbox
@@ -877,3 +883,283 @@ def test_preclassify_real_document(filename, expected_category, monkeypatch, rea
     assert result.confidence >= 0.5, f"{filename}: confidence too low: {result.confidence}"
     assert result.is_document is True
     assert result.document_count >= 1
+
+
+# =============================================================================
+# find_matching_blueprint unit tests
+# =============================================================================
+
+
+SAMPLE_SCHEMAS = {
+    "W2": {
+        "documentType": "W2",
+        "description": "IRS W-2 Wage and Tax Statement",
+        "category": "tax_documents",
+        "fields": [{"name": "employer_ein", "type": "string"}, {"name": "wages", "type": "number"}],
+    },
+    "paystub": {
+        "documentType": "paystub",
+        "description": "Employee pay stub",
+        "category": "employment_wages",
+        "fields": [
+            {"name": "employee_name", "type": "string"},
+            {"name": "pay_period", "type": "string"},
+        ],
+    },
+}
+
+
+def test_build_blueprint_prompt_lists_all_types():
+    prompt = _build_blueprint_prompt(SAMPLE_SCHEMAS)
+    assert "W2" in prompt
+    assert "paystub" in prompt
+    assert "IRS W-2 Wage and Tax Statement" in prompt
+    assert "Employee pay stub" in prompt
+    assert "Fields: employer_ein, wages" in prompt
+    assert "Fields: employee_name, pay_period" in prompt
+
+
+def test_build_blueprint_prompt_handles_missing_description():
+    schemas = {"receipt": {"documentType": "receipt", "fields": []}}
+    prompt = _build_blueprint_prompt(schemas)
+    assert "- receipt" in prompt
+
+
+def test_find_matching_blueprint_returns_match(monkeypatch):
+    response = _mock_invoke_response({"matched_blueprint": "W2", "confidence": 0.92})
+    _patch_invoke(monkeypatch, response)
+    monkeypatch.setattr("documentai_api.utils.schemas.get_all_schemas", lambda: SAMPLE_SCHEMAS)
+
+    result = find_matching_blueprint(SAMPLE_IMAGE, "image/png")
+
+    assert result.matched_document_type == "W2"
+    assert result.confidence == 0.92
+    assert result.input_tokens == 100
+    assert result.output_tokens == 50
+    assert result.duration_seconds is not None
+
+
+def test_find_matching_blueprint_returns_none_when_no_match(monkeypatch):
+    response = _mock_invoke_response({"matched_blueprint": None, "confidence": 0.0})
+    _patch_invoke(monkeypatch, response)
+    monkeypatch.setattr("documentai_api.utils.schemas.get_all_schemas", lambda: SAMPLE_SCHEMAS)
+
+    result = find_matching_blueprint(SAMPLE_IMAGE, "image/png")
+
+    assert result.matched_document_type is None
+    assert result.confidence == 0.0
+
+
+def test_find_matching_blueprint_rejects_unknown_type(monkeypatch):
+    """Model returns a type not in schemas → treated as no match."""
+    response = _mock_invoke_response({"matched_blueprint": "invented_type", "confidence": 0.8})
+    _patch_invoke(monkeypatch, response)
+    monkeypatch.setattr("documentai_api.utils.schemas.get_all_schemas", lambda: SAMPLE_SCHEMAS)
+
+    result = find_matching_blueprint(SAMPLE_IMAGE, "image/png")
+
+    assert result.matched_document_type is None
+
+
+def test_find_matching_blueprint_returns_none_when_no_schemas(monkeypatch):
+    """No schemas available → early return with no match."""
+    monkeypatch.setattr("documentai_api.utils.schemas.get_all_schemas", lambda: {})
+
+    result = find_matching_blueprint(SAMPLE_IMAGE, "image/png")
+
+    assert result.matched_document_type is None
+    assert result.confidence == 0.0
+
+
+def test_find_matching_blueprint_handles_invocation_failure(monkeypatch):
+    monkeypatch.setattr(
+        "documentai_api.utils.bedrock._invoke",
+        lambda **kwargs: (_ for _ in ()).throw(RuntimeError("timeout")),
+    )
+    monkeypatch.setattr("documentai_api.utils.schemas.get_all_schemas", lambda: SAMPLE_SCHEMAS)
+
+    result = find_matching_blueprint(SAMPLE_IMAGE, "image/png")
+
+    assert result.matched_document_type is None
+    assert result.confidence == 0.0
+
+
+def test_find_matching_blueprint_handles_invalid_json(monkeypatch):
+    bad_response = {
+        "output": {"message": {"content": [{"text": "not json at all"}]}},
+        "usage": {"inputTokens": 10, "outputTokens": 5},
+    }
+    _patch_invoke(monkeypatch, bad_response)
+    monkeypatch.setattr("documentai_api.utils.schemas.get_all_schemas", lambda: SAMPLE_SCHEMAS)
+
+    result = find_matching_blueprint(SAMPLE_IMAGE, "image/png")
+
+    assert result.matched_document_type is None
+    assert result.input_tokens == 10
+    assert result.output_tokens == 5
+
+
+def test_find_matching_blueprint_confidence_clamped(monkeypatch):
+    response = _mock_invoke_response({"matched_blueprint": "W2", "confidence": 1.5})
+    _patch_invoke(monkeypatch, response)
+    monkeypatch.setattr("documentai_api.utils.schemas.get_all_schemas", lambda: SAMPLE_SCHEMAS)
+
+    result = find_matching_blueprint(SAMPLE_IMAGE, "image/png")
+
+    assert result.confidence == 1.0
+
+
+def test_find_matching_blueprint_uses_pdf_document_block(monkeypatch):
+    captured = {}
+
+    def capture_invoke(**kwargs):
+        captured["messages"] = kwargs["messages"]
+        return _mock_invoke_response({"matched_blueprint": None, "confidence": 0.0})
+
+    monkeypatch.setattr("documentai_api.utils.bedrock._invoke", capture_invoke)
+    monkeypatch.setattr("documentai_api.utils.bedrock._get_model_id", lambda: "test-model")
+    monkeypatch.setattr("documentai_api.utils.schemas.get_all_schemas", lambda: SAMPLE_SCHEMAS)
+
+    find_matching_blueprint(b"%PDF-1.4 fake", "application/pdf")
+
+    doc_block = captured["messages"][0]["content"][0]
+    assert "document" in doc_block
+    assert doc_block["document"]["format"] == "pdf"
+
+
+# =============================================================================
+# find_matching_blueprint integration tests - call real Bedrock + real BDA schemas
+# =============================================================================
+
+# Map test documents to their expected blueprint match (None = should not match).
+# These expectations align with the bdaMatchedDocumentClass in expected.json.
+_BLUEPRINT_MATCH_EXPECTATIONS = [
+    ("synthetic-tax-w2-wage-statement.png", "W2", "tax_documents"),
+    (
+        "synthetic-public-benefits-income-proof-pay-statement-rendered.png",
+        "Payslip",
+        "employment_wages",
+    ),
+    (
+        "synthetic-snap-income-proof-employment-wage-verification-letter-rendered.png",
+        "Employment-Verification-Letter",
+        "employment_wages",
+    ),
+    (
+        "synthetic-drivers-license-desk-background.jpg",
+        "US-drivers-licenses",
+        "identity_verification",
+    ),
+    # Documents that should NOT match any blueprint:
+    ("synthetic-wic-adjunctive-eligibility-snap-benefits-letter.jpg", None, "government_benefits"),
+    (
+        "synthetic-wic-certification-pregnancy-verification-clinic-note.jpg",
+        None,
+        "government_benefits",
+    ),
+]
+
+
+@pytest.fixture
+def bda_env(reset_env, monkeypatch):
+    """Restore BDA env vars needed for integration tests that call get_all_schemas()."""
+    arn = reset_env.get("BDA_PROJECT_ARN_ALL")
+    if not arn:
+        pytest.skip("BDA_PROJECT_ARN_ALL not set in environment")
+    monkeypatch.setenv("BDA_PROJECT_ARN_ALL", arn)
+    if "BDA_REGION" in reset_env:
+        monkeypatch.setenv("BDA_REGION", reset_env["BDA_REGION"])
+
+
+@pytest.mark.integration
+def test_get_all_schemas_has_descriptions(real_aws_credentials, bda_env):
+    """Verify get_all_schemas() returns schemas with non-empty descriptions.
+
+    This is a prerequisite for find_matching_blueprint - without descriptions the prompt
+    has no context to evaluate documents against.
+    """
+    from documentai_api.utils.schemas import get_all_schemas, invalidate_schema_cache
+
+    invalidate_schema_cache()
+    schemas = get_all_schemas()
+
+    assert len(schemas) > 0, "No schemas returned from BDA"
+
+    missing_descriptions = [
+        doc_type for doc_type, schema in schemas.items() if not schema.get("description")
+    ]
+    assert not missing_descriptions, (
+        f"Schemas missing descriptions: {missing_descriptions}. "
+        "Blueprint matching prompt needs descriptions to work."
+    )
+
+    # Verify each schema has a category (needed for routing)
+    missing_categories = [
+        doc_type for doc_type, schema in schemas.items() if not schema.get("category")
+    ]
+    assert not missing_categories, f"Schemas missing category: {missing_categories}"
+
+    print(f"\nSchemas fetched: {len(schemas)} types, all with descriptions")
+    for doc_type, schema in schemas.items():
+        print(f"  {doc_type}: {schema.get('description', '')[:60]}...")
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize(
+    ("filename", "expected_match", "category"),
+    _BLUEPRINT_MATCH_EXPECTATIONS,
+)
+def test_find_matching_blueprint_real(
+    filename, expected_match, category, monkeypatch, real_aws_credentials, bda_env
+):
+    """Match a real document against real BDA schemas via Bedrock.
+
+    Calls get_all_schemas() for real (hitting BDA API) and then invokes the
+    model with the blueprint prompt. Validates end-to-end that:
+    1. Schemas are fetched with descriptions
+    2. The prompt produces correct matches
+    3. Token usage is reported
+    """
+    from documentai_api.utils.schemas import invalidate_schema_cache
+
+    monkeypatch.setattr(
+        "documentai_api.utils.bedrock._get_model_id",
+        lambda: "us.amazon.nova-lite-v1:0",
+    )
+
+    # Use real schemas from BDA - validates the full pipeline
+    invalidate_schema_cache()
+
+    filepath = FIXTURES_DIR / filename
+    if not filepath.exists():
+        pytest.skip(f"Test fixture not found: {filepath}")
+
+    document_bytes = filepath.read_bytes()
+    content_type = _get_content_type(filename)
+
+    result = find_matching_blueprint(document_bytes, content_type, category=category)
+
+    if expected_match is None:
+        assert result.matched_document_type is None, (
+            f"{filename}: expected no match, got '{result.matched_document_type}' "
+            f"(confidence={result.confidence})"
+        )
+    else:
+        assert result.matched_document_type == expected_match, (
+            f"{filename}: expected '{expected_match}', got '{result.matched_document_type}' "
+            f"(confidence={result.confidence})"
+        )
+        assert result.confidence >= 0.5, f"{filename}: confidence too low: {result.confidence}"
+
+    # Verify token usage is reported
+    assert result.input_tokens is not None
+    assert result.input_tokens > 0
+    assert result.output_tokens is not None
+    assert result.output_tokens > 0
+    assert result.duration_seconds is not None
+    assert result.duration_seconds > 0
+
+    print(
+        f"\n{filename}: matched={result.matched_document_type}, confidence={result.confidence}, "
+        f"tokens={result.input_tokens}/{result.output_tokens}, duration={result.duration_seconds}s"
+    )

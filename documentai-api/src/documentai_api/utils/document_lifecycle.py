@@ -10,13 +10,13 @@ from documentai_api.config.constants import (
     ProcessStatus,
 )
 from documentai_api.config.env import EnvVars, get_required_env
-from documentai_api.dtos.classification import ClassificationData
+from documentai_api.dtos.classification import ClassificationData, PreclassificationMatchResult
 from documentai_api.dtos.ddb import PreClassificationDdbFields, UpsertDdbData
 from documentai_api.dtos.processing import InternalApiResponse
 from documentai_api.logging import get_logger
 from documentai_api.models.document_record import DocumentRecord
 from documentai_api.services import s3 as s3_service
-from documentai_api.utils.bedrock import preclassify_document
+from documentai_api.utils.bedrock import find_matching_blueprint, preclassify_document
 from documentai_api.utils.ddb import (
     update_ddb,
     upsert_ddb,
@@ -337,6 +337,7 @@ def upsert_initial_ddb_record(
     pre_classification_output_tokens = None
     pre_classification_duration_seconds = None
     pre_classification_model_id = None
+    pre_classification_blueprint_match_result: PreclassificationMatchResult | None = None
 
     if is_password_protected:
         process_status = ProcessStatus.PASSWORD_PROTECTED
@@ -370,6 +371,18 @@ def upsert_initial_ddb_record(
             textract_result = None
 
         else:
+            pre_classification_blueprint_match_result = find_matching_blueprint(
+                file_bytes, content_type, category=result.document_type
+            )
+            logger.info(
+                "Blueprint match result",
+                extra={
+                    "matched_document_type": pre_classification_blueprint_match_result.matched_document_type,
+                    "confidence": pre_classification_blueprint_match_result.confidence,
+                    "duration_seconds": str(pre_classification_blueprint_match_result.duration_seconds),
+                },
+            )
+
             # Check if this is an identity document eligible for Textract
             textract_result = try_textract_identity(
                 result.document_type, content_type, file_bytes, ddb_key
@@ -419,6 +432,31 @@ def upsert_initial_ddb_record(
                 output_tokens=pre_classification_output_tokens,
                 duration_seconds=pre_classification_duration_seconds,
                 model_id=pre_classification_model_id,
+                blueprint_matched_document_type=(
+                    pre_classification_blueprint_match_result.matched_document_type
+                    if pre_classification_blueprint_match_result
+                    else None
+                ),
+                blueprint_match_confidence=(
+                    pre_classification_blueprint_match_result.confidence
+                    if pre_classification_blueprint_match_result
+                    else None
+                ),
+                blueprint_match_input_tokens=(
+                    pre_classification_blueprint_match_result.input_tokens
+                    if pre_classification_blueprint_match_result
+                    else None
+                ),
+                blueprint_match_output_tokens=(
+                    pre_classification_blueprint_match_result.output_tokens
+                    if pre_classification_blueprint_match_result
+                    else None
+                ),
+                blueprint_match_duration_seconds=(
+                    pre_classification_blueprint_match_result.duration_seconds
+                    if pre_classification_blueprint_match_result
+                    else None
+                ),
             ),
             document_processor_started_at=document_processor_started_at,
             is_document_processor_cold_start=is_document_processor_cold_start,

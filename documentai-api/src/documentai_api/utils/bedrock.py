@@ -14,7 +14,10 @@ from documentai_api.config.constants import (
     PreprocessingBoundingBoxDefault,
 )
 from documentai_api.config.env import get_aws_config
-from documentai_api.dtos.classification import BedrockClassificationResult
+from documentai_api.dtos.classification import (
+    BedrockClassificationResult,
+    PreclassificationMatchResult,
+)
 from documentai_api.dtos.processing import CropResult
 from documentai_api.logging import get_logger
 from documentai_api.services.bedrock import invoke_model
@@ -67,11 +70,18 @@ def _get_classification_prompt() -> str:
     return get_parameter_value(param_name, default=DEFAULT_PRECLASSIFICATION_PROMPT)
 
 
-def _invoke(messages: list[Any], max_tokens: int = 256, model_id: str | None = None) -> Any:
+def _invoke(
+    messages: list[Any],
+    max_tokens: int = 256,
+    model_id: str | None = None,
+    temperature: float | None = None,
+) -> Any:
     if model_id is None:
         model_id = _get_model_id()
     logger.info(f"Invoking Bedrock model: {model_id}")
-    response = invoke_model(model_id=model_id, messages=messages, max_tokens=max_tokens)
+    response = invoke_model(
+        model_id=model_id, messages=messages, max_tokens=max_tokens, temperature=temperature
+    )
     return response
 
 
@@ -279,3 +289,138 @@ def preclassify_document(document_bytes: bytes, content_type: str) -> BedrockCla
         return BedrockClassificationResult(
             document_type="other_document", confidence=0.0, document_count=1, is_document=True
         )
+
+
+class _BlueprintMatchResponse(BaseModel):
+    """Expected shape of the blueprint matching model's JSON output."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    matched_blueprint: str | None = None
+    confidence: float = 0.0
+
+
+def _build_blueprint_prompt(schemas: dict[str, Any]) -> str:
+    """Build a prompt listing all blueprints for the model to evaluate against."""
+    lines = [
+        "You are an expert document classification system.",
+        "Analyze the provided document and classify it into EXACTLY ONE of the following categories.",
+        "",
+        "Respond in JSON only:",
+        '{"matched_blueprint": "class_name_or_OTHER", "confidence": float 0-1}',
+        "",
+        "Categories:",
+        "",
+    ]
+
+    for doc_type, schema in schemas.items():
+        desc = schema.get("description", "")
+        if desc:
+            lines.append(f"- {doc_type}: {desc}")
+        else:
+            lines.append(f"- {doc_type}")
+        fields = schema.get("fields", [])
+        if fields:
+            field_names = ", ".join(f["name"] for f in fields)
+            lines.append(f"  Fields: {field_names}")
+
+    lines.append("")
+    lines.append("OTHER: Use this ONLY if the document does not fit any of the above categories.")
+    lines.append("")
+    lines.append("You MUST pick exactly one. Use OTHER if uncertain.")
+
+    return "\n".join(lines)
+
+
+def find_matching_blueprint(
+    document_bytes: bytes, content_type: str, category: str | None = None
+) -> PreclassificationMatchResult:
+    """Match a document against available BDA blueprints.
+
+    Called after preclassification to identify which specific blueprint the document
+    matches. Result is stored for observability - no routing decisions are made from it.
+
+    Gated by the enable-preclassification-blueprint-matching SSM flag (default true).
+    Returns an empty result when disabled.
+
+    If category is provided, only blueprints in that category are considered.
+    """
+    config = get_aws_config()
+    if config.enable_preclassification_blueprint_matching_param:
+        value = get_parameter_value(
+            config.enable_preclassification_blueprint_matching_param, default="true"
+        )
+        if value.lower() != "true":
+            return PreclassificationMatchResult()
+
+    from documentai_api.utils.schemas import get_all_schemas
+
+    all_schemas = get_all_schemas()
+    if category:
+        filtered = {k: v for k, v in all_schemas.items() if v.get("category") == category}
+        schemas = filtered or all_schemas
+    else:
+        schemas = all_schemas
+    if not schemas:
+        logger.warning("No blueprint schemas available for matching")
+        return PreclassificationMatchResult()
+
+    prompt = _build_blueprint_prompt(schemas)
+
+    if content_type == "application/pdf":
+        content_block = {
+            "document": {"format": "pdf", "name": "document", "source": {"bytes": document_bytes}}
+        }
+    else:
+        fmt = content_type.split("/")[1]
+        content_block = {"image": {"format": fmt, "source": {"bytes": document_bytes}}}
+
+    messages = [
+        {
+            "role": "user",
+            "content": [content_block, {"text": prompt}],
+        }
+    ]
+
+    try:
+        model_id = _get_model_id()
+        start = time.time()
+        response = _invoke(messages=messages, model_id=model_id, temperature=0.0)
+        elapsed = round(time.time() - start, 2)
+
+        usage = response.get("usage", {})
+        text = response["output"]["message"]["content"][0]["text"]
+
+        try:
+            parsed = _BlueprintMatchResponse.model_validate_json(text)
+        except ValidationError as e:
+            logger.warning(f"Blueprint matching returned invalid output: {e}")
+            return PreclassificationMatchResult(
+                input_tokens=usage.get("inputTokens"),
+                output_tokens=usage.get("outputTokens"),
+                duration_seconds=Decimal(str(elapsed)),
+            )
+
+        matched = parsed.matched_blueprint
+        if matched and (matched == "OTHER" or matched not in schemas):
+            matched = None
+
+        # Confidence threshold: reject weak matches (gap 5)
+        if matched and parsed.confidence < 0.5:
+            logger.info(
+                f"Blueprint match '{matched}' rejected: confidence {parsed.confidence} below threshold"
+            )
+            matched = None
+
+        matched_schema = schemas.get(matched, {}) if matched else {}
+        return PreclassificationMatchResult(
+            matched_document_type=matched,
+            confidence=max(0.0, min(1.0, parsed.confidence)),
+            category=matched_schema.get("category"),
+            input_tokens=usage.get("inputTokens"),
+            output_tokens=usage.get("outputTokens"),
+            duration_seconds=Decimal(str(elapsed)),
+        )
+    except Exception as e:
+        logger.warning(f"Blueprint matching failed: {e}")
+        return PreclassificationMatchResult()

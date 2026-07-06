@@ -98,6 +98,8 @@ class AWSEnvConfig(PydanticBaseEnvConfig):
 
     # BDA project ARNs (per preclassification category)
     preclassification_routing_param: str | None = None
+    skip_bda_if_unclassified_param: str | None = None
+    enable_preclassification_blueprint_matching_param: str | None = None
     bda_project_arn_tax_documents: str | None = None
     bda_project_arn_employment_wages: str | None = None
     bda_project_arn_independent_earnings: str | None = None
