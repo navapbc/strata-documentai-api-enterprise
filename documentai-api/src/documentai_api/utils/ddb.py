@@ -483,6 +483,8 @@ def upsert_ddb(data: UpsertDdbData) -> None:
             f"{DocumentMetadata.UPDATED_AT} = :now",
             f"{DocumentMetadata.IS_PASSWORD_PROTECTED} = :pwProt",
             f"{DocumentMetadata.IS_DOCUMENT_BLURRY} = :blurry",
+            f"{DocumentMetadata.BLUR_ANALYSIS_FAILED} = :blurFailed",
+            f"{DocumentMetadata.BLUR_LLM_CHECKED} = :blurLlm",
             f"{DocumentMetadata.AI_CONSENT_FLAG} = "
             f"if_not_exists({DocumentMetadata.AI_CONSENT_FLAG}, :aiConsent)",
             "#ttl = if_not_exists(#ttl, :ttl)",
@@ -497,6 +499,8 @@ def upsert_ddb(data: UpsertDdbData) -> None:
             ":now": now,
             ":pwProt": bool(data.is_password_protected),
             ":blurry": bool(data.is_document_blurry),
+            ":blurFailed": bool(data.blur_analysis_failed),
+            ":blurLlm": bool(data.blur_llm_checked),
             ":aiConsent": bool(data.ai_consent_flag),
             ":ttl": ttl_epoch_in_days(data.ttl_days or ConfigDefaults.DOCUMENT_METADATA_TTL_DAYS),
         }

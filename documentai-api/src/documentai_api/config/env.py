@@ -96,6 +96,10 @@ class AWSEnvConfig(PydanticBaseEnvConfig):
     # Textract identity extraction (feature flag)
     textract_identity_param: str | None = None
 
+    # Blur detection (feature flags)
+    enable_blur_detection_param: str | None = None
+    enforce_blur_rejection_param: str | None = None
+
     # BDA project ARNs (per preclassification category)
     preclassification_routing_param: str | None = None
     skip_bda_if_unclassified_param: str | None = None

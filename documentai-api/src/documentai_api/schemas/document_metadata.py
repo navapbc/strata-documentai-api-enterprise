@@ -75,9 +75,12 @@ class DocumentMetadata:
     PAGES_DETECTED = "pagesDetected"
     IS_DOCUMENT_BLURRY = "isDocumentBlurry"
     IS_PASSWORD_PROTECTED = "isPasswordProtected"
+    BLUR_ANALYSIS_FAILED = "blurAnalysisFailed"
+    OCR_AVG_WORD_CONFIDENCE = "ocrAvgWordConfidence"
+    DOCUMENT_WORD_COUNT = "documentWordCount"
+    BLUR_LLM_CHECKED = "blurLlmChecked"
     DOCUMENT_METRICS_RAW = "documentMetricsRaw"
     DOCUMENT_METRICS_NORMALIZED = "documentMetricsNormalized"
-    OVERALL_BLUR_SCORE = "overallBlurScore"
 
     # operational intelligence
     ADDITIONAL_INFO = "additionalInfo"

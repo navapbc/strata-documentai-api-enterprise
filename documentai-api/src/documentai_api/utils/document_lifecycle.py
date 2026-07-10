@@ -24,6 +24,7 @@ from documentai_api.utils.ddb import (
 )
 from documentai_api.utils.response_builder import get_internal_api_response
 from documentai_api.utils.response_codes import ResponseCodes
+from documentai_api.utils.ssm import is_blur_detection_enabled, is_blur_rejection_enforced
 from documentai_api.utils.textract import finalize_textract_result, try_textract_identity
 
 logger = get_logger(__name__)
@@ -332,6 +333,10 @@ def upsert_initial_ddb_record(
     pages_detected = document_utils.get_page_count(file_bytes)
     is_password_protected = document_utils.is_password_protected(file_bytes)
     is_document_blurry = False
+    blur_analysis_failed = False
+    ocr_avg_word_confidence: float | None = None
+    document_word_count: int | None = None
+    blur_llm_checked = False
     pre_classification_document_type = None
     pre_classification_confidence = None
     pre_classification_input_tokens = None
@@ -348,24 +353,31 @@ def upsert_initial_ddb_record(
 
     else:
         # Textract-based blur detection (deterministic, confidence-score based)
-        blur_result = detect_blur(file_bytes, content_type)
+        blur_enabled = is_blur_detection_enabled()
+        blur_enforced = is_blur_rejection_enforced()
 
-        if blur_result.is_not_document:
-            process_status = ProcessStatus.NO_DOCUMENT_DETECTED
-            response_code = ResponseCodes.NO_DOCUMENT_DETECTED
-            textract_result = None
+        if blur_enabled:
+            blur_result = detect_blur(file_bytes, content_type)
+            is_document_blurry = blur_result.is_blurry
+            blur_analysis_failed = blur_result.analysis_failed
+            ocr_avg_word_confidence = blur_result.avg_confidence
+            document_word_count = blur_result.word_count
+            blur_llm_checked = blur_result.llm_checked
 
-        elif blur_result.is_blurry:
-            process_status = ProcessStatus.BLURRY_DOCUMENT_DETECTED
-            response_code = ResponseCodes.BLURRY_DOCUMENT_DETECTED
-            is_document_blurry = True
-            textract_result = None
+            if blur_result.is_not_document and blur_enforced:
+                process_status = ProcessStatus.NO_DOCUMENT_DETECTED
+                response_code = ResponseCodes.NO_DOCUMENT_DETECTED
+                textract_result = None
 
-        elif blur_result.analysis_failed:
-            # Textract failed — fall through to preclassification, don't block
-            logger.warning("Blur detection failed, continuing with preclassification")
+            elif blur_result.is_blurry and blur_enforced:
+                process_status = ProcessStatus.BLURRY_DOCUMENT_DETECTED
+                response_code = ResponseCodes.BLURRY_DOCUMENT_DETECTED
+                textract_result = None
 
-        if not is_document_blurry and process_status not in (
+            elif blur_result.analysis_failed:
+                logger.warning("Blur detection failed, continuing with preclassification")
+
+        if process_status not in (
             ProcessStatus.NO_DOCUMENT_DETECTED,
             ProcessStatus.BLURRY_DOCUMENT_DETECTED,
         ):
@@ -440,6 +452,10 @@ def upsert_initial_ddb_record(
             trace_id=trace_id,
             batch_id=batch_id,
             is_document_blurry=is_document_blurry,
+            blur_analysis_failed=blur_analysis_failed,
+            ocr_avg_word_confidence=ocr_avg_word_confidence,
+            document_word_count=document_word_count,
+            blur_llm_checked=blur_llm_checked,
             is_password_protected=is_password_protected,
             pre_classification=PreClassificationDdbFields(
                 document_type=pre_classification_document_type,

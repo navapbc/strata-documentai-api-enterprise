@@ -129,6 +129,12 @@ def test_upsert_initial_ddb_record(
         "documentai_api.utils.document_lifecycle.document_utils.is_password_protected",
         return_value=is_password_protected,
     )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.is_blur_detection_enabled", return_value=True
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.is_blur_rejection_enforced", return_value=True
+    )
     mock_blur = mocker.patch("documentai_api.utils.document_lifecycle.detect_blur")
     mock_blur.return_value = blur_result or BlurResult(
         is_blurry=False, is_not_document=False, word_count=20, avg_confidence=95.0
@@ -184,6 +190,60 @@ def test_upsert_initial_ddb_record(
         assert DocumentMetadata.V1_API_RESPONSE_JSON in item
     else:
         assert DocumentMetadata.RESPONSE_JSON not in item
+
+
+def test_blur_detection_without_enforcement_proceeds_to_preclassify(
+    ddb_doc_metadata_table,
+    s3_bucket,
+    mocker,
+):
+    """When blur is detected but enforcement is off, preclassification still runs."""
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.document_utils.get_page_count", return_value=1
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.document_utils.is_password_protected",
+        return_value=False,
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.is_blur_detection_enabled", return_value=True
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.is_blur_rejection_enforced", return_value=False
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.detect_blur",
+        return_value=BlurResult(is_blurry=True, word_count=10, avg_confidence=50.0),
+    )
+    mock_preclassify = mocker.patch(
+        "documentai_api.utils.document_lifecycle.preclassify_document",
+        return_value=BedrockClassificationResult(
+            document_type="W2", confidence=0.95, document_count=1, is_document=True
+        ),
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.find_matching_blueprint",
+        return_value=PreclassificationMatchResult(),
+    )
+    mocker.patch(
+        "documentai_api.utils.ddb.build_v1_api_response",
+        return_value={"status": "completed"},
+    )
+
+    s3_bucket.put_object(Key="input/test-file", Body=b"bytes", ContentType="image/jpeg")
+
+    lifecycle_util.upsert_initial_ddb_record(
+        source_bucket_name=s3_bucket.name,
+        source_object_key="input/test-file",
+        original_file_name="test.jpeg",
+        ddb_key="test-file",
+        user_provided_document_category="income",
+    )
+
+    mock_preclassify.assert_called_once()
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
+    assert item[DocumentMetadata.IS_DOCUMENT_BLURRY] is True
+    assert item[DocumentMetadata.PRECLASSIFICATION_CATEGORY] == "W2"
 
 
 def test_set_bda_processing_status_started(mocker):

@@ -127,11 +127,11 @@ class ConfigDefaults:
 
     # Textract-based blur detection thresholds
     BLUR_CONFIDENCE_FLOOR = 70.0  # per-word confidence % below which a word is "low confidence"
-    BLUR_MIN_WORD_COUNT = 5  # fewer words than this → is_not_document (too sparse to evaluate)
+    BLUR_MIN_WORD_COUNT = 5  # fewer words than this -> is_not_document (too sparse to evaluate)
     BLUR_LOW_CONFIDENCE_MAX_PERCENT = (
-        30.0  # if >30% of words in a quadrant are below floor → blurry
+        30.0  # if >30% of words in a quadrant are below floor -> blurry
     )
-    BLUR_QUADRANT_MIN_AVG_CONFIDENCE = 85.0  # per-quadrant avg confidence below this → blurry
+    BLUR_QUADRANT_MIN_AVG_CONFIDENCE = 85.0  # per-quadrant avg confidence below this -> blurry
     BLUR_TEXT_DENSE_MIN_WORDS = (
         20  # total words needed to consider empty quadrants suspicious (LLM fallback gate)
     )

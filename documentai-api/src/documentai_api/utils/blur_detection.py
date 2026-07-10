@@ -28,6 +28,7 @@ class BlurResult:
     avg_confidence: float | None = None
     word_count: int | None = None
     low_confidence_percent: float | None = None
+    llm_checked: bool = False
     quadrant_stats: dict[str, Any] | None = None
     duration_seconds: Decimal | None = None
 
@@ -258,6 +259,7 @@ def detect_blur(image_bytes: bytes, content_type: str | None = None) -> BlurResu
         # For empty quadrants on text-dense documents, crop each and ask
         # Nova Pro if blur destroyed text in that region (one call per quadrant).
         # Skip if we already found a blurry quadrant via confidence check.
+        llm_checked = False
         if not failed_quadrants:
             empty_quadrant_names = [
                 name
@@ -266,6 +268,7 @@ def detect_blur(image_bytes: bytes, content_type: str | None = None) -> BlurResu
             ]
             if empty_quadrant_names:
                 llm_results = _check_empty_quadrants_for_text(image_bytes, empty_quadrant_names)
+                llm_checked = True
                 for name, has_text in llm_results.items():
                     quadrant_stats[name] = {
                         "word_count": 0,
@@ -312,6 +315,7 @@ def detect_blur(image_bytes: bytes, content_type: str | None = None) -> BlurResu
             avg_confidence=avg_confidence,
             word_count=word_count,
             low_confidence_percent=low_confidence_percent,
+            llm_checked=llm_checked,
             quadrant_stats=quadrant_stats,
             duration_seconds=Decimal(str(elapsed)),
         )

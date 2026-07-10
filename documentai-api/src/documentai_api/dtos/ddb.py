@@ -105,6 +105,14 @@ class UpsertDdbData(BaseModel):
     # than via the exclude_unset ddb-metadata path - intentionally no ddb_attr.
     is_password_protected: bool = False
     is_document_blurry: bool = False
+    blur_analysis_failed: bool = False
+    ocr_avg_word_confidence: float | None = Field(
+        default=None, json_schema_extra=_ddb_metadata_map("ocrAvgWordConfidence", ":ocrConf")
+    )
+    document_word_count: int | None = Field(
+        default=None, json_schema_extra=_ddb_metadata_map("documentWordCount", ":wordCount")
+    )
+    blur_llm_checked: bool = False
     pre_classification: PreClassificationDdbFields | None = None
     external_document_id: str | None = Field(
         default=None, json_schema_extra=_ddb_metadata_map("externalDocumentId", ":extDocId")
