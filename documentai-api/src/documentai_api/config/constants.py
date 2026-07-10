@@ -124,6 +124,18 @@ class ConfigDefaults:
     DEMO_DOCUMENT_TTL_DAYS = 7
     BDA_DOCUMENT_DETECTION_MIN_CHAR_LENGTH = 50
     BLURRY_DOCUMENT_THRESHOLD = 25
+
+    # Textract-based blur detection thresholds
+    BLUR_CONFIDENCE_FLOOR = 70.0  # per-word confidence % below which a word is "low confidence"
+    BLUR_MIN_WORD_COUNT = 5  # fewer words than this → is_not_document (too sparse to evaluate)
+    BLUR_LOW_CONFIDENCE_MAX_PERCENT = (
+        30.0  # if >30% of words in a quadrant are below floor → blurry
+    )
+    BLUR_QUADRANT_MIN_AVG_CONFIDENCE = 85.0  # per-quadrant avg confidence below this → blurry
+    BLUR_TEXT_DENSE_MIN_WORDS = (
+        20  # total words needed to consider empty quadrants suspicious (LLM fallback gate)
+    )
+    BLUR_QUADRANT_MODEL_ID = "us.amazon.nova-pro-v1:0"  # model for empty-quadrant blur check (Pro needed for spatial reasoning)
     BDA_MAX_IMAGE_SIZE_BYTES = 5_242_880
     BDA_MAX_DOCUMENT_FILE_SIZE_BYTES = 524_288_000
     # Bedrock Converse per-image limits (used by the vision bbox-detection call).
@@ -349,7 +361,7 @@ class PreClassificationDefaults:
     PROMPT = "\n".join(
         [
             "Classify this document into one of the categories below. Respond in JSON only:",
-            '{"document_type": "string", "confidence": float 0-1, "document_count": int, "is_blurry": bool}',
+            '{"document_type": "string", "confidence": float 0-1, "document_count": int}',
             "",
             "Categories and their document types:",
             "- tax_documents: W-2, 1040, 1099-INT, 1099-MISC, 1099-G",
@@ -369,9 +381,7 @@ class PreClassificationDefaults:
             "",
             "ONLY use one of the exact category names listed above for document_type.",
             "Do not create new categories. If unsure, use 'other_document'.",
-            "Use 'system_reject' for blurry, blank, corrupted, or non-document images.",
-            "Set is_blurry to true ONLY if the document appears out of focus, smeared, or motion-blurred.",
-            "If is_blurry is true, set confidence below 0.5 and use 'system_reject'.",
+            "Use 'system_reject' for blank, corrupted, or non-document images.",
             "document_count: how many separate documents are visible?",
         ]
     )

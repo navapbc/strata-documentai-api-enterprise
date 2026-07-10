@@ -52,15 +52,21 @@ class PreClassificationDdbFields(BaseModel):
     )
     blueprint_match_input_tokens: int | None = Field(
         default=None,
-        json_schema_extra=_ddb_metadata_map("preclassificationBlueprintMatchInputTokens", ":pcbmit"),
+        json_schema_extra=_ddb_metadata_map(
+            "preclassificationBlueprintMatchInputTokens", ":pcbmit"
+        ),
     )
     blueprint_match_output_tokens: int | None = Field(
         default=None,
-        json_schema_extra=_ddb_metadata_map("preclassificationBlueprintMatchOutputTokens", ":pcbmot"),
+        json_schema_extra=_ddb_metadata_map(
+            "preclassificationBlueprintMatchOutputTokens", ":pcbmot"
+        ),
     )
     blueprint_match_duration_seconds: Decimal | None = Field(
         default=None,
-        json_schema_extra=_ddb_metadata_map("preclassificationBlueprintMatchDurationSeconds", ":pcbmds"),
+        json_schema_extra=_ddb_metadata_map(
+            "preclassificationBlueprintMatchDurationSeconds", ":pcbmds"
+        ),
     )
 
 

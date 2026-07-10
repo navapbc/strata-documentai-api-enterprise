@@ -40,7 +40,6 @@ class _PreclassificationResponse(BaseModel):
     confidence: float = 0.0
     document_count: int = 1
     is_document: bool = True
-    is_blurry: bool = False
 
 
 DEFAULT_PRECLASSIFICATION_MODEL_ID = PreClassificationDefaults.MODEL_ID
@@ -268,7 +267,6 @@ def preclassify_document(document_bytes: bytes, content_type: str) -> BedrockCla
             confidence=max(0.0, min(1.0, parsed.confidence)),
             document_count=max(0, parsed.document_count),
             is_document=parsed.is_document,
-            is_blurry=parsed.is_blurry,
             input_tokens=usage.get("inputTokens"),
             output_tokens=usage.get("outputTokens"),
             duration_seconds=Decimal(str(elapsed)),

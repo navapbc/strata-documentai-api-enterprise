@@ -17,6 +17,7 @@ from documentai_api.logging import get_logger
 from documentai_api.models.document_record import DocumentRecord
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils.bedrock import find_matching_blueprint, preclassify_document
+from documentai_api.utils.blur_detection import detect_blur
 from documentai_api.utils.ddb import (
     update_ddb,
     upsert_ddb,
@@ -338,6 +339,7 @@ def upsert_initial_ddb_record(
     pre_classification_duration_seconds = None
     pre_classification_model_id = None
     pre_classification_blueprint_match_result: PreclassificationMatchResult | None = None
+    textract_result = None
 
     if is_password_protected:
         process_status = ProcessStatus.PASSWORD_PROTECTED
@@ -345,59 +347,73 @@ def upsert_initial_ddb_record(
         textract_result = None
 
     else:
-        result = preclassify_document(file_bytes, content_type)
+        # Textract-based blur detection (deterministic, confidence-score based)
+        blur_result = detect_blur(file_bytes, content_type)
 
-        pre_classification_document_type = result.document_type
-        pre_classification_confidence = result.confidence
-        pre_classification_input_tokens = result.input_tokens
-        pre_classification_output_tokens = result.output_tokens
-        pre_classification_duration_seconds = result.duration_seconds
-        pre_classification_model_id = result.model_id
-
-        if not result.is_document:
+        if blur_result.is_not_document:
             process_status = ProcessStatus.NO_DOCUMENT_DETECTED
             response_code = ResponseCodes.NO_DOCUMENT_DETECTED
             textract_result = None
 
-        elif result.is_blurry:
+        elif blur_result.is_blurry:
             process_status = ProcessStatus.BLURRY_DOCUMENT_DETECTED
             response_code = ResponseCodes.BLURRY_DOCUMENT_DETECTED
             is_document_blurry = True
             textract_result = None
 
-        elif result.document_count > 1:
-            process_status = ProcessStatus.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE
-            response_code = ResponseCodes.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE
-            textract_result = None
+        elif blur_result.analysis_failed:
+            # Textract failed — fall through to preclassification, don't block
+            logger.warning("Blur detection failed, continuing with preclassification")
 
-        else:
-            pre_classification_blueprint_match_result = find_matching_blueprint(
-                file_bytes, content_type, category=result.document_type
-            )
-            logger.info(
-                "Blueprint match result",
-                extra={
-                    "matched_document_type": pre_classification_blueprint_match_result.matched_document_type,
-                    "confidence": pre_classification_blueprint_match_result.confidence,
-                    "duration_seconds": str(pre_classification_blueprint_match_result.duration_seconds),
-                },
-            )
+        if not is_document_blurry and process_status not in (
+            ProcessStatus.NO_DOCUMENT_DETECTED,
+            ProcessStatus.BLURRY_DOCUMENT_DETECTED,
+        ):
+            # Blur check passed or was skipped — run LLM preclassification
+            result = preclassify_document(file_bytes, content_type)
 
-            # Check if this is an identity document eligible for Textract
-            textract_result = try_textract_identity(
-                result.document_type, content_type, file_bytes, ddb_key
-            )
+            pre_classification_document_type = result.document_type
+            pre_classification_confidence = result.confidence
+            pre_classification_input_tokens = result.input_tokens
+            pre_classification_output_tokens = result.output_tokens
+            pre_classification_duration_seconds = result.duration_seconds
+            pre_classification_model_id = result.model_id
 
-            if textract_result is None:
-                # Not a Textract-eligible doc or flag is off; route to BDA
-                if content_type in FileValidation.GRAYSCALE_CONVERTIBLE:
-                    process_status = ProcessStatus.PENDING_IMAGE_OPTIMIZATION
-                else:
-                    process_status = ProcessStatus.NOT_STARTED
+            if result.document_count > 1:
+                process_status = ProcessStatus.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE
+                response_code = ResponseCodes.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE
+                textract_result = None
+
             else:
-                # Textract succeeded inline; upsert as STARTED, finalize_textract_result
-                # will transition to SUCCESS after the upsert
-                process_status = ProcessStatus.STARTED
+                pre_classification_blueprint_match_result = find_matching_blueprint(
+                    file_bytes, content_type, category=result.document_type
+                )
+                logger.info(
+                    "Blueprint match result",
+                    extra={
+                        "matched_document_type": pre_classification_blueprint_match_result.matched_document_type,
+                        "confidence": pre_classification_blueprint_match_result.confidence,
+                        "duration_seconds": str(
+                            pre_classification_blueprint_match_result.duration_seconds
+                        ),
+                    },
+                )
+
+                # Check if this is an identity document eligible for Textract
+                textract_result = try_textract_identity(
+                    result.document_type, content_type, file_bytes, ddb_key
+                )
+
+                if textract_result is None:
+                    # Not a Textract-eligible doc or flag is off; route to BDA
+                    if content_type in FileValidation.GRAYSCALE_CONVERTIBLE:
+                        process_status = ProcessStatus.PENDING_IMAGE_OPTIMIZATION
+                    else:
+                        process_status = ProcessStatus.NOT_STARTED
+                else:
+                    # Textract succeeded inline; upsert as STARTED, finalize_textract_result
+                    # will transition to SUCCESS after the upsert
+                    process_status = ProcessStatus.STARTED
 
     # initial status does not qualify for bda processing
     # create the json response signaling the process is complete

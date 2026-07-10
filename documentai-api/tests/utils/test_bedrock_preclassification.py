@@ -48,7 +48,6 @@ def test_classifies_image_successfully(monkeypatch):
             "confidence": 0.95,
             "document_count": 1,
             "is_document": True,
-            "is_blurry": False,
         }
     )
     _patch_invoke(monkeypatch, response)
@@ -59,7 +58,6 @@ def test_classifies_image_successfully(monkeypatch):
     assert result.confidence == 0.95
     assert result.document_count == 1
     assert result.is_document is True
-    assert result.is_blurry is False
 
 
 def test_skips_unsupported_content_type():
@@ -225,25 +223,6 @@ def test_parse_defaults_when_fields_missing(monkeypatch):
     assert result.confidence == 0.0
     assert result.document_count == 1
     assert result.is_document is True
-    assert result.is_blurry is False
-
-
-def test_blurry_detection(monkeypatch):
-    response = _mock_invoke_response(
-        {
-            "document_type": "tax_documents",
-            "confidence": 0.3,
-            "document_count": 1,
-            "is_document": True,
-            "is_blurry": True,
-        }
-    )
-    _patch_invoke(monkeypatch, response)
-
-    result = preclassify_document(SAMPLE_IMAGE, "image/png")
-
-    assert result.is_blurry is True
-    assert result.confidence == 0.3
 
 
 def test_empty_document_bytes(monkeypatch):
@@ -550,13 +529,11 @@ def test_string_false_coerced_correctly(monkeypatch):
             "confidence": 0.9,
             "document_count": 1,
             "is_document": "true",
-            "is_blurry": "false",
         }
     )
     _patch_invoke(monkeypatch, response)
     result = preclassify_document(SAMPLE_IMAGE, "image/png")
     assert result.is_document is True
-    assert result.is_blurry is False
 
 
 def test_native_bools_pass_through(monkeypatch):
@@ -567,13 +544,11 @@ def test_native_bools_pass_through(monkeypatch):
             "confidence": 0.9,
             "document_count": 1,
             "is_document": True,
-            "is_blurry": True,
         }
     )
     _patch_invoke(monkeypatch, response)
     result = preclassify_document(SAMPLE_IMAGE, "image/png")
     assert result.is_document is True
-    assert result.is_blurry is True
 
 
 # =============================================================================

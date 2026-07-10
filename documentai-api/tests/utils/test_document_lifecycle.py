@@ -8,6 +8,7 @@ from documentai_api.dtos.classification import (
 )
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils import document_lifecycle as lifecycle_util
+from documentai_api.utils.blur_detection import BlurResult
 from documentai_api.utils.response_codes import ResponseCodes
 
 
@@ -19,9 +20,10 @@ from documentai_api.utils.response_codes import ResponseCodes
         "preclassify_result",
         "expected_status",
         "has_internal_response",
+        "blur_result",
     ),
     [
-        ("income", "application/pdf", True, None, ProcessStatus.PASSWORD_PROTECTED, True),
+        ("income", "application/pdf", True, None, ProcessStatus.PASSWORD_PROTECTED, True, None),
         (
             "income",
             "application/pdf",
@@ -31,10 +33,10 @@ from documentai_api.utils.response_codes import ResponseCodes
                 confidence=0.3,
                 document_count=1,
                 is_document=True,
-                is_blurry=True,
             ),
             ProcessStatus.BLURRY_DOCUMENT_DETECTED,
             True,
+            BlurResult(is_blurry=True, is_not_document=False, avg_confidence=45.0, word_count=3),
         ),
         (
             "income",
@@ -45,10 +47,10 @@ from documentai_api.utils.response_codes import ResponseCodes
                 confidence=0.9,
                 document_count=1,
                 is_document=False,
-                is_blurry=False,
             ),
             ProcessStatus.NO_DOCUMENT_DETECTED,
             True,
+            BlurResult(is_blurry=False, is_not_document=True, word_count=0),
         ),
         (
             "income",
@@ -59,10 +61,10 @@ from documentai_api.utils.response_codes import ResponseCodes
                 confidence=0.95,
                 document_count=2,
                 is_document=True,
-                is_blurry=False,
             ),
             ProcessStatus.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
             True,
+            None,
         ),
         (
             "income",
@@ -73,10 +75,10 @@ from documentai_api.utils.response_codes import ResponseCodes
                 confidence=0.95,
                 document_count=1,
                 is_document=True,
-                is_blurry=False,
             ),
             ProcessStatus.PENDING_IMAGE_OPTIMIZATION,
             False,
+            None,
         ),
         (
             "income",
@@ -87,10 +89,10 @@ from documentai_api.utils.response_codes import ResponseCodes
                 confidence=0.95,
                 document_count=1,
                 is_document=True,
-                is_blurry=False,
             ),
             ProcessStatus.NOT_STARTED,
             False,
+            None,
         ),
         (
             None,
@@ -101,10 +103,10 @@ from documentai_api.utils.response_codes import ResponseCodes
                 confidence=0.95,
                 document_count=1,
                 is_document=True,
-                is_blurry=False,
             ),
             ProcessStatus.NOT_STARTED,
             False,
+            None,
         ),
     ],
 )
@@ -117,6 +119,7 @@ def test_upsert_initial_ddb_record(
     preclassify_result,
     expected_status,
     has_internal_response,
+    blur_result,
     mocker,
 ):
     mocker.patch(
@@ -125,6 +128,10 @@ def test_upsert_initial_ddb_record(
     mocker.patch(
         "documentai_api.utils.document_lifecycle.document_utils.is_password_protected",
         return_value=is_password_protected,
+    )
+    mock_blur = mocker.patch("documentai_api.utils.document_lifecycle.detect_blur")
+    mock_blur.return_value = blur_result or BlurResult(
+        is_blurry=False, is_not_document=False, word_count=20, avg_confidence=95.0
     )
     mock_preclassify = mocker.patch("documentai_api.utils.document_lifecycle.preclassify_document")
     if preclassify_result:
@@ -167,7 +174,9 @@ def test_upsert_initial_ddb_record(
     assert DocumentMetadata.CREATED_AT in item
     assert DocumentMetadata.UPDATED_AT in item
 
-    if preclassify_result:
+    if preclassify_result and not (
+        blur_result and (blur_result.is_blurry or blur_result.is_not_document)
+    ):
         assert item[DocumentMetadata.PRECLASSIFICATION_CATEGORY] == preclassify_result.document_type
 
     if has_internal_response:
@@ -390,13 +399,18 @@ def test_upsert_initial_ddb_record_routes_to_textract_when_enabled(
         return_value=False,
     )
     mocker.patch(
+        "documentai_api.utils.document_lifecycle.detect_blur",
+        return_value=BlurResult(
+            is_blurry=False, is_not_document=False, word_count=20, avg_confidence=95.0
+        ),
+    )
+    mocker.patch(
         "documentai_api.utils.document_lifecycle.preclassify_document",
         return_value=BedrockClassificationResult(
             document_type="identity_verification",
             confidence=0.95,
             document_count=1,
             is_document=True,
-            is_blurry=False,
         ),
     )
     mocker.patch(
@@ -454,13 +468,18 @@ def test_upsert_initial_ddb_record_unknown_category_with_textract_does_not_crash
         return_value=False,
     )
     mocker.patch(
+        "documentai_api.utils.document_lifecycle.detect_blur",
+        return_value=BlurResult(
+            is_blurry=False, is_not_document=False, word_count=20, avg_confidence=95.0
+        ),
+    )
+    mocker.patch(
         "documentai_api.utils.document_lifecycle.preclassify_document",
         return_value=BedrockClassificationResult(
             document_type="identity_verification",
             confidence=0.95,
             document_count=1,
             is_document=True,
-            is_blurry=False,
         ),
     )
     mocker.patch(
@@ -513,13 +532,18 @@ def test_upsert_initial_ddb_record_falls_through_when_textract_returns_none(
         return_value=False,
     )
     mocker.patch(
+        "documentai_api.utils.document_lifecycle.detect_blur",
+        return_value=BlurResult(
+            is_blurry=False, is_not_document=False, word_count=20, avg_confidence=95.0
+        ),
+    )
+    mocker.patch(
         "documentai_api.utils.document_lifecycle.preclassify_document",
         return_value=BedrockClassificationResult(
             document_type="identity_verification",
             confidence=0.95,
             document_count=1,
             is_document=True,
-            is_blurry=False,
         ),
     )
     mocker.patch(
@@ -572,13 +596,18 @@ def test_upsert_initial_ddb_record_stores_blueprint_match_fields(
         return_value=False,
     )
     mocker.patch(
+        "documentai_api.utils.document_lifecycle.detect_blur",
+        return_value=BlurResult(
+            is_blurry=False, is_not_document=False, word_count=20, avg_confidence=95.0
+        ),
+    )
+    mocker.patch(
         "documentai_api.utils.document_lifecycle.preclassify_document",
         return_value=BedrockClassificationResult(
             document_type="tax_documents",
             confidence=0.95,
             document_count=1,
             is_document=True,
-            is_blurry=False,
         ),
     )
     mocker.patch(
@@ -611,10 +640,14 @@ def test_upsert_initial_ddb_record_stores_blueprint_match_fields(
 
     item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
     assert item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCHED_TYPE] == "W2"
-    assert float(item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_CONFIDENCE]) == pytest.approx(0.92)
+    assert float(
+        item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_CONFIDENCE]
+    ) == pytest.approx(0.92)
     assert item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_INPUT_TOKENS] == 150
     assert item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_OUTPUT_TOKENS] == 25
-    assert float(item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_DURATION_SECONDS]) == pytest.approx(1.23)
+    assert float(
+        item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_DURATION_SECONDS]
+    ) == pytest.approx(1.23)
 
 
 def test_upsert_initial_ddb_record_stores_blueprint_no_match(
@@ -633,13 +666,18 @@ def test_upsert_initial_ddb_record_stores_blueprint_no_match(
         return_value=False,
     )
     mocker.patch(
+        "documentai_api.utils.document_lifecycle.detect_blur",
+        return_value=BlurResult(
+            is_blurry=False, is_not_document=False, word_count=20, avg_confidence=95.0
+        ),
+    )
+    mocker.patch(
         "documentai_api.utils.document_lifecycle.preclassify_document",
         return_value=BedrockClassificationResult(
             document_type="other_document",
             confidence=0.3,
             document_count=1,
             is_document=True,
-            is_blurry=False,
         ),
     )
     mocker.patch(
@@ -671,7 +709,11 @@ def test_upsert_initial_ddb_record_stores_blueprint_no_match(
 
     item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
     assert DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCHED_TYPE not in item
-    assert float(item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_CONFIDENCE]) == pytest.approx(0.0)
+    assert float(
+        item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_CONFIDENCE]
+    ) == pytest.approx(0.0)
     assert item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_INPUT_TOKENS] == 120
     assert item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_OUTPUT_TOKENS] == 18
-    assert float(item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_DURATION_SECONDS]) == pytest.approx(0.95)
+    assert float(
+        item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_DURATION_SECONDS]
+    ) == pytest.approx(0.95)

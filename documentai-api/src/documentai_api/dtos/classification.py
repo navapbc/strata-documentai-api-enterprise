@@ -24,7 +24,6 @@ class BedrockClassificationResult:
     confidence: float
     document_count: int
     is_document: bool
-    is_blurry: bool = False
     input_tokens: int | None = None
     output_tokens: int | None = None
     duration_seconds: Decimal | None = None
