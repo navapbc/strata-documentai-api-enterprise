@@ -37,11 +37,12 @@ def _get_project_arns() -> dict[str, str]:
 def _is_preclassification_routing_enabled() -> bool:
     """Check SSM feature flag for preclassification-based routing."""
     config = get_aws_config()
-    if not config.preclassification_routing_param:
+    if not config.ssm_prefix:
         return False
     from documentai_api.utils.ssm import get_parameter_value
 
-    value = get_parameter_value(config.preclassification_routing_param, default="false")
+    param = f"{config.ssm_prefix}/feature-flags/preclassification-based-routing"
+    value = get_parameter_value(param, default="false")
     return value.lower() == "true"
 
 
@@ -51,11 +52,12 @@ def skip_bda_if_unclassified() -> bool:
     Defaults to false (always invoke BDA) if the param is not configured.
     """
     config = get_aws_config()
-    if not config.skip_bda_if_unclassified_param:
+    if not config.ssm_prefix:
         return False
     from documentai_api.utils.ssm import get_parameter_value
 
-    value = get_parameter_value(config.skip_bda_if_unclassified_param, default="false")
+    param = f"{config.ssm_prefix}/feature-flags/skip-bda-if-unclassified"
+    value = get_parameter_value(param, default="false")
     return value.lower() == "true"
 
 

@@ -80,6 +80,9 @@ class PydanticBaseEnvConfig(BaseSettings):
 
 
 class AWSEnvConfig(PydanticBaseEnvConfig):
+    # SSM
+    ssm_prefix: str | None = None
+
     # BDA / Bedrock
     bda_project_arn: str | None = None
     bda_profile_arn: str | None = None
@@ -90,20 +93,7 @@ class AWSEnvConfig(PydanticBaseEnvConfig):
     bedrock_bounding_box_model_id_param: str | None = None
     bedrock_supplemental_extraction_model_id_param: str | None = None
 
-    # Image pipeline
-    document_crop_param: str | None = None
-
-    # Textract identity extraction (feature flag)
-    textract_identity_param: str | None = None
-
-    # Blur detection (feature flags)
-    enable_blur_detection_param: str | None = None
-    enforce_blur_rejection_param: str | None = None
-
     # BDA project ARNs (per preclassification category)
-    preclassification_routing_param: str | None = None
-    skip_bda_if_unclassified_param: str | None = None
-    enable_preclassification_blueprint_matching_param: str | None = None
     bda_project_arn_tax_documents: str | None = None
     bda_project_arn_employment_wages: str | None = None
     bda_project_arn_independent_earnings: str | None = None

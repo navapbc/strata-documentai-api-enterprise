@@ -33,7 +33,6 @@ def mock_preclassification(mocker):
             confidence=0.95,
             document_count=1,
             is_document=True,
-            is_blurry=False,
         ),
     )
 
@@ -403,7 +402,6 @@ def test_main_skips_bda_when_no_match_and_flag_on(input_pdf, mocker, mock_invoke
             confidence=0.5,
             document_count=1,
             is_document=True,
-            is_blurry=False,
         ),
     )
 

@@ -445,13 +445,6 @@ locals {
 
   lambda_env_vars = {
     ENVIRONMENT                                               = var.environment
-    PRECLASSIFICATION_ROUTING_PARAM                           = "${local.ssm_prefix}/feature-flags/preclassification-based-routing"
-    SKIP_BDA_IF_UNCLASSIFIED_PARAM                    = "${local.ssm_prefix}/feature-flags/skip-bda-if-unclassified"
-    ENABLE_PRECLASSIFICATION_BLUEPRINT_MATCHING_PARAM  = "${local.ssm_prefix}/feature-flags/enable-preclassification-blueprint-matching"
-    DOCUMENT_CROP_PARAM                                       = "${local.ssm_prefix}/feature-flags/document-crop"
-    TEXTRACT_IDENTITY_PARAM                                   = "${local.ssm_prefix}/feature-flags/textract-identity-enabled"
-    ENABLE_BLUR_DETECTION_PARAM                               = "${local.ssm_prefix}/feature-flags/enable-blur-detection"
-    ENFORCE_BLUR_REJECTION_PARAM                              = "${local.ssm_prefix}/feature-flags/enforce-blur-rejection"
     DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME                   = module.document_metadata.table_name
     DOCUMENTAI_DOCUMENT_METADATA_JOB_ID_INDEX_NAME            = local.gsi_job_id
     DOCUMENTAI_DOCUMENT_METADATA_EXTERNAL_DOC_ID_INDEX_NAME   = local.gsi_external_document_id

@@ -130,11 +130,18 @@ def get_internal_api_response(
 
         user_provided_document_category = get_user_provided_document_category(object_key)
 
+    try:
+        document_category = (
+            DocumentCategory(user_provided_document_category)
+            if user_provided_document_category
+            else None
+        )
+    except ValueError:
+        document_category = None
+
     return InternalApiResponse(
         validation_passed=ResponseCodes.is_success_response_code(response_code),
-        document_category=DocumentCategory(user_provided_document_category)
-        if user_provided_document_category
-        else None,
+        document_category=document_category,
         matched_document_class=matched_document_class,
         response_code=response_code,
         response_message=ResponseCodes.get_message(response_code),
@@ -256,6 +263,18 @@ def build_v1_api_response(
                 "additionalInfo": data.additional_info if data else None,
                 "responseCode": ResponseCodes.NO_DOCUMENT_DETECTED,
                 "responseMessage": ResponseCodes.get_message(ResponseCodes.NO_DOCUMENT_DETECTED),
+            }
+        )
+
+    elif job_status == ProcessStatus.BLURRY_DOCUMENT_DETECTED.value:
+        base_response.update(
+            {
+                "jobStatus": "not_supported",
+                "message": "Document is blurry",
+                "responseCode": ResponseCodes.BLURRY_DOCUMENT_DETECTED,
+                "responseMessage": ResponseCodes.get_message(
+                    ResponseCodes.BLURRY_DOCUMENT_DETECTED
+                ),
             }
         )
 

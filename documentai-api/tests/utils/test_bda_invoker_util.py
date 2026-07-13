@@ -204,7 +204,7 @@ def test_invoke_bedrock_data_automation_pages_sent_fallback(page_count_return, e
 
 
 def test_skip_bda_if_unclassified_defaults_false_when_no_param():
-    """When no SSM param is configured, defaults to False (don't skip BDA)."""
+    """When no SSM prefix is configured, defaults to False (don't skip BDA)."""
     with patch.dict("os.environ", {}, clear=True):
         from documentai_api.config.env import get_aws_config
 
@@ -218,7 +218,7 @@ def test_skip_bda_if_unclassified_reads_ssm_true():
     with (
         patch.dict(
             "os.environ",
-            {"SKIP_BDA_IF_UNCLASSIFIED_PARAM": "/test/flag"},
+            {"SSM_PREFIX": "/test"},
         ),
         patch(
             "documentai_api.utils.ssm.get_parameter_value",
@@ -237,7 +237,7 @@ def test_skip_bda_if_unclassified_reads_ssm_false():
     with (
         patch.dict(
             "os.environ",
-            {"SKIP_BDA_IF_UNCLASSIFIED_PARAM": "/test/flag"},
+            {"SSM_PREFIX": "/test"},
         ),
         patch(
             "documentai_api.utils.ssm.get_parameter_value",

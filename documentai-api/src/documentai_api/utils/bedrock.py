@@ -344,10 +344,9 @@ def find_matching_blueprint(
     If category is provided, only blueprints in that category are considered.
     """
     config = get_aws_config()
-    if config.enable_preclassification_blueprint_matching_param:
-        value = get_parameter_value(
-            config.enable_preclassification_blueprint_matching_param, default="true"
-        )
+    if config.ssm_prefix:
+        param = f"{config.ssm_prefix}/feature-flags/enable-preclassification-blueprint-matching"
+        value = get_parameter_value(param, default="true")
         if value.lower() != "true":
             return PreclassificationMatchResult()
 

@@ -28,19 +28,14 @@ def get_parameter_value(param_name: str, default: str | None = None) -> str:
 
 
 def is_document_crop_enabled() -> bool:
-    """Whether image document-ROI cropping is on. SSM-configurable at runtime; default off.
-
-    Mirrors the preclassification-routing flag: the parameter path is provided via
-    env config so it can be toggled in SSM without a redeploy. Defaults to off
-    (opt-in) when the flag is unconfigured or the parameter is missing, so it can
-    be validated per-environment before being turned on.
-    """
+    """Whether image document-ROI cropping is on. SSM-configurable at runtime; default off."""
     from documentai_api.config.env import get_aws_config
 
     config = get_aws_config()
-    if not config.document_crop_param:
+    if not config.ssm_prefix:
         return False
-    return get_parameter_value(config.document_crop_param, default="false").lower() == "true"
+    param = f"{config.ssm_prefix}/feature-flags/document-crop"
+    return get_parameter_value(param, default="false").lower() == "true"
 
 
 def is_blur_detection_enabled() -> bool:
@@ -54,9 +49,10 @@ def is_blur_detection_enabled() -> bool:
     from documentai_api.config.env import get_aws_config
 
     config = get_aws_config()
-    if not config.enable_blur_detection_param:
+    if not config.ssm_prefix:
         return True
-    return get_parameter_value(config.enable_blur_detection_param, default="true").lower() == "true"
+    param = f"{config.ssm_prefix}/feature-flags/enable-blur-detection"
+    return get_parameter_value(param, default="true").lower() == "true"
 
 
 def is_blur_rejection_enforced() -> bool:
@@ -68,11 +64,10 @@ def is_blur_rejection_enforced() -> bool:
     from documentai_api.config.env import get_aws_config
 
     config = get_aws_config()
-    if not config.enforce_blur_rejection_param:
+    if not config.ssm_prefix:
         return False
-    return (
-        get_parameter_value(config.enforce_blur_rejection_param, default="false").lower() == "true"
-    )
+    param = f"{config.ssm_prefix}/feature-flags/enforce-blur-rejection"
+    return get_parameter_value(param, default="false").lower() == "true"
 
 
 def is_textract_identity_enabled() -> bool:
@@ -85,6 +80,7 @@ def is_textract_identity_enabled() -> bool:
     from documentai_api.config.env import get_aws_config
 
     config = get_aws_config()
-    if not config.textract_identity_param:
+    if not config.ssm_prefix:
         return False
-    return get_parameter_value(config.textract_identity_param, default="false").lower() == "true"
+    param = f"{config.ssm_prefix}/feature-flags/textract-identity-enabled"
+    return get_parameter_value(param, default="false").lower() == "true"
