@@ -137,5 +137,21 @@
     "isPasswordProtected": false,
     "preclassificationCategory": "government_benefits",
     "responseCode": "002"
+  },
+  "synthetic-password-protected.pdf": {
+    "//": [
+      "Encrypted PDF. Detected as password protected before preclassification, so it ",
+      "short-circuits to the terminal password_protected state (responseCode 106) and ",
+      "never runs preclassification or BDA - hence null preclassificationCategory and no ",
+      "BDA output. Guards the regression where the poller failed to treat this terminal ",
+      "state as done."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "application/pdf",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": true,
+    "preclassificationCategory": null,
+    "responseCode": "106"
   }
 }

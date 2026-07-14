@@ -16,7 +16,7 @@ CLASSIFICATIONS = TEST_DOCS_DIR / "expected.json"
 
 @dataclass
 class ExpectedResult:
-    preclassification_category: str
+    preclassification_category: str | None
     response_code: str
     is_blurry: bool = False
     is_password_protected: bool = False
@@ -45,6 +45,7 @@ def load_test_cases() -> list[Case]:
                     content_type=expected.get("content_type"),
                 ),
             ),
+            id=filename,
         )
         for filename, expected in cases.items()
         if expected.get("e2e_enabled", False)
@@ -71,9 +72,13 @@ def _upload_and_wait(base_url, api_key, file_path, timeout=60, interval=2):
         )
         assert r.status_code == 200, f"poll failed {r.status_code}: {r.text}"
         body = r.json()
-        bda_completed_at = body.get("completedAt")
 
-        if bda_completed_at is not None:
+        # responseCode is always present in the serialized response (it's an
+        # optional model field that defaults to null during processing). It only
+        # becomes non-null once the v1 response is persisted, i.e. the job is
+        # done - including terminal states that never invoke BDA (password
+        # protected, blurry), where completedAt is never set.
+        if body.get("responseCode") is not None:
             return body
 
         time.sleep(interval)
@@ -102,12 +107,18 @@ def test_post_document(test_case, base_url, api_key):
     }
 
     expect_not_none: list[str] = [
-        DocumentMetadata.BDA_OUTPUT_S3_URI,
-        DocumentMetadata.PROCESSED_DATE,
         DocumentMetadata.V1_API_RESPONSE_JSON,
         DocumentMetadata.UPDATED_AT,
         DocumentMetadata.CREATED_AT,
     ]
+
+    # Password-protected docs short-circuit before BDA, so BDA output and the
+    # processed-date timestamp are never written.
+    if not expected_result.is_password_protected:
+        expect_not_none += [
+            DocumentMetadata.BDA_OUTPUT_S3_URI,
+            DocumentMetadata.PROCESSED_DATE,
+        ]
 
     job_id = body["jobId"]
     items = ddb_service.query_by_key(table_name, job_id_index_name, DocumentMetadata.JOB_ID, job_id)
