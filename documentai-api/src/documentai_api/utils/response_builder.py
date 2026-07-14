@@ -266,6 +266,18 @@ def build_v1_api_response(
             }
         )
 
+    elif job_status == ProcessStatus.BLURRY_DOCUMENT_DETECTED.value:
+        base_response.update(
+            {
+                "jobStatus": "not_supported",
+                "message": "Document is blurry",
+                "responseCode": ResponseCodes.BLURRY_DOCUMENT_DETECTED,
+                "responseMessage": ResponseCodes.get_message(
+                    ResponseCodes.BLURRY_DOCUMENT_DETECTED
+                ),
+            }
+        )
+
     elif job_status == ProcessStatus.AI_CONSENT_DECLINED.value:
         base_response.update(
             {

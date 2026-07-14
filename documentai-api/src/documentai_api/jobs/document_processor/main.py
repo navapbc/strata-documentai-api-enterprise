@@ -25,10 +25,14 @@ from documentai_api.dtos.classification import ClassificationData
 from documentai_api.dtos.processing import CropResult
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import s3 as s3_service
-from documentai_api.utils.bda_invoker import invoke_bedrock_data_automation
+from documentai_api.utils.bda_invoker import (
+    invoke_bedrock_data_automation,
+    skip_bda_if_unclassified,
+)
 from documentai_api.utils.ddb import get_ddb_record
 from documentai_api.utils.document_lifecycle import (
     classify_as_failed,
+    classify_as_no_custom_blueprint_matched,
     classify_as_not_implemented,
     set_bda_processing_status_started,
     set_processing_status_started,
@@ -40,6 +44,19 @@ from documentai_api.utils.uploads import validate_s3_object_is_bda_native
 
 logger = documentai_api.logging.get_logger(__name__)
 app = typer.Typer()
+
+
+def _should_invoke_bda(preclassification_category: str | None) -> bool:
+    """Determine if BDA should be invoked based on preclassification and feature flag.
+
+    Skip is driven by preclassify returning "other_document" (i.e. no category,
+    so no blueprint would match) - NOT by an actual blueprint match test. The
+    flag name references blueprints because "unclassified" implies "no blueprint
+    will match"; the live check is the free other_document signal from preclassify.
+    """
+    if preclassification_category and preclassification_category != "other_document":
+        return True
+    return not skip_bda_if_unclassified()
 
 
 def _persist_optimization_metrics(
@@ -256,8 +273,17 @@ def main(
             _persist_optimization_metrics(
                 ddb_key, opt.crop_result, opt.grayscale_applied, opt.file_size_bytes
             )
-            invoke_bda(bucket_name, object_key, ddb_key, preclassification_category)
-            logger.info(f"Optimized {ddb_key} and invoked BDA")
+            if _should_invoke_bda(preclassification_category):
+                invoke_bda(bucket_name, object_key, ddb_key, preclassification_category)
+                logger.info(f"Optimized {ddb_key} and invoked BDA")
+            else:
+                logger.info(f"{ddb_key} preclassified as other_document; skipping BDA (flag on)")
+                classify_as_no_custom_blueprint_matched(
+                    object_key=ddb_key,
+                    data=ClassificationData(
+                        additional_info="Preclassified as other_document; BDA skipped per feature flag"
+                    ),
+                )
         else:
             _persist_optimization_metrics(ddb_key, opt.crop_result, False, None)
             classify_as_not_implemented(
@@ -285,7 +311,16 @@ def main(
             apply_grayscale=False,
         )
         _persist_optimization_metrics(ddb_key, opt.crop_result, False, opt.file_size_bytes)
-        invoke_bda(bucket_name, object_key, ddb_key, preclassification_category)
+        if _should_invoke_bda(preclassification_category):
+            invoke_bda(bucket_name, object_key, ddb_key, preclassification_category)
+        else:
+            logger.info(f"{ddb_key} preclassified as other_document; skipping BDA (flag on)")
+            classify_as_no_custom_blueprint_matched(
+                object_key=ddb_key,
+                data=ClassificationData(
+                    additional_info="Preclassified as other_document; BDA skipped per feature flag"
+                ),
+            )
     else:
         # Already processing or terminal (SUCCESS, FAILED, STARTED) - skip.
         logger.info(f"File {ddb_key} already has status: {status}, skipping")

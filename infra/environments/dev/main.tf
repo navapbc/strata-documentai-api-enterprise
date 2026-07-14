@@ -296,20 +296,33 @@ module "config" {
   prefix = local.ssm_prefix
 
   parameters = {
-    "feature-flags/preclassification-based-routing" = "false"
-    "feature-flags/document-crop"                   = "true"
-    "feature-flags/textract-identity-enabled"       = "true"
+    "feature-flags/preclassification-based-routing"             = "false"
+    "feature-flags/skip-bda-if-unclassified"                    = "false"
+    "feature-flags/enable-preclassification-blueprint-matching" = "true"
+    "feature-flags/document-crop"                               = "true"
+    "feature-flags/textract-identity-enabled"                   = "true"
+    "feature-flags/enable-blur-detection"                       = "true"
+    "feature-flags/enforce-blur-rejection"                      = "true"
     # Vision model ids - swappable at runtime via SSM (no redeploy). Kept as
     # separate params so preclassification and bbox detection can be tuned apart.
-    "models/classification-model-id"    = "us.amazon.nova-lite-v1:0"
-    "models/bounding-box-model-id"      = "us.amazon.nova-lite-v1:0"
+    #   Lite  - vision tasks (preclassification, blueprint match: model sees the image)
+    #   Pro   - blur empty-quadrant check (spatial reasoning over image crops)
+    #   Micro - supplemental extraction: text-only field matching over Textract WORD
+    #           blocks (no image sent), cheapest/fastest for basic text-in/text-out
+    "models/classification-model-id"          = "us.amazon.nova-lite-v1:0"
+    "models/bounding-box-model-id"            = "us.amazon.nova-lite-v1:0"
+    "models/blur-quadrant-model-id"           = "us.amazon.nova-pro-v1:0"
     "models/supplemental-extraction-model-id" = "us.amazon.nova-micro-v1:0"
   }
 
   allowed_patterns = {
-    "feature-flags/preclassification-based-routing" = "^(true|false)$"
-    "feature-flags/document-crop"                   = "^(true|false)$"
-    "feature-flags/textract-identity-enabled"       = "^(true|false)$"
+    "feature-flags/preclassification-based-routing"             = "^(true|false)$"
+    "feature-flags/skip-bda-if-unclassified"                    = "^(true|false)$"
+    "feature-flags/enable-preclassification-blueprint-matching" = "^(true|false)$"
+    "feature-flags/document-crop"                               = "^(true|false)$"
+    "feature-flags/textract-identity-enabled"                   = "^(true|false)$"
+    "feature-flags/enable-blur-detection"                       = "^(true|false)$"
+    "feature-flags/enforce-blur-rejection"                      = "^(true|false)$"
   }
 }
 
@@ -437,9 +450,6 @@ locals {
 
   lambda_env_vars = {
     ENVIRONMENT                                               = var.environment
-    PRECLASSIFICATION_ROUTING_PARAM                           = "${local.ssm_prefix}/feature-flags/preclassification-based-routing"
-    DOCUMENT_CROP_PARAM                                       = "${local.ssm_prefix}/feature-flags/document-crop"
-    TEXTRACT_IDENTITY_PARAM                                   = "${local.ssm_prefix}/feature-flags/textract-identity-enabled"
     DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME                   = module.document_metadata.table_name
     DOCUMENTAI_DOCUMENT_METADATA_JOB_ID_INDEX_NAME            = local.gsi_job_id
     DOCUMENTAI_DOCUMENT_METADATA_EXTERNAL_DOC_ID_INDEX_NAME   = local.gsi_external_document_id
@@ -479,6 +489,7 @@ locals {
     BDA_REGION                                                = var.bda_region
     BEDROCK_CLASSIFICATION_MODEL_ID_PARAM                     = "${local.ssm_prefix}/models/classification-model-id"
     BEDROCK_BOUNDING_BOX_MODEL_ID_PARAM                       = "${local.ssm_prefix}/models/bounding-box-model-id"
+    BEDROCK_BLUR_QUADRANT_MODEL_ID_PARAM                      = "${local.ssm_prefix}/models/blur-quadrant-model-id"
     BEDROCK_SUPPLEMENTAL_EXTRACTION_MODEL_ID_PARAM            = "${local.ssm_prefix}/models/supplemental-extraction-model-id"
     SSM_PREFIX                                                = local.ssm_prefix
     MAX_BDA_INVOKE_RETRY_ATTEMPTS                             = local.max_bda_invoke_retry_attempts
@@ -662,10 +673,11 @@ data "aws_iam_policy_document" "bedrock_all" {
     ]
   }
 
-  # Textract (AnalyzeID for identity documents)
+  # Textract (AnalyzeID for identity documents, DetectDocumentText for blur detection)
   statement {
     actions = [
       "textract:AnalyzeID",
+      "textract:DetectDocumentText",
     ]
     resources = ["*"]
   }

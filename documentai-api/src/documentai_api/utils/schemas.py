@@ -56,6 +56,7 @@ def _fetch_schemas_from_bda() -> dict[str, Any]:
 
                 schemas[document_type] = {
                     "documentType": document_type,
+                    "description": schema.get("description", blueprint.get("description", "")),
                     "fields": fields,
                     "category": category,
                     "blueprintArn": blueprint_arn,

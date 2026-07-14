@@ -10,19 +10,21 @@ from documentai_api.config.constants import (
     ProcessStatus,
 )
 from documentai_api.config.env import EnvVars, get_required_env
-from documentai_api.dtos.classification import ClassificationData
+from documentai_api.dtos.classification import ClassificationData, PreclassificationMatchResult
 from documentai_api.dtos.ddb import PreClassificationDdbFields, UpsertDdbData
 from documentai_api.dtos.processing import InternalApiResponse
 from documentai_api.logging import get_logger
 from documentai_api.models.document_record import DocumentRecord
 from documentai_api.services import s3 as s3_service
-from documentai_api.utils.bedrock import preclassify_document
+from documentai_api.utils.blur_detection import detect_blur
 from documentai_api.utils.ddb import (
     update_ddb,
     upsert_ddb,
 )
+from documentai_api.utils.preclassification import find_matching_blueprint, preclassify_document
 from documentai_api.utils.response_builder import get_internal_api_response
 from documentai_api.utils.response_codes import ResponseCodes
+from documentai_api.utils.ssm import is_blur_detection_enabled, is_blur_rejection_enforced
 from documentai_api.utils.textract import finalize_textract_result, try_textract_identity
 
 logger = get_logger(__name__)
@@ -331,12 +333,18 @@ def upsert_initial_ddb_record(
     pages_detected = document_utils.get_page_count(file_bytes)
     is_password_protected = document_utils.is_password_protected(file_bytes)
     is_document_blurry = False
+    blur_analysis_failed = False
+    ocr_avg_word_confidence: float | None = None
+    document_word_count: int | None = None
+    blur_llm_checked = False
     pre_classification_document_type = None
     pre_classification_confidence = None
     pre_classification_input_tokens = None
     pre_classification_output_tokens = None
     pre_classification_duration_seconds = None
     pre_classification_model_id = None
+    pre_classification_blueprint_match_result: PreclassificationMatchResult | None = None
+    textract_result = None
 
     if is_password_protected:
         process_status = ProcessStatus.PASSWORD_PROTECTED
@@ -344,47 +352,80 @@ def upsert_initial_ddb_record(
         textract_result = None
 
     else:
-        result = preclassify_document(file_bytes, content_type)
+        # Textract-based blur detection (deterministic, confidence-score based)
+        blur_enabled = is_blur_detection_enabled()
+        blur_enforced = is_blur_rejection_enforced()
 
-        pre_classification_document_type = result.document_type
-        pre_classification_confidence = result.confidence
-        pre_classification_input_tokens = result.input_tokens
-        pre_classification_output_tokens = result.output_tokens
-        pre_classification_duration_seconds = result.duration_seconds
-        pre_classification_model_id = result.model_id
+        if blur_enabled:
+            blur_result = detect_blur(file_bytes, content_type)
+            is_document_blurry = blur_result.is_blurry
+            blur_analysis_failed = blur_result.analysis_failed
+            ocr_avg_word_confidence = blur_result.avg_confidence
+            document_word_count = blur_result.word_count
+            blur_llm_checked = blur_result.llm_checked
 
-        if not result.is_document:
-            process_status = ProcessStatus.NO_DOCUMENT_DETECTED
-            response_code = ResponseCodes.NO_DOCUMENT_DETECTED
-            textract_result = None
+            if blur_result.is_not_document and blur_enforced:
+                process_status = ProcessStatus.NO_DOCUMENT_DETECTED
+                response_code = ResponseCodes.NO_DOCUMENT_DETECTED
+                textract_result = None
 
-        elif result.is_blurry:
-            process_status = ProcessStatus.BLURRY_DOCUMENT_DETECTED
-            response_code = ResponseCodes.BLURRY_DOCUMENT_DETECTED
-            is_document_blurry = True
-            textract_result = None
+            elif blur_result.is_blurry and blur_enforced:
+                process_status = ProcessStatus.BLURRY_DOCUMENT_DETECTED
+                response_code = ResponseCodes.BLURRY_DOCUMENT_DETECTED
+                textract_result = None
 
-        elif result.document_count > 1:
-            process_status = ProcessStatus.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE
-            response_code = ResponseCodes.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE
-            textract_result = None
+            elif blur_result.analysis_failed:
+                logger.warning("Blur detection failed, continuing with preclassification")
 
-        else:
-            # Check if this is an identity document eligible for Textract
-            textract_result = try_textract_identity(
-                result.document_type, content_type, file_bytes, ddb_key
-            )
+        if process_status not in (
+            ProcessStatus.NO_DOCUMENT_DETECTED,
+            ProcessStatus.BLURRY_DOCUMENT_DETECTED,
+        ):
+            # Blur check passed or was skipped - run LLM preclassification
+            result = preclassify_document(file_bytes, content_type)
 
-            if textract_result is None:
-                # Not a Textract-eligible doc or flag is off; route to BDA
-                if content_type in FileValidation.GRAYSCALE_CONVERTIBLE:
-                    process_status = ProcessStatus.PENDING_IMAGE_OPTIMIZATION
-                else:
-                    process_status = ProcessStatus.NOT_STARTED
+            pre_classification_document_type = result.document_type
+            pre_classification_confidence = result.confidence
+            pre_classification_input_tokens = result.input_tokens
+            pre_classification_output_tokens = result.output_tokens
+            pre_classification_duration_seconds = result.duration_seconds
+            pre_classification_model_id = result.model_id
+
+            if result.document_count > 1:
+                process_status = ProcessStatus.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE
+                response_code = ResponseCodes.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE
+                textract_result = None
+
             else:
-                # Textract succeeded inline; upsert as STARTED, finalize_textract_result
-                # will transition to SUCCESS after the upsert
-                process_status = ProcessStatus.STARTED
+                pre_classification_blueprint_match_result = find_matching_blueprint(
+                    file_bytes, content_type, category=result.document_type
+                )
+                logger.info(
+                    "Blueprint match result",
+                    extra={
+                        "matched_document_type": pre_classification_blueprint_match_result.matched_document_type,
+                        "confidence": pre_classification_blueprint_match_result.confidence,
+                        "duration_seconds": str(
+                            pre_classification_blueprint_match_result.duration_seconds
+                        ),
+                    },
+                )
+
+                # Check if this is an identity document eligible for Textract
+                textract_result = try_textract_identity(
+                    result.document_type, content_type, file_bytes, ddb_key
+                )
+
+                if textract_result is None:
+                    # Not a Textract-eligible doc or flag is off; route to BDA
+                    if content_type in FileValidation.GRAYSCALE_CONVERTIBLE:
+                        process_status = ProcessStatus.PENDING_IMAGE_OPTIMIZATION
+                    else:
+                        process_status = ProcessStatus.NOT_STARTED
+                else:
+                    # Textract succeeded inline; upsert as STARTED, finalize_textract_result
+                    # will transition to SUCCESS after the upsert
+                    process_status = ProcessStatus.STARTED
 
     # initial status does not qualify for bda processing
     # create the json response signaling the process is complete
@@ -411,6 +452,10 @@ def upsert_initial_ddb_record(
             trace_id=trace_id,
             batch_id=batch_id,
             is_document_blurry=is_document_blurry,
+            blur_analysis_failed=blur_analysis_failed,
+            ocr_avg_word_confidence=ocr_avg_word_confidence,
+            document_word_count=document_word_count,
+            blur_llm_checked=blur_llm_checked,
             is_password_protected=is_password_protected,
             pre_classification=PreClassificationDdbFields(
                 document_type=pre_classification_document_type,
@@ -419,6 +464,31 @@ def upsert_initial_ddb_record(
                 output_tokens=pre_classification_output_tokens,
                 duration_seconds=pre_classification_duration_seconds,
                 model_id=pre_classification_model_id,
+                blueprint_matched_document_type=(
+                    pre_classification_blueprint_match_result.matched_document_type
+                    if pre_classification_blueprint_match_result
+                    else None
+                ),
+                blueprint_match_confidence=(
+                    pre_classification_blueprint_match_result.confidence
+                    if pre_classification_blueprint_match_result
+                    else None
+                ),
+                blueprint_match_input_tokens=(
+                    pre_classification_blueprint_match_result.input_tokens
+                    if pre_classification_blueprint_match_result
+                    else None
+                ),
+                blueprint_match_output_tokens=(
+                    pre_classification_blueprint_match_result.output_tokens
+                    if pre_classification_blueprint_match_result
+                    else None
+                ),
+                blueprint_match_duration_seconds=(
+                    pre_classification_blueprint_match_result.duration_seconds
+                    if pre_classification_blueprint_match_result
+                    else None
+                ),
             ),
             document_processor_started_at=document_processor_started_at,
             is_document_processor_cold_start=is_document_processor_cold_start,

@@ -138,6 +138,33 @@
     "preclassificationCategory": "government_benefits",
     "responseCode": "002"
   },
+  "blur/synthetic-disk-defocus.jpeg": {
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/jpeg",
+    "e2e_enabled": true,
+    "isDocumentBlurry": true,
+    "isPasswordProtected": false,
+    "preclassificationCategory": null,
+    "responseCode": "104"
+  },
+  "blur/synthetic-ghost-linear.jpeg": {
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/jpeg",
+    "e2e_enabled": true,
+    "isDocumentBlurry": true,
+    "isPasswordProtected": false,
+    "preclassificationCategory": null,
+    "responseCode": "104"
+  },
+  "blur/synthetic-low-light.jpeg": {
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/jpeg",
+    "e2e_enabled": true,
+    "isDocumentBlurry": true,
+    "isPasswordProtected": false,
+    "preclassificationCategory": null,
+    "responseCode": "104"
+  },
   "synthetic-password-protected.pdf": {
     "//": [
       "Encrypted PDF. Detected as password protected before preclassification, so it ",

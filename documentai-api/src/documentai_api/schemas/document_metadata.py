@@ -36,6 +36,13 @@ class DocumentMetadata:
     PRECLASSIFICATION_OUTPUT_TOKENS = "preclassificationOutputTokens"
     PRECLASSIFICATION_DURATION_SECONDS = "preclassificationDurationSeconds"
     PRECLASSIFICATION_MODEL_ID = "preclassificationModelId"
+    PRECLASSIFICATION_BLUEPRINT_MATCHED_TYPE = "preclassificationBlueprintMatchedType"
+    PRECLASSIFICATION_BLUEPRINT_MATCH_CONFIDENCE = "preclassificationBlueprintMatchConfidence"
+    PRECLASSIFICATION_BLUEPRINT_MATCH_INPUT_TOKENS = "preclassificationBlueprintMatchInputTokens"
+    PRECLASSIFICATION_BLUEPRINT_MATCH_OUTPUT_TOKENS = "preclassificationBlueprintMatchOutputTokens"
+    PRECLASSIFICATION_BLUEPRINT_MATCH_DURATION_SECONDS = (
+        "preclassificationBlueprintMatchDurationSeconds"
+    )
 
     # image optimization fields
     CROP_BOUNDING_BOX = "cropBoundingBox"
@@ -68,9 +75,12 @@ class DocumentMetadata:
     PAGES_DETECTED = "pagesDetected"
     IS_DOCUMENT_BLURRY = "isDocumentBlurry"
     IS_PASSWORD_PROTECTED = "isPasswordProtected"
+    BLUR_ANALYSIS_FAILED = "blurAnalysisFailed"
+    OCR_AVG_WORD_CONFIDENCE = "ocrAvgWordConfidence"
+    DOCUMENT_WORD_COUNT = "documentWordCount"
+    BLUR_LLM_CHECKED = "blurLlmChecked"
     DOCUMENT_METRICS_RAW = "documentMetricsRaw"
     DOCUMENT_METRICS_NORMALIZED = "documentMetricsNormalized"
-    OVERALL_BLUR_SCORE = "overallBlurScore"
 
     # operational intelligence
     ADDITIONAL_INFO = "additionalInfo"

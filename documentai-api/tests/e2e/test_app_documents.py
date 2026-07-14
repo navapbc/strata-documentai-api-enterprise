@@ -112,9 +112,9 @@ def test_post_document(test_case, base_url, api_key):
         DocumentMetadata.CREATED_AT,
     ]
 
-    # Password-protected docs short-circuit before BDA, so BDA output and the
-    # processed-date timestamp are never written.
-    if not expected_result.is_password_protected:
+    # Password-protected and blurry docs short-circuit before BDA, so BDA
+    # output and the processed-date timestamp are never written.
+    if not expected_result.is_blurry and not expected_result.is_password_protected:
         expect_not_none += [
             DocumentMetadata.BDA_OUTPUT_S3_URI,
             DocumentMetadata.PROCESSED_DATE,
