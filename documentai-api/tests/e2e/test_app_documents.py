@@ -45,6 +45,7 @@ def load_test_cases() -> list[Case]:
                     content_type=expected.get("content_type"),
                 ),
             ),
+            id=filename,
         )
         for filename, expected in cases.items()
         if expected.get("e2e_enabled", False)
@@ -74,7 +75,9 @@ def _upload_and_wait(base_url, api_key, file_path, timeout=60, interval=2):
 
         # responseCode is always present in the serialized response (it's an
         # optional model field that defaults to null during processing). It only
-        # becomes non-null once the v1 response is persisted, i.e. the job is done.
+        # becomes non-null once the v1 response is persisted, i.e. the job is
+        # done - including terminal states that never invoke BDA (password
+        # protected, blurry), where completedAt is never set.
         if body.get("responseCode") is not None:
             return body
 
@@ -109,7 +112,9 @@ def test_post_document(test_case, base_url, api_key):
         DocumentMetadata.CREATED_AT,
     ]
 
-    if not expected_result.is_blurry:
+    # Password-protected and blurry docs short-circuit before BDA, so BDA
+    # output and the processed-date timestamp are never written.
+    if not expected_result.is_blurry and not expected_result.is_password_protected:
         expect_not_none += [
             DocumentMetadata.BDA_OUTPUT_S3_URI,
             DocumentMetadata.PROCESSED_DATE,
