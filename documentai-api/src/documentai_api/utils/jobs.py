@@ -67,7 +67,7 @@ async def poll_for_completion(
 
             if (
                 job_status.process_status
-                and ProcessStatus.is_completed(job_status.process_status)
+                and ProcessStatus.is_classified(job_status.process_status)
                 and job_status.v1_response_json
             ):
                 if include_extracted_data and job_status.object_key:
