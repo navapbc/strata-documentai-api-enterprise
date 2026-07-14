@@ -15,7 +15,10 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any
 
+from documentai_api.config.constants import ConfigDefaults
+from documentai_api.config.env import get_aws_config
 from documentai_api.logging import get_logger
+from documentai_api.utils.ssm import get_parameter_value
 
 logger = get_logger(__name__)
 
@@ -96,6 +99,13 @@ def _crop_quadrant(image_bytes: bytes, quadrant_name: str) -> tuple[bytes, str]:
     return output.getvalue(), "jpeg"
 
 
+def _get_blur_quadrant_model_id() -> str:
+    param_name = get_aws_config().bedrock_blur_quadrant_model_id_param
+    if not param_name:
+        return ConfigDefaults.BLUR_QUADRANT_MODEL_ID
+    return get_parameter_value(param_name, default=ConfigDefaults.BLUR_QUADRANT_MODEL_ID)
+
+
 def _check_empty_quadrants_for_text(
     image_bytes: bytes, quadrant_names: list[str]
 ) -> dict[str, bool]:
@@ -105,9 +115,10 @@ def _check_empty_quadrants_for_text(
     Uses _downscale_for_detection on the crop to handle Converse size limits.
     Parses response with regex (not json.loads) to tolerate malformed output.
     """
-    from documentai_api.config.constants import ConfigDefaults
-    from documentai_api.utils.bedrock import _downscale_for_detection, _invoke
+    from documentai_api.services.bedrock import invoke_model
+    from documentai_api.utils.bbox_detection import _downscale_for_detection
 
+    model_id = _get_blur_quadrant_model_id()
     results: dict[str, bool] = {}
 
     for name in quadrant_names:
@@ -126,10 +137,10 @@ def _check_empty_quadrants_for_text(
                 }
             ]
 
-            response = _invoke(
+            response = invoke_model(
                 messages=messages,
                 max_tokens=8,
-                model_id=ConfigDefaults.BLUR_QUADRANT_MODEL_ID,
+                model_id=model_id,
                 temperature=0.0,
             )
             text = response["output"]["message"]["content"][0]["text"]
@@ -159,7 +170,6 @@ def detect_blur(image_bytes: bytes, content_type: str | None = None) -> BlurResu
     Returns:
         BlurResult with detection outcomes.
     """
-    from documentai_api.config.constants import ConfigDefaults
     from documentai_api.utils.aws_client_factory import AWSClientFactory
 
     if not content_type:
@@ -183,18 +193,7 @@ def detect_blur(image_bytes: bytes, content_type: str | None = None) -> BlurResu
         words = [b for b in response["Blocks"] if b["BlockType"] == "WORD"]
         word_count = len(words)
 
-        # No words at all - not a document (blank/dark/non-document image)
-        if word_count == 0:
-            return BlurResult(
-                is_blurry=False,
-                is_not_document=True,
-                avg_confidence=0.0,
-                word_count=0,
-                duration_seconds=Decimal(str(elapsed)),
-            )
-
-        # Very few words - likely not a document (photo of hand, wall, etc.)
-        # rather than a blurry document that lost all its text
+        # Too few words to be a real document (blank, dark, or non-document image)
         if word_count < min_word_count:
             return BlurResult(
                 is_blurry=False,

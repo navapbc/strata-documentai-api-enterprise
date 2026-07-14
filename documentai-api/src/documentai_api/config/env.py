@@ -91,6 +91,7 @@ class AWSEnvConfig(PydanticBaseEnvConfig):
     bedrock_classification_model_id_param: str | None = None
     bedrock_classification_prompt_param: str | None = None
     bedrock_bounding_box_model_id_param: str | None = None
+    bedrock_blur_quadrant_model_id_param: str | None = None
     bedrock_supplemental_extraction_model_id_param: str | None = None
 
     # BDA project ARNs (per preclassification category)

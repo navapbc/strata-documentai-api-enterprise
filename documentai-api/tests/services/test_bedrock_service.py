@@ -37,7 +37,7 @@ def test_converse_request_shape(monkeypatch):
                 "role": "assistant",
                 "content": [
                     {
-                        "text": '{"document_type": "tax_documents", "confidence": 0.95, "document_count": 1, "is_document": true}'
+                        "text": '{"document_type": "tax_documents", "confidence": 0.95, "document_count": 1}'
                     }
                 ],
             }
@@ -76,7 +76,7 @@ def test_converse_request_shape(monkeypatch):
     assert result["output"]["message"]["role"] == "assistant"
     assert (
         result["output"]["message"]["content"][0]["text"]
-        == '{"document_type": "tax_documents", "confidence": 0.95, "document_count": 1, "is_document": true}'
+        == '{"document_type": "tax_documents", "confidence": 0.95, "document_count": 1}'
     )
 
     # Stubber verifies the request matched expected_params - if not, it raises

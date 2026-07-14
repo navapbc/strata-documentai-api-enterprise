@@ -344,7 +344,6 @@ class PreclassificationCategory(StrEnum):
     DEBT_OBLIGATIONS = "debt_obligations"
     IDENTITY_VERIFICATION = "identity_verification"
     RIGHT_TO_WORK = "right_to_work"
-    SYSTEM_REJECT = "system_reject"
 
 
 class PreClassificationDefaults:
@@ -377,11 +376,9 @@ class PreClassificationDefaults:
             "- debt_obligations: Mortgage statements, auto loan bills, student loans, credit card statements",
             "- identity_verification: Driver's license, passport, state ID, Global Entry card",
             "- right_to_work: Form I-9, work permits, EAD cards, visa stamps",
-            "- system_reject: Blurry photos, blank pages, corrupted files, non-document images",
             "",
             "ONLY use one of the exact category names listed above for document_type.",
             "Do not create new categories. If unsure, use 'other_document'.",
-            "Use 'system_reject' for blank, corrupted, or non-document images.",
             "document_count: how many separate documents are visible?",
         ]
     )

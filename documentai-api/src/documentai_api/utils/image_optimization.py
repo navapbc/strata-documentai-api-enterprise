@@ -14,7 +14,7 @@ from documentai_api.config.constants import ConfigDefaults, FileValidation
 from documentai_api.dtos.processing import CropResult, OptimizationResult
 from documentai_api.logging import get_logger
 from documentai_api.services import s3 as s3_service
-from documentai_api.utils.bedrock import detect_document_bbox
+from documentai_api.utils.bbox_detection import detect_document_bbox
 from documentai_api.utils.ssm import is_document_crop_enabled
 
 logger = get_logger(__name__)

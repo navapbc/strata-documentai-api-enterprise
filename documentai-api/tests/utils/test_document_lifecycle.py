@@ -32,7 +32,6 @@ from documentai_api.utils.response_codes import ResponseCodes
                 document_type="other_document",
                 confidence=0.3,
                 document_count=1,
-                is_document=True,
             ),
             ProcessStatus.BLURRY_DOCUMENT_DETECTED,
             True,
@@ -46,7 +45,6 @@ from documentai_api.utils.response_codes import ResponseCodes
                 document_type="not_a_document",
                 confidence=0.9,
                 document_count=1,
-                is_document=False,
             ),
             ProcessStatus.NO_DOCUMENT_DETECTED,
             True,
@@ -60,7 +58,6 @@ from documentai_api.utils.response_codes import ResponseCodes
                 document_type="W2",
                 confidence=0.95,
                 document_count=2,
-                is_document=True,
             ),
             ProcessStatus.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
             True,
@@ -74,7 +71,6 @@ from documentai_api.utils.response_codes import ResponseCodes
                 document_type="W2",
                 confidence=0.95,
                 document_count=1,
-                is_document=True,
             ),
             ProcessStatus.PENDING_IMAGE_OPTIMIZATION,
             False,
@@ -88,7 +84,6 @@ from documentai_api.utils.response_codes import ResponseCodes
                 document_type="W2",
                 confidence=0.95,
                 document_count=1,
-                is_document=True,
             ),
             ProcessStatus.NOT_STARTED,
             False,
@@ -102,7 +97,6 @@ from documentai_api.utils.response_codes import ResponseCodes
                 document_type="W2",
                 confidence=0.95,
                 document_count=1,
-                is_document=True,
             ),
             ProcessStatus.NOT_STARTED,
             False,
@@ -218,7 +212,7 @@ def test_blur_detection_without_enforcement_proceeds_to_preclassify(
     mock_preclassify = mocker.patch(
         "documentai_api.utils.document_lifecycle.preclassify_document",
         return_value=BedrockClassificationResult(
-            document_type="W2", confidence=0.95, document_count=1, is_document=True
+            document_type="W2", confidence=0.95, document_count=1
         ),
     )
     mocker.patch(
@@ -470,7 +464,6 @@ def test_upsert_initial_ddb_record_routes_to_textract_when_enabled(
             document_type="identity_verification",
             confidence=0.95,
             document_count=1,
-            is_document=True,
         ),
     )
     mocker.patch(
@@ -539,7 +532,6 @@ def test_upsert_initial_ddb_record_unknown_category_with_textract_does_not_crash
             document_type="identity_verification",
             confidence=0.95,
             document_count=1,
-            is_document=True,
         ),
     )
     mocker.patch(
@@ -603,7 +595,6 @@ def test_upsert_initial_ddb_record_falls_through_when_textract_returns_none(
             document_type="identity_verification",
             confidence=0.95,
             document_count=1,
-            is_document=True,
         ),
     )
     mocker.patch(
@@ -667,7 +658,6 @@ def test_upsert_initial_ddb_record_stores_blueprint_match_fields(
             document_type="tax_documents",
             confidence=0.95,
             document_count=1,
-            is_document=True,
         ),
     )
     mocker.patch(
@@ -737,7 +727,6 @@ def test_upsert_initial_ddb_record_stores_blueprint_no_match(
             document_type="other_document",
             confidence=0.3,
             document_count=1,
-            is_document=True,
         ),
     )
     mocker.patch(

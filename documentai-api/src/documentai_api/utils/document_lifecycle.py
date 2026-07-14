@@ -16,12 +16,12 @@ from documentai_api.dtos.processing import InternalApiResponse
 from documentai_api.logging import get_logger
 from documentai_api.models.document_record import DocumentRecord
 from documentai_api.services import s3 as s3_service
-from documentai_api.utils.bedrock import find_matching_blueprint, preclassify_document
 from documentai_api.utils.blur_detection import detect_blur
 from documentai_api.utils.ddb import (
     update_ddb,
     upsert_ddb,
 )
+from documentai_api.utils.preclassification import find_matching_blueprint, preclassify_document
 from documentai_api.utils.response_builder import get_internal_api_response
 from documentai_api.utils.response_codes import ResponseCodes
 from documentai_api.utils.ssm import is_blur_detection_enabled, is_blur_rejection_enforced
@@ -381,7 +381,7 @@ def upsert_initial_ddb_record(
             ProcessStatus.NO_DOCUMENT_DETECTED,
             ProcessStatus.BLURRY_DOCUMENT_DETECTED,
         ):
-            # Blur check passed or was skipped — run LLM preclassification
+            # Blur check passed or was skipped - run LLM preclassification
             result = preclassify_document(file_bytes, content_type)
 
             pre_classification_document_type = result.document_type
