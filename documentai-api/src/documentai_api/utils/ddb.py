@@ -168,6 +168,7 @@ def _build_update_expression(
             DocumentMetadata.ADDITIONAL_INFO: data.additional_info,
             DocumentMetadata.BDA_MATCHED_DOCUMENT_CLASS: data.matched_document_class,
             DocumentMetadata.BDA_MATCHED_BLUEPRINT_FIELD_EMPTY_LIST: data.field_empty_list,
+            DocumentMetadata.BDA_MATCHED_BLUEPRINT_FIELD_MISSING_GEOMETRY_LIST: data.field_missing_geometry_list,
             DocumentMetadata.BDA_MATCHED_BLUEPRINT_FIELD_BELOW_THRESHOLD_LIST: data.field_below_threshold_list,
             DocumentMetadata.BDA_MATCHED_BLUEPRINT_FIELD_COUNT: metrics.field_count,
             DocumentMetadata.BDA_MATCHED_BLUEPRINT_FIELD_COUNT_NOT_EMPTY: metrics.field_count_not_empty,

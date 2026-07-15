@@ -49,7 +49,10 @@ def delete_rule(tenant_id: str, document_type: str) -> bool:
 
 
 def apply_extraction_rules(
-    tenant_id: str, document_type: str, fields: dict[str, Any]
+    tenant_id: str,
+    document_type: str,
+    fields: dict[str, Any],
+    missing_fields: list[str] | None = None,
 ) -> ExtractionRuleResult:
     rules = get_rules(tenant_id, document_type)
 
@@ -61,7 +64,8 @@ def apply_extraction_rules(
     optional = set(rule.get("optionalFields", []))
     allowed = required | optional
 
-    filtered = {k: v for k, v in fields.items() if k in allowed}
+    absent = set(missing_fields or []) & required
+    filtered = {k: v for k, v in fields.items() if k in allowed and k not in absent}
     missing = sorted(required - set(filtered.keys()))
 
     return ExtractionRuleResult(fields=filtered, missing_required_field_list=missing)

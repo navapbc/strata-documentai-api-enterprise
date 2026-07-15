@@ -95,6 +95,7 @@ class DocumentMetadata:
 
     # list of blueprint fields that were expected but did not have any data extracted
     BDA_MATCHED_BLUEPRINT_FIELD_EMPTY_LIST = "matchedBlueprintFieldEmptyList"
+    BDA_MATCHED_BLUEPRINT_FIELD_MISSING_GEOMETRY_LIST = "matchedBlueprintFieldMissingGeometryList"
     BDA_MATCHED_BLUEPRINT_FIELD_BELOW_THRESHOLD_LIST = "matchedBlueprintFieldBelowThresholdList"
     BDA_MATCHED_BLUEPRINT_FIELD_COUNT = "matchedBlueprintFieldCount"
     BDA_MATCHED_BLUEPRINT_FIELD_COUNT_NOT_EMPTY = "matchedBlueprintFieldCountNotEmpty"

@@ -147,3 +147,45 @@ def test_apply_extraction_rules_no_rules(extraction_rules_table):
 
     assert result.fields == fields
     assert result.missing_required_field_list == []
+
+
+@pytest.mark.parametrize(
+    ("missing_fields", "expected_missing_required", "excluded_from_result"),
+    [
+        # Required fields flagged as missing -> removed and reported
+        (
+            ["PayPeriodStartDate", "YTDGrossPay"],
+            ["PayPeriodStartDate", "YTDGrossPay"],
+            ["PayPeriodStartDate", "YTDGrossPay"],
+        ),
+        # Optional field flagged -> kept in response, not reported
+        (["EmployerName"], [], []),
+        # None -> legacy noop
+        (None, [], []),
+    ],
+)
+def test_apply_extraction_rules_missing_fields(
+    extraction_rules_table, missing_fields, expected_missing_required, excluded_from_result
+):
+    extraction_rules_table.put_item(
+        Item={
+            "tenantId": "t1",
+            "documentType": "Payslip",
+            "requiredFields": ["GrossPay", "PayPeriodStartDate", "YTDGrossPay"],
+            "optionalFields": ["EmployerName"],
+            "createdAt": "2026-01-01",
+            "updatedAt": "2026-01-01",
+        }
+    )
+
+    fields = {
+        "GrossPay": "5000",
+        "PayPeriodStartDate": "2025-01-01",
+        "YTDGrossPay": "",
+        "EmployerName": "Acme",
+    }
+    result = apply_extraction_rules("t1", "Payslip", fields, missing_fields=missing_fields)
+
+    for f in excluded_from_result:
+        assert f not in result.fields
+    assert sorted(result.missing_required_field_list) == sorted(expected_missing_required)

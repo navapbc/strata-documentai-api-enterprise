@@ -67,16 +67,27 @@ def calculate_field_metrics(data: ClassificationData) -> FieldMetrics:
     if not data.field_confidence_scores:
         return FieldMetrics(0, 0, None)
 
+    from documentai_api.utils.ssm import is_missing_geo_included_with_missing_fields
+
     field_count = len(data.field_confidence_scores)
     empty_fields = set(data.field_empty_list or [])
+
+    if is_missing_geo_included_with_missing_fields():
+        missing_geometry_fields = set(data.field_missing_geometry_list or [])
+        excluded_fields = empty_fields | missing_geometry_fields
+    else:
+        excluded_fields = empty_fields
+        missing_geometry_fields = set()
 
     non_empty_count = sum(
         1
         for field_data in data.field_confidence_scores
-        if next(iter(field_data.keys())) not in empty_fields
+        if next(iter(field_data.keys())) not in excluded_fields
     )
     avg_confidence = calculate_average_non_empty_confidence(
-        data.field_confidence_scores, data.field_empty_list
+        data.field_confidence_scores,
+        data.field_empty_list,
+        list(missing_geometry_fields) if missing_geometry_fields else None,
     )
 
     return FieldMetrics(field_count, non_empty_count, avg_confidence)

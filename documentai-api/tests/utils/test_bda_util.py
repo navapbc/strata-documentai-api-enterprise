@@ -1,8 +1,13 @@
+import json
+from pathlib import Path
+
 import pytest
 
 from documentai_api.config.constants import ProcessStatus
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils import bda as bda_util
+
+FIXTURES_DIR = Path(__file__).parent / ".." / "helpers" / "fixtures" / "bda"
 
 
 @pytest.mark.parametrize(
@@ -167,3 +172,38 @@ def test_get_ddb_record_from_bda_output_returns_none_no_record(ddb_doc_metadata_
     """Valid UUID in key but no DDB record with that invocation ID returns None."""
     result = bda_util.get_ddb_record_from_bda_output(BDA_OUTPUT_BUCKET, BDA_OUTPUT_KEY)
     assert result is None
+
+
+# =============================================================================
+# Missing geometry detection (hallucinated fields)
+# =============================================================================
+
+
+def test_extract_fields_identifies_missing_geometry_from_fixture(monkeypatch):
+    """Fields without geometry and below threshold are flagged as missing."""
+    monkeypatch.setattr("documentai_api.utils.bda._get_missing_geometry_threshold", lambda: 0.25)
+
+    fixture_path = FIXTURES_DIR / "payslip_missing_geometry.json"
+    bda_result = json.loads(fixture_path.read_text())
+
+    metadata, _, _ = bda_util.extract_field_values_from_bda_results(bda_result)
+
+    # These fields have values but no geometry and confidence < 0.25
+    assert "PayPeriodStartDate" in metadata.fields_missing_geometry
+    assert "PayPeriodEndDate" in metadata.fields_missing_geometry
+    assert "are_field_names_sufficient" in metadata.fields_missing_geometry
+
+    # Fields WITH geometry should NOT be in the missing list
+    assert "CurrentGrossPay" not in metadata.fields_missing_geometry
+    assert "RegularHourlyRate" not in metadata.fields_missing_geometry
+    assert "EmployeeNumber" not in metadata.fields_missing_geometry
+
+    # Empty fields should be in empty_fields, not missing_geometry
+    assert "YTDNetPay" in metadata.empty_fields
+    assert "YTDNetPay" not in metadata.fields_missing_geometry
+
+    # Missing geometry fields should NOT be in confidence_scores
+    for score_map in metadata.field_confidence_map_list:
+        field_name = next(iter(score_map.keys()))
+        if field_name in metadata.fields_missing_geometry:
+            assert score_map[field_name] not in metadata.confidence_scores

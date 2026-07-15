@@ -502,3 +502,67 @@ def test_nest_fields_preserves_legacy_camelcase_keys():
     # camelCase segments are preserved verbatim (not lowercased) and still nest
     assert nested["tenantName"] == {"confidence": 0.93, "value": "Jane"}
     assert nested["paymentDetails"]["baseRent"]["value"] == "1200"
+
+
+def test_build_v1_api_response_missing_geometry_and_empty_fields_trigger_101(
+    s3_bucket,
+    ddb_doc_metadata_table,
+    extraction_rules_table,
+    monkeypatch,
+):
+    """DDB missing-geometry + empty lists union into missing_fields -> 101."""
+    import json
+
+    from documentai_api.config.constants import BdaResponseFields
+
+    bda_results = {
+        BdaResponseFields.EXPLAINABILITY_INFO: [
+            {
+                "GrossPay": {"confidence": 0.95, "value": "5000"},
+                "PayPeriodStartDate": {"confidence": 0.12, "value": "2025-01-01"},
+                "YTDGrossPay": {"confidence": 0.94, "value": ""},
+            }
+        ]
+    }
+    bda_obj = s3_bucket.put_object(Key="missing-geo.json", Body=json.dumps(bda_results))
+
+    ddb_record = {
+        DocumentMetadata.FILE_NAME: "missing-geo-key",
+        DocumentMetadata.JOB_ID: "missing-geo-job",
+        DocumentMetadata.BDA_OUTPUT_S3_URI: f"s3://{bda_obj.bucket_name}/{bda_obj.key}",
+        DocumentMetadata.BDA_MATCHED_DOCUMENT_CLASS: "Payslip",
+        DocumentMetadata.CREATED_AT: "2026-01-01T00:00:00+00:00",
+        DocumentMetadata.FIELD_CONFIDENCE_SCORES: (
+            '[{"GrossPay": 0.95}, {"PayPeriodStartDate": 0.12}, {"YTDGrossPay": 0.94}]'
+        ),
+        DocumentMetadata.BDA_MATCHED_BLUEPRINT_FIELD_MISSING_GEOMETRY_LIST: json.dumps(
+            ["PayPeriodStartDate"]
+        ),
+        DocumentMetadata.BDA_MATCHED_BLUEPRINT_FIELD_EMPTY_LIST: json.dumps(["YTDGrossPay"]),
+        "tenantId": "t1",
+    }
+    ddb_doc_metadata_table.put_item(Item=ddb_record)
+
+    extraction_rules_table.put_item(
+        Item={
+            "tenantId": "t1",
+            "documentType": "Payslip",
+            "requiredFields": ["GrossPay", "PayPeriodStartDate", "YTDGrossPay"],
+            "optionalFields": [],
+            "createdAt": "2026-01-01",
+            "updatedAt": "2026-01-01",
+        }
+    )
+
+    monkeypatch.setattr(
+        "documentai_api.utils.ssm.is_missing_geo_included_with_missing_fields",
+        lambda: True,
+    )
+
+    response = response_builder_util.build_v1_api_response(
+        "missing-geo-key", ProcessStatus.SUCCESS.value, include_extracted_data=True
+    )
+
+    assert response["responseCode"] == ResponseCodes.MISSING_FIELDS
+    assert sorted(response["missingRequiredFieldList"]) == ["PayPeriodStartDate", "YTDGrossPay"]
+    assert "GrossPay" in response["fields"]

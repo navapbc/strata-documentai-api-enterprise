@@ -15,6 +15,7 @@ class ClassificationData:
     field_confidence_scores: list[dict[str, float]] | None = None
     field_below_threshold_list: list[str] | None = None
     field_empty_list: list[str] | None = None
+    field_missing_geometry_list: list[str] | None = None
     additional_info: str | None = None
 
 
