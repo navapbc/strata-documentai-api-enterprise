@@ -136,6 +136,7 @@ class ConfigDefaults:
         20  # total words needed to consider empty quadrants suspicious (LLM fallback gate)
     )
     BLUR_QUADRANT_MODEL_ID = "us.amazon.nova-pro-v1:0"  # model for empty-quadrant blur check (Pro needed for spatial reasoning)
+    MISSING_GEOMETRY_CONFIDENCE_THRESHOLD = 0.25
     BDA_MAX_IMAGE_SIZE_BYTES = 5_242_880
     BDA_MAX_DOCUMENT_FILE_SIZE_BYTES = 524_288_000
     # Bedrock Converse per-image limits (used by the vision bbox-detection call).

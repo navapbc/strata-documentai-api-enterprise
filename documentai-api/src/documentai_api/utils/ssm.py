@@ -84,3 +84,20 @@ def is_textract_identity_enabled() -> bool:
         return False
     param = f"{config.ssm_prefix}/feature-flags/textract-identity-enabled"
     return get_parameter_value(param, default="false").lower() == "true"
+
+
+def is_missing_geo_included_with_missing_fields() -> bool:
+    """Whether fields without geometry and below confidence threshold are treated as missing.
+
+    When enabled, non-empty fields lacking a bounding box (geometry) with confidence
+    below the configured threshold are excluded from the non-empty count, excluded
+    from average confidence, and treated as absent for extraction rule evaluation
+    (triggering response code 101 if required). Default: true.
+    """
+    from documentai_api.config.env import get_aws_config
+
+    config = get_aws_config()
+    if not config.ssm_prefix:
+        return True
+    param = f"{config.ssm_prefix}/feature-flags/include-missing-geo-with-missing-fields"
+    return get_parameter_value(param, default="true").lower() == "true"

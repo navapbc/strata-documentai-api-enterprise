@@ -37,6 +37,7 @@ class BdaProcessingResults:
     """Data elements derrived from BDA output."""
 
     empty_field_list: list[str] = field(default_factory=list)
+    fields_missing_geometry: list[str] = field(default_factory=list)
     field_confidence_map_list: list[dict[str, float]] = field(default_factory=list)
     response_code: str | None = None
 
@@ -52,6 +53,7 @@ def get_bda_processing_results(bda_result_json: dict[str, Any]) -> BdaProcessing
     return BdaProcessingResults(
         field_confidence_map_list=field_data.field_confidence_map_list,
         empty_field_list=field_data.empty_fields,
+        fields_missing_geometry=field_data.fields_missing_geometry or [],
         response_code=response_code,
     )
 
@@ -140,6 +142,7 @@ def process_bda_output(
 
         classification_data.field_confidence_scores = results.field_confidence_map_list
         classification_data.field_empty_list = results.empty_field_list
+        classification_data.field_missing_geometry_list = results.fields_missing_geometry
         classification_data.additional_info = msg
 
         # Check average confidence against tenant's extraction confidence floor
@@ -180,7 +183,7 @@ def _is_below_extraction_confidence_floor(
 ) -> bool:
     """Check if average non-empty field confidence is below the tenant's floor."""
     avg_confidence = calculate_average_non_empty_confidence(
-        results.field_confidence_map_list, results.empty_field_list
+        results.field_confidence_map_list, results.empty_field_list, results.fields_missing_geometry
     )
     if avg_confidence is None:
         return False

@@ -303,6 +303,8 @@ module "config" {
     "feature-flags/textract-identity-enabled"                   = "true"
     "feature-flags/enable-blur-detection"                       = "true"
     "feature-flags/enforce-blur-rejection"                      = "true"
+    "feature-flags/include-missing-geo-with-missing-fields"                = "true"
+    # Thresholds
     # Vision model ids - swappable at runtime via SSM (no redeploy). Kept as
     # separate params so preclassification and bbox detection can be tuned apart.
     #   Lite  - vision tasks (preclassification, blueprint match: model sees the image)
@@ -323,6 +325,7 @@ module "config" {
     "feature-flags/textract-identity-enabled"                   = "^(true|false)$"
     "feature-flags/enable-blur-detection"                       = "^(true|false)$"
     "feature-flags/enforce-blur-rejection"                      = "^(true|false)$"
+    "feature-flags/include-missing-geo-with-missing-fields"                = "^(true|false)$"
   }
 }
 

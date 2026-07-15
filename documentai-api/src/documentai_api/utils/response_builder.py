@@ -206,8 +206,27 @@ def build_v1_api_response(
             if tenant_id and document_type and fields:
                 try:
                     from documentai_api.utils.extraction_rules import apply_extraction_rules
+                    from documentai_api.utils.ssm import is_missing_geo_included_with_missing_fields
 
-                    rule_result = apply_extraction_rules(tenant_id, document_type, fields)
+                    # Build the set of fields to treat as missing for rule evaluation
+                    missing_fields: list[str] = []
+                    if is_missing_geo_included_with_missing_fields():
+                        for key in (
+                            DocumentMetadata.BDA_MATCHED_BLUEPRINT_FIELD_MISSING_GEOMETRY_LIST,
+                            DocumentMetadata.BDA_MATCHED_BLUEPRINT_FIELD_EMPTY_LIST,
+                        ):
+                            raw = ddb_record.get(key)
+                            if raw:
+                                missing_fields.extend(
+                                    json.loads(raw) if isinstance(raw, str) else raw
+                                )
+
+                    rule_result = apply_extraction_rules(
+                        tenant_id,
+                        document_type,
+                        fields,
+                        missing_fields=missing_fields or None,
+                    )
                     fields = rule_result.fields
 
                     if rule_result.missing_required_field_list:
