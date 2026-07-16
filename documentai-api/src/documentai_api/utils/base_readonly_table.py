@@ -13,6 +13,8 @@ Subclass and declare table config to get standard read operations:
 
 from typing import Any
 
+from fastapi import HTTPException, status
+
 from documentai_api.config.env import get_aws_config
 from documentai_api.logging import get_logger
 from documentai_api.services import ddb as ddb_service
@@ -31,7 +33,13 @@ class ReadOnlyTable:
     def _get_table_name(self) -> str:
         table_name: str | None = getattr(get_aws_config(), self.table_name_env.lower(), None)
         if not table_name:
-            raise ValueError(f"{self.table_name_env} not configured")
+            # Log the specific config name for operators; keep it out of the
+            # client-facing response so we don't leak internal table names.
+            logger.error("Required table not configured: %s", self.table_name_env)
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Storage not configured",
+            )
         return table_name
 
     def _build_key(self, pk_value: str, sk_value: str | None = None) -> dict[str, str]:
