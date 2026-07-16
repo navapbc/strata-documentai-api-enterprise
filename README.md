@@ -45,7 +45,7 @@ For Strata template applications, see [`navapbc/strata`](https://github.com/nava
 ```
 ├── documentai-api/     # Python API using FastAPI on Lambda
 ├── ui/
-│   ├── shared/         # Shared services, utils, and styles
+│   ├── shared/         # Shared services, utils, styles, and recording fixtures
 │   ├── admin/          # Admin console (vanilla JS SPA)
 │   └── demo/           # Demo UI (upload + extraction with bbox overlay)
 ├── infra/              # Terraform infrastructure
@@ -61,8 +61,9 @@ Before getting started, install and configure:
 - AWS CLI
 - Terraform 1.10 or newer
 - Docker
-- Node.js 18 or newer
+- Node.js 20 or newer (22 recommended)
 - Python 3.11 or newer with [uv](https://github.com/astral-sh/uv)
+- ffmpeg (for generating demo GIFs — `brew install ffmpeg`)
 
 You will also need an AWS profile with permission to create the required infrastructure.
 
@@ -206,6 +207,13 @@ cd ui/admin
 npm run dev       # Dev server at localhost:3000
 npm test          # Unit tests (Vitest)
 npm run test:e2e  # e2e tests (Playwright)
+```
+
+To regenerate the demo GIFs (requires `ffmpeg`):
+
+```bash
+make record-admin-ui       # admin console walkthrough
+make record-rules-ui       # extraction rules walkthrough
 ```
 
 ### ui/demo/

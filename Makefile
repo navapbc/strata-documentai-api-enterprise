@@ -5,6 +5,11 @@
 	deploy-admin-ui \
 	deploy-demo-ui \
 	deploy-ui \
+	record-admin-ui \
+	record-rules-ui \
+	record-demo-ui \
+	record-ui \
+	playwright-install \
 	format \
 	lint \
 	test \
@@ -18,6 +23,7 @@ ENVIRONMENT ?= dev
 AWS_PROFILE ?= nava-sandbox
 AWS_ARGS := --profile $(AWS_PROFILE)
 TF_DIR := infra/environments/$(ENVIRONMENT)
+MEDIA_DIR := docs/documentai-api/media
 
 deploy: ## Deploy everything (infra + UIs)
 deploy: deploy-infra deploy-ui
@@ -83,6 +89,31 @@ deploy-demo-ui: ## Build demo UI and sync to S3 + invalidate CloudFront
 		$(AWS_ARGS) \
 		--no-cli-pager && \
 	echo "Demo UI deployed."
+
+record-ui: ## Regenerate demo videos for both UIs (webm + gif)
+record-ui: record-admin-ui record-rules-ui record-demo-ui
+
+playwright-install: ## Install Playwright Chromium browser for both UIs
+	cd ui/admin && npx playwright install chromium
+	cd ui/demo && npx playwright install chromium
+
+record-admin-ui: ## Record admin console walkthrough video -> $(MEDIA_DIR)/admin-walkthrough.gif
+record-admin-ui: playwright-install
+	@which ffmpeg > /dev/null 2>&1 || (echo "Error: ffmpeg not found. Install with: brew install ffmpeg" && exit 1)
+	cd ui/admin && npm run record -- --grep "admin console"
+	ui/shared/scripts/webm-to-gif.sh ui/admin/video-output/*/video.webm $(MEDIA_DIR)/admin-walkthrough.gif
+
+record-rules-ui: ## Record extraction rules walkthrough video -> $(MEDIA_DIR)/admin-extraction-rules-walkthrough.gif
+record-rules-ui: playwright-install
+	@which ffmpeg > /dev/null 2>&1 || (echo "Error: ffmpeg not found. Install with: brew install ffmpeg" && exit 1)
+	cd ui/admin && npm run record -- --grep "extraction rules"
+	ui/shared/scripts/webm-to-gif.sh ui/admin/video-output/*/video.webm $(MEDIA_DIR)/admin-extraction-rules-walkthrough.gif
+
+record-demo-ui: ## Record demo UI walkthrough video -> $(MEDIA_DIR)/demo-walkthrough.gif
+record-demo-ui: playwright-install
+	@which ffmpeg > /dev/null 2>&1 || (echo "Error: ffmpeg not found. Install with: brew install ffmpeg" && exit 1)
+	cd ui/demo && npx playwright test --config=playwright.video.config.js
+	ui/shared/scripts/webm-to-gif.sh ui/demo/video-output/*/video.webm $(MEDIA_DIR)/demo-walkthrough.gif
 
 help: ## Show help
 	@grep -Eh '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'

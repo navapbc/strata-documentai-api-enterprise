@@ -33,6 +33,9 @@ regexes = [
   # config/env.py — boto3 SSM get_parameter call (Name=..., WithDecryption=True),
   # not a hardcoded secret; the value is fetched from SSM at runtime.
   '''api_auth_insecure_shared_key_param''',
+  # docs/documentai-api/setup-demo.tape — hardcoded local dev key used in the
+  # VHS terminal recording curl example. Not a real credential.
+  '''local-dev-key''',
 ]
 
 # tests/jobs/test_document_processor_job.py — generic-api-key false positive: the
