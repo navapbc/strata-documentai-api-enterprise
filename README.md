@@ -27,10 +27,6 @@ For Strata template applications, see [`navapbc/strata`](https://github.com/nava
 
 ## See it in action
 
-**Local API quickstart** - clone, start, curl. No AWS required.
-
-![Local API setup](docs/documentai-api/media/setup-demo.gif)
-
 **Admin console** - tenant and user management, API keys, document review.
 
 ![Admin console walkthrough](docs/documentai-api/media/admin-walkthrough.gif)

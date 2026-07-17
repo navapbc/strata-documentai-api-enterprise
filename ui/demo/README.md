@@ -1,6 +1,6 @@
 # DocumentAI Demo UI
 
-Minimal demo app for uploading documents and viewing extraction results with bounding box overlay. Scoped to the authenticated user's tenant — no admin features.
+Minimal demo app for uploading documents and viewing extraction results with bounding box overlay. Scoped to the authenticated user's tenant - no admin features.
 
 ## Prerequisites
 
@@ -23,7 +23,7 @@ Serves at `localhost:3001`. Update `config.json` with your API endpoint and Cogn
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Dev server at localhost:3001 |
-| `npm run build` | Production bundle → `dist/` |
+| `npm run build` | Production bundle -> `dist/` |
 | `npm test` | Unit tests (Vitest) |
 | `npm run test:watch` | Unit tests in watch mode |
 | `npm run test:e2e` | e2e tests (Playwright) |

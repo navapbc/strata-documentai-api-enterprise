@@ -1,10 +1,10 @@
 # Extraction rules
 
-When a document is processed, the platform extracts every field the AI model finds. Extraction rules let you control which of those fields actually matter - and which should be ignored - on a per-tenant, per-document-type basis.
+When a document is processed, the platform extracts every field the AI model finds. Extraction rules let you control which of those fields matter - and which should be ignored - on a per-tenant, per-document-type basis.
 
 ## The problem they solve
 
-Different organizations care about different things from the same document. A driver's license processed for one agency might need name, date of birth, and license number. Another agency might only need name and expiration date, and actively doesn't want license number stored. Without rules, every tenant gets every field the model returns - including fields they don't need, didn't ask for, and may not be allowed to retain.
+Different organizations care about different things from the same document. A driver's license processed for one consumer might need name, date of birth, and license number. Another consumer might only need name and expiration date, and must not retain the license number. Without rules, every tenant gets every field the model returns - including fields they don't need and may not be permitted to store.
 
 ## How rules work
 
@@ -19,7 +19,7 @@ Any field not on either list is excluded from the result entirely. The tenant ne
 
 If a field isn't in required or optional, it's filtered out before the result is stored or returned. It doesn't appear in the document viewer, it doesn't show up in the API response, and it isn't written to the database. The raw model output still exists in S3, but the processed result only contains what the rule allows.
 
-## No rule = no filtering
+## Default behavior
 
 If no rule exists for a tenant and document type, all extracted fields are returned as-is. This is the default behavior - useful during initial setup or testing, but not recommended for production tenants where field control matters.
 

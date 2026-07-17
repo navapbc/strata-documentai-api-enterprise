@@ -23,7 +23,7 @@ Serves at `localhost:3000`. Update `config.json` with your API endpoint and Cogn
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Dev server at localhost:3000 |
-| `npm run build` | Production bundle → `dist/bundle.js` |
+| `npm run build` | Production bundle -> `dist/bundle.js` |
 | `npm test` | Unit tests (Vitest) |
 | `npm run test:watch` | Unit tests in watch mode |
 | `npm run test:e2e` | e2e tests (Playwright) |

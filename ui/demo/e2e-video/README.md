@@ -1,8 +1,8 @@
 # Scripted demo video
 
-A re-generatable UI walkthrough of the demo app — the browser analog of a
+A re-generatable UI walkthrough of the demo app - the browser analog of a
 terminal (VHS) recording. It drives the real SPA through
-**login → MFA → upload → extraction results with the bounding-box overlay**, but
+**login -> MFA -> upload -> extraction results with the bounding-box overlay**, but
 mocks every network dependency (`config.json`, Cognito, the API) so it runs
 **offline, deterministically, with no credentials or deployed infra**.
 
@@ -31,9 +31,9 @@ Output: `video-output/<test>/video.webm` (1280×800).
 
 ## What to edit
 
-- **The document / extracted fields** — the `FIELDS` array in `demo-walkthrough.spec.js` is
+- **The document / extracted fields** - the `FIELDS` array in `demo-walkthrough.spec.js` is
   the single source of truth: it draws the synthetic W-2 preview *and* derives
   the normalised bounding boxes, so overlay boxes always land on the values.
-- **Pacing** — `launchOptions.slowMo` in `playwright.video.config.js` plus the
+- **Pacing** - `launchOptions.slowMo` in `playwright.video.config.js` plus the
   `waitForTimeout` beats in the spec.
-- **Mocked responses** — the `page.route(...)` handlers at the top of the test.
+- **Mocked responses** - the `page.route(...)` handlers at the top of the test.

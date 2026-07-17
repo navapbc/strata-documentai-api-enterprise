@@ -7,7 +7,7 @@
 - Docker
 - Node.js 20 or newer (22 recommended)
 - Python 3.11 or newer with [uv](https://github.com/astral-sh/uv)
-- ffmpeg — only needed for regenerating demo GIFs (`brew install ffmpeg`)
+- ffmpeg - only needed for regenerating demo GIFs (`brew install ffmpeg`)
 
 ## First-time setup
 
@@ -76,7 +76,7 @@ make init
 make start
 ```
 
-Runs at `localhost:8000`. The default `.env` sets `API_AUTH_INSECURE_SHARED_KEY=local-dev-key` — use `API-Key: local-dev-key` in requests. No DynamoDB or Cognito needed.
+Runs at `localhost:8000`. The default `.env` sets `API_AUTH_INSECURE_SHARED_KEY=local-dev-key` - use `API-Key: local-dev-key` in requests. No DynamoDB or Cognito needed.
 
 See [documentai-api/README.md](documentai-api/README.md) for the full command reference.
 
@@ -109,4 +109,4 @@ cd infra
 make infra-destroy ENVIRONMENT=dev
 ```
 
-S3 buckets with objects and ECR repositories with images may block destroy — empty them first. The Terraform state bucket is not destroyed by design.
+S3 buckets with objects and ECR repositories with images may block destroy - empty them first. The Terraform state bucket is not destroyed by design.

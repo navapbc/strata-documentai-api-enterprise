@@ -9,13 +9,16 @@
  * @param {string[]} [opts.groups]
  * @param {Function} [opts.expect]
  */
-export async function loginWithMfa(page, {
-  email = "admin@example.com",
-  password = "AdminPassword123!",
-  session = "session-token",
-  groups = ["super-admin"],
-  expect,
-} = {}) {
+export async function loginWithMfa(
+  page,
+  {
+    email = "admin@example.com",
+    password = "AdminPassword123!",
+    session = "session-token",
+    groups = ["super-admin"],
+    expect,
+  } = {},
+) {
   const json = (body) => ({
     status: 200,
     contentType: "application/json",
@@ -25,18 +28,22 @@ export async function loginWithMfa(page, {
   await page.route(/cognito-idp\./, async (route) => {
     const target = route.request().headers()["x-amz-target"] || "";
     if (target.includes("InitiateAuth")) {
-      return route.fulfill(json({ ChallengeName: "SOFTWARE_TOKEN_MFA", Session: session }));
+      return route.fulfill(
+        json({ ChallengeName: "SOFTWARE_TOKEN_MFA", Session: session }),
+      );
     }
     if (target.includes("RespondToAuthChallenge")) {
       const payload = btoa(JSON.stringify({ "cognito:groups": groups, email }));
-      return route.fulfill(json({
-        AuthenticationResult: {
-          AccessToken: "access-token",
-          IdToken: `h.${payload}.s`,
-          RefreshToken: "refresh-token",
-          ExpiresIn: 3600,
-        },
-      }));
+      return route.fulfill(
+        json({
+          AuthenticationResult: {
+            AccessToken: "access-token",
+            IdToken: `h.${payload}.s`,
+            RefreshToken: "refresh-token",
+            ExpiresIn: 3600,
+          },
+        }),
+      );
     }
     return route.fulfill(json({}));
   });

@@ -8,7 +8,7 @@ import { hoverFields, expectBboxOverlay } from "../../shared/e2e/helpers/documen
 //
 // Flow: login -> MFA -> Documents -> open W-2 -> bbox overlay -> field hover
 //
-// All network dependencies are mocked — runs offline, no credentials needed.
+// All network dependencies are mocked - runs offline, no credentials needed.
 // ---------------------------------------------------------------------------
 
 const TENANT_ID = "acme-corp";

@@ -6,9 +6,18 @@
  * @param {string} [rowSelector] - base selector for field rows
  * @param {number} [pauseMs] - pause between hovers
  */
-export async function hoverFields(page, fieldNames, rowSelector = "tr[data-field]", pauseMs = 800) {
+export async function hoverFields(
+  page,
+  fieldNames,
+  rowSelector = "tr[data-field]",
+  pauseMs = 800,
+) {
   for (const name of fieldNames) {
-    await page.locator(`${rowSelector.replace("[data-field]", "")}[data-field="${name}"]`).hover();
+    await page
+      .locator(
+        `${rowSelector.replace("[data-field]", "")}[data-field="${name}"]`,
+      )
+      .hover();
     await page.waitForTimeout(pauseMs);
   }
 }
@@ -20,7 +29,11 @@ export async function hoverFields(page, fieldNames, rowSelector = "tr[data-field
  * @param {Function} expect
  * @param {string} [overlaySelector]
  */
-export async function expectBboxOverlay(page, expect, overlaySelector = ".bbox-overlay rect") {
+export async function expectBboxOverlay(
+  page,
+  expect,
+  overlaySelector = ".bbox-overlay rect",
+) {
   const rects = page.locator(overlaySelector);
   await expect(rects.first()).toBeVisible();
   expect(await rects.count()).toBeGreaterThan(0);

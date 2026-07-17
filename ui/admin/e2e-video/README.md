@@ -25,7 +25,7 @@ First run: `make playwright-install` (installs Chromium) and ensure `ffmpeg` is 
 
 ## What to edit
 
-- **Synthetic data** — arrays at the top of each spec (`TENANTS`, `KEYS`, `USERS`, `DOCUMENTS`, `FIELDS`)
-- **Shared W-2 fixture** — `ui/shared/e2e/fixtures/recording/w2-document.js`
-- **Pacing** — `launchOptions.slowMo` in `playwright.video.config.js` and `waitForTimeout` calls in the spec
-- **Flow** — add or reorder navigation steps in the test body
+- **Synthetic data** - arrays at the top of each spec (`TENANTS`, `KEYS`, `USERS`, `DOCUMENTS`, `FIELDS`)
+- **Shared W-2 fixture** - `ui/shared/e2e/fixtures/recording/w2-document.js`
+- **Pacing** - `launchOptions.slowMo` in `playwright.video.config.js` and `waitForTimeout` calls in the spec
+- **Flow** - add or reorder navigation steps in the test body

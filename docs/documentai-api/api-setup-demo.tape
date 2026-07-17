@@ -1,12 +1,12 @@
-# DocumentAI API — local setup from scratch (VHS tape)
+# DocumentAI API - local setup from scratch (VHS tape)
 # Records the exact documented steps: clone -> .env -> make init -> make start -> curl.
-# Run from an empty directory:  vhs setup-demo.tape
-# Produces setup-demo.mp4 (faithful full run). Derive a short GIF with:
-#   ffmpeg -i setup-demo.mp4 -filter_complex \
+# Run from an empty directory:  vhs api-setup-demo.tape
+# Produces api-setup-demo.mp4 (faithful full run). Derive a short GIF with:
+#   ffmpeg -i api-setup-demo.mp4 -filter_complex \
 #     "[0:v]setpts=PTS/SPEED,fps=12,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=bayer" \
-#     setup-demo.gif
+#     api-setup-demo.gif
 
-Output setup-demo.mp4
+Output api-setup-demo.mp4
 
 Require git
 Require docker
@@ -32,7 +32,7 @@ Sleep 800ms
 Show
 
 # --- 1. clone the repo ---
-Type "git clone -b lgoolsby/update-documentation https://github.com/navapbc/strata-documentai-api-enterprise.git"
+Type "git clone https://github.com/navapbc/strata-documentai-api-enterprise.git"
 Sleep 600ms
 Enter
 Wait

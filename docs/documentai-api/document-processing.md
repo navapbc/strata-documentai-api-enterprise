@@ -18,13 +18,13 @@ For identity documents like driver's licenses and passports, the platform uses A
 
 ## Supported formats
 
-The platform accepts PDF, JPEG, PNG, and TIFF files. PDFs are limited to the first five pages. Documents must not be password-protected.
+The platform accepts PDF, JPEG, PNG, and several other image formats (BMP, GIF, TIFF, WEBP, HEIC/HEIF). PDFs are limited to the first five pages. Documents must not be password-protected.
 
 ## Sync and async upload
 
-By default, upload is asynchronous - the API returns a job ID immediately and processing happens in the background. Clients can poll for status or wait for a webhook.
+By default, upload is asynchronous - the API returns a job ID immediately and processing happens in the background. Clients poll for the result using the job ID.
 
-For use cases that need an immediate result, the upload endpoint supports a `?wait=true` parameter. The request holds open until processing completes and returns the full result in the response.
+For use cases that need an immediate result, a synchronous endpoint (POST /v1/documents/wait) holds the request open until processing completes and returns the full result, subject to a configurable timeout.
 
 ## What comes back
 

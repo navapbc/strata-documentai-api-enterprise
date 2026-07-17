@@ -4,9 +4,9 @@ When a document is processed, the platform stores both the original image and th
 
 ## Bounding box overlay
 
-Every extracted field has coordinates from the model - the bounding box of the text region it was read from. The viewer draws those boxes as an overlay on the document image. When you hover a field in the results panel, its bounding box highlights on the image. When you hover a box on the image, the corresponding field highlights in the panel.
+Every extracted field has coordinates from the model - the bounding box of the text region it was read from. The viewer draws those boxes as an overlay on the document image. Hovering over a field in the results panel highlights its bounding box on the image. Hovering over a box on the image highlights the corresponding field in the panel.
 
-This makes it easy to verify extraction accuracy at a glance - you can see exactly what the model read and where it found it.
+This makes extraction accuracy easy to verify: the overlay shows what the model read and where it found it.
 
 ## What gets shown
 
