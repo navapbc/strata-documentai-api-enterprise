@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { JOB_ID, COMPLETED_DOC, previewDataUrl } from "../../shared/e2e/fixtures/recording/w2-document.js";
+import { loginWithMfa } from "../../shared/e2e/helpers/login.js";
+import { hoverFields, expectBboxOverlay } from "../../shared/e2e/helpers/document-viewer.js";
 
 // ---------------------------------------------------------------------------
 // Scripted, re-generatable DEMO VIDEO of the DocumentAI Admin Console.
@@ -65,32 +67,6 @@ test("admin console walkthrough: login -> MFA -> keys -> tenants -> users -> doc
     ),
   );
 
-  // --- Cognito: password sign-in -> MFA challenge -> tokens ------------------
-  await page.route(/cognito-idp\./, async (route) => {
-    const target = route.request().headers()["x-amz-target"] || "";
-    if (target.includes("InitiateAuth")) {
-      return route.fulfill(
-        json({ ChallengeName: "SOFTWARE_TOKEN_MFA", Session: "admin-session-token" }),
-      );
-    }
-    if (target.includes("RespondToAuthChallenge")) {
-      const payload = btoa(
-        JSON.stringify({ "cognito:groups": ["super-admin"], email: "admin@example.com" }),
-      );
-      return route.fulfill(
-        json({
-          AuthenticationResult: {
-            AccessToken: "admin-access-token",
-            IdToken: `h.${payload}.s`,
-            RefreshToken: "admin-refresh-token",
-            ExpiresIn: 3600,
-          },
-        }),
-      );
-    }
-    return route.fulfill(json({}));
-  });
-
   // --- API: all admin endpoints --------------------------------------------
   await page.route("**/v1/admin/api-keys**", (route) =>
     route.fulfill(json({ keys: KEYS })),
@@ -118,21 +94,11 @@ test("admin console walkthrough: login -> MFA -> keys -> tenants -> users -> doc
     route.fulfill(json({ fields: [] })),
   );
 
-  // === 1. Login ============================================================
+  // === 1. Login + MFA ======================================================
   await page.goto("/");
-  await expect(page.locator("#sign-in-card")).toBeVisible();
-  await page.fill("#sign-in-email", "admin@example.com");
-  await page.fill("#sign-in-password", "AdminPassword123!");
-  await page.waitForTimeout(600);
-  await page.click('#sign-in-form button[type="submit"]');
+  await loginWithMfa(page, { expect });
 
-  // === 2. MFA ==============================================================
-  await expect(page.locator("#mfa-card")).toBeVisible();
-  await page.fill("#mfa-code", "123456");
-  await page.waitForTimeout(500);
-  await page.click('#mfa-form button[type="submit"]');
-
-  // === 3. Dashboard: Tenants ===============================================
+  // === 2. Dashboard: Tenants ===============================================
   await expect(page.locator("#view-title")).toHaveText("");
   await page.locator('[data-section="tenants"]').click();
   await expect(page.locator("#section-tenants")).not.toHaveClass(/hidden/);
@@ -179,16 +145,11 @@ test("admin console walkthrough: login -> MFA -> keys -> tenants -> users -> doc
   // Click the W-2 to show detail panel + bounding box overlay
   await page.locator(`[data-job-id="${JOB_ID}"]`).click();
   await expect(page.locator("#document-detail-panel")).not.toHaveClass(/collapsed/);
-  await expect(page.locator("#document-preview-panel .bbox-overlay rect").first()).toBeVisible();
+  await expectBboxOverlay(page, expect, "#document-preview-panel .bbox-overlay rect");
   await page.waitForTimeout(1000);
 
   // Hover field rows to show bbox highlight
-  await page.locator('tr[data-field="wages"]').hover();
-  await page.waitForTimeout(800);
-  await page.locator('tr[data-field="federalIncomeTaxWithheld"]').hover();
-  await page.waitForTimeout(800);
-  await page.locator('tr[data-field="employerName"]').hover();
-  await page.waitForTimeout(800);
+  await hoverFields(page, ["wages", "federalIncomeTaxWithheld", "employerName"], "#document-detail-panel tr[data-field]");
 
   // Show the status filter dropdown
   await page.locator("#document-status-filter").click();

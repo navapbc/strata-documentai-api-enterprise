@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { loginWithMfa } from "../../shared/e2e/helpers/login.js";
 
 // ---------------------------------------------------------------------------
 // Scripted demo video: Extraction Rules management view.
@@ -60,26 +61,6 @@ test("extraction rules walkthrough", async ({ page }) => {
     })),
   );
 
-  // --- Cognito --------------------------------------------------------------
-  await page.route(/cognito-idp\./, async (route) => {
-    const target = route.request().headers()["x-amz-target"] || "";
-    if (target.includes("InitiateAuth")) {
-      return route.fulfill(json({ ChallengeName: "SOFTWARE_TOKEN_MFA", Session: "session" }));
-    }
-    if (target.includes("RespondToAuthChallenge")) {
-      const payload = btoa(JSON.stringify({ "cognito:groups": ["super-admin"], email: "admin@example.com" }));
-      return route.fulfill(json({
-        AuthenticationResult: {
-          AccessToken: "admin-access-token",
-          IdToken: `h.${payload}.s`,
-          RefreshToken: "admin-refresh-token",
-          ExpiresIn: 3600,
-        },
-      }));
-    }
-    return route.fulfill(json({}));
-  });
-
   // --- API ------------------------------------------------------------------
   await page.route("**/v1/admin/tenants**", (route) =>
     route.fulfill(json({ tenants: [{ tenantId: TENANT_ID, displayName: "Acme Corporation", isActive: true }] })),
@@ -98,19 +79,9 @@ test("extraction rules walkthrough", async ({ page }) => {
   });
   await page.route("**/v1/audit/**", (route) => route.fulfill(json({})));
 
-  // === 1. Login =============================================================
+  // === 1. Login + MFA =======================================================
   await page.goto("/");
-  await expect(page.locator("#sign-in-card")).toBeVisible();
-  await page.fill("#sign-in-email", "admin@example.com");
-  await page.fill("#sign-in-password", "AdminPassword123!");
-  await page.waitForTimeout(600);
-  await page.click('#sign-in-form button[type="submit"]');
-
-  // === 2. MFA ===============================================================
-  await expect(page.locator("#mfa-card")).toBeVisible();
-  await page.fill("#mfa-code", "123456");
-  await page.waitForTimeout(500);
-  await page.click('#mfa-form button[type="submit"]');
+  await loginWithMfa(page, { expect });
 
   // === 3. Navigate to Extraction Rules =====================================
   await page.locator('[data-section="docs"]').click();

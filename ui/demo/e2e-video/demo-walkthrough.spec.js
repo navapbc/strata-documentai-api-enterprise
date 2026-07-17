@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { JOB_ID, COMPLETED_DOC, previewDataUrl } from "../../shared/e2e/fixtures/recording/w2-document.js";
+import { loginWithMfa } from "../../shared/e2e/helpers/login.js";
+import { hoverFields, expectBboxOverlay } from "../../shared/e2e/helpers/document-viewer.js";
 
 // ---------------------------------------------------------------------------
 // Scripted, re-generatable DEMO VIDEO of the DocumentAI demo UI.
@@ -46,29 +48,6 @@ test("demo walkthrough: login -> upload -> extraction with bounding boxes", asyn
     ),
   );
 
-  // --- Cognito: password sign-in -> MFA challenge -> tokens -----------------
-  await page.route(/cognito-idp\./, async (route) => {
-    const target = route.request().headers()["x-amz-target"] || "";
-    if (target.includes("InitiateAuth")) {
-      return route.fulfill(
-        json({ ChallengeName: "SOFTWARE_TOKEN_MFA", Session: "demo-session-token" }),
-      );
-    }
-    if (target.includes("RespondToAuthChallenge")) {
-      return route.fulfill(
-        json({
-          AuthenticationResult: {
-            AccessToken: "demo-access-token",
-            IdToken: "demo-id-token",
-            RefreshToken: "demo-refresh-token",
-            ExpiresIn: 3600,
-          },
-        }),
-      );
-    }
-    return route.fulfill(json({}));
-  });
-
   // --- API: history, upload, poll (started -> success), preview -------------
   let getCalls = 0;
   await page.route("**/v1/demo/documents**", async (route) => {
@@ -93,19 +72,9 @@ test("demo walkthrough: login -> upload -> extraction with bounding boxes", asyn
     return route.fulfill(json(HISTORY));
   });
 
-  // === 1. Login ============================================================
+  // === 1. Login + MFA ======================================================
   await page.goto("/");
-  await expect(page.locator("#sign-in-card")).toBeVisible();
-  await page.fill("#sign-in-email", "demo@example.com");
-  await page.fill("#sign-in-password", "DemoPassword123!");
-  await page.waitForTimeout(600);
-  await page.click('#sign-in-form button[type="submit"]');
-
-  // === 2. MFA ==============================================================
-  await expect(page.locator("#mfa-card")).toBeVisible();
-  await page.fill("#mfa-code", "123456");
-  await page.waitForTimeout(500);
-  await page.click('#mfa-form button[type="submit"]');
+  await loginWithMfa(page, { email: "demo@example.com", password: "DemoPassword123!", groups: [], expect });
 
   // === 3. Upload view ======================================================
   await expect(page.locator("#demo-dropzone")).toBeVisible();
@@ -132,17 +101,16 @@ test("demo walkthrough: login -> upload -> extraction with bounding boxes", asyn
 
   // === 5. Results + bounding-box overlay ===================================
   await expect(page.locator("#demo-results table")).toBeVisible({ timeout: 30_000 });
-  const rects = page.locator("#demo-preview-panel .bbox-overlay rect");
-  await expect(rects.first()).toBeVisible();
-  expect(await rects.count()).toBeGreaterThan(0);
+  await expectBboxOverlay(page, expect, "#demo-preview-panel .bbox-overlay rect");
   await page.waitForTimeout(1200);
 
   // === 6. Show the field <-> box linking (a key selling point) =============
   const rows = page.locator("#demo-results tr[data-field]");
   const n = Math.min(await rows.count(), 4);
+  const fieldNames = [];
   for (let i = 0; i < n; i++) {
-    await rows.nth(i).hover();
-    await page.waitForTimeout(900);
+    fieldNames.push(await rows.nth(i).getAttribute("data-field"));
   }
+  await hoverFields(page, fieldNames, "#demo-results tr[data-field]");
   await page.waitForTimeout(1200);
 });

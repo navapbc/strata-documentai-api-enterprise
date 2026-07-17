@@ -7,6 +7,7 @@
 	deploy-ui \
 	record-admin-ui \
 	record-rules-ui \
+	record-viewer-ui \
 	record-demo-ui \
 	record-ui \
 	playwright-install \
@@ -91,7 +92,7 @@ deploy-demo-ui: ## Build demo UI and sync to S3 + invalidate CloudFront
 	echo "Demo UI deployed."
 
 record-ui: ## Regenerate demo videos for both UIs (webm + gif)
-record-ui: record-admin-ui record-rules-ui record-demo-ui
+record-ui: record-admin-ui record-rules-ui record-viewer-ui record-demo-ui
 
 playwright-install: ## Install Playwright Chromium browser for both UIs
 	cd ui/admin && npx playwright install chromium
@@ -108,6 +109,12 @@ record-rules-ui: playwright-install
 	@which ffmpeg > /dev/null 2>&1 || (echo "Error: ffmpeg not found. Install with: brew install ffmpeg" && exit 1)
 	cd ui/admin && npm run record -- --grep "extraction rules"
 	ui/shared/scripts/webm-to-gif.sh ui/admin/video-output/*/video.webm $(MEDIA_DIR)/admin-extraction-rules-walkthrough.gif
+
+record-viewer-ui: ## Record document viewer walkthrough video -> $(MEDIA_DIR)/document-viewer-walkthrough.gif
+record-viewer-ui: playwright-install
+	@which ffmpeg > /dev/null 2>&1 || (echo "Error: ffmpeg not found. Install with: brew install ffmpeg" && exit 1)
+	cd ui/admin && npm run record -- --grep "document viewer"
+	ui/shared/scripts/webm-to-gif.sh ui/admin/video-output/*/video.webm $(MEDIA_DIR)/document-viewer-walkthrough.gif
 
 record-demo-ui: ## Record demo UI walkthrough video -> $(MEDIA_DIR)/demo-walkthrough.gif
 record-demo-ui: playwright-install
