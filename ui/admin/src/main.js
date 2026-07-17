@@ -61,7 +61,7 @@ const app = document.getElementById("app");
 let _currentView = null;
 let _mainContent = null;
 
-// View registry: name → { module, lazyLoad }
+// View registry: name -> { module, lazyLoad }
 const VIEWS = {
   keys: { module: KeysView },
   users: { module: UsersView },
@@ -160,10 +160,10 @@ function showDashboard(session) {
     _mainContent.addEventListener("click", closeSidebar);
   }
 
-  // Restore view from hash or default to keys
-  const initialHash = location.hash.replace("#", "") || "keys";
+  // Restore view from hash (no default - sidebar starts collapsed)
+  const initialHash = location.hash.replace("#", "");
   const initialView = initialHash.split("/")[0];
-  activateNavItem(VIEWS[initialView] ? initialView : "keys");
+  if (VIEWS[initialView]) activateNavItem(initialView);
 
   // Preload blueprint schemas so extraction-rules view renders instantly
   SchemasService.getAllFields()

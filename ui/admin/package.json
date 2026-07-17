@@ -13,6 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "record": "playwright test --config=playwright.video.config.js",
     "format": "prettier --write src/ styles/ tests/ e2e/ ../shared/",
     "format:check": "prettier --check src/ styles/ tests/ e2e/ ../shared/",
     "preview": "python3 -m http.server 3000"

@@ -201,9 +201,10 @@ async def delete_api_key(
 
             table_name = get_aws_config().api_keys_table_name
             if not table_name:
+                logger.error("Required table not configured: api_keys_table_name")
                 raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="API_KEYS_TABLE_NAME not configured",
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="Storage not configured",
                 )
             record = ddb_service.get_item(table_name, {ApiKeyRecord.KEY_HASH: full_hash})
             if not record or record.get(ApiKeyRecord.TENANT_ID) != caller_tenant:

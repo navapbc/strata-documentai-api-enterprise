@@ -114,8 +114,8 @@ describe("main.js router", () => {
     await import("../../src/main.js");
     await flush();
 
-    // Dashboard rendered - keys view mounted as default
-    expect(KeysView.mount).toHaveBeenCalled();
+    // Dashboard rendered - no default view mounted
+    expect(KeysView.mount).not.toHaveBeenCalled();
     expect(TenantContext.init).toHaveBeenCalled();
     expect(document.querySelector("#connected-url").textContent).toBe("a@b.com");
   });
