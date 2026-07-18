@@ -12,6 +12,7 @@
 	record-ui \
 	record-api-setup \
 	playwright-install \
+	postman \
 	format \
 	lint \
 	test \
@@ -131,6 +132,9 @@ record-api-setup: ## Record local API setup demo -> $(MEDIA_DIR)/api-setup-demo.
 		-filter_complex "[0:v]setpts=PTS/1.0,fps=12,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=bayer" \
 		$(MEDIA_DIR)/api-setup-demo.gif
 	rm -f api-setup-demo.mp4
+
+postman: ## Regenerate the Postman collection from docs/documentai-api/openapi.json
+	docs/documentai-api/postman/build.sh
 
 help: ## Show help
 	@grep -Eh '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'

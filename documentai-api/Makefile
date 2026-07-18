@@ -56,6 +56,7 @@ __check_defined = \
 
 APP_NAME := documentai-api
 APP_DOCS_DIR := $(CURDIR)/../docs/$(APP_NAME)
+POSTMAN_DIR := /docs/documentai-api/postman
 TF_DIR := ../infra/environments/dev
 
 DIAGRAMS := \
@@ -163,16 +164,16 @@ test-e2e: ## Run e2e tests
 ##################################################
 
 format: ## Format code
-	$(PY_RUN_CMD) ruff format $(FMT_ARGS) .
+	$(PY_RUN_CMD) ruff format $(FMT_ARGS) . $(POSTMAN_DIR)
 
 lint: ## Run all linters
 lint: lint-ruff lint-uv lint-mypy
 
 lint-ruff: ## Lint Python code with ruff
-	$(PY_RUN_CMD) ruff check $(LINT_ARGS) .
+	$(PY_RUN_CMD) ruff check $(LINT_ARGS) . $(POSTMAN_DIR)
 
 lint-mypy: ## Type check with mypy
-	$(PY_RUN_CMD) mypy src
+	$(PY_RUN_CMD) mypy src $(POSTMAN_DIR)
 
 lint-uv: ## Check uv lockfile is up-to-date
 	$(RUN_CMD) uv lock --check

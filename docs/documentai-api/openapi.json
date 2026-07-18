@@ -1166,7 +1166,7 @@
             "in": "query",
             "required": false,
             "schema": {
-              "$ref": "#/components/schemas/DictionaryFormatType",
+              "$ref": "#/components/schemas/OutputFormatType",
               "default": "json"
             }
           }
@@ -1220,7 +1220,7 @@
             "in": "query",
             "required": false,
             "schema": {
-              "$ref": "#/components/schemas/DictionaryFormatType",
+              "$ref": "#/components/schemas/OutputFormatType",
               "default": "json"
             }
           }
@@ -1306,7 +1306,7 @@
             "in": "query",
             "required": false,
             "schema": {
-              "$ref": "#/components/schemas/DictionaryFormatType",
+              "$ref": "#/components/schemas/OutputFormatType",
               "default": "json"
             }
           }
@@ -1360,7 +1360,7 @@
             "in": "query",
             "required": false,
             "schema": {
-              "$ref": "#/components/schemas/DictionaryFormatType",
+              "$ref": "#/components/schemas/OutputFormatType",
               "default": "json"
             }
           }
@@ -1414,7 +1414,7 @@
             "in": "query",
             "required": false,
             "schema": {
-              "$ref": "#/components/schemas/DictionaryFormatType",
+              "$ref": "#/components/schemas/OutputFormatType",
               "default": "json"
             }
           }
@@ -2685,6 +2685,90 @@
                 "schema": {
                   "$ref": "#/components/schemas/DocumentPreviewResponse"
                 }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/usage": {
+      "get": {
+        "summary": "Get Usage",
+        "description": "Get usage report for a given month.\n\ngranularity=monthly: per-tenant totals for the month.\ngranularity=daily: per-day breakdown for a specific tenant or global.\n\nSuper-admins see all tenants (or filter with ?tenant_id=X).\nTenant-admins see only their own.\nDefaults to the current month if not specified.",
+        "operationId": "get_usage_v1_admin_usage_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Month"
+            }
+          },
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "granularity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/MetricsGranularity",
+              "default": "monthly"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/OutputFormatType",
+              "default": "json"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           },
@@ -5142,14 +5226,6 @@
         ],
         "title": "DictionaryBlueprintField"
       },
-      "DictionaryFormatType": {
-        "type": "string",
-        "enum": [
-          "json",
-          "csv"
-        ],
-        "title": "DictionaryFormatType"
-      },
       "DictionarySchemaListResponse": {
         "properties": {
           "schemas": {
@@ -6067,6 +6143,7 @@
             "default": {
               "totalFileSizeBytes": 0,
               "totalPages": 0,
+              "totalBdaPages": 0,
               "totalBedrockInputTokens": 0,
               "totalBedrockOutputTokens": 0
             }
@@ -6074,6 +6151,14 @@
         },
         "type": "object",
         "title": "MetricsSummary"
+      },
+      "OutputFormatType": {
+        "type": "string",
+        "enum": [
+          "json",
+          "csv"
+        ],
+        "title": "OutputFormatType"
       },
       "PeriodStats": {
         "properties": {
@@ -6149,6 +6234,7 @@
             "default": {
               "totalFileSizeBytes": 0,
               "totalPages": 0,
+              "totalBdaPages": 0,
               "totalBedrockInputTokens": 0,
               "totalBedrockOutputTokens": 0
             }
@@ -6446,6 +6532,11 @@
           "totalPages": {
             "type": "integer",
             "title": "Totalpages",
+            "default": 0
+          },
+          "totalBdaPages": {
+            "type": "integer",
+            "title": "Totalbdapages",
             "default": 0
           },
           "totalBedrockInputTokens": {
