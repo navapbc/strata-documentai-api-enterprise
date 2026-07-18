@@ -11,6 +11,7 @@ services:
       # machine's dir instead of the host machine's dir, which may be divergent.
       # This is especially true for any dependency or temp directories.
       - documentai-api_venv:/app/.venv
+      - ../docs:/docs
 
 volumes:
   documentai-api_venv:

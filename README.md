@@ -27,6 +27,10 @@ For Strata template applications, see [`navapbc/strata`](https://github.com/nava
 
 ## See it in action
 
+**Local API setup** - clone, configure, and run the API locally with no AWS needed.
+
+![Local API setup](docs/documentai-api/media/api-setup-demo.gif)
+
 **Admin console** - tenant and user management, API keys, document review.
 
 ![Admin console walkthrough](docs/documentai-api/media/admin-walkthrough.gif)
@@ -75,6 +79,7 @@ A client uploads a document via the API. It's stored in S3 and queued for proces
 
 - [Setup and deploy](SETUP.md) - requirements, first-time bootstrap, deploy, teardown
 - [DocumentAI API](documentai-api/README.md) - API reference and development
+- [Postman collection](docs/documentai-api/postman/DocumentAI.postman_collection.json) - import to explore the API locally (no AWS needed)
 
 ## Contributing
 

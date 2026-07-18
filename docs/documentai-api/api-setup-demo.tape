@@ -1,6 +1,6 @@
 # DocumentAI API - local setup from scratch (VHS tape)
-# Records the exact documented steps: clone -> .env -> make init -> make start -> curl.
-# Run from an empty directory:  vhs api-setup-demo.tape
+# Records the setup steps visible to a new user: clone -> .env -> make init -> make start -> curl.
+# Run from the repo root: vhs docs/documentai-api/api-setup-demo.tape
 # Produces api-setup-demo.mp4 (faithful full run). Derive a short GIF with:
 #   ffmpeg -i api-setup-demo.mp4 -filter_complex \
 #     "[0:v]setpts=PTS/SPEED,fps=12,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=bayer" \
@@ -25,7 +25,7 @@ Set WaitPattern /demo \$$/
 Hide
 Type "export PS1='demo $ '" Enter
 Sleep 800ms
-Type "rm -rf strata-documentai-api-enterprise .env" Enter
+Type "rm -rf strata-documentai-api-enterprise" Enter
 Sleep 800ms
 Type "clear" Enter
 Sleep 800ms
@@ -83,5 +83,9 @@ Sleep 3s
 # --- teardown (hidden) ---
 Hide
 Type "make stop" Enter
+Wait
+Type "cd ../.." Enter
+Wait
+Type "rm -rf strata-documentai-api-enterprise" Enter
 Wait
 Show

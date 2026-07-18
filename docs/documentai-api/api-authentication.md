@@ -42,6 +42,16 @@ response = requests.post(
 print(response.json())
 ```
 
+### Using the Postman collection
+
+A ready-to-import Postman collection lives at [`postman/DocumentAI.postman_collection.json`](postman/DocumentAI.postman_collection.json), generated from the API's OpenAPI spec.
+
+1. In Postman: **Import** - select the file (or drag it in).
+2. The collection sends `API-Key: {{apiKey}}` on every request. Its `baseUrl` and `apiKey` variables default to the local dev server (`http://localhost:8000`) and shared key (`local-dev-key`); edit them under the collection's **Variables** tab to target another environment.
+3. Admin (`/v1/admin/*`) routes require a Cognito JWT rather than an API key, so they return 401/403 with only the key set.
+
+Maintainers: regenerate the collection after changing the API surface with `make postman` (re-derives it from `docs/documentai-api/openapi.json`).
+
 ### Endpoint Authentication
 
 Visit `/docs` to view all available endpoints.
