@@ -6,11 +6,10 @@ from datetime import UTC, datetime
 from typing import Any
 
 import typer
-from botocore.exceptions import ClientError
 from tenacity import (
     RetryError,
     Retrying,
-    retry_if_exception_type,
+    retry_if_exception,
     stop_after_attempt,
     wait_exponential_jitter,
 )
@@ -38,6 +37,7 @@ from documentai_api.utils.document_lifecycle import (
     set_processing_status_started,
     upsert_initial_ddb_record,
 )
+from documentai_api.utils.exceptions import is_retryable
 from documentai_api.utils.image_optimization import optimize_s3_image
 from documentai_api.utils.s3 import parse_s3_uri
 from documentai_api.utils.uploads import validate_s3_object_is_bda_native
@@ -106,7 +106,7 @@ def _invoke_bda(
     for attempt in Retrying(
         stop=stop_after_attempt(get_aws_config().max_bda_invoke_retry_attempts),
         wait=wait_exponential_jitter(initial=10, max=120),
-        retry=retry_if_exception_type(ClientError),
+        retry=retry_if_exception(is_retryable),
     ):
         with attempt:
             invocation_arn, project_arn, pages_sent = invoke_bedrock_data_automation(

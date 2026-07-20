@@ -123,8 +123,8 @@ def test_invoke_bda_success(input_pdf, mocker):
     )
 
 
-def test_invoke_bda_failure(input_pdf, mock_invoke, mocker):
-    """Test BDA invocation failure updates DDB and raises exception."""
+def test_invoke_bda_retryable_failure(input_pdf, mock_invoke, mocker):
+    """Transient errors (ThrottlingException) exhaust retries -> RetryError -> classify_as_failed."""
     from botocore.exceptions import ClientError
     from tenacity import RetryError
 
@@ -133,10 +133,8 @@ def test_invoke_bda_failure(input_pdf, mock_invoke, mocker):
     mock_low_level_invoke = mocker.patch(
         "documentai_api.jobs.document_processor.main.invoke_bedrock_data_automation"
     )
-
-    # raise ClientError so retry decorator actually retries
     mock_low_level_invoke.side_effect = ClientError(
-        {"Error": {"Code": "ServiceException", "Message": "BDA invocation failed"}},
+        {"Error": {"Code": "ThrottlingException", "Message": "Rate exceeded"}},
         "invoke_bedrock_data_automation",
     )
 
@@ -146,6 +144,24 @@ def test_invoke_bda_failure(input_pdf, mock_invoke, mocker):
     mock_classify.assert_called_once()
     assert mock_classify.call_args.kwargs["object_key"] == "test.pdf"
     assert mock_classify.call_args.kwargs["error_message"] == "BDA invocation failed"
+
+
+def test_invoke_bda_non_retryable_failure(input_pdf, mock_invoke, mocker):
+    """Non-retryable errors (ValidationException) raise ClientError immediately, no retries."""
+    from botocore.exceptions import ClientError
+
+    mock_low_level_invoke = mocker.patch(
+        "documentai_api.jobs.document_processor.main.invoke_bedrock_data_automation"
+    )
+    mock_low_level_invoke.side_effect = ClientError(
+        {"Error": {"Code": "ValidationException", "Message": "Invalid ARN"}},
+        "invoke_bedrock_data_automation",
+    )
+
+    with pytest.raises(ClientError):
+        invoke_bda(input_pdf.bucket_name, input_pdf.key, "test.pdf")
+
+    mock_low_level_invoke.assert_called_once()  # no retries
 
 
 def test_main_first_time_pdf(input_pdf, mocker, ddb_doc_metadata_table, mock_invoke):

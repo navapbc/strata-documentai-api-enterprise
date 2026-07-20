@@ -74,6 +74,25 @@ def test_get_document_results_in_progress(api_client, mocker):
     assert "in progress" in data["message"].lower()
 
 
+def test_get_document_results_not_started_reports_awaiting(api_client, mocker):
+    """A not-yet-picked-up job reports 'awaiting', not the misleading 'in progress'."""
+    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status.return_value = JobStatus(
+        ddb_record={"fileName": "test.pdf", "tenantId": "test-tenant"},
+        object_key="test.pdf",
+        process_status="not_started",
+        v1_response_json=None,
+    )
+
+    response = api_client.get(f"/v1/documents/{TEST_JOB_ID}")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["jobStatus"] == "not_started"
+    assert "awaiting" in data["message"].lower()
+    assert "in progress" not in data["message"].lower()
+
+
 def test_create_document_invalid_file_type(api_client, empty_zip_bytes):
     """Test document upload with invalid file type."""
     files = {"file": ("test.zip", empty_zip_bytes, "application/zip")}
@@ -292,6 +311,25 @@ def test_search_documents_in_progress(api_client, mocker):
     results = response.json()["results"]
     assert results[0]["jobStatus"] == "started"
     assert "in progress" in results[0]["message"].lower()
+
+
+def test_search_documents_not_started_reports_awaiting(api_client, mocker):
+    """Search reports 'awaiting' for a not-yet-picked-up job, not 'in progress'."""
+    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status.return_value = JobStatus(
+        ddb_record={"fileName": "test.pdf", "tenantId": "test-tenant"},
+        object_key="test.pdf",
+        process_status="not_started",
+        v1_response_json=None,
+    )
+
+    response = api_client.post("/v1/documents/search", json={"jobIds": ["job-1"]})
+
+    assert response.status_code == 200
+    results = response.json()["results"]
+    assert results[0]["jobStatus"] == "not_started"
+    assert "awaiting" in results[0]["message"].lower()
+    assert "in progress" not in results[0]["message"].lower()
 
 
 def test_search_documents_empty_list(api_client):

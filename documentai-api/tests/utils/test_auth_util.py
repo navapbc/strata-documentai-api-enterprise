@@ -161,10 +161,15 @@ def test_validate_key_record_invalid_expires_at():
 ##############################################################################
 
 
-def test_insecure_key_missing_env_raises_500(monkeypatch):
-    monkeypatch.delenv(EnvVars.API_AUTH_INSECURE_SHARED_KEY, raising=False)
-    with pytest.raises(HTTPException) as exc_info:
-        auth_util._verify_with_insecure_shared_key("any-key")
+def test_insecure_key_missing_env_raises_500():
+    # Patch the resolved value rather than just the OS env var: the key can also
+    # come from the .env file or an SSM param, so deleting the env var alone
+    # doesn't reliably exercise the "not configured" path (a local .env would
+    # still supply it).
+    with patch("documentai_api.utils.auth.get_app_env_config") as mock_config:
+        mock_config.return_value.resolve_insecure_shared_key.return_value = ""
+        with pytest.raises(HTTPException) as exc_info:
+            auth_util._verify_with_insecure_shared_key("any-key")
     assert exc_info.value.status_code == 500
 
 
