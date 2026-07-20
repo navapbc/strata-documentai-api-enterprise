@@ -38,6 +38,11 @@ make infra-deploy ENVIRONMENT=dev
 
 All commands accept `ENVIRONMENT=dev|staging|prod` and `AWS_PROFILE=your-profile`.
 
+| `make infra-drift` | Validate deployed infra against manifest (alias for `infra-check`) |
+| `make infra-check` | Validate deployed infra against manifest |
+
+See [tagging-guide.md](tagging-guide.md) for required resource tags and [validators/README.md](validators/README.md) for full drift validator documentation.
+
 ## Modules
 
 | Module | Description |

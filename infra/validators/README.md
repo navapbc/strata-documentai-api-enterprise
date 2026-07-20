@@ -15,7 +15,7 @@ Though originally built for manually-provisioned environments, it's useful anywh
 - Python >= 3.11
 - [uv](https://docs.astral.sh/uv/) (package manager)
 - AWS credentials configured (`~/.aws/credentials` or environment variables)
-- Resources tagged with `project`, `stage`, and `component` tags (hard requirement - untagged resources cannot be discovered or validated). Tag key names are configurable via `--tags` if your environment uses different keys.
+- Resources tagged with `project`, `stage`, and `component` tags (hard requirement - untagged resources cannot be discovered or validated). Tag key names are configurable via `--tags` if your environment uses different keys. See [tagging-guide.md](../tagging-guide.md) for the full list of required tags per resource.
 
 ## Architecture
 
