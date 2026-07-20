@@ -88,6 +88,7 @@ make start-local
 | `make test-parallel` | Tests in parallel |
 | `make lint` | Ruff linter |
 | `make format` | Ruff formatter |
+| `make postman` | Regenerate Postman collection from OpenAPI spec |
 
 ### Using tasks.py (cross-platform, Windows/macOS/Linux)
 
@@ -147,6 +148,8 @@ Set by infrastructure on deploy:
 ## API Endpoints
 
 Full API documentation is available at `/docs` (Swagger UI) and `/openapi.json` when the server is running. A snapshot is committed at [docs/documentai-api/openapi.json](../docs/documentai-api/openapi.json) - regenerate with `uv run export-openapi`.
+
+A [Postman collection](../docs/documentai-api/postman/DocumentAI.postman_collection.json) is committed with local-dev defaults pre-configured (baseUrl `localhost:8000`, `API-Key: local-dev-key`). Import it directly or regenerate with `make postman`.
 
 See the [API route map](../docs/documentai-api/diagrams/api-routes.mmd) for a visual overview grouped by auth scheme.
 
@@ -208,6 +211,24 @@ API keys can be created via:
 
 Additional CLI commands: `api-keys list`, `api-keys deactivate`.
 
+### Generating Usage Reports
+
+A per-tenant monthly usage report (pages, bytes, Bedrock tokens) is produced by a
+scheduled Lambda (`usage-report`) that runs daily. To generate one on demand
+against a deployed environment:
+
+```bash
+make usage-report MONTH=2026-01
+```
+
+Requires AWS access and these env vars: `DDB_EXPORT_BUCKET_NAME`, `GLUE_DATABASE_NAME`,
+`DDB_RAW_DATA_TABLE_NAME`, `ATHENA_WORKGROUP_NAME`. Runs an Athena query over the raw
+metrics data and writes `usage-report/month=<MONTH>/report.json` to the metrics bucket.
+
+> **Note:** Running this overwrites the existing report for that month. The report can
+> only cover data still in the raw metrics table - if S3 lifecycle rules have archived
+> or expired older records, those months will be incomplete or empty.
+
 ## Testing
 
 Most tests use pytest with moto for AWS service mocking - no real AWS infrastructure required. Tests are split into three tiers via pytest markers:
@@ -257,7 +278,8 @@ src/documentai_api/
 │   ├── document_processor/         # EventBridge → process upload → invoke BDA
 │   ├── bda_result_processor/       # EventBridge → extract fields → update DDB
 │   ├── metrics_processor/          # SQS → write Parquet to S3
-│   └── metrics_aggregator/         # Scheduled → aggregate daily metrics
+│   ├── metrics_aggregator/         # Scheduled → aggregate daily metrics
+│   └── usage_report/               # Scheduled → per-tenant usage report via Athena
 ├── services/
 │   ├── s3.py                       # S3 client
 │   ├── ddb.py                      # DynamoDB client

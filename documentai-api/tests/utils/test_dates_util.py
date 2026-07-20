@@ -51,3 +51,19 @@ def test_validate_date_range_invalid(start, end):
         ValueError, match=r"Invalid date format|start_date must be before or equal to end_date"
     ):
         validate_date_range(start, end)
+
+
+@pytest.mark.parametrize(
+    ("input_val", "expected"),
+    [
+        ("2026-01-08T00:00:00", "2026-01-08"),  # standard Textract datetime
+        ("1973-01-07T12:34:56", "1973-01-07"),  # non-midnight time
+        ("2026-01-08", "2026-01-08"),  # already date-only
+        ("", ""),  # empty string
+        ("no-t-here", "no-t-here"),  # no T separator
+    ],
+)
+def test_strip_time(input_val, expected):
+    from documentai_api.utils.dates import strip_time
+
+    assert strip_time(input_val) == expected

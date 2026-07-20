@@ -24,6 +24,8 @@ strata@navapbc.com
 
 ## Getting Started
 
+See [writing-tests.md](docs/documentai-api/writing-tests.md) for test conventions and how to run the suite.
+
 To contribute, create a pull request on GitHub with:
 
 - Clear title and description

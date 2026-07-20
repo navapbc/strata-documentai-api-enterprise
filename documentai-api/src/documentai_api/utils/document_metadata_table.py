@@ -3,10 +3,14 @@
 from typing import Any
 
 from boto3.dynamodb.conditions import Key
+from fastapi import HTTPException, status
 
 from documentai_api.config.env import get_aws_config
+from documentai_api.logging import get_logger
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.base_readonly_table import ReadOnlyTable
+
+logger = get_logger(__name__)
 
 
 class DocumentMetadataTable(ReadOnlyTable):
@@ -18,7 +22,11 @@ class DocumentMetadataTable(ReadOnlyTable):
     def _get_index(self, attr: str) -> str:
         name: str | None = getattr(get_aws_config(), attr, None)
         if not name:
-            raise ValueError(f"{attr} not configured")
+            logger.error("Required index not configured: %s", attr)
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Storage not configured",
+            )
         return name
 
     def query_by_tenant(

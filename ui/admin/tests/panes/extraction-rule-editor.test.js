@@ -244,3 +244,48 @@ describe("extraction-rule-editor header", () => {
     expect(root.querySelector(".fields-list-header")).toBeFalsy();
   });
 });
+
+describe("extraction-rule-editor field defaults", () => {
+  let root;
+
+  beforeEach(() => {
+    Store.reset();
+    root = document.createElement("div");
+    document.body.innerHTML =
+      '<div id="view-actions"><button id="bp-save-btn"></button><button id="bp-discard-btn"></button></div>';
+    document.body.appendChild(root);
+  });
+
+  it("defaults unlisted fields to optional when no rule exists", () => {
+    Store.set({
+      schemas: { W2: [{ name: "ssn", type: "string" }] },
+      activeDocType: "W2",
+      tenantId: "test-tenant",
+      rules: {},
+      ruleExists: false,
+    });
+    ExtractionRuleEditor.mount(root);
+    const optionalRadio = root.querySelector('input[value="optional"]');
+    expect(optionalRadio.checked).toBe(true);
+  });
+
+  it("defaults unlisted fields to excluded when a rule exists", () => {
+    Store.set({
+      schemas: {
+        W2: [
+          { name: "ssn", type: "string" },
+          { name: "wages", type: "number" },
+        ],
+      },
+      activeDocType: "W2",
+      tenantId: "test-tenant",
+      rules: { ssn: "required" },
+      ruleExists: true,
+    });
+    ExtractionRuleEditor.mount(root);
+    // wages is not in rules, so it should default to excluded
+    const wagesRow = [...root.querySelectorAll(".field-row")][1];
+    const excludedRadio = wagesRow.querySelector('input[value="excluded"]');
+    expect(excludedRadio.checked).toBe(true);
+  });
+});

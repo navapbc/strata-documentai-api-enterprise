@@ -691,6 +691,38 @@ def test_get_document_completed_without_extracted_data(api_client, mocker):
     assert response.json()["jobStatus"] == "success"
 
 
+def test_get_document_completed_has_cache_control(api_client, mocker):
+    """Terminal state responses include Cache-Control header."""
+    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status.return_value = JobStatus(
+        ddb_record={"fileName": "test.pdf", "tenantId": "test-tenant"},
+        object_key="test.pdf",
+        process_status="success",
+        v1_response_json='{"jobId": "job-1", "jobStatus": "success", "message": "Done"}',
+    )
+
+    response = api_client.get(f"/v1/documents/{TEST_JOB_ID}")
+
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "private, max-age=3600, immutable"
+
+
+def test_get_document_in_progress_no_cache_control(api_client, mocker):
+    """In-progress responses must not include Cache-Control."""
+    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status.return_value = JobStatus(
+        ddb_record={"fileName": "test.pdf", "tenantId": "test-tenant"},
+        object_key="test.pdf",
+        process_status="started",
+        v1_response_json=None,
+    )
+
+    response = api_client.get(f"/v1/documents/{TEST_JOB_ID}")
+
+    assert response.status_code == 200
+    assert "cache-control" not in response.headers
+
+
 def test_get_document_results_nests_stored_flat_fields(api_client, mocker):
     """Default GET applies presentation nesting to the stored flat/verbatim fields."""
     mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")

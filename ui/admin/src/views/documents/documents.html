@@ -1,8 +1,19 @@
 <div class="documents-three-panel detail-collapsed">
   <div class="documents-list-panel">
-    <div class="documents-search-box">
-      <input type="text" id="document-search-input" placeholder="Search by Job ID…" />
-      <button type="button" id="document-search-btn" class="btn-primary">Search</button>
+    <div class="documents-filter-bar">
+      <select id="document-status-filter">
+        <option value="">All statuses</option>
+        <option value="success">Success</option>
+        <option value="no_custom_blueprint_matched">No Blueprint Matched</option>
+        <option value="failed">Failed</option>
+        <option value="conversion_failed">Conversion Failed</option>
+        <option value="blurry_document_detected">Blurry Document</option>
+        <option value="no_document_detected">No Document Detected</option>
+        <option value="password_protected">Password Protected</option>
+        <option value="started">Processing</option>
+        <option value="not_started">Pending</option>
+        <option value="deleted">Deleted</option>
+      </select>
     </div>
     <p id="no-documents" class="empty-state hidden">No documents yet</p>
     <ul id="documents-list" class="documents-compact-list"></ul>

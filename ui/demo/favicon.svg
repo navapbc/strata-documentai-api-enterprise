@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <defs>
+    <!-- Light Accent Blue for the emerging data/document -->
+    <linearGradient id="dataGrad" x1="16" y1="2" x2="16" y2="22" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#4597d5" />
+    </linearGradient>
+    
+    <!-- Your Brand Blue (#005ea2) for the solid folder base -->
+    <linearGradient id="brandFolder" x1="2" y1="10" x2="30" y2="28" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#005ea2" />
+      <stop offset="100%" stop-color="#003e73" /> <!-- Darker shade for depth -->
+    </linearGradient>
+  </defs>
+
+  <!-- The Document (Processing / Data) -->
+  <path d="M10 4C10 2.89543 10.8954 2 12 2H20C21.1046 2 22 2.89543 22 4V22H10V4Z" fill="url(#dataGrad)" />
+  <!-- Accent lines on emerging document -->
+  <line x1="13" y1="7" x2="19" y2="7" stroke="#005ea2" stroke-width="1.5" stroke-linecap="round" />
+  <line x1="13" y1="11" x2="17" y2="11" stroke="#005ea2" stroke-width="1.5" stroke-linecap="round" />
+
+  <!-- Main Folder using your requested #005ea2 base -->
+  <path d="M2 12C2 10.8954 2.89543 10 4 10H11L14 13H28C29.1046 13 30 13.8954 30 15V26C30 27.1046 29.1046 28 28 28H4C2.89543 28 2 27.1046 2 26V12Z" fill="url(#brandFolder)" />
+  
+  <!-- Subtle top highlight for the folder lip to keep it crisp on dark browser tabs -->
+  <path d="M2 12C2 10.8954 2.89543 10 4 10H11L14 13H28" stroke="#4597d5" stroke-width="1" fill="none" />
+</svg>

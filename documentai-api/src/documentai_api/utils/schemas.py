@@ -27,7 +27,7 @@ def _fetch_schemas_from_bda() -> dict[str, Any]:
     if project_arns_json:
         project_arns = json.loads(project_arns_json)
     else:
-        project_arn = get_required_env(EnvVars.BDA_PROJECT_ARN)
+        project_arn = get_required_env(EnvVars.BDA_PROJECT_ARN_ALL)
         project_arns = {"default": project_arn}
 
     schemas: dict[str, Any] = {}
@@ -56,6 +56,7 @@ def _fetch_schemas_from_bda() -> dict[str, Any]:
 
                 schemas[document_type] = {
                     "documentType": document_type,
+                    "description": schema.get("description", blueprint.get("description", "")),
                     "fields": fields,
                     "category": category,
                     "blueprintArn": blueprint_arn,

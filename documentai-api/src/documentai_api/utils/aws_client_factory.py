@@ -99,6 +99,12 @@ class AWSClientFactory:
 
     @classmethod
     @lru_cache(maxsize=1)
+    def get_textract_client(cls):  # type: ignore[no-untyped-def]
+        """Get Textract client for identity document analysis."""
+        return cls.get_session().client("textract", region_name=cls.get_region())
+
+    @classmethod
+    @lru_cache(maxsize=1)
     def get_ssm_client(cls) -> SSMClient:
         return cls.get_session().client("ssm", region_name=cls.get_region())
 

@@ -6,7 +6,6 @@
 import * as Store from "../state/blueprint-store.js";
 import * as RulesService from "../services/rules.js";
 import * as TenantContext from "../utils/tenant-context.js";
-import * as Helpers from "../utils/helpers.js";
 import * as Toast from "../utils/toast.js";
 import { h } from "../utils/dom.js";
 
@@ -33,7 +32,7 @@ export function mount(root) {
   if (tenantId) Store.set({ tenantId });
 
   _tenantUnsub = TenantContext.onChange((tid) => {
-    Store.set({ tenantId: tid || null, rules: {}, dirty: false });
+    Store.set({ tenantId: tid || null, rules: {}, ruleExists: false, dirty: false });
     _lastRulesKey = null;
   });
 
@@ -58,13 +57,14 @@ async function loadRules(tenantId, docType) {
   if (!tenantId || !docType) return;
   try {
     const data = await RulesService.get(tenantId, docType);
-    const rule = data.rules?.[0] || {};
+    const rule = data.rules?.[0];
+    const ruleExists = (data.rules?.length ?? 0) > 0;
     const rules = {};
-    for (const f of rule.requiredFields || []) rules[f] = "required";
-    for (const f of rule.optionalFields || []) rules[f] = "optional";
-    Store.set({ rules });
+    for (const f of rule?.requiredFields || []) rules[f] = "required";
+    for (const f of rule?.optionalFields || []) rules[f] = "optional";
+    Store.set({ rules, ruleExists });
   } catch {
-    Store.set({ rules: {} });
+    Store.set({ rules: {}, ruleExists: false });
   }
 }
 
@@ -108,7 +108,8 @@ function render(state) {
   fieldsList.appendChild(h("h3", { className: "fields-list-header" }, activeDocType));
 
   for (const field of fields) {
-    const fieldState = rules[field.name] || "excluded";
+    const defaultState = state.ruleExists ? "excluded" : "optional";
+    const fieldState = rules[field.name] || defaultState;
     const radioName = `rule-${field.name}`;
 
     function makeToggle(value, label, cls) {

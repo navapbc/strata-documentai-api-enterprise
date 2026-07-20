@@ -1,5 +1,5 @@
 {
-  "description": "A formal piece of correspondence or notice sent by an insurance provider regarding policy changes, claim updates, billing notifications, or benefit payments.",
+  "description": "A formal letter or notice from a private insurance company (life, disability, health, or settlement) regarding policy status, claim decisions, premium changes, or benefit disbursements. Must reference an insurance policy number and be issued by a named insurance provider, not a government agency or public benefits program.",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "class": "Insurance-Company-Letter",

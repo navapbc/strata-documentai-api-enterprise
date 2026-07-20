@@ -30,6 +30,7 @@
 	stop \
 	test \
 	test-e2e \
+	usage-report \
 
 .DEFAULT_GOAL := help
 
@@ -55,6 +56,7 @@ __check_defined = \
 
 APP_NAME := documentai-api
 APP_DOCS_DIR := $(CURDIR)/../docs/$(APP_NAME)
+POSTMAN_DIR := /docs/documentai-api/postman
 TF_DIR := ../infra/environments/dev
 
 DIAGRAMS := \
@@ -162,16 +164,16 @@ test-e2e: ## Run e2e tests
 ##################################################
 
 format: ## Format code
-	$(PY_RUN_CMD) ruff format $(FMT_ARGS) .
+	$(PY_RUN_CMD) ruff format $(FMT_ARGS) . $(POSTMAN_DIR)
 
 lint: ## Run all linters
 lint: lint-ruff lint-uv lint-mypy
 
 lint-ruff: ## Lint Python code with ruff
-	$(PY_RUN_CMD) ruff check $(LINT_ARGS) .
+	$(PY_RUN_CMD) ruff check $(LINT_ARGS) . $(POSTMAN_DIR)
 
 lint-mypy: ## Type check with mypy
-	$(PY_RUN_CMD) mypy src
+	$(PY_RUN_CMD) mypy src $(POSTMAN_DIR)
 
 lint-uv: ## Check uv lockfile is up-to-date
 	$(RUN_CMD) uv lock --check
@@ -222,6 +224,14 @@ tenant-deactivate: ## Deactivate a tenant (TENANT=tenant-id).
 pull-blueprint-fields: ## Write blueprint field labels (ARN=project-arn required)
 	@:$(call check_defined, ARN, BDA project ARN, e.g. ARN=arn:aws:bedrock:us-east-1:123:data-automation-project/abc)
 	uv run --frozen pull-blueprint-fields --project-arn "$(ARN)"
+
+usage-report: ## Generate tenant usage report (MONTH=YYYY-MM required)
+	@:$(call check_defined, MONTH, target month, e.g. MONTH=2026-01)
+	@:$(call check_defined, DDB_EXPORT_BUCKET_NAME, metrics bucket name)
+	@:$(call check_defined, GLUE_DATABASE_NAME, Glue database name)
+	@:$(call check_defined, DDB_RAW_DATA_TABLE_NAME, Glue table name)
+	@:$(call check_defined, ATHENA_WORKGROUP_NAME, Athena workgroup name)
+	uv run --frozen usage_report "$(MONTH)"
 
 openapi-spec: ## Export openapi spec to docs directory
 	$(PY_RUN_CMD) export-openapi > $(APP_DOCS_DIR)/openapi.json

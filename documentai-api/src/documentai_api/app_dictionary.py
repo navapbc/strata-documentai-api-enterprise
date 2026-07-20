@@ -10,7 +10,7 @@ from documentai_api.config.constants import (
     ApiVisualizationTag,
     DictionaryBlueprintField,
     DictionaryBlueprintSchema,
-    DictionaryFormatType,
+    OutputFormatType,
 )
 from documentai_api.logging import get_logger
 from documentai_api.models.dictionary import (
@@ -66,7 +66,7 @@ async def list_schemas(
 async def get_schema_detail(
     document_type: str,
     user: AuthUserWithFallback,
-    output_format: OutputFormat = DictionaryFormatType.JSON,
+    output_format: OutputFormat = OutputFormatType.JSON,
 ) -> DictionarySchemaDetailResponse | Response:
     """Get field schema for a specific document type."""
     try:
@@ -85,7 +85,7 @@ async def get_schema_detail(
         logger.error(f"Schema for {document_type} missing 'fields' key")
         raise HTTPException(status_code=500, detail="Schema data is malformed")
 
-    if output_format == DictionaryFormatType.CSV:
+    if output_format == OutputFormatType.CSV:
         return build_csv_response(data)
 
     return DictionarySchemaDetailResponse(
@@ -104,7 +104,7 @@ async def get_schema_detail(
 )
 async def get_all_schema_fields(
     user: AuthUserWithFallback,
-    output_format: OutputFormat = DictionaryFormatType.JSON,
+    output_format: OutputFormat = OutputFormatType.JSON,
 ) -> DictionaryFieldsResponse | Response:
     """Get all fields across all document types."""
     try:
@@ -116,7 +116,7 @@ async def get_all_schema_fields(
             detail="Unable to retrieve dictionary fields",
         ) from None
 
-    if output_format == DictionaryFormatType.CSV:
+    if output_format == OutputFormatType.CSV:
         return build_csv_response(data)
 
     return DictionaryFieldsResponse(fields=data)
@@ -132,7 +132,7 @@ async def search_schema_fields(
     user: AuthUserWithFallback,
     q: str | None = None,
     field: DictionaryBlueprintField | None = None,
-    output_format: OutputFormat = DictionaryFormatType.JSON,
+    output_format: OutputFormat = OutputFormatType.JSON,
 ) -> DictionarySearchResponse | Response:
     """Search fields across all blueprints."""
     try:
@@ -151,7 +151,7 @@ async def search_schema_fields(
         else:
             data = [f for f in data if any(query in str(v).lower() for v in f.values())]
 
-    if output_format == DictionaryFormatType.CSV:
+    if output_format == OutputFormatType.CSV:
         return build_csv_response(data)
 
     return DictionarySearchResponse(fields=data)
@@ -165,7 +165,7 @@ async def search_schema_fields(
 )
 async def get_response_codes(
     user: AuthUserWithFallback,
-    output_format: OutputFormat = DictionaryFormatType.JSON,
+    output_format: OutputFormat = OutputFormatType.JSON,
 ) -> DictionaryResponseCodesResponse | Response:
     """Get list of response codes and their meanings."""
     try:
@@ -176,7 +176,7 @@ async def get_response_codes(
         logger.exception("Failed to retrieve response codes")
         raise HTTPException(status_code=503, detail="Unable to retrieve response codes") from None
 
-    if output_format == DictionaryFormatType.CSV:
+    if output_format == OutputFormatType.CSV:
         return build_csv_response(data)
 
     return DictionaryResponseCodesResponse(response_codes=data)
@@ -190,7 +190,7 @@ async def get_response_codes(
 )
 async def get_document_categories(
     user: AuthUserWithFallback,
-    output_format: OutputFormat = DictionaryFormatType.JSON,
+    output_format: OutputFormat = OutputFormatType.JSON,
 ) -> DictionaryDocumentCategoriesResponse | Response:
     """Get list of supported document categories (derived from BDA project config)."""
     import json
@@ -203,7 +203,7 @@ async def get_document_categories(
     categories = sorted(json.loads(project_arns_json).keys())
     data = [{"category": c} for c in categories]
 
-    if output_format == DictionaryFormatType.CSV:
+    if output_format == OutputFormatType.CSV:
         return build_csv_response(data)
 
     return DictionaryDocumentCategoriesResponse(document_categories=categories)

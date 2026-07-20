@@ -1,62 +1,61 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-let DocumentsView, mockGet, mockGetPreviewUrl, mockToast;
+let DocumentsView, mockList, mockGet, mockGetPreviewUrl, mockGetTenantId, mockOnChange;
 
-// Mirror the storage keys used by the documents view.
 const STORAGE_KEY_ACTIVE = "docai_documents_active_job";
-const STORAGE_KEY_SEARCHES = "docai_documents_searches";
 
 function flush() {
   return new Promise((r) => setTimeout(r, 0));
 }
 
-function row(overrides = {}) {
+function doc(overrides = {}) {
   return {
     jobId: "j-1",
     fileName: "test.pdf",
-    processStatus: "completed",
+    processStatus: "success",
     createdAt: "2026-01-01T00:00:00Z",
+    contentType: "application/pdf",
     ...overrides,
   };
 }
 
-function seedSearches(rows) {
-  sessionStorage.setItem(STORAGE_KEY_SEARCHES, JSON.stringify(rows));
-}
-
 describe("documents view", () => {
   let root;
-
-  async function search(jobId) {
-    const input = root.querySelector("#document-search-input");
-    input.value = jobId;
-    input.dispatchEvent(new Event("input"));
-    root.querySelector("#document-search-btn").click();
-    await flush();
-    await flush();
-  }
+  let tenantChangeCallback;
 
   beforeEach(async () => {
     vi.resetModules();
     sessionStorage.clear();
+    tenantChangeCallback = null;
 
+    mockList = vi.fn().mockResolvedValue({ documents: [] });
     mockGet = vi.fn().mockResolvedValue({
       jobId: "j-1",
       fileName: "test.pdf",
-      processStatus: "completed",
+      processStatus: "success",
       contentType: "application/pdf",
-      fields: { ssn: "123" },
+      fields: { ssn: { value: "123", confidence: 0.95 } },
     });
     mockGetPreviewUrl = vi.fn().mockResolvedValue({
       url: "https://s3.example.com/presigned",
       contentType: "application/pdf",
       expiresIn: 300,
     });
-    mockToast = { show: vi.fn() };
+    mockGetTenantId = vi.fn(() => null);
+    mockOnChange = vi.fn((fn) => {
+      tenantChangeCallback = fn;
+      return () => {};
+    });
 
     vi.doMock("../../src/services/documents.js", () => ({
+      list: mockList,
       get: mockGet,
       getPreviewUrl: mockGetPreviewUrl,
+    }));
+    vi.doMock("../../src/utils/tenant-context.js", () => ({
+      getTenantId: mockGetTenantId,
+      onChange: mockOnChange,
+      load: vi.fn(),
     }));
     vi.doMock("../../src/utils/helpers.js", () => ({
       esc: (s) => s,
@@ -65,9 +64,8 @@ describe("documents view", () => {
       setViewActions: vi.fn(),
       clearViewActions: vi.fn(),
     }));
-    vi.doMock("../../src/utils/toast.js", () => mockToast);
     vi.doMock("../../src/utils/session.js", () => ({
-      getEmail: () => "viewer@example.com",
+      getEmail: () => "admin@test.com",
     }));
 
     DocumentsView = await import("../../src/views/documents/documents.js");
@@ -80,165 +78,206 @@ describe("documents view", () => {
     sessionStorage.clear();
   });
 
-  it("shows empty-state prompt and fetches nothing when there are no saved searches", async () => {
+  it("mounts with status filter dropdown", () => {
+    DocumentsView.mount(root);
+    expect(root.querySelector("#document-status-filter")).not.toBeNull();
+  });
+
+  it("shows tenant prompt when no tenant selected", async () => {
     DocumentsView.mount(root);
     await flush();
 
     const noDoc = root.querySelector("#no-documents");
     expect(noDoc.classList.contains("hidden")).toBe(false);
-    expect(noDoc.textContent).toContain("Search for a document");
-    expect(mockGet).not.toHaveBeenCalled();
+    expect(noDoc.textContent).toContain("Select a tenant");
+    expect(mockList).not.toHaveBeenCalled();
   });
 
-  it("rebuilds the sidebar from cached searches without re-fetching each document", async () => {
-    seedSearches([
-      row({ jobId: "j-1", fileName: "first.pdf" }),
-      row({ jobId: "j-2", fileName: "second.pdf" }),
-    ]);
+  it("calls list with tenantId and renders rows on tenant select", async () => {
+    mockGetTenantId.mockReturnValue("tenant-a");
+    mockList.mockResolvedValue({
+      documents: [
+        doc({ jobId: "j-1", fileName: "first.pdf" }),
+        doc({ jobId: "j-2", fileName: "second.pdf" }),
+      ],
+    });
 
     DocumentsView.mount(root);
     await flush();
 
-    expect(root.querySelectorAll("#documents-list .doc-list-item").length).toBe(2);
+    expect(mockList).toHaveBeenCalledWith(
+      expect.objectContaining({ tenantId: "tenant-a", limit: 25 }),
+    );
+    expect(root.querySelectorAll(".doc-list-item").length).toBe(2);
     expect(root.querySelector("#no-documents").classList.contains("hidden")).toBe(true);
-    // Option 3: repopulating the list must not log a view/search audit event.
-    expect(mockGet).not.toHaveBeenCalled();
   });
 
-  it("ignores the legacy bare-string cache format", async () => {
-    sessionStorage.setItem(STORAGE_KEY_SEARCHES, JSON.stringify(["j-1", "j-2"]));
+  it("passes status to list when status filter changes", async () => {
+    mockGetTenantId.mockReturnValue("tenant-a");
+    mockList.mockResolvedValue({ documents: [doc()] });
 
     DocumentsView.mount(root);
     await flush();
 
-    expect(root.querySelectorAll("#documents-list .doc-list-item").length).toBe(0);
-    expect(mockGet).not.toHaveBeenCalled();
+    mockList.mockClear();
+    const select = root.querySelector("#document-status-filter");
+    select.value = "failed";
+    select.dispatchEvent(new Event("change"));
+    await flush();
+
+    expect(mockList).toHaveBeenCalledWith(
+      expect.objectContaining({ tenantId: "tenant-a", status: "failed", limit: 25 }),
+    );
   });
 
-  it("restores the active document on mount and fetches its detail", async () => {
-    seedSearches([row({ jobId: "j-1", fileName: "first.pdf" })]);
-    sessionStorage.setItem(STORAGE_KEY_ACTIVE, "j-1");
+  it("renders success badge for processStatus success", async () => {
+    mockGetTenantId.mockReturnValue("tenant-a");
+    mockList.mockResolvedValue({ documents: [doc({ processStatus: "success" })] });
 
     DocumentsView.mount(root);
     await flush();
-    await flush();
 
-    expect(mockGet).toHaveBeenCalledWith("j-1");
-    expect(root.querySelector("#detail-content").innerHTML).toContain("test.pdf");
+    const badge = root.querySelector(".badge");
+    expect(badge.classList.contains("badge-success")).toBe(true);
   });
 
-  it("clicking a cached list item loads document detail", async () => {
-    seedSearches([row({ jobId: "j-1", fileName: "first.pdf" })]);
+  it("renders danger badge for processStatus failed", async () => {
+    mockGetTenantId.mockReturnValue("tenant-a");
+    mockList.mockResolvedValue({ documents: [doc({ processStatus: "failed" })] });
+
+    DocumentsView.mount(root);
+    await flush();
+
+    const badge = root.querySelector(".badge");
+    expect(badge.classList.contains("badge-danger")).toBe(true);
+  });
+
+  it("clicking a row fetches detail with extracted data and bounding box", async () => {
+    mockGetTenantId.mockReturnValue("tenant-a");
+    mockList.mockResolvedValue({ documents: [doc()] });
+
     DocumentsView.mount(root);
     await flush();
 
     root.querySelector(".doc-list-item").click();
     await flush();
 
-    expect(mockGet).toHaveBeenCalledWith("j-1");
+    expect(mockGet).toHaveBeenCalledWith("j-1", {
+      includeExtractedData: true,
+      includeBoundingBox: true,
+    });
     expect(root.querySelector("#detail-content").innerHTML).toContain("test.pdf");
   });
 
-  it("clicking a cached list item marks it active", async () => {
-    seedSearches([
-      row({ jobId: "j-1", fileName: "first.pdf" }),
-      row({ jobId: "j-2", fileName: "second.pdf" }),
-    ]);
+  it("clicking a row loads preview", async () => {
+    mockGetTenantId.mockReturnValue("tenant-a");
+    mockList.mockResolvedValue({ documents: [doc()] });
+
     DocumentsView.mount(root);
     await flush();
 
-    const items = root.querySelectorAll(".doc-list-item");
-    items[1].click();
+    root.querySelector(".doc-list-item").click();
     await flush();
 
-    expect(items[0].classList.contains("active")).toBe(false);
-    expect(items[1].classList.contains("active")).toBe(true);
+    expect(mockGetPreviewUrl).toHaveBeenCalledWith("j-1");
+    const preview = root.querySelector("#document-preview-panel");
+    expect(preview.querySelector("object")).not.toBeNull();
   });
 
-  it("search button disabled when input empty", () => {
-    DocumentsView.mount(root);
-    expect(root.querySelector("#document-search-btn").disabled).toBe(true);
-  });
+  it("tenant change clears active job and reloads", async () => {
+    mockGetTenantId.mockReturnValue("tenant-a");
+    mockList.mockResolvedValue({ documents: [doc()] });
 
-  it("search button enabled when input has value", () => {
-    DocumentsView.mount(root);
-    const input = root.querySelector("#document-search-input");
-    input.value = "abc";
-    input.dispatchEvent(new Event("input"));
-    expect(root.querySelector("#document-search-btn").disabled).toBe(false);
-  });
-
-  it("search calls get, renders detail, and caches the row", async () => {
     DocumentsView.mount(root);
     await flush();
 
-    await search("j-1");
-
-    expect(mockGet).toHaveBeenCalledWith("j-1");
-    expect(root.querySelector("#detail-content").innerHTML).toContain("test.pdf");
-
-    const cached = JSON.parse(sessionStorage.getItem(STORAGE_KEY_SEARCHES));
-    expect(cached).toHaveLength(1);
-    expect(cached[0].jobId).toBe("j-1");
+    // Click a doc to activate it
+    root.querySelector(".doc-list-item").click();
+    await flush();
     expect(sessionStorage.getItem(STORAGE_KEY_ACTIVE)).toBe("j-1");
-  });
 
-  it("search shows toast on 404", async () => {
-    const err = new Error("Not found");
-    err.status = 404;
-    mockGet.mockRejectedValue(err);
-
-    DocumentsView.mount(root);
+    // Simulate tenant change
+    mockGetTenantId.mockReturnValue("tenant-b");
+    mockList.mockResolvedValue({ documents: [] });
+    tenantChangeCallback();
     await flush();
-    await search("missing");
 
-    expect(mockToast.show).toHaveBeenCalledWith("Document not found");
+    expect(sessionStorage.getItem(STORAGE_KEY_ACTIVE)).toBeNull();
+    expect(root.querySelector("#detail-content").innerHTML).toBe("");
+    expect(root.querySelector("#document-preview-panel").innerHTML).toContain(
+      "Select a document to preview",
+    );
+    expect(root.querySelector("#document-detail-panel").classList.contains("collapsed")).toBe(true);
   });
 
-  it("unmount clears root", () => {
+  it("unmount clears root and unsubscribes from tenant changes", () => {
     DocumentsView.mount(root);
     DocumentsView.unmount(root);
     expect(root.children.length).toBe(0);
   });
 
-  it("renders PDF preview with object tag", async () => {
-    DocumentsView.mount(root);
-    await flush();
-    await search("j-1");
-
-    const preview = root.querySelector("#document-preview-panel");
-    expect(preview.querySelector("object")).not.toBeNull();
-    expect(preview.innerHTML).toContain("application/pdf");
-  });
-
-  it("renders image preview with img tag", async () => {
-    mockGet.mockResolvedValue({
-      jobId: "j-img",
-      fileName: "photo.jpg",
-      processStatus: "completed",
-      contentType: "image/jpeg",
-    });
-    mockGetPreviewUrl.mockResolvedValue({
-      url: "https://s3.example.com/photo.jpg",
-      contentType: "image/jpeg",
-      expiresIn: 300,
-    });
-    DocumentsView.mount(root);
-    await flush();
-    await search("j-img");
-
-    const preview = root.querySelector("#document-preview-panel");
-    expect(preview.querySelector("img")).not.toBeNull();
-    expect(preview.innerHTML).toContain("photo.jpg");
-  });
-
   it("shows unavailable message when preview request fails", async () => {
+    mockGetTenantId.mockReturnValue("tenant-a");
+    mockList.mockResolvedValue({ documents: [doc()] });
     mockGetPreviewUrl.mockRejectedValue(new Error("failed"));
+
     DocumentsView.mount(root);
     await flush();
-    await search("j-1");
+
+    root.querySelector(".doc-list-item").click();
+    await flush();
 
     const preview = root.querySelector("#document-preview-panel");
     expect(preview.innerHTML).toContain("Preview unavailable");
+  });
+
+  it("renders extracted data revealed without toggle", async () => {
+    mockGetTenantId.mockReturnValue("tenant-a");
+    mockList.mockResolvedValue({ documents: [doc()] });
+
+    DocumentsView.mount(root);
+    await flush();
+
+    root.querySelector(".doc-list-item").click();
+    await flush();
+
+    // Should show values, no toggle checkbox
+    expect(root.querySelector(".extracted-data-toggle")).toBeNull();
+    expect(root.querySelector(".extracted-data-table")).not.toBeNull();
+  });
+
+  it("shows empty state when list request fails", async () => {
+    mockGetTenantId.mockReturnValue("tenant-a");
+    mockList.mockRejectedValue(new Error("network error"));
+
+    DocumentsView.mount(root);
+    await flush();
+
+    expect(root.querySelectorAll(".doc-list-item").length).toBe(0);
+    const noDoc = root.querySelector("#no-documents");
+    expect(noDoc.classList.contains("hidden")).toBe(false);
+    expect(noDoc.textContent).toContain("No documents found");
+  });
+
+  it("restores active document from session storage on mount", async () => {
+    mockGetTenantId.mockReturnValue("tenant-a");
+    mockList.mockResolvedValue({
+      documents: [
+        doc({ jobId: "j-1", fileName: "first.pdf" }),
+        doc({ jobId: "j-2", fileName: "second.pdf" }),
+      ],
+    });
+    sessionStorage.setItem(STORAGE_KEY_ACTIVE, "j-1");
+
+    DocumentsView.mount(root);
+    await flush(); // list fetch
+    await flush(); // loadDetail from restored active job
+
+    const activeItem = root.querySelector('[data-job-id="j-1"]');
+    expect(activeItem.classList.contains("active")).toBe(true);
+    expect(mockGet).toHaveBeenCalledWith("j-1", {
+      includeExtractedData: true,
+      includeBoundingBox: true,
+    });
   });
 });

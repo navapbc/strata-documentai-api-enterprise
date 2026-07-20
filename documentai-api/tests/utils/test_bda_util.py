@@ -1,6 +1,13 @@
+import json
+from pathlib import Path
+
 import pytest
 
+from documentai_api.config.constants import ProcessStatus
+from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils import bda as bda_util
+
+FIXTURES_DIR = Path(__file__).parent / ".." / "helpers" / "fixtures" / "bda"
 
 
 @pytest.mark.parametrize(
@@ -94,3 +101,109 @@ def test_extract_field_values_with_geometry_nested(bda_result_with_geometry):
     assert geometry["payment_details.base_rent"]["geometry"][0]["boundingBox"]["left"] == 0.3
     # fees has no geometry
     assert "payment_details.fees" not in geometry
+
+
+# =============================================================================
+# get_ddb_key_from_bda_output / get_ddb_record_from_bda_output
+# =============================================================================
+
+BDA_INVOCATION_UUID = "de8464af-d53e-44dc-a9f7-ad5360530210"
+BDA_OUTPUT_BUCKET = "output-bucket"
+BDA_OUTPUT_KEY = (
+    f"processed/input/test-tenant/doc.pdf/{BDA_INVOCATION_UUID}/0/custom_output/job_metadata.json"
+)
+BDA_DDB_FILE_NAME = "input/test-tenant/doc.pdf"
+
+
+def test_get_ddb_key_from_bda_output_returns_file_name(ddb_doc_metadata_table):
+    """Realistic key with seeded record returns the correct file_name."""
+    ddb_doc_metadata_table.put_item(
+        Item={
+            DocumentMetadata.FILE_NAME: BDA_DDB_FILE_NAME,
+            DocumentMetadata.BDA_INVOCATION_ID: BDA_INVOCATION_UUID,
+        }
+    )
+
+    result = bda_util.get_ddb_key_from_bda_output(BDA_OUTPUT_BUCKET, BDA_OUTPUT_KEY)
+    assert result == BDA_DDB_FILE_NAME
+
+
+def test_get_ddb_key_from_bda_output_returns_none_no_uuid(ddb_doc_metadata_table):
+    """Key with no UUID segment returns None."""
+    result = bda_util.get_ddb_key_from_bda_output(
+        BDA_OUTPUT_BUCKET, "processed/no-uuid-here/job_metadata.json"
+    )
+    assert result is None
+
+
+def test_get_ddb_key_from_bda_output_returns_none_no_record(ddb_doc_metadata_table):
+    """Valid UUID in key but no DDB record with that invocation ID returns None."""
+    result = bda_util.get_ddb_key_from_bda_output(BDA_OUTPUT_BUCKET, BDA_OUTPUT_KEY)
+    assert result is None
+
+
+def test_get_ddb_record_from_bda_output_returns_record(ddb_doc_metadata_table):
+    """Realistic key with seeded record returns the full DDB record."""
+    ddb_doc_metadata_table.put_item(
+        Item={
+            DocumentMetadata.FILE_NAME: BDA_DDB_FILE_NAME,
+            DocumentMetadata.BDA_INVOCATION_ID: BDA_INVOCATION_UUID,
+            DocumentMetadata.TENANT_ID: "test-tenant",
+            DocumentMetadata.PROCESS_STATUS: ProcessStatus.STARTED.value,
+        }
+    )
+
+    result = bda_util.get_ddb_record_from_bda_output(BDA_OUTPUT_BUCKET, BDA_OUTPUT_KEY)
+    assert result is not None
+    assert result[DocumentMetadata.FILE_NAME] == BDA_DDB_FILE_NAME
+    assert result[DocumentMetadata.TENANT_ID] == "test-tenant"
+    assert result[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.STARTED.value
+
+
+def test_get_ddb_record_from_bda_output_returns_none_no_uuid(ddb_doc_metadata_table):
+    """Key with no UUID segment returns None."""
+    result = bda_util.get_ddb_record_from_bda_output(
+        BDA_OUTPUT_BUCKET, "processed/no-uuid/job_metadata.json"
+    )
+    assert result is None
+
+
+def test_get_ddb_record_from_bda_output_returns_none_no_record(ddb_doc_metadata_table):
+    """Valid UUID in key but no DDB record with that invocation ID returns None."""
+    result = bda_util.get_ddb_record_from_bda_output(BDA_OUTPUT_BUCKET, BDA_OUTPUT_KEY)
+    assert result is None
+
+
+# =============================================================================
+# Missing geometry detection (hallucinated fields)
+# =============================================================================
+
+
+def test_extract_fields_identifies_missing_geometry_from_fixture(monkeypatch):
+    """Fields without geometry and below threshold are flagged as missing."""
+    monkeypatch.setattr("documentai_api.utils.bda._get_missing_geometry_threshold", lambda: 0.25)
+
+    fixture_path = FIXTURES_DIR / "payslip_missing_geometry.json"
+    bda_result = json.loads(fixture_path.read_text())
+
+    metadata, _, _ = bda_util.extract_field_values_from_bda_results(bda_result)
+
+    # These fields have values but no geometry and confidence < 0.25
+    assert "PayPeriodStartDate" in metadata.fields_missing_geometry
+    assert "PayPeriodEndDate" in metadata.fields_missing_geometry
+    assert "are_field_names_sufficient" in metadata.fields_missing_geometry
+
+    # Fields WITH geometry should NOT be in the missing list
+    assert "CurrentGrossPay" not in metadata.fields_missing_geometry
+    assert "RegularHourlyRate" not in metadata.fields_missing_geometry
+    assert "EmployeeNumber" not in metadata.fields_missing_geometry
+
+    # Empty fields should be in empty_fields, not missing_geometry
+    assert "YTDNetPay" in metadata.empty_fields
+    assert "YTDNetPay" not in metadata.fields_missing_geometry
+
+    # Missing geometry fields should NOT be in confidence_scores
+    for score_map in metadata.field_confidence_map_list:
+        field_name = next(iter(score_map.keys()))
+        if field_name in metadata.fields_missing_geometry:
+            assert score_map[field_name] not in metadata.confidence_scores

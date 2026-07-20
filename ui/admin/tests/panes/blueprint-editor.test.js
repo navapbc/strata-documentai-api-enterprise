@@ -20,7 +20,7 @@ describe("blueprint-editor pane", () => {
     }));
     vi.doMock("../../src/utils/tenant-context.js", () => ({
       getTenantId: mockGetTenantId,
-      onChange: vi.fn((cb) => () => {}),
+      onChange: vi.fn((_cb) => () => {}),
     }));
     vi.doMock("../../src/utils/toast.js", () => ({ show: vi.fn() }));
     vi.doMock("../../src/utils/helpers.js", () => ({

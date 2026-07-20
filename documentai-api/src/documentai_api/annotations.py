@@ -10,8 +10,8 @@ from fastapi import Depends, Form, Header, Query
 from pydantic import StringConstraints
 
 from documentai_api.config.constants import (
-    DictionaryFormatType,
     DocumentCategory,
+    OutputFormatType,
 )
 from documentai_api.utils.auth import (
     UserContext,
@@ -83,7 +83,7 @@ AiConsentFlag = Annotated[
 
 
 # Query params
-OutputFormat = Annotated[DictionaryFormatType, Query(alias="format")]
+OutputFormat = Annotated[OutputFormatType, Query(alias="format")]
 PageLimit = Annotated[int, Query(ge=1, le=200)]
 IsoDateParam = Annotated[str | None, Query(pattern=r"^\d{4}-\d{2}-\d{2}")]
 

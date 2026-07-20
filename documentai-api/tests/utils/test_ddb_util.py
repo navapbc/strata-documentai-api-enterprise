@@ -5,109 +5,25 @@ import pytest
 from freezegun import freeze_time
 
 from documentai_api.config.constants import ProcessStatus
+from documentai_api.dtos.classification import ClassificationData
+from documentai_api.dtos.ddb import PreClassificationDdbFields, UpsertDdbData
+from documentai_api.dtos.processing import InternalApiResponse
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils import ddb as ddb_util
-from documentai_api.utils.dto import (
-    ClassificationData,
-    InternalApiResponse,
-    PreClassificationData,
-    UpsertDdbData,
-)
 from documentai_api.utils.response_codes import ResponseCodes
 
 
-def test_get_elapsed_time_seconds():
-    """Test elapsed time calculation."""
-    year = datetime.now().year
-    start = datetime(year, 1, 1, 12, 0, 0, tzinfo=UTC)
-    end = datetime(year, 1, 1, 12, 0, 5, 500000, tzinfo=UTC)  # 5.5 seconds later
-
-    result = ddb_util.get_elapsed_time_seconds(start, end)
-
-    assert result == Decimal("5.5")
-    assert isinstance(result, Decimal)
-
-
-def test_calculate_bda_processing_times(ddb_doc_metadata_table):
-    """Test BDA processing time calculation."""
-    year = datetime.now().year
-    created_at = datetime(year, 1, 1, 12, 0, 0, tzinfo=UTC)
-    bda_started_at = datetime(year, 1, 1, 12, 0, 5, tzinfo=UTC)
-    completion_time = datetime(year, 1, 1, 12, 0, 15, tzinfo=UTC)
-
-    ddb_record = {
-        DocumentMetadata.FILE_NAME: "test-file",
-        DocumentMetadata.CREATED_AT: created_at.isoformat(),
-        DocumentMetadata.BDA_STARTED_AT: bda_started_at.isoformat(),
-    }
-
-    ddb_doc_metadata_table.put_item(Item=ddb_record)
-
-    result = ddb_util.calculate_bda_processing_times("test-file", completion_time)
-
-    assert result.total_processing_time_seconds == Decimal("15.0")
-    assert result.bda_processing_time_seconds == Decimal("10.0")
-
-
-@freeze_time("2026-01-01 12:00:10+00:00")
-def test_calculate_wait_time(ddb_doc_metadata_table):
-    """Test BDA wait time calculation."""
-    created_at = datetime(2026, 1, 1, 12, 0, 0, tzinfo=UTC)
-
-    ddb_record = {
-        DocumentMetadata.FILE_NAME: "test-file",
-        DocumentMetadata.CREATED_AT: created_at.isoformat(),
-    }
-
-    ddb_doc_metadata_table.put_item(Item=ddb_record)
-
-    wait_time = ddb_util._calculate_wait_time("test-file")
-    assert wait_time == Decimal("10.0")
-
-
-@pytest.mark.parametrize(
-    (
-        "field_confidence_scores",
-        "field_empty_list",
-        "expected_count",
-        "expected_non_empty",
-        "expected_avg",
-    ),
-    [
-        (None, None, 0, 0, None),
-        ([], None, 0, 0, None),
-        ([{"field1": 0.95}, {"field2": 0.85}], None, 2, 2, 0.9),
-        ([{"field1": 0.95}, {"field2": 0.85}, {"field3": 0.75}], ["field3"], 3, 2, 0.9),
-        ([{"field1": 0.8}], ["field1"], 1, 0, None),
-    ],
-)
-def test_calculate_field_metrics(
-    field_confidence_scores, field_empty_list, expected_count, expected_non_empty, expected_avg
-):
-    """Test field metrics calculation."""
-    data = ClassificationData(
-        field_confidence_scores=field_confidence_scores,
-        field_empty_list=field_empty_list,
-    )
-
-    metrics = ddb_util._calculate_field_metrics(data)
-
-    assert metrics.field_count == expected_count
-    assert metrics.field_count_not_empty == expected_non_empty
-    assert metrics.field_not_empty_avg_confidence == pytest.approx(expected_avg)
-
-
-@pytest.mark.parametrize("has_bda_started_at", [True, False])
+@pytest.mark.parametrize("has_extraction_started_at", [True, False])
 @freeze_time("2026-01-01 12:00:15+00:00")
-def test_build_completion_timing(has_bda_started_at, ddb_doc_metadata_table, mocker):
+def test_build_completion_timing(has_extraction_started_at, ddb_doc_metadata_table, mocker):
     """Test completion timing updates."""
     ddb_record = {
         DocumentMetadata.FILE_NAME: "test-file",
         DocumentMetadata.CREATED_AT: datetime(2026, 1, 1, 12, 0, 0, tzinfo=UTC).isoformat(),
     }
 
-    if has_bda_started_at:
-        ddb_record[DocumentMetadata.BDA_STARTED_AT] = datetime(
+    if has_extraction_started_at:
+        ddb_record[DocumentMetadata.EXTRACTION_STARTED_AT] = datetime(
             2026, 1, 1, 12, 0, 5, tzinfo=UTC
         ).isoformat()
 
@@ -116,17 +32,22 @@ def test_build_completion_timing(has_bda_started_at, ddb_doc_metadata_table, moc
     mock_get_modified = mocker.patch("documentai_api.utils.ddb.s3_service.get_last_modified_at")
     mock_get_modified.return_value = datetime(2026, 1, 1, 12, 0, 15, tzinfo=UTC)
 
-    bda_output_s3_uri = "s3://bucket/key/job_metadata.json" if has_bda_started_at else None
+    bda_output_s3_uri = "s3://bucket/key/job_metadata.json" if has_extraction_started_at else None
     updates, values = ddb_util._build_completion_timing("test-file", bda_output_s3_uri)
 
-    if has_bda_started_at:
-        assert any(DocumentMetadata.BDA_COMPLETED_AT in u for u in updates)
+    if has_extraction_started_at:
+        assert any(DocumentMetadata.EXTRACTION_COMPLETED_AT in u for u in updates)
         assert any(DocumentMetadata.PROCESSED_DATE in u for u in updates)
-        assert ":bdaCompletedAt" in values
+        assert ":extractionCompletedAt" in values
         assert ":processedDate" in values
         assert values[":totalProcessingTime"] == Decimal("15.0")
-        assert values[":bdaProcessingTime"] == Decimal("10.0")
+        assert values[":extractionProcessingTime"] == Decimal("10.0")
         mock_get_modified.assert_called_once_with("bucket", "key/job_metadata.json")
+        # bda* timing fields must NOT be written
+        assert not any(DocumentMetadata.BDA_COMPLETED_AT in u for u in updates)
+        assert not any(DocumentMetadata.BDA_PROCESSING_TIME_SECONDS in u for u in updates)
+        assert ":bdaCompletedAt" not in values
+        assert ":bdaProcessingTime" not in values
     else:
         assert updates == []
         assert values == {}
@@ -151,7 +72,7 @@ def test_build_timing_updates(status, ddb_doc_metadata_table, mocker):
     }
 
     if status in [ProcessStatus.SUCCESS, ProcessStatus.FAILED]:
-        ddb_record[DocumentMetadata.BDA_STARTED_AT] = datetime(
+        ddb_record[DocumentMetadata.EXTRACTION_STARTED_AT] = datetime(
             2026, 1, 1, 12, 0, 5, tzinfo=UTC
         ).isoformat()
 
@@ -171,18 +92,28 @@ def test_build_timing_updates(status, ddb_doc_metadata_table, mocker):
     updates, values = ddb_util._build_timing_updates("test-file", status, bda_output_s3_uri)
 
     if status == ProcessStatus.STARTED:
-        assert DocumentMetadata.BDA_STARTED_AT in updates
-        assert DocumentMetadata.BDA_WAIT_TIME_SECONDS in updates
-        assert DocumentMetadata.BDA_COMPLETED_AT not in updates
+        assert DocumentMetadata.EXTRACTION_STARTED_AT in updates
+        assert DocumentMetadata.EXTRACTION_WAIT_TIME_SECONDS in updates
+        assert DocumentMetadata.EXTRACTION_COMPLETED_AT not in updates
         assert DocumentMetadata.PROCESSED_DATE not in updates
-        assert values[":bdaWaitTimeSeconds"] == Decimal("10.0")
-    elif status in [ProcessStatus.SUCCESS, ProcessStatus.FAILED]:
-        assert DocumentMetadata.BDA_COMPLETED_AT in updates
-        assert DocumentMetadata.PROCESSED_DATE in updates
+        assert values[":extractionWaitTimeSeconds"] == Decimal("10.0")
+        # bda* timing fields must NOT be written
         assert DocumentMetadata.BDA_STARTED_AT not in updates
         assert DocumentMetadata.BDA_WAIT_TIME_SECONDS not in updates
+        assert ":bdaStartedAt" not in values
+        assert ":bdaWaitTimeSeconds" not in values
+    elif status in [ProcessStatus.SUCCESS, ProcessStatus.FAILED]:
+        assert DocumentMetadata.EXTRACTION_COMPLETED_AT in updates
+        assert DocumentMetadata.PROCESSED_DATE in updates
+        assert DocumentMetadata.EXTRACTION_STARTED_AT not in updates
+        assert DocumentMetadata.EXTRACTION_WAIT_TIME_SECONDS not in updates
         assert values[":totalProcessingTime"] == Decimal("10.0")
-        assert values[":bdaProcessingTime"] == Decimal("5.0")
+        assert values[":extractionProcessingTime"] == Decimal("5.0")
+        # bda* timing fields must NOT be written
+        assert DocumentMetadata.BDA_COMPLETED_AT not in updates
+        assert DocumentMetadata.BDA_PROCESSING_TIME_SECONDS not in updates
+        assert ":bdaCompletedAt" not in values
+        assert ":bdaProcessingTime" not in values
     else:
         assert updates == ""
         assert values == {}
@@ -387,6 +318,27 @@ def test_update_ddb(status, has_timing, ddb_doc_metadata_table, mocker):
         assert item["timing"] == "val"
 
 
+def test_update_ddb_writes_pages_sent_and_result_processor_started_at(
+    ddb_doc_metadata_table, mocker
+):
+    """update_ddb with pages_sent_to_bda and result_processor_started_at writes both."""
+    mocker.patch("documentai_api.utils.ddb._build_timing_updates", return_value=("", {}))
+    mocker.patch("documentai_api.utils.ddb.build_v1_api_response", return_value={})
+
+    object_key = "update-ddb-new-fields"
+
+    ddb_util.update_ddb(
+        object_key,
+        ProcessStatus.STARTED,
+        pages_sent_to_bda=3,
+        result_processor_started_at="2026-01-01T12:00:05+00:00",
+    )
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"]
+    assert item[DocumentMetadata.PAGES_SENT_TO_BDA] == 3
+    assert item[DocumentMetadata.RESULT_PROCESSOR_STARTED_AT] == "2026-01-01T12:00:05+00:00"
+
+
 def test_upsert_ddb(ddb_doc_metadata_table, mocker):
     """Test DDB insert with all fields."""
     mock_raw_metrics = mocker.MagicMock()
@@ -418,7 +370,7 @@ def test_upsert_ddb(ddb_doc_metadata_table, mocker):
             trace_id="trace-456",
             is_password_protected=True,
             is_document_blurry=False,
-            pre_classification=PreClassificationData(
+            pre_classification=PreClassificationDdbFields(
                 document_type="W2",
                 confidence=0.98,
             ),
@@ -540,72 +492,148 @@ def test_upsert_ddb_required_bools_always_written(ddb_doc_metadata_table):
     assert item[DocumentMetadata.IS_DOCUMENT_BLURRY] is False
 
 
+def test_upsert_ddb_cold_start_false_persists(ddb_doc_metadata_table):
+    """is_document_processor_cold_start=False is written (not dropped as falsy).
+
+    _apply_ddb_fields skips None but must NOT skip False - the attribute should
+    appear in DDB with value False.
+    """
+    object_key = "cold-start-false"
+
+    ddb_util.upsert_ddb(
+        UpsertDdbData(
+            object_key=object_key,
+            original_file_name="f.pdf",
+            is_document_processor_cold_start=False,
+            document_processor_started_at="2026-01-01T12:00:00+00:00",
+        )
+    )
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"]
+    assert item[DocumentMetadata.IS_DOCUMENT_PROCESSOR_COLD_START] is False
+    assert item[DocumentMetadata.DOCUMENT_PROCESSOR_STARTED_AT] == "2026-01-01T12:00:00+00:00"
+
+
+def test_upsert_ddb_cold_start_true_persists(ddb_doc_metadata_table):
+    """is_document_processor_cold_start=True is also written."""
+    object_key = "cold-start-true"
+
+    ddb_util.upsert_ddb(
+        UpsertDdbData(
+            object_key=object_key,
+            original_file_name="f.pdf",
+            is_document_processor_cold_start=True,
+        )
+    )
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"]
+    assert item[DocumentMetadata.IS_DOCUMENT_PROCESSOR_COLD_START] is True
+
+
 # =============================================================================
-# get_ddb_key_from_bda_output / get_ddb_record_from_bda_output
+# mark_document_deleted
 # =============================================================================
 
-BDA_INVOCATION_UUID = "de8464af-d53e-44dc-a9f7-ad5360530210"
-BDA_OUTPUT_BUCKET = "output-bucket"
-BDA_OUTPUT_KEY = (
-    f"processed/input/test-tenant/doc.pdf/{BDA_INVOCATION_UUID}/0/custom_output/job_metadata.json"
+
+@pytest.mark.parametrize("deletion_type", ["soft", "hard"])
+def test_mark_document_deleted(deletion_type, ddb_doc_metadata_table):
+    """mark_document_deleted sets status=DELETED, deletionType, and updatedAt."""
+    from documentai_api.config.constants import DeletionType
+
+    ddb_doc_metadata_table.put_item(
+        Item={
+            DocumentMetadata.FILE_NAME: "delete-test",
+            DocumentMetadata.PROCESS_STATUS: ProcessStatus.SUCCESS.value,
+        }
+    )
+
+    ddb_util.mark_document_deleted("delete-test", DeletionType(deletion_type))
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": "delete-test"})["Item"]
+    assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.DELETED.value
+    assert item[DocumentMetadata.DELETION_TYPE] == deletion_type
+    assert DocumentMetadata.UPDATED_AT in item
+
+
+# =============================================================================
+# Metrics enqueue policy
+# =============================================================================
+
+
+@pytest.mark.parametrize(
+    ("status", "should_enqueue"),
+    [(s, ProcessStatus.is_classified(s)) for s in ProcessStatus],
 )
-BDA_DDB_FILE_NAME = "input/test-tenant/doc.pdf"
+def test_update_ddb_metrics_enqueue_policy(
+    status, should_enqueue, ddb_doc_metadata_table, mocker, monkeypatch
+):
+    """Metrics enqueue for classified (terminal) statuses, never for in-progress."""
+    monkeypatch.setenv("DDB_METRICS_INPUT_QUEUE_URL", "https://sqs.us-east-1.amazonaws.com/queue")
+    mocker.patch("documentai_api.utils.ddb._build_timing_updates", return_value=("", {}))
+    mocker.patch("documentai_api.utils.ddb.build_v1_api_response", return_value={})
+    mock_sqs = mocker.patch("documentai_api.services.sqs.send_message")
+
+    ddb_util.update_ddb("metrics-policy-test", status)
+
+    if should_enqueue:
+        mock_sqs.assert_called_once()
+    else:
+        mock_sqs.assert_not_called()
 
 
-def test_get_ddb_key_from_bda_output_returns_file_name(ddb_doc_metadata_table):
-    """Realistic key with seeded record returns the correct file_name."""
-    ddb_doc_metadata_table.put_item(
-        Item={
-            DocumentMetadata.FILE_NAME: BDA_DDB_FILE_NAME,
-            DocumentMetadata.BDA_INVOCATION_ID: BDA_INVOCATION_UUID,
-        }
+@pytest.mark.parametrize(
+    ("status", "should_enqueue"),
+    [(s, ProcessStatus.is_classified(s)) for s in ProcessStatus],
+)
+def test_upsert_ddb_metrics_enqueue_policy(
+    status, should_enqueue, ddb_doc_metadata_table, mocker, monkeypatch
+):
+    """Metrics enqueue for classified (terminal) statuses, never for in-progress."""
+    monkeypatch.setenv("DDB_METRICS_INPUT_QUEUE_URL", "https://sqs.us-east-1.amazonaws.com/queue")
+    mocker.patch("documentai_api.utils.ddb.build_v1_api_response", return_value={})
+    mock_sqs = mocker.patch("documentai_api.services.sqs.send_message")
+
+    ddb_util.upsert_ddb(
+        UpsertDdbData(
+            object_key="metrics-upsert-test",
+            original_file_name="test.pdf",
+            process_status=status.value,
+        )
     )
 
-    result = ddb_util.get_ddb_key_from_bda_output(BDA_OUTPUT_BUCKET, BDA_OUTPUT_KEY)
-    assert result == BDA_DDB_FILE_NAME
+    if should_enqueue:
+        mock_sqs.assert_called_once()
+    else:
+        mock_sqs.assert_not_called()
 
 
-def test_get_ddb_key_from_bda_output_returns_none_no_uuid(ddb_doc_metadata_table):
-    """Key with no UUID segment returns None."""
-    result = ddb_util.get_ddb_key_from_bda_output(
-        BDA_OUTPUT_BUCKET, "processed/no-uuid-here/job_metadata.json"
-    )
-    assert result is None
+@pytest.mark.parametrize(
+    ("status", "should_enqueue"),
+    [
+        (ProcessStatus.SUCCESS, True),
+        (ProcessStatus.FAILED, True),
+        (ProcessStatus.PASSWORD_PROTECTED, True),
+        (ProcessStatus.NO_DOCUMENT_DETECTED, True),
+        (ProcessStatus.STARTED, False),
+        (ProcessStatus.NOT_STARTED, False),
+        (ProcessStatus.PENDING_IMAGE_OPTIMIZATION, False),
+    ],
+)
+def test_metrics_enqueue_contract(
+    status, should_enqueue, ddb_doc_metadata_table, mocker, monkeypatch
+):
+    """Hardcoded contract: these specific statuses must always enqueue (or not).
 
+    Independent of is_classified - fails loudly if the predicate changes.
+    """
+    monkeypatch.setenv("DDB_METRICS_INPUT_QUEUE_URL", "https://sqs.us-east-1.amazonaws.com/queue")
+    mocker.patch("documentai_api.utils.ddb._build_timing_updates", return_value=("", {}))
+    mocker.patch("documentai_api.utils.ddb.build_v1_api_response", return_value={})
+    mock_sqs = mocker.patch("documentai_api.services.sqs.send_message")
 
-def test_get_ddb_key_from_bda_output_returns_none_no_record(ddb_doc_metadata_table):
-    """Valid UUID in key but no DDB record with that invocation ID returns None."""
-    result = ddb_util.get_ddb_key_from_bda_output(BDA_OUTPUT_BUCKET, BDA_OUTPUT_KEY)
-    assert result is None
+    ddb_util.update_ddb("metrics-contract-test", status)
 
-
-def test_get_ddb_record_from_bda_output_returns_record(ddb_doc_metadata_table):
-    """Realistic key with seeded record returns the full DDB record."""
-    ddb_doc_metadata_table.put_item(
-        Item={
-            DocumentMetadata.FILE_NAME: BDA_DDB_FILE_NAME,
-            DocumentMetadata.BDA_INVOCATION_ID: BDA_INVOCATION_UUID,
-            DocumentMetadata.TENANT_ID: "test-tenant",
-            DocumentMetadata.PROCESS_STATUS: ProcessStatus.STARTED.value,
-        }
-    )
-
-    result = ddb_util.get_ddb_record_from_bda_output(BDA_OUTPUT_BUCKET, BDA_OUTPUT_KEY)
-    assert result is not None
-    assert result[DocumentMetadata.FILE_NAME] == BDA_DDB_FILE_NAME
-    assert result[DocumentMetadata.TENANT_ID] == "test-tenant"
-    assert result[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.STARTED.value
-
-
-def test_get_ddb_record_from_bda_output_returns_none_no_uuid(ddb_doc_metadata_table):
-    """Key with no UUID segment returns None."""
-    result = ddb_util.get_ddb_record_from_bda_output(
-        BDA_OUTPUT_BUCKET, "processed/no-uuid/job_metadata.json"
-    )
-    assert result is None
-
-
-def test_get_ddb_record_from_bda_output_returns_none_no_record(ddb_doc_metadata_table):
-    """Valid UUID in key but no DDB record with that invocation ID returns None."""
-    result = ddb_util.get_ddb_record_from_bda_output(BDA_OUTPUT_BUCKET, BDA_OUTPUT_KEY)
-    assert result is None
+    if should_enqueue:
+        mock_sqs.assert_called_once()
+    else:
+        mock_sqs.assert_not_called()

@@ -1,6 +1,5 @@
 """Document classification state machine and initial record creation."""
 
-import json
 from typing import Any
 
 from botocore.exceptions import ClientError
@@ -11,25 +10,22 @@ from documentai_api.config.constants import (
     ProcessStatus,
 )
 from documentai_api.config.env import EnvVars, get_required_env
+from documentai_api.dtos.classification import ClassificationData, PreclassificationMatchResult
+from documentai_api.dtos.ddb import PreClassificationDdbFields, UpsertDdbData
+from documentai_api.dtos.processing import InternalApiResponse
 from documentai_api.logging import get_logger
 from documentai_api.models.document_record import DocumentRecord
-from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import s3 as s3_service
-from documentai_api.utils.bedrock import preclassify_document
+from documentai_api.utils.blur_detection import detect_blur
 from documentai_api.utils.ddb import (
-    _execute_ddb_update,
-    _send_record_to_metrics_queue,
     update_ddb,
     upsert_ddb,
 )
-from documentai_api.utils.dto import (
-    ClassificationData,
-    InternalApiResponse,
-    PreClassificationData,
-    UpsertDdbData,
-)
-from documentai_api.utils.response_builder import build_v1_api_response, get_internal_api_response
+from documentai_api.utils.preclassification import find_matching_blueprint, preclassify_document
+from documentai_api.utils.response_builder import get_internal_api_response
 from documentai_api.utils.response_codes import ResponseCodes
+from documentai_api.utils.ssm import is_blur_detection_enabled, is_blur_rejection_enforced
+from documentai_api.utils.textract import finalize_textract_result, try_textract_identity
 
 logger = get_logger(__name__)
 
@@ -44,6 +40,7 @@ def classify_as_success(
     response_code: str,
     data: ClassificationData,
     below_extraction_confidence_floor: bool = False,
+    result_processor_started_at: str | None = None,
 ) -> dict[str, Any]:
     """Mark file processing as completed."""
     internal_api_response: InternalApiResponse = get_internal_api_response(
@@ -58,6 +55,7 @@ def classify_as_success(
         internal_api_response=internal_api_response,
         data=data,
         below_extraction_confidence_floor=below_extraction_confidence_floor,
+        result_processor_started_at=result_processor_started_at,
     )
 
     # convert dataclass to dict for JSON serialization
@@ -65,7 +63,10 @@ def classify_as_success(
 
 
 def classify_as_failed(
-    object_key: str, error_message: str, data: ClassificationData
+    object_key: str,
+    error_message: str,
+    data: ClassificationData,
+    result_processor_started_at: str | None = None,
 ) -> dict[str, Any]:
     """Mark file processing as failed with error message."""
     internal_api_response: InternalApiResponse = get_internal_api_response(
@@ -80,6 +81,7 @@ def classify_as_failed(
         internal_api_response=internal_api_response,
         error_message=error_message,
         data=data,
+        result_processor_started_at=result_processor_started_at,
     )
 
     # convert dataclass to dict for JSON serialization
@@ -105,7 +107,9 @@ def classify_as_not_implemented(object_key: str, data: ClassificationData) -> di
     return internal_api_response.__dict__
 
 
-def classify_as_no_document_detected(object_key: str, data: ClassificationData) -> dict[str, Any]:
+def classify_as_no_document_detected(
+    object_key: str, data: ClassificationData, result_processor_started_at: str | None = None
+) -> dict[str, Any]:
     """Mark file processing as no document detected."""
     internal_api_response: InternalApiResponse = get_internal_api_response(
         object_key=object_key,
@@ -118,6 +122,7 @@ def classify_as_no_document_detected(object_key: str, data: ClassificationData) 
         status=ProcessStatus.NO_DOCUMENT_DETECTED,
         internal_api_response=internal_api_response,
         data=data,
+        result_processor_started_at=result_processor_started_at,
     )
 
     # convert dataclass to dict for JSON serialization
@@ -160,7 +165,7 @@ def classify_as_conversion_failed(object_key: str, error_message: str) -> dict[s
 
 
 def classify_as_no_custom_blueprint_matched(
-    object_key: str, data: ClassificationData
+    object_key: str, data: ClassificationData, result_processor_started_at: str | None = None
 ) -> dict[str, Any]:
     """Mark file processing as not implemented."""
     internal_api_response: InternalApiResponse = get_internal_api_response(
@@ -174,6 +179,7 @@ def classify_as_no_custom_blueprint_matched(
         status=ProcessStatus.NO_CUSTOM_BLUEPRINT_MATCHED,
         internal_api_response=internal_api_response,
         data=data,
+        result_processor_started_at=result_processor_started_at,
     )
 
     # convert dataclass to dict for JSON serialization
@@ -207,7 +213,10 @@ def classify_as_multiple_documents_on_page(
 
 
 def set_bda_processing_status_started(
-    object_key: str, bda_invocation_arn: str, bda_project_arn_used: str | None = None
+    object_key: str,
+    bda_invocation_arn: str,
+    bda_project_arn_used: str | None = None,
+    pages_sent_to_bda: int | None = None,
 ) -> None:
     """Mark file processing as started with BDA job ARN."""
     update_ddb(
@@ -216,6 +225,7 @@ def set_bda_processing_status_started(
         internal_api_response=None,
         bda_invocation_arn=bda_invocation_arn,
         bda_project_arn_used=bda_project_arn_used,
+        pages_sent_to_bda=pages_sent_to_bda,
     )
 
 
@@ -300,6 +310,8 @@ def upsert_initial_ddb_record(
     job_id: str | None = None,
     trace_id: str | None = None,
     batch_id: str | None = None,
+    document_processor_started_at: str | None = None,
+    is_document_processor_cold_start: bool | None = None,
 ) -> None:
     """Run preclassification on the S3 object and upsert its DDB record.
 
@@ -321,49 +333,104 @@ def upsert_initial_ddb_record(
     pages_detected = document_utils.get_page_count(file_bytes)
     is_password_protected = document_utils.is_password_protected(file_bytes)
     is_document_blurry = False
+    blur_analysis_failed = False
+    ocr_avg_word_confidence: float | None = None
+    document_word_count: int | None = None
+    blur_llm_checked = False
     pre_classification_document_type = None
     pre_classification_confidence = None
     pre_classification_input_tokens = None
     pre_classification_output_tokens = None
     pre_classification_duration_seconds = None
     pre_classification_model_id = None
+    pre_classification_blueprint_match_result: PreclassificationMatchResult | None = None
+    textract_result = None
 
     if is_password_protected:
         process_status = ProcessStatus.PASSWORD_PROTECTED
         response_code = ResponseCodes.PASSWORD_PROTECTED
+        textract_result = None
 
     else:
-        result = preclassify_document(file_bytes, content_type)
+        # Textract-based blur detection (deterministic, confidence-score based)
+        blur_enabled = is_blur_detection_enabled()
+        blur_enforced = is_blur_rejection_enforced()
 
-        pre_classification_document_type = result.document_type
-        pre_classification_confidence = result.confidence
-        pre_classification_input_tokens = result.input_tokens
-        pre_classification_output_tokens = result.output_tokens
-        pre_classification_duration_seconds = result.duration_seconds
-        pre_classification_model_id = result.model_id
+        if blur_enabled:
+            blur_result = detect_blur(file_bytes, content_type)
+            is_document_blurry = blur_result.is_blurry
+            blur_analysis_failed = blur_result.analysis_failed
+            ocr_avg_word_confidence = blur_result.avg_confidence
+            document_word_count = blur_result.word_count
+            blur_llm_checked = blur_result.llm_checked
 
-        if not result.is_document:
-            process_status = ProcessStatus.NO_DOCUMENT_DETECTED
-            response_code = ResponseCodes.NO_DOCUMENT_DETECTED
+            if blur_result.is_not_document and blur_enforced:
+                process_status = ProcessStatus.NO_DOCUMENT_DETECTED
+                response_code = ResponseCodes.NO_DOCUMENT_DETECTED
+                textract_result = None
 
-        elif result.is_blurry:
-            process_status = ProcessStatus.BLURRY_DOCUMENT_DETECTED
-            response_code = ResponseCodes.BLURRY_DOCUMENT_DETECTED
-            is_document_blurry = True
+            elif blur_result.is_blurry and blur_enforced:
+                process_status = ProcessStatus.BLURRY_DOCUMENT_DETECTED
+                response_code = ResponseCodes.BLURRY_DOCUMENT_DETECTED
+                textract_result = None
 
-        elif result.document_count > 1:
-            process_status = ProcessStatus.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE
-            response_code = ResponseCodes.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE
+            elif blur_result.analysis_failed:
+                logger.warning("Blur detection failed, continuing with preclassification")
 
-        else:
-            if content_type in FileValidation.GRAYSCALE_CONVERTIBLE:
-                process_status = ProcessStatus.PENDING_IMAGE_OPTIMIZATION
+        if process_status not in (
+            ProcessStatus.NO_DOCUMENT_DETECTED,
+            ProcessStatus.BLURRY_DOCUMENT_DETECTED,
+        ):
+            # Blur check passed or was skipped - run LLM preclassification
+            result = preclassify_document(file_bytes, content_type)
+
+            pre_classification_document_type = result.document_type
+            pre_classification_confidence = result.confidence
+            pre_classification_input_tokens = result.input_tokens
+            pre_classification_output_tokens = result.output_tokens
+            pre_classification_duration_seconds = result.duration_seconds
+            pre_classification_model_id = result.model_id
+
+            if result.document_count > 1:
+                process_status = ProcessStatus.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE
+                response_code = ResponseCodes.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE
+                textract_result = None
+
             else:
-                process_status = ProcessStatus.NOT_STARTED
+                pre_classification_blueprint_match_result = find_matching_blueprint(
+                    file_bytes, content_type, category=result.document_type
+                )
+                logger.info(
+                    "Blueprint match result",
+                    extra={
+                        "matched_document_type": pre_classification_blueprint_match_result.matched_document_type,
+                        "confidence": pre_classification_blueprint_match_result.confidence,
+                        "duration_seconds": str(
+                            pre_classification_blueprint_match_result.duration_seconds
+                        ),
+                    },
+                )
+
+                # Check if this is an identity document eligible for Textract
+                textract_result = try_textract_identity(
+                    result.document_type, content_type, file_bytes, ddb_key
+                )
+
+                if textract_result is None:
+                    # Not a Textract-eligible doc or flag is off; route to BDA
+                    if content_type in FileValidation.GRAYSCALE_CONVERTIBLE:
+                        process_status = ProcessStatus.PENDING_IMAGE_OPTIMIZATION
+                    else:
+                        process_status = ProcessStatus.NOT_STARTED
+                else:
+                    # Textract succeeded inline; upsert as STARTED, finalize_textract_result
+                    # will transition to SUCCESS after the upsert
+                    process_status = ProcessStatus.STARTED
 
     # initial status does not qualify for bda processing
     # create the json response signaling the process is complete
-    if not ProcessStatus.is_pending_extraction(process_status):
+    # (skip for Textract -- finalize_textract_result handles its own response)
+    if not ProcessStatus.is_pending_extraction(process_status) and textract_result is None:
         internal_api_response = get_internal_api_response(
             object_key=ddb_key,
             response_code=response_code,
@@ -385,27 +452,53 @@ def upsert_initial_ddb_record(
             trace_id=trace_id,
             batch_id=batch_id,
             is_document_blurry=is_document_blurry,
+            blur_analysis_failed=blur_analysis_failed,
+            ocr_avg_word_confidence=ocr_avg_word_confidence,
+            document_word_count=document_word_count,
+            blur_llm_checked=blur_llm_checked,
             is_password_protected=is_password_protected,
-            pre_classification=PreClassificationData(
+            pre_classification=PreClassificationDdbFields(
                 document_type=pre_classification_document_type,
                 confidence=pre_classification_confidence,
                 input_tokens=pre_classification_input_tokens,
                 output_tokens=pre_classification_output_tokens,
                 duration_seconds=pre_classification_duration_seconds,
                 model_id=pre_classification_model_id,
+                blueprint_matched_document_type=(
+                    pre_classification_blueprint_match_result.matched_document_type
+                    if pre_classification_blueprint_match_result
+                    else None
+                ),
+                blueprint_match_confidence=(
+                    pre_classification_blueprint_match_result.confidence
+                    if pre_classification_blueprint_match_result
+                    else None
+                ),
+                blueprint_match_input_tokens=(
+                    pre_classification_blueprint_match_result.input_tokens
+                    if pre_classification_blueprint_match_result
+                    else None
+                ),
+                blueprint_match_output_tokens=(
+                    pre_classification_blueprint_match_result.output_tokens
+                    if pre_classification_blueprint_match_result
+                    else None
+                ),
+                blueprint_match_duration_seconds=(
+                    pre_classification_blueprint_match_result.duration_seconds
+                    if pre_classification_blueprint_match_result
+                    else None
+                ),
             ),
+            document_processor_started_at=document_processor_started_at,
+            is_document_processor_cold_start=is_document_processor_cold_start,
         )
     )
 
     # explicitly remove file reference to free memory for the lambda
     del file_bytes
 
-    # document did not qualify for bda, processing complete
-    # create the v1 api response here and save to ddb
-    # write to sqs as the file was received, but no data extracted
-    if not ProcessStatus.is_pending_extraction(process_status):
-        v1_response = build_v1_api_response(ddb_key, process_status)
-        update_expr = f"SET {DocumentMetadata.V1_API_RESPONSE_JSON} = :v1ResponseJson"
-        expr_values = {":v1ResponseJson": json.dumps(v1_response)}
-        _execute_ddb_update(ddb_key, update_expr, expr_values)
-        _send_record_to_metrics_queue(ddb_key)
+    # Textract completed inline -- finalize the record with extraction results
+    if textract_result is not None:
+        finalize_textract_result(ddb_key, textract_result, user_provided_document_category)
+        return

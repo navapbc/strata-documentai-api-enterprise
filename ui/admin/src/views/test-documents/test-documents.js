@@ -79,7 +79,7 @@ export function mount(root) {
   updateRunButton();
 }
 
-export function unmount(root) {
+export function unmount(_root) {
   cancelTest();
   if (_tenantUnsub) {
     _tenantUnsub();

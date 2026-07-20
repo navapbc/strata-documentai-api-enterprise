@@ -7,15 +7,18 @@ from fastapi import Response
 
 from documentai_api.config.constants import (
     DocumentCategory,
+    ExtractMethod,
     ProcessStatus,
 )
+from documentai_api.dtos.classification import ClassificationData
+from documentai_api.dtos.processing import InternalApiResponse
 from documentai_api.logging import get_logger
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services.bda import get_bda_result_json
 from documentai_api.utils.bda import extract_field_values_from_bda_results
-from documentai_api.utils.dto import ClassificationData, InternalApiResponse
 from documentai_api.utils.field_labels import get_field_label
 from documentai_api.utils.response_codes import ResponseCodes
+from documentai_api.utils.textract import extract_field_values_from_textract_results
 
 logger = get_logger(__name__)
 
@@ -45,10 +48,18 @@ def _extract_field_values(
         if not bda_results:
             return {}
 
-        metadata, field_values, field_geometry = extract_field_values_from_bda_results(
-            bda_results, include_geometry=include_bounding_box
-        )
-        field_confidence_map_list = metadata.field_confidence_map_list
+        extract_method = ddb_record.get(DocumentMetadata.EXTRACT_METHOD)
+
+        if extract_method == ExtractMethod.TEXTRACT:
+            metadata, field_values, field_geometry = extract_field_values_from_textract_results(
+                bda_results
+            )
+            field_confidence_map_list = metadata["field_confidence_map_list"]
+        else:
+            metadata, field_values, field_geometry = extract_field_values_from_bda_results(
+                bda_results, include_geometry=include_bounding_box
+            )
+            field_confidence_map_list = metadata.field_confidence_map_list
     else:
         field_confidence_map_list = json.loads(
             ddb_record.get(DocumentMetadata.FIELD_CONFIDENCE_SCORES, "[]")
@@ -119,11 +130,18 @@ def get_internal_api_response(
 
         user_provided_document_category = get_user_provided_document_category(object_key)
 
+    try:
+        document_category = (
+            DocumentCategory(user_provided_document_category)
+            if user_provided_document_category
+            else None
+        )
+    except ValueError:
+        document_category = None
+
     return InternalApiResponse(
         validation_passed=ResponseCodes.is_success_response_code(response_code),
-        document_category=DocumentCategory(user_provided_document_category)
-        if user_provided_document_category
-        else None,
+        document_category=document_category,
         matched_document_class=matched_document_class,
         response_code=response_code,
         response_message=ResponseCodes.get_message(response_code),
@@ -150,7 +168,10 @@ def build_v1_api_response(
     matched_document_class = ddb_record.get(DocumentMetadata.BDA_MATCHED_DOCUMENT_CLASS)
     total_time = ddb_record.get(DocumentMetadata.TOTAL_PROCESSING_TIME_SECONDS)
     created_at = ddb_record.get(DocumentMetadata.CREATED_AT)
-    completed_at = ddb_record.get(DocumentMetadata.BDA_COMPLETED_AT)
+    # Coalesce: new records write extractionCompletedAt; legacy records have bdaCompletedAt
+    completed_at = ddb_record.get(DocumentMetadata.EXTRACTION_COMPLETED_AT) or ddb_record.get(
+        DocumentMetadata.BDA_COMPLETED_AT
+    )
 
     base_response = {"jobId": job_id, "jobStatus": job_status, "createdAt": created_at}
 
@@ -185,8 +206,27 @@ def build_v1_api_response(
             if tenant_id and document_type and fields:
                 try:
                     from documentai_api.utils.extraction_rules import apply_extraction_rules
+                    from documentai_api.utils.ssm import is_missing_geo_included_with_missing_fields
 
-                    rule_result = apply_extraction_rules(tenant_id, document_type, fields)
+                    # Build the set of fields to treat as missing for rule evaluation
+                    missing_fields: list[str] = []
+                    if is_missing_geo_included_with_missing_fields():
+                        for key in (
+                            DocumentMetadata.BDA_MATCHED_BLUEPRINT_FIELD_MISSING_GEOMETRY_LIST,
+                            DocumentMetadata.BDA_MATCHED_BLUEPRINT_FIELD_EMPTY_LIST,
+                        ):
+                            raw = ddb_record.get(key)
+                            if raw:
+                                missing_fields.extend(
+                                    json.loads(raw) if isinstance(raw, str) else raw
+                                )
+
+                    rule_result = apply_extraction_rules(
+                        tenant_id,
+                        document_type,
+                        fields,
+                        missing_fields=missing_fields or None,
+                    )
                     fields = rule_result.fields
 
                     if rule_result.missing_required_field_list:
@@ -242,6 +282,18 @@ def build_v1_api_response(
                 "additionalInfo": data.additional_info if data else None,
                 "responseCode": ResponseCodes.NO_DOCUMENT_DETECTED,
                 "responseMessage": ResponseCodes.get_message(ResponseCodes.NO_DOCUMENT_DETECTED),
+            }
+        )
+
+    elif job_status == ProcessStatus.BLURRY_DOCUMENT_DETECTED.value:
+        base_response.update(
+            {
+                "jobStatus": "not_supported",
+                "message": "Document is blurry",
+                "responseCode": ResponseCodes.BLURRY_DOCUMENT_DETECTED,
+                "responseMessage": ResponseCodes.get_message(
+                    ResponseCodes.BLURRY_DOCUMENT_DETECTED
+                ),
             }
         )
 
@@ -304,7 +356,7 @@ def build_flat_file(field_names: list[str], data: list[dict[str, Any]], delim: s
         if s is None:
             return '""'
 
-        escaped = s.replace('"', '""')
+        escaped = str(s).replace('"', '""')
         return f'"{escaped}"'
 
     header = delim.join(escape_value(name) for name in field_names)

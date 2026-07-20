@@ -143,7 +143,7 @@ def set_ddb_doc_metadata_table_env_vars(ddb_doc_metadata_table_resource, monkeyp
     monkeypatch.setenv(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_TENANT_INDEX_NAME, "tenant-index")
     monkeypatch.setenv(EnvVars.DOCUMENTAI_INPUT_LOCATION, "s3://test/input")
     monkeypatch.setenv(EnvVars.DOCUMENTAI_OUTPUT_LOCATION, "s3://test/output")
-    monkeypatch.setenv(EnvVars.BDA_PROJECT_ARN, "arn:aws:test")
+    monkeypatch.setenv(EnvVars.BDA_PROJECT_ARN_ALL, "arn:aws:test")
     monkeypatch.setenv(EnvVars.BDA_PROFILE_ARN, "arn:aws:test")
 
 

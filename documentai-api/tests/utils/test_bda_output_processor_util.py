@@ -66,7 +66,7 @@ def test_process_bda_output_blueprint_matched_without_user_category():
             "documentai_api.utils.bda_output_processor.classify_as_success"
         ) as mock_classify_as_success,
         patch(
-            "documentai_api.utils.ddb.get_ddb_record_from_bda_output",
+            "documentai_api.utils.bda_output_processor.get_ddb_record_from_bda_output",
             return_value=MOCK_DDB_RECORD,
         ),
         patch(
@@ -98,7 +98,7 @@ def test_process_bda_output_blueprint_matched():
             "documentai_api.utils.bda_output_processor.classify_as_success"
         ) as mock_classify_as_success,
         patch(
-            "documentai_api.utils.ddb.get_ddb_record_from_bda_output",
+            "documentai_api.utils.bda_output_processor.get_ddb_record_from_bda_output",
             return_value=MOCK_DDB_RECORD,
         ),
         patch(
@@ -140,7 +140,7 @@ def test_process_bda_output_no_matching_blueprint(text, expected_status, expecte
             f"documentai_api.utils.bda_output_processor.{expected_classify_method}"
         ) as mock_classify_method,
         patch(
-            "documentai_api.utils.ddb.get_ddb_record_from_bda_output",
+            "documentai_api.utils.bda_output_processor.get_ddb_record_from_bda_output",
             return_value=MOCK_DDB_RECORD,
         ),
     ):

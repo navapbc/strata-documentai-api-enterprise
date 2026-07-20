@@ -2,6 +2,7 @@
 """Process uploaded documents: insert to DDB, convert if needed, invoke BDA."""
 
 import os
+from datetime import UTC, datetime
 from typing import Any
 
 import typer
@@ -20,24 +21,42 @@ from documentai_api.config.constants import (
     S3MetadataKeys,
 )
 from documentai_api.config.env import EnvVars, get_aws_config, get_required_env
+from documentai_api.dtos.classification import ClassificationData
+from documentai_api.dtos.processing import CropResult
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import s3 as s3_service
-from documentai_api.utils.bda_invoker import invoke_bedrock_data_automation
+from documentai_api.utils.bda_invoker import (
+    invoke_bedrock_data_automation,
+    skip_bda_if_unclassified,
+)
 from documentai_api.utils.ddb import get_ddb_record
 from documentai_api.utils.document_lifecycle import (
     classify_as_failed,
+    classify_as_no_custom_blueprint_matched,
     classify_as_not_implemented,
     set_bda_processing_status_started,
     set_processing_status_started,
     upsert_initial_ddb_record,
 )
-from documentai_api.utils.dto import ClassificationData, CropResult
 from documentai_api.utils.image_optimization import optimize_s3_image
 from documentai_api.utils.s3 import parse_s3_uri
 from documentai_api.utils.uploads import validate_s3_object_is_bda_native
 
 logger = documentai_api.logging.get_logger(__name__)
 app = typer.Typer()
+
+
+def _should_invoke_bda(preclassification_category: str | None) -> bool:
+    """Determine if BDA should be invoked based on preclassification and feature flag.
+
+    Skip is driven by preclassify returning "other_document" (i.e. no category,
+    so no blueprint would match) - NOT by an actual blueprint match test. The
+    flag name references blueprints because "unclassified" implies "no blueprint
+    will match"; the live check is the free other_document signal from preclassify.
+    """
+    if preclassification_category and preclassification_category != "other_document":
+        return True
+    return not skip_bda_if_unclassified()
 
 
 def _persist_optimization_metrics(
@@ -90,7 +109,7 @@ def _invoke_bda(
         retry=retry_if_exception_type(ClientError),
     ):
         with attempt:
-            invocation_arn, project_arn = invoke_bedrock_data_automation(
+            invocation_arn, project_arn, pages_sent = invoke_bedrock_data_automation(
                 bucket_name, object_key, preclassification_category
             )
 
@@ -98,6 +117,7 @@ def _invoke_bda(
                 object_key=ddb_key,
                 bda_invocation_arn=invocation_arn,
                 bda_project_arn_used=project_arn,
+                pages_sent_to_bda=pages_sent,
             )
 
             logger.info(f"BDA job started for {ddb_key}, ARN: {invocation_arn}")
@@ -132,6 +152,7 @@ def main(
     job_id: str | None = None,
     trace_id: str | None = None,
     batch_id: str | None = None,
+    is_cold_start: bool = False,
 ) -> None:
     """Process uploaded document and invoke BDA.
 
@@ -145,7 +166,9 @@ def main(
         job_id: Optional job ID (will be read from S3 metadata if not provided)
         trace_id: Optional trace ID (will be read from S3 metadata if not provided)
         batch_id: Optional batch ID (will be read from S3 metadata if not provided)
+        is_cold_start: Whether this is the Lambda container's first invocation
     """
+    processor_started_at = datetime.now(UTC)
     if bucket_name is None:
         input_location = get_required_env(EnvVars.DOCUMENTAI_INPUT_LOCATION)
         bucket_name, _ = parse_s3_uri(input_location)
@@ -198,6 +221,8 @@ def main(
             job_id=job_id,
             trace_id=trace_id,
             batch_id=batch_id,
+            document_processor_started_at=processor_started_at.isoformat(),
+            is_document_processor_cold_start=is_cold_start,
         )
         existing_record = get_ddb_record(ddb_key)
 
@@ -248,8 +273,17 @@ def main(
             _persist_optimization_metrics(
                 ddb_key, opt.crop_result, opt.grayscale_applied, opt.file_size_bytes
             )
-            invoke_bda(bucket_name, object_key, ddb_key, preclassification_category)
-            logger.info(f"Optimized {ddb_key} and invoked BDA")
+            if _should_invoke_bda(preclassification_category):
+                invoke_bda(bucket_name, object_key, ddb_key, preclassification_category)
+                logger.info(f"Optimized {ddb_key} and invoked BDA")
+            else:
+                logger.info(f"{ddb_key} preclassified as other_document; skipping BDA (flag on)")
+                classify_as_no_custom_blueprint_matched(
+                    object_key=ddb_key,
+                    data=ClassificationData(
+                        additional_info="Preclassified as other_document; BDA skipped per feature flag"
+                    ),
+                )
         else:
             _persist_optimization_metrics(ddb_key, opt.crop_result, False, None)
             classify_as_not_implemented(
@@ -277,7 +311,16 @@ def main(
             apply_grayscale=False,
         )
         _persist_optimization_metrics(ddb_key, opt.crop_result, False, opt.file_size_bytes)
-        invoke_bda(bucket_name, object_key, ddb_key, preclassification_category)
+        if _should_invoke_bda(preclassification_category):
+            invoke_bda(bucket_name, object_key, ddb_key, preclassification_category)
+        else:
+            logger.info(f"{ddb_key} preclassified as other_document; skipping BDA (flag on)")
+            classify_as_no_custom_blueprint_matched(
+                object_key=ddb_key,
+                data=ClassificationData(
+                    additional_info="Preclassified as other_document; BDA skipped per feature flag"
+                ),
+            )
     else:
         # Already processing or terminal (SUCCESS, FAILED, STARTED) - skip.
         logger.info(f"File {ddb_key} already has status: {status}, skipping")

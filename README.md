@@ -18,34 +18,55 @@
 
 # DocumentAI API
 
-Open source tools for document processing and intelligent data extraction. 
-
-DocumentAI API is a serverless document processing platform that helps teams upload documents, extract structured data, manage tenants and API keys, and review results through an admin console for operating document extraction workflows.
-
-This repository is a complete DocumentAI API application. It includes the API, admin UI, infrastructure, documentation, and deployment scripts needed to run the platform in AWS.
+A serverless document processing platform - upload documents, extract structured data, and manage the full pipeline through an admin console.
 
 For Strata template applications, see [`navapbc/strata`](https://github.com/navapbc/strata).
 
 > ⚠️ **Public Preview / Active Development (June 2026)**
 > This project is under active development, but is being designed for out-of-the-box use. APIs, configuration, and features may change.
 
+## See it in action
+
+**Local API setup** - clone, configure, and run the API locally with no AWS needed.
+
+![Local API setup](docs/documentai-api/media/api-setup-demo.gif)
+
+**Admin console** - tenant and user management, API keys, document review.
+
+![Admin console walkthrough](docs/documentai-api/media/admin-walkthrough.gif)
+
+**Extraction rules** - configure per-tenant, per-document-type field rules.
+
+![Extraction rules walkthrough](docs/documentai-api/media/admin-extraction-rules-walkthrough.gif)
+
+**Demo UI** - upload a document and view extraction results with bounding box overlay.
+
+![Demo UI walkthrough](docs/documentai-api/media/demo-walkthrough.gif)
+
+## How it works
+
+A client uploads a document via the API. It's stored in S3 and queued for processing via EventBridge. A processor Lambda invokes Bedrock Data Automation with a tenant-specific blueprint, writes results back to S3, and a second Lambda extracts fields into DynamoDB. Metrics flow through SQS into Parquet via Glue.
+
+![Architecture diagram](docs/documentai-api/media/architecture.svg)
+
 ## Features
 
-- API for uploading, identifying, and extracting data from document files
-- Serverless FastAPI application deployed on AWS Lambda
-- Document processing with Bedrock Data Automation
-- Multi-tenant API key authentication and authorization
-- Admin console for managing tenants, users, API keys, and extraction rules
-- Terraform infrastructure for the full serverless stack
-- Metrics pipeline for document processing and platform usage
-- Cognito-backed admin authentication with MFA and Google SSO support
+- **[Document upload and processing](docs/documentai-api/document-processing.md)** - Bedrock Data Automation blueprints, with Textract AnalyzeID for IDs and passports
+- **[Document viewer](docs/documentai-api/document-viewer.md)** - extracted fields with bounding box overlay linked to the source image
+- **[Configurable extraction rules engine](docs/documentai-api/extraction-rules.md)** - required, optional, and excluded fields per tenant and document type
+- **[Multi-tenancy with role-based access](docs/documentai-api/access-control.md)** - tenant-admin and super-admin roles, tenant-scoped API keys
+- **[Authorization](docs/documentai-api/authorization.md)** - Cognito with TOTP MFA, optional Google SSO, and API key support for programmatic clients
+- **[Admin console](ui/admin/README.md)** - manage tenants, users, API keys, extraction rules, and review processed documents
+- **[Demo environment](ui/demo/README.md)** - upload documents and view extraction results without tenant configuration
+- **[Metrics pipeline](docs/documentai-api/metrics-pipeline.md)** - SQS -> Glue -> S3 (Parquet), queryable per tenant
+- **[Serverless Terraform infrastructure](infra/README.md)** - Lambda containers, API Gateway, CloudFront, DynamoDB, S3
 
-## Getting Started
-### Repo structure
+## Repo structure
+
 ```
-├── documentai-api/     # Python API using FastAPI on Lambda
+├── documentai-api/     # Python FastAPI on Lambda
 ├── ui/
-│   ├── shared/         # Shared services, utils, and styles
+│   ├── shared/         # Shared utilities, styles, and recording fixtures
 │   ├── admin/          # Admin console (vanilla JS SPA)
 │   └── demo/           # Demo UI (upload + extraction with bbox overlay)
 ├── infra/              # Terraform infrastructure
@@ -54,204 +75,16 @@ For Strata template applications, see [`navapbc/strata`](https://github.com/nava
 └── Makefile            # Commands for setup, deploy, and teardown
 ```
 
-### Requirements
+## Get started
 
-Before getting started, install and configure:
-
-- AWS CLI
-- Terraform 1.10 or newer
-- Docker
-- Node.js 18 or newer
-- Python 3.11 or newer with [uv](https://github.com/astral-sh/uv)
-
-You will also need an AWS profile with permission to create the required infrastructure.
-
-### Setup
-
-To set up the application for the first time:
-
-1. Configure your AWS profile.
-
-```bash
-export AWS_PROFILE=your-profile
-```
-
-2. Create the Terraform state bucket. This only needs to happen once per environment.
-
-```bash
-cd infra
-make infra-bootstrap ENVIRONMENT=dev
-make infra-init ENVIRONMENT=dev
-```
-
-3. Deploy the infrastructure and admin UI.
-
-```bash
-cd ..
-make deploy
-```
-
-The deploy command builds the API, applies the Terraform infrastructure, builds the admin UI, uploads it to S3, and updates CloudFront. The admin UI configuration is generated automatically during deployment.
-
-### Local development
-
-#### API
-
-To run the API locally with Docker:
-
-```bash
-cd documentai-api
-cp local.env.example .env
-make init
-make start
-```
-
-The API will run at `localhost:8000`.
-
-To run without Docker:
-
-```bash
-make init-local
-export RUN_CMD_APPROACH=local
-make start-local
-```
-
-#### Admin UI
-
-```bash
-cd ui/admin
-npm install
-cp config.example.json config.json
-npm run dev
-```
-
-The admin UI will run at `localhost:3000`. If you have not deployed the infrastructure yet, update `ui/admin/config.json` with the API endpoint and Cognito values you want to use.
-
-#### Demo UI
-
-```bash
-cd ui/demo
-npm install
-cp config.example.json config.json
-npm run dev
-```
-
-The demo UI will run at `localhost:3001`. It provides document upload and extraction with bounding box overlay - no admin features.
-
-### Deploy
-
-From the repository root:
-
-```bash
-make deploy
-```
-
-You can also deploy pieces separately:
-
-```bash
-make deploy-infra
-make deploy-ui
-```
-
-To use a specific environment or AWS profile:
-
-```bash
-make deploy ENVIRONMENT=dev AWS_PROFILE=my-profile
-```
-> **Note**: Region is configured in `infra/environments/<env>/terraform.tfvars`. The state bucket is created in `us-east-1` by default.
-
-Only the `dev` environment exists today. To add another environment, copy `infra/environments/dev/` and update its `terraform.tfvars`.
-
-### Teardown
-
-To remove the deployed infrastructure:
-
-```bash
-cd infra
-make infra-destroy ENVIRONMENT=dev
-```
-
-## Components
-
-### documentai-api/
-
-FastAPI application deployed as a Lambda container. Handles document upload and processing via Bedrock Data Automation, multi-tenant API key authentication, extraction rule configuration, and metrics collection.
-
-```bash
-cd documentai-api
-make start        # Local development server (Docker)
-make test         # Run pytest suite
-make test-e2e     # Run e2e suite
-make lint         # Ruff + mypy
-```
-
-> [!NOTE]
-> The `e2e` and `integration` test suites run against **synthetic, fake sample documents**
-> that contain no real data. See
-> [test-documents/README.md](documentai-api/tests/helpers/fixtures/test-documents/README.md)
-> for details on the test data and how to report a concern.
-
-### ui/admin/
-
-Single-page admin console for managing the platform. Features API key lifecycle management, tenant and user management with role-based access, extraction rule editor, document viewer, and Cognito auth with TOTP MFA.
-
-```bash
-cd ui/admin
-npm run dev       # Dev server at localhost:3000
-npm test          # Unit tests (Vitest)
-npm run test:e2e  # e2e tests (Playwright)
-```
-
-### ui/demo/
-
-Minimal demo app for uploading documents and viewing extraction results with bounding box overlays. Same Cognito auth, auto-scoped to the user's tenant.
-
-```bash
-cd ui/demo
-npm run dev       # Dev server at localhost:3001
-npm test          # Unit tests (Vitest)
-```
-
-### infra/
-
-Terraform modules for the complete serverless stack. See [infra/README.md](infra/README.md) for the full module list and usage.
-
-```bash
-cd infra
-make infra-plan   # Terraform plan
-make infra-apply  # Terraform apply
-```
-
-## Architecture
-
-At a high level:
-
-1. A client uploads a document through the API Gateway to Lambda.
-2. The document is stored in S3 and metadata in DynamoDB.
-3. EventBridge triggers the document processor Lambda.
-4. The processor invokes Bedrock Data Automation with a tenant-specific blueprint.
-5. BDA writes results to S3.
-6. The result processor Lambda extracts fields and updates DynamoDB.
-7. Metrics are emitted to SQS, processed into Parquet via Glue, and stored in S3.
-
-The system follows an event-driven architecture:
-
-![Architecture diagram](docs/documentai-api/media/architecture.svg)
-
-The diagram source lives in [`architecture.mmd`](docs/documentai-api/diagrams/architecture.mmd).
-
-## Auth
-
-- **API clients**: `API-Key` header, DynamoDB-backed and tenant-scoped
-- **Admin users**: Cognito JWT with super-admin or tenant-admin roles
-- **Google SSO**: Optional federated sign-in via Cognito (admin + demo UIs)
-- **Dual auth**: Endpoints support both via `get_user_context_with_fallback`
+- [Setup and deploy](SETUP.md) - requirements, first-time bootstrap, deploy, teardown
+- [DocumentAI API](documentai-api/README.md) - API reference and development
+- [Postman collection](docs/documentai-api/postman/DocumentAI.postman_collection.json) - import to explore the API locally (no AWS needed)
 
 ## Contributing
 
 For more information about our contribution guidelines, see
-[CONTRIBUTING.md](CONTRIBUTING.md). All contributors are expected to follow our
-[Code of Conduct](CODE_OF_CONDUCT.md).
+[CONTRIBUTING.md](CONTRIBUTING.md). All contributors are expected to follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## License
 

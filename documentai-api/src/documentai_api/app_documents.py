@@ -301,9 +301,9 @@ async def get_document_results(
                 message="Processing in progress",
             )
 
-        # TODO: Terminal states are immutable - add Cache-Control + ETag headers
-        # to reduce DDB reads from repeated client polls after completion.
-        # processing complete
+        if job_status.process_status and ProcessStatus.is_classified(job_status.process_status):
+            response.headers["Cache-Control"] = "private, max-age=3600, immutable"
+
         if include_extracted_data:
             if not job_status.object_key or not job_status.process_status:
                 raise HTTPException(status_code=500, detail=f"Incomplete record for job {job_id}")

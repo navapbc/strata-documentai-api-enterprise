@@ -70,15 +70,10 @@ export function clearTestHistory() {
 }
 
 async function loadSchemas() {
+  if (Object.keys(Store.get().schemas).length > 0) return;
   try {
     const data = await SchemasService.getAllFields();
-    const schemas = {};
-    for (const field of data.fields || []) {
-      const docType = field.documentType;
-      if (!schemas[docType]) schemas[docType] = [];
-      schemas[docType].push(field);
-    }
-    Store.set({ schemas, schemasLoading: false });
+    Store.set({ schemas: SchemasService.groupFieldsByDocType(data), schemasLoading: false });
   } catch (e) {
     Store.set({ schemasLoading: false });
     Toast.show(`Failed to load schemas: ${e.message}`);

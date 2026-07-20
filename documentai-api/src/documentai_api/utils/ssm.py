@@ -28,16 +28,76 @@ def get_parameter_value(param_name: str, default: str | None = None) -> str:
 
 
 def is_document_crop_enabled() -> bool:
-    """Whether image document-ROI cropping is on. SSM-configurable at runtime; default off.
+    """Whether image document-ROI cropping is on. SSM-configurable at runtime; default off."""
+    from documentai_api.config.env import get_aws_config
 
-    Mirrors the preclassification-routing flag: the parameter path is provided via
-    env config so it can be toggled in SSM without a redeploy. Defaults to off
-    (opt-in) when the flag is unconfigured or the parameter is missing, so it can
-    be validated per-environment before being turned on.
+    config = get_aws_config()
+    if not config.ssm_prefix:
+        return False
+    param = f"{config.ssm_prefix}/feature-flags/document-crop"
+    return get_parameter_value(param, default="false").lower() == "true"
+
+
+def is_blur_detection_enabled() -> bool:
+    """Whether Textract-based blur detection runs on each image.
+
+    When enabled, detect_blur is called and results (is_blurry, analysis_failed,
+    avg confidence, word count, llm_checked) are recorded to DDB. Does not reject
+    documents unless enforce-blur-rejection is also enabled. Default: true (param
+    absent means enabled so detection is on by default).
     """
     from documentai_api.config.env import get_aws_config
 
     config = get_aws_config()
-    if not config.document_crop_param:
+    if not config.ssm_prefix:
+        return True
+    param = f"{config.ssm_prefix}/feature-flags/enable-blur-detection"
+    return get_parameter_value(param, default="true").lower() == "true"
+
+
+def is_blur_rejection_enforced() -> bool:
+    """Whether a blurry detection actually rejects the document.
+
+    When false, blur detection still runs (if enabled) and records results, but
+    does not set BLURRY_DOCUMENT_DETECTED status. Default: false.
+    """
+    from documentai_api.config.env import get_aws_config
+
+    config = get_aws_config()
+    if not config.ssm_prefix:
         return False
-    return get_parameter_value(config.document_crop_param, default="false").lower() == "true"
+    param = f"{config.ssm_prefix}/feature-flags/enforce-blur-rejection"
+    return get_parameter_value(param, default="false").lower() == "true"
+
+
+def is_textract_identity_enabled() -> bool:
+    """Whether Textract AnalyzeID is used for identity documents.
+
+    When enabled, documents preclassified as identity_verification are routed to
+    Textract AnalyzeID instead of BDA. Controlled via an SSM parameter so it can
+    be toggled per-environment without redeploying.
+    """
+    from documentai_api.config.env import get_aws_config
+
+    config = get_aws_config()
+    if not config.ssm_prefix:
+        return False
+    param = f"{config.ssm_prefix}/feature-flags/textract-identity-enabled"
+    return get_parameter_value(param, default="false").lower() == "true"
+
+
+def is_missing_geo_included_with_missing_fields() -> bool:
+    """Whether fields without geometry and below confidence threshold are treated as missing.
+
+    When enabled, non-empty fields lacking a bounding box (geometry) with confidence
+    below the configured threshold are excluded from the non-empty count, excluded
+    from average confidence, and treated as absent for extraction rule evaluation
+    (triggering response code 101 if required). Default: true.
+    """
+    from documentai_api.config.env import get_aws_config
+
+    config = get_aws_config()
+    if not config.ssm_prefix:
+        return True
+    param = f"{config.ssm_prefix}/feature-flags/include-missing-geo-with-missing-fields"
+    return get_parameter_value(param, default="true").lower() == "true"

@@ -16,29 +16,32 @@ regex = '''docai_[A-Za-z0-9_-]{32}'''
 keywords = ["docai_"]
 
 [[allowlists]]
-description = "Known false positives reviewed 2026-05-29 — no real secrets present"
+description = "Known false positives reviewed 2026-05-29 - no real secrets present"
 
 # Match the regexes below against the full matched text, not just the extracted
 # secret, so we can key off surrounding identifiers (e.g. the SSM param name).
 regexTarget = "match"
 
 regexes = [
-  # docs/documentai-api/api-authentication.md — literal placeholder in curl/python examples.
+  # docs/documentai-api/api-authentication.md - literal placeholder in curl/python examples.
   # Suppress only the placeholder string, NOT the whole file, so a real key committed
   # there in future is still caught.
   '''your-api-key-here''',
-  # docs/documentai-api/api-authentication.md:107 — fake example key (a1b2c3.. sequential),
+  # docs/documentai-api/api-authentication.md:107 - fake example key (a1b2c3.. sequential),
   # matches the documentai-api-key rule. Suppress this exact placeholder only.
   '''docai_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6''',
-  # config/env.py — boto3 SSM get_parameter call (Name=..., WithDecryption=True),
+  # config/env.py - boto3 SSM get_parameter call (Name=..., WithDecryption=True),
   # not a hardcoded secret; the value is fetched from SSM at runtime.
   '''api_auth_insecure_shared_key_param''',
+  # docs/documentai-api/api-setup-demo.tape - hardcoded local dev key used in the
+  # VHS terminal recording curl example. Not a real credential.
+  '''local-dev-key''',
 ]
 
-# tests/jobs/test_document_processor_job.py — generic-api-key false positive: the
+# tests/jobs/test_document_processor_job.py - generic-api-key false positive: the
 # `.key,` attribute access adjacent to the `apply_grayscale=True` kwarg trips the
-# heuristic. Scoped to BOTH this path AND the token, so the kwarg elsewhere — or a
-# real secret in this same file — is still caught.
+# heuristic. Scoped to BOTH this path AND the token, so the kwarg elsewhere - or a
+# real secret in this same file - is still caught.
 [[allowlists]]
 condition = "AND"
 regexTarget = "match"

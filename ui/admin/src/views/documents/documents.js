@@ -1,7 +1,7 @@
 import * as DocumentsService from "../../services/documents.js";
 import * as Helpers from "../../utils/helpers.js";
-import * as Toast from "../../utils/toast.js";
 import * as Session from "../../utils/session.js";
+import * as TenantContext from "../../utils/tenant-context.js";
 import { h } from "../../utils/dom.js";
 import { tpl } from "../../utils/tpl.js";
 import {
@@ -19,42 +19,29 @@ import html from "./documents.html";
 const tmpl = tpl(html);
 
 const STORAGE_KEY_ACTIVE = "docai_documents_active_job";
-const STORAGE_KEY_SEARCHES = "docai_documents_searches";
-
-// Saved searches are stored as lightweight row objects (jobId, fileName,
-// processStatus, createdAt) so the sidebar can be rebuilt without re-fetching
-// each document - which would otherwise log a view/search audit event per row.
-function _getSavedSearches() {
-  try {
-    const parsed = JSON.parse(sessionStorage.getItem(STORAGE_KEY_SEARCHES)) || [];
-    // Tolerate the legacy bare-string format from earlier sessions.
-    return parsed.filter((row) => row && typeof row === "object" && row.jobId);
-  } catch {
-    return [];
-  }
-}
-
-function _saveSearch(row) {
-  const searches = _getSavedSearches().filter((r) => r.jobId !== row.jobId);
-  searches.unshift(row);
-  sessionStorage.setItem(STORAGE_KEY_SEARCHES, JSON.stringify(searches.slice(0, 20)));
-}
 
 let _root, _listEl, _noDocuments;
-let _searchInput, _searchBtn, _detailPanel, _previewPanel, _detailContent, _collapseBtn;
+let _statusFilter, _detailPanel, _previewPanel, _detailContent, _collapseBtn;
 let _activeJobId = null;
 let _detailCollapsed = true;
 let _fieldGeometry = null;
 let _resizeObserver = null;
+let _unsubTenant = null;
+let _recentDocuments = [];
 
 export function mount(root) {
   _root = root;
   root.replaceChildren(tmpl());
 
-  Helpers.setViewActions(); // no header actions for this view
+  Helpers.setViewActions();
 
-  _searchInput = root.querySelector("#document-search-input");
-  _searchBtn = root.querySelector("#document-search-btn");
+  _activeJobId = null;
+  _detailCollapsed = true;
+  _fieldGeometry = null;
+  _resizeObserver = null;
+  _recentDocuments = [];
+
+  _statusFilter = root.querySelector("#document-status-filter");
   _listEl = root.querySelector("#documents-list");
   _noDocuments = root.querySelector("#no-documents");
   _detailPanel = root.querySelector("#document-detail-panel");
@@ -65,17 +52,28 @@ export function mount(root) {
   _collapseBtn.addEventListener("click", toggleDetailPanel);
   _collapseBtn.classList.add("disabled");
 
-  // Hovering a field row highlights its bbox in the preview. Delegated on the
-  // containers, so it survives detail/table re-renders and async overlay render.
   linkFieldHighlighting(_detailContent, _previewPanel);
 
-  _searchBtn.disabled = true;
-  _searchInput.addEventListener("input", () => {
-    _searchBtn.disabled = !_searchInput.value.trim();
-  });
-  _searchBtn.addEventListener("click", handleSearch);
-  _searchInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && _searchInput.value.trim()) handleSearch();
+  _statusFilter.addEventListener("change", () => load());
+
+  _unsubTenant = TenantContext.onChange(() => {
+    _activeJobId = null;
+    sessionStorage.removeItem(STORAGE_KEY_ACTIVE);
+    clearDetail();
+    // Collapse the detail panel
+    _detailCollapsed = true;
+    _detailPanel.classList.add("collapsed");
+    _root.querySelector(".documents-three-panel").classList.add("detail-collapsed");
+    _collapseBtn.textContent = "\u276E";
+    _collapseBtn.title = "Expand details";
+    // Clear bbox overlay
+    clearBboxOverlay(_previewPanel);
+    if (_resizeObserver) {
+      _resizeObserver.disconnect();
+      _resizeObserver = null;
+    }
+    _fieldGeometry = null;
+    load();
   });
 
   load();
@@ -86,13 +84,17 @@ export function unmount(root) {
     _resizeObserver.disconnect();
     _resizeObserver = null;
   }
+  if (_unsubTenant) {
+    _unsubTenant();
+    _unsubTenant = null;
+  }
   root.replaceChildren();
 }
 
 function clearDetail() {
   _detailContent.innerHTML = "";
   _previewPanel.innerHTML = '<p class="empty-state">Select a document to preview</p>';
-  // Nothing to show -> the collapse toggle has no purpose.
+  _previewPanel.classList.remove("watermarked", "watermark-block");
   _collapseBtn.classList.add("disabled");
 }
 
@@ -119,23 +121,26 @@ function toggleDetailPanel() {
 }
 
 export async function load() {
-  _listEl.innerHTML = "";
-
-  // Rebuild the sidebar from cached row data - no document fetch, so no audit
-  // event is logged for merely repopulating the list. Detail/preview (and their
-  // audit events) only fire when a document is actually opened below.
-  for (const row of _getSavedSearches()) {
-    _listEl.appendChild(buildListItem(row));
-  }
-
-  if (!_listEl.children.length) {
-    _noDocuments.textContent = "Search for a document by Job ID";
+  const tenantId = TenantContext.getTenantId();
+  if (!tenantId) {
+    _recentDocuments = [];
+    renderList();
+    _noDocuments.textContent = "Select a tenant to view recent documents";
     _noDocuments.classList.remove("hidden");
-  } else {
-    _noDocuments.classList.add("hidden");
+    return;
   }
 
-  // Restore active document
+  const status = _statusFilter?.value || undefined;
+
+  try {
+    const resp = await DocumentsService.list({ tenantId, status, limit: 25 });
+    _recentDocuments = resp.documents || resp || [];
+  } catch {
+    _recentDocuments = [];
+  }
+
+  renderList();
+
   const savedActive = sessionStorage.getItem(STORAGE_KEY_ACTIVE);
   if (savedActive) {
     _activeJobId = savedActive;
@@ -145,52 +150,27 @@ export async function load() {
   }
 }
 
-async function handleSearch() {
-  const query = _searchInput.value.trim();
-  if (!query) return;
+function renderList() {
+  _listEl.innerHTML = "";
 
-  try {
-    const detail = await DocumentsService.get(query);
-    // Add to top of list if not already present
-    const existing = _listEl.querySelector(`[data-job-id="${detail.jobId}"]`);
-    if (existing) {
-      _listEl.querySelectorAll(".doc-list-item").forEach((el) => el.classList.remove("active"));
-      existing.classList.add("active");
-    } else {
-      _listEl.querySelectorAll(".doc-list-item").forEach((el) => el.classList.remove("active"));
-      const li = buildListItem({
-        jobId: detail.jobId,
-        fileName: detail.fileName,
-        processStatus: detail.processStatus,
-        createdAt: detail.createdAt,
-      });
-      li.classList.add("active");
-      _listEl.prepend(li);
-      _noDocuments.classList.add("hidden");
-    }
-    _activeJobId = detail.jobId;
-    sessionStorage.setItem(STORAGE_KEY_ACTIVE, detail.jobId);
-    _saveSearch({
-      jobId: detail.jobId,
-      fileName: detail.fileName,
-      processStatus: detail.processStatus,
-      createdAt: detail.createdAt,
-    });
-    renderDetail(detail);
-    expandDetailPanel();
-    loadPreview(detail.jobId, detail.contentType);
-  } catch (e) {
-    if (e.status === 404) {
-      Toast.show("Document not found");
-    } else {
-      Toast.show(`Search failed: ${e.message}`);
-    }
+  if (!_recentDocuments.length) {
+    const msg = TenantContext.getTenantId()
+      ? "No documents found"
+      : "Select a tenant to view recent documents";
+    _noDocuments.textContent = msg;
+    _noDocuments.classList.remove("hidden");
+    return;
+  }
+
+  _noDocuments.classList.add("hidden");
+  for (const doc of _recentDocuments) {
+    _listEl.appendChild(buildListItem(doc));
   }
 }
 
 function buildListItem(doc) {
   const cls =
-    doc.processStatus === "completed"
+    doc.processStatus === "success"
       ? "badge-success"
       : doc.processStatus === "failed"
         ? "badge-danger"
@@ -222,19 +202,6 @@ function buildListItem(doc) {
   return li;
 }
 
-function renderList(documents) {
-  _listEl.innerHTML = "";
-  if (documents.length === 0) {
-    _noDocuments.textContent = "No documents yet";
-    _noDocuments.classList.remove("hidden");
-    return;
-  }
-  _noDocuments.classList.add("hidden");
-  for (const doc of documents) {
-    _listEl.appendChild(buildListItem(doc));
-  }
-}
-
 async function loadDetail(jobId) {
   _detailContent.textContent = "Loading...";
   _fieldGeometry = null;
@@ -244,10 +211,27 @@ async function loadDetail(jobId) {
   }
   clearBboxOverlay(_previewPanel);
   try {
-    const detail = await DocumentsService.get(jobId);
+    const detail = await DocumentsService.get(jobId, {
+      includeExtractedData: true,
+      includeBoundingBox: true,
+    });
+    if (detail.fields) {
+      _fieldGeometry = extractGeometry(detail.fields);
+    }
     renderDetail(detail);
     expandDetailPanel();
-    loadPreview(jobId, detail.contentType);
+    await loadPreview(jobId, detail.contentType);
+    if (_fieldGeometry) {
+      _resizeObserver = renderBboxOverlay(_previewPanel, _fieldGeometry);
+      markFieldsWithGeometry(_detailContent, _fieldGeometry);
+    } else if (detail.fields) {
+      // Textract AnalyzeID doesn't return geometry; show a note so the
+      // absence of bounding boxes isn't mistaken for a bug.
+      const note = document.createElement("p");
+      note.className = "empty-state bbox-unavailable-note";
+      note.textContent = "Bounding boxes not available for this document";
+      _previewPanel.appendChild(note);
+    }
   } catch (e) {
     _detailContent.textContent = e.message;
     expandDetailPanel();
@@ -317,56 +301,13 @@ function renderDetail(doc) {
   ];
 
   if (doc.fields) {
-    sections.push(renderExtractedData(doc.fields));
+    sections.push(renderExtractedData(doc.fields, { revealed: true, maskable: false }));
   }
 
   // eslint-disable-next-line no-unsanitized/property -- server data rendered with esc()
   _detailContent.innerHTML = sections.join("");
 
-  // There's content now, so the collapse toggle is usable.
   _collapseBtn.classList.remove("disabled");
-
-  bindExtractedDataToggle();
-}
-
-function bindExtractedDataToggle() {
-  const toggle = _detailContent.querySelector(".extracted-data-toggle");
-  if (toggle) {
-    toggle.addEventListener("change", async () => {
-      if (toggle.checked) {
-        try {
-          const detail = await DocumentsService.get(_activeJobId, {
-            includeExtractedData: true,
-            includeBoundingBox: true,
-          });
-          if (detail.fields) {
-            _fieldGeometry = extractGeometry(detail.fields);
-            const table = _detailContent.querySelector(".extracted-data-table");
-            // eslint-disable-next-line no-unsanitized/property -- rendered with esc()
-            if (table) table.outerHTML = renderExtractedData(detail.fields, { revealed: true });
-            bindExtractedDataToggle();
-            if (_resizeObserver) _resizeObserver.disconnect();
-            _resizeObserver = renderBboxOverlay(_previewPanel, _fieldGeometry);
-            markFieldsWithGeometry(_detailContent, _fieldGeometry);
-          }
-        } catch (e) {
-          Toast.show(`Failed to load extracted data: ${e.message}`);
-          toggle.checked = false;
-        }
-      } else {
-        _detailContent.querySelectorAll(".extracted-value").forEach((td) => {
-          td.textContent = "\u2022\u2022\u2022\u2022\u2022";
-        });
-        clearBboxOverlay(_previewPanel);
-        if (_resizeObserver) {
-          _resizeObserver.disconnect();
-          _resizeObserver = null;
-        }
-        _fieldGeometry = null;
-        markFieldsWithGeometry(_detailContent, null);
-      }
-    });
-  }
 }
 
 function renderSection(title, fields) {
@@ -378,7 +319,5 @@ function renderSection(title, fields) {
     )
     .join("");
   if (!rows) return "";
-  // Section name is the table's own <thead> header (styled by the global `th`
-  // rule), so it reads as part of the table like the API keys table.
   return `<table class="detail-table"><thead><tr><th colspan="2">${Helpers.esc(title)}</th></tr></thead><tbody>${rows}</tbody></table>`;
 }

@@ -3,12 +3,13 @@
 import pytest
 
 from documentai_api.config.constants import ProcessStatus
+from documentai_api.dtos.processing import CropResult, OptimizationResult
 from documentai_api.jobs.document_processor.main import (
+    _should_invoke_bda,
     invoke_bda,
     main,
 )
 from documentai_api.schemas.document_metadata import DocumentMetadata
-from documentai_api.utils.dto import CropResult, OptimizationResult
 
 
 @pytest.fixture(autouse=True)
@@ -23,7 +24,7 @@ def mock_env(runtime_required_env):
 
 @pytest.fixture(autouse=True)
 def mock_preclassification(mocker):
-    from documentai_api.utils.dto import BedrockClassificationResult
+    from documentai_api.dtos.classification import BedrockClassificationResult
 
     mocker.patch(
         "documentai_api.utils.document_lifecycle.preclassify_document",
@@ -31,9 +32,17 @@ def mock_preclassification(mocker):
             document_type="tax_documents",
             confidence=0.95,
             document_count=1,
-            is_document=True,
-            is_blurry=False,
         ),
+    )
+
+
+@pytest.fixture(autouse=True)
+def mock_find_matching_blueprint(mocker):
+    from documentai_api.dtos.classification import PreclassificationMatchResult
+
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.find_matching_blueprint",
+        return_value=PreclassificationMatchResult(),
     )
 
 
@@ -100,6 +109,7 @@ def test_invoke_bda_success(input_pdf, mocker):
     mock_low_level_invoke.return_value = (
         "arn:aws:bedrock:us-east-1:123456789012:job/abc123",
         "arn:aws:bedrock:us-east-1:123456789012:project/test",
+        1,
     )
 
     result = invoke_bda(input_pdf.bucket_name, input_pdf.key, "test.pdf", "tax_documents")
@@ -109,6 +119,7 @@ def test_invoke_bda_success(input_pdf, mocker):
         object_key="test.pdf",
         bda_invocation_arn="arn:aws:bedrock:us-east-1:123456789012:job/abc123",
         bda_project_arn_used="arn:aws:bedrock:us-east-1:123456789012:project/test",
+        pages_sent_to_bda=1,
     )
 
 
@@ -318,3 +329,137 @@ def test_main_propagates_s3_metadata(input_pdf, mocker):
     assert call_kwargs["trace_id"] == "test-trace-id"
     assert call_kwargs["user_provided_document_category"] == "income"
     assert call_kwargs["original_file_name"] == "original.pdf"
+
+
+# =============================================================================
+# _should_invoke_bda tests
+# =============================================================================
+
+
+def test_should_invoke_bda_with_real_category(mocker):
+    """A real category always invokes BDA regardless of flag."""
+    mocker.patch(
+        "documentai_api.jobs.document_processor.main.skip_bda_if_unclassified",
+        return_value=True,
+    )
+    assert _should_invoke_bda("tax_documents") is True
+
+
+def test_should_invoke_bda_other_document_flag_off(mocker):
+    """'other_document' with skip flag OFF → invoke BDA."""
+    mocker.patch(
+        "documentai_api.jobs.document_processor.main.skip_bda_if_unclassified",
+        return_value=False,
+    )
+    assert _should_invoke_bda("other_document") is True
+
+
+def test_should_invoke_bda_other_document_flag_on(mocker):
+    """'other_document' with skip flag ON → skip BDA."""
+    mocker.patch(
+        "documentai_api.jobs.document_processor.main.skip_bda_if_unclassified",
+        return_value=True,
+    )
+    assert _should_invoke_bda("other_document") is False
+
+
+def test_should_invoke_bda_none_flag_off(mocker):
+    """None category with skip flag OFF → invoke BDA."""
+    mocker.patch(
+        "documentai_api.jobs.document_processor.main.skip_bda_if_unclassified",
+        return_value=False,
+    )
+    assert _should_invoke_bda(None) is True
+
+
+def test_should_invoke_bda_none_flag_on(mocker):
+    """None category with skip flag ON → skip BDA."""
+    mocker.patch(
+        "documentai_api.jobs.document_processor.main.skip_bda_if_unclassified",
+        return_value=True,
+    )
+    assert _should_invoke_bda(None) is False
+
+
+# =============================================================================
+# BDA skip flow (no blueprint match + flag off)
+# =============================================================================
+
+
+def test_main_skips_bda_when_no_match_and_flag_on(input_pdf, mocker, mock_invoke):
+    """When no blueprint matched and skip flag is on, BDA is skipped."""
+    from documentai_api.dtos.classification import BedrockClassificationResult
+
+    mocker.patch(
+        "documentai_api.jobs.document_processor.main.skip_bda_if_unclassified",
+        return_value=True,
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.preclassify_document",
+        return_value=BedrockClassificationResult(
+            document_type="other_document",
+            confidence=0.5,
+            document_count=1,
+        ),
+    )
+
+    mock_classify_no_match = mocker.patch(
+        "documentai_api.jobs.document_processor.main.classify_as_no_custom_blueprint_matched"
+    )
+
+    mock_get = mocker.patch("documentai_api.jobs.document_processor.main.get_ddb_record")
+    mock_get.side_effect = [
+        None,
+        {
+            DocumentMetadata.PROCESS_STATUS: ProcessStatus.NOT_STARTED.value,
+            DocumentMetadata.PRECLASSIFICATION_CATEGORY: "other_document",
+        },
+    ]
+    mocker.patch("documentai_api.jobs.document_processor.main.upsert_initial_ddb_record")
+    mocker.patch(
+        "documentai_api.jobs.document_processor.main.set_processing_status_started",
+        return_value=True,
+    )
+    mocker.patch(
+        "documentai_api.jobs.document_processor.main.optimize_s3_image",
+        return_value=OptimizationResult(
+            crop_result=CropResult(), grayscale_applied=False, file_size_bytes=100, too_large=False
+        ),
+    )
+
+    main(input_pdf.key, input_pdf.bucket_name)
+
+    mock_invoke.assert_not_called()
+    mock_classify_no_match.assert_called_once()
+
+
+def test_main_invokes_bda_when_match_found(input_pdf, mocker, mock_invoke):
+    """When a blueprint matched, BDA is always invoked."""
+    mocker.patch(
+        "documentai_api.jobs.document_processor.main.skip_bda_if_unclassified",
+        return_value=True,
+    )
+
+    mock_get = mocker.patch("documentai_api.jobs.document_processor.main.get_ddb_record")
+    mock_get.side_effect = [
+        None,
+        {
+            DocumentMetadata.PROCESS_STATUS: ProcessStatus.NOT_STARTED.value,
+            DocumentMetadata.PRECLASSIFICATION_CATEGORY: "tax_documents",
+        },
+    ]
+    mocker.patch("documentai_api.jobs.document_processor.main.upsert_initial_ddb_record")
+    mocker.patch(
+        "documentai_api.jobs.document_processor.main.set_processing_status_started",
+        return_value=True,
+    )
+    mocker.patch(
+        "documentai_api.jobs.document_processor.main.optimize_s3_image",
+        return_value=OptimizationResult(
+            crop_result=CropResult(), grayscale_applied=False, file_size_bytes=100, too_large=False
+        ),
+    )
+
+    main(input_pdf.key, input_pdf.bucket_name)
+
+    mock_invoke.assert_called_once()

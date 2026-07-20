@@ -1,0 +1,95 @@
+{
+  "IdentityDocuments": [
+    {
+      "DocumentIndex": 1,
+      "IdentityDocumentFields": [
+        {
+          "Type": {"Text": "FIRST_NAME"},
+          "ValueDetection": {"Text": "ANDREW", "Confidence": 98.0}
+        },
+        {
+          "Type": {"Text": "LAST_NAME"},
+          "ValueDetection": {"Text": "SAMPLE", "Confidence": 80.0}
+        },
+        {
+          "Type": {"Text": "MIDDLE_NAME"},
+          "ValueDetection": {"Text": "JASON", "Confidence": 98.0}
+        },
+        {
+          "Type": {"Text": "SUFFIX"},
+          "ValueDetection": {"Text": "", "Confidence": 99.0}
+        },
+        {
+          "Type": {"Text": "CITY_IN_ADDRESS"},
+          "ValueDetection": {"Text": "HARRISBURG", "Confidence": 98.0}
+        },
+        {
+          "Type": {"Text": "ZIP_CODE_IN_ADDRESS"},
+          "ValueDetection": {"Text": "171010000", "Confidence": 98.0}
+        },
+        {
+          "Type": {"Text": "STATE_IN_ADDRESS"},
+          "ValueDetection": {"Text": "PA", "Confidence": 85.0}
+        },
+        {
+          "Type": {"Text": "STATE_NAME"},
+          "ValueDetection": {"Text": "PENNSYLVANIA", "Confidence": 96.0}
+        },
+        {
+          "Type": {"Text": "DOCUMENT_NUMBER"},
+          "ValueDetection": {"Text": "99999999", "Confidence": 97.0}
+        },
+        {
+          "Type": {"Text": "EXPIRATION_DATE"},
+          "ValueDetection": {
+            "Text": "01/08/2026",
+            "Confidence": 97.0,
+            "NormalizedValue": {"Value": "2026-01-08T00:00:00"}
+          }
+        },
+        {
+          "Type": {"Text": "DATE_OF_BIRTH"},
+          "ValueDetection": {
+            "Text": "01/07/1973",
+            "Confidence": 96.0,
+            "NormalizedValue": {"Value": "1973-01-07T00:00:00"}
+          }
+        },
+        {
+          "Type": {"Text": "DATE_OF_ISSUE"},
+          "ValueDetection": {
+            "Text": "01/07/2022",
+            "Confidence": 97.0,
+            "NormalizedValue": {"Value": "2022-01-07T00:00:00"}
+          }
+        },
+        {
+          "Type": {"Text": "ENDORSEMENTS"},
+          "ValueDetection": {"Text": "NONE", "Confidence": 98.0}
+        },
+        {
+          "Type": {"Text": "RESTRICTIONS"},
+          "ValueDetection": {"Text": "NONE", "Confidence": 98.0}
+        },
+        {
+          "Type": {"Text": "CLASS"},
+          "ValueDetection": {"Text": "D", "Confidence": 59.0}
+        },
+        {
+          "Type": {"Text": "ADDRESS"},
+          "ValueDetection": {"Text": "123 MAIN STREET APT", "Confidence": 94.0}
+        },
+        {
+          "Type": {"Text": "COUNTY"},
+          "ValueDetection": {"Text": "", "Confidence": 99.0}
+        },
+        {
+          "Type": {"Text": "ID_TYPE"},
+          "ValueDetection": {"Text": "DRIVER LICENSE FRONT", "Confidence": 99.0}
+        }
+      ]
+    }
+  ],
+  "DocumentMetadata": {"Pages": 1},
+  "AnalyzeIDModelVersion": "1.0"
+}

@@ -38,7 +38,7 @@ def mock_env(monkeypatch):
     )
     monkeypatch.setenv(EnvVars.DOCUMENTAI_INPUT_LOCATION, "s3://test-bucket/input")
     monkeypatch.setenv(EnvVars.DOCUMENTAI_OUTPUT_LOCATION, "s3://test-bucket/output")
-    monkeypatch.setenv(EnvVars.BDA_PROJECT_ARN, "arn:aws:test")
+    monkeypatch.setenv(EnvVars.BDA_PROJECT_ARN_ALL, "arn:aws:test")
     monkeypatch.setenv(EnvVars.BDA_PROFILE_ARN, "arn:aws:test")
     monkeypatch.setenv(EnvVars.BDA_REGION, "us-east-1")
 
@@ -214,3 +214,27 @@ def test_malformed_event_returns_500_without_ddb_update():
 
     assert result["statusCode"] == 500
     mock_fail.assert_not_called()
+
+
+##############################################################################
+# Cold start lifecycle toggle
+##############################################################################
+
+
+def test_document_processor_cold_start_toggle():
+    """First handler() passes is_cold_start=True to main, second passes False."""
+    from documentai_api.jobs.document_processor import handler as handler_mod
+
+    # Reset module-level state to simulate fresh container
+    handler_mod.lifecycle["is_cold_start"] = True
+
+    with patch("documentai_api.jobs.document_processor.handler.main") as mock_main:
+        doc_handler(EVENTBRIDGE_S3_EVENT, None)
+        assert mock_main.call_args.kwargs["is_cold_start"] is True
+
+        doc_handler(EVENTBRIDGE_S3_EVENT, None)
+        assert mock_main.call_args.kwargs["is_cold_start"] is False
+
+        # Third call still False
+        doc_handler(EVENTBRIDGE_S3_EVENT, None)
+        assert mock_main.call_args.kwargs["is_cold_start"] is False

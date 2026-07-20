@@ -3,17 +3,17 @@
   <aside class="sidebar">
     <div class="sidebar-header">
       <button id="sidebar-close" class="sidebar-close" aria-label="Close menu">✕</button>
-      <h1>DocumentAI Console</h1>
+      <h1>DocumentAI Enterprise Console</h1>
       <span id="connected-url"></span>
     </div>
 
     <nav class="sidebar-nav">
-      <div class="nav-section">
-        <button class="nav-section-header" data-section="keys">
-          <span class="nav-arrow">▸</span> API Keys
+      <div class="nav-section hidden" id="nav-section-tenants">
+        <button class="nav-section-header" data-section="tenants">
+          <span class="nav-arrow">▸</span> Tenants
         </button>
-        <div class="nav-section-body hidden" id="section-keys">
-          <a class="nav-item" data-view="keys">Manage API Keys</a>
+        <div class="nav-section-body hidden" id="section-tenants">
+          <a class="nav-item" data-view="tenants">Manage Tenants</a>
         </div>
       </div>
 
@@ -26,12 +26,12 @@
         </div>
       </div>
 
-      <div class="nav-section hidden" id="nav-section-tenants">
-        <button class="nav-section-header" data-section="tenants">
-          <span class="nav-arrow">▸</span> Tenants
+      <div class="nav-section">
+        <button class="nav-section-header" data-section="keys">
+          <span class="nav-arrow">▸</span> API Keys
         </button>
-        <div class="nav-section-body hidden" id="section-tenants">
-          <a class="nav-item" data-view="tenants">Manage Tenants</a>
+        <div class="nav-section-body hidden" id="section-keys">
+          <a class="nav-item" data-view="keys">Manage API Keys</a>
         </div>
       </div>
 
@@ -40,10 +40,11 @@
           <span class="nav-arrow">▸</span> Documents
         </button>
         <div class="nav-section-body hidden" id="section-docs">
+          <a class="nav-item" data-view="documents">Recently Processed</a>
           <a class="nav-item" data-view="doc-categories">Manage Document Categories</a>
           <a class="nav-item" data-view="extraction-rules">Manage Extraction Rules</a>
           <a class="nav-item" data-view="test-documents">Test Document Extraction</a>
-          <a class="nav-item" data-view="documents">View Documents</a>
+          <!-- <a class="nav-item" data-view="document-search">Search Documents</a> TODO: wire up backend search (FilterExpression on tenant index or similar) -->
         </div>
       </div>
 
@@ -53,6 +54,16 @@
         </button>
         <div class="nav-section-body hidden" id="section-audit-log">
           <a class="nav-item" data-view="audit-log">View Audit Log Events</a>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <button class="nav-section-header" data-section="reporting">
+          <span class="nav-arrow">▸</span> Reporting
+        </button>
+        <div class="nav-section-body hidden" id="section-reporting">
+          <a class="nav-item" data-view="metrics">Metrics Dashboard</a>
+          <a class="nav-item" data-view="usage">Usage Tracking</a>
         </div>
       </div>
     </nav>
@@ -66,7 +77,7 @@
     <h2 id="view-title"></h2>
     <div id="view-actions" class="content-actions"></div>
   </div>
-  <div class="tenant-filter-bar">
+  <div class="tenant-filter-bar hidden">
     <label for="global-tenant-select">Tenant</label>
     <select id="global-tenant-select">
       <option value="">All Tenants</option>

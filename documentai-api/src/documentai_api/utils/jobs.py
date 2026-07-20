@@ -6,12 +6,12 @@ from dataclasses import dataclass
 from typing import Any
 
 from documentai_api.config.constants import ProcessStatus
+from documentai_api.dtos.classification import ClassificationData
 from documentai_api.logging import get_logger
 from documentai_api.models.api_responses import JobStatusResponse
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.ddb import get_ddb_by_job_id
 from documentai_api.utils.document_lifecycle import classify_as_failed
-from documentai_api.utils.dto import ClassificationData
 from documentai_api.utils.response_builder import build_v1_api_response
 
 logger = get_logger(__name__)
@@ -67,7 +67,7 @@ async def poll_for_completion(
 
             if (
                 job_status.process_status
-                and ProcessStatus.is_completed(job_status.process_status)
+                and ProcessStatus.is_classified(job_status.process_status)
                 and job_status.v1_response_json
             ):
                 if include_extracted_data and job_status.object_key:

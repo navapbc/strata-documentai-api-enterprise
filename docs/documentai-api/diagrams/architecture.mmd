@@ -8,8 +8,9 @@ architecture-beta
 
   %% Admin
   %% NOTE: 'material-symbols' requires external JSON injection.
-  %% The users icon render as a '?' inside the native VS Code preview window,
-  %% but generates perfectly centered 1:1 square nodes when compiled via 'make'.
+  %% The material-symbols:manage-accounts icon render as a '?' inside the native
+  %% VS Code preview window, but generates perfectly centered 1:1 square nodes 
+  %% when generated via 'make'.
   service user(material-symbols:manage-accounts)[Admin User]
   service cloudfront(logos:aws-cloudfront)[CloudFront] in admin
   service s3ui(logos:aws-s3)[S3 Static Site] in admin
@@ -38,10 +39,12 @@ architecture-beta
   %% Metrics Pipeline
   service sqs(logos:aws-sqs)[SQS Queue] in metrics
   service metrics-processor(logos:aws-lambda)[Metrics Processor] in metrics
-  service s3metrics(logos:aws-s3)[S3 Metrics] in metrics
+  service s3-base-metrics(logos:aws-s3)[Base Processing Metrics] in metrics
   service glue(logos:aws-glue)[Glue Database] in metrics
   service metrics-aggregator(logos:aws-lambda)[Metrics Aggregator] in metrics
-  service s3aggregated(logos:aws-s3)[S3 Aggregated] in metrics
+  service s3-agg-metrics(logos:aws-s3)[Aggregated Processing Metrics] in metrics
+  service tenant-schedule(logos:aws-lambda)[Tenant Usage Report] in metrics
+  service s3-tenant-usage-metrics(logos:aws-s3)[Tenant Usage Metrics] in metrics
 
   %% Admin flow
   user:B --> T:cloudfront
@@ -77,7 +80,9 @@ architecture-beta
 
   %% Metrics flow
   sqs:R --> L:metrics-processor
-  metrics-processor:R --> L:s3metrics
-  s3metrics:R --> L:glue
+  metrics-processor:R --> L:s3-base-metrics
+  s3-base-metrics:R --> L:glue
   glue:R --> L:metrics-aggregator
-  metrics-aggregator:R --> L:s3aggregated
+  metrics-aggregator:R --> L:s3-agg-metrics
+  glue:B --> T:tenant-schedule
+  tenant-schedule:B --> T:s3-tenant-usage-metrics

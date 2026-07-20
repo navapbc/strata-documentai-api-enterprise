@@ -19,7 +19,9 @@ def test_main_success(s3_bucket, mocker):
 
     assert result == {"status": "success", "data": {"field1": "value1"}}
     mock_process.assert_called_once_with(
-        "test-bucket", "output/input/test-file.pdf/job_metadata.json"
+        "test-bucket",
+        "output/input/test-file.pdf/job_metadata.json",
+        result_processor_started_at=None,
     )
 
 
@@ -31,7 +33,9 @@ def test_main_with_truncated_filename(s3_bucket, mocker):
     main(s3_bucket.name, "output/input/long_truncated.pdf/job_metadata.json")
 
     mock_process.assert_called_once_with(
-        "test-bucket", "output/input/long_truncated.pdf/job_metadata.json"
+        "test-bucket",
+        "output/input/long_truncated.pdf/job_metadata.json",
+        result_processor_started_at=None,
     )
 
 

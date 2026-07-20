@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from documentai_api.config.constants import BdaResponseFields, ConfigDefaults
+from documentai_api.dtos.classification import ClassificationData
 from documentai_api.logging import get_logger
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services.bda import extract_bda_output_s3_uri, get_bda_result_json
@@ -9,6 +10,7 @@ from documentai_api.utils.bda import (
     BdaFieldProcessingData,
     calculate_average_non_empty_confidence,
     extract_field_metadata_from_bda_results,
+    get_ddb_record_from_bda_output,
     get_text_from_standard_blueprint,
 )
 from documentai_api.utils.document_lifecycle import (
@@ -16,7 +18,6 @@ from documentai_api.utils.document_lifecycle import (
     classify_as_no_document_detected,
     classify_as_success,
 )
-from documentai_api.utils.dto import ClassificationData
 from documentai_api.utils.response_codes import ResponseCodes
 from documentai_api.utils.tenants import get_extraction_confidence_floor
 
@@ -36,6 +37,7 @@ class BdaProcessingResults:
     """Data elements derrived from BDA output."""
 
     empty_field_list: list[str] = field(default_factory=list)
+    fields_missing_geometry: list[str] = field(default_factory=list)
     field_confidence_map_list: list[dict[str, float]] = field(default_factory=list)
     response_code: str | None = None
 
@@ -51,6 +53,7 @@ def get_bda_processing_results(bda_result_json: dict[str, Any]) -> BdaProcessing
     return BdaProcessingResults(
         field_confidence_map_list=field_data.field_confidence_map_list,
         empty_field_list=field_data.empty_fields,
+        fields_missing_geometry=field_data.fields_missing_geometry or [],
         response_code=response_code,
     )
 
@@ -73,9 +76,11 @@ def get_matched_blueprint(bda_result_json: dict[str, Any]) -> MatchedBlueprintIn
     return MatchedBlueprintInfo(matched_blueprint_name, matched_blueprint_confidence)
 
 
-def process_bda_output(bda_output_bucket_name: str, bda_output_object_key: str) -> dict[str, Any]:
-    from documentai_api.utils.ddb import get_ddb_record_from_bda_output
-
+def process_bda_output(
+    bda_output_bucket_name: str,
+    bda_output_object_key: str,
+    result_processor_started_at: str | None = None,
+) -> dict[str, Any]:
     bda_output_s3_uri = extract_bda_output_s3_uri(bda_output_bucket_name, bda_output_object_key)
 
     if not bda_output_s3_uri:
@@ -117,13 +122,19 @@ def process_bda_output(bda_output_bucket_name: str, bda_output_object_key: str) 
             logger.info(msg)
             classification_data.additional_info = msg
             return classify_as_no_custom_blueprint_matched(
-                object_key=file_name, data=classification_data
+                object_key=file_name,
+                data=classification_data,
+                result_processor_started_at=result_processor_started_at,
             )
         else:
             msg += "Unable to extract meaningful document content."
             logger.info(msg)
             classification_data.additional_info = msg
-            return classify_as_no_document_detected(object_key=file_name, data=classification_data)
+            return classify_as_no_document_detected(
+                object_key=file_name,
+                data=classification_data,
+                result_processor_started_at=result_processor_started_at,
+            )
     else:
         msg = "Custom matching blueprint found, and document type matches. Success."
         logger.info(msg)
@@ -131,6 +142,7 @@ def process_bda_output(bda_output_bucket_name: str, bda_output_object_key: str) 
 
         classification_data.field_confidence_scores = results.field_confidence_map_list
         classification_data.field_empty_list = results.empty_field_list
+        classification_data.field_missing_geometry_list = results.fields_missing_geometry
         classification_data.additional_info = msg
 
         # Check average confidence against tenant's extraction confidence floor
@@ -161,6 +173,7 @@ def process_bda_output(bda_output_bucket_name: str, bda_output_object_key: str) 
             response_code=response_code,
             data=classification_data,
             below_extraction_confidence_floor=below_floor,
+            result_processor_started_at=result_processor_started_at,
         )
 
 
@@ -170,7 +183,7 @@ def _is_below_extraction_confidence_floor(
 ) -> bool:
     """Check if average non-empty field confidence is below the tenant's floor."""
     avg_confidence = calculate_average_non_empty_confidence(
-        results.field_confidence_map_list, results.empty_field_list
+        results.field_confidence_map_list, results.empty_field_list, results.fields_missing_geometry
     )
     if avg_confidence is None:
         return False

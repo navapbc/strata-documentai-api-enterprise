@@ -2,7 +2,6 @@
  * Blueprint list pane - renders document type list, dispatches selection to store.
  */
 import * as Store from "../state/blueprint-store.js";
-import * as Helpers from "../utils/helpers.js";
 
 let _root = null;
 let _unsub = null;

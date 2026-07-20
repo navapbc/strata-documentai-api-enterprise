@@ -1,9 +1,14 @@
 import pytest
 
 from documentai_api.config.constants import ProcessStatus
+from documentai_api.dtos.classification import (
+    BedrockClassificationResult,
+    ClassificationData,
+    PreclassificationMatchResult,
+)
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils import document_lifecycle as lifecycle_util
-from documentai_api.utils.dto import BedrockClassificationResult, ClassificationData
+from documentai_api.utils.blur_detection import BlurResult
 from documentai_api.utils.response_codes import ResponseCodes
 
 
@@ -15,9 +20,10 @@ from documentai_api.utils.response_codes import ResponseCodes
         "preclassify_result",
         "expected_status",
         "has_internal_response",
+        "blur_result",
     ),
     [
-        ("income", "application/pdf", True, None, ProcessStatus.PASSWORD_PROTECTED, True),
+        ("income", "application/pdf", True, None, ProcessStatus.PASSWORD_PROTECTED, True, None),
         (
             "income",
             "application/pdf",
@@ -26,11 +32,10 @@ from documentai_api.utils.response_codes import ResponseCodes
                 document_type="other_document",
                 confidence=0.3,
                 document_count=1,
-                is_document=True,
-                is_blurry=True,
             ),
             ProcessStatus.BLURRY_DOCUMENT_DETECTED,
             True,
+            BlurResult(is_blurry=True, is_not_document=False, avg_confidence=45.0, word_count=3),
         ),
         (
             "income",
@@ -40,11 +45,10 @@ from documentai_api.utils.response_codes import ResponseCodes
                 document_type="not_a_document",
                 confidence=0.9,
                 document_count=1,
-                is_document=False,
-                is_blurry=False,
             ),
             ProcessStatus.NO_DOCUMENT_DETECTED,
             True,
+            BlurResult(is_blurry=False, is_not_document=True, word_count=0),
         ),
         (
             "income",
@@ -54,11 +58,10 @@ from documentai_api.utils.response_codes import ResponseCodes
                 document_type="W2",
                 confidence=0.95,
                 document_count=2,
-                is_document=True,
-                is_blurry=False,
             ),
             ProcessStatus.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
             True,
+            None,
         ),
         (
             "income",
@@ -68,11 +71,10 @@ from documentai_api.utils.response_codes import ResponseCodes
                 document_type="W2",
                 confidence=0.95,
                 document_count=1,
-                is_document=True,
-                is_blurry=False,
             ),
             ProcessStatus.PENDING_IMAGE_OPTIMIZATION,
             False,
+            None,
         ),
         (
             "income",
@@ -82,11 +84,10 @@ from documentai_api.utils.response_codes import ResponseCodes
                 document_type="W2",
                 confidence=0.95,
                 document_count=1,
-                is_document=True,
-                is_blurry=False,
             ),
             ProcessStatus.NOT_STARTED,
             False,
+            None,
         ),
         (
             None,
@@ -96,11 +97,10 @@ from documentai_api.utils.response_codes import ResponseCodes
                 document_type="W2",
                 confidence=0.95,
                 document_count=1,
-                is_document=True,
-                is_blurry=False,
             ),
             ProcessStatus.NOT_STARTED,
             False,
+            None,
         ),
     ],
 )
@@ -113,6 +113,7 @@ def test_upsert_initial_ddb_record(
     preclassify_result,
     expected_status,
     has_internal_response,
+    blur_result,
     mocker,
 ):
     mocker.patch(
@@ -122,12 +123,27 @@ def test_upsert_initial_ddb_record(
         "documentai_api.utils.document_lifecycle.document_utils.is_password_protected",
         return_value=is_password_protected,
     )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.is_blur_detection_enabled", return_value=True
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.is_blur_rejection_enforced", return_value=True
+    )
+    mock_blur = mocker.patch("documentai_api.utils.document_lifecycle.detect_blur")
+    mock_blur.return_value = blur_result or BlurResult(
+        is_blurry=False, is_not_document=False, word_count=20, avg_confidence=95.0
+    )
     mock_preclassify = mocker.patch("documentai_api.utils.document_lifecycle.preclassify_document")
     if preclassify_result:
         mock_preclassify.return_value = preclassify_result
 
     mocker.patch(
-        "documentai_api.utils.document_lifecycle.build_v1_api_response",
+        "documentai_api.utils.document_lifecycle.find_matching_blueprint",
+        return_value=PreclassificationMatchResult(),
+    )
+
+    mocker.patch(
+        "documentai_api.utils.ddb.build_v1_api_response",
         return_value={"status": "completed"},
     )
 
@@ -158,7 +174,9 @@ def test_upsert_initial_ddb_record(
     assert DocumentMetadata.CREATED_AT in item
     assert DocumentMetadata.UPDATED_AT in item
 
-    if preclassify_result:
+    if preclassify_result and not (
+        blur_result and (blur_result.is_blurry or blur_result.is_not_document)
+    ):
         assert item[DocumentMetadata.PRECLASSIFICATION_CATEGORY] == preclassify_result.document_type
 
     if has_internal_response:
@@ -166,6 +184,60 @@ def test_upsert_initial_ddb_record(
         assert DocumentMetadata.V1_API_RESPONSE_JSON in item
     else:
         assert DocumentMetadata.RESPONSE_JSON not in item
+
+
+def test_blur_detection_without_enforcement_proceeds_to_preclassify(
+    ddb_doc_metadata_table,
+    s3_bucket,
+    mocker,
+):
+    """When blur is detected but enforcement is off, preclassification still runs."""
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.document_utils.get_page_count", return_value=1
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.document_utils.is_password_protected",
+        return_value=False,
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.is_blur_detection_enabled", return_value=True
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.is_blur_rejection_enforced", return_value=False
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.detect_blur",
+        return_value=BlurResult(is_blurry=True, word_count=10, avg_confidence=50.0),
+    )
+    mock_preclassify = mocker.patch(
+        "documentai_api.utils.document_lifecycle.preclassify_document",
+        return_value=BedrockClassificationResult(
+            document_type="W2", confidence=0.95, document_count=1
+        ),
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.find_matching_blueprint",
+        return_value=PreclassificationMatchResult(),
+    )
+    mocker.patch(
+        "documentai_api.utils.ddb.build_v1_api_response",
+        return_value={"status": "completed"},
+    )
+
+    s3_bucket.put_object(Key="input/test-file", Body=b"bytes", ContentType="image/jpeg")
+
+    lifecycle_util.upsert_initial_ddb_record(
+        source_bucket_name=s3_bucket.name,
+        source_object_key="input/test-file",
+        original_file_name="test.jpeg",
+        ddb_key="test-file",
+        user_provided_document_category="income",
+    )
+
+    mock_preclassify.assert_called_once()
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
+    assert item[DocumentMetadata.IS_DOCUMENT_BLURRY] is True
+    assert item[DocumentMetadata.PRECLASSIFICATION_CATEGORY] == "W2"
 
 
 def test_set_bda_processing_status_started(mocker):
@@ -182,6 +254,7 @@ def test_set_bda_processing_status_started(mocker):
         internal_api_response=None,
         bda_invocation_arn="arn:aws:bda:us-east-1:123:job/1",
         bda_project_arn_used="arn:aws:project/123",
+        pages_sent_to_bda=None,
     )
 
 
@@ -328,6 +401,14 @@ def test_classify_functions(
 
     if function == lifecycle_util.classify_as_success:
         expected_call["below_extraction_confidence_floor"] = False
+        expected_call["result_processor_started_at"] = None
+
+    if function in (
+        lifecycle_util.classify_as_failed,
+        lifecycle_util.classify_as_no_document_detected,
+        lifecycle_util.classify_as_no_custom_blueprint_matched,
+    ):
+        expected_call["result_processor_started_at"] = None
 
     mock_update.assert_called_once_with(**expected_call)
 
@@ -351,3 +432,337 @@ def test_classify_as_ai_consent_declined(mocker):
         status=ProcessStatus.AI_CONSENT_DECLINED,
         internal_api_response=mock_get_response.return_value,
     )
+
+
+# =============================================================================
+# Textract identity routing
+# =============================================================================
+
+
+def test_upsert_initial_ddb_record_routes_to_textract_when_enabled(
+    ddb_doc_metadata_table,
+    s3_bucket,
+    mocker,
+):
+    """When textract flag is on and preclassification = identity_verification, routes to Textract."""
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.document_utils.get_page_count", return_value=1
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.document_utils.is_password_protected",
+        return_value=False,
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.detect_blur",
+        return_value=BlurResult(
+            is_blurry=False, is_not_document=False, word_count=20, avg_confidence=95.0
+        ),
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.preclassify_document",
+        return_value=BedrockClassificationResult(
+            document_type="identity_verification",
+            confidence=0.95,
+            document_count=1,
+        ),
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.find_matching_blueprint",
+        return_value=PreclassificationMatchResult(),
+    )
+
+    mock_textract = mocker.patch(
+        "documentai_api.utils.document_lifecycle.try_textract_identity",
+        return_value={
+            "matched_document_class": "US-drivers-licenses",
+            "field_confidence_scores": [{"NAME_DETAILS.FIRST_NAME": 0.99}],
+            "textract_s3_uri": "s3://test-bucket/output/textract/test-file.json",
+            "extract_started_at": "2025-01-01T00:00:00+00:00",
+            "extract_completed_at": "2025-01-01T00:00:02+00:00",
+            "extract_time": "2.00",
+        },
+    )
+    mock_finalize = mocker.patch("documentai_api.utils.document_lifecycle.finalize_textract_result")
+
+    s3_bucket.put_object(Key="input/test-file", Body=b"bytes", ContentType="image/jpeg")
+
+    lifecycle_util.upsert_initial_ddb_record(
+        source_bucket_name="test-bucket",
+        source_object_key="input/test-file",
+        original_file_name="license.jpg",
+        ddb_key="test-file",
+        user_provided_document_category="identity",
+        job_id="test-job-id",
+        trace_id="test-trace-id",
+    )
+
+    mock_textract.assert_called_once()
+    mock_finalize.assert_called_once_with("test-file", mock_textract.return_value, "identity")
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
+    assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.STARTED
+
+
+def test_upsert_initial_ddb_record_unknown_category_with_textract_does_not_crash(
+    ddb_doc_metadata_table,
+    s3_bucket,
+    mocker,
+):
+    """Regression: unknown category + Textract must not crash.
+
+    user_provided_document_category=None resolves to 'unknown' which previously
+    raised ValueError via DocumentCategory('unknown').
+    """
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.document_utils.get_page_count", return_value=1
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.document_utils.is_password_protected",
+        return_value=False,
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.detect_blur",
+        return_value=BlurResult(
+            is_blurry=False, is_not_document=False, word_count=20, avg_confidence=95.0
+        ),
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.preclassify_document",
+        return_value=BedrockClassificationResult(
+            document_type="identity_verification",
+            confidence=0.95,
+            document_count=1,
+        ),
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.find_matching_blueprint",
+        return_value=PreclassificationMatchResult(),
+    )
+    mock_textract = mocker.patch(
+        "documentai_api.utils.document_lifecycle.try_textract_identity",
+        return_value={
+            "matched_document_class": "US-drivers-licenses",
+            "field_confidence_scores": [{"NAME_DETAILS.FIRST_NAME": 0.99}],
+            "textract_s3_uri": "s3://bucket/output/textract/test-file.json",
+            "extract_started_at": "2025-01-01T00:00:00+00:00",
+            "extract_completed_at": "2025-01-01T00:00:02+00:00",
+            "extract_time": "2.00",
+        },
+    )
+    mock_finalize = mocker.patch("documentai_api.utils.document_lifecycle.finalize_textract_result")
+
+    s3_bucket.put_object(Key="input/test-file", Body=b"bytes", ContentType="image/jpeg")
+
+    # user_provided_document_category=None triggers the "unknown" default
+    lifecycle_util.upsert_initial_ddb_record(
+        source_bucket_name="test-bucket",
+        source_object_key="input/test-file",
+        original_file_name="license.jpg",
+        ddb_key="test-file",
+        user_provided_document_category=None,
+        job_id="test-job-id",
+        trace_id="test-trace-id",
+    )
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
+    assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.STARTED
+    mock_textract.assert_called_once()
+    mock_finalize.assert_called_once_with("test-file", mock_textract.return_value, "unknown")
+
+
+def test_upsert_initial_ddb_record_falls_through_when_textract_returns_none(
+    ddb_doc_metadata_table,
+    s3_bucket,
+    mocker,
+):
+    """When textract returns None (flag off or failure), falls through to BDA path."""
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.document_utils.get_page_count", return_value=1
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.document_utils.is_password_protected",
+        return_value=False,
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.detect_blur",
+        return_value=BlurResult(
+            is_blurry=False, is_not_document=False, word_count=20, avg_confidence=95.0
+        ),
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.preclassify_document",
+        return_value=BedrockClassificationResult(
+            document_type="identity_verification",
+            confidence=0.95,
+            document_count=1,
+        ),
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.find_matching_blueprint",
+        return_value=PreclassificationMatchResult(),
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.try_textract_identity",
+        return_value=None,
+    )
+    mock_finalize = mocker.patch("documentai_api.utils.document_lifecycle.finalize_textract_result")
+
+    s3_bucket.put_object(Key="input/test-file", Body=b"bytes", ContentType="image/jpeg")
+
+    lifecycle_util.upsert_initial_ddb_record(
+        source_bucket_name="test-bucket",
+        source_object_key="input/test-file",
+        original_file_name="license.jpg",
+        ddb_key="test-file",
+        user_provided_document_category="identity",
+        job_id="test-job-id",
+        trace_id="test-trace-id",
+    )
+
+    mock_finalize.assert_not_called()
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
+    # JPEG -> goes to image optimization, not Textract
+    assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.PENDING_IMAGE_OPTIMIZATION
+
+
+# =============================================================================
+# Blueprint matching integration in upsert_initial_ddb_record
+# =============================================================================
+
+
+def test_upsert_initial_ddb_record_stores_blueprint_match_fields(
+    ddb_doc_metadata_table,
+    s3_bucket,
+    mocker,
+):
+    """Blueprint match result fields are persisted to DDB."""
+    from decimal import Decimal
+
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.document_utils.get_page_count", return_value=1
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.document_utils.is_password_protected",
+        return_value=False,
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.detect_blur",
+        return_value=BlurResult(
+            is_blurry=False, is_not_document=False, word_count=20, avg_confidence=95.0
+        ),
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.preclassify_document",
+        return_value=BedrockClassificationResult(
+            document_type="tax_documents",
+            confidence=0.95,
+            document_count=1,
+        ),
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.find_matching_blueprint",
+        return_value=PreclassificationMatchResult(
+            matched_document_type="W2",
+            confidence=0.92,
+            category="income",
+            input_tokens=150,
+            output_tokens=25,
+            duration_seconds=Decimal("1.23"),
+        ),
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.try_textract_identity",
+        return_value=None,
+    )
+
+    s3_bucket.put_object(Key="input/test-file", Body=b"bytes", ContentType="application/pdf")
+
+    lifecycle_util.upsert_initial_ddb_record(
+        source_bucket_name="test-bucket",
+        source_object_key="input/test-file",
+        original_file_name="w2.pdf",
+        ddb_key="test-file",
+        user_provided_document_category="income",
+        job_id="test-job-id",
+        trace_id="test-trace-id",
+    )
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
+    assert item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCHED_TYPE] == "W2"
+    assert float(
+        item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_CONFIDENCE]
+    ) == pytest.approx(0.92)
+    assert item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_INPUT_TOKENS] == 150
+    assert item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_OUTPUT_TOKENS] == 25
+    assert float(
+        item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_DURATION_SECONDS]
+    ) == pytest.approx(1.23)
+
+
+def test_upsert_initial_ddb_record_stores_blueprint_no_match(
+    ddb_doc_metadata_table,
+    s3_bucket,
+    mocker,
+):
+    """When blueprint matcher finds no match, fields reflect that."""
+    from decimal import Decimal
+
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.document_utils.get_page_count", return_value=1
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.document_utils.is_password_protected",
+        return_value=False,
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.detect_blur",
+        return_value=BlurResult(
+            is_blurry=False, is_not_document=False, word_count=20, avg_confidence=95.0
+        ),
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.preclassify_document",
+        return_value=BedrockClassificationResult(
+            document_type="other_document",
+            confidence=0.3,
+            document_count=1,
+        ),
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.find_matching_blueprint",
+        return_value=PreclassificationMatchResult(
+            matched_document_type=None,
+            confidence=0.0,
+            input_tokens=120,
+            output_tokens=18,
+            duration_seconds=Decimal("0.95"),
+        ),
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.try_textract_identity",
+        return_value=None,
+    )
+
+    s3_bucket.put_object(Key="input/test-file", Body=b"bytes", ContentType="application/pdf")
+
+    lifecycle_util.upsert_initial_ddb_record(
+        source_bucket_name="test-bucket",
+        source_object_key="input/test-file",
+        original_file_name="random.pdf",
+        ddb_key="test-file",
+        user_provided_document_category=None,
+        job_id="test-job-id",
+        trace_id="test-trace-id",
+    )
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
+    assert DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCHED_TYPE not in item
+    assert float(
+        item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_CONFIDENCE]
+    ) == pytest.approx(0.0)
+    assert item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_INPUT_TOKENS] == 120
+    assert item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_OUTPUT_TOKENS] == 18
+    assert float(
+        item[DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_DURATION_SECONDS]
+    ) == pytest.approx(0.95)

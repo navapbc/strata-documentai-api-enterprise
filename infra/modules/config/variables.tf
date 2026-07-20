@@ -19,3 +19,9 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "allowed_patterns" {
+  type        = map(string)
+  description = "Optional map of parameter key to allowed_pattern regex. Restricts values at the AWS API level."
+  default     = {}
+}

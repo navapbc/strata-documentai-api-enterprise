@@ -4,7 +4,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = ">= 5.81.0, < 6.50.1"
+      version = ">= 5.81.0, < 6.52.1"
     }
     awscc = {
       source  = "hashicorp/awscc"
@@ -98,7 +98,7 @@ module "input_bucket" {
     {
       id              = "expire-demo-uploads"
       prefix          = "${local.demo_input_prefix}/"
-      expiration_days = 3
+      expiration_days = 7
     },
     {
       id              = "expire-preprocessing-originals"
@@ -126,7 +126,7 @@ module "output_bucket" {
     {
       id              = "expire-demo-results"
       prefix          = "${local.demo_output_prefix}/"
-      expiration_days = 3
+      expiration_days = 7
   }]
 }
 
@@ -279,11 +279,24 @@ module "metrics_bucket" {
   name   = "${local.service_name}-metrics"
   tags   = { component = "metrics-bucket" }
 
-  lifecycle_rules = [{
-    id                    = "archive-metrics"
-    transition_to_ia_days = 30
-    expiration_days       = 365
-  }]
+  lifecycle_rules = [
+    {
+      id                    = "expire-raw-metrics"
+      prefix                = "raw/"
+      transition_to_ia_days = 30
+      expiration_days       = 365
+    },
+    {
+      id                    = "archive-aggregated"
+      prefix                = "aggregated/"
+      transition_to_ia_days = 90
+    },
+    {
+      id                    = "archive-usage-reports"
+      prefix                = "usage-report/"
+      transition_to_ia_days = 30
+    },
+  ]
 }
 
 module "analytics" {
@@ -303,12 +316,36 @@ module "config" {
   tags        = { component = "config" }
 
   parameters = {
-    "feature-flags/preclassification-based-routing" = "false"
-    "feature-flags/document-crop"                   = "true"
+    "feature-flags/preclassification-based-routing"             = "false"
+    "feature-flags/skip-bda-if-unclassified"                    = "false"
+    "feature-flags/enable-preclassification-blueprint-matching" = "true"
+    "feature-flags/document-crop"                               = "true"
+    "feature-flags/textract-identity-enabled"                   = "true"
+    "feature-flags/enable-blur-detection"                       = "true"
+    "feature-flags/enforce-blur-rejection"                      = "true"
+    "feature-flags/include-missing-geo-with-missing-fields"                = "true"
+    # Thresholds
     # Vision model ids - swappable at runtime via SSM (no redeploy). Kept as
     # separate params so preclassification and bbox detection can be tuned apart.
-    "models/classification-model-id" = "us.amazon.nova-lite-v1:0"
-    "models/bounding-box-model-id"   = "us.amazon.nova-lite-v1:0"
+    #   Lite  - vision tasks (preclassification, blueprint match: model sees the image)
+    #   Pro   - blur empty-quadrant check (spatial reasoning over image crops)
+    #   Micro - supplemental extraction: text-only field matching over Textract WORD
+    #           blocks (no image sent), cheapest/fastest for basic text-in/text-out
+    "models/classification-model-id"          = "us.amazon.nova-lite-v1:0"
+    "models/bounding-box-model-id"            = "us.amazon.nova-lite-v1:0"
+    "models/blur-quadrant-model-id"           = "us.amazon.nova-pro-v1:0"
+    "models/supplemental-extraction-model-id" = "us.amazon.nova-micro-v1:0"
+  }
+
+  allowed_patterns = {
+    "feature-flags/preclassification-based-routing"             = "^(true|false)$"
+    "feature-flags/skip-bda-if-unclassified"                    = "^(true|false)$"
+    "feature-flags/enable-preclassification-blueprint-matching" = "^(true|false)$"
+    "feature-flags/document-crop"                               = "^(true|false)$"
+    "feature-flags/textract-identity-enabled"                   = "^(true|false)$"
+    "feature-flags/enable-blur-detection"                       = "^(true|false)$"
+    "feature-flags/enforce-blur-rejection"                      = "^(true|false)$"
+    "feature-flags/include-missing-geo-with-missing-fields"                = "^(true|false)$"
   }
 }
 
@@ -442,8 +479,6 @@ locals {
 
   lambda_env_vars = {
     ENVIRONMENT                                               = var.environment
-    PRECLASSIFICATION_ROUTING_PARAM                           = "${local.ssm_prefix}/feature-flags/preclassification-based-routing"
-    DOCUMENT_CROP_PARAM                                       = "${local.ssm_prefix}/feature-flags/document-crop"
     DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME                   = module.document_metadata.table_name
     DOCUMENTAI_DOCUMENT_METADATA_JOB_ID_INDEX_NAME            = local.gsi_job_id
     DOCUMENTAI_DOCUMENT_METADATA_EXTERNAL_DOC_ID_INDEX_NAME   = local.gsi_external_document_id
@@ -479,11 +514,12 @@ locals {
     BDA_PROJECT_ARN_IDENTITY_VERIFICATION                     = module.bedrock_data_automation["identity_verification"].project_arn
     BDA_PROJECT_ARN_RIGHT_TO_WORK                             = module.bedrock_data_automation["right_to_work"].project_arn
     BDA_PROJECT_ARN_ALL                                       = module.bedrock_data_automation["all"].project_arn
-    BDA_PROJECT_ARN                                           = module.bedrock_data_automation["all"].project_arn
     BDA_PROFILE_ARN                                           = module.bedrock_data_automation["all"].profile_arn
     BDA_REGION                                                = var.bda_region
     BEDROCK_CLASSIFICATION_MODEL_ID_PARAM                     = "${local.ssm_prefix}/models/classification-model-id"
     BEDROCK_BOUNDING_BOX_MODEL_ID_PARAM                       = "${local.ssm_prefix}/models/bounding-box-model-id"
+    BEDROCK_BLUR_QUADRANT_MODEL_ID_PARAM                      = "${local.ssm_prefix}/models/blur-quadrant-model-id"
+    BEDROCK_SUPPLEMENTAL_EXTRACTION_MODEL_ID_PARAM            = "${local.ssm_prefix}/models/supplemental-extraction-model-id"
     SSM_PREFIX                                                = local.ssm_prefix
     MAX_BDA_INVOKE_RETRY_ATTEMPTS                             = local.max_bda_invoke_retry_attempts
     API_AUTH_ENABLED                                          = local.api_auth_enabled
@@ -666,6 +702,15 @@ data "aws_iam_policy_document" "bedrock_all" {
       "arn:aws:bedrock:*::foundation-model/*",
     ]
   }
+
+  # Textract (AnalyzeID for identity documents, DetectDocumentText for blur detection)
+  statement {
+    actions = [
+      "textract:AnalyzeID",
+      "textract:DetectDocumentText",
+    ]
+    resources = ["*"]
+  }
 }
 
 resource "aws_iam_policy" "bedrock_all" {
@@ -755,6 +800,7 @@ locals {
     "bda-result-processor" = ["documentai_api.jobs.bda_result_processor.handler.handler"]
     "metrics-processor"    = ["documentai_api.jobs.metrics_processor.handler.handler"]
     "metrics-aggregator"   = ["documentai_api.jobs.metrics_aggregator.handler.handler"]
+    "usage-report"         = ["documentai_api.jobs.usage_report.handler.handler"]
   }
 }
 
@@ -766,7 +812,7 @@ module "workers" {
   image_uri             = local.lambda_image_uri
   command               = each.value
   timeout               = 300
-  memory_size           = 512
+  memory_size           = 1024
   environment_variables = local.lambda_env_vars
   policy_arns           = local.lambda_policy_arns
 
@@ -785,6 +831,10 @@ module "workers" {
     "metrics-aggregator" = [
       { name = "current-day", schedule_expression = "rate(5 minutes)", input = { mode = "today", overwrite = "true" } },
       { name = "prior-day", schedule_expression = "cron(0 2 * * ? *)", input = { mode = "yesterday", overwrite = "true" } },
+    ]
+    "usage-report" = [
+      { name = "current-month", schedule_expression = "cron(0 6 * * ? *)", input = { month = "current" } },
+      { name = "previous-month", schedule_expression = "cron(0 6 1-5 * ? *)", input = { month = "previous" } },
     ]
   }, each.key, [])
 }

@@ -89,14 +89,7 @@ export function unmount(root) {
 }
 
 export async function load() {
-  const tenantId = TenantContext.getTenantId();
   loadCategories();
-}
-
-function clearTable() {
-  _tbody.innerHTML = "";
-  _noCategories.textContent = "No categories found.";
-  _noCategories.classList.remove("hidden");
 }
 
 async function loadCategories() {

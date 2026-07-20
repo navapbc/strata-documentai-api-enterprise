@@ -8,6 +8,7 @@ class DocumentMetadata:
     BDA_INVOCATION_ARN = "bdaInvocationArn"
     BDA_INVOCATION_ID = "bdaInvocationId"
     BDA_PROJECT_ARN_USED = "bdaProjectArn"
+    # TODO: Rename to extractionOutputS3Uri -- used by both BDA and Textract paths
     BDA_OUTPUT_S3_URI = "bdaOutputS3Uri"
     ERROR_MESSAGE = "errorMessage"
     RESPONSE_JSON = "responseJson"
@@ -35,6 +36,13 @@ class DocumentMetadata:
     PRECLASSIFICATION_OUTPUT_TOKENS = "preclassificationOutputTokens"
     PRECLASSIFICATION_DURATION_SECONDS = "preclassificationDurationSeconds"
     PRECLASSIFICATION_MODEL_ID = "preclassificationModelId"
+    PRECLASSIFICATION_BLUEPRINT_MATCHED_TYPE = "preclassificationBlueprintMatchedType"
+    PRECLASSIFICATION_BLUEPRINT_MATCH_CONFIDENCE = "preclassificationBlueprintMatchConfidence"
+    PRECLASSIFICATION_BLUEPRINT_MATCH_INPUT_TOKENS = "preclassificationBlueprintMatchInputTokens"
+    PRECLASSIFICATION_BLUEPRINT_MATCH_OUTPUT_TOKENS = "preclassificationBlueprintMatchOutputTokens"
+    PRECLASSIFICATION_BLUEPRINT_MATCH_DURATION_SECONDS = (
+        "preclassificationBlueprintMatchDurationSeconds"
+    )
 
     # image optimization fields
     CROP_BOUNDING_BOX = "cropBoundingBox"
@@ -47,11 +55,19 @@ class DocumentMetadata:
     PROCESSED_FILE_SIZE_BYTES = "processedFileSizeBytes"
 
     # performance tracking
-    BDA_STARTED_AT = "bdaStartedAt"
-    BDA_COMPLETED_AT = "bdaCompletedAt"
+    DOCUMENT_PROCESSOR_STARTED_AT = "documentProcessorStartedAt"
+    BDA_STARTED_AT = "bdaStartedAt"  # legacy read-only (metrics aggregator fallback)
+    BDA_COMPLETED_AT = "bdaCompletedAt"  # legacy read-only (metrics aggregator fallback)
+    EXTRACTION_STARTED_AT = "extractionStartedAt"
+    EXTRACTION_COMPLETED_AT = "extractionCompletedAt"
+    EXTRACTION_PROCESSING_TIME_SECONDS = "extractionProcessingTimeSeconds"
+    EXTRACTION_WAIT_TIME_SECONDS = "extractionWaitTimeSeconds"
+    RESULT_PROCESSOR_STARTED_AT = "resultProcessorStartedAt"
     TOTAL_PROCESSING_TIME_SECONDS = "totalProcessingTimeSeconds"
     BDA_PROCESSING_TIME_SECONDS = "bdaProcessingTimeSeconds"  # time bda took to process the file
     BDA_WAIT_TIME_SECONDS = "bdaWaitTimeSeconds"  # time between s3 write and bda invocation
+    IS_DOCUMENT_PROCESSOR_COLD_START = "isDocumentProcessorColdStart"
+    PAGES_SENT_TO_BDA = "pagesSentToBda"
 
     # file metadata
     FILE_SIZE_BYTES = "fileSizeBytes"
@@ -59,9 +75,12 @@ class DocumentMetadata:
     PAGES_DETECTED = "pagesDetected"
     IS_DOCUMENT_BLURRY = "isDocumentBlurry"
     IS_PASSWORD_PROTECTED = "isPasswordProtected"
+    BLUR_ANALYSIS_FAILED = "blurAnalysisFailed"
+    OCR_AVG_WORD_CONFIDENCE = "ocrAvgWordConfidence"
+    DOCUMENT_WORD_COUNT = "documentWordCount"
+    BLUR_LLM_CHECKED = "blurLlmChecked"
     DOCUMENT_METRICS_RAW = "documentMetricsRaw"
     DOCUMENT_METRICS_NORMALIZED = "documentMetricsNormalized"
-    OVERALL_BLUR_SCORE = "overallBlurScore"
 
     # operational intelligence
     ADDITIONAL_INFO = "additionalInfo"
@@ -76,6 +95,7 @@ class DocumentMetadata:
 
     # list of blueprint fields that were expected but did not have any data extracted
     BDA_MATCHED_BLUEPRINT_FIELD_EMPTY_LIST = "matchedBlueprintFieldEmptyList"
+    BDA_MATCHED_BLUEPRINT_FIELD_MISSING_GEOMETRY_LIST = "matchedBlueprintFieldMissingGeometryList"
     BDA_MATCHED_BLUEPRINT_FIELD_BELOW_THRESHOLD_LIST = "matchedBlueprintFieldBelowThresholdList"
     BDA_MATCHED_BLUEPRINT_FIELD_COUNT = "matchedBlueprintFieldCount"
     BDA_MATCHED_BLUEPRINT_FIELD_COUNT_NOT_EMPTY = "matchedBlueprintFieldCountNotEmpty"
@@ -83,3 +103,6 @@ class DocumentMetadata:
         "matchedBlueprintFieldNotEmptyAvgConfidence"
     )
     BELOW_EXTRACTION_CONFIDENCE_FLOOR = "belowExtractionConfidenceFloor"
+
+    # extraction method
+    EXTRACT_METHOD = "extractionMethod"
