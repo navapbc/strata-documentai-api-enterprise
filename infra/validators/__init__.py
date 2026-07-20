@@ -48,6 +48,7 @@ class BaseValidator:
     env: str
     ssm_prefix: str
     account_id: str
+    tag_keys: dict[str, str]
 
     def record(
         self,

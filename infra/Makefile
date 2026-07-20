@@ -107,10 +107,10 @@ infra-manifest: infra-expected ## Regenerate manifest.json from tfplan.json (req
 	uv run python -m validators.generate --expected tfplan.json --output manifest.json
 
 infra-check: ## Validate deployed infra against manifest.json (no TF needed)
-	uv run python -m validators --env $(ENVIRONMENT) --project $(PROJECT) $(if $(STAGE),--stage $(STAGE)) $(if $(AWS_PROFILE),--profile $(AWS_PROFILE))
+	uv run python -m validators --env $(ENVIRONMENT) --project $(PROJECT) $(if $(STAGE),--stage $(STAGE)) $(if $(AWS_PROFILE),--profile $(AWS_PROFILE)) $(if $(TAGS),--tags $(TAGS))
 
 infra-drift: ## Alias for infra-check
-	uv run python -m validators --env $(ENVIRONMENT) --project $(PROJECT) $(if $(STAGE),--stage $(STAGE)) $(if $(AWS_PROFILE),--profile $(AWS_PROFILE))
+	uv run python -m validators --env $(ENVIRONMENT) --project $(PROJECT) $(if $(STAGE),--stage $(STAGE)) $(if $(AWS_PROFILE),--profile $(AWS_PROFILE)) $(if $(TAGS),--tags $(TAGS))
 
 infra-expected: ## Generate tfplan.json from Terraform plan (read-only, no remote state)
 	@echo "Generating tfplan.json from Terraform modules..."

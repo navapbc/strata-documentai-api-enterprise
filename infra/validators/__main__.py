@@ -130,6 +130,7 @@ class InfraValidator(
         project: str = "docai",
         stage: str | None = None,
         json_output: bool = False,
+        tag_keys: dict[str, str] | None = None,
     ):
         self.env = env
         self.region = region
@@ -171,9 +172,19 @@ class InfraValidator(
         self.service_name = f"{self.project}-{env}-{self.account_id}"
         self.ssm_prefix = f"/{self.project}/{env}"
 
+        self.tag_keys = {"project": "project", "stage": "stage", "component": "component"}
+        if tag_keys:
+            self.tag_keys.update(tag_keys)
+
         # Discover resources by tags
         self._log(f"  Discovering resources: project={self.project}, stage={self.stage}")
-        self.component_resources = discover_resources(session, self.project, self.stage)
+        self._log(
+            f"  Tag keys: project={self.tag_keys['project']}, "
+            f"stage={self.tag_keys['stage']}, component={self.tag_keys['component']}"
+        )
+        self.component_resources = discover_resources(
+            session, self.project, self.stage, self.tag_keys
+        )
         discovered_count = sum(len(v) for v in self.component_resources.values())
         self._log(
             f"  Found {discovered_count} resources "
@@ -344,6 +355,16 @@ def main():
         default=None,
         help="Comma-separated list of categories to check (e.g. --only s3,dynamodb,lambda)",
     )
+    parser.add_argument(
+        "--tags",
+        default=None,
+        help=(
+            "Override tag key names used for discovery. Maps the validator's internal keys "
+            "to the tag keys in your AWS account, as comma-separated pairs. "
+            "Internal keys: project, stage, component. "
+            "Example: --tags project=Application,stage=Environment,component=Purpose"
+        ),
+    )
     args = parser.parse_args()
 
     only = [x.strip() for x in args.only.split(",")] if args.only else None
@@ -353,6 +374,19 @@ def main():
             parser.error(
                 f"Unknown categories: {', '.join(unknown)}. "
                 f"Valid: {', '.join(InfraValidator.ALL_CHECKS)}"
+            )
+
+    tag_keys: dict[str, str] | None = None
+    if args.tags:
+        valid_keys = {"project", "stage", "component"}
+        try:
+            tag_keys = dict(pair.split("=", 1) for pair in args.tags.split(","))
+        except ValueError:
+            parser.error("--tags must be in the format key=Value,key=Value")
+        unknown_keys = set(tag_keys) - valid_keys
+        if unknown_keys:
+            parser.error(
+                f"Unknown tag keys: {', '.join(unknown_keys)}. Valid: {', '.join(valid_keys)}"
             )
 
     if not args.json:
@@ -372,6 +406,7 @@ def main():
             project=args.project,
             stage=args.stage,
             json_output=args.json,
+            tag_keys=tag_keys,
         )
     except SystemExit:
         raise

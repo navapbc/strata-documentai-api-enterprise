@@ -15,7 +15,7 @@ Though originally built for manually-provisioned environments, it's useful anywh
 - Python >= 3.11
 - [uv](https://docs.astral.sh/uv/) (package manager)
 - AWS credentials configured (`~/.aws/credentials` or environment variables)
-- Resources tagged with `project`, `stage`, and `component` tags (hard requirement - untagged resources cannot be discovered or validated)
+- Resources tagged with `project`, `stage`, and `component` tags (hard requirement - untagged resources cannot be discovered or validated). Tag key names are configurable via `--tags` if your environment uses different keys.
 
 ## Architecture
 
@@ -69,6 +69,21 @@ make infra-check PROJECT=myproject
 
 # Stage tag differs from environment (e.g. manual deploy tagged "DEV1")
 uv run python -m validators --env dev --stage DEV1 --profile other-account
+```
+
+## Custom tag key names
+
+By default the validator looks for tag keys named `project`, `stage`, and `component`. If your AWS environment uses different tag key names, use `--tags` to map them:
+
+```bash
+uv run python -m validators --tags project=Application,stage=Environment,component=Purpose
+```
+
+This means: "look for the tag key `Application` where the validator expects `project`", and so on. You only need to specify the keys that differ — unspecified keys fall back to their defaults.
+
+```bash
+# Override only the component key
+uv run python -m validators --tags component=Purpose
 ```
 
 If the target account has never been tagged with `project` + `stage` + `component`, discovery will return nothing and everything reports as missing. The fix is tagging the resources (via `terraform apply` with this branch, or manually) - not a validator issue.

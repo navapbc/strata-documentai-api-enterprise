@@ -9,17 +9,25 @@ def discover_resources(
     session,
     project: str,
     stage: str,
+    tag_keys: dict[str, str] | None = None,
 ) -> dict[str, list[str]]:
     """Discover all resources matching project + stage tags, grouped by component.
 
     Returns a dict mapping component tag values to lists of resource ARNs.
     Resources without a component tag are grouped under Tag.UNTAGGED.
+
+    tag_keys overrides the default tag key names:
+        {"project": "Application", "stage": "Environment", "component": "Purpose"}
     """
+    keys = {"project": "project", "stage": "stage", "component": "component"}
+    if tag_keys:
+        keys.update(tag_keys)
+
     client = session.client("resourcegroupstaggingapi")
 
     tag_filters = [
-        {"Key": "project", "Values": [project]},
-        {"Key": "stage", "Values": [stage]},
+        {"Key": keys["project"], "Values": [project]},
+        {"Key": keys["stage"], "Values": [stage]},
     ]
 
     resources: dict[str, list[str]] = defaultdict(list)
@@ -35,7 +43,7 @@ def discover_resources(
         for item in resp.get("ResourceTagMappingList", []):
             arn = item["ResourceARN"]
             tags = {t["Key"]: t["Value"] for t in item.get("Tags", [])}
-            component = tags.get("component", Tag.UNTAGGED)
+            component = tags.get(keys["component"], Tag.UNTAGGED)
             resources[component].append(arn)
 
         pagination_token = resp.get("PaginationToken", "")
