@@ -19,28 +19,32 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     result_processor_started_at = datetime.now(UTC).isoformat()
     key, bucket, *_ = extract_s3_info_from_event(event)
 
-    try:
-        with init(__package__):
-            logger.info(f"Processing BDA output: s3://{bucket}/{key}")
+    with init(__package__):
+        logger.info(f"Processing BDA output: s3://{bucket}/{key}")
+        # try/except must stay inside `with init(...)` so failure logs reach CloudWatch.
+        # Moving it outside tears down the log handler before logger.error fires.
+        try:
             main(
                 bucket_name=bucket,
                 object_key=key,
                 result_processor_started_at=result_processor_started_at,
             )
-    except Exception as e:
-        logger.error(f"BDA result processing failed for {key}: {e}")
-        try:
-            ddb_key = get_ddb_key_from_bda_output(bucket, key)
-            if not ddb_key:
-                logger.error(f"Unable to resolve DDB key from BDA output: s3://{bucket}/{key}")
-                raise
-            classify_as_failed(
-                object_key=ddb_key,
-                error_message=str(e),
-                data=ClassificationData(additional_info="Unhandled error in BDA result processor"),
-                result_processor_started_at=result_processor_started_at,
-            )
-        except Exception as ddb_err:
-            logger.error(f"Failed to mark document as failed in DDB: {ddb_err}")
-        raise
+        except Exception as e:
+            logger.error(f"BDA result processing failed for {key}: {e}")
+            try:
+                ddb_key = get_ddb_key_from_bda_output(bucket, key)
+                if not ddb_key:
+                    logger.error(f"Unable to resolve DDB key from BDA output: s3://{bucket}/{key}")
+                    raise
+                classify_as_failed(
+                    object_key=ddb_key,
+                    error_message=str(e),
+                    data=ClassificationData(
+                        additional_info="Unhandled error in BDA result processor"
+                    ),
+                    result_processor_started_at=result_processor_started_at,
+                )
+            except Exception as ddb_err:
+                logger.error(f"Failed to mark document as failed in DDB: {ddb_err}")
+            raise
     return {"statusCode": 200}

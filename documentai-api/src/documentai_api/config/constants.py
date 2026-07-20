@@ -292,6 +292,18 @@ class ProcessStatus(StrEnum):
         return value in [cls.NOT_STARTED, cls.PENDING_UPLOAD]
 
     @classmethod
+    def pending_message(cls, value: str) -> str:
+        """Human-readable message for a document with no final result yet.
+
+        Distinguishes a document still awaiting pickup by the processor from one
+        that is actively being processed, so a stalled or never-claimed document
+        does not misreport as "Processing in progress".
+        """
+        if cls.is_awaiting_processing(value):
+            return "Awaiting processing"
+        return "Processing in progress"
+
+    @classmethod
     def is_successful(cls, value: str) -> bool:
         return value in [
             cls.SUCCESS,

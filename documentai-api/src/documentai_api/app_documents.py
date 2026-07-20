@@ -295,10 +295,12 @@ async def get_document_results(
             raise HTTPException(status_code=404, detail=f"Job ID {job_id} not found")
 
         if not job_status.v1_response_json:
+            current_status = job_status.process_status or ProcessStatus.NOT_STARTED.value
+
             return JobStatusResponse(
                 job_id=str(job_id),
-                job_status=job_status.process_status or ProcessStatus.NOT_STARTED.value,
-                message="Processing in progress",
+                job_status=current_status,
+                message=ProcessStatus.pending_message(current_status),
             )
 
         if job_status.process_status and ProcessStatus.is_classified(job_status.process_status):
@@ -432,11 +434,13 @@ async def search_documents(body: DocumentSearchRequest, auth: AuthUser) -> Docum
                     )
                 )
             elif not job_status.v1_response_json:
+                current_status = job_status.process_status or ProcessStatus.NOT_STARTED.value
+
                 results.append(
                     JobStatusResponse(
                         job_id=job_id,
-                        job_status=job_status.process_status or ProcessStatus.NOT_STARTED.value,
-                        message="Processing in progress",
+                        job_status=current_status,
+                        message=ProcessStatus.pending_message(current_status),
                     )
                 )
             elif body.include_extracted_data:
