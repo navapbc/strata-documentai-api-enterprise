@@ -12,7 +12,7 @@ from documentai_api.config.env import EnvVars, get_required_env
 from documentai_api.schemas.document_batches import DocumentBatches
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import ddb as ddb_service
-from documentai_api.utils.ttl import ttl_epoch_in_days
+from documentai_api.utils.dates import get_ttl_epoch_in_days
 
 
 def create_batch(
@@ -33,7 +33,9 @@ def create_batch(
         DocumentBatches.TOTAL_FILES: total_files,
         DocumentBatches.CREATED_AT: created_at,
         # TTL from creation - batch records are short-lived tracking artifacts.
-        DocumentBatches.TIME_TO_LIVE: ttl_epoch_in_days(ConfigDefaults.DOCUMENT_BATCHES_TTL_DAYS),
+        DocumentBatches.TIME_TO_LIVE: get_ttl_epoch_in_days(
+            ConfigDefaults.DOCUMENT_BATCHES_TTL_DAYS
+        ),
     }
 
     if category:

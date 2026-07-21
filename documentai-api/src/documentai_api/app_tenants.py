@@ -1,10 +1,16 @@
 """Admin tenants router - CRUD for tenant management."""
 
+import asyncio
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from documentai_api.annotations import AdminClaims, SuperAdminClaims, verify_jwt_with_role
+from documentai_api.annotations import (
+    AdminClaims,
+    MonthParam,
+    SuperAdminClaims,
+    verify_jwt_with_role,
+)
 from documentai_api.config.constants import ApiVisualizationTag
 from documentai_api.logging import get_logger
 from documentai_api.models.tenant import (
@@ -12,13 +18,19 @@ from documentai_api.models.tenant import (
     DeleteTenantResponse,
     ListTenantsResponse,
     TenantItem,
+    TenantRequestCountItem,
+    TenantRequestCountsResponse,
     UpdateTenantRequest,
 )
 from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
 from documentai_api.schemas.tenants import TenantRecord
 from documentai_api.utils import tenants as tenants_util
 from documentai_api.utils.audit import log_event
+from documentai_api.utils.dates import get_month_prefix, get_today_iso
 from documentai_api.utils.jwt_auth import is_super_admin, tenant_scope
+from documentai_api.utils.rate_limit import get_request_counts
+from documentai_api.utils.strings import camel_to_snake
+from documentai_api.utils.tenants import SUPER_ADMIN_PROTECTED_FIELDS
 
 logger = get_logger(__name__)
 
@@ -36,6 +48,8 @@ def _to_item(record: dict[str, Any]) -> TenantItem:
         primary_contact=record.get(TenantRecord.PRIMARY_CONTACT),
         is_active=record.get(TenantRecord.IS_ACTIVE, True),
         extraction_confidence_floor=record.get(TenantRecord.EXTRACTION_CONFIDENCE_FLOOR),
+        max_requests_per_day=record.get(TenantRecord.MAX_REQUESTS_PER_DAY),
+        max_requests_per_month=record.get(TenantRecord.MAX_REQUESTS_PER_MONTH),
         created_at=record.get(TenantRecord.CREATED_AT),
         updated_at=record.get(TenantRecord.UPDATED_AT),
     )
@@ -63,6 +77,8 @@ async def create_tenant(
             display_name=body.display_name,
             primary_contact=body.primary_contact,
             extraction_confidence_floor=body.extraction_confidence_floor,
+            max_requests_per_day=body.max_requests_per_day,
+            max_requests_per_month=body.max_requests_per_month,
         )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
@@ -106,7 +122,10 @@ async def get_tenant(
     return _to_item(record)
 
 
-@router.patch("/{tenant_id}")
+@router.patch(
+    "/{tenant_id}",
+    description="Update a tenant's metadata. Pass `null` for `extractionConfidenceFloor`, `maxRequestsPerDay`, or `maxRequestsPerMonth` to clear the override back to the platform default. `isActive`, `extractionConfidenceFloor`, `maxRequestsPerDay`, and `maxRequestsPerMonth` are super-admin only.",
+)
 async def update_tenant(
     tenant_id: str,
     body: UpdateTenantRequest,
@@ -115,19 +134,23 @@ async def update_tenant(
     """Update a tenant's metadata."""
     _enforce_scope(claims, tenant_id)
 
-    # Tenant-admins cannot change activation status or extraction confidence floor
-    is_active = body.is_active if is_super_admin(claims) else None
-    extraction_confidence_floor = (
-        body.extraction_confidence_floor if is_super_admin(claims) else None
-    )
+    allowed = set(body.model_fields_set)
+    super_admin_only = {camel_to_snake(f) for f in SUPER_ADMIN_PROTECTED_FIELDS}
+    restricted = allowed & super_admin_only
+    if not is_super_admin(claims) and restricted:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Only super-admins may modify: {', '.join(sorted(restricted))}",
+        )
+
+    set_fields = {f: getattr(body, f) for f in allowed if getattr(body, f) is not None}
+    clear_fields = {f for f in allowed if getattr(body, f) is None}
 
     try:
         updated = tenants_util.update_tenant(
             tenant_id,
-            display_name=body.display_name,
-            primary_contact=body.primary_contact,
-            is_active=is_active,
-            extraction_confidence_floor=extraction_confidence_floor,
+            clear_fields=clear_fields,
+            **set_fields,
         )
     except ValueError as e:
         msg = str(e)
@@ -141,9 +164,31 @@ async def update_tenant(
         target_type=AuditTargetType.TENANT,
         target_id=tenant_id,
         tenant_id=tenant_id,
-        metadata={"changed_fields": [k for k, v in body.model_dump(exclude_none=True).items()]},
+        metadata={"changed_fields": list(allowed)},
     )
     return _to_item(updated)
+
+
+@router.get("/{tenant_id}/request-counts")
+async def get_tenant_request_counts(
+    tenant_id: str,
+    claims: AdminClaims,
+    month: MonthParam = None,
+) -> TenantRequestCountsResponse:
+    """Get daily request counts for a tenant in a given month (defaults to current month)."""
+    _enforce_scope(claims, tenant_id)
+    month = month or get_month_prefix(get_today_iso())
+    items = await asyncio.to_thread(get_request_counts, tenant_id, month)
+    daily = sorted(
+        [TenantRequestCountItem(date=i["date"], count=int(i["count"])) for i in items],
+        key=lambda x: x.date,
+    )
+    return TenantRequestCountsResponse(
+        tenant_id=tenant_id,
+        month=month,
+        monthly_total=sum(d.count for d in daily),
+        daily=daily,
+    )
 
 
 @router.delete("/{tenant_id}")

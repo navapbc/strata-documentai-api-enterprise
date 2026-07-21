@@ -12,6 +12,11 @@ def _disable_auth(disable_auth):
     pass
 
 
+@pytest.fixture(autouse=True)
+def _bypass_rate_limit(mocker):
+    mocker.patch("documentai_api.app_documents.increment_and_check")
+
+
 def test_demo_upload_returns_202(api_client, blank_pdf_bytes, mocker):
     """POST /v1/demo/documents returns 202 with job_id."""
     mocker.patch("documentai_api.app_documents.insert_minimal_ddb_record")

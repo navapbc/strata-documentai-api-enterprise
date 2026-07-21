@@ -3,8 +3,11 @@
 from typing import Any
 
 from documentai_api.schemas.tenants import TenantRecord, TenantsTable
+from documentai_api.utils.strings import snake_to_camel
 
 _table = TenantsTable()
+
+SUPER_ADMIN_PROTECTED_FIELDS = _table.super_admin_protected_fields
 
 
 def get_tenant(tenant_id: str) -> dict[str, Any] | None:
@@ -33,6 +36,8 @@ def create_tenant(
     display_name: str,
     primary_contact: str | None = None,
     extraction_confidence_floor: float | None = None,
+    max_requests_per_day: int | None = None,
+    max_requests_per_month: int | None = None,
 ) -> dict[str, Any]:
     """Create a new tenant. Raises ValueError if already exists."""
     item: dict[str, Any] = {
@@ -43,24 +48,32 @@ def create_tenant(
         item[TenantRecord.PRIMARY_CONTACT] = primary_contact
     if extraction_confidence_floor is not None:
         item[TenantRecord.EXTRACTION_CONFIDENCE_FLOOR] = extraction_confidence_floor
+    if max_requests_per_day is not None:
+        item[TenantRecord.MAX_REQUESTS_PER_DAY] = max_requests_per_day
+    if max_requests_per_month is not None:
+        item[TenantRecord.MAX_REQUESTS_PER_MONTH] = max_requests_per_month
 
     return _table.create(item)
 
 
-def update_tenant(tenant_id: str, **fields: Any) -> dict[str, Any]:
-    """Update tenant fields. Returns updated record. Raises ValueError if not found."""
-    field_map = {
-        "display_name": TenantRecord.DISPLAY_NAME,
-        "primary_contact": TenantRecord.PRIMARY_CONTACT,
-        "is_active": TenantRecord.IS_ACTIVE,
-        "extraction_confidence_floor": TenantRecord.EXTRACTION_CONFIDENCE_FLOOR,
+def update_tenant(
+    tenant_id: str, clear_fields: set[str] | None = None, **fields: Any
+) -> dict[str, Any]:
+    """Update tenant fields. Returns updated record. Raises ValueError if not found.
+
+    Pass clear_fields (python field names) to explicitly remove nullable overrides.
+    Only fields in TenantsTable.clearable_fields are accepted; others are silently ignored.
+    """
+    ddb_fields = _table.to_ddb_fields(**{k: v for k, v in fields.items() if v is not None})
+    ddb_clear = {
+        snake_to_camel(k)
+        for k in (clear_fields or set())
+        if snake_to_camel(k) in _table.clearable_fields
     }
-    # Map python kwargs to DDB field names
-    ddb_fields = {field_map[k]: v for k, v in fields.items() if k in field_map and v is not None}
-    if not ddb_fields:
+    if not ddb_fields and not ddb_clear:
         raise ValueError("No fields to update")
 
-    return _table.update(tenant_id, **ddb_fields)
+    return _table.update(tenant_id, clear_fields=ddb_clear or None, **ddb_fields)
 
 
 def deactivate_tenant(tenant_id: str) -> bool:

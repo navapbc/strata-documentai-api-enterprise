@@ -23,6 +23,7 @@ from documentai_api.services import s3 as s3_service
 from documentai_api.services import sqs as sqs_service
 from documentai_api.utils import s3 as s3_utils
 from documentai_api.utils.bda import extract_region_from_bda_arn
+from documentai_api.utils.dates import get_ttl_epoch_in_days
 from documentai_api.utils.extraction_timing import (
     calculate_field_metrics as _calculate_field_metrics,
 )
@@ -31,7 +32,6 @@ from documentai_api.utils.extraction_timing import (
     calculate_wait_time,
 )
 from documentai_api.utils.response_builder import build_v1_api_response
-from documentai_api.utils.ttl import ttl_epoch_in_days
 
 logger = get_logger(__name__)
 
@@ -503,7 +503,9 @@ def upsert_ddb(data: UpsertDdbData) -> None:
             ":blurFailed": bool(data.blur_analysis_failed),
             ":blurLlm": bool(data.blur_llm_checked),
             ":aiConsent": bool(data.ai_consent_flag),
-            ":ttl": ttl_epoch_in_days(data.ttl_days or ConfigDefaults.DOCUMENT_METADATA_TTL_DAYS),
+            ":ttl": get_ttl_epoch_in_days(
+                data.ttl_days or ConfigDefaults.DOCUMENT_METADATA_TTL_DAYS
+            ),
         }
 
         # internal_api_response and pre_classification are handled by dedicated

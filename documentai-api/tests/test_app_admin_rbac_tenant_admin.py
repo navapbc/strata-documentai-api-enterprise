@@ -213,14 +213,14 @@ def test_tenants_tenant_admin_update_other_returns_403(client, seed_tenant):
     assert response.status_code == 403
 
 
-def test_tenants_tenant_admin_update_is_active_ignored(client, seed_tenant):
+def test_tenants_tenant_admin_update_is_active_forbidden(client, seed_tenant):
+    """A tenant-admin PATCH that includes a super-admin-only field (e.g. is_active) is
+    rejected wholesale with 403 - even alongside a field they may otherwise change."""
     _override_jwt(_make_claims(groups=[TENANT_ADMIN], tenant_id=TENANT_ID))
     response = client.patch(
-        f"{TENANTS_URL}/{TENANT_ID}", json={"display_name": "Still Active", "is_active": False}
+        f"{TENANTS_URL}/{TENANT_ID}", json={"display_name": "New Name", "is_active": False}
     )
-    assert response.status_code == 200
-    assert response.json()["isActive"] is True
-    assert response.json()["displayName"] == "Still Active"
+    assert response.status_code == 403
 
 
 def test_tenants_tenant_admin_update_primary_contact(client, seed_tenant):

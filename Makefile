@@ -18,6 +18,7 @@
 	test \
 	secret-scan \
 	install-hooks \
+	adr-log \
 	help
 
 .DEFAULT_GOAL := help
@@ -135,6 +136,10 @@ record-api-setup: ## Record local API setup demo -> $(MEDIA_DIR)/api-setup-demo.
 
 postman: ## Regenerate the Postman collection from docs/documentai-api/openapi.json
 	docs/documentai-api/postman/build.sh
+
+adr-log: ## Regenerate the ADR index (docs/decisions/index.md)
+	@which adr-log > /dev/null 2>&1 || (echo "Error: adr-log not found. Install with: npm install -g adr-log" && exit 1)
+	cd docs/decisions && adr-log -i -e template.md
 
 help: ## Show help
 	@grep -Eh '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'

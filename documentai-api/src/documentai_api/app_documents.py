@@ -48,6 +48,7 @@ from documentai_api.utils.document_lifecycle import (
     insert_minimal_ddb_record,
 )
 from documentai_api.utils.jobs import JobStatus, get_job_status, poll_for_completion
+from documentai_api.utils.rate_limit import increment_and_check
 from documentai_api.utils.response_builder import build_v1_api_response
 from documentai_api.utils.tenant_access import validate_document_tenant_access
 from documentai_api.utils.uploads import (
@@ -99,6 +100,8 @@ async def upload_document(
 
     actual_content_type = await validate_upload(file)
     filename: str = file.filename  # type: ignore[assignment]
+
+    await asyncio.to_thread(increment_and_check, auth.tenant_id)
 
     logger.info(
         "Processing document",

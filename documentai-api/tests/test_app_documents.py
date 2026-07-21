@@ -17,6 +17,11 @@ def _disable_auth(disable_auth):
     pass
 
 
+@pytest.fixture(autouse=True)
+def _bypass_rate_limit(mocker):
+    mocker.patch("documentai_api.app_documents.increment_and_check")
+
+
 def test_document_upload_no_file(api_client):
     response = api_client.post("/v1/documents")
     assert response.status_code == 422
