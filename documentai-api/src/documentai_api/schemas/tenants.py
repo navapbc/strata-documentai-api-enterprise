@@ -31,9 +31,11 @@ class TenantsTable(BaseCrudTable):
             TenantRecord.MAX_REQUESTS_PER_MONTH,
         }
     )
-    super_admin_protected_fields: frozenset[str] = frozenset({
-        TenantRecord.IS_ACTIVE,
-        TenantRecord.EXTRACTION_CONFIDENCE_FLOOR,
-        TenantRecord.MAX_REQUESTS_PER_DAY,
-        TenantRecord.MAX_REQUESTS_PER_MONTH,
-    })
+    super_admin_protected_fields: frozenset[str] = frozenset(
+        {
+            TenantRecord.IS_ACTIVE,
+            TenantRecord.EXTRACTION_CONFIDENCE_FLOOR,
+            TenantRecord.MAX_REQUESTS_PER_DAY,
+            TenantRecord.MAX_REQUESTS_PER_MONTH,
+        }
+    )
