@@ -170,6 +170,14 @@ module "tenants" {
   hash_key   = "tenantId"
 }
 
+module "tenant_request_counts" {
+  source        = "../../modules/nosql"
+  table_name    = "${local.service_name}-tenant-request-counts"
+  hash_key      = "tenantId"
+  sort_key      = "date"
+  ttl_attribute = "ttl"
+}
+
 module "audit_events" {
   source        = "../../modules/nosql"
   table_name    = "${local.service_name}-audit-events"
@@ -460,6 +468,7 @@ locals {
     DOCUMENTAI_DOCUMENT_METADATA_TENANT_INDEX_NAME            = local.gsi_tenant_id
     API_KEYS_TABLE_NAME                                       = module.api_keys.table_name
     TENANTS_TABLE_NAME                                        = module.tenants.table_name
+    TENANT_REQUEST_COUNTS_TABLE_NAME                          = module.tenant_request_counts.table_name
     AUDIT_EVENTS_TABLE_NAME                                   = module.audit_events.table_name
     EXTRACTION_RULES_TABLE_NAME                               = module.extraction_rules.table_name
     DOCUMENT_CATEGORIES_TABLE_NAME                            = module.document_categories.table_name
@@ -575,6 +584,8 @@ data "aws_iam_policy_document" "data_access" {
       "${module.api_keys.table_arn}/index/*",
       "${module.tenants.table_arn}",
       "${module.tenants.table_arn}/index/*",
+      "${module.tenant_request_counts.table_arn}",
+      "${module.tenant_request_counts.table_arn}/index/*",
       "${module.extraction_rules.table_arn}",
       "${module.extraction_rules.table_arn}/index/*",
       "${module.document_categories.table_arn}",
@@ -601,7 +612,7 @@ data "aws_iam_policy_document" "data_access" {
     resources = concat(
       [for m in [
         module.document_metadata, module.api_keys, module.tenants,
-        module.extraction_rules, module.document_categories,
+        module.tenant_request_counts, module.extraction_rules, module.document_categories,
         module.document_batches, module.document_builds, module.audit_events,
       ] : m.kms_key_arn],
       [

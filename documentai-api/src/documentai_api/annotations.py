@@ -7,7 +7,7 @@ Import and use directly as parameter type hints.
 from typing import Annotated, Any, Literal
 
 from fastapi import Depends, Form, Header, Query
-from pydantic import StringConstraints
+from pydantic import Field, StringConstraints
 
 from documentai_api.config.constants import (
     DocumentCategory,
@@ -86,8 +86,10 @@ AiConsentFlag = Annotated[
 OutputFormat = Annotated[OutputFormatType, Query(alias="format")]
 PageLimit = Annotated[int, Query(ge=1, le=200)]
 IsoDateParam = Annotated[str | None, Query(pattern=r"^\d{4}-\d{2}-\d{2}")]
+MonthParam = Annotated[str | None, Query(pattern=r"^\d{4}-\d{2}$")]
 
 # Validated string types
 ApiKeyNameStr = Annotated[
     str, StringConstraints(pattern=r"^[a-z0-9-]+$", min_length=1, max_length=64)
 ]
+RequestLimit = Annotated[int, Field(gt=0, description="Maximum number of write requests allowed.")]

@@ -162,6 +162,26 @@ def tenants_table(aws_credentials, monkeypatch):
 
 
 @pytest.fixture
+def tenant_request_counts_table(aws_credentials, monkeypatch):
+    with mock_aws():
+        dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+        table = dynamodb.create_table(
+            TableName="tenant-request-counts",
+            KeySchema=[
+                {"AttributeName": "tenantId", "KeyType": "HASH"},
+                {"AttributeName": "date", "KeyType": "RANGE"},
+            ],
+            AttributeDefinitions=[
+                {"AttributeName": "tenantId", "AttributeType": "S"},
+                {"AttributeName": "date", "AttributeType": "S"},
+            ],
+            BillingMode="PAY_PER_REQUEST",
+        )
+        monkeypatch.setenv(EnvVars.TENANT_REQUEST_COUNTS_TABLE_NAME, table.name)
+        yield table
+
+
+@pytest.fixture
 def audit_events_table(aws_credentials, monkeypatch):
     with mock_aws():
         dynamodb = boto3.resource("dynamodb", region_name="us-east-1")

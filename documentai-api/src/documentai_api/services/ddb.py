@@ -32,13 +32,15 @@ def update_item(
     expression_values: dict[str, Any],
     expression_names: dict[str, str] | None = None,
     condition_expression: str | None = None,
-) -> None:
+    return_values: str | None = None,
+) -> dict[str, Any] | None:
     """Update item in DynamoDB table.
 
     Pass `expression_names` to alias reserved attribute names (e.g. `ttl`) in the
     update expression via `#placeholder` references.
     Pass `condition_expression` for conditional writes (raises
     ConditionalCheckFailedException on failure).
+    Pass `return_values` (e.g. "ALL_NEW") to get the updated item back.
     """
     ddb_table = AWSClientFactory.get_ddb_table(table_name)
     kwargs: dict[str, Any] = {
@@ -50,7 +52,10 @@ def update_item(
         kwargs["ExpressionAttributeNames"] = expression_names
     if condition_expression:
         kwargs["ConditionExpression"] = condition_expression
-    ddb_table.update_item(**kwargs)
+    if return_values:
+        kwargs["ReturnValues"] = return_values
+    response = ddb_table.update_item(**kwargs)
+    return cast(dict[str, Any], response["Attributes"]) if return_values else None
 
 
 def delete_item(table_name: str, key: dict[str, Any]) -> None:

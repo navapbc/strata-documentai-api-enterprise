@@ -20,6 +20,7 @@ from documentai_api.logging import get_logger
 from documentai_api.services import ddb as ddb_service
 from documentai_api.utils.aws_client_factory import AWSClientFactory
 from documentai_api.utils.base_readonly_table import ReadOnlyTable
+from documentai_api.utils.strings import snake_to_camel
 
 logger = get_logger(__name__)
 
@@ -41,6 +42,11 @@ class BaseCrudTable(ReadOnlyTable):
     active_field: str = "isActive"
     created_field: str = "createdAt"
     updated_field: str = "updatedAt"
+    clearable_fields: frozenset[str] = frozenset()
+
+    def to_ddb_fields(self, **fields: Any) -> dict[str, Any]:
+        """Convert snake_case kwargs to camelCase DDB attribute names."""
+        return {snake_to_camel(k): v for k, v in fields.items()}
 
     def list_by_pk(self, pk_value: str, active_only: bool = True) -> list[dict[str, Any]]:
         """List items by partition key."""
@@ -75,30 +81,47 @@ class BaseCrudTable(ReadOnlyTable):
         ddb_service.put_item(self._get_table_name(), _floats_to_decimal(item))
         return item
 
-    def update(self, pk_value: str, sk_value: str | None = None, **fields: Any) -> dict[str, Any]:
-        """Update fields on an existing item. Raises ValueError if not found or no fields."""
+    def update(
+        self,
+        pk_value: str,
+        sk_value: str | None = None,
+        *,
+        clear_fields: set[str] | None = None,
+        **fields: Any,
+    ) -> dict[str, Any]:
+        """Update fields on an existing item. Raises ValueError if not found or no fields.
+
+        Pass clear_fields to explicitly remove attributes (REMOVE expression).
+        Useful for clearing nullable overrides back to their default/absent state.
+        Note: field names must not be DDB reserved words (e.g. 'status', 'date', 'count',
+        'ttl') - no expression name aliasing is applied.
+        """
         existing = self.get(pk_value, sk_value)
         if not existing:
             raise ValueError("Item not found")
 
-        # Filter out None values
+        # Filter out None values from SET fields
         updates = {k: v for k, v in fields.items() if v is not None}
-        if not updates:
+        clear_fields = clear_fields or set()
+        if not updates and not clear_fields:
             raise ValueError("No fields to update")
 
         now = datetime.now(UTC).isoformat()
         updates[self.updated_field] = now
 
-        update_parts = []
+        set_parts = []
         expr_values: dict[str, Any] = {}
         for field_name, value in updates.items():
             param = f":{field_name}"
-            update_parts.append(f"{field_name} = {param}")
+            set_parts.append(f"{field_name} = {param}")
             expr_values[param] = _floats_to_decimal(value)
 
-        update_expr = "SET " + ", ".join(update_parts)
-        key = self._build_key(pk_value, sk_value)
+        # timestamp is always set, so set_parts is never empty
+        update_expr = "SET " + ", ".join(set_parts)
+        if clear_fields:
+            update_expr += " REMOVE " + ", ".join(clear_fields)
 
+        key = self._build_key(pk_value, sk_value)
         ddb_service.update_item(self._get_table_name(), key, update_expr, expr_values)
 
         updated = self.get(pk_value, sk_value)

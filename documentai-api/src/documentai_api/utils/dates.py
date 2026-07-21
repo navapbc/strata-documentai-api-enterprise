@@ -1,7 +1,12 @@
 """Date utilities."""
 
 import re
-from datetime import datetime
+from datetime import UTC, datetime
+
+
+def get_ttl_epoch_in_days(days: int) -> int:
+    """Unix-epoch seconds `days` in the future, for a DynamoDB `ttl` attribute."""
+    return int(datetime.now(UTC).timestamp()) + days * 24 * 60 * 60
 
 
 def validate_yyyymmdd_format(date_str: str) -> datetime:
@@ -43,3 +48,13 @@ def strip_time(value: str) -> str:
     if "T" in value:
         return value.split("T")[0]
     return value
+
+
+def get_today_iso() -> str:
+    """Return today's date as an ISO 8601 string (YYYY-MM-DD), in UTC."""
+    return datetime.now(UTC).date().isoformat()
+
+
+def get_month_prefix(date: str) -> str:
+    """Return the year-month portion of an ISO date string (YYYY-MM)."""
+    return date[:7]

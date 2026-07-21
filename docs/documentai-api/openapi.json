@@ -1953,7 +1953,7 @@
           "Admin:Tenants"
         ],
         "summary": "Update Tenant",
-        "description": "Update a tenant's metadata.",
+        "description": "Update a tenant's metadata. Pass `null` for `extractionConfidenceFloor`, `maxRequestsPerDay`, or `maxRequestsPerMonth` to clear the override back to the platform default. `isActive`, `extractionConfidenceFloor`, `maxRequestsPerDay`, and `maxRequestsPerMonth` are super-admin only.",
         "operationId": "update_tenant_v1_admin_tenants__tenant_id__patch",
         "security": [
           {
@@ -2034,6 +2034,71 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DeleteTenantResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/tenants/{tenant_id}/request-counts": {
+      "get": {
+        "tags": [
+          "Admin:Tenants"
+        ],
+        "summary": "Get Tenant Request Counts",
+        "description": "Get daily request counts for a tenant in a given month (defaults to current month).",
+        "operationId": "get_tenant_request_counts_v1_admin_tenants__tenant_id__request_counts_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Month"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantRequestCountsResponse"
                 }
               }
             }
@@ -5171,6 +5236,32 @@
               }
             ],
             "title": "Extractionconfidencefloor"
+          },
+          "maxRequestsPerDay": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0,
+                "description": "Maximum number of write requests allowed."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxrequestsperday"
+          },
+          "maxRequestsPerMonth": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0,
+                "description": "Maximum number of write requests allowed."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxrequestspermonth"
           }
         },
         "type": "object",
@@ -6322,6 +6413,28 @@
             "title": "Extractionconfidencefloor",
             "description": "Tenant override for the extraction confidence floor (0.0-1.0). Null means no override is set and the platform default applies."
           },
+          "maxRequestsPerDay": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxrequestsperday"
+          },
+          "maxRequestsPerMonth": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxrequestspermonth"
+          },
           "createdAt": {
             "anyOf": [
               {
@@ -6351,6 +6464,55 @@
           "displayName"
         ],
         "title": "TenantItem"
+      },
+      "TenantRequestCountItem": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "count"
+        ],
+        "title": "TenantRequestCountItem"
+      },
+      "TenantRequestCountsResponse": {
+        "properties": {
+          "tenantId": {
+            "type": "string",
+            "title": "Tenantid"
+          },
+          "month": {
+            "type": "string",
+            "title": "Month"
+          },
+          "monthlyTotal": {
+            "type": "integer",
+            "title": "Monthlytotal"
+          },
+          "daily": {
+            "items": {
+              "$ref": "#/components/schemas/TenantRequestCountItem"
+            },
+            "type": "array",
+            "title": "Daily"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenantId",
+          "month",
+          "monthlyTotal",
+          "daily"
+        ],
+        "title": "TenantRequestCountsResponse"
       },
       "TimingStats": {
         "properties": {
@@ -6494,6 +6656,32 @@
               }
             ],
             "title": "Extractionconfidencefloor"
+          },
+          "maxRequestsPerDay": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0,
+                "description": "Maximum number of write requests allowed."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxrequestsperday"
+          },
+          "maxRequestsPerMonth": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0,
+                "description": "Maximum number of write requests allowed."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxrequestspermonth"
           }
         },
         "type": "object",

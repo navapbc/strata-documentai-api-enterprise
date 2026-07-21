@@ -4,6 +4,7 @@ from typing import Annotated
 
 from pydantic import Field, StringConstraints
 
+from documentai_api.annotations import RequestLimit
 from documentai_api.models.base import BaseApiResponse
 
 TenantIdStr = Annotated[
@@ -28,6 +29,8 @@ class CreateTenantRequest(BaseApiResponse):
     display_name: DisplayNameStr
     primary_contact: str | None = None
     extraction_confidence_floor: ConfidenceFloor | None = None
+    max_requests_per_day: RequestLimit | None = None
+    max_requests_per_month: RequestLimit | None = None
 
 
 class UpdateTenantRequest(BaseApiResponse):
@@ -35,6 +38,8 @@ class UpdateTenantRequest(BaseApiResponse):
     primary_contact: str | None = None
     is_active: bool | None = None
     extraction_confidence_floor: ConfidenceFloor | None = None
+    max_requests_per_day: RequestLimit | None = None
+    max_requests_per_month: RequestLimit | None = None
 
 
 class TenantItem(BaseApiResponse):
@@ -49,6 +54,8 @@ class TenantItem(BaseApiResponse):
             "Null means no override is set and the platform default applies."
         ),
     )
+    max_requests_per_day: int | None = None
+    max_requests_per_month: int | None = None
     created_at: str | None = None
     updated_at: str | None = None
 
@@ -61,3 +68,15 @@ class ListTenantsResponse(BaseApiResponse):
 class DeleteTenantResponse(BaseApiResponse):
     deleted: bool
     tenant_id: str
+
+
+class TenantRequestCountItem(BaseApiResponse):
+    date: str
+    count: int
+
+
+class TenantRequestCountsResponse(BaseApiResponse):
+    tenant_id: str
+    month: str
+    monthly_total: int
+    daily: list[TenantRequestCountItem]
