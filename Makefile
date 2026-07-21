@@ -135,7 +135,7 @@ record-api-setup: ## Record local API setup demo -> $(MEDIA_DIR)/api-setup-demo.
 	rm -f api-setup-demo.mp4
 
 postman: ## Regenerate the Postman collection from docs/documentai-api/openapi.json
-	docs/documentai-api/postman/build.sh
+	$(MAKE) -C documentai-api postman
 
 adr-log: ## Regenerate the ADR index (docs/decisions/index.md)
 	@which adr-log > /dev/null 2>&1 || (echo "Error: adr-log not found. Install with: npm install -g adr-log" && exit 1)

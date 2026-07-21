@@ -21,6 +21,7 @@
 	lint-uv \
 	login \
 	openapi-spec \
+	postman \
 	pull-blueprint-fields \
 	release-build \
 	run-logs \
@@ -235,6 +236,9 @@ usage-report: ## Generate tenant usage report (MONTH=YYYY-MM required)
 
 openapi-spec: ## Export openapi spec to docs directory
 	$(PY_RUN_CMD) export-openapi > $(APP_DOCS_DIR)/openapi.json
+
+postman: ## Regenerate the Postman collection from openapi.json
+	$(APP_DOCS_DIR)/postman/build.sh
 
 diagrams: ## Render all .mmd diagrams to SVG
 diagrams: $(DIAGRAMS)
