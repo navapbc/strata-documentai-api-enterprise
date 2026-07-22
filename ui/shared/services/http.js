@@ -63,7 +63,10 @@ function createClient(buildAuthHeaders) {
         const respBody = await res
           .json()
           .catch(() => ({ detail: res.statusText }));
-        const detail = respBody.detail || respBody.message || res.statusText;
+        const raw = respBody.detail || respBody.message || res.statusText;
+        const detail = Array.isArray(raw)
+          ? (raw[0]?.msg ?? res.statusText)
+          : raw;
         const err = new Error(detail);
         err.status = res.status;
         err.method = method;

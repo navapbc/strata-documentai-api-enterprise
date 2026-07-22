@@ -18,6 +18,7 @@ from documentai_api.schemas.tenant_request_counts import (
     TenantRequestCountRecord,
     TenantRequestCountsTable,
 )
+from documentai_api.schemas.tenants import TenantRecord
 from documentai_api.services import ddb as ddb_service
 from documentai_api.utils.dates import get_month_prefix, get_today_iso, get_ttl_epoch_in_days
 from documentai_api.utils.tenants import get_tenant
@@ -44,8 +45,8 @@ def increment_and_check(tenant_id: str) -> None:
     if not tenant:
         return
 
-    max_per_day: int | None = tenant.get("maxRequestsPerDay")
-    max_per_month: int | None = tenant.get("maxRequestsPerMonth")
+    max_per_day: int | None = tenant.get(TenantRecord.MAX_WRITES_PER_DAY)
+    max_per_month: int | None = tenant.get(TenantRecord.MAX_WRITES_PER_MONTH)
 
     if max_per_day is None and max_per_month is None:
         return
@@ -112,7 +113,7 @@ def _get_monthly_total(table_name: str, tenant_id: str, today: str, today_count:
     )
 
 
-def get_request_counts(tenant_id: str, month: str) -> list[dict[str, Any]]:
+def get_write_counts(tenant_id: str, month: str) -> list[dict[str, Any]]:
     """Return daily request count items for a tenant in the given month (YYYY-MM)."""
     table_name = _tenants_count_table._get_table_name()
     return _query_month_items(table_name, tenant_id, month)

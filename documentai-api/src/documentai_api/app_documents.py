@@ -48,7 +48,6 @@ from documentai_api.utils.document_lifecycle import (
     insert_minimal_ddb_record,
 )
 from documentai_api.utils.jobs import JobStatus, get_job_status, poll_for_completion
-from documentai_api.utils.rate_limit import increment_and_check
 from documentai_api.utils.response_builder import build_v1_api_response
 from documentai_api.utils.tenant_access import validate_document_tenant_access
 from documentai_api.utils.uploads import (
@@ -57,6 +56,7 @@ from documentai_api.utils.uploads import (
     generate_unique_filename,
     validate_upload,
 )
+from documentai_api.utils.write_limit import increment_and_check
 
 logger = get_logger(__name__)
 

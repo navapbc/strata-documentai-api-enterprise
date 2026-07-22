@@ -36,8 +36,8 @@ def create_tenant(
     display_name: str,
     primary_contact: str | None = None,
     extraction_confidence_floor: float | None = None,
-    max_requests_per_day: int | None = None,
-    max_requests_per_month: int | None = None,
+    max_writes_per_day: int | None = None,
+    max_writes_per_month: int | None = None,
 ) -> dict[str, Any]:
     """Create a new tenant. Raises ValueError if already exists."""
     item: dict[str, Any] = {
@@ -48,10 +48,10 @@ def create_tenant(
         item[TenantRecord.PRIMARY_CONTACT] = primary_contact
     if extraction_confidence_floor is not None:
         item[TenantRecord.EXTRACTION_CONFIDENCE_FLOOR] = extraction_confidence_floor
-    if max_requests_per_day is not None:
-        item[TenantRecord.MAX_REQUESTS_PER_DAY] = max_requests_per_day
-    if max_requests_per_month is not None:
-        item[TenantRecord.MAX_REQUESTS_PER_MONTH] = max_requests_per_month
+    if max_writes_per_day is not None:
+        item[TenantRecord.MAX_WRITES_PER_DAY] = max_writes_per_day
+    if max_writes_per_month is not None:
+        item[TenantRecord.MAX_WRITES_PER_MONTH] = max_writes_per_month
 
     return _table.create(item)
 

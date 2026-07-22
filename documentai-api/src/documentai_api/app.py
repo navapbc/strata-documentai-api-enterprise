@@ -72,7 +72,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=False,
-    allow_methods=["GET", "PUT", "POST", "DELETE", "OPTIONS"],
+    allow_methods=["GET", "PUT", "POST", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "x-api-key", "API-Key", "Authorization", "X-Trace-ID"],
     expose_headers=["X-Trace-ID"],
 )

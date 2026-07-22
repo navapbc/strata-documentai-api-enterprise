@@ -92,4 +92,4 @@ MonthParam = Annotated[str | None, Query(pattern=r"^\d{4}-\d{2}$")]
 ApiKeyNameStr = Annotated[
     str, StringConstraints(pattern=r"^[a-z0-9-]+$", min_length=1, max_length=64)
 ]
-RequestLimit = Annotated[int, Field(gt=0, description="Maximum number of write requests allowed.")]
+WriteLimit = Annotated[int, Field(gt=0, description="Maximum number of write requests allowed.")]
