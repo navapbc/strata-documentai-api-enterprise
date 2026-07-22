@@ -54,6 +54,36 @@ async def test_validate_file_type_unsupported(runtime_required_env, empty_zip_by
 
 
 @pytest.mark.asyncio
+async def test_validate_file_type_docx_accepted(runtime_required_env, blank_docx_bytes):
+    from documentai_api.utils.uploads import validate_file_type
+
+    file = UploadFile(filename="test.docx", file=io.BytesIO(blank_docx_bytes))
+    content_type = await validate_file_type(file)
+    assert content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+
+@pytest.mark.asyncio
+async def test_validate_file_type_odt_rejected_with_hint(runtime_required_env, blank_odt_bytes):
+    from documentai_api.utils.uploads import validate_file_type
+
+    file = UploadFile(filename="test.odt", file=io.BytesIO(blank_odt_bytes))
+    with pytest.raises(HTTPException) as exc_info:
+        await validate_file_type(file)
+    assert exc_info.value.status_code == 400
+    assert "aren't currently supported" in exc_info.value.detail
+    assert ".docx" in exc_info.value.detail
+
+
+@pytest.mark.asyncio
+async def test_validate_file_type_doc_accepted(runtime_required_env, blank_doc_bytes):
+    from documentai_api.utils.uploads import validate_file_type
+
+    file = UploadFile(filename="test.doc", file=io.BytesIO(blank_doc_bytes))
+    content_type = await validate_file_type(file)
+    assert content_type == "application/msword"
+
+
+@pytest.mark.asyncio
 async def test_validate_file_type_resets_pointer(runtime_required_env, blank_pdf_bytes):
     """Verify the file pointer is reset after validation."""
     from documentai_api.utils.uploads import validate_file_type
