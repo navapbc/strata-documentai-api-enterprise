@@ -17,14 +17,14 @@ from documentai_api.config.constants import (
 from documentai_api.config.env import EnvVars
 from documentai_api.logging import get_logger
 from documentai_api.services import s3 as s3_service
-from documentai_api.utils.image_conversion import convert_to_png
+from documentai_api.utils.file_conversion import convert_file
 from documentai_api.utils.s3 import get_bucket_and_key, parse_s3_uri
 
 logger = get_logger(__name__)
 
-# filetype requires ~261 bytes for detection; 2048 provides margin without
+# filetype requires ~261 bytes for detection; 4096 provides margin without
 # reading the full object.
-HEADER_READ_BYTES = 2048
+HEADER_READ_BYTES = 4096
 
 
 def _detect_mime(header_bytes: bytes) -> str:
@@ -114,6 +114,13 @@ async def validate_file_type(file: UploadFile) -> str:
     header_bytes = await file.read(HEADER_READ_BYTES)
     actual_content_type = _detect_mime(header_bytes)
     await file.seek(0)
+
+    if FileValidation.is_odt(actual_content_type):
+        raise HTTPException(
+            status_code=400,
+            detail="OpenDocument Text (.odt) files aren't currently supported. "
+            "Please save the document as PDF or Microsoft Word (.docx) and try again.",
+        )
 
     if not FileValidation.is_supported(actual_content_type):
         raise HTTPException(
@@ -296,12 +303,13 @@ async def upload_document_for_processing(
         )
 
         try:
-            converted_bytes = await asyncio.to_thread(convert_to_png, file_bytes, content_type)
+            converted_bytes, content_type = await asyncio.to_thread(
+                convert_file, file_bytes, content_type
+            )
         except ValueError as e:
             raise ImageConversionError(str(e)) from e
 
         src_file = BytesIO(converted_bytes)
-        content_type = "image/png"
     else:
         src_file = BytesIO(file_bytes)
 

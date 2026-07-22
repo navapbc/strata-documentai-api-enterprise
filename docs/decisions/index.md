@@ -4,7 +4,8 @@ This log lists the architectural decisions for [project name].
 
 <!-- adrlog -- Regenerate the content by using "adr-log -i -e template.md". You can install it via "npm install -g adr-log" -->
 
-* [ADR-2026-07-21](infra/2026-07-21-tenant-write-rate-limiting.md) - Use DynamoDB Atomic Counters for Tenant Write Rate Limiting
+* [ADR-2026-07-22](api/2026-07-22-odt-upload-rejection.md) - Reject ODT Uploads with a Friendly Error Instead of Converting
+* [ADR-2026-07-21](infra/2026-07-21-tenant-write-rate-limiting.md) - Use DynamoDB Atomic Counters for Tenant Write Quota Enforcement
 
 <!-- adrlogstop -->
 

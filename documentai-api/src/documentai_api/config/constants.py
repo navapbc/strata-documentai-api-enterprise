@@ -163,6 +163,8 @@ class DocumentCategory(StrEnum):
 class FileValidation:
     NO_CONVERSION_NEEDED = (
         "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         "image/jpeg",
         "image/png",
     )
@@ -189,6 +191,8 @@ class FileValidation:
         "image/png",
     )
 
+    ODT_CONTENT_TYPES = ("application/vnd.oasis.opendocument.text",)
+
     @staticmethod
     def is_supported(content_type: str) -> bool:
         return content_type in FileValidation.SUPPORTED_CONTENT_TYPES
@@ -197,8 +201,14 @@ class FileValidation:
     def needs_conversion(content_type: str) -> bool:
         return content_type in FileValidation.REQUIRES_CONVERSION
 
+    @staticmethod
+    def is_odt(content_type: str) -> bool:
+        return content_type in FileValidation.ODT_CONTENT_TYPES
+
     CONTENT_TYPE_TO_EXT: ClassVar[dict[str, str]] = {
         "application/pdf": "pdf",
+        "application/msword": "doc",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
         "image/jpeg": "jpg",
         "image/jpg": "jpg",
         "image/png": "png",

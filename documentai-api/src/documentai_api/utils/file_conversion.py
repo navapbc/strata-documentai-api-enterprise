@@ -1,4 +1,4 @@
-"""Image format conversion for mobile file types (HEIC, WebP, GIF)."""
+"""File format conversion for images (HEIC, WebP, GIF, BMP, TIFF)."""
 
 import io
 
@@ -9,17 +9,10 @@ from documentai_api.logging import get_logger
 logger = get_logger(__name__)
 
 
-def convert_to_png(file_bytes: bytes, content_type: str) -> bytes:
-    """Convert HEIC/WebP/GIF image bytes to PNG.
+def convert_image_to_png(file_bytes: bytes, content_type: str) -> bytes:
+    """Convert HEIC/WebP/GIF/BMP/TIFF image bytes to PNG.
 
     For animated GIFs, extracts the first frame only.
-
-    Args:
-        file_bytes: Raw image bytes.
-        content_type: MIME type of the source image.
-
-    Returns:
-        PNG image bytes.
 
     Raises:
         ValueError: If conversion fails.
@@ -32,11 +25,9 @@ def convert_to_png(file_bytes: bytes, content_type: str) -> bytes:
 
         img = Image.open(io.BytesIO(file_bytes))
 
-        # animated GIF - take first frame
         if content_type == "image/gif" and getattr(img, "is_animated", False):
             img.seek(0)
 
-        # convert to RGB if needed (e.g. RGBA, palette mode)
         if img.mode not in ("RGB", "L"):
             img = img.convert("RGB")
 
@@ -53,3 +44,26 @@ def convert_to_png(file_bytes: bytes, content_type: str) -> bytes:
 
     except Exception as e:
         raise ValueError(f"Image conversion failed for {content_type}: {e}") from e
+
+
+def convert_file(file_bytes: bytes, content_type: str) -> tuple[bytes, str]:
+    """Convert a file to a BDA-native format.
+
+    Returns:
+        Tuple of (converted_bytes, output_content_type).
+
+    Raises:
+        ValueError: If conversion fails or content type is not supported.
+    """
+    image_types = (
+        "image/bmp",
+        "image/heic",
+        "image/heif",
+        "image/webp",
+        "image/gif",
+        "image/tiff",
+    )
+    if content_type in image_types:
+        return convert_image_to_png(file_bytes, content_type), "image/png"
+
+    raise ValueError(f"No conversion available for {content_type}")
