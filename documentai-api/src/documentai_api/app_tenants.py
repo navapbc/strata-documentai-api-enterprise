@@ -28,9 +28,9 @@ from documentai_api.utils import tenants as tenants_util
 from documentai_api.utils.audit import log_event
 from documentai_api.utils.dates import get_month_prefix, get_today_iso
 from documentai_api.utils.jwt_auth import is_super_admin, tenant_scope
-from documentai_api.utils.rate_limit import get_request_counts
 from documentai_api.utils.strings import camel_to_snake
 from documentai_api.utils.tenants import SUPER_ADMIN_PROTECTED_FIELDS
+from documentai_api.utils.write_limit import get_write_counts
 
 logger = get_logger(__name__)
 
@@ -48,8 +48,8 @@ def _to_item(record: dict[str, Any]) -> TenantItem:
         primary_contact=record.get(TenantRecord.PRIMARY_CONTACT),
         is_active=record.get(TenantRecord.IS_ACTIVE, True),
         extraction_confidence_floor=record.get(TenantRecord.EXTRACTION_CONFIDENCE_FLOOR),
-        max_requests_per_day=record.get(TenantRecord.MAX_REQUESTS_PER_DAY),
-        max_requests_per_month=record.get(TenantRecord.MAX_REQUESTS_PER_MONTH),
+        max_writes_per_day=record.get(TenantRecord.MAX_WRITES_PER_DAY),
+        max_writes_per_month=record.get(TenantRecord.MAX_WRITES_PER_MONTH),
         created_at=record.get(TenantRecord.CREATED_AT),
         updated_at=record.get(TenantRecord.UPDATED_AT),
     )
@@ -77,8 +77,8 @@ async def create_tenant(
             display_name=body.display_name,
             primary_contact=body.primary_contact,
             extraction_confidence_floor=body.extraction_confidence_floor,
-            max_requests_per_day=body.max_requests_per_day,
-            max_requests_per_month=body.max_requests_per_month,
+            max_writes_per_day=body.max_writes_per_day,
+            max_writes_per_month=body.max_writes_per_month,
         )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
@@ -124,7 +124,7 @@ async def get_tenant(
 
 @router.patch(
     "/{tenant_id}",
-    description="Update a tenant's metadata. Pass `null` for `extractionConfidenceFloor`, `maxRequestsPerDay`, or `maxRequestsPerMonth` to clear the override back to the platform default. `isActive`, `extractionConfidenceFloor`, `maxRequestsPerDay`, and `maxRequestsPerMonth` are super-admin only.",
+    description="Update a tenant's metadata. Pass `null` for `extractionConfidenceFloor`, `maxWritesPerDay`, or `maxWritesPerMonth` to clear the override back to the platform default. `isActive`, `extractionConfidenceFloor`, `maxWritesPerDay`, and `maxWritesPerMonth` are super-admin only.",
 )
 async def update_tenant(
     tenant_id: str,
@@ -133,6 +133,10 @@ async def update_tenant(
 ) -> TenantItem:
     """Update a tenant's metadata."""
     _enforce_scope(claims, tenant_id)
+
+    record = tenants_util.get_tenant(tenant_id)
+    if not record:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant not found")
 
     allowed = set(body.model_fields_set)
     super_admin_only = {camel_to_snake(f) for f in SUPER_ADMIN_PROTECTED_FIELDS}
@@ -146,6 +150,28 @@ async def update_tenant(
     set_fields = {f: getattr(body, f) for f in allowed if getattr(body, f) is not None}
     clear_fields = {f for f in allowed if getattr(body, f) is None}
 
+    _day = camel_to_snake(TenantRecord.MAX_WRITES_PER_DAY)
+    _month = camel_to_snake(TenantRecord.MAX_WRITES_PER_MONTH)
+    effective_day = (
+        None
+        if _day in clear_fields
+        else set_fields.get(_day, record.get(TenantRecord.MAX_WRITES_PER_DAY))
+    )
+    effective_month = (
+        None
+        if _month in clear_fields
+        else set_fields.get(_month, record.get(TenantRecord.MAX_WRITES_PER_MONTH))
+    )
+    if (
+        effective_day is not None
+        and effective_month is not None
+        and effective_day > effective_month
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Daily write limit cannot exceed monthly write limit",
+        )
+
     try:
         updated = tenants_util.update_tenant(
             tenant_id,
@@ -153,10 +179,7 @@ async def update_tenant(
             **set_fields,
         )
     except ValueError as e:
-        msg = str(e)
-        if "not found" in msg:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg) from e
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=msg) from e
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
     log_event(
         claims,
@@ -178,7 +201,7 @@ async def get_tenant_request_counts(
     """Get daily request counts for a tenant in a given month (defaults to current month)."""
     _enforce_scope(claims, tenant_id)
     month = month or get_month_prefix(get_today_iso())
-    items = await asyncio.to_thread(get_request_counts, tenant_id, month)
+    items = await asyncio.to_thread(get_write_counts, tenant_id, month)
     daily = sorted(
         [TenantRequestCountItem(date=i["date"], count=int(i["count"])) for i in items],
         key=lambda x: x.date,

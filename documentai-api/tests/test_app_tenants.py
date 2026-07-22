@@ -40,9 +40,9 @@ def _seed_tenant(tenants_table, tenant_id: str, max_per_day=None, max_per_month=
         TenantRecord.IS_ACTIVE: True,
     }
     if max_per_day is not None:
-        item[TenantRecord.MAX_REQUESTS_PER_DAY] = max_per_day
+        item[TenantRecord.MAX_WRITES_PER_DAY] = max_per_day
     if max_per_month is not None:
-        item[TenantRecord.MAX_REQUESTS_PER_MONTH] = max_per_month
+        item[TenantRecord.MAX_WRITES_PER_MONTH] = max_per_month
     tenants_table.put_item(Item=item)
 
 
@@ -76,20 +76,44 @@ def test_create_tenant_duplicate_returns_409(api_client, tenants_table):
     assert response.status_code == 409
 
 
-def test_create_tenant_with_rate_limits(api_client, tenants_table):
+def test_create_tenant_with_write_limits(api_client, tenants_table):
     response = api_client.post(
         URL,
         json={
             "tenant_id": "t1",
             "display_name": "T1",
-            "max_requests_per_day": 100,
-            "max_requests_per_month": 2000,
+            "max_writes_per_day": 100,
+            "max_writes_per_month": 2000,
         },
     )
     assert response.status_code == 201
     data = response.json()
-    assert data["maxRequestsPerDay"] == 100
-    assert data["maxRequestsPerMonth"] == 2000
+    assert data["maxWritesPerDay"] == 100
+    assert data["maxWritesPerMonth"] == 2000
+
+
+@pytest.mark.parametrize(
+    ("max_per_day", "max_per_month", "expected_http_response_code"),
+    [
+        (500, 100, 422),
+        (101, 100, 422),
+        (100, 100, 201),
+        (99, 100, 201),
+    ],
+)
+def test_create_tenant_write_limit_validation(
+    api_client, tenants_table, max_per_day, max_per_month, expected_http_response_code
+):
+    response = api_client.post(
+        URL,
+        json={
+            "tenant_id": "t1",
+            "display_name": "T1",
+            "max_writes_per_day": max_per_day,
+            "max_writes_per_month": max_per_month,
+        },
+    )
+    assert response.status_code == expected_http_response_code
 
 
 def test_list_tenants(api_client, tenants_table):
@@ -119,31 +143,72 @@ def test_update_tenant(api_client, tenants_table):
     assert response.json()["displayName"] == "New"
 
 
-def test_update_tenant_rate_limits(api_client, tenants_table):
+def test_update_tenant_write_limits(api_client, tenants_table):
     api_client.post(URL, json={"tenant_id": "t1", "display_name": "T1"})
-    response = api_client.patch(f"{URL}/t1", json={"max_requests_per_day": 50})
+    response = api_client.patch(f"{URL}/t1", json={"max_writes_per_day": 50})
     assert response.status_code == 200
-    assert response.json()["maxRequestsPerDay"] == 50
+    assert response.json()["maxWritesPerDay"] == 50
 
 
-def test_update_tenant_rate_limit_omitted_leaves_unchanged(api_client, tenants_table):
-    """Omitting a quota field leaves the existing value unchanged."""
-    api_client.post(
-        URL, json={"tenant_id": "t1", "display_name": "T1", "max_requests_per_day": 100}
+@pytest.mark.parametrize(
+    ("max_per_day", "max_per_month", "expected_http_response_code"),
+    [
+        (500, 100, 422),
+        (101, 100, 422),
+        (100, 100, 200),
+        (99, 100, 200),
+    ],
+)
+def test_update_tenant_write_limit_validation(
+    api_client, tenants_table, max_per_day, max_per_month, expected_http_response_code
+):
+    api_client.post(URL, json={"tenant_id": "t1", "display_name": "T1"})
+    response = api_client.patch(
+        f"{URL}/t1",
+        json={"max_writes_per_day": max_per_day, "max_writes_per_month": max_per_month},
     )
+    assert response.status_code == expected_http_response_code
+
+
+@pytest.mark.parametrize(
+    ("max_per_day", "expected_http_response_code"), [(500, 422), (101, 422), (100, 200), (99, 200)]
+)
+def test_update_tenant_day_against_existing_month(
+    api_client, tenants_table, max_per_day, expected_http_response_code
+):
+    """Setting day alone validates against the stored month limit."""
+    _seed_tenant(tenants_table, "t1", max_per_month=100)
+    response = api_client.patch(f"{URL}/t1", json={"max_writes_per_day": max_per_day})
+    assert response.status_code == expected_http_response_code
+
+
+@pytest.mark.parametrize(
+    ("max_per_month", "expected_http_response_code"),
+    [(100, 422), (499, 422), (500, 200), (501, 200)],
+)
+def test_update_tenant_month_against_existing_day(
+    api_client, tenants_table, max_per_month, expected_http_response_code
+):
+    """Setting month alone validates against the stored day limit."""
+    _seed_tenant(tenants_table, "t1", max_per_day=500)
+    response = api_client.patch(f"{URL}/t1", json={"max_writes_per_month": max_per_month})
+    assert response.status_code == expected_http_response_code
+
+
+def test_update_tenant_write_limit_omitted_leaves_unchanged(api_client, tenants_table):
+    """Omitting a quota field leaves the existing value unchanged."""
+    api_client.post(URL, json={"tenant_id": "t1", "display_name": "T1", "max_writes_per_day": 100})
     response = api_client.patch(f"{URL}/t1", json={"display_name": "Updated"})
     assert response.status_code == 200
-    assert response.json()["maxRequestsPerDay"] == 100
+    assert response.json()["maxWritesPerDay"] == 100
 
 
-def test_update_tenant_rate_limit_null_clears_limit(api_client, tenants_table):
+def test_update_tenant_write_limit_null_clears_limit(api_client, tenants_table):
     """Passing null for a quota field removes the limit entirely."""
-    api_client.post(
-        URL, json={"tenant_id": "t1", "display_name": "T1", "max_requests_per_day": 100}
-    )
-    response = api_client.patch(f"{URL}/t1", json={"max_requests_per_day": None})
+    api_client.post(URL, json={"tenant_id": "t1", "display_name": "T1", "max_writes_per_day": 100})
+    response = api_client.patch(f"{URL}/t1", json={"max_writes_per_day": None})
     assert response.status_code == 200
-    assert response.json()["maxRequestsPerDay"] is None
+    assert response.json()["maxWritesPerDay"] is None
 
 
 def test_delete_tenant(api_client, tenants_table):
@@ -164,7 +229,7 @@ def test_tenant_admin_cannot_set_quota_field(api_client, tenants_table):
     app.dependency_overrides[verify_jwt] = lambda: _make_claims(
         groups=["tenant-admin"], tenant_id="t1"
     )
-    response = api_client.patch(f"{URL}/t1", json={"max_requests_per_day": 50})
+    response = api_client.patch(f"{URL}/t1", json={"max_writes_per_day": 50})
     assert response.status_code == 403
 
 
@@ -174,7 +239,7 @@ def test_tenant_admin_cannot_clear_quota_field(api_client, tenants_table):
     app.dependency_overrides[verify_jwt] = lambda: _make_claims(
         groups=["tenant-admin"], tenant_id="t1"
     )
-    response = api_client.patch(f"{URL}/t1", json={"max_requests_per_day": None})
+    response = api_client.patch(f"{URL}/t1", json={"max_writes_per_day": None})
     assert response.status_code == 403
 
 

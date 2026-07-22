@@ -13,7 +13,7 @@ def _disable_auth(disable_auth):
 
 
 @pytest.fixture(autouse=True)
-def _bypass_rate_limit(mocker):
+def _bypass_write_limit(mocker):
     mocker.patch("documentai_api.app_documents.increment_and_check")
 
 

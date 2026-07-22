@@ -1953,7 +1953,7 @@
           "Admin:Tenants"
         ],
         "summary": "Update Tenant",
-        "description": "Update a tenant's metadata. Pass `null` for `extractionConfidenceFloor`, `maxRequestsPerDay`, or `maxRequestsPerMonth` to clear the override back to the platform default. `isActive`, `extractionConfidenceFloor`, `maxRequestsPerDay`, and `maxRequestsPerMonth` are super-admin only.",
+        "description": "Update a tenant's metadata. Pass `null` for `extractionConfidenceFloor`, `maxWritesPerDay`, or `maxWritesPerMonth` to clear the override back to the platform default. `isActive`, `extractionConfidenceFloor`, `maxWritesPerDay`, and `maxWritesPerMonth` are super-admin only.",
         "operationId": "update_tenant_v1_admin_tenants__tenant_id__patch",
         "security": [
           {
@@ -5237,7 +5237,7 @@
             ],
             "title": "Extractionconfidencefloor"
           },
-          "maxRequestsPerDay": {
+          "maxWritesPerDay": {
             "anyOf": [
               {
                 "type": "integer",
@@ -5248,9 +5248,9 @@
                 "type": "null"
               }
             ],
-            "title": "Maxrequestsperday"
+            "title": "Maxwritesperday"
           },
-          "maxRequestsPerMonth": {
+          "maxWritesPerMonth": {
             "anyOf": [
               {
                 "type": "integer",
@@ -5261,7 +5261,7 @@
                 "type": "null"
               }
             ],
-            "title": "Maxrequestspermonth"
+            "title": "Maxwritespermonth"
           }
         },
         "type": "object",
@@ -6413,7 +6413,7 @@
             "title": "Extractionconfidencefloor",
             "description": "Tenant override for the extraction confidence floor (0.0-1.0). Null means no override is set and the platform default applies."
           },
-          "maxRequestsPerDay": {
+          "maxWritesPerDay": {
             "anyOf": [
               {
                 "type": "integer"
@@ -6422,9 +6422,9 @@
                 "type": "null"
               }
             ],
-            "title": "Maxrequestsperday"
+            "title": "Maxwritesperday"
           },
-          "maxRequestsPerMonth": {
+          "maxWritesPerMonth": {
             "anyOf": [
               {
                 "type": "integer"
@@ -6433,7 +6433,7 @@
                 "type": "null"
               }
             ],
-            "title": "Maxrequestspermonth"
+            "title": "Maxwritespermonth"
           },
           "createdAt": {
             "anyOf": [
@@ -6657,7 +6657,7 @@
             ],
             "title": "Extractionconfidencefloor"
           },
-          "maxRequestsPerDay": {
+          "maxWritesPerDay": {
             "anyOf": [
               {
                 "type": "integer",
@@ -6668,9 +6668,9 @@
                 "type": "null"
               }
             ],
-            "title": "Maxrequestsperday"
+            "title": "Maxwritesperday"
           },
-          "maxRequestsPerMonth": {
+          "maxWritesPerMonth": {
             "anyOf": [
               {
                 "type": "integer",
@@ -6681,7 +6681,7 @@
                 "type": "null"
               }
             ],
-            "title": "Maxrequestspermonth"
+            "title": "Maxwritespermonth"
           }
         },
         "type": "object",

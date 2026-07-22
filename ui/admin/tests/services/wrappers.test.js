@@ -88,6 +88,8 @@ describe("service wrappers", () => {
         tenant_id: "acme",
         display_name: "Acme Corp",
         primary_contact: "ops@acme.com",
+        max_writes_per_day: null,
+        max_writes_per_month: null,
       });
       expect(result.tenantId).toBe("acme");
     });

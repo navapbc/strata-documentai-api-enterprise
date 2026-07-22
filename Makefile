@@ -48,17 +48,12 @@ deploy-admin-ui: ## Build admin UI and sync to S3 + invalidate CloudFront
 	DIST_ID=$$(terraform -chdir="$(TF_DIR)" output -raw admin_ui_distribution_id) && \
 	echo "Syncing to s3://$$BUCKET..." && \
 	aws s3 sync ui/admin/ s3://$$BUCKET \
-		--exclude "node_modules/*" \
-		--exclude "package*.json" \
-		--exclude ".gitignore" \
-		--exclude "src/*" \
-		--exclude "tests/*" \
-		--exclude "e2e/*" \
-		--exclude "test-results/*" \
-		--exclude "LICENSE" \
-		--exclude "README.md" \
-		--exclude "config.example.json" \
-		--exclude "docs/*" \
+		--exclude "*" \
+		--include "index.html" \
+		--include "config.json" \
+		--include "favicon.svg" \
+		--include "dist/*" \
+		--include "styles/*" \
 		$(AWS_ARGS) \
 		--delete && \
 	echo "Invalidating CloudFront cache..." && \
@@ -76,14 +71,12 @@ deploy-demo-ui: ## Build demo UI and sync to S3 + invalidate CloudFront
 	DIST_ID=$$(terraform -chdir="$(TF_DIR)" output -raw demo_ui_distribution_id) && \
 	echo "Syncing to s3://$$BUCKET..." && \
 	aws s3 sync ui/demo/ s3://$$BUCKET \
-		--exclude "node_modules/*" \
-		--exclude "package*.json" \
-		--exclude ".gitignore" \
-		--exclude "src/*" \
-		--exclude "tests/*" \
-		--exclude "LICENSE" \
-		--exclude "README.md" \
-		--exclude "config.example.json" \
+		--exclude "*" \
+		--include "index.html" \
+		--include "config.json" \
+		--include "favicon.svg" \
+		--include "dist/*" \
+		--include "styles/*" \
 		$(AWS_ARGS) \
 		--delete && \
 	echo "Invalidating CloudFront cache..." && \

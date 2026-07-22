@@ -10,7 +10,16 @@ import html from "./tenants.html";
 const tmpl = tpl(html);
 
 let _root, _tbody, _noTenants, _createBtn, _refreshBtn, _showInactive;
-let _modal, _form, _idInput, _nameInput, _contactInput, _cancelBtn, _errorEl, _titleEl;
+let _modal,
+  _form,
+  _idInput,
+  _nameInput,
+  _contactInput,
+  _maxPerDayInput,
+  _maxPerMonthInput,
+  _cancelBtn,
+  _errorEl,
+  _titleEl;
 let _deleteModal, _deleteName, _deleteError, _deleteCancel, _deleteConfirm;
 let _editingTenant = null;
 let _pendingDeleteId = null;
@@ -43,6 +52,8 @@ export function mount(root) {
   _idInput = root.querySelector("#tenant-id");
   _nameInput = root.querySelector("#tenant-name");
   _contactInput = root.querySelector("#tenant-contact");
+  _maxPerDayInput = root.querySelector("#tenant-max-writes-per-day");
+  _maxPerMonthInput = root.querySelector("#tenant-max-writes-per-month");
   _cancelBtn = root.querySelector("#tenant-cancel");
   _errorEl = root.querySelector("#tenant-form-error");
   _titleEl = root.querySelector("#tenant-modal-title");
@@ -121,6 +132,8 @@ function renderTable(tenants) {
       h("td", null, t.tenantId),
       h("td", null, t.displayName || "-"),
       h("td", null, t.primaryContact || "-"),
+      h("td", null, t.maxWritesPerDay != null ? String(t.maxWritesPerDay) : "-"),
+      h("td", null, t.maxWritesPerMonth != null ? String(t.maxWritesPerMonth) : "-"),
       h("td", null, statusEl),
       h("td", null, Helpers.formatDate(t.createdAt)),
       actionsCell,
@@ -138,6 +151,8 @@ function openCreateModal() {
   _idInput.disabled = false;
   _nameInput.value = "";
   _contactInput.value = "";
+  _maxPerDayInput.value = "";
+  _maxPerMonthInput.value = "";
   _errorEl.classList.add("hidden");
   openModal(_modal);
 }
@@ -149,6 +164,8 @@ function openEditModal(tenant) {
   _idInput.disabled = true;
   _nameInput.value = tenant.displayName || "";
   _contactInput.value = tenant.primaryContact || "";
+  _maxPerDayInput.value = tenant.maxWritesPerDay ?? "";
+  _maxPerMonthInput.value = tenant.maxWritesPerMonth ?? "";
   _errorEl.classList.add("hidden");
   openModal(_modal);
 }
@@ -165,13 +182,26 @@ async function handleSubmit(e) {
   const tenantId = _idInput.value.trim();
   const displayName = _nameInput.value.trim();
   const primaryContact = _contactInput.value.trim() || null;
+  const maxWritesPerDay = _maxPerDayInput.value ? parseInt(_maxPerDayInput.value, 10) : null;
+  const maxWritesPerMonth = _maxPerMonthInput.value ? parseInt(_maxPerMonthInput.value, 10) : null;
 
   try {
     if (_editingTenant) {
-      await TenantsService.update(_editingTenant, { displayName, primaryContact });
+      await TenantsService.update(_editingTenant, {
+        displayName,
+        primaryContact,
+        maxWritesPerDay,
+        maxWritesPerMonth,
+      });
       Toast.show("Tenant updated");
     } else {
-      await TenantsService.create(tenantId, displayName, primaryContact);
+      await TenantsService.create(
+        tenantId,
+        displayName,
+        primaryContact,
+        maxWritesPerDay,
+        maxWritesPerMonth,
+      );
       Toast.show("Tenant created");
       TenantContext.load();
     }

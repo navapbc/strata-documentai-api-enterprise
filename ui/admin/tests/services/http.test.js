@@ -189,9 +189,26 @@ describe("http client", () => {
 
       await expect(adminClient.request("GET", "/v1/test")).rejects.toThrow("Internal Server Error");
     });
+
+    it("extracts first msg from Pydantic array detail", async () => {
+      global.fetch.mockResolvedValue({
+        ok: false,
+        status: 422,
+        statusText: "Unprocessable Entity",
+        json: () =>
+          Promise.resolve({
+            detail: [
+              { type: "value_error", msg: "Daily write limit cannot exceed monthly write limit" },
+            ],
+          }),
+      });
+
+      await expect(adminClient.request("POST", "/v1/admin/tenants")).rejects.toThrow(
+        "Daily write limit cannot exceed monthly write limit",
+      );
+    });
   });
 });
-
 describe("error properties", () => {
   beforeEach(async () => {
     vi.resetModules();

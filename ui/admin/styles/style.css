@@ -64,6 +64,7 @@ input[type="text"],
 input[type="email"],
 input[type="url"],
 input[type="password"],
+input[type="number"],
 select {
   width: 100%;
   padding: 0.5rem 0.75rem;
