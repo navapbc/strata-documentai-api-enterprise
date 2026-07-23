@@ -175,20 +175,6 @@ def is_selected_for_processing(tenant_id: str | None, category_name: str | None)
     return bda_percentage == 1.0 or random.random() < bda_percentage
 
 
-def classify_as_processing_excluded(object_key: str) -> None:
-    """Mark document as excluded from processing by sampling."""
-    internal_api_response = get_internal_api_response(
-        object_key=object_key,
-        response_code=ResponseCodes.PROCESSING_EXCLUDED,
-        matched_document_class=None,
-    )
-    update_ddb(
-        object_key=object_key,
-        status=ProcessStatus.PROCESSING_EXCLUDED,
-        internal_api_response=internal_api_response,
-    )
-
-
 def classify_as_no_custom_blueprint_matched(
     object_key: str, data: ClassificationData, result_processor_started_at: str | None = None
 ) -> dict[str, Any]:
@@ -332,6 +318,7 @@ def upsert_initial_ddb_record(
     ddb_key: str,
     original_file_name: str,
     tenant_id: str | None = None,
+    upload_date: str | None = None,
     user_provided_document_category: str | None = None,
     job_id: str | None = None,
     trace_id: str | None = None,
@@ -375,6 +362,17 @@ def upsert_initial_ddb_record(
     if is_password_protected:
         process_status = ProcessStatus.PASSWORD_PROTECTED
         response_code = ResponseCodes.PASSWORD_PROTECTED
+        textract_result = None
+
+    elif not is_selected_for_processing(tenant_id, user_provided_document_category):
+        logger.info(f"{ddb_key} excluded by sampling for category {user_provided_document_category}")
+        # TODO: add a CloudWatch metric filter on this log line (dimensioned by category)
+        # to make sampling rates observable without a custom metric
+        if tenant_id and upload_date:
+            from documentai_api.utils.write_limit import decrement
+            decrement(tenant_id, upload_date)
+        process_status = ProcessStatus.PROCESSING_EXCLUDED
+        response_code = ResponseCodes.PROCESSING_EXCLUDED
         textract_result = None
 
     else:
@@ -452,18 +450,6 @@ def upsert_initial_ddb_record(
                     # Textract succeeded inline; upsert as STARTED, finalize_textract_result
                     # will transition to SUCCESS after the upsert
                     process_status = ProcessStatus.STARTED
-
-    # Sampling check: only reached if process_status is still pending (i.e. the document
-    # passed all prior guards (password, blur, multi-page). Excludes the doc before
-    # it enters the BDA pipeline based on the category's processing_percentage.
-    if ProcessStatus.is_pending_extraction(process_status) and not is_selected_for_processing(
-        tenant_id, user_provided_document_category
-    ):
-        process_status = ProcessStatus.PROCESSING_EXCLUDED
-        response_code = ResponseCodes.PROCESSING_EXCLUDED
-        logger.info(
-            f"{ddb_key} excluded by sampling for category {user_provided_document_category}"
-        )
 
     # initial status does not qualify for bda processing
     # create the json response signaling the process is complete

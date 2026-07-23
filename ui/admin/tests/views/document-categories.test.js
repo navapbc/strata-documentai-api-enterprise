@@ -51,12 +51,19 @@ describe("document-categories view", () => {
   it("renders category rows", async () => {
     mockList.mockResolvedValue({
       categories: [
-        { tenantId: "acme", categoryName: "tax", displayName: "Tax Forms", isActive: true },
+        {
+          tenantId: "acme",
+          categoryName: "tax",
+          displayName: "Tax Forms",
+          isActive: true,
+          processingPercentage: 0.5,
+        },
       ],
     });
     DocCategoriesView.mount(root);
     await new Promise((r) => setTimeout(r, 0));
     expect(root.querySelectorAll("#categories-tbody tr").length).toBe(1);
+    expect(root.querySelector("#categories-tbody").textContent).toContain("50%");
   });
 
   it("shows empty state when no categories", async () => {

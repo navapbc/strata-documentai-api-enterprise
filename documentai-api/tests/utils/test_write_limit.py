@@ -24,6 +24,16 @@ def _seed_tenant(tenants_table, tenant_id: str, max_per_day=None, max_per_month=
     tenants_table.put_item(Item=item)
 
 
+def _seed_count(counts_table, tenant_id: str, date: str, count: int) -> None:
+    counts_table.put_item(
+        Item={
+            TenantRequestCountRecord.TENANT_ID: tenant_id,
+            TenantRequestCountRecord.DATE: date,
+            TenantRequestCountRecord.COUNT: Decimal(count),
+        }
+    )
+
+
 def _get_count(counts_table, tenant_id: str, date: str) -> int:
     item = counts_table.get_item(
         Key={TenantRequestCountRecord.TENANT_ID: tenant_id, TenantRequestCountRecord.DATE: date}
@@ -150,3 +160,32 @@ def test_daily_limit_checked_before_monthly(tenants_table, tenant_request_counts
     with pytest.raises(HTTPException) as exc_info:
         write_limit_util.increment_and_check("t1")
     assert "Daily" in exc_info.value.detail
+
+
+# =============================================================================
+# decrement
+# =============================================================================
+
+
+@pytest.mark.parametrize(
+    ("initial_count", "decrement_count", "expected"),
+    [
+        (2, 1, 1),  # reduces count
+        (1, 2, 0),  # floors at zero
+    ],
+)
+def test_decrement(tenants_table, tenant_request_counts_table, initial_count, decrement_count, expected):
+    today = get_today_iso()
+    _seed_tenant(tenants_table, "t1", max_per_day=10)
+    _seed_count(tenant_request_counts_table, "t1", today, initial_count)
+    for _ in range(decrement_count):
+        write_limit_util.decrement("t1", today)
+    assert _get_count(tenant_request_counts_table, "t1", today) == expected
+
+
+def test_decrement_targets_specified_date(tenants_table, tenant_request_counts_table):
+    upload_date = f"{get_month_prefix(get_today_iso())}-01"
+    _seed_count(tenant_request_counts_table, "t1", upload_date, 3)
+    write_limit_util.decrement("t1", upload_date)
+    assert _get_count(tenant_request_counts_table, "t1", upload_date) == 2
+    assert _get_count(tenant_request_counts_table, "t1", get_today_iso()) == 0

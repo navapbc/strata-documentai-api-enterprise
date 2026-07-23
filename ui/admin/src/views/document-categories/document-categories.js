@@ -16,6 +16,7 @@ let _modal,
   _nameInput,
   _displayNameInput,
   _descriptionInput,
+  _processingPercentageInput,
   _cancelBtn,
   _errorEl,
   _titleEl;
@@ -47,6 +48,7 @@ export function mount(root) {
   _nameInput = root.querySelector("#category-name");
   _displayNameInput = root.querySelector("#category-display-name");
   _descriptionInput = root.querySelector("#category-description");
+  _processingPercentageInput = root.querySelector("#category-processing-percentage");
   _cancelBtn = root.querySelector("#category-cancel");
   _errorEl = root.querySelector("#category-form-error");
   _titleEl = root.querySelector("#category-modal-title");
@@ -131,6 +133,7 @@ function renderTable(categories) {
       h("td", null, cat.categoryName),
       h("td", null, cat.displayName),
       h("td", null, cat.description || "-"),
+      h("td", null, String(Math.round((cat.processingPercentage ?? 1) * 100)) + "%"),
       h("td", null, statusEl),
       actionsCell,
     );
@@ -166,6 +169,7 @@ function openCreateModal() {
   _nameInput.disabled = false;
   _displayNameInput.value = "";
   _descriptionInput.value = "";
+  _processingPercentageInput.value = "100";
   _errorEl.classList.add("hidden");
   openModal(_modal);
 }
@@ -179,6 +183,7 @@ function openEditModal(cat) {
   _nameInput.disabled = true;
   _displayNameInput.value = cat.displayName;
   _descriptionInput.value = cat.description || "";
+  _processingPercentageInput.value = String(Math.round((cat.processingPercentage ?? 1) * 100));
   _errorEl.classList.add("hidden");
   openModal(_modal);
 }
@@ -197,13 +202,14 @@ async function handleSubmit(e) {
   const name = _nameInput.value.trim();
   const displayName = _displayNameInput.value.trim();
   const description = _descriptionInput.value.trim();
+  const processingPercentage = Number(_processingPercentageInput.value) / 100;
 
   try {
     if (_editingCategory) {
-      await CategoriesService.update(tenantId, _editingCategory, { displayName, description });
+      await CategoriesService.update(tenantId, _editingCategory, { displayName, description, processingPercentage });
       Toast.show("Category updated");
     } else {
-      await CategoriesService.create(tenantId, name, displayName, description);
+      await CategoriesService.create(tenantId, name, displayName, description, processingPercentage);
       Toast.show("Category created");
     }
     closeEditModal();

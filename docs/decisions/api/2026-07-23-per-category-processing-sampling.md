@@ -19,7 +19,7 @@ Chosen option: per-category sampling, because different document types have diff
 
 The `processingPercentage` field (0.0-1.0) is stored on the document category record and checked in the document processor before the document enters the document extraction pipeline. Documents that fail the sampling check are marked `PROCESSING_EXCLUDED` - a terminal status treated as completed but not successful.
 
-Sampling is applied only after all other guards (password protection, blur detection, multi-page) so that genuinely unprocessable documents are never counted against the sampling rate.
+Sampling is applied immediately after the password-protection check, before blur detection and preclassification. Excluded documents incur no blur-detection or LLM preclassification cost. Password-protected documents are not subject to sampling — they are already terminal and unprocessable regardless of category.
 
 ## Pros and Cons of the Options
 

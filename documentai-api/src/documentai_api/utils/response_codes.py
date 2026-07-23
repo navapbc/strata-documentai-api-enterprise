@@ -1,8 +1,9 @@
 class ResponseCodes:
     SUCCESS = "000"
-    PROCESSING_EXCLUDED = "001"
+    # 001 is a legacy code from the prior platform contract and is not used here
     DOCUMENT_TYPE_NOT_IMPLEMENTED = "002"
     AI_CONSENT_DECLINED = "003"
+    PROCESSING_EXCLUDED = "004"
     MISSING_FIELDS = "101"
     MISCATEGORIZED = "102"
     NO_DOCUMENT_DETECTED = "103"

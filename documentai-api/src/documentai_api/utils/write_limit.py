@@ -10,6 +10,7 @@ from decimal import Decimal
 from typing import Any
 
 from boto3.dynamodb.conditions import Key
+from botocore.exceptions import ClientError
 from fastapi import HTTPException, status
 
 from documentai_api.config.constants import ConfigDefaults
@@ -93,13 +94,29 @@ def increment_and_check(tenant_id: str) -> None:
 
 
 def _rollback(table_name: str, tenant_id: str, today: str) -> None:
-    ddb_service.update_item(
-        table_name,
-        key=_get_tenant_update_key(tenant_id, today),
-        update_expression="ADD #count :neg_one",
-        expression_names={"#count": TenantRequestCountRecord.COUNT},
-        expression_values={":neg_one": Decimal(-1)},
-    )
+    try:
+        ddb_service.update_item(
+            table_name,
+            key=_get_tenant_update_key(tenant_id, today),
+            update_expression="ADD #count :neg_one",
+            expression_names={"#count": TenantRequestCountRecord.COUNT},
+            expression_values={":neg_one": Decimal(-1), ":zero": Decimal(0)},
+            condition_expression="#count > :zero",
+        )
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+            logger.warning(f"Skipped decrement for tenant {tenant_id} on {today}: count already at zero")
+        else:
+            raise
+
+
+def decrement(tenant_id: str, date: str) -> None:
+    """Decrement the write count for a tenant on the given date.
+
+    Pass the upload date rather than today to avoid skew when the processor
+    runs on a different calendar day than the upload.
+    """
+    _rollback(_tenants_count_table._get_table_name(), tenant_id, date)
 
 
 def _get_monthly_total(table_name: str, tenant_id: str, today: str, today_count: int) -> int:

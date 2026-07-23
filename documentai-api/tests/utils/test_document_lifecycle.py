@@ -413,26 +413,6 @@ def test_classify_functions(
     mock_update.assert_called_once_with(**expected_call)
 
 
-def test_classify_as_processing_excluded(mocker):
-    mock_get_response = mocker.patch(
-        "documentai_api.utils.document_lifecycle.get_internal_api_response"
-    )
-    mock_update = mocker.patch("documentai_api.utils.document_lifecycle.update_ddb")
-
-    lifecycle_util.classify_as_processing_excluded("test-file")
-
-    mock_get_response.assert_called_once_with(
-        object_key="test-file",
-        response_code=ResponseCodes.PROCESSING_EXCLUDED,
-        matched_document_class=None,
-    )
-    mock_update.assert_called_once_with(
-        object_key="test-file",
-        status=ProcessStatus.PROCESSING_EXCLUDED,
-        internal_api_response=mock_get_response.return_value,
-    )
-
-
 @pytest.mark.parametrize(
     ("tenant_id", "category_name", "bda_percentage", "random_val", "expected"),
     [
@@ -466,7 +446,7 @@ def test_upsert_initial_ddb_record_sampling_excluded(
     s3_bucket,
     mocker,
 ):
-    """Document passing all guards is excluded when sampling rate rejects it."""
+    """Document excluded by sampling skips blur/preclassification and is marked excluded."""
     mocker.patch(
         "documentai_api.utils.document_lifecycle.document_utils.get_page_count", return_value=1
     )
@@ -474,23 +454,11 @@ def test_upsert_initial_ddb_record_sampling_excluded(
         "documentai_api.utils.document_lifecycle.document_utils.is_password_protected",
         return_value=False,
     )
-    mocker.patch(
-        "documentai_api.utils.document_lifecycle.is_blur_detection_enabled", return_value=False
-    )
-    mocker.patch(
-        "documentai_api.utils.document_lifecycle.preclassify_document",
-        return_value=BedrockClassificationResult(
-            document_type="tax_documents", confidence=0.9, document_count=1
-        ),
-    )
-    mocker.patch(
-        "documentai_api.utils.document_lifecycle.find_matching_blueprint",
-        return_value=PreclassificationMatchResult(),
-    )
-    mocker.patch("documentai_api.utils.document_lifecycle.try_textract_identity", return_value=None)
+    mock_preclassify = mocker.patch("documentai_api.utils.document_lifecycle.preclassify_document")
     mocker.patch(
         "documentai_api.utils.document_lifecycle.is_selected_for_processing", return_value=False
     )
+    mock_decrement = mocker.patch("documentai_api.utils.write_limit.decrement")
     mocker.patch(
         "documentai_api.utils.ddb.build_v1_api_response", return_value={"status": "completed"}
     )
@@ -504,8 +472,11 @@ def test_upsert_initial_ddb_record_sampling_excluded(
         ddb_key="test-file",
         user_provided_document_category="income",
         tenant_id="tenant-1",
+        upload_date="2026-07-31",
     )
 
+    mock_preclassify.assert_not_called()
+    mock_decrement.assert_called_once_with("tenant-1", "2026-07-31")
     item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
     assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.PROCESSING_EXCLUDED
     assert DocumentMetadata.RESPONSE_JSON in item

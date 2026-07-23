@@ -234,8 +234,9 @@ usage-report: ## Generate tenant usage report (MONTH=YYYY-MM required)
 	@:$(call check_defined, ATHENA_WORKGROUP_NAME, Athena workgroup name)
 	uv run --frozen usage_report "$(MONTH)"
 
-openapi-spec: ## Export openapi spec to docs directory
+openapi-spec: ## Export openapi spec to docs directory and regenerate Postman collection
 	$(PY_RUN_CMD) export-openapi > $(APP_DOCS_DIR)/openapi.json
+	$(MAKE) postman
 
 postman: ## Regenerate the Postman collection from openapi.json
 	$(APP_DOCS_DIR)/postman/build.sh
