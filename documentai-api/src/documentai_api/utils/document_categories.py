@@ -46,11 +46,12 @@ def list_all_categories(active_only: bool = True) -> list[dict[str, Any]]:
 
 
 def auto_register_category(tenant_id: str, category_name: str) -> None:
-    """Idempotently register a category seen at upload time.
+    """Upsert a category seen at upload time.
 
-    Uses if_not_exists on all fields except updatedAt, so existing manually-created
-    records are never overwritten. Skips the DDB write if already registered this
-    container lifetime.
+    Creates the record if it doesn't exist. Uses if_not_exists on all fields except
+    updatedAt so existing manually-created records are not overwritten, provided
+    isAutoRegistered was explicitly set to False at creation. Skips the DDB write
+    if already registered this container lifetime.
     """
     if (tenant_id, category_name) in _registered_categories:
         return
@@ -92,6 +93,7 @@ def create_category(
         DocumentCategoryRecord.CATEGORY_NAME: category_name,
         DocumentCategoryRecord.DISPLAY_NAME: display_name,
         DocumentCategoryRecord.DESCRIPTION: description or "",
+        DocumentCategoryRecord.IS_AUTO_REGISTERED: False,
         DocumentCategoryRecord.PROCESSING_PERCENTAGE: processing_percentage,
     }
     return _table.create(item)

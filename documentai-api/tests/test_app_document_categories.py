@@ -431,8 +431,30 @@ def test_categories_tenant_admin_create_duplicate_returns_409(client, seed_categ
 
 
 # ==============================================================================
-# Super-admin requires tenant_id on all methods
+# isAutoRegistered
 # ==============================================================================
+
+
+def test_categories_manual_create_sets_is_auto_registered_false(client, document_categories_table):
+    _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
+    response = client.post(CATEGORIES_URL, params={"tenant_id": TENANT_ID}, json=NEW_CATEGORY)
+    assert response.status_code == 201
+    assert response.json()["isAutoRegistered"] is False
+
+
+def test_categories_auto_register_does_not_overwrite_manual(document_categories_table, client):
+    from documentai_api.utils.document_categories import auto_register_category
+
+    # Create manually first
+    _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
+    client.post(CATEGORIES_URL, params={"tenant_id": TENANT_ID}, json=NEW_CATEGORY)
+
+    # Simulate upload path auto-registering the same category
+    auto_register_category(TENANT_ID, CATEGORY_NAME)
+
+    response = client.get(f"{CATEGORIES_URL}/{CATEGORY_NAME}", params={"tenant_id": TENANT_ID})
+    assert response.json()["isAutoRegistered"] is False
+
 
 
 @pytest.mark.parametrize(

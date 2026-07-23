@@ -78,7 +78,69 @@ describe("document-categories view", () => {
     expect(root.children.length).toBe(0);
   });
 
-  it("opens deactivate modal and confirms deactivation", async () => {
+  it("renders System badge for auto-registered category", async () => {
+    mockList.mockResolvedValue({
+      categories: [
+        { tenantId: "acme", categoryName: "tax", displayName: "Tax Forms", isActive: true, isAutoRegistered: true },
+      ],
+    });
+    DocCategoriesView.mount(root);
+    await new Promise((r) => setTimeout(r, 0));
+    const badge = root.querySelector(".badge-info");
+    expect(badge).not.toBeNull();
+    expect(badge.textContent).toBe("System");
+  });
+
+  it("renders Manual badge for manually created category", async () => {
+    mockList.mockResolvedValue({
+      categories: [
+        { tenantId: "acme", categoryName: "tax", displayName: "Tax Forms", isActive: true, isAutoRegistered: false },
+      ],
+    });
+    DocCategoriesView.mount(root);
+    await new Promise((r) => setTimeout(r, 0));
+    const badge = root.querySelector(".badge-warning");
+    expect(badge).not.toBeNull();
+    expect(badge.textContent).toBe("Manual");
+  });
+
+  it("hides dates section on create modal", async () => {
+    DocCategoriesView.mount(root);
+    await new Promise((r) => setTimeout(r, 0));
+    root.querySelector("#category-modal");
+    // Trigger create modal via the create button
+    const createBtn = Array.from(document.querySelectorAll("button")).find(
+      (b) => b.textContent === "Create Category",
+    );
+    createBtn?.click();
+    expect(root.querySelector("#category-dates").classList.contains("hidden")).toBe(true);
+  });
+
+  it("shows dates in edit modal with formatted values", async () => {
+    mockList.mockResolvedValue({
+      categories: [
+        {
+          tenantId: "acme",
+          categoryName: "tax",
+          displayName: "Tax Forms",
+          isActive: true,
+          createdAt: "2026-01-15T10:00:00.000Z",
+          updatedAt: "2026-07-23T18:00:00.000Z",
+        },
+      ],
+    });
+    DocCategoriesView.mount(root);
+    await new Promise((r) => setTimeout(r, 0));
+
+    root.querySelector(".btn-secondary.btn-sm").click();
+
+    const datesEl = root.querySelector("#category-dates");
+    expect(datesEl.classList.contains("hidden")).toBe(false);
+    expect(root.querySelector("#category-created-at").textContent).not.toBe("");
+    expect(root.querySelector("#category-updated-at").textContent).not.toBe("");
+  });
+
+  it("deactivate modal confirms and calls remove", async () => {
     mockList.mockResolvedValue({
       categories: [
         { tenantId: "acme", categoryName: "tax", displayName: "Tax Forms", isActive: true },
@@ -87,17 +149,14 @@ describe("document-categories view", () => {
     DocCategoriesView.mount(root);
     await new Promise((r) => setTimeout(r, 0));
 
-    // Click deactivate button
     const deactivateBtn = root.querySelector(".btn-outline-danger");
     expect(deactivateBtn).not.toBeNull();
     deactivateBtn.click();
 
-    // Modal should be visible
     const modal = root.querySelector("#category-deactivate-modal");
     expect(modal.classList.contains("hidden")).toBe(false);
     expect(root.querySelector("#deactivate-category-name").textContent).toBe("tax");
 
-    // Confirm deactivation
     root.querySelector("#category-deactivate-confirm").click();
     await new Promise((r) => setTimeout(r, 0));
 
