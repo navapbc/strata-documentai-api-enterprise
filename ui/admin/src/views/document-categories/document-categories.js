@@ -138,9 +138,13 @@ function renderTable(categories) {
       h("td", null, cat.displayName),
       h("td", null, cat.description || "-"),
       h("td", null, String(Math.round((cat.processingPercentage ?? 1) * 100)) + "%"),
-      h("td", null, cat.isAutoRegistered
-        ? h("span", { className: "badge badge-info" }, "System")
-        : h("span", { className: "badge badge-warning" }, "Manual")),
+      h(
+        "td",
+        null,
+        cat.isAutoRegistered
+          ? h("span", { className: "badge badge-info" }, "System")
+          : h("span", { className: "badge badge-warning" }, "Manual"),
+      ),
       h("td", null, statusEl),
       actionsCell,
     );
@@ -217,10 +221,20 @@ async function handleSubmit(e) {
 
   try {
     if (_editingCategory) {
-      await CategoriesService.update(tenantId, _editingCategory, { displayName, description, processingPercentage });
+      await CategoriesService.update(tenantId, _editingCategory, {
+        displayName,
+        description,
+        processingPercentage,
+      });
       Toast.show("Category updated");
     } else {
-      await CategoriesService.create(tenantId, name, displayName, description, processingPercentage);
+      await CategoriesService.create(
+        tenantId,
+        name,
+        displayName,
+        description,
+        processingPercentage,
+      );
       Toast.show("Category created");
     }
     closeEditModal();

@@ -81,7 +81,13 @@ describe("document-categories view", () => {
   it("renders System badge for auto-registered category", async () => {
     mockList.mockResolvedValue({
       categories: [
-        { tenantId: "acme", categoryName: "tax", displayName: "Tax Forms", isActive: true, isAutoRegistered: true },
+        {
+          tenantId: "acme",
+          categoryName: "tax",
+          displayName: "Tax Forms",
+          isActive: true,
+          isAutoRegistered: true,
+        },
       ],
     });
     DocCategoriesView.mount(root);
@@ -94,7 +100,13 @@ describe("document-categories view", () => {
   it("renders Manual badge for manually created category", async () => {
     mockList.mockResolvedValue({
       categories: [
-        { tenantId: "acme", categoryName: "tax", displayName: "Tax Forms", isActive: true, isAutoRegistered: false },
+        {
+          tenantId: "acme",
+          categoryName: "tax",
+          displayName: "Tax Forms",
+          isActive: true,
+          isAutoRegistered: false,
+        },
       ],
     });
     DocCategoriesView.mount(root);

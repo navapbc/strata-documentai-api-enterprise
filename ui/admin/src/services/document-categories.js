@@ -8,7 +8,13 @@ export async function list(tenantId, activeOnly = true) {
   return adminClient.request("GET", `/v1/admin/document-categories${qs}`);
 }
 
-export async function create(tenantId, categoryName, displayName, description, processingPercentage) {
+export async function create(
+  tenantId,
+  categoryName,
+  displayName,
+  description,
+  processingPercentage,
+) {
   const params = tenantId ? `?tenant_id=${encodeURIComponent(tenantId)}` : "";
   return adminClient.request("POST", `/v1/admin/document-categories${params}`, {
     category_name: categoryName,
@@ -18,7 +24,11 @@ export async function create(tenantId, categoryName, displayName, description, p
   });
 }
 
-export async function update(tenantId, categoryName, { displayName, description, isActive, processingPercentage } = {}) {
+export async function update(
+  tenantId,
+  categoryName,
+  { displayName, description, isActive, processingPercentage } = {},
+) {
   const params = tenantId ? `?tenant_id=${encodeURIComponent(tenantId)}` : "";
   const body = {};
   if (displayName !== undefined) body.display_name = displayName;
