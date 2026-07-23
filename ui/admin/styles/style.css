@@ -157,7 +157,7 @@ button {
   background: #c82333;
 }
 .btn-sm {
-  padding: 0.25rem 0.5rem;
+  padding: 0.3rem 0.6rem;
   font-size: 0.75rem;
 }
 .btn-block {
@@ -469,7 +469,7 @@ form button[type="submit"]:not(.btn-primary):not(.btn-secondary):not(.btn-outlin
 
 .badge {
   display: inline-block;
-  padding: 0.125rem 0.5rem;
+  padding: 0.3rem 0.75rem;
   border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 600;
@@ -505,6 +505,16 @@ form button[type="submit"]:not(.btn-primary):not(.btn-secondary):not(.btn-outlin
 .badge-danger {
   background: #fef2f2;
   color: #dc2626;
+}
+
+.badge-warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-info {
+  background: #eff6ff;
+  color: #1d4ed8;
 }
 
 .row-actions {

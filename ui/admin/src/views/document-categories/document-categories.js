@@ -16,10 +16,12 @@ let _modal,
   _nameInput,
   _displayNameInput,
   _descriptionInput,
+  _processingPercentageInput,
   _cancelBtn,
   _errorEl,
   _titleEl;
 let _deactivateModal, _deactivateName, _deactivateError, _deactivateCancel, _deactivateConfirm;
+let _datesEl, _createdAtEl, _updatedAtEl;
 let _editingCategory = null;
 let _editingTenantId = null;
 let _pendingDeactivate = null;
@@ -47,9 +49,13 @@ export function mount(root) {
   _nameInput = root.querySelector("#category-name");
   _displayNameInput = root.querySelector("#category-display-name");
   _descriptionInput = root.querySelector("#category-description");
+  _processingPercentageInput = root.querySelector("#category-processing-percentage");
   _cancelBtn = root.querySelector("#category-cancel");
   _errorEl = root.querySelector("#category-form-error");
   _titleEl = root.querySelector("#category-modal-title");
+  _datesEl = root.querySelector("#category-dates");
+  _createdAtEl = root.querySelector("#category-created-at");
+  _updatedAtEl = root.querySelector("#category-updated-at");
 
   _tenantUnsub = TenantContext.onChange(() => {
     loadCategories();
@@ -131,6 +137,14 @@ function renderTable(categories) {
       h("td", null, cat.categoryName),
       h("td", null, cat.displayName),
       h("td", null, cat.description || "-"),
+      h("td", null, String(Math.round((cat.processingPercentage ?? 1) * 100)) + "%"),
+      h(
+        "td",
+        null,
+        cat.isAutoRegistered
+          ? h("span", { className: "badge badge-info" }, "System")
+          : h("span", { className: "badge badge-warning" }, "Manual"),
+      ),
       h("td", null, statusEl),
       actionsCell,
     );
@@ -166,6 +180,8 @@ function openCreateModal() {
   _nameInput.disabled = false;
   _displayNameInput.value = "";
   _descriptionInput.value = "";
+  _processingPercentageInput.value = "100";
+  _datesEl.classList.add("hidden");
   _errorEl.classList.add("hidden");
   openModal(_modal);
 }
@@ -179,6 +195,10 @@ function openEditModal(cat) {
   _nameInput.disabled = true;
   _displayNameInput.value = cat.displayName;
   _descriptionInput.value = cat.description || "";
+  _processingPercentageInput.value = String(Math.round((cat.processingPercentage ?? 1) * 100));
+  _createdAtEl.textContent = cat.createdAt ? new Date(cat.createdAt).toLocaleString() : "-";
+  _updatedAtEl.textContent = cat.updatedAt ? new Date(cat.updatedAt).toLocaleString() : "-";
+  _datesEl.classList.remove("hidden");
   _errorEl.classList.add("hidden");
   openModal(_modal);
 }
@@ -197,13 +217,24 @@ async function handleSubmit(e) {
   const name = _nameInput.value.trim();
   const displayName = _displayNameInput.value.trim();
   const description = _descriptionInput.value.trim();
+  const processingPercentage = Number(_processingPercentageInput.value) / 100;
 
   try {
     if (_editingCategory) {
-      await CategoriesService.update(tenantId, _editingCategory, { displayName, description });
+      await CategoriesService.update(tenantId, _editingCategory, {
+        displayName,
+        description,
+        processingPercentage,
+      });
       Toast.show("Category updated");
     } else {
-      await CategoriesService.create(tenantId, name, displayName, description);
+      await CategoriesService.create(
+        tenantId,
+        name,
+        displayName,
+        description,
+        processingPercentage,
+      );
       Toast.show("Category created");
     }
     closeEditModal();

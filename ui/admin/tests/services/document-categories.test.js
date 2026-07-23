@@ -40,6 +40,7 @@ describe("document-categories service", () => {
       "tax-forms",
       "Tax Forms",
       "All tax documents",
+      0.5,
     );
     expect(mockRequest).toHaveBeenCalledWith(
       "POST",
@@ -48,13 +49,14 @@ describe("document-categories service", () => {
         category_name: "tax-forms",
         display_name: "Tax Forms",
         description: "All tax documents",
+        processing_percentage: 0.5,
       },
     );
     expect(result.categoryName).toBe("tax-forms");
   });
 
   it("create with null description", async () => {
-    await CategoriesService.create("acme", "misc", "Misc", null);
+    await CategoriesService.create("acme", "misc", "Misc", null, 1.0);
     expect(mockRequest).toHaveBeenCalledWith(
       "POST",
       "/v1/admin/document-categories?tenant_id=acme",
@@ -62,16 +64,20 @@ describe("document-categories service", () => {
         category_name: "misc",
         display_name: "Misc",
         description: null,
+        processing_percentage: 1.0,
       },
     );
   });
 
   it("update calls PATCH with partial body", async () => {
-    await CategoriesService.update("acme", "tax-forms", { displayName: "Updated" });
+    await CategoriesService.update("acme", "tax-forms", {
+      displayName: "Updated",
+      processingPercentage: 0.2,
+    });
     expect(mockRequest).toHaveBeenCalledWith(
       "PATCH",
       "/v1/admin/document-categories/tax-forms?tenant_id=acme",
-      { display_name: "Updated" },
+      { display_name: "Updated", processing_percentage: 0.2 },
     );
   });
 

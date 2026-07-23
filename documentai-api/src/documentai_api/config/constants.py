@@ -149,6 +149,7 @@ class ConfigDefaults:
     MAX_PAGES_PER_DOCUMENT = 5
     PRESIGNED_URL_SIGNATURE_VERSION = "s3v4"
     PRESIGNED_PREVIEW_EXPIRY_SECONDS = 300
+    PROCESSING_PERCENTAGE_CACHE_TTL_MINUTES = 5
 
 
 # Document categories - must match the BDA project keys in infra/environments/*/main.tf
@@ -260,6 +261,7 @@ class ProcessStatus(StrEnum):
     PASSWORD_PROTECTED = "password_protected"
     PENDING_IMAGE_OPTIMIZATION = "pending_image_optimization"
     PENDING_UPLOAD = "pending_upload"
+    PROCESSING_EXCLUDED = "processing_excluded"
     STARTED = "started"
     SUCCESS = "success"
 
@@ -268,6 +270,7 @@ class ProcessStatus(StrEnum):
         return value in [
             cls.AI_CONSENT_DECLINED,
             cls.CONVERSION_FAILED,
+            cls.PROCESSING_EXCLUDED,
             cls.SUCCESS,
             cls.FAILED,
             cls.NO_DOCUMENT_DETECTED,
@@ -287,6 +290,7 @@ class ProcessStatus(StrEnum):
             cls.NO_DOCUMENT_DETECTED,
             cls.NOT_IMPLEMENTED,
             cls.PASSWORD_PROTECTED,
+            cls.PROCESSING_EXCLUDED,
             cls.SUCCESS,
         ]
 

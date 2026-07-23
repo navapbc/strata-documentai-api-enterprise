@@ -1,5 +1,6 @@
 """Document classification state machine and initial record creation."""
 
+import random
 from typing import Any
 
 from botocore.exceptions import ClientError
@@ -164,6 +165,16 @@ def classify_as_conversion_failed(object_key: str, error_message: str) -> dict[s
     return internal_api_response.__dict__
 
 
+def is_selected_for_processing(tenant_id: str | None, category_name: str | None) -> bool:
+    """Return True if this document should be processed based on the category's sampling rate."""
+    from documentai_api.utils.document_categories import get_processing_percentage
+
+    if not tenant_id or not category_name:
+        return True
+    bda_percentage = get_processing_percentage(tenant_id, category_name)
+    return bda_percentage == 1.0 or random.random() < bda_percentage
+
+
 def classify_as_no_custom_blueprint_matched(
     object_key: str, data: ClassificationData, result_processor_started_at: str | None = None
 ) -> dict[str, Any]:
@@ -306,6 +317,8 @@ def upsert_initial_ddb_record(
     source_object_key: str,
     ddb_key: str,
     original_file_name: str,
+    tenant_id: str | None = None,
+    upload_date: str | None = None,
     user_provided_document_category: str | None = None,
     job_id: str | None = None,
     trace_id: str | None = None,
@@ -349,6 +362,20 @@ def upsert_initial_ddb_record(
     if is_password_protected:
         process_status = ProcessStatus.PASSWORD_PROTECTED
         response_code = ResponseCodes.PASSWORD_PROTECTED
+        textract_result = None
+
+    elif not is_selected_for_processing(tenant_id, user_provided_document_category):
+        logger.info(
+            f"{ddb_key} excluded by sampling for category {user_provided_document_category}"
+        )
+        # TODO: add a CloudWatch metric filter on this log line (dimensioned by category)
+        # to make sampling rates observable without a custom metric
+        if tenant_id and upload_date:
+            from documentai_api.utils.write_limit import decrement
+
+            decrement(tenant_id, upload_date)
+        process_status = ProcessStatus.PROCESSING_EXCLUDED
+        response_code = ResponseCodes.PROCESSING_EXCLUDED
         textract_result = None
 
     else:

@@ -1,7 +1,9 @@
 class ResponseCodes:
     SUCCESS = "000"
+    # 001 is a legacy code from the prior platform contract and is not used here
     DOCUMENT_TYPE_NOT_IMPLEMENTED = "002"
     AI_CONSENT_DECLINED = "003"
+    PROCESSING_EXCLUDED = "004"
     MISSING_FIELDS = "101"
     MISCATEGORIZED = "102"
     NO_DOCUMENT_DETECTED = "103"
@@ -16,6 +18,7 @@ class ResponseCodes:
         """Get message for response code."""
         messages = {
             cls.SUCCESS: "Document validation passed",
+            cls.PROCESSING_EXCLUDED: "Document not chosen for extraction",
             cls.DOCUMENT_TYPE_NOT_IMPLEMENTED: "Document type not implemented",
             cls.AI_CONSENT_DECLINED: "Document not processed - AI consent not provided",
             cls.MISSING_FIELDS: "Missing fields",

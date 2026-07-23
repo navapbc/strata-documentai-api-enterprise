@@ -5188,6 +5188,13 @@
               }
             ],
             "title": "Description"
+          },
+          "processingPercentage": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Processingpercentage",
+            "default": 1.0
           }
         },
         "type": "object",
@@ -5367,6 +5374,16 @@
             "type": "boolean",
             "title": "Isactive",
             "default": true
+          },
+          "isAutoRegistered": {
+            "type": "boolean",
+            "title": "Isautoregistered",
+            "default": false
+          },
+          "processingPercentage": {
+            "type": "number",
+            "title": "Processingpercentage",
+            "default": 1.0
           },
           "createdAt": {
             "anyOf": [
@@ -6601,6 +6618,19 @@
               }
             ],
             "title": "Isactive"
+          },
+          "processingPercentage": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Processingpercentage"
           }
         },
         "type": "object",

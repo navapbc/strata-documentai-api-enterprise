@@ -5,6 +5,8 @@
       <th data-col="categoryName">Name</th>
       <th data-col="displayName">Display Name</th>
       <th data-col="description">Description</th>
+      <th data-col="processingPercentage">Sample Rate</th>
+      <th data-col="isAutoRegistered">Source</th>
       <th>Status</th>
       <th style="width: 1px; white-space: nowrap">Actions</th>
     </tr>
@@ -39,7 +41,24 @@
       <label for="category-description">Description (optional)</label>
       <input type="text" id="category-description" placeholder="W2s, 1099s, pay stubs" />
 
+      <label for="category-processing-percentage">Sample rate (0–100%)</label>
+      <p class="field-hint">Percentage of documents to process. 100 = process all.</p>
+      <input
+        type="number"
+        id="category-processing-percentage"
+        min="0"
+        max="100"
+        step="1"
+        value="100"
+        required
+      />
+
       <p id="category-form-error" class="error hidden"></p>
+
+      <div id="category-dates" class="hidden">
+        <p class="field-hint">Created: <span id="category-created-at"></span></p>
+        <p class="field-hint">Updated: <span id="category-updated-at"></span></p>
+      </div>
 
       <div class="modal-actions">
         <button type="button" id="category-cancel" class="btn-secondary">Cancel</button>

@@ -11,6 +11,8 @@ class DocumentCategoryRecord:
     DISPLAY_NAME = "displayName"
     DESCRIPTION = "description"
     IS_ACTIVE = "isActive"
+    IS_AUTO_REGISTERED = "isAutoRegistered"
+    PROCESSING_PERCENTAGE = "processingPercentage"
     CREATED_AT = "createdAt"
     UPDATED_AT = "updatedAt"
 

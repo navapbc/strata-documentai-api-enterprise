@@ -28,6 +28,7 @@ from documentai_api.utils.bda_invoker import (
     invoke_bedrock_data_automation,
     skip_bda_if_unclassified,
 )
+from documentai_api.utils.dates import strip_time
 from documentai_api.utils.ddb import get_ddb_record
 from documentai_api.utils.document_lifecycle import (
     classify_as_failed,
@@ -217,6 +218,10 @@ def main(
             source_object_key=object_key,
             ddb_key=ddb_key,
             original_file_name=original_file_name,
+            tenant_id=existing_record.get(DocumentMetadata.TENANT_ID) if existing_record else None,
+            upload_date=strip_time(existing_record[DocumentMetadata.CREATED_AT])
+            if existing_record and DocumentMetadata.CREATED_AT in existing_record
+            else None,
             user_provided_document_category=user_provided_document_category,
             job_id=job_id,
             trace_id=trace_id,
