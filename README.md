@@ -51,15 +51,17 @@ A client uploads a document via the API. It's stored in S3 and queued for proces
 
 ## Features
 
-- **[Document upload and processing](docs/documentai-api/document-processing.md)** - Bedrock Data Automation blueprints, with Textract AnalyzeID for IDs and passports
+- **[Document upload and processing](docs/documentai-api/document-processing.md)** - Bedrock Data Automation blueprints, with Textract AnalyzeID for IDs and passports; supports typed and handwritten documents in English and other configured languages
 - **[Document viewer](docs/documentai-api/document-viewer.md)** - extracted fields with bounding box overlay linked to the source image
-- **[Configurable extraction rules engine](docs/documentai-api/extraction-rules.md)** - required, optional, and excluded fields per tenant and document type
+- **[Configurable extraction rules engine](docs/documentai-api/extraction-rules.md)** - required, optional, and excluded fields per tenant and document type with structured codes for issues
 - **[Multi-tenancy with role-based access](docs/documentai-api/access-control.md)** - tenant-admin and super-admin roles, tenant-scoped API keys
 - **[Authorization](docs/documentai-api/authorization.md)** - Cognito with TOTP MFA, optional Google SSO, and API key support for programmatic clients
 - **[Admin console](ui/admin/README.md)** - manage tenants, users, API keys, extraction rules, and review processed documents
 - **[Demo environment](ui/demo/README.md)** - upload documents and view extraction results without tenant configuration
 - **[Metrics pipeline](docs/documentai-api/metrics-pipeline.md)** - SQS -> Glue -> S3 (Parquet), queryable per tenant
 - **[Serverless Terraform infrastructure](infra/README.md)** - Lambda containers, API Gateway, CloudFront, DynamoDB, S3
+
+
 
 ## Repo structure
 
