@@ -11,6 +11,7 @@ export async function create(
   primaryContact,
   maxWritesPerDay,
   maxWritesPerMonth,
+  extractionConfidenceFloor,
 ) {
   return adminClient.request("POST", "/v1/admin/tenants", {
     tenant_id: tenantId,
@@ -18,12 +19,20 @@ export async function create(
     primary_contact: primaryContact || null,
     max_writes_per_day: maxWritesPerDay || null,
     max_writes_per_month: maxWritesPerMonth || null,
+    extraction_confidence_floor: extractionConfidenceFloor ?? null,
   });
 }
 
 export async function update(
   tenantId,
-  { displayName, primaryContact, isActive, maxWritesPerDay, maxWritesPerMonth } = {},
+  {
+    displayName,
+    primaryContact,
+    isActive,
+    maxWritesPerDay,
+    maxWritesPerMonth,
+    extractionConfidenceFloor,
+  } = {},
 ) {
   const body = {};
   if (displayName !== undefined) body.display_name = displayName;
@@ -31,6 +40,8 @@ export async function update(
   if (isActive !== undefined) body.is_active = isActive;
   if (maxWritesPerDay !== undefined) body.max_writes_per_day = maxWritesPerDay;
   if (maxWritesPerMonth !== undefined) body.max_writes_per_month = maxWritesPerMonth;
+  if (extractionConfidenceFloor !== undefined)
+    body.extraction_confidence_floor = extractionConfidenceFloor;
   return adminClient.request("PATCH", `/v1/admin/tenants/${encodeURIComponent(tenantId)}`, body);
 }
 

@@ -17,6 +17,7 @@ let _modal,
   _contactInput,
   _maxPerDayInput,
   _maxPerMonthInput,
+  _confidenceFloorInput,
   _cancelBtn,
   _errorEl,
   _titleEl;
@@ -54,6 +55,7 @@ export function mount(root) {
   _contactInput = root.querySelector("#tenant-contact");
   _maxPerDayInput = root.querySelector("#tenant-max-writes-per-day");
   _maxPerMonthInput = root.querySelector("#tenant-max-writes-per-month");
+  _confidenceFloorInput = root.querySelector("#tenant-confidence-floor");
   _cancelBtn = root.querySelector("#tenant-cancel");
   _errorEl = root.querySelector("#tenant-form-error");
   _titleEl = root.querySelector("#tenant-modal-title");
@@ -131,11 +133,16 @@ function renderTable(tenants) {
       t.isActive ? null : { className: "row-inactive" },
       h("td", null, t.tenantId),
       h("td", null, t.displayName || "-"),
-      h("td", null, t.primaryContact || "-"),
+      h(
+        "td",
+        null,
+        t.extractionConfidenceFloor != null
+          ? `${Math.round(t.extractionConfidenceFloor * 100)}%`
+          : "-",
+      ),
       h("td", null, t.maxWritesPerDay != null ? String(t.maxWritesPerDay) : "-"),
       h("td", null, t.maxWritesPerMonth != null ? String(t.maxWritesPerMonth) : "-"),
       h("td", null, statusEl),
-      h("td", null, Helpers.formatDate(t.createdAt)),
       actionsCell,
     );
 
@@ -153,6 +160,7 @@ function openCreateModal() {
   _contactInput.value = "";
   _maxPerDayInput.value = "";
   _maxPerMonthInput.value = "";
+  _confidenceFloorInput.value = "";
   _errorEl.classList.add("hidden");
   openModal(_modal);
 }
@@ -166,6 +174,10 @@ function openEditModal(tenant) {
   _contactInput.value = tenant.primaryContact || "";
   _maxPerDayInput.value = tenant.maxWritesPerDay ?? "";
   _maxPerMonthInput.value = tenant.maxWritesPerMonth ?? "";
+  _confidenceFloorInput.value =
+    tenant.extractionConfidenceFloor != null
+      ? Math.round(tenant.extractionConfidenceFloor * 100)
+      : "";
   _errorEl.classList.add("hidden");
   openModal(_modal);
 }
@@ -184,6 +196,9 @@ async function handleSubmit(e) {
   const primaryContact = _contactInput.value.trim() || null;
   const maxWritesPerDay = _maxPerDayInput.value ? parseInt(_maxPerDayInput.value, 10) : null;
   const maxWritesPerMonth = _maxPerMonthInput.value ? parseInt(_maxPerMonthInput.value, 10) : null;
+  const confidenceFloor = _confidenceFloorInput.value
+    ? parseFloat(_confidenceFloorInput.value) / 100
+    : null;
 
   try {
     if (_editingTenant) {
@@ -192,6 +207,7 @@ async function handleSubmit(e) {
         primaryContact,
         maxWritesPerDay,
         maxWritesPerMonth,
+        extractionConfidenceFloor: confidenceFloor,
       });
       Toast.show("Tenant updated");
     } else {
@@ -201,6 +217,7 @@ async function handleSubmit(e) {
         primaryContact,
         maxWritesPerDay,
         maxWritesPerMonth,
+        confidenceFloor,
       );
       Toast.show("Tenant created");
       TenantContext.load();

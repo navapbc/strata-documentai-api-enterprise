@@ -193,8 +193,11 @@ function renderTable(keys) {
       h("td", null, key.emailAddress || "-"),
       h("td", null, key.environment || "-"),
       h("td", null, h("code", null, key.keyPrefix ? key.keyPrefix + "…" : "-")),
-      h("td", null, Helpers.formatDate(key.createdAt)),
-      h("td", null, key.lastUsed ? Helpers.formatDate(key.lastUsed) : "-"),
+      h(
+        "td",
+        { title: key.lastUsed ? Helpers.formatDateTime(key.lastUsed) : "" },
+        key.lastUsed ? Helpers.relativeTime(key.lastUsed) : "-",
+      ),
       h("td", null, actionEl),
     );
     if (isActive) {
