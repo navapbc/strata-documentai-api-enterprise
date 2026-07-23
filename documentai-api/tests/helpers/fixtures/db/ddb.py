@@ -148,6 +148,26 @@ def set_ddb_doc_metadata_table_env_vars(ddb_doc_metadata_table_resource, monkeyp
 
 
 @pytest.fixture
+def document_categories_table(aws_credentials, monkeypatch):
+    with mock_aws():
+        dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+        table = dynamodb.create_table(
+            TableName="document-categories",
+            KeySchema=[
+                {"AttributeName": "tenantId", "KeyType": "HASH"},
+                {"AttributeName": "categoryName", "KeyType": "RANGE"},
+            ],
+            AttributeDefinitions=[
+                {"AttributeName": "tenantId", "AttributeType": "S"},
+                {"AttributeName": "categoryName", "AttributeType": "S"},
+            ],
+            BillingMode="PAY_PER_REQUEST",
+        )
+        monkeypatch.setenv(EnvVars.DOCUMENT_CATEGORIES_TABLE_NAME, table.name)
+        yield table
+
+
+@pytest.fixture
 def tenants_table(aws_credentials, monkeypatch):
     with mock_aws():
         dynamodb = boto3.resource("dynamodb", region_name="us-east-1")

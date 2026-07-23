@@ -217,6 +217,7 @@ def main(
             source_object_key=object_key,
             ddb_key=ddb_key,
             original_file_name=original_file_name,
+            tenant_id=existing_record.get(DocumentMetadata.TENANT_ID) if existing_record else None,
             user_provided_document_category=user_provided_document_category,
             job_id=job_id,
             trace_id=trace_id,

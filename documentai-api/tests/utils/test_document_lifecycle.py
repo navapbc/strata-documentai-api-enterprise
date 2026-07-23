@@ -308,7 +308,7 @@ def test_set_processing_status_started_returns_false_when_already_claimed(ddb_do
 
 
 def test_set_processing_status_started_returns_false_when_record_missing(ddb_doc_metadata_table):
-    """No record to claim (never upserted) → conditional update fails, returns False."""
+    """No record to claim (never upserted) -> conditional update fails, returns False."""
     claimed = lifecycle_util.set_processing_status_started(
         "does-not-exist", ProcessStatus.PENDING_IMAGE_OPTIMIZATION.value
     )
@@ -411,6 +411,140 @@ def test_classify_functions(
         expected_call["result_processor_started_at"] = None
 
     mock_update.assert_called_once_with(**expected_call)
+
+
+def test_classify_as_processing_excluded(mocker):
+    mock_get_response = mocker.patch(
+        "documentai_api.utils.document_lifecycle.get_internal_api_response"
+    )
+    mock_update = mocker.patch("documentai_api.utils.document_lifecycle.update_ddb")
+
+    lifecycle_util.classify_as_processing_excluded("test-file")
+
+    mock_get_response.assert_called_once_with(
+        object_key="test-file",
+        response_code=ResponseCodes.PROCESSING_EXCLUDED,
+        matched_document_class=None,
+    )
+    mock_update.assert_called_once_with(
+        object_key="test-file",
+        status=ProcessStatus.PROCESSING_EXCLUDED,
+        internal_api_response=mock_get_response.return_value,
+    )
+
+
+@pytest.mark.parametrize(
+    ("tenant_id", "category_name", "bda_percentage", "random_val", "expected"),
+    [
+        (None, "income", None, None, True),
+        ("t1", None, None, None, True),
+        ("t1", "income", 1.0, None, True),
+        ("t1", "income", 0.5, 0.4, True),
+        ("t1", "income", 0.5, 0.6, False),
+        ("t1", "income", 0.0, 0.0, False),
+    ],
+)
+def test_is_selected_for_processing(
+    tenant_id, category_name, bda_percentage, random_val, expected, mocker
+):
+    if bda_percentage is not None:
+        mocker.patch(
+            "documentai_api.utils.document_categories.get_processing_percentage",
+            return_value=bda_percentage,
+        )
+    if random_val is not None:
+        mocker.patch(
+            "documentai_api.utils.document_lifecycle.random.random", return_value=random_val
+        )
+
+    result = lifecycle_util.is_selected_for_processing(tenant_id, category_name)
+    assert result is expected
+
+
+def test_upsert_initial_ddb_record_sampling_excluded(
+    ddb_doc_metadata_table,
+    s3_bucket,
+    mocker,
+):
+    """Document passing all guards is excluded when sampling rate rejects it."""
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.document_utils.get_page_count", return_value=1
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.document_utils.is_password_protected",
+        return_value=False,
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.is_blur_detection_enabled", return_value=False
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.preclassify_document",
+        return_value=BedrockClassificationResult(
+            document_type="tax_documents", confidence=0.9, document_count=1
+        ),
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.find_matching_blueprint",
+        return_value=PreclassificationMatchResult(),
+    )
+    mocker.patch("documentai_api.utils.document_lifecycle.try_textract_identity", return_value=None)
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.is_selected_for_processing", return_value=False
+    )
+    mocker.patch(
+        "documentai_api.utils.ddb.build_v1_api_response", return_value={"status": "completed"}
+    )
+
+    s3_bucket.put_object(Key="input/test-file", Body=b"bytes", ContentType="application/pdf")
+
+    lifecycle_util.upsert_initial_ddb_record(
+        source_bucket_name=s3_bucket.name,
+        source_object_key="input/test-file",
+        original_file_name="test.pdf",
+        ddb_key="test-file",
+        user_provided_document_category="income",
+        tenant_id="tenant-1",
+    )
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
+    assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.PROCESSING_EXCLUDED
+    assert DocumentMetadata.RESPONSE_JSON in item
+
+
+def test_upsert_initial_ddb_record_sampling_not_applied_to_password_protected(
+    ddb_doc_metadata_table,
+    s3_bucket,
+    mocker,
+):
+    """Password-protected documents skip sampling - they're already terminal."""
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.document_utils.get_page_count", return_value=1
+    )
+    mocker.patch(
+        "documentai_api.utils.document_lifecycle.document_utils.is_password_protected",
+        return_value=True,
+    )
+    mock_sampling = mocker.patch(
+        "documentai_api.utils.document_lifecycle.is_selected_for_processing"
+    )
+    mocker.patch(
+        "documentai_api.utils.ddb.build_v1_api_response", return_value={"status": "completed"}
+    )
+
+    s3_bucket.put_object(Key="input/test-file", Body=b"bytes", ContentType="application/pdf")
+
+    lifecycle_util.upsert_initial_ddb_record(
+        source_bucket_name=s3_bucket.name,
+        source_object_key="input/test-file",
+        original_file_name="test.pdf",
+        ddb_key="test-file",
+        user_provided_document_category="income",
+        tenant_id="tenant-1",
+    )
+
+    mock_sampling.assert_not_called()
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
+    assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.PASSWORD_PROTECTED
 
 
 def test_classify_as_ai_consent_declined(mocker):

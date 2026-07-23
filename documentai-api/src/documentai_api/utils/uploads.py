@@ -17,6 +17,7 @@ from documentai_api.config.constants import (
 from documentai_api.config.env import EnvVars
 from documentai_api.logging import get_logger
 from documentai_api.services import s3 as s3_service
+from documentai_api.utils.document_categories import auto_register_category
 from documentai_api.utils.file_conversion import convert_file
 from documentai_api.utils.s3 import get_bucket_and_key, parse_s3_uri
 
@@ -294,6 +295,16 @@ async def upload_document_for_processing(
     _save_original_to_preprocessing(
         file_bytes, os.path.basename(object_key), content_type, tenant_id=tenant_id
     )
+
+    if user_provided_document_category and tenant_id:
+        try:
+            await asyncio.to_thread(
+                auto_register_category, tenant_id, user_provided_document_category.value
+            )
+        except Exception as e:
+            logger.warning(
+                f"Failed to auto-register category '{user_provided_document_category}' for tenant '{tenant_id}': {e}"
+            )
 
     # handle format conversion for mobile/unsupported-by-BDA formats
     if FileValidation.needs_conversion(content_type):
