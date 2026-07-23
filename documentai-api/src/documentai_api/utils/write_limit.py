@@ -105,7 +105,9 @@ def _rollback(table_name: str, tenant_id: str, today: str) -> None:
         )
     except ClientError as e:
         if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
-            logger.warning(f"Skipped decrement for tenant {tenant_id} on {today}: count already at zero")
+            logger.warning(
+                f"Skipped decrement for tenant {tenant_id} on {today}: count already at zero"
+            )
         else:
             raise
 

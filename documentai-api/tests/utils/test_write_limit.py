@@ -174,7 +174,9 @@ def test_daily_limit_checked_before_monthly(tenants_table, tenant_request_counts
         (1, 2, 0),  # floors at zero
     ],
 )
-def test_decrement(tenants_table, tenant_request_counts_table, initial_count, decrement_count, expected):
+def test_decrement(
+    tenants_table, tenant_request_counts_table, initial_count, decrement_count, expected
+):
     today = get_today_iso()
     _seed_tenant(tenants_table, "t1", max_per_day=10)
     _seed_count(tenant_request_counts_table, "t1", today, initial_count)

@@ -365,11 +365,14 @@ def upsert_initial_ddb_record(
         textract_result = None
 
     elif not is_selected_for_processing(tenant_id, user_provided_document_category):
-        logger.info(f"{ddb_key} excluded by sampling for category {user_provided_document_category}")
+        logger.info(
+            f"{ddb_key} excluded by sampling for category {user_provided_document_category}"
+        )
         # TODO: add a CloudWatch metric filter on this log line (dimensioned by category)
         # to make sampling rates observable without a custom metric
         if tenant_id and upload_date:
             from documentai_api.utils.write_limit import decrement
+
             decrement(tenant_id, upload_date)
         process_status = ProcessStatus.PROCESSING_EXCLUDED
         response_code = ResponseCodes.PROCESSING_EXCLUDED

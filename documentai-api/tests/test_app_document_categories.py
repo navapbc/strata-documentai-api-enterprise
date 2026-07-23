@@ -456,7 +456,6 @@ def test_categories_auto_register_does_not_overwrite_manual(document_categories_
     assert response.json()["isAutoRegistered"] is False
 
 
-
 @pytest.mark.parametrize(
     ("method", "path"),
     [
