@@ -1,20 +1,3 @@
-export function formatDate(iso) {
-  if (!iso) return "-";
-  return new Date(iso).toLocaleDateString();
-}
-
-export function formatDateTime(iso) {
-  if (!iso) return "-";
-  return new Date(iso).toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-}
-
 export function esc(str) {
   const el = document.createElement("span");
   el.textContent = str || "";

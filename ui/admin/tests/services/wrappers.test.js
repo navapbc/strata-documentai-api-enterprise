@@ -83,13 +83,21 @@ describe("service wrappers", () => {
 
     it("create calls POST with body", async () => {
       mockRequest.mockResolvedValue({ tenantId: "acme" });
-      const result = await TenantsService.create("acme", "Acme Corp", "ops@acme.com");
+      const result = await TenantsService.create(
+        "acme",
+        "Acme Corp",
+        "ops@acme.com",
+        null,
+        null,
+        0.65,
+      );
       expect(mockRequest).toHaveBeenCalledWith("POST", "/v1/admin/tenants", {
         tenant_id: "acme",
         display_name: "Acme Corp",
         primary_contact: "ops@acme.com",
         max_writes_per_day: null,
         max_writes_per_month: null,
+        extraction_confidence_floor: 0.65,
       });
       expect(result.tenantId).toBe("acme");
     });
