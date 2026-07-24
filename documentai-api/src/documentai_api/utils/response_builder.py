@@ -277,7 +277,7 @@ def build_v1_api_response(
     elif job_status == ProcessStatus.NO_DOCUMENT_DETECTED.value:
         base_response.update(
             {
-                "jobStatus": "not_supported",
+                "jobStatus": "completed",
                 "message": "Unable to extract meaningful document content",
                 "additionalInfo": data.additional_info if data else None,
                 "responseCode": ResponseCodes.NO_DOCUMENT_DETECTED,
@@ -288,7 +288,7 @@ def build_v1_api_response(
     elif job_status == ProcessStatus.BLURRY_DOCUMENT_DETECTED.value:
         base_response.update(
             {
-                "jobStatus": "not_supported",
+                "jobStatus": "completed",
                 "message": "Document is blurry",
                 "responseCode": ResponseCodes.BLURRY_DOCUMENT_DETECTED,
                 "responseMessage": ResponseCodes.get_message(
@@ -334,7 +334,7 @@ def build_v1_api_response(
             response_code = ResponseCodes.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE
         base_response.update(
             {
-                "jobStatus": "not_supported",
+                "jobStatus": "completed",
                 "message": "Document type not supported",
                 "additionalInfo": data.additional_info if data else None,
                 "responseCode": response_code,
