@@ -19,11 +19,11 @@
   "devDependencies": {
     "@playwright/test": "^1.61.1",
     "esbuild": "^0.28.1",
-    "eslint": "^10.7.0",
+    "eslint": "^10.8.0",
     "eslint-plugin-no-unsanitized": "^4.1.5",
     "jsdom": "^29.1.1",
     "otplib": "^13.4.1",
-    "prettier": "^3.9.5",
+    "prettier": "^3.9.6",
     "vitest": "^4.1.10"
   },
   "dependencies": {
