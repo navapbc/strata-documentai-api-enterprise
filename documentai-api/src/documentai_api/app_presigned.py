@@ -12,6 +12,7 @@ from documentai_api.annotations import (
     ExternalDocumentId,
     ExternalSystemId,
     TraceId,
+    UploadSourceField,
 )
 from documentai_api.config.constants import (
     ApiVisualizationTag,
@@ -65,6 +66,7 @@ async def create_presigned_upload_url(
     # use POST /v1/documents with ai_consent_flag=false instead (stores metadata
     # without uploading to S3).
     external_system_id: ExternalSystemId = None,
+    upload_source: UploadSourceField = None,
 ) -> PresignedUploadResponse:
     """Generate a presigned POST URL for direct S3 upload.
 
@@ -138,6 +140,7 @@ async def create_presigned_upload_url(
             external_document_id=external_document_id,
             external_system_id=external_system_id,
             upload_method=UploadMethod.PRESIGNED,
+            upload_source=upload_source,
             tenant_id=auth.tenant_id,
             api_key_name=auth.api_key_name,
         )

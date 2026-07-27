@@ -4326,6 +4326,17 @@
             ],
             "title": "Ai Consent Flag",
             "description": "AI consent flag"
+          },
+          "upload_source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UploadSource"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Source device type of the upload (desktop or mobile)"
           }
         },
         "type": "object",
@@ -4396,6 +4407,17 @@
             "title": "Ai Consent Flag",
             "description": "Explicit AI processing consent. True = consent granted, processing proceeds normally. False = consent denied, document is stored but not processed.",
             "default": true
+          },
+          "upload_source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UploadSource"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Source device type of the upload (desktop or mobile)"
           }
         },
         "type": "object",
@@ -4455,6 +4477,17 @@
             "title": "Ai Consent Flag",
             "description": "Explicit AI processing consent. True = consent granted, processing proceeds normally. False = consent denied, document is stored but not processed.",
             "default": true
+          },
+          "upload_source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UploadSource"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Source device type of the upload (desktop or mobile)"
           }
         },
         "type": "object",
@@ -4514,6 +4547,17 @@
             ],
             "title": "External System Id",
             "description": "External system identifier"
+          },
+          "upload_source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UploadSource"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Source device type of the upload (desktop or mobile)"
           }
         },
         "type": "object",
@@ -6739,6 +6783,14 @@
           "message"
         ],
         "title": "UploadAsyncResponse"
+      },
+      "UploadSource": {
+        "type": "string",
+        "enum": [
+          "desktop",
+          "mobile"
+        ],
+        "title": "UploadSource"
       },
       "UsageStats": {
         "properties": {

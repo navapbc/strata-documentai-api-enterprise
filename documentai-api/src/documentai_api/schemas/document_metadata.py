@@ -21,6 +21,7 @@ class DocumentMetadata:
     EXTERNAL_SYSTEM_ID = "externalSystemId"
     AI_CONSENT_FLAG = "aiConsentFlag"
     UPLOAD_METHOD = "uploadMethod"
+    UPLOAD_SOURCE = "uploadSource"
     TENANT_ID = "tenantId"
     API_KEY_NAME = "apiKeyName"
     IS_DEMO = "isDemo"

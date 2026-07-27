@@ -18,7 +18,7 @@ from fastapi import (
     status,
 )
 
-from documentai_api.annotations import AuthUser
+from documentai_api.annotations import AuthUser, UploadSourceField
 from documentai_api.config.constants import (
     MAX_PAGES_PER_BUILD,
     ApiVisualizationTag,
@@ -144,6 +144,7 @@ async def create_build(
         str | None, Form(description="External system identifier")
     ] = None,
     ai_consent_flag: Annotated[bool | None, Form(description="AI consent flag")] = None,
+    upload_source: UploadSourceField = None,
 ) -> BuildCreatedResponse:
     """Create a new document build for multi-page upload."""
     if not trace_id:
@@ -158,6 +159,7 @@ async def create_build(
         ai_consent_flag=ai_consent_flag,
         tenant_id=auth.tenant_id,
         api_key_name=auth.api_key_name,
+        upload_source=upload_source,
     )
 
     response.headers["X-Trace-ID"] = trace_id
@@ -372,6 +374,7 @@ async def _submit_build(
             external_system_id=build_metadata.get(DocumentBuilds.EXTERNAL_SYSTEM_ID),
             ai_consent_flag=False,
             upload_method=UploadMethod.BUILD,
+            upload_source=build_metadata.get(DocumentBuilds.UPLOAD_SOURCE),
             tenant_id=build_metadata[DocumentBuilds.TENANT_ID],
             api_key_name=build_metadata[DocumentBuilds.API_KEY_NAME],
         )
@@ -433,6 +436,9 @@ async def _submit_build(
                 trace_id=trace_id,
                 content_type="application/pdf",
                 upload_method=UploadMethod.BUILD,
+                upload_source=build_metadata.get(DocumentBuilds.UPLOAD_SOURCE)
+                if build_metadata
+                else None,
                 tenant_id=tenant_id,
                 api_key_name=api_key_name,
             ),

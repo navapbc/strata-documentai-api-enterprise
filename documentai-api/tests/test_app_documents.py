@@ -152,6 +152,20 @@ def test_create_document_with_external_fields(api_client, blank_pdf_bytes, mocke
     assert record.ai_consent_flag is True
 
 
+@pytest.mark.parametrize("upload_source", ["desktop", "mobile", None])
+def test_create_document_passes_upload_source(api_client, blank_pdf_bytes, mocker, upload_source):
+    """upload_source is forwarded to the DocumentRecord."""
+    mock_insert = mocker.patch("documentai_api.app_documents.insert_minimal_ddb_record")
+
+    files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
+    data = {"upload_source": upload_source} if upload_source else {}
+    response = api_client.post("/v1/documents", files=files, data=data)
+
+    assert response.status_code == 202
+    record = mock_insert.call_args[0][0]
+    assert record.upload_source == upload_source
+
+
 def test_create_document_ai_consent_declined(api_client, blank_pdf_bytes, mocker):
     """Test document upload with ai_consent_flag=false bypasses processing."""
     mock_insert = mocker.patch("documentai_api.app_documents.insert_minimal_ddb_record")
