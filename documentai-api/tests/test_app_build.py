@@ -113,6 +113,17 @@ def test_create_build_with_external_fields(document_build_ddb_table):
     assert call_kwargs["ai_consent_flag"] is True
 
 
+@pytest.mark.parametrize("upload_source", ["desktop", "mobile", None])
+def test_create_build_passes_upload_source(document_build_ddb_table, upload_source):
+    """create_build forwards upload_source to create_document_build."""
+    with patch("documentai_api.app_build.create_document_build") as mock_create:
+        data = {"upload_source": upload_source} if upload_source else {}
+        response = client.post("/v1/builds", data=data)
+
+    assert response.status_code == 200
+    assert mock_create.call_args.kwargs["upload_source"] == upload_source
+
+
 @pytest.mark.parametrize(
     ("build_id", "page_number", "expected_build"),
     [
@@ -335,6 +346,37 @@ def test_submit_document_build_stamps_tenant_on_job_record(
     # merged PDF is also written under the tenant prefix
     dest_path = mock_document_build_submit["upload"].call_args.kwargs["dest_path"]
     assert "/test-tenant/" in dest_path
+
+
+@pytest.mark.parametrize("upload_source", ["desktop", "mobile", None])
+def test_submit_propagates_upload_source_from_build_metadata(
+    document_build_ddb_table, upload_source
+):
+    """Submit reads upload_source from build metadata and stamps it on the job record."""
+    import io
+
+    from documentai_api.schemas.document_builds import DocumentBuilds
+
+    build_metadata = {DocumentBuilds.UPLOAD_SOURCE: upload_source}
+
+    with (
+        patch("documentai_api.app_build.get_build_metadata", return_value=build_metadata),
+        patch(
+            "documentai_api.app_build.get_document_build_pages",
+            return_value=[create_page_metadata(1)],
+        ),
+        patch("documentai_api.app_build.merge_pages_to_pdf", return_value=io.BytesIO(b"pdf")),
+        patch("documentai_api.app_build.upload_document_for_processing", new_callable=AsyncMock),
+        patch("documentai_api.app_build.insert_minimal_ddb_record") as mock_insert,
+        patch("documentai_api.app_build.mark_document_build_submitted"),
+        patch("documentai_api.config.env.AWSEnvConfig") as mock_aws_config,
+    ):
+        mock_aws_config.return_value.documentai_input_location = "s3://test-bucket/input"
+        response = client.post("/v1/builds/test-build-id/submit")
+
+    assert response.status_code == 202
+    record = mock_insert.call_args.args[0]
+    assert record.upload_source == upload_source
 
 
 def test_upload_document_build_page_error_handling(

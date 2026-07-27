@@ -16,6 +16,7 @@ class DocumentRecord(BaseModel):
     original_file_name: str
     job_id: str
     upload_method: str
+    upload_source: str | None = None
     tenant_id: str
     api_key_name: str
     process_status: ProcessStatus = ProcessStatus.NOT_STARTED

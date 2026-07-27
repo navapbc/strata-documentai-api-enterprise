@@ -229,6 +229,7 @@ def create_document_build(
     ai_consent_flag: bool | None = None,
     tenant_id: str | None = None,
     api_key_name: str | None = None,
+    upload_source: str | None = None,
 ) -> str:
     """Create a new document build."""
     item: dict[str, Any] = {
@@ -251,6 +252,8 @@ def create_document_build(
         item[DocumentBuilds.TENANT_ID] = tenant_id
     if api_key_name is not None:
         item[DocumentBuilds.API_KEY_NAME] = api_key_name
+    if upload_source is not None:
+        item[DocumentBuilds.UPLOAD_SOURCE] = upload_source
 
     ddb_service.put_item(get_document_build_table(), item)
     return build_id

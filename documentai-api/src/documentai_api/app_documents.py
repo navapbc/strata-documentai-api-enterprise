@@ -23,6 +23,7 @@ from documentai_api.annotations import (
     ExternalDocumentId,
     ExternalSystemId,
     TraceId,
+    UploadSourceField,
 )
 from documentai_api.config.constants import (
     MAX_SEARCH_JOB_IDS,
@@ -91,6 +92,7 @@ async def upload_document(
     external_system_id: ExternalSystemId = None,
     ai_consent_flag: AiConsentFlag = True,
     is_demo: bool = False,
+    upload_source: UploadSourceField = None,
 ) -> _UploadResult:
     """Shared upload logic. Returns an _UploadResult with job_id, status, and message."""
     if not trace_id:
@@ -135,6 +137,7 @@ async def upload_document(
             external_system_id=external_system_id,
             ai_consent_flag=ai_consent_flag,
             upload_method=UploadMethod.DIRECT,
+            upload_source=upload_source,
             tenant_id=auth.tenant_id,
             api_key_name=auth.api_key_name,
             is_demo=is_demo,
@@ -193,6 +196,7 @@ async def create_document(
     external_document_id: ExternalDocumentId = None,
     external_system_id: ExternalSystemId = None,
     ai_consent_flag: AiConsentFlag = True,
+    upload_source: UploadSourceField = None,
 ) -> UploadAsyncResponse:
     """Upload a document for processing (fire-and-forget)."""
     result = await upload_document(
@@ -204,6 +208,7 @@ async def create_document(
         external_document_id,
         external_system_id,
         ai_consent_flag,
+        upload_source=upload_source,
     )
     return UploadAsyncResponse(
         job_id=result.job_id,
@@ -230,6 +235,7 @@ async def create_document_wait(
     include_bounding_box: bool = False,
     timeout: Annotated[int, Query(ge=1)] = ConfigDefaults.MAX_WAIT_SECONDS
     - ConfigDefaults.ALB_TIMEOUT_BUFFER_SECONDS,
+    upload_source: UploadSourceField = None,
 ) -> JobStatusResponse:
     """Upload a document and poll until processing completes or timeout.
 
@@ -248,6 +254,7 @@ async def create_document_wait(
         external_document_id,
         external_system_id,
         ai_consent_flag,
+        upload_source=upload_source,
     )
     # Terminal states (consent declined, conversion failed) - return immediately.
     if ProcessStatus.is_classified(result.job_status):

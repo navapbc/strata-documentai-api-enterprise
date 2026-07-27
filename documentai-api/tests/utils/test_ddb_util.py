@@ -637,3 +637,27 @@ def test_metrics_enqueue_contract(
         mock_sqs.assert_called_once()
     else:
         mock_sqs.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("upload_source", "expected"),
+    [
+        ("mobile", "mobile"),
+        ("desktop", "desktop"),
+        (None, None),
+    ],
+)
+def test_upsert_ddb_upload_source_persists(ddb_doc_metadata_table, upload_source, expected):
+    """upload_source is written to DDB when set; absent when None."""
+    object_key = f"upload-source-{upload_source}"
+    ddb_util.upsert_ddb(
+        UpsertDdbData(
+            object_key=object_key, original_file_name="f.pdf", upload_source=upload_source
+        )
+    )
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"]
+    if expected is None:
+        assert DocumentMetadata.UPLOAD_SOURCE not in item
+    else:
+        assert item[DocumentMetadata.UPLOAD_SOURCE] == expected
