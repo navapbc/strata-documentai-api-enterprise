@@ -550,7 +550,7 @@ def test_upsert_initial_ddb_record_routes_to_textract_when_enabled(
     s3_bucket,
     mocker,
 ):
-    """When textract flag is on and preclassification = identity_verification, routes to Textract."""
+    """When textract flag is on and user category is identity, routes to Textract."""
     mocker.patch(
         "documentai_api.utils.document_lifecycle.document_utils.get_page_count", return_value=1
     )
@@ -567,9 +567,10 @@ def test_upsert_initial_ddb_record_routes_to_textract_when_enabled(
     mocker.patch(
         "documentai_api.utils.document_lifecycle.preclassify_document",
         return_value=BedrockClassificationResult(
-            document_type="identity_verification",
+            document_type="driver's license",
             confidence=0.95,
             document_count=1,
+            is_identity_document=True,
         ),
     )
     mocker.patch(
@@ -616,8 +617,7 @@ def test_upsert_initial_ddb_record_unknown_category_with_textract_does_not_crash
 ):
     """Regression: unknown category + Textract must not crash.
 
-    user_provided_document_category=None resolves to 'unknown' which previously
-    raised ValueError via DocumentCategory('unknown').
+    user_provided_document_category=None is passed through as None (no longer coerced to 'unknown').
     """
     mocker.patch(
         "documentai_api.utils.document_lifecycle.document_utils.get_page_count", return_value=1
@@ -635,7 +635,7 @@ def test_upsert_initial_ddb_record_unknown_category_with_textract_does_not_crash
     mocker.patch(
         "documentai_api.utils.document_lifecycle.preclassify_document",
         return_value=BedrockClassificationResult(
-            document_type="identity_verification",
+            document_type="driver's license",
             confidence=0.95,
             document_count=1,
         ),
@@ -646,20 +646,12 @@ def test_upsert_initial_ddb_record_unknown_category_with_textract_does_not_crash
     )
     mock_textract = mocker.patch(
         "documentai_api.utils.document_lifecycle.try_textract_identity",
-        return_value={
-            "matched_document_class": "US-drivers-licenses",
-            "field_confidence_scores": [{"NAME_DETAILS.FIRST_NAME": 0.99}],
-            "textract_s3_uri": "s3://bucket/output/textract/test-file.json",
-            "extract_started_at": "2025-01-01T00:00:00+00:00",
-            "extract_completed_at": "2025-01-01T00:00:02+00:00",
-            "extract_time": "2.00",
-        },
     )
     mock_finalize = mocker.patch("documentai_api.utils.document_lifecycle.finalize_textract_result")
 
     s3_bucket.put_object(Key="input/test-file", Body=b"bytes", ContentType="image/jpeg")
 
-    # user_provided_document_category=None triggers the "unknown" default
+    # user_provided_document_category=None is passed through as None
     lifecycle_util.upsert_initial_ddb_record(
         source_bucket_name="test-bucket",
         source_object_key="input/test-file",
@@ -671,9 +663,9 @@ def test_upsert_initial_ddb_record_unknown_category_with_textract_does_not_crash
     )
 
     item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
-    assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.STARTED
-    mock_textract.assert_called_once()
-    mock_finalize.assert_called_once_with("test-file", mock_textract.return_value, "unknown")
+    assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.PENDING_IMAGE_OPTIMIZATION
+    mock_textract.assert_not_called()
+    mock_finalize.assert_not_called()
 
 
 def test_upsert_initial_ddb_record_falls_through_when_textract_returns_none(
@@ -698,7 +690,7 @@ def test_upsert_initial_ddb_record_falls_through_when_textract_returns_none(
     mocker.patch(
         "documentai_api.utils.document_lifecycle.preclassify_document",
         return_value=BedrockClassificationResult(
-            document_type="identity_verification",
+            document_type="driver's license",
             confidence=0.95,
             document_count=1,
         ),

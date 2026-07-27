@@ -229,9 +229,6 @@ class FileValidation:
 class TextractConfig:
     """Textract AnalyzeID configuration."""
 
-    # Preclassification categories eligible for Textract identity extraction
-    IDENTITY_PRECLASSIFICATION_CATEGORIES = ("identity_verification",)
-
     # Content types supported by Textract AnalyzeID (inline bytes)
     SUPPORTED_CONTENT_TYPES = (
         "image/jpeg",
@@ -387,27 +384,14 @@ class PreClassificationDefaults:
     )
     PROMPT = "\n".join(
         [
-            "Classify this document into one of the categories below. Respond in JSON only:",
-            '{"document_type": "string", "confidence": float 0-1, "document_count": int}',
+            "Analyze this document. Respond in JSON only:",
+            '{"document_type": "string", "confidence": float 0-1, "document_count": int, "category_match": bool, "is_identity_document": bool}',
             "",
-            "Categories and their document types:",
-            "- tax_documents: W-2, 1040, 1099-INT, 1099-MISC, 1099-G",
-            "- employment_wages: Paystubs, payslips, earnings statements",
-            "- independent_earnings: Gig platform summaries (Uber, DoorDash, Etsy), freelance 1099-NEC",
-            "- government_benefits: Social Security letters (SSI/SSDI), unemployment award letters",
-            "- private_benefits_and_settlements: Pension statements, life insurance payouts, annuities",
-            "- court_ordered_benefits: Child support orders, alimony decrees, divorce agreements",
-            "- financial_assets: Bank statements, 401(k) summaries, brokerage statements",
-            "- receipts_and_invoices: Point-of-sale receipts, vendor invoices",
-            "- recurring_bills: Electric, water, gas, phone, internet, insurance bills",
-            "- housing_expenses: Rental leases, landlord payment ledgers, HOA letters",
-            "- debt_obligations: Mortgage statements, auto loan bills, student loans, credit card statements",
-            "- identity_verification: Driver's license, passport, state ID, Global Entry card",
-            "- right_to_work: Form I-9, work permits, EAD cards, visa stamps",
-            "",
-            "ONLY use one of the exact category names listed above for document_type.",
-            "Do not create new categories. If unsure, use 'other_document'.",
-            "document_count: how many separate documents are visible?",
+            'document_type: a short description of what this document is (e.g. "W-2", "pay stub", "driver\'s license")',
+            "confidence: how confident are you in the document_type classification",
+            "document_count: how many separate documents are visible",
+            'category_match: true if this document could reasonably be considered a "{user_category}" document, false otherwise',
+            "is_identity_document: true if this is a passport or driver's license, false otherwise",
         ]
     )
 

@@ -576,3 +576,98 @@ def test_build_v1_api_response_missing_geometry_and_empty_fields_trigger_101(
     assert response["responseCode"] == ResponseCodes.MISSING_FIELDS
     assert sorted(response["missingRequiredFieldList"]) == ["PayPeriodStartDate", "YTDGrossPay"]
     assert "GrossPay" in response["fields"]
+
+
+# =============================================================================
+# Response code precedence: 101 > 102 > 105 > 100
+# =============================================================================
+
+
+@pytest.mark.parametrize(
+    ("below_floor", "category_match", "expected_code"),
+    [
+        (False, True, ResponseCodes.SUCCESS),
+        (False, None, ResponseCodes.SUCCESS),
+        (True, True, ResponseCodes.LOW_EXTRACTION_CONFIDENCE),
+        (False, False, ResponseCodes.MISCATEGORIZED),
+        (True, False, ResponseCodes.MISCATEGORIZED),  # 102 beats 105
+    ],
+)
+def test_build_v1_api_response_success_response_code_precedence(
+    s3_bucket, ddb_doc_metadata_table, below_floor, category_match, expected_code
+):
+    """_resolve_success_fields precedence: 102 beats 105, both lose to 101."""
+    import json
+
+    bda_results = {
+        BdaResponseFields.EXPLAINABILITY_INFO: [{"wages": {"confidence": 0.9, "value": "50000"}}]
+    }
+    bda_obj = s3_bucket.put_object(Key="prec-test.json", Body=json.dumps(bda_results))
+
+    ddb_record = {
+        DocumentMetadata.FILE_NAME: "test-file-name",
+        DocumentMetadata.JOB_ID: "test-job-id",
+        DocumentMetadata.BDA_OUTPUT_S3_URI: f"s3://{bda_obj.bucket_name}/{bda_obj.key}",
+        DocumentMetadata.BDA_MATCHED_DOCUMENT_CLASS: "paystub",
+        DocumentMetadata.CREATED_AT: "2026-01-01T00:00:00+00:00",
+        DocumentMetadata.FIELD_CONFIDENCE_SCORES: '[{"wages": 0.9}]',
+        DocumentMetadata.BELOW_EXTRACTION_CONFIDENCE_FLOOR: below_floor,
+    }
+    if category_match is not None:
+        ddb_record[DocumentMetadata.PRECLASSIFICATION_CATEGORY_MATCH] = category_match
+    ddb_doc_metadata_table.put_item(Item=ddb_record)
+
+    response = response_builder_util.build_v1_api_response(
+        "test-file-name", ProcessStatus.SUCCESS.value
+    )
+
+    assert response["responseCode"] == expected_code
+    assert (
+        response["belowExtractionConfidenceFloor"] is True
+        if below_floor
+        else "belowExtractionConfidenceFloor" not in response
+    )
+
+
+def test_build_v1_api_response_101_beats_102_and_105(
+    s3_bucket, ddb_doc_metadata_table, extraction_rules_table
+):
+    """101 (missing required fields) takes priority over both 102 and 105."""
+    import json
+
+    bda_results = {
+        BdaResponseFields.EXPLAINABILITY_INFO: [{"wages": {"confidence": 0.9, "value": "50000"}}]
+    }
+    bda_obj = s3_bucket.put_object(Key="prec-101.json", Body=json.dumps(bda_results))
+
+    ddb_record = {
+        DocumentMetadata.FILE_NAME: "test-file-name",
+        DocumentMetadata.JOB_ID: "test-job-id",
+        DocumentMetadata.BDA_OUTPUT_S3_URI: f"s3://{bda_obj.bucket_name}/{bda_obj.key}",
+        DocumentMetadata.BDA_MATCHED_DOCUMENT_CLASS: "paystub",
+        DocumentMetadata.CREATED_AT: "2026-01-01T00:00:00+00:00",
+        DocumentMetadata.FIELD_CONFIDENCE_SCORES: '[{"wages": 0.9}]',
+        DocumentMetadata.BELOW_EXTRACTION_CONFIDENCE_FLOOR: True,
+        DocumentMetadata.PRECLASSIFICATION_CATEGORY_MATCH: False,
+        "tenantId": "t1",
+    }
+    ddb_doc_metadata_table.put_item(Item=ddb_record)
+
+    extraction_rules_table.put_item(
+        Item={
+            "tenantId": "t1",
+            "documentType": "paystub",
+            "requiredFields": ["missing_field"],
+            "optionalFields": [],
+            "createdAt": "2026-01-01",
+            "updatedAt": "2026-01-01",
+        }
+    )
+
+    response = response_builder_util.build_v1_api_response(
+        "test-file-name", ProcessStatus.SUCCESS.value
+    )
+
+    assert response["responseCode"] == ResponseCodes.MISSING_FIELDS
+    assert response["belowExtractionConfidenceFloor"] is True
+    assert "missing_field" in response["missingRequiredFieldList"]

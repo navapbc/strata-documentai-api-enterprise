@@ -42,6 +42,9 @@ class PreClassificationDdbFields(BaseModel):
     model_id: str | None = Field(
         default=None, json_schema_extra=_ddb_metadata_map("preclassificationModelId", ":pcmi")
     )
+    category_match: bool | None = Field(
+        default=None, json_schema_extra=_ddb_metadata_map("preclassificationCategoryMatch", ":pccm")
+    )
     blueprint_matched_document_type: str | None = Field(
         default=None,
         json_schema_extra=_ddb_metadata_map("preclassificationBlueprintMatchedType", ":pcbmt"),

@@ -24,6 +24,8 @@ class BedrockClassificationResult:
     document_type: str
     confidence: float
     document_count: int
+    category_match: bool = True
+    is_identity_document: bool = False
     input_tokens: int | None = None
     output_tokens: int | None = None
     duration_seconds: Decimal | None = None
