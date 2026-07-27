@@ -416,12 +416,12 @@ def test_classify_functions(
 @pytest.mark.parametrize(
     ("tenant_id", "category_name", "bda_percentage", "random_val", "expected"),
     [
-        (None, "income", None, None, True),
-        ("t1", None, None, None, True),
-        ("t1", "income", 1.0, None, True),
-        ("t1", "income", 0.5, 0.4, True),
-        ("t1", "income", 0.5, 0.6, False),
-        ("t1", "income", 0.0, 0.0, False),
+        (None, "income", None, None, (True, None, None)),
+        ("t1", None, None, None, (True, None, None)),
+        ("t1", "income", 1.0, None, (True, 1.0, None)),
+        ("t1", "income", 0.5, 0.4, (True, 0.5, 0.4)),
+        ("t1", "income", 0.5, 0.6, (False, 0.5, 0.6)),
+        ("t1", "income", 0.0, 0.0, (False, 0.0, 0.0)),
     ],
 )
 def test_is_selected_for_processing(
@@ -438,7 +438,7 @@ def test_is_selected_for_processing(
         )
 
     result = lifecycle_util.is_selected_for_processing(tenant_id, category_name)
-    assert result is expected
+    assert result == expected
 
 
 def test_upsert_initial_ddb_record_sampling_excluded(
@@ -456,7 +456,8 @@ def test_upsert_initial_ddb_record_sampling_excluded(
     )
     mock_preclassify = mocker.patch("documentai_api.utils.document_lifecycle.preclassify_document")
     mocker.patch(
-        "documentai_api.utils.document_lifecycle.is_selected_for_processing", return_value=False
+        "documentai_api.utils.document_lifecycle.is_selected_for_processing",
+        return_value=(False, 0.5, 0.6),
     )
     mock_decrement = mocker.patch("documentai_api.utils.write_limit.decrement")
     mocker.patch(

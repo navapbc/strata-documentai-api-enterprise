@@ -142,3 +142,10 @@ class UpsertDdbData(BaseModel):
         default=None,
         json_schema_extra=_ddb_metadata_map("isDocumentProcessorColdStart", ":dpColdStart"),
     )
+    processing_percentage: float | None = Field(
+        default=None, json_schema_extra=_ddb_metadata_map("processingPercentage", ":procPct")
+    )
+    processing_assigned_value: float | None = Field(
+        default=None,
+        json_schema_extra=_ddb_metadata_map("processingAssignedValue", ":procAssigned"),
+    )

@@ -165,14 +165,24 @@ def classify_as_conversion_failed(object_key: str, error_message: str) -> dict[s
     return internal_api_response.__dict__
 
 
-def is_selected_for_processing(tenant_id: str | None, category_name: str | None) -> bool:
-    """Return True if this document should be processed based on the category's sampling rate."""
+def is_selected_for_processing(
+    tenant_id: str | None, category_name: str | None
+) -> tuple[bool, float | None, float | None]:
+    """Return (selected, processing_percentage, processing_assigned_value).
+
+    processing_percentage is None when tenant/category are absent.
+    processing_assigned_value is None when percentage is 1.0 (no random value needed).
+    """
     from documentai_api.utils.document_categories import get_processing_percentage
 
     if not tenant_id or not category_name:
-        return True
-    bda_percentage = get_processing_percentage(tenant_id, category_name)
-    return bda_percentage == 1.0 or random.random() < bda_percentage
+        return True, None, None
+
+    percent_processed = get_processing_percentage(tenant_id, category_name)
+    if percent_processed >= 1.0:
+        return True, percent_processed, None
+    selected_value = random.random()
+    return selected_value < percent_processed, percent_processed, selected_value
 
 
 def classify_as_no_custom_blueprint_matched(
@@ -350,6 +360,8 @@ def upsert_initial_ddb_record(
     ocr_avg_word_confidence: float | None = None
     document_word_count: int | None = None
     blur_llm_checked = False
+    processing_percentage: float | None = None
+    processing_assigned_value: float | None = None
     pre_classification_document_type = None
     pre_classification_confidence = None
     pre_classification_input_tokens = None
@@ -359,12 +371,21 @@ def upsert_initial_ddb_record(
     pre_classification_blueprint_match_result: PreclassificationMatchResult | None = None
     textract_result = None
 
+    # assume document will be processed, but check if it should be excluded by sampling
+    is_processing_selected = True
+
+    if not is_password_protected:
+        is_processing_selected, processing_percentage, processing_assigned_value = (
+            is_selected_for_processing(tenant_id, user_provided_document_category)
+        )
+
+    # purposefully not using elif here so that password-protected docs are not subject to sampling
     if is_password_protected:
         process_status = ProcessStatus.PASSWORD_PROTECTED
         response_code = ResponseCodes.PASSWORD_PROTECTED
         textract_result = None
 
-    elif not is_selected_for_processing(tenant_id, user_provided_document_category):
+    elif not is_processing_selected:
         logger.info(
             f"{ddb_key} excluded by sampling for category {user_provided_document_category}"
         )
@@ -519,6 +540,8 @@ def upsert_initial_ddb_record(
             ),
             document_processor_started_at=document_processor_started_at,
             is_document_processor_cold_start=is_document_processor_cold_start,
+            processing_percentage=processing_percentage,
+            processing_assigned_value=processing_assigned_value,
         )
     )
 
