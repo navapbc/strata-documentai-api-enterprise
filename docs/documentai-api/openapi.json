@@ -6255,6 +6255,21 @@
             "title": "Totalbdainvocations",
             "default": 0
           },
+          "totalTextractExtractions": {
+            "type": "integer",
+            "title": "Totaltextractextractions",
+            "default": 0
+          },
+          "totalExtractionInvocations": {
+            "type": "integer",
+            "title": "Totalextractioninvocations",
+            "default": 0
+          },
+          "totalDocumentsRecognized": {
+            "type": "integer",
+            "title": "Totaldocumentsrecognized",
+            "default": 0
+          },
           "byStatus": {
             "additionalProperties": {
               "type": "integer"
@@ -6344,6 +6359,21 @@
           "totalBdaInvocations": {
             "type": "integer",
             "title": "Totalbdainvocations",
+            "default": 0
+          },
+          "totalTextractExtractions": {
+            "type": "integer",
+            "title": "Totaltextractextractions",
+            "default": 0
+          },
+          "totalExtractionInvocations": {
+            "type": "integer",
+            "title": "Totalextractioninvocations",
+            "default": 0
+          },
+          "totalDocumentsRecognized": {
+            "type": "integer",
+            "title": "Totaldocumentsrecognized",
             "default": 0
           },
           "byStatus": {
