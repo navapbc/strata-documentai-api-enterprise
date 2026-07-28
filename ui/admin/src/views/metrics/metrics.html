@@ -1,20 +1,35 @@
 <div class="metrics-view">
-  <div class="metrics-controls">
-    <div class="usage-field">
-      <label for="metrics-start">Start</label>
-      <input type="date" id="metrics-start" />
+  <div class="metrics-top-grid">
+    <div class="metrics-cards-col">
+      <div class="metrics-controls">
+        <div class="metrics-timeframe">
+          <select id="metrics-timeframe">
+            <option value="7">Last 7 days</option>
+            <option value="30" selected>Last 30 days</option>
+            <option value="90">Last 90 days</option>
+            <option value="custom">Custom</option>
+          </select>
+          <div id="metrics-custom-range" class="metrics-custom-range hidden">
+            <div class="metrics-custom-field">
+              <label for="metrics-start">Start</label>
+              <input type="date" id="metrics-start" />
+            </div>
+            <div class="metrics-custom-field">
+              <label for="metrics-end">End</label>
+              <input type="date" id="metrics-end" />
+            </div>
+            <button id="metrics-load-btn" class="btn-primary">Load</button>
+          </div>
+        </div>
+      </div>
+      <div id="metrics-cards" class="metrics-cards"></div>
     </div>
-    <div class="usage-field">
-      <label for="metrics-end">End</label>
-      <input type="date" id="metrics-end" />
+    <div class="metrics-classification-col">
+      <div id="metrics-classification-label"></div>
+      <div id="metrics-classification" class="metrics-panel"></div>
+      <div id="metrics-codes-label"></div>
+      <div id="metrics-codes" class="metrics-panel"></div>
     </div>
-    <button id="metrics-load-btn" class="btn-primary">Load</button>
   </div>
-  <div id="metrics-cards" class="metrics-cards"></div>
-  <div class="metrics-panels">
-    <div id="metrics-status" class="metrics-panel"></div>
-    <div id="metrics-codes" class="metrics-panel"></div>
-  </div>
-  <div id="metrics-classification" class="metrics-panel"></div>
   <p id="metrics-empty" class="empty-state hidden"></p>
 </div>
