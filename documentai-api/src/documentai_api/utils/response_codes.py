@@ -33,6 +33,16 @@ class ResponseCodes:
         return messages.get(code, "")
 
     @classmethod
+    def is_document_type_identified(cls, code: str) -> bool:
+        """Check if response code indicates the document type was identified (reached validation)."""
+        return code in {
+            cls.SUCCESS,
+            cls.MISSING_FIELDS,
+            cls.MISCATEGORIZED,
+            cls.LOW_EXTRACTION_CONFIDENCE,
+        }
+
+    @classmethod
     def is_success_response_code(cls, code: str) -> bool:
         """Check if response code indicates success (0xx codes)."""
         return code.startswith("0")

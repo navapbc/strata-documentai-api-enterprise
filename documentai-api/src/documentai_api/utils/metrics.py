@@ -158,10 +158,16 @@ def build_summary(stats_list: list[dict[str, Any]]) -> dict[str, Any]:
     by_response_code: dict[str, int] = {}
     total_records = 0
     total_bda_invocations = 0
+    total_textract_extractions = 0
+    total_extraction_invocations = 0
+    total_documents_recognized = 0
 
     for stats in stats_list:
         total_records += stats.get("total_records", 0)
         total_bda_invocations += stats.get("total_bda_invocations", 0)
+        total_textract_extractions += stats.get("total_textract_extractions", 0)
+        total_extraction_invocations += stats.get("total_extraction_invocations", 0)
+        total_documents_recognized += stats.get("total_documents_recognized", 0)
 
         for status, count in stats.get("by_status", {}).items():
             by_status[status] = by_status.get(status, 0) + count
@@ -213,6 +219,9 @@ def build_summary(stats_list: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "total_records": total_records,
         "total_bda_invocations": total_bda_invocations,
+        "total_textract_extractions": total_textract_extractions,
+        "total_extraction_invocations": total_extraction_invocations,
+        "total_documents_recognized": total_documents_recognized,
         "by_status": by_status,
         "by_classification": by_classification,
         "by_response_code": by_response_code,

@@ -315,6 +315,16 @@ def build_v1_api_response(
             }
         )
 
+    elif job_status == ProcessStatus.PROCESSING_EXCLUDED.value:
+        base_response.update(
+            {
+                "jobStatus": "completed",
+                "message": "Document not chosen for extraction",
+                "responseCode": ResponseCodes.PROCESSING_EXCLUDED,
+                "responseMessage": ResponseCodes.get_message(ResponseCodes.PROCESSING_EXCLUDED),
+            }
+        )
+
     elif job_status == ProcessStatus.CONVERSION_FAILED.value:
         base_response.update(
             {
