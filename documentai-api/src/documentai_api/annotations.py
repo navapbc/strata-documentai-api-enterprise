@@ -12,6 +12,7 @@ from pydantic import Field, StringConstraints
 from documentai_api.config.constants import (
     DocumentCategory,
     OutputFormatType,
+    UploadSource,
 )
 from documentai_api.utils.auth import (
     UserContext,
@@ -59,6 +60,9 @@ TraceId = Annotated[str | None, Header(alias="X-Trace-ID")]
 # Common form fields
 CategoryField = Annotated[
     DocumentCategory | None, Form(description="Type of document being uploaded")
+]
+UploadSourceField = Annotated[
+    UploadSource | None, Form(description="Source device type of the upload (desktop or mobile)")
 ]
 ExternalDocumentId = Annotated[
     str | None,

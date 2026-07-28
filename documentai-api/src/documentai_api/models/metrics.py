@@ -28,6 +28,9 @@ class UsageStats(BaseApiResponse):
 class MetricsSummary(BaseApiResponse):
     total_records: int = 0
     total_bda_invocations: int = 0
+    total_textract_extractions: int = 0
+    total_extraction_invocations: int = 0
+    total_documents_recognized: int = 0
     by_status: dict[str, int] = Field(default_factory=dict)
     by_classification: dict[str, int] = Field(default_factory=dict)
     by_response_code: dict[str, int] = Field(default_factory=dict)
@@ -40,6 +43,9 @@ class PeriodStats(BaseApiResponse):
     month: str | None = None
     total_records: int = 0
     total_bda_invocations: int = 0
+    total_textract_extractions: int = 0
+    total_extraction_invocations: int = 0
+    total_documents_recognized: int = 0
     by_status: dict[str, int] = Field(default_factory=dict)
     by_classification: dict[str, int] = Field(default_factory=dict)
     by_response_code: dict[str, int] = Field(default_factory=dict)

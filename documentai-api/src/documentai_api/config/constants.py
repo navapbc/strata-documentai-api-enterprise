@@ -349,6 +349,11 @@ class UploadMethod(StrEnum):
     BUILD = "build"
 
 
+class UploadSource(StrEnum):
+    DESKTOP = "desktop"
+    MOBILE = "mobile"
+
+
 class DocumentBuildStatus(StrEnum):
     SUBMITTED = "submitted"
     NOT_SUBMITTED = "not_submitted"

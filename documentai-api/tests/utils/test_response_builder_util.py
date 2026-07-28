@@ -140,6 +140,16 @@ def test_get_internal_api_response(response_code, matched_document_class, ddb_do
             None,
             None,
         ),
+        (
+            ProcessStatus.PROCESSING_EXCLUDED.value,
+            None,
+            None,
+            False,
+            "completed",
+            "Document not chosen for extraction",
+            None,
+            ResponseCodes.PROCESSING_EXCLUDED,
+        ),
     ],
 )
 def test_build_v1_api_response(

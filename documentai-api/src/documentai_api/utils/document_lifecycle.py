@@ -310,6 +310,7 @@ def insert_minimal_ddb_record(record: DocumentRecord) -> None:
             external_system_id=record.external_system_id,
             ai_consent_flag=record.ai_consent_flag,
             upload_method=record.upload_method,
+            upload_source=record.upload_source,
             tenant_id=record.tenant_id,
             api_key_name=record.api_key_name,
             is_demo=record.is_demo,

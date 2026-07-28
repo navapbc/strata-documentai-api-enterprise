@@ -129,6 +129,9 @@ class UpsertDdbData(BaseModel):
     upload_method: str | None = Field(
         default=None, json_schema_extra=_ddb_metadata_map("uploadMethod", ":uploadMethod")
     )
+    upload_source: str | None = Field(
+        default=None, json_schema_extra=_ddb_metadata_map("uploadSource", ":uploadSource")
+    )
     tenant_id: str | None = Field(
         default=None, json_schema_extra=_ddb_metadata_map("tenantId", ":tenantId")
     )

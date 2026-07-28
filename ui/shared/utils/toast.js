@@ -1,9 +1,9 @@
-export function show(message) {
+export function show(message, type) {
   const existing = document.querySelector(".toast");
   if (existing) existing.remove();
 
   const toast = document.createElement("div");
-  toast.className = "toast";
+  toast.className = type === "error" ? "toast toast--error" : "toast";
   toast.textContent = message;
   document.body.appendChild(toast);
 
