@@ -154,6 +154,10 @@ resource "aws_glue_catalog_table" "raw_metrics" {
       type = "double"
     }
     columns {
+      name = "extraction_method"
+      type = "string"
+    }
+    columns {
       name = "document_processor_started_at"
       type = "string"
     }

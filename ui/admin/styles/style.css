@@ -30,7 +30,12 @@ body {
   min-height: 100vh;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: inherit;
 }
 
@@ -1416,7 +1421,7 @@ td {
   display: grid;
   grid-template-columns: 280px 1fr;
   gap: 1.5rem;
-  height: calc(100vh - 14rem);
+  height: calc(100vh - 11rem);
 }
 .test-left-panel {
   display: flex;
@@ -1601,7 +1606,7 @@ td {
   display: grid;
   grid-template-columns: 240px 1fr 1fr;
   gap: 1rem;
-  height: calc(100vh - 14rem);
+  height: calc(100vh - 11rem);
   transition: grid-template-columns 0.2s ease;
 }
 
@@ -1933,7 +1938,7 @@ td {
   display: grid;
   grid-template-columns: 250px 1fr;
   gap: 1rem;
-  height: calc(100vh - 5rem - 4rem);
+  height: calc(100vh - 11rem);
 }
 
 .blueprints-sidebar {
@@ -2317,6 +2322,96 @@ td {
 }
 
 /* Metrics Dashboard */
+.metrics-view {
+  height: 100%;
+}
+
+.metrics-layout {
+  display: flex;
+  gap: 24px;
+  height: calc(100vh - 11rem);
+}
+
+.metrics-sidebar {
+  width: 160px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-right: 1px solid var(--color-border, #e5e7eb);
+  padding-right: 16px;
+}
+
+.metrics-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metrics-tab {
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.metrics-tab:hover {
+  background: #f0f5fb;
+}
+
+.metrics-tab.active {
+  background: #e8f0fe;
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.metrics-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.metrics-tab-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.metrics-timing-callout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 20px;
+  background: #e5e7eb;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  color: #111827;
+}
+
+.metrics-timing-callout svg {
+  flex-shrink: 0;
+  color: #9ca3af;
+  width: 20px;
+  height: 20px;
+}
+
+.metrics-timing-callout-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  font-family: inherit;
+  color: var(--color-primary);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
 .metrics-controls {
   display: flex;
   align-items: center;
@@ -2328,7 +2423,6 @@ td {
   align-items: center;
   gap: 0.5rem;
 }
-
 
 .metrics-timeframe select {
   width: 100%;
@@ -2419,10 +2513,61 @@ td {
   gap: 12px;
 }
 
+.metrics-funnel {
+  display: flex;
+  height: 160px;
+}
+
+.metrics-funnel-stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 4px;
+  padding: 8px;
+}
+
+.metrics-failure-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 15px;
+}
+
+.metrics-failure-group-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9ca3af;
+}
+
+.metrics-funnel-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: var(--color-text);
+}
+
+.metrics-funnel-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #6b7280);
+}
+
+.metrics-funnel-pct {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 500;
+  min-height: 1em;
+}
+
 .metric-card {
   border-radius: 8px;
   padding: 20px;
-  min-height: 140px;
+  min-height: 100px;
   border: 1px solid #dfe1e2;
   display: flex;
   flex-direction: column;
@@ -2452,6 +2597,11 @@ td {
   color: #a9aeb1;
   display: flex;
   flex-shrink: 0;
+}
+
+.metric-card-icon svg {
+  width: 20px;
+  height: 20px;
 }
 
 .metric-card-value {
