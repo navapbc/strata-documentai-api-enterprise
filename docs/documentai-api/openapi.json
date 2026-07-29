@@ -4283,12 +4283,16 @@
           "category": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/DocumentCategory"
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1,
+                "pattern": "^[a-z0-9 _-]+$"
               },
               {
                 "type": "null"
               }
             ],
+            "title": "Category",
             "description": "Type of document being uploaded"
           },
           "external_document_id": {
@@ -4366,12 +4370,16 @@
           "category": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/DocumentCategory"
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1,
+                "pattern": "^[a-z0-9 _-]+$"
               },
               {
                 "type": "null"
               }
             ],
+            "title": "Category",
             "description": "Type of document being uploaded"
           },
           "external_document_id": {
@@ -4436,12 +4444,16 @@
           "category": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/DocumentCategory"
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1,
+                "pattern": "^[a-z0-9 _-]+$"
               },
               {
                 "type": "null"
               }
             ],
+            "title": "Category",
             "description": "Type of document being uploaded"
           },
           "external_document_id": {
@@ -4512,12 +4524,16 @@
           "category": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/DocumentCategory"
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1,
+                "pattern": "^[a-z0-9 _-]+$"
               },
               {
                 "type": "null"
               }
             ],
+            "title": "Category",
             "description": "Type of document being uploaded"
           },
           "external_document_id": {
@@ -4622,12 +4638,17 @@
           "category": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/DocumentCategory"
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1,
+                "pattern": "^[a-z0-9 _-]+$"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Category",
+            "description": "Type of document being uploaded"
           },
           "external_document_id": {
             "anyOf": [
@@ -4695,12 +4716,16 @@
           "category": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/DocumentCategory"
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1,
+                "pattern": "^[a-z0-9 _-]+$"
               },
               {
                 "type": "null"
               }
             ],
+            "title": "Category",
             "description": "Type of document being uploaded"
           }
         },
@@ -4723,12 +4748,16 @@
           "category": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/DocumentCategory"
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1,
+                "pattern": "^[a-z0-9 _-]+$"
               },
               {
                 "type": "null"
               }
             ],
+            "title": "Category",
             "description": "Type of document being uploaded"
           }
         },
@@ -4749,12 +4778,17 @@
           "category": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/DocumentCategory"
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1,
+                "pattern": "^[a-z0-9 _-]+$"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Category",
+            "description": "Type of document being uploaded"
           },
           "external_document_id": {
             "anyOf": [
@@ -5383,17 +5417,6 @@
           "schemas"
         ],
         "title": "DictionarySchemaListResponse"
-      },
-      "DocumentCategory": {
-        "type": "string",
-        "enum": [
-          "income",
-          "expenses",
-          "identity",
-          "employment",
-          "training"
-        ],
-        "title": "DocumentCategory"
       },
       "DocumentCategoryItem": {
         "properties": {
@@ -6080,6 +6103,28 @@
               }
             ],
             "title": "Belowextractionconfidencefloor"
+          },
+          "userProvidedDocumentCategory": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Userprovideddocumentcategory"
+          },
+          "inferredDocumentType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inferreddocumenttype"
           }
         },
         "type": "object",
