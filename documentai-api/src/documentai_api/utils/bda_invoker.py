@@ -34,38 +34,23 @@ def _get_project_arns() -> dict[str, str]:
     return _project_arns_cache
 
 
-def _is_preclassification_routing_enabled() -> bool:
-    """Check SSM feature flag for preclassification-based routing."""
-    config = get_aws_config()
-    if not config.ssm_prefix:
-        return False
-    from documentai_api.utils.ssm import get_parameter_value
-
-    param = f"{config.ssm_prefix}/feature-flags/preclassification-based-routing"
-    value = get_parameter_value(param, default="false")
-    return value.lower() == "true"
-
-
 def skip_bda_if_unclassified() -> bool:
-    """Check SSM feature flag: should BDA be skipped when no blueprint matches?
+    """Check SSM feature flag: should BDA be skipped when preclassification returns other_document?
 
     Defaults to false (always invoke BDA) if the param is not configured.
     """
-    config = get_aws_config()
-    if not config.ssm_prefix:
-        return False
-    from documentai_api.utils.ssm import get_parameter_value
+    from documentai_api.utils.ssm import is_skip_bda_if_unclassified
 
-    param = f"{config.ssm_prefix}/feature-flags/skip-bda-if-unclassified"
-    value = get_parameter_value(param, default="false")
-    return value.lower() == "true"
+    return is_skip_bda_if_unclassified()
 
 
 def resolve_project_arn(category: str | None) -> str:
     """Resolve BDA project ARN for a preclassification category."""
+    from documentai_api.utils.ssm import is_preclassification_routing_enabled
+
     arns = _get_project_arns()
 
-    if category and _is_preclassification_routing_enabled() and category in arns:
+    if category and is_preclassification_routing_enabled() and category in arns:
         return arns[category]
 
     # Routing disabled or category not found - use "all" project
