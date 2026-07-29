@@ -22,6 +22,7 @@ from fastapi import (
 from documentai_api.annotations import (
     AiConsentFlag,
     AuthUser,
+    DocumentCategoryField,
     TraceId,
 )
 from documentai_api.config.constants import (
@@ -29,7 +30,6 @@ from documentai_api.config.constants import (
     MAX_BATCH_SIZE,
     ApiVisualizationTag,
     BatchStatus,
-    DocumentCategory,
     ProcessStatus,
     UploadMethod,
 )
@@ -77,7 +77,7 @@ router = APIRouter(dependencies=[Depends(get_user_context_from_api_key)])
 async def _process_batch_files(
     files: list[UploadFile],
     batch_id: str,
-    category: DocumentCategory | None,
+    category: str | None,
     trace_id: str,
     tenant_id: str,
     api_key_name: str,
@@ -179,7 +179,7 @@ async def _execute_batch(
     files: list[UploadFile],
     upload_method: str,
     auth: UserContext,
-    category: DocumentCategory | None,
+    category: str | None,
     trace_id: str,
     external_document_id: str | None,
     external_system_id: str | None,
@@ -249,7 +249,7 @@ async def upload_document_batch(
     response: Response,
     files: Annotated[list[UploadFile], Form(description="Documents to process")],
     auth: AuthUser,
-    category: Annotated[DocumentCategory | None, Form()] = None,
+    category: DocumentCategoryField = None,
     trace_id: TraceId = None,
     external_document_id: Annotated[
         str | None, Form(description="External document identifier (applied to all files in batch)")
@@ -292,7 +292,7 @@ async def upload_zip_batch(
     response: Response,
     zip_file: Annotated[UploadFile, Form(description="ZIP file containing documents")],
     auth: AuthUser,
-    category: Annotated[DocumentCategory | None, Form()] = None,
+    category: DocumentCategoryField = None,
     trace_id: TraceId = None,
     external_document_id: Annotated[
         str | None, Form(description="External document identifier (applied to all files in batch)")

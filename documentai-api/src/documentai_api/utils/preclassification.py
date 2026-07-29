@@ -119,7 +119,7 @@ def preclassify_document(
             document_type=document_type,
             confidence=max(0.0, min(1.0, parsed.confidence)),
             document_count=max(0, parsed.document_count),
-            category_match=parsed.category_match if user_category else True,
+            category_match=parsed.category_match if user_category else None,
             is_identity_document=parsed.is_identity_document,
             input_tokens=usage.get("inputTokens"),
             output_tokens=usage.get("outputTokens"),
@@ -131,7 +131,9 @@ def preclassify_document(
             f"Pre-classification complete in {elapsed}s: "
             f"type={classification.document_type}, "
             f"confidence={classification.confidence}, "
-            f"document_count={classification.document_count}"
+            f"document_count={classification.document_count}, "
+            f"user_category={user_category}, "
+            f"category_match={classification.category_match}"
         )
 
         return classification

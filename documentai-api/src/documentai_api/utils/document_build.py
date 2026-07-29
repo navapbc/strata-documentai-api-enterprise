@@ -2,7 +2,7 @@ import os
 from datetime import UTC, datetime
 from typing import Any
 
-from documentai_api.config.constants import ConfigDefaults, DocumentCategory
+from documentai_api.config.constants import ConfigDefaults
 from documentai_api.config.env import EnvVars
 from documentai_api.dtos.processing import PageMetadata
 from documentai_api.schemas.document_builds import DocumentBuilds
@@ -62,7 +62,7 @@ async def upsert_document_build_page(
     page_number: int,
     s3_path: str,
     original_file_name: str | None = None,
-    category: DocumentCategory | None = None,
+    category: str | None = None,
     overwrite: bool = True,
 ) -> None:
     """Upsert multipage session page record.
@@ -84,7 +84,7 @@ async def upsert_document_build_page(
         item[DocumentBuilds.ORIGINAL_FILE_NAME] = original_file_name
 
     if category:
-        item[DocumentBuilds.CATEGORY] = category.value
+        item[DocumentBuilds.CATEGORY] = category
 
     if not overwrite:
         from documentai_api.utils.aws_client_factory import AWSClientFactory
@@ -223,7 +223,7 @@ def delete_document_build_page(build_id: str, page_number: int) -> bool:
 
 def create_document_build(
     build_id: str,
-    category: DocumentCategory | None = None,
+    category: str | None = None,
     external_document_id: str | None = None,
     external_system_id: str | None = None,
     ai_consent_flag: bool | None = None,
@@ -241,7 +241,7 @@ def create_document_build(
     }
 
     if category:
-        item[DocumentBuilds.CATEGORY] = category.value
+        item[DocumentBuilds.CATEGORY] = category
     if external_document_id is not None:
         item[DocumentBuilds.EXTERNAL_DOCUMENT_ID] = external_document_id
     if external_system_id is not None:

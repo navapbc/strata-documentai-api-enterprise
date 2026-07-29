@@ -243,8 +243,6 @@ def test_submit_document_build_synchronous(document_build_ddb_table, mock_docume
 
 def test_submit_document_build_with_category(document_build_ddb_table, mock_document_build_submit):
     """Test submit uses first non-None category from pages."""
-    from documentai_api.config.constants import DocumentCategory
-
     mock_document_build_submit["get_pages"].return_value = [
         create_page_metadata(1, category="income"),
         create_page_metadata(2),
@@ -257,7 +255,7 @@ def test_submit_document_build_with_category(document_build_ddb_table, mock_docu
 
     # verify category was converted to enum
     call_args = mock_document_build_submit["upload"].call_args
-    assert call_args.kwargs["user_provided_document_category"] == DocumentCategory.INCOME
+    assert call_args.kwargs["user_provided_document_category"] == "income"
 
 
 @pytest.mark.parametrize(
@@ -724,8 +722,6 @@ def test_submit_category_substitution_picks_first_non_none(
     document_build_ddb_table, mock_document_build_submit
 ):
     """When page 1 has no category but page 2 does, submit uses page 2's category."""
-    from documentai_api.config.constants import DocumentCategory
-
     mock_document_build_submit["get_pages"].return_value = [
         create_page_metadata(1, category=None),
         create_page_metadata(2, category="income"),
@@ -735,7 +731,7 @@ def test_submit_category_substitution_picks_first_non_none(
 
     assert response.status_code == 202
     call_kwargs = mock_document_build_submit["upload"].call_args.kwargs
-    assert call_kwargs["user_provided_document_category"] == DocumentCategory.INCOME
+    assert call_kwargs["user_provided_document_category"] == "income"
 
 
 def test_upload_document_build_page_number_validation(document_build_ddb_table):
@@ -982,9 +978,8 @@ def test_batch_upload_with_category(document_build_ddb_table, mock_document_buil
     assert response.status_code == 200
     # Verify upsert was called with the category
     call_kwargs = mock_document_build_upload["upsert"].call_args.kwargs
-    from documentai_api.config.constants import DocumentCategory
 
-    assert call_kwargs["category"] == DocumentCategory.INCOME
+    assert call_kwargs["category"] == "income"
 
 
 def test_submit_document_build_rollback_failure_still_returns_500(

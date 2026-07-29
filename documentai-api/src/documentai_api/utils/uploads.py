@@ -10,7 +10,6 @@ from fastapi import HTTPException, UploadFile
 
 from documentai_api.config.constants import (
     MAX_UPLOAD_SIZE_BYTES,
-    DocumentCategory,
     FileValidation,
     S3MetadataKeys,
 )
@@ -222,7 +221,7 @@ async def dispatch_upload(
     dest_path: str,
     original_file_name: str,
     content_type: str,
-    category: DocumentCategory | None,
+    category: str | None,
     job_id: str,
     trace_id: str,
     ddb_key: str,
@@ -275,7 +274,7 @@ async def upload_document_for_processing(
     dest_path: str,
     original_file_name: str,
     content_type: str,
-    user_provided_document_category: DocumentCategory | None = None,
+    user_provided_document_category: str | None = None,
     job_id: str | None = None,
     trace_id: str | None = None,
     batch_id: str | None = None,
@@ -299,7 +298,7 @@ async def upload_document_for_processing(
     if user_provided_document_category and tenant_id:
         try:
             await asyncio.to_thread(
-                auto_register_category, tenant_id, user_provided_document_category.value
+                auto_register_category, tenant_id, user_provided_document_category
             )
         except Exception as e:
             logger.warning(
@@ -327,13 +326,8 @@ async def upload_document_for_processing(
     try:
         metadata = {}
         if user_provided_document_category:
-            if not isinstance(user_provided_document_category, DocumentCategory):
-                raise ValueError(
-                    f"Expected DocumentCategory, got {type(user_provided_document_category)}"
-                )
-
             metadata[S3MetadataKeys.USER_PROVIDED_DOCUMENT_CATEGORY] = (
-                user_provided_document_category.value
+                user_provided_document_category
             )
 
         metadata[S3MetadataKeys.ORIGINAL_FILE_NAME] = original_file_name

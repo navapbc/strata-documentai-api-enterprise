@@ -88,14 +88,12 @@ async def test_upload_document_for_processing_success(
     runtime_required_env, blank_pdf_file, s3_bucket, mocker
 ):
     """Test successful document upload."""
-    from documentai_api.config.constants import DocumentCategory
-
     await upload_document_for_processing(
         src_file=blank_pdf_file.open("rb"),
         dest_path=f"s3://{s3_bucket.name}/input/test-unique.pdf",
         original_file_name="test.pdf",
         content_type="application/pdf",
-        user_provided_document_category=DocumentCategory.INCOME,
+        user_provided_document_category="income",
         job_id="test-job-id",
         trace_id="test-trace-id",
     )
@@ -109,7 +107,6 @@ async def test_upload_always_saves_original_to_preprocessing(
     runtime_required_env, blank_pdf_file, s3_bucket, monkeypatch
 ):
     """Every upload writes the original to preprocessing, regardless of file type."""
-    from documentai_api.config.constants import DocumentCategory
     from documentai_api.config.env import EnvVars
 
     monkeypatch.setenv(
@@ -121,7 +118,7 @@ async def test_upload_always_saves_original_to_preprocessing(
         dest_path=f"s3://{s3_bucket.name}/input/test-unique.pdf",
         original_file_name="test.pdf",
         content_type="application/pdf",
-        user_provided_document_category=DocumentCategory.INCOME,
+        user_provided_document_category="income",
         job_id="test-job-id",
         trace_id="test-trace-id",
     )

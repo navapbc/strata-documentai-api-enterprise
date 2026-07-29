@@ -18,13 +18,12 @@ from fastapi import (
     status,
 )
 
-from documentai_api.annotations import AuthUser, UploadSourceField
+from documentai_api.annotations import AuthUser, DocumentCategoryField, UploadSourceField
 from documentai_api.config.constants import (
     MAX_PAGES_PER_BUILD,
     ApiVisualizationTag,
     ConfigDefaults,
     DocumentBuildStatus,
-    DocumentCategory,
     FileValidation,
     ProcessStatus,
     UploadMethod,
@@ -81,7 +80,7 @@ async def add_page_to_build(
     page_number: int,
     content_type: str,
     tenant_id: str,
-    category: DocumentCategory | None = None,
+    category: str | None = None,
     trace_id: str | None = None,
     overwrite: bool = True,
 ) -> BuildPageBatchItem:
@@ -133,9 +132,7 @@ async def add_page_to_build(
 async def create_build(
     response: Response,
     auth: Annotated[UserContext, Depends(get_user_context_from_api_key)],
-    category: Annotated[
-        DocumentCategory | None, Form(description="Type of document being uploaded")
-    ] = None,
+    category: DocumentCategoryField = None,
     trace_id: Annotated[str | None, Header(alias="X-Trace-ID")] = None,
     external_document_id: Annotated[
         str | None, Form(description="External document identifier")
@@ -181,9 +178,7 @@ async def upload_document_build_page(
     auth: AuthUser,
     page_number: Annotated[int | None, Form(description="Page number (1-indexed)", ge=1)] = None,
     overwrite: Annotated[bool, Form(description="Allow overwriting existing page")] = False,
-    category: Annotated[
-        DocumentCategory | None, Form(description="Type of document being uploaded")
-    ] = None,
+    category: DocumentCategoryField = None,
     trace_id: Annotated[str | None, Header(alias="X-Trace-ID")] = None,
 ) -> BuildPageUploadResponse:
     """Upload a single page for multi-page document processing."""
@@ -249,9 +244,7 @@ async def upload_document_build_pages_batch(
     files: list[UploadFile],
     build_id: str,
     auth: AuthUser,
-    category: Annotated[
-        DocumentCategory | None, Form(description="Type of document being uploaded")
-    ] = None,
+    category: DocumentCategoryField = None,
     trace_id: Annotated[str | None, Header(alias="X-Trace-ID")] = None,
 ) -> BuildPagesBatchResponse:
     """Upload multiple pages to a document build in one request."""
@@ -360,8 +353,7 @@ async def _submit_build(
     if build_metadata and build_metadata.get(DocumentBuilds.AI_CONSENT_FLAG) is False:
         job_id = str(uuid.uuid4())
         ddb_key = f"document-build-{build_id}-{job_id}.pdf"
-        category_str = build_metadata.get(DocumentBuilds.CATEGORY)
-        category = DocumentCategory(category_str) if category_str else None
+        category = build_metadata.get(DocumentBuilds.CATEGORY)
 
         record = DocumentRecord(
             ddb_key=ddb_key,
@@ -419,8 +411,7 @@ async def _submit_build(
 
         job_id = str(uuid.uuid4())
         unique_file_name = f"document-build-{build_id}-{uuid.uuid4()}.pdf"
-        category_str = next((p.category for p in pages if p.category), None)
-        category = DocumentCategory(category_str) if category_str else None
+        category = next((p.category for p in pages if p.category), None)
 
         # Pre-insert a tenant-stamped job record before upload. The doc-processor's
         # upsert_initial_ddb_record (keyed by basename, with no tenant) updates this

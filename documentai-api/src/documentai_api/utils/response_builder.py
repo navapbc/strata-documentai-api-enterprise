@@ -6,7 +6,6 @@ from typing import Any
 from fastapi import Response
 
 from documentai_api.config.constants import (
-    DocumentCategory,
     ExtractMethod,
     ProcessStatus,
 )
@@ -194,18 +193,9 @@ def get_internal_api_response(
 
         user_provided_document_category = get_user_provided_document_category(object_key)
 
-    try:
-        document_category = (
-            DocumentCategory(user_provided_document_category)
-            if user_provided_document_category
-            else None
-        )
-    except ValueError:
-        document_category = None
-
     return InternalApiResponse(
         validation_passed=ResponseCodes.is_success_response_code(response_code),
-        document_category=document_category,
+        document_category=user_provided_document_category,
         matched_document_class=matched_document_class,
         response_code=response_code,
         response_message=ResponseCodes.get_message(response_code),

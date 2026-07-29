@@ -6,7 +6,6 @@ from typing import Any
 from documentai_api.config.constants import (
     BatchStatus,
     ConfigDefaults,
-    DocumentCategory,
 )
 from documentai_api.config.env import EnvVars, get_required_env
 from documentai_api.schemas.document_batches import DocumentBatches
@@ -18,7 +17,7 @@ from documentai_api.utils.dates import get_ttl_epoch_in_days
 def create_batch(
     batch_id: str,
     total_files: int,
-    category: DocumentCategory | None,
+    category: str | None,
     status: BatchStatus = BatchStatus.UPLOADING,
     tenant_id: str | None = None,
     api_key_name: str | None = None,
@@ -39,9 +38,7 @@ def create_batch(
     }
 
     if category:
-        item[DocumentBatches.CATEGORY] = (
-            category.value if isinstance(category, DocumentCategory) else category
-        )
+        item[DocumentBatches.CATEGORY] = category
     if tenant_id is not None:
         item[DocumentBatches.TENANT_ID] = tenant_id
     if api_key_name is not None:

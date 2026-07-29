@@ -115,7 +115,6 @@ class ConfigDefaults:
     POLL_INTERVAL_SECONDS = 5
     MAX_WAIT_SECONDS = 120
     ALB_TIMEOUT_BUFFER_SECONDS = 15
-    USER_DOCUMENT_TYPE_NOT_PROVIDED = "Not specified"
     BDA_REGION_NOT_AVAILABLE = "N/A"
     LOG_RETENTION_DAYS = 30
     DOCUMENT_BATCHES_TTL_DAYS = 30
@@ -150,15 +149,6 @@ class ConfigDefaults:
     PRESIGNED_URL_SIGNATURE_VERSION = "s3v4"
     PRESIGNED_PREVIEW_EXPIRY_SECONDS = 300
     PROCESSING_PERCENTAGE_CACHE_TTL_MINUTES = 5
-
-
-# Document categories - must match the BDA project keys in infra/environments/*/main.tf
-class DocumentCategory(StrEnum):
-    INCOME = "income"
-    EXPENSES = "expenses"
-    IDENTITY = "identity"
-    EMPLOYMENT = "employment"
-    TRAINING = "training"
 
 
 class FileValidation:
@@ -389,14 +379,22 @@ class PreClassificationDefaults:
     )
     PROMPT = "\n".join(
         [
-            "Analyze this document. Respond in JSON only:",
-            '{"document_type": "string", "confidence": float 0-1, "document_count": int, "category_match": bool, "is_identity_document": bool}',
+            'Analyze the provided document against the target category: "{user_category}".',
             "",
-            'document_type: a short description of what this document is (e.g. "W-2", "pay stub", "driver\'s license")',
-            "confidence: how confident are you in the document_type classification",
-            "document_count: how many separate documents are visible",
-            'category_match: true if this document could reasonably be considered a "{user_category}" document, false otherwise',
-            "is_identity_document: true if this is a passport or driver's license, false otherwise",
+            "First, perform this evaluation step-by-step:",
+            "1. Examine the visual layout of the page. Look for distinct borders, separate rectangles, multiple photos, or independent snippets (e.g., multiple receipts or cards placed on a single scanner bed).",
+            "2. Count how many individual, separate documents or items are visually present on this single page/file.",
+            '3. Check if the document is directly and primarily a "{user_category}" document.',
+            '   - Note: If it merely mentions or relates to "{user_category}" in a secondary way, set category_match to false.',
+            "",
+            "Then, output your final answer strictly as a raw JSON object with no markdown formatting or backticks:",
+            "{",
+            '  "document_type": "<short description>",',
+            '  "confidence": <float between 0.0 and 1.0>,',
+            '  "document_count": <integer count of distinct visual document items found on the page>,',
+            '  "category_match": <true or false based on step 3>,',
+            '  "is_identity_document": <true if passport or driver\'s license, else false>',
+            "}",
         ]
     )
 
