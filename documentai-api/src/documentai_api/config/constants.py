@@ -115,7 +115,6 @@ class ConfigDefaults:
     POLL_INTERVAL_SECONDS = 5
     MAX_WAIT_SECONDS = 120
     ALB_TIMEOUT_BUFFER_SECONDS = 15
-    USER_DOCUMENT_TYPE_NOT_PROVIDED = "Not specified"
     BDA_REGION_NOT_AVAILABLE = "N/A"
     LOG_RETENTION_DAYS = 30
     DOCUMENT_BATCHES_TTL_DAYS = 30
@@ -150,15 +149,6 @@ class ConfigDefaults:
     PRESIGNED_URL_SIGNATURE_VERSION = "s3v4"
     PRESIGNED_PREVIEW_EXPIRY_SECONDS = 300
     PROCESSING_PERCENTAGE_CACHE_TTL_MINUTES = 5
-
-
-# Document categories - must match the BDA project keys in infra/environments/*/main.tf
-class DocumentCategory(StrEnum):
-    INCOME = "income"
-    EXPENSES = "expenses"
-    IDENTITY = "identity"
-    EMPLOYMENT = "employment"
-    TRAINING = "training"
 
 
 class FileValidation:
@@ -228,9 +218,6 @@ class FileValidation:
 
 class TextractConfig:
     """Textract AnalyzeID configuration."""
-
-    # Preclassification categories eligible for Textract identity extraction
-    IDENTITY_PRECLASSIFICATION_CATEGORIES = ("identity_verification",)
 
     # Content types supported by Textract AnalyzeID (inline bytes)
     SUPPORTED_CONTENT_TYPES = (
@@ -392,27 +379,22 @@ class PreClassificationDefaults:
     )
     PROMPT = "\n".join(
         [
-            "Classify this document into one of the categories below. Respond in JSON only:",
-            '{"document_type": "string", "confidence": float 0-1, "document_count": int}',
+            'Analyze the provided document against the target category: "{user_category}".',
             "",
-            "Categories and their document types:",
-            "- tax_documents: W-2, 1040, 1099-INT, 1099-MISC, 1099-G",
-            "- employment_wages: Paystubs, payslips, earnings statements",
-            "- independent_earnings: Gig platform summaries (Uber, DoorDash, Etsy), freelance 1099-NEC",
-            "- government_benefits: Social Security letters (SSI/SSDI), unemployment award letters",
-            "- private_benefits_and_settlements: Pension statements, life insurance payouts, annuities",
-            "- court_ordered_benefits: Child support orders, alimony decrees, divorce agreements",
-            "- financial_assets: Bank statements, 401(k) summaries, brokerage statements",
-            "- receipts_and_invoices: Point-of-sale receipts, vendor invoices",
-            "- recurring_bills: Electric, water, gas, phone, internet, insurance bills",
-            "- housing_expenses: Rental leases, landlord payment ledgers, HOA letters",
-            "- debt_obligations: Mortgage statements, auto loan bills, student loans, credit card statements",
-            "- identity_verification: Driver's license, passport, state ID, Global Entry card",
-            "- right_to_work: Form I-9, work permits, EAD cards, visa stamps",
+            "First, perform this evaluation step-by-step:",
+            "1. Examine the visual layout of the page. Look for distinct borders, separate rectangles, multiple photos, or independent snippets (e.g., multiple receipts or cards placed on a single scanner bed).",
+            "2. Count how many individual, separate documents or items are visually present on this single page/file.",
+            '3. Check if the document is directly and primarily a "{user_category}" document.',
+            '   - Note: If it merely mentions or relates to "{user_category}" in a secondary way, set category_match to false.',
             "",
-            "ONLY use one of the exact category names listed above for document_type.",
-            "Do not create new categories. If unsure, use 'other_document'.",
-            "document_count: how many separate documents are visible?",
+            "Then, output your final answer strictly as a raw JSON object with no markdown formatting or backticks:",
+            "{",
+            '  "document_type": "<short description>",',
+            '  "confidence": <float between 0.0 and 1.0>,',
+            '  "document_count": <integer count of distinct visual document items found on the page>,',
+            '  "category_match": <true or false based on step 3>,',
+            '  "is_identity_document": <true if passport or driver\'s license, else false>',
+            "}",
         ]
     )
 

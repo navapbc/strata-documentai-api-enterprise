@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Response
 
 from documentai_api.annotations import (
     AuthUser,
-    CategoryField,
+    DocumentCategoryField,
     ExternalDocumentId,
     ExternalSystemId,
     TraceId,
@@ -58,7 +58,7 @@ async def create_presigned_upload_url(
     auth: AuthUser,
     filename: Annotated[str, Form(description="Original filename", max_length=MAX_FILENAME_LENGTH)],
     content_type: Annotated[str, Form(description="MIME type of the file")],
-    category: CategoryField = None,
+    category: DocumentCategoryField = None,
     trace_id: TraceId = None,
     external_document_id: ExternalDocumentId = None,
     # ai_consent_flag is not accepted here - presigned URLs are only generated
@@ -110,7 +110,7 @@ async def create_presigned_upload_url(
         "original-file-name": safe_filename,
     }
     if category:
-        metadata["user-provided-document-category"] = category.value
+        metadata["user-provided-document-category"] = category
 
     # Generate the presigned POST before writing to DDB.
     # Signing is local CPU work (no network call), so failure is unlikely -

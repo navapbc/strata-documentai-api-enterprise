@@ -8,7 +8,6 @@ from pydantic import BaseModel, ConfigDict, ValidationError
 
 from documentai_api.config.constants import (
     ConfigDefaults,
-    PreclassificationCategory,
     PreClassificationDefaults,
 )
 from documentai_api.config.env import get_aws_config
@@ -36,6 +35,8 @@ class _PreclassificationResponse(BaseModel):
     document_type: str = "other_document"
     confidence: float = 0.0
     document_count: int = 1
+    category_match: bool = True
+    is_identity_document: bool = False
 
 
 class _BlueprintMatchResponse(BaseModel):
@@ -55,10 +56,7 @@ def _get_model_id() -> str:
 
 
 def _get_classification_prompt() -> str:
-    param_name = get_aws_config().bedrock_classification_prompt_param
-    if not param_name:
-        return PreClassificationDefaults.PROMPT
-    return get_parameter_value(param_name, default=PreClassificationDefaults.PROMPT)
+    return PreClassificationDefaults.PROMPT
 
 
 def _build_content_block(document_bytes: bytes, content_type: str) -> dict[str, Any]:
@@ -70,7 +68,9 @@ def _build_content_block(document_bytes: bytes, content_type: str) -> dict[str, 
     return {"image": {"format": content_type.split("/")[1], "source": {"bytes": document_bytes}}}
 
 
-def preclassify_document(document_bytes: bytes, content_type: str) -> BedrockClassificationResult:
+def preclassify_document(
+    document_bytes: bytes, content_type: str, user_category: str | None = None
+) -> BedrockClassificationResult:
     """Classify document type and count using Bedrock vision model."""
     if content_type not in SUPPORTED_CLASSIFICATION_TYPES:
         logger.info(f"Unsupported content type for classification: {content_type}")
@@ -86,7 +86,7 @@ def preclassify_document(document_bytes: bytes, content_type: str) -> BedrockCla
             document_type="other_document", confidence=0.0, document_count=1
         )
 
-    prompt = _get_classification_prompt()
+    prompt = _get_classification_prompt().replace("{user_category}", user_category or "unknown")
     content_block = _build_content_block(document_bytes, content_type)
 
     messages = [
@@ -114,14 +114,13 @@ def preclassify_document(document_bytes: bytes, content_type: str) -> BedrockCla
             )
 
         document_type = parsed.document_type
-        valid_types = [e.value for e in PreclassificationCategory] + ["other_document"]
-        if document_type not in valid_types:
-            document_type = "other_document"
 
         classification = BedrockClassificationResult(
             document_type=document_type,
             confidence=max(0.0, min(1.0, parsed.confidence)),
             document_count=max(0, parsed.document_count),
+            category_match=parsed.category_match if user_category else None,
+            is_identity_document=parsed.is_identity_document,
             input_tokens=usage.get("inputTokens"),
             output_tokens=usage.get("outputTokens"),
             duration_seconds=Decimal(str(elapsed)),
@@ -132,7 +131,9 @@ def preclassify_document(document_bytes: bytes, content_type: str) -> BedrockCla
             f"Pre-classification complete in {elapsed}s: "
             f"type={classification.document_type}, "
             f"confidence={classification.confidence}, "
-            f"document_count={classification.document_count}"
+            f"document_count={classification.document_count}, "
+            f"user_category={user_category}, "
+            f"category_match={classification.category_match}"
         )
 
         return classification

@@ -32,6 +32,7 @@ class DocumentMetadata:
 
     # preclassification fields
     PRECLASSIFICATION_CATEGORY = "preclassificationCategory"
+    PRECLASSIFICATION_CATEGORY_MATCH = "preclassificationCategoryMatch"
     PRECLASSIFICATION_CONFIDENCE = "preclassificationConfidence"
     PRECLASSIFICATION_INPUT_TOKENS = "preclassificationInputTokens"
     PRECLASSIFICATION_OUTPUT_TOKENS = "preclassificationOutputTokens"

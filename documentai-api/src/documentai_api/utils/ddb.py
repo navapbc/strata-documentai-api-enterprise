@@ -8,7 +8,6 @@ from pydantic import BaseModel
 from documentai_api.config.constants import (
     ConfigDefaults,
     DeletionType,
-    DocumentCategory,
     ExtractMethod,
     ProcessStatus,
 )
@@ -276,35 +275,17 @@ def _send_record_to_metrics_queue(object_key: str) -> None:
         logger.error(f"Failed to send {object_key} to SQS queue: {e}")
 
 
-def get_user_provided_document_category(object_key: str) -> DocumentCategory | None:
-    """Get the user-provided DocumentCategory for a file, or None if unset/invalid.
+def get_user_provided_document_category(object_key: str) -> str | None:
+    """Get the tenant-provided document category for a file, or None if unset.
 
-    The DDB record may hold values that don't map to a DocumentCategory enum
-    member (e.g. the "Not specified" default when the API caller doesn't pick a
-    category, or the legacy "unknown" fallback from insert_initial_ddb_record).
-    Returns None in those cases rather than raising - the caller treats None as
-    "no category provided" and downstream paths handle it.
+    Categories are free-form and stored verbatim; the attribute is simply absent
+    when none was provided at upload. Callers treat None as "no category provided".
     """
     ddb_record = get_ddb_record(object_key)
     if ddb_record is None:
         return None
 
-    user_provided_document_category = ddb_record.get(
-        DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY
-    )
-
-    if not user_provided_document_category:
-        logger.warning(f"User specified document type not found for file: {object_key}")
-        return None
-
-    try:
-        return DocumentCategory(user_provided_document_category)
-    except ValueError:
-        logger.info(
-            f"User-provided document category '{user_provided_document_category}' "
-            f"is not a recognized DocumentCategory for {object_key}; treating as None"
-        )
-        return None
+    return ddb_record.get(DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY)
 
 
 def get_ddb_record(object_key: str) -> dict[str, Any] | None:
@@ -479,7 +460,6 @@ def upsert_ddb(data: UpsertDdbData) -> None:
         expr_fields: list[str] = [
             f"{DocumentMetadata.ORIGINAL_FILE_NAME} = :originalFileName",
             f"{DocumentMetadata.PROCESS_STATUS} = :processStatus",
-            f"{DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY} = :category",
             f"{DocumentMetadata.CREATED_AT} = if_not_exists({DocumentMetadata.CREATED_AT}, :now)",
             f"{DocumentMetadata.UPDATED_AT} = :now",
             f"{DocumentMetadata.IS_PASSWORD_PROTECTED} = :pwProt",
@@ -493,10 +473,6 @@ def upsert_ddb(data: UpsertDdbData) -> None:
         expr_values: dict[str, Any] = {
             ":originalFileName": data.original_file_name,
             ":processStatus": data.process_status,
-            ":category": (
-                data.user_provided_document_category
-                or ConfigDefaults.USER_DOCUMENT_TYPE_NOT_PROVIDED
-            ),
             ":now": now,
             ":pwProt": bool(data.is_password_protected),
             ":blurry": bool(data.is_document_blurry),
@@ -507,6 +483,12 @@ def upsert_ddb(data: UpsertDdbData) -> None:
                 data.ttl_days or ConfigDefaults.DOCUMENT_METADATA_TTL_DAYS
             ),
         }
+
+        # Categories are free-form and optional: write the attribute only when
+        # provided, leaving it absent otherwise (no sentinel to strip on read).
+        if data.user_provided_document_category:
+            expr_fields.append(f"{DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY} = :category")
+            expr_values[":category"] = data.user_provided_document_category
 
         # internal_api_response and pre_classification are handled by dedicated
         # paths below, so exclude them here - dumping them is dead work and would

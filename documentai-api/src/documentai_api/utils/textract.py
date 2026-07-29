@@ -426,23 +426,19 @@ def extract_field_values_from_textract_results(
 
 
 def try_textract_identity(
-    preclassification_category: str,
     content_type: str,
     file_bytes: bytes,
     ddb_key: str,
 ) -> dict[str, Any] | None:
-    """Attempt Textract AnalyzeID if the document is an eligible identity type.
+    """Attempt Textract AnalyzeID extraction.
 
     Returns a result dict on success, or None if Textract should not be used
-    (flag off, wrong category, unsupported content type, or Textract failure).
+    (flag off, unsupported content type, or Textract failure).
     On failure, logs a warning and returns None so the caller falls through to BDA.
     """
     from documentai_api.utils.ssm import is_textract_identity_enabled
 
     if not is_textract_identity_enabled():
-        return None
-
-    if preclassification_category not in TextractConfig.IDENTITY_PRECLASSIFICATION_CATEGORIES:
         return None
 
     if content_type not in TextractConfig.SUPPORTED_CONTENT_TYPES:

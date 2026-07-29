@@ -6,7 +6,6 @@ from typing import Any
 from fastapi import Response
 
 from documentai_api.config.constants import (
-    DocumentCategory,
     ExtractMethod,
     ProcessStatus,
 )
@@ -21,6 +20,70 @@ from documentai_api.utils.response_codes import ResponseCodes
 from documentai_api.utils.textract import extract_field_values_from_textract_results
 
 logger = get_logger(__name__)
+
+_TERMINAL_STATUS_RESPONSES: dict[str, dict[str, Any]] = {
+    ProcessStatus.NO_CUSTOM_BLUEPRINT_MATCHED.value: {
+        "jobStatus": "completed",
+        "message": "Document processed but no matching template found",
+        "fields": {},
+        "responseCode": ResponseCodes.DOCUMENT_TYPE_NOT_IMPLEMENTED,
+        "responseMessage": ResponseCodes.get_message(ResponseCodes.DOCUMENT_TYPE_NOT_IMPLEMENTED),
+    },
+    ProcessStatus.FAILED.value: {
+        "jobStatus": "failed",
+        "error": "Processing failed",
+        "responseCode": ResponseCodes.INTERNAL_PROCESSING_ERROR,
+        "responseMessage": ResponseCodes.get_message(ResponseCodes.INTERNAL_PROCESSING_ERROR),
+    },
+    ProcessStatus.NO_DOCUMENT_DETECTED.value: {
+        "jobStatus": "completed",
+        "message": "Unable to extract meaningful document content",
+        "responseCode": ResponseCodes.NO_DOCUMENT_DETECTED,
+        "responseMessage": ResponseCodes.get_message(ResponseCodes.NO_DOCUMENT_DETECTED),
+    },
+    ProcessStatus.BLURRY_DOCUMENT_DETECTED.value: {
+        "jobStatus": "completed",
+        "message": "Document is blurry",
+        "responseCode": ResponseCodes.BLURRY_DOCUMENT_DETECTED,
+        "responseMessage": ResponseCodes.get_message(ResponseCodes.BLURRY_DOCUMENT_DETECTED),
+    },
+    ProcessStatus.AI_CONSENT_DECLINED.value: {
+        "jobStatus": "ai_consent_declined",
+        "message": "Document not processed - AI consent not provided",
+        "responseCode": ResponseCodes.AI_CONSENT_DECLINED,
+        "responseMessage": ResponseCodes.get_message(ResponseCodes.AI_CONSENT_DECLINED),
+    },
+    ProcessStatus.DELETED.value: {
+        "jobStatus": "deleted",
+        "message": "Document has been deleted",
+    },
+    ProcessStatus.CONVERSION_FAILED.value: {
+        "jobStatus": "conversion_failed",
+        "message": "Image format conversion failed",
+        "responseCode": ResponseCodes.INTERNAL_PROCESSING_ERROR,
+        "responseMessage": ResponseCodes.get_message(ResponseCodes.INTERNAL_PROCESSING_ERROR),
+    },
+    ProcessStatus.PASSWORD_PROTECTED.value: {
+        "jobStatus": "completed",
+        "message": "Document type not supported",
+        "responseCode": ResponseCodes.PASSWORD_PROTECTED,
+        "responseMessage": ResponseCodes.get_message(ResponseCodes.PASSWORD_PROTECTED),
+    },
+    ProcessStatus.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE.value: {
+        "jobStatus": "completed",
+        "message": "Document type not supported",
+        "responseCode": ResponseCodes.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
+        "responseMessage": ResponseCodes.get_message(
+            ResponseCodes.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE
+        ),
+    },
+    ProcessStatus.PROCESSING_EXCLUDED.value: {
+        "jobStatus": "completed",
+        "message": "Document not chosen for extraction",
+        "responseCode": ResponseCodes.PROCESSING_EXCLUDED,
+        "responseMessage": ResponseCodes.get_message(ResponseCodes.PROCESSING_EXCLUDED),
+    },
+}
 
 
 # TODO: Refactor to improve testability - consider making public along with
@@ -130,22 +193,68 @@ def get_internal_api_response(
 
         user_provided_document_category = get_user_provided_document_category(object_key)
 
-    try:
-        document_category = (
-            DocumentCategory(user_provided_document_category)
-            if user_provided_document_category
-            else None
-        )
-    except ValueError:
-        document_category = None
-
     return InternalApiResponse(
         validation_passed=ResponseCodes.is_success_response_code(response_code),
-        document_category=document_category,
+        document_category=user_provided_document_category,
         matched_document_class=matched_document_class,
         response_code=response_code,
         response_message=ResponseCodes.get_message(response_code),
     )
+
+
+def _apply_extraction_rules(
+    ddb_record: dict[str, Any],
+    fields: dict[str, Any],
+) -> tuple[dict[str, Any], list[str]]:
+    """Apply tenant extraction rules to fields. Returns (fields, missing_required_field_list)."""
+    tenant_id = ddb_record.get("tenantId")
+    document_type = ddb_record.get(DocumentMetadata.BDA_MATCHED_DOCUMENT_CLASS)
+    if not tenant_id or not document_type or not fields:
+        return fields, []
+    try:
+        from documentai_api.utils.extraction_rules import apply_extraction_rules
+        from documentai_api.utils.ssm import is_missing_geo_included_with_missing_fields
+
+        missing_fields: list[str] = []
+        if is_missing_geo_included_with_missing_fields():
+            for key in (
+                DocumentMetadata.BDA_MATCHED_BLUEPRINT_FIELD_MISSING_GEOMETRY_LIST,
+                DocumentMetadata.BDA_MATCHED_BLUEPRINT_FIELD_EMPTY_LIST,
+            ):
+                raw = ddb_record.get(key)
+                if raw:
+                    missing_fields.extend(json.loads(raw) if isinstance(raw, str) else raw)
+
+        rule_result = apply_extraction_rules(
+            tenant_id, document_type, fields, missing_fields=missing_fields or None
+        )
+        return rule_result.fields, rule_result.missing_required_field_list or []
+    except Exception as e:
+        logger.warning(f"Failed to apply extraction rules for {document_type}: {e}")
+        return fields, []
+
+
+def _resolve_success_fields(
+    ddb_record: dict[str, Any],
+    missing_required: list[str],
+) -> tuple[str, bool]:
+    """Resolve responseCode for the SUCCESS path with precedence 101 > 102 > 105 > 100.
+
+    Returns (response_code, below_extraction_confidence_floor).
+    """
+    below_floor = bool(ddb_record.get(DocumentMetadata.BELOW_EXTRACTION_CONFIDENCE_FLOOR))
+    category_match = ddb_record.get(DocumentMetadata.PRECLASSIFICATION_CATEGORY_MATCH)
+
+    if missing_required:
+        return ResponseCodes.MISSING_FIELDS, below_floor
+
+    if category_match is False:
+        return ResponseCodes.MISCATEGORIZED, below_floor
+
+    if below_floor:
+        return ResponseCodes.LOW_EXTRACTION_CONFIDENCE, below_floor
+
+    return ResponseCodes.SUCCESS, below_floor
 
 
 def build_v1_api_response(
@@ -184,173 +293,47 @@ def build_v1_api_response(
     if matched_document_class:
         base_response["matchedDocumentClass"] = matched_document_class
 
+    user_category = ddb_record.get(DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY)
+
+    if user_category:
+        base_response["userProvidedDocumentCategory"] = user_category
+
     # success response with full results
-    if ProcessStatus.is_successful(job_status):
+    if job_status == ProcessStatus.SUCCESS.value:
+        fields = _extract_field_values(
+            ddb_record,
+            include_extracted_data,
+            include_bounding_box,
+            document_type=matched_document_class,
+        )
+
+        fields, missing_required = _apply_extraction_rules(ddb_record, fields)
+        base_response["fields"] = fields
+
+        if missing_required:
+            base_response["missingRequiredFieldList"] = missing_required
+
+        response_code, below_floor = _resolve_success_fields(ddb_record, missing_required)
         base_response["jobStatus"] = "completed"
+        base_response["message"] = "Document processed successfully"
+        base_response["responseCode"] = response_code
+        base_response["responseMessage"] = ResponseCodes.get_message(response_code)
 
-        if job_status == ProcessStatus.SUCCESS.value:
-            base_response["message"] = "Document processed successfully"
-            base_response["responseCode"] = ResponseCodes.SUCCESS
-            base_response["responseMessage"] = ResponseCodes.get_message(ResponseCodes.SUCCESS)
-
-            fields = _extract_field_values(
-                ddb_record,
-                include_extracted_data,
-                include_bounding_box,
-                document_type=matched_document_class,
-            )
-
-            tenant_id = ddb_record.get("tenantId")
-            document_type = ddb_record.get(DocumentMetadata.BDA_MATCHED_DOCUMENT_CLASS)
-
-            if tenant_id and document_type and fields:
-                try:
-                    from documentai_api.utils.extraction_rules import apply_extraction_rules
-                    from documentai_api.utils.ssm import is_missing_geo_included_with_missing_fields
-
-                    # Build the set of fields to treat as missing for rule evaluation
-                    missing_fields: list[str] = []
-                    if is_missing_geo_included_with_missing_fields():
-                        for key in (
-                            DocumentMetadata.BDA_MATCHED_BLUEPRINT_FIELD_MISSING_GEOMETRY_LIST,
-                            DocumentMetadata.BDA_MATCHED_BLUEPRINT_FIELD_EMPTY_LIST,
-                        ):
-                            raw = ddb_record.get(key)
-                            if raw:
-                                missing_fields.extend(
-                                    json.loads(raw) if isinstance(raw, str) else raw
-                                )
-
-                    rule_result = apply_extraction_rules(
-                        tenant_id,
-                        document_type,
-                        fields,
-                        missing_fields=missing_fields or None,
-                    )
-                    fields = rule_result.fields
-
-                    if rule_result.missing_required_field_list:
-                        base_response["missingRequiredFieldList"] = (
-                            rule_result.missing_required_field_list
-                        )
-                        base_response["responseCode"] = ResponseCodes.MISSING_FIELDS
-                        base_response["responseMessage"] = ResponseCodes.get_message(
-                            ResponseCodes.MISSING_FIELDS
-                        )
-                except Exception as e:
-                    logger.warning(f"Failed to apply extraction rules for {document_type}: {e}")
-
-            base_response["fields"] = fields
-
-            # Surface the confidence floor flag, but let missing required fields
-            # take precedence over low confidence as the reported response code.
-            if ddb_record.get(DocumentMetadata.BELOW_EXTRACTION_CONFIDENCE_FLOOR):
-                base_response["belowExtractionConfidenceFloor"] = True
-                if base_response.get("responseCode") != ResponseCodes.MISSING_FIELDS:
-                    base_response["responseCode"] = ResponseCodes.LOW_EXTRACTION_CONFIDENCE
-                    base_response["responseMessage"] = ResponseCodes.get_message(
-                        ResponseCodes.LOW_EXTRACTION_CONFIDENCE
-                    )
-
-        elif job_status == ProcessStatus.NO_CUSTOM_BLUEPRINT_MATCHED.value:
-            base_response["message"] = "Document processed but no matching template found"
-            base_response["fields"] = {}
-            base_response["responseCode"] = ResponseCodes.DOCUMENT_TYPE_NOT_IMPLEMENTED
-            base_response["responseMessage"] = ResponseCodes.get_message(
-                ResponseCodes.DOCUMENT_TYPE_NOT_IMPLEMENTED
-            )
-
-    # error responses
-    elif job_status == ProcessStatus.FAILED.value:
-        base_response.update(
-            {
-                "jobStatus": "failed",
-                "error": error_message or "Processing failed",
-                "additionalInfo": data.additional_info if data else None,
-                "responseCode": ResponseCodes.INTERNAL_PROCESSING_ERROR,
-                "responseMessage": ResponseCodes.get_message(
-                    ResponseCodes.INTERNAL_PROCESSING_ERROR
-                ),
-            }
+        base_response["inferredDocumentType"] = ddb_record.get(
+            DocumentMetadata.PRECLASSIFICATION_CATEGORY
         )
 
-    elif job_status == ProcessStatus.NO_DOCUMENT_DETECTED.value:
-        base_response.update(
-            {
-                "jobStatus": "completed",
-                "message": "Unable to extract meaningful document content",
-                "additionalInfo": data.additional_info if data else None,
-                "responseCode": ResponseCodes.NO_DOCUMENT_DETECTED,
-                "responseMessage": ResponseCodes.get_message(ResponseCodes.NO_DOCUMENT_DETECTED),
-            }
-        )
+        if below_floor:
+            base_response["belowExtractionConfidenceFloor"] = True
 
-    elif job_status == ProcessStatus.BLURRY_DOCUMENT_DETECTED.value:
-        base_response.update(
-            {
-                "jobStatus": "completed",
-                "message": "Document is blurry",
-                "responseCode": ResponseCodes.BLURRY_DOCUMENT_DETECTED,
-                "responseMessage": ResponseCodes.get_message(
-                    ResponseCodes.BLURRY_DOCUMENT_DETECTED
-                ),
-            }
-        )
+    elif terminal := _TERMINAL_STATUS_RESPONSES.get(job_status):
+        base_response.update(terminal)
 
-    elif job_status == ProcessStatus.AI_CONSENT_DECLINED.value:
-        base_response.update(
-            {
-                "jobStatus": "ai_consent_declined",
-                "message": "Document not processed - AI consent not provided",
-                "responseCode": ResponseCodes.AI_CONSENT_DECLINED,
-                "responseMessage": ResponseCodes.get_message(ResponseCodes.AI_CONSENT_DECLINED),
-            }
-        )
+        if data and data.additional_info:
+            base_response["additionalInfo"] = data.additional_info
 
-    elif job_status == ProcessStatus.DELETED.value:
-        base_response.update(
-            {
-                "jobStatus": "deleted",
-                "message": "Document has been deleted",
-            }
-        )
-
-    elif job_status == ProcessStatus.PROCESSING_EXCLUDED.value:
-        base_response.update(
-            {
-                "jobStatus": "completed",
-                "message": "Document not chosen for extraction",
-                "responseCode": ResponseCodes.PROCESSING_EXCLUDED,
-                "responseMessage": ResponseCodes.get_message(ResponseCodes.PROCESSING_EXCLUDED),
-            }
-        )
-
-    elif job_status == ProcessStatus.CONVERSION_FAILED.value:
-        base_response.update(
-            {
-                "jobStatus": "conversion_failed",
-                "message": "Image format conversion failed",
-                "responseCode": ResponseCodes.INTERNAL_PROCESSING_ERROR,
-                "responseMessage": ResponseCodes.get_message(
-                    ResponseCodes.INTERNAL_PROCESSING_ERROR
-                ),
-            }
-        )
-
-    elif ProcessStatus.is_not_supported(job_status):
-        if job_status == ProcessStatus.PASSWORD_PROTECTED.value:
-            response_code = ResponseCodes.PASSWORD_PROTECTED
-        else:
-            response_code = ResponseCodes.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE
-        base_response.update(
-            {
-                "jobStatus": "completed",
-                "message": "Document type not supported",
-                "additionalInfo": data.additional_info if data else None,
-                "responseCode": response_code,
-                "responseMessage": ResponseCodes.get_message(response_code),
-            }
-        )
+        if job_status == ProcessStatus.FAILED.value and error_message:
+            base_response["error"] = error_message
 
     else:
         base_response.update(
@@ -370,9 +353,7 @@ def build_flat_file(field_names: list[str], data: list[dict[str, Any]], delim: s
         return f'"{escaped}"'
 
     header = delim.join(escape_value(name) for name in field_names)
-
     rows = [delim.join(escape_value(row.get(col, "")) for col in field_names) for row in data]
-
     return "\r\n".join([header, *rows])
 
 

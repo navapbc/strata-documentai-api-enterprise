@@ -19,7 +19,6 @@ class EnvVars(StrEnum):
     BDA_REGION = "BDA_REGION"
     MAX_BDA_INVOKE_RETRY_ATTEMPTS = "MAX_BDA_INVOKE_RETRY_ATTEMPTS"
     BEDROCK_CLASSIFICATION_MODEL_ID_PARAM = "BEDROCK_CLASSIFICATION_MODEL_ID_PARAM"
-    BEDROCK_CLASSIFICATION_PROMPT_PARAM = "BEDROCK_CLASSIFICATION_PROMPT_PARAM"
     BEDROCK_BOUNDING_BOX_MODEL_ID_PARAM = "BEDROCK_BOUNDING_BOX_MODEL_ID_PARAM"
 
     # === Document AI core ===
@@ -90,7 +89,6 @@ class AWSEnvConfig(PydanticBaseEnvConfig):
     bda_region: str = "us-east-1"
     max_bda_invoke_retry_attempts: int = 3
     bedrock_classification_model_id_param: str | None = None
-    bedrock_classification_prompt_param: str | None = None
     bedrock_bounding_box_model_id_param: str | None = None
     bedrock_blur_quadrant_model_id_param: str | None = None
     bedrock_supplemental_extraction_model_id_param: str | None = None

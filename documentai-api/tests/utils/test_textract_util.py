@@ -192,19 +192,18 @@ def test_extract_field_values_from_textract_results_empty():
 
 
 @pytest.mark.parametrize(
-    ("category", "content_type", "flag_on"),
+    ("content_type", "flag_on"),
     [
-        ("identity_verification", "image/jpeg", False),  # flag off
-        ("tax_documents", "image/jpeg", True),  # incorrect category
-        ("identity_verification", "image/tiff", True),  # unsupported content type
+        ("image/jpeg", False),  # flag off
+        ("image/tiff", True),  # unsupported content type
     ],
 )
-def test_try_textract_identity_returns_none_early(mocker, category, content_type, flag_on):
+def test_try_textract_identity_returns_none_early(mocker, content_type, flag_on):
     mocker.patch(
         "documentai_api.utils.ssm.is_textract_identity_enabled",
         return_value=flag_on,
     )
-    result = try_textract_identity(category, content_type, b"bytes", "key")
+    result = try_textract_identity(content_type, b"bytes", "key")
     assert result is None
 
 
@@ -227,7 +226,7 @@ def test_try_textract_identity_returns_result_on_success(mocker, monkeypatch):
     mocker.patch("documentai_api.services.s3.put_object")
     mock_set_method = mocker.patch("documentai_api.utils.ddb.set_extract_method")
 
-    result = try_textract_identity("identity_verification", "image/jpeg", b"bytes", "test-key")
+    result = try_textract_identity("image/jpeg", b"bytes", "test-key")
 
     assert result is not None
     assert result["matched_document_class"] == "US-drivers-licenses"
@@ -257,7 +256,7 @@ def test_try_textract_identity_returns_none_on_textract_failure(mocker, monkeypa
         side_effect=Exception("Textract down"),
     )
 
-    result = try_textract_identity("identity_verification", "image/jpeg", b"bytes", "test-key")
+    result = try_textract_identity("image/jpeg", b"bytes", "test-key")
     assert result is None
 
 
@@ -299,7 +298,7 @@ def test_try_textract_identity_duplicate_dates_falls_back_despite_supplemental(
         return_value=[{"field_name": "sex", "value": "F", "block_index": 0}],
     )
 
-    result = try_textract_identity("identity_verification", "image/jpeg", b"bytes", "test-key")
+    result = try_textract_identity("image/jpeg", b"bytes", "test-key")
 
     # Must fall back to BDA, NOT commit a supplemental-only record
     assert result is None

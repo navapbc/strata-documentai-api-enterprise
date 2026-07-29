@@ -99,7 +99,6 @@ def test_post_document(test_case, base_url, api_key):
 
     expect: dict[str, str | bool | None] = {
         DocumentMetadata.BDA_MATCHED_DOCUMENT_CLASS: expected_result.bda_matched_document_class,
-        DocumentMetadata.PRECLASSIFICATION_CATEGORY: expected_result.preclassification_category,
         DocumentMetadata.RESPONSE_CODE: expected_result.response_code,
         DocumentMetadata.IS_DOCUMENT_BLURRY: expected_result.is_blurry,
         DocumentMetadata.IS_PASSWORD_PROTECTED: expected_result.is_password_protected,
@@ -111,6 +110,9 @@ def test_post_document(test_case, base_url, api_key):
         DocumentMetadata.UPDATED_AT,
         DocumentMetadata.CREATED_AT,
     ]
+
+    if expected_result.preclassification_category is not None:
+        expect_not_none.append(DocumentMetadata.PRECLASSIFICATION_CATEGORY)
 
     # Password-protected and blurry docs short-circuit before BDA, so BDA
     # output and the processed-date timestamp are never written.

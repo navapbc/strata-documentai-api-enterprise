@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from documentai_api.config.constants import ConfigDefaults, PreclassificationCategory
+from documentai_api.config.constants import ConfigDefaults
 from documentai_api.utils.preclassification import (
     _build_blueprint_prompt,
     find_matching_blueprint,
@@ -93,36 +93,22 @@ def test_pdf_not_subject_to_image_size_limit(monkeypatch):
     assert result.document_type == "tax_documents"
 
 
-@pytest.mark.parametrize("category", [c.value for c in PreclassificationCategory])
-def test_all_enum_values_accepted(monkeypatch, category):
-    """Every PreclassificationCategory value is accepted without fallback."""
+@pytest.mark.parametrize("document_type", ["W-2", "pay stub", "driver's license", "bank statement"])
+def test_free_form_document_types_pass_through(monkeypatch, document_type):
+    """Free-form document_type values are returned as-is without normalization."""
     response = _mock_invoke_response(
         {
-            "document_type": category,
+            "document_type": document_type,
             "confidence": 0.9,
             "document_count": 1,
+            "category_match": True,
         }
     )
     _patch_invoke(monkeypatch, response)
 
     result = preclassify_document(SAMPLE_IMAGE, "image/png")
 
-    assert result.document_type == category
-
-
-def test_invalid_document_type_falls_back(monkeypatch):
-    response = _mock_invoke_response(
-        {
-            "document_type": "invented_category",
-            "confidence": 0.8,
-            "document_count": 1,
-        }
-    )
-    _patch_invoke(monkeypatch, response)
-
-    result = preclassify_document(SAMPLE_IMAGE, "image/png")
-
-    assert result.document_type == "other_document"
+    assert result.document_type == document_type
 
 
 def test_other_document_is_valid_type(monkeypatch):
@@ -141,7 +127,7 @@ def test_other_document_is_valid_type(monkeypatch):
     assert result.confidence == 0.6
 
 
-def test_unrecognized_type_falls_back_to_other_document(monkeypatch):
+def test_unrecognized_type_passes_through(monkeypatch):
     response = _mock_invoke_response(
         {
             "document_type": "system_reject",
@@ -153,7 +139,7 @@ def test_unrecognized_type_falls_back_to_other_document(monkeypatch):
 
     result = preclassify_document(SAMPLE_IMAGE, "image/png")
 
-    assert result.document_type == "other_document"
+    assert result.document_type == "system_reject"
 
 
 def test_invocation_failure_returns_default(monkeypatch):
@@ -230,15 +216,15 @@ def test_empty_document_bytes(monkeypatch):
 
     result = preclassify_document(b"", "image/png")
 
-    assert result.document_type == "other_document"
+    assert result.document_type == "system_reject"
 
 
-def test_prompt_includes_all_categories():
+def test_prompt_includes_category_match_placeholder():
     from documentai_api.config.constants import PreClassificationDefaults
 
     prompt = PreClassificationDefaults.PROMPT
-    for category in PreclassificationCategory:
-        assert category.value in prompt, f"{category.value} missing from prompt"
+    assert "category_match" in prompt
+    assert "{user_category}" in prompt
 
 
 @pytest.mark.parametrize(
@@ -366,38 +352,6 @@ def test_document_count_clamped_to_non_negative(monkeypatch):
     _patch_invoke(monkeypatch, response)
     result = preclassify_document(SAMPLE_IMAGE, "image/png")
     assert result.document_count == 0
-
-
-def test_get_classification_prompt_uses_default(monkeypatch):
-    """When no SSM param configured, returns the hardcoded default prompt."""
-    from documentai_api.config.constants import PreClassificationDefaults
-    from documentai_api.utils.preclassification import _get_classification_prompt
-
-    monkeypatch.setattr(
-        "documentai_api.utils.preclassification.get_aws_config",
-        lambda: type("C", (), {"bedrock_classification_prompt_param": None})(),
-    )
-
-    result = _get_classification_prompt()
-    assert result == PreClassificationDefaults.PROMPT
-
-
-def test_get_classification_prompt_reads_ssm(monkeypatch):
-    """When SSM param is configured, reads from SSM."""
-    from documentai_api.utils.preclassification import _get_classification_prompt
-
-    custom_prompt = "Custom classification prompt"
-    monkeypatch.setattr(
-        "documentai_api.utils.preclassification.get_aws_config",
-        lambda: type("C", (), {"bedrock_classification_prompt_param": "/test/prompt"})(),
-    )
-    monkeypatch.setattr(
-        "documentai_api.utils.preclassification.get_parameter_value",
-        lambda name, default=None: custom_prompt,
-    )
-
-    result = _get_classification_prompt()
-    assert result == custom_prompt
 
 
 def test_get_model_id_uses_default(monkeypatch):

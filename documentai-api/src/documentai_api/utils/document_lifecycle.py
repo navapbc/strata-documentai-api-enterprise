@@ -345,7 +345,6 @@ def upsert_initial_ddb_record(
     """
     if not user_provided_document_category:
         logger.warning(f"Warning: user_provided_document_category is None/empty for {ddb_key}")
-        user_provided_document_category = "unknown"
 
     content_type = s3_service.get_content_type(source_bucket_name, source_object_key)
     file_size_bytes = s3_service.get_file_size_bytes(source_bucket_name, source_object_key)
@@ -365,6 +364,7 @@ def upsert_initial_ddb_record(
     processing_assigned_value: float | None = None
     pre_classification_document_type = None
     pre_classification_confidence = None
+    pre_classification_category_match: bool | None = None
     pre_classification_input_tokens = None
     pre_classification_output_tokens = None
     pre_classification_duration_seconds = None
@@ -431,10 +431,13 @@ def upsert_initial_ddb_record(
             ProcessStatus.BLURRY_DOCUMENT_DETECTED,
         ):
             # Blur check passed or was skipped - run LLM preclassification
-            result = preclassify_document(file_bytes, content_type)
+            result = preclassify_document(
+                file_bytes, content_type, user_provided_document_category or None
+            )
 
             pre_classification_document_type = result.document_type
             pre_classification_confidence = result.confidence
+            pre_classification_category_match = result.category_match
             pre_classification_input_tokens = result.input_tokens
             pre_classification_output_tokens = result.output_tokens
             pre_classification_duration_seconds = result.duration_seconds
@@ -447,7 +450,7 @@ def upsert_initial_ddb_record(
 
             else:
                 pre_classification_blueprint_match_result = find_matching_blueprint(
-                    file_bytes, content_type, category=result.document_type
+                    file_bytes, content_type
                 )
                 logger.info(
                     "Blueprint match result",
@@ -461,8 +464,10 @@ def upsert_initial_ddb_record(
                 )
 
                 # Check if this is an identity document eligible for Textract
-                textract_result = try_textract_identity(
-                    result.document_type, content_type, file_bytes, ddb_key
+                textract_result = (
+                    try_textract_identity(content_type, file_bytes, ddb_key)
+                    if result.is_identity_document
+                    else None
                 )
 
                 if textract_result is None:
@@ -509,6 +514,7 @@ def upsert_initial_ddb_record(
             pre_classification=PreClassificationDdbFields(
                 document_type=pre_classification_document_type,
                 confidence=pre_classification_confidence,
+                category_match=pre_classification_category_match,
                 input_tokens=pre_classification_input_tokens,
                 output_tokens=pre_classification_output_tokens,
                 duration_seconds=pre_classification_duration_seconds,
