@@ -293,6 +293,11 @@ def build_v1_api_response(
     if matched_document_class:
         base_response["matchedDocumentClass"] = matched_document_class
 
+    user_category = ddb_record.get(DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY)
+
+    if user_category:
+        base_response["userProvidedDocumentCategory"] = user_category
+
     # success response with full results
     if job_status == ProcessStatus.SUCCESS.value:
         fields = _extract_field_values(
@@ -313,6 +318,16 @@ def build_v1_api_response(
         base_response["message"] = "Document processed successfully"
         base_response["responseCode"] = response_code
         base_response["responseMessage"] = ResponseCodes.get_message(response_code)
+
+        if response_code == ResponseCodes.MISCATEGORIZED:
+            preclass_category = ddb_record.get(DocumentMetadata.PRECLASSIFICATION_CATEGORY)
+
+            if preclass_category:
+                # explicitly named 'detectedDocumentType' rather than
+                # 'detectedDocumentCategory' to avoid consumer confusion with
+                # the user-provided category. preclass_category is a free-form
+                # value returned by the preclassification model, not a tenant-defined category.
+                base_response["detectedDocumentType"] = preclass_category
 
         if below_floor:
             base_response["belowExtractionConfidenceFloor"] = True

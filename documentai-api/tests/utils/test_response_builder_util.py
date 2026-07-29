@@ -681,3 +681,79 @@ def test_build_v1_api_response_101_beats_102_and_105(
     assert response["responseCode"] == ResponseCodes.MISSING_FIELDS
     assert response["belowExtractionConfidenceFloor"] is True
     assert "missing_field" in response["missingRequiredFieldList"]
+
+
+# =============================================================================
+# userProvidedDocumentCategory echo + detectedDocumentType on 102
+# =============================================================================
+
+
+def _minimal_success_record(s3_bucket: object, file_name: str) -> dict:
+    """Put a minimal BDA result in S3 and return a DDB record dict ready for put_item."""
+    import json
+
+    bda_results = {
+        BdaResponseFields.EXPLAINABILITY_INFO: [{"wages": {"confidence": 0.9, "value": "50000"}}]
+    }
+    bda_obj = s3_bucket.put_object(Key=f"{file_name}.json", Body=json.dumps(bda_results))  # type: ignore[union-attr]
+    return {
+        DocumentMetadata.FILE_NAME: file_name,
+        DocumentMetadata.JOB_ID: f"{file_name}-job",
+        DocumentMetadata.BDA_OUTPUT_S3_URI: f"s3://{bda_obj.bucket_name}/{bda_obj.key}",
+        DocumentMetadata.BDA_MATCHED_DOCUMENT_CLASS: "paystub",
+        DocumentMetadata.CREATED_AT: "2026-01-01T00:00:00+00:00",
+        DocumentMetadata.FIELD_CONFIDENCE_SCORES: '[{"wages": 0.9}]',
+    }
+
+
+def test_user_category_echoed_when_present(s3_bucket, ddb_doc_metadata_table):
+    """UserProvidedDocumentCategory appears in the response when set on the DDB record."""
+    record = _minimal_success_record(s3_bucket, "user-cat")
+    record[DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY] = "income"
+    ddb_doc_metadata_table.put_item(Item=record)
+
+    response = response_builder_util.build_v1_api_response("user-cat", ProcessStatus.SUCCESS.value)
+
+    assert response["userProvidedDocumentCategory"] == "income"
+
+
+def test_user_category_absent_when_not_set(s3_bucket, ddb_doc_metadata_table):
+    """UserProvidedDocumentCategory is omitted when not present on the DDB record."""
+    ddb_doc_metadata_table.put_item(Item=_minimal_success_record(s3_bucket, "no-user-cat"))
+
+    response = response_builder_util.build_v1_api_response(
+        "no-user-cat", ProcessStatus.SUCCESS.value
+    )
+
+    assert "userProvidedDocumentCategory" not in response
+
+
+def test_102_includes_detected_document_type(s3_bucket, ddb_doc_metadata_table):
+    """On a 102 response, detectedDocumentType is populated from preclassificationCategory."""
+    record = _minimal_success_record(s3_bucket, "102-suggested")
+    record[DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY] = "income"
+    record[DocumentMetadata.PRECLASSIFICATION_CATEGORY_MATCH] = False
+    record[DocumentMetadata.PRECLASSIFICATION_CATEGORY] = "pay stub"
+    ddb_doc_metadata_table.put_item(Item=record)
+
+    response = response_builder_util.build_v1_api_response(
+        "102-suggested", ProcessStatus.SUCCESS.value
+    )
+
+    assert response["responseCode"] == ResponseCodes.MISCATEGORIZED
+    assert response["userProvidedDocumentCategory"] == "income"
+    assert response["detectedDocumentType"] == "pay stub"
+
+
+def test_non_102_omits_detected_document_type(s3_bucket, ddb_doc_metadata_table):
+    """DetectedDocumentType is not included on non-102 responses even if preclassificationCategory is set."""
+    record = _minimal_success_record(s3_bucket, "100-no-suggested")
+    record[DocumentMetadata.PRECLASSIFICATION_CATEGORY] = "pay stub"
+    ddb_doc_metadata_table.put_item(Item=record)
+
+    response = response_builder_util.build_v1_api_response(
+        "100-no-suggested", ProcessStatus.SUCCESS.value
+    )
+
+    assert response["responseCode"] == ResponseCodes.SUCCESS
+    assert "detectedDocumentType" not in response

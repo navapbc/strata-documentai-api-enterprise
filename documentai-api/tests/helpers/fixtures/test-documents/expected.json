@@ -11,7 +11,7 @@
     "e2e_enabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
-    "preclassificationCategory": "government_benefits",
+    "preclassificationCategory": "present",
     "responseCode": "002"
   },
   "synthetic-public-benefits-identity-proof-state-photo-id.jpg": {
@@ -20,7 +20,7 @@
     "e2e_enabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
-    "preclassificationCategory": "identity_verification",
+    "preclassificationCategory": "present",
     "responseCode": "000"
   },
   "synthetic-public-benefits-income-proof-pay-statement-photo.png": {
@@ -29,7 +29,7 @@
     "e2e_enabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
-    "preclassificationCategory": "employment_wages",
+    "preclassificationCategory": "present",
     "responseCode": "000"
   },
   "synthetic-public-benefits-income-proof-pay-statement-rendered.png": {
@@ -38,7 +38,7 @@
     "e2e_enabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
-    "preclassificationCategory": "employment_wages",
+    "preclassificationCategory": "present",
     "responseCode": "000"
   },
   "synthetic-public-benefits-income-proof-pay-stub.jpg": {
@@ -47,7 +47,7 @@
     "e2e_enabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
-    "preclassificationCategory": "employment_wages",
+    "preclassificationCategory": "present",
     "responseCode": "000"
   },
   "synthetic-public-benefits-residency-proof-utility-bill.jpg": {
@@ -62,7 +62,7 @@
     "e2e_enabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
-    "preclassificationCategory": "recurring_bills",
+    "preclassificationCategory": "present",
     "responseCode": "002"
   },
   "synthetic-snap-income-proof-employment-wage-verification-letter-photo.png": {
@@ -71,7 +71,7 @@
     "e2e_enabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
-    "preclassificationCategory": "employment_wages",
+    "preclassificationCategory": "present",
     "responseCode": "000"
   },
   "synthetic-snap-income-proof-employment-wage-verification-letter-rendered.png": {
@@ -80,7 +80,7 @@
     "e2e_enabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
-    "preclassificationCategory": "employment_wages",
+    "preclassificationCategory": "present",
     "responseCode": "000"
   },
   "synthetic-snap-income-proof-self-employment-ledger-photo.png": {
@@ -96,7 +96,7 @@
     "e2e_enabled": false,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
-    "preclassificationCategory": "independent_earnings",
+    "preclassificationCategory": "present",
     "responseCode": "002"
   },
   "synthetic-snap-income-proof-self-employment-ledger-rendered.png": {
@@ -112,7 +112,7 @@
     "e2e_enabled": false,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
-    "preclassificationCategory": "independent_earnings",
+    "preclassificationCategory": "present",
     "responseCode": "002"
   },
   "synthetic-wic-adjunctive-eligibility-snap-benefits-letter.jpg": {
@@ -121,7 +121,7 @@
     "e2e_enabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
-    "preclassificationCategory": "government_benefits",
+    "preclassificationCategory": "present",
     "responseCode": "002"
   },
   "synthetic-wic-certification-pregnancy-verification-clinic-note.jpg": {
@@ -135,7 +135,7 @@
     "e2e_enabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
-    "preclassificationCategory": "government_benefits",
+    "preclassificationCategory": "present",
     "responseCode": "002"
   },
   "blur/synthetic-disk-defocus.jpeg": {
