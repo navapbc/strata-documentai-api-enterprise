@@ -1,6 +1,23 @@
 import io
+import zipfile
 
 from PIL import Image
+
+
+def generate_ooxml_with_deep_entry(member: str = "word/document.xml") -> bytes:
+    """Generate an OOXML file whose identifying member sits past filetype's scan window.
+
+    ``filetype`` only scans the first ~6KB of the archive for the word/ (or
+    xl//ppt/) entry, so a large [Content_Types].xml pushes that entry deep enough
+    to be mislabeled application/zip - reproducing newer-Office layouts. ``member``
+    selects the subtype (word/document.xml, xl/workbook.xml, ppt/presentation.xml).
+    """
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_STORED) as z:
+        z.writestr("[Content_Types].xml", b"<?xml?><Types><!-- " + b"x" * 40000 + b" --></Types>")
+        z.writestr("_rels/.rels", b"<Relationships/>")
+        z.writestr(member, b"<x/>")
+    return buf.getvalue()
 
 
 # Add a blank page (A4 dimensions in points: 1/72 inch per unit)
