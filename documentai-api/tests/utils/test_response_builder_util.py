@@ -684,7 +684,7 @@ def test_build_v1_api_response_101_beats_102_and_105(
 
 
 # =============================================================================
-# userProvidedDocumentCategory echo + detectedDocumentType on 102
+# userProvidedDocumentCategory echo + inferredDocumentType on 102
 # =============================================================================
 
 
@@ -728,8 +728,8 @@ def test_user_category_absent_when_not_set(s3_bucket, ddb_doc_metadata_table):
     assert "userProvidedDocumentCategory" not in response
 
 
-def test_102_includes_detected_document_type(s3_bucket, ddb_doc_metadata_table):
-    """On a 102 response, detectedDocumentType is populated from preclassificationCategory."""
+def test_102_includes_inferred_document_type(s3_bucket, ddb_doc_metadata_table):
+    """On a 102 response, inferredDocumentType is populated from preclassificationCategory."""
     record = _minimal_success_record(s3_bucket, "102-suggested")
     record[DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY] = "income"
     record[DocumentMetadata.PRECLASSIFICATION_CATEGORY_MATCH] = False
@@ -742,18 +742,35 @@ def test_102_includes_detected_document_type(s3_bucket, ddb_doc_metadata_table):
 
     assert response["responseCode"] == ResponseCodes.MISCATEGORIZED
     assert response["userProvidedDocumentCategory"] == "income"
-    assert response["detectedDocumentType"] == "pay stub"
+    assert response["inferredDocumentType"] == "pay stub"
 
 
-def test_non_102_omits_detected_document_type(s3_bucket, ddb_doc_metadata_table):
-    """DetectedDocumentType is not included on non-102 responses even if preclassificationCategory is set."""
-    record = _minimal_success_record(s3_bucket, "100-no-suggested")
+def test_inferred_document_type_present_on_non_102(s3_bucket, ddb_doc_metadata_table):
+    """InferredDocumentType is surfaced on any success response, not just 102."""
+    record = _minimal_success_record(s3_bucket, "100-detected")
     record[DocumentMetadata.PRECLASSIFICATION_CATEGORY] = "pay stub"
     ddb_doc_metadata_table.put_item(Item=record)
 
     response = response_builder_util.build_v1_api_response(
-        "100-no-suggested", ProcessStatus.SUCCESS.value
+        "100-detected", ProcessStatus.SUCCESS.value
     )
 
     assert response["responseCode"] == ResponseCodes.SUCCESS
-    assert "detectedDocumentType" not in response
+    assert response["inferredDocumentType"] == "pay stub"
+
+
+def test_inferred_document_type_absent_from_dict_when_not_preclassified(
+    s3_bucket, ddb_doc_metadata_table
+):
+    """With no preclassification category, inferredDocumentType is absent from the response dict.
+
+    None values are stripped by build_v1_api_response.
+    """
+    ddb_doc_metadata_table.put_item(Item=_minimal_success_record(s3_bucket, "100-no-detect"))
+
+    response = response_builder_util.build_v1_api_response(
+        "100-no-detect", ProcessStatus.SUCCESS.value
+    )
+
+    assert response["responseCode"] == ResponseCodes.SUCCESS
+    assert "inferredDocumentType" not in response
