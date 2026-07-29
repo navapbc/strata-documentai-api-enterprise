@@ -571,6 +571,9 @@ class FeatureFlags:
     ENFORCE_BLUR_REJECTION = "enforce-blur-rejection"
     TEXTRACT_IDENTITY_ENABLED = "textract-identity-enabled"
     INCLUDE_MISSING_GEO_WITH_MISSING_FIELDS = "include-missing-geo-with-missing-fields"
+    PRECLASSIFICATION_BASED_ROUTING = "preclassification-based-routing"
+    SKIP_BDA_IF_UNCLASSIFIED = "skip-bda-if-unclassified"
+    ENABLE_PRECLASSIFICATION_BLUEPRINT_MATCHING = "enable-preclassification-blueprint-matching"
 
 
 ATHENA_QUERY_TIMEOUT_SECONDS = 300

@@ -189,12 +189,10 @@ def find_matching_blueprint(
 
     If category is provided, only blueprints in that category are considered.
     """
-    config = get_aws_config()
-    if config.ssm_prefix:
-        param = f"{config.ssm_prefix}/feature-flags/enable-preclassification-blueprint-matching"
-        value = get_parameter_value(param, default="true")
-        if value.lower() != "true":
-            return PreclassificationMatchResult()
+    from documentai_api.utils.ssm import is_preclassification_blueprint_matching_enabled
+
+    if not is_preclassification_blueprint_matching_enabled():
+        return PreclassificationMatchResult()
 
     from documentai_api.utils.schemas import get_all_schemas
 

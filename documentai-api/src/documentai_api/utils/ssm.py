@@ -85,3 +85,34 @@ def is_missing_geo_included_with_missing_fields() -> bool:
     (triggering response code 101 if required). Default: true.
     """
     return _get_flag(FeatureFlags.INCLUDE_MISSING_GEO_WITH_MISSING_FIELDS, default=True)
+
+
+def is_preclassification_routing_enabled() -> bool:
+    """Whether documents are routed to a category-specific BDA project ARN.
+
+    When enabled, documents with a matched preclassification category are sent to
+    the corresponding per-category BDA project instead of the default "all" project.
+    Default: false.
+    """
+    return _get_flag(FeatureFlags.PRECLASSIFICATION_BASED_ROUTING, default=False)
+
+
+def is_skip_bda_if_unclassified() -> bool:
+    """Whether BDA is skipped when preclassification returns "other_document".
+
+    When enabled, documents that preclassify as other_document (no category match,
+    unsupported type, or classification failure) are not sent to BDA. Despite the
+    flag name, the live trigger is the other_document signal from preclassify, not
+    blueprint matching. Default: false (always invoke BDA).
+    """
+    return _get_flag(FeatureFlags.SKIP_BDA_IF_UNCLASSIFIED, default=False)
+
+
+def is_preclassification_blueprint_matching_enabled() -> bool:
+    """Whether blueprint matching runs after preclassification.
+
+    When enabled, documents are matched against available BDA blueprints after
+    preclassification. Results are stored for observability only - no routing
+    decisions are made from them. Default: true.
+    """
+    return _get_flag(FeatureFlags.ENABLE_PRECLASSIFICATION_BLUEPRINT_MATCHING, default=True)
