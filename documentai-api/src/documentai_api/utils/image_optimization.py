@@ -17,6 +17,9 @@ from documentai_api.services import s3 as s3_service
 from documentai_api.utils.bbox_detection import detect_document_bbox
 from documentai_api.utils.ssm import is_document_crop_enabled
 
+# Limit maximum image pixels to prevent pixel-flood DoS.
+Image.MAX_IMAGE_PIXELS = ConfigDefaults.MAX_IMAGE_PIXELS
+
 logger = get_logger(__name__)
 
 

@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from documentai_api.config.env import get_aws_config
 from documentai_api.logging import get_logger
 from documentai_api.utils.aws_client_factory import AWSClientFactory
 from documentai_api.utils.json_parsing import parse_json_object
+from documentai_api.utils.s3 import parse_s3_uri
 
 if TYPE_CHECKING:
     from mypy_boto3_bedrock_data_automation.type_defs import (
@@ -42,6 +44,18 @@ def get_bda_result_json(bda_result_uri: str) -> dict[str, Any] | None:
         s3_parts = bda_result_uri.replace("s3://", "").split("/", 1)
         result_bucket = s3_parts[0]
         result_key = s3_parts[1]
+
+        # Validate the bucket is the configured output bucket to prevent SSRF
+        # via a crafted BDA response pointing at an arbitrary S3 location.
+        output_location = get_aws_config().documentai_output_location
+        if output_location:
+            expected_bucket, _ = parse_s3_uri(output_location)
+            if result_bucket != expected_bucket:
+                logger.error(
+                    f"BDA result URI bucket {result_bucket!r} does not match "
+                    f"expected output bucket {expected_bucket!r}"
+                )
+                return None
 
         s3 = AWSClientFactory.get_s3_client()
         bda_result_object = s3.get_object(Bucket=result_bucket, Key=result_key)

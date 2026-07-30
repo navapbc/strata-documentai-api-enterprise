@@ -70,6 +70,9 @@ TIN_RE = re.compile(
     re.ASCII | re.VERBOSE,
 )
 
+# Passport number: letter + 8 digits (US format) or 2 letters + 7 digits (common international).
+PASSPORT_RE = re.compile(r"\b[A-Z]{1,2}\d{7,8}\b")
+
 ALLOW_NO_MASK = {
     "account_key",
     "count",
@@ -79,19 +82,51 @@ ALLOW_NO_MASK = {
     "thread",
 }
 
+# Field names whose values should always be masked regardless of value shape.
+# Covers identity-document fields returned by BDA that won't match numeric patterns.
+_PII_FIELD_DENY_LIST = {
+    # Names
+    "first_name",
+    "last_name",
+    "full_name",
+    "name",
+    "given_name",
+    "surname",
+    "middle_name",
+    # Identity document numbers
+    "ssn",
+    "tin",
+    "license_number",
+    "dl_number",
+    "driver_license_number",
+    "passport_number",
+    "document_number",
+    "id_number",
+    # Addresses / contact
+    "address",
+    "street_address",
+    "date_of_birth",
+    "dob",
+}
+
 
 def _mask_pii_for_key(key: str, value: Any | None) -> Any | None:
-    """Mask the given value if it has the pattern of a tax identifier.
+    """Mask the given value if the key is on the PII deny list or the value matches a known PII pattern.
 
-    Unless its key is one of the allowed values to avoid masking
-    something that looks like an SSN but is known to be safe (like a timestamp).
+    Patterns checked: SSN, passport number.
+    Keys in ALLOW_NO_MASK are always returned as-is.
     """
     if key in ALLOW_NO_MASK:
         return value
+    if key.lower() in _PII_FIELD_DENY_LIST:
+        return "*********"
     return _mask_pii(value)
 
 
 def _mask_pii(value: Any | None) -> Any | None:
-    if TIN_RE.search(str(value)):
-        return TIN_RE.sub("*********", str(value))
-    return value
+    s = str(value)
+    if TIN_RE.search(s):
+        s = TIN_RE.sub("*********", s)
+    if PASSPORT_RE.search(s):
+        s = PASSPORT_RE.sub("*********", s)
+    return s if s != str(value) else value

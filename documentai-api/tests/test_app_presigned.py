@@ -10,6 +10,11 @@ def _disable_auth(disable_auth):
     pass
 
 
+@pytest.fixture(autouse=True)
+def _mock_quota(mocker):
+    mocker.patch("documentai_api.app_presigned.increment_and_check")
+
+
 def test_create_presigned_url_success(api_client, mocker):
     """Test successful presigned POST generation."""
     mock_insert = mocker.patch("documentai_api.app_presigned.insert_minimal_ddb_record")

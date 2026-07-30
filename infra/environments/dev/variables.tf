@@ -51,6 +51,12 @@ variable "google_allowed_domains" {
   default     = []
 }
 
+variable "extra_cors_allowed_origins" {
+  type        = list(string)
+  description = "Additional CORS origins beyond the managed admin/demo CloudFront URLs (e.g. ['http://localhost:3000'] for local UI dev). Inject at plan/apply via -var or TF_VAR_extra_cors_allowed_origins; the CloudFront origins are always included automatically."
+  default     = []
+}
+
 variable "bda_projects" {
   type = map(object({
     managed_blueprint_arns = list(string)

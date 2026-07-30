@@ -3,6 +3,8 @@ from collections.abc import Iterable
 from enum import StrEnum
 from typing import ClassVar
 
+import filetype  # type: ignore[import-untyped]
+
 # === API ===
 API_VERSION = "v1"
 API_TITLE = "Document AI API"
@@ -139,6 +141,11 @@ class ConfigDefaults:
     BLUR_QUADRANT_MODEL_ID = "us.amazon.nova-pro-v1:0"  # model for empty-quadrant blur check (Pro needed for spatial reasoning)
     MISSING_GEOMETRY_CONFIDENCE_THRESHOLD = 0.25
     BDA_MAX_IMAGE_SIZE_BYTES = 5_242_880
+
+    # PIL pixel limit for DecompressionBomb protection. 60 MP covers high-res phone
+    # photos of ID documents (typical range 8-48 MP) while still bounding memory use.
+    MAX_IMAGE_PIXELS = 60_000_000
+
     BDA_MAX_DOCUMENT_FILE_SIZE_BYTES = 524_288_000
     # Bedrock Converse per-image limits (used by the vision bbox-detection call).
     # The real API ceiling is 3.75MB / 8000px per image - stricter than the 5MB BDA
@@ -238,6 +245,19 @@ class FileValidation:
     )
 
     ODT_CONTENT_TYPES = ("application/vnd.oasis.opendocument.text",)
+
+    @staticmethod
+    def is_pdf(data: bytes) -> bool:
+        return data[:4] == b"%PDF"
+
+    @staticmethod
+    def is_image(data: bytes) -> bool:
+        mime = filetype.guess_mime(data)
+        return (
+            mime is not None
+            and mime in FileValidation.SUPPORTED_CONTENT_TYPES
+            and mime.startswith("image/")
+        )
 
     @staticmethod
     def is_supported(content_type: str) -> bool:

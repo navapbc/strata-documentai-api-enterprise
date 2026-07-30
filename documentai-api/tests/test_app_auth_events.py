@@ -54,10 +54,10 @@ def test_report_login_event(mock_log_event):
 
     assert response.status_code == 204
     mock_log_event.assert_called_once_with(
-        claims={"sub": "admin@co.com", "email": "admin@co.com"},
+        claims={"sub": "test-client", "email": "test-client"},
         action=AuditAction.AUTH_LOGIN,
         target_type=AuditTargetType.SESSION,
-        target_id="admin@co.com",
+        target_id="test-client",
         tenant_id="test-tenant",
         metadata=None,
     )
@@ -70,10 +70,10 @@ def test_report_logout_event(mock_log_event):
 
     assert response.status_code == 204
     mock_log_event.assert_called_once_with(
-        claims={"sub": "admin@co.com", "email": "admin@co.com"},
+        claims={"sub": "test-client", "email": "test-client"},
         action=AuditAction.AUTH_LOGOUT,
         target_type=AuditTargetType.SESSION,
-        target_id="admin@co.com",
+        target_id="test-client",
         tenant_id="test-tenant",
         metadata=None,
     )

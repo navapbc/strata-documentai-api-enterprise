@@ -311,7 +311,7 @@ module "config" {
     "feature-flags/textract-identity-enabled"                   = "true"
     "feature-flags/enable-blur-detection"                       = "true"
     "feature-flags/enforce-blur-rejection"                      = "true"
-    "feature-flags/include-missing-geo-with-missing-fields"                = "true"
+    "feature-flags/include-missing-geo-with-missing-fields"     = "true"
     # Thresholds
     # Vision model ids - swappable at runtime via SSM (no redeploy). Kept as
     # separate params so preclassification and bbox detection can be tuned apart.
@@ -333,7 +333,7 @@ module "config" {
     "feature-flags/textract-identity-enabled"                   = "^(true|false)$"
     "feature-flags/enable-blur-detection"                       = "^(true|false)$"
     "feature-flags/enforce-blur-rejection"                      = "^(true|false)$"
-    "feature-flags/include-missing-geo-with-missing-fields"                = "^(true|false)$"
+    "feature-flags/include-missing-geo-with-missing-fields"     = "^(true|false)$"
   }
 }
 
@@ -449,7 +449,7 @@ module "api_gateway" {
   timeout       = 30
   memory_size   = 1024
 
-  environment_variables = local.lambda_env_vars
+  environment_variables = local.api_lambda_env_vars
 
   policy_arns = local.lambda_policy_arns
 }
@@ -458,6 +458,20 @@ module "api_gateway" {
 
 locals {
   lambda_image_uri = "${module.ecr.repository_url}:${var.image_tag}"
+
+  # CORS origins are derived from the managed admin/demo CloudFront
+  # distributions so they can never drift to a wildcard or a stale value.
+  # extra_cors_allowed_origins is the plan/apply injection point for anything
+  # not managed here (e.g. http://localhost:3000 during UI development).
+  #
+  # Enforced by the FastAPI app (Starlette CORSMiddleware), not the gateway:
+  # the single $default route forwards OPTIONS preflight to Lambda, so the app
+  # is the only layer that can answer it. Passed only to the API Lambda via
+  # api_lambda_env_vars below.
+  cors_allowed_origins = concat(
+    [module.admin_ui.url, module.demo_ui.url],
+    var.extra_cors_allowed_origins,
+  )
 
   lambda_env_vars = {
     ENVIRONMENT                                               = var.environment
@@ -511,6 +525,20 @@ locals {
     COGNITO_USER_POOL_ID                                      = module.identity_provider.user_pool_id
     COGNITO_CLIENT_ID                                         = module.identity_provider.client_id
   }
+
+  # API Lambda env: the shared worker map, minus the Athena/Glue vars that only
+  # the metrics-aggregator/usage-report workers read, plus CORS_ALLOWED_ORIGINS.
+  # Dropping the worker-only vars keeps the API function under the 4KB Lambda
+  # env limit once CORS is added. (Workers keep lambda_env_vars unchanged.)
+  api_lambda_env_vars = merge(
+    {
+      for k, v in local.lambda_env_vars : k => v
+      if !contains(["ATHENA_WORKGROUP_NAME", "GLUE_DATABASE_NAME", "DDB_RAW_DATA_TABLE_NAME"], k)
+    },
+    {
+      CORS_ALLOWED_ORIGINS = jsonencode(local.cors_allowed_origins)
+    },
+  )
 
   lambda_policy_arns = {
     data_access         = aws_iam_policy.data_access.arn

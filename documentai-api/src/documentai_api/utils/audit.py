@@ -85,8 +85,19 @@ def log_event(
         # Write to tenant partition
         table.put_item(Item={**base_item, AuditEventRecord.TENANT_ID: partition})
 
-        # Double-write to __global__ for super-admin "all events" view
+        # Double-write to __global__ for super-admin "all events" view.
+        # Note: these two writes are not atomic - a failure on the second write
+        # leaves the tenant partition written but the global view incomplete.
+        # This is acceptable for audit observability (tenant record is authoritative)
+        # but callers should not rely on global-view consistency.
         if partition != GLOBAL_TENANT:
             table.put_item(Item={**base_item, AuditEventRecord.TENANT_ID: GLOBAL_TENANT})
+
     except Exception:
-        logger.exception(f"Failed to write audit event: {action} on {target_type}/{target_id}")
+        # Log at ERROR so failures are visible in CloudWatch alarms rather than
+        # silently dropped. Audit failures are non-fatal to the request but must
+        # be monitored - a sustained failure means the audit trail has gaps.
+        logger.error(
+            f"Failed to write audit event: {action} on {target_type}/{target_id}",
+            exc_info=True,
+        )

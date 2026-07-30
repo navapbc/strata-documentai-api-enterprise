@@ -98,7 +98,11 @@ async def get_audit_log(
     except HTTPException:
         raise
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
+        logger.error(f"Audit log query error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to query audit log",
+        ) from e
     except Exception as e:
         logger.error(f"Failed to query audit log: {e}")
         raise HTTPException(

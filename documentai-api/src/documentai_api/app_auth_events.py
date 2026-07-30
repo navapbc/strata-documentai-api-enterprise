@@ -34,10 +34,13 @@ async def report_auth_event(
     if not audit_action:
         return  # Silently ignore unknown actions
 
-    # Build a claims-like dict for log_event
+    # Use the verified identity from the auth context, not the caller-supplied
+    # body.email, to prevent actor identity spoofing in audit records.
+    verified_actor = auth.api_key_name
+
     claims = {
-        "sub": body.email or auth.api_key_name,
-        "email": body.email or auth.api_key_name,
+        "sub": verified_actor,
+        "email": verified_actor,
     }
 
     try:
@@ -45,7 +48,7 @@ async def report_auth_event(
             claims=claims,
             action=audit_action,
             target_type=AuditTargetType.SESSION,
-            target_id=body.email or auth.api_key_name,
+            target_id=verified_actor,
             tenant_id=auth.tenant_id,
             metadata=body.metadata,
         )
