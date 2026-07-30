@@ -39,9 +39,28 @@ async def extract_files_from_zip(
                         detail=f"ZIP contains more than {max_files} files",
                     )
 
+                # Check the uncompressed size declared in the central directory
+                # before decompressing to prevent decompression-bomb allocation.
+                # file_info.file_size is the stored uncompressed size; it can be
+                # spoofed for stored (method=0) entries but is reliable for deflated
+                # entries and provides a fast pre-check before any decompression.
+                projected_total = total_extracted + file_info.file_size
+
+                if projected_total > MAX_ZIP_EXTRACTED_BYTES:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="ZIP extracted size exceeds limit",
+                    )
+                if zip_size > 0 and projected_total / zip_size > MAX_ZIP_DECOMPRESSION_RATIO:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="ZIP decompression ratio exceeds limit",
+                    )
+
                 file_content = zf.read(file_info.filename)
                 total_extracted += len(file_content)
 
+                # Re-check with actual decompressed size (guards against spoofed headers).
                 if total_extracted > MAX_ZIP_EXTRACTED_BYTES:
                     raise HTTPException(
                         status_code=400,

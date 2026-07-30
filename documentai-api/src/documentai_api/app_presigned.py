@@ -30,6 +30,7 @@ from documentai_api.utils.auth import get_user_context_from_api_key
 from documentai_api.utils.document_lifecycle import insert_minimal_ddb_record
 from documentai_api.utils.s3 import build_s3_key, parse_s3_uri, sanitize_for_s3_metadata
 from documentai_api.utils.uploads import generate_unique_filename
+from documentai_api.utils.write_limit import increment_and_check
 
 logger = get_logger(__name__)
 
@@ -85,6 +86,9 @@ async def create_presigned_upload_url(
         )
 
     trace_id = _validate_trace_id(trace_id)
+
+    increment_and_check(auth.tenant_id)
+
     expiry = get_app_env_config().presigned_url_expiry_seconds
 
     input_location = get_aws_config().documentai_input_location

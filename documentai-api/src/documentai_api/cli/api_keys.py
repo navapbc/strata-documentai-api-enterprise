@@ -75,10 +75,12 @@ def generate(
     typer.echo(f"Client:      {api_key_name}")
     typer.echo(f"Environment: {environment}")
     typer.echo(f"Tenant:      {tenant_id}")
+
     if parsed_expires_at:
         typer.echo(f"Expires:     {parsed_expires_at.isoformat()}")
     else:
         typer.echo("Expires:     never")
+
     typer.echo("")
 
 
@@ -91,7 +93,11 @@ def deactivate(
     ] = False,
 ) -> None:
     """Deactivate one or all active API keys for a client."""
-    from documentai_api.utils.auth import _hash_key, deactivate_api_key, get_active_keys_by_name
+    from documentai_api.utils.auth import (
+        _compute_key_hash,
+        deactivate_api_key,
+        get_active_keys_by_name,
+    )
 
     if not api_key and not all_keys:
         typer.echo("Error: Provide --api-key or --all", err=True)
@@ -102,8 +108,9 @@ def deactivate(
         raise typer.Exit(code=1) from None
 
     if api_key:
-        key_hash = _hash_key(api_key)
+        key_hash = _compute_key_hash(api_key)
         deactivated = deactivate_api_key(key_hash)
+
         if deactivated:
             typer.echo(f"Deactivated key for key: {api_key_name}")
         else:
@@ -111,6 +118,7 @@ def deactivate(
             raise typer.Exit(code=1) from None
     else:
         active_keys = get_active_keys_by_name(api_key_name)
+
         if not active_keys:
             typer.echo(f"No active keys found for key: {api_key_name}")
             return
@@ -141,15 +149,19 @@ def list_keys(
             records = get_active_keys_by_name(api_key_name)
         else:
             table_name = get_aws_config().api_keys_table_name
+
             if not table_name:
                 raise ValueError("API_KEYS_TABLE_NAME environment variable not set")
             all_records = ddb_service.scan(table_name)
+
             if api_key_name:
                 all_records = [
                     r for r in all_records if r.get(ApiKeyRecord.API_KEY_NAME) == api_key_name
                 ]
+
             if not include_inactive:
                 all_records = [r for r in all_records if r.get(ApiKeyRecord.IS_ACTIVE, False)]
+
             records = all_records
     except Exception as e:
         typer.echo(f"Error: Failed to list keys: {e}", err=True)
@@ -172,6 +184,7 @@ def list_keys(
         created = record.get(ApiKeyRecord.CREATED_AT, "unknown")
         expires = record.get(ApiKeyRecord.EXPIRES_AT, "never")
         typer.echo(f"{client:<30} {environment:<12} {active_cell} {created:<30} {expires}")
+
     typer.echo("")
 
 

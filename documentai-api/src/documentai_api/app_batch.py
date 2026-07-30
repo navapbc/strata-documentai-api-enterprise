@@ -65,6 +65,7 @@ from documentai_api.utils.uploads import (
     upload_document_for_processing,
     validate_file_type,
 )
+from documentai_api.utils.write_limit import increment_and_check
 from documentai_api.utils.zip import extract_files_from_zip
 
 logger = get_logger(__name__)
@@ -101,6 +102,7 @@ async def _process_batch_files(
                 status_code=400, detail=f"Filename is required (file at position {idx})"
             )
 
+        increment_and_check(tenant_id)
         actual_content_type = await validate_file_type(file)
         job_id = str(uuid.uuid4())
         unique_file_name = f"{idx}-{generate_unique_filename(file.filename, job_id)}"

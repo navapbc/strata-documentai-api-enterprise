@@ -344,3 +344,29 @@ def test_optimize_too_large_after_conversion(s3_bucket, mocker):
 
     assert result.too_large is True
     assert result.grayscale_applied is True
+
+
+def test_max_image_pixels_constant_is_sufficient_for_id_documents():
+    assert ConfigDefaults.MAX_IMAGE_PIXELS >= 48_000_000
+
+
+def test_max_image_pixels_set_on_pil():
+    from PIL import Image
+
+    assert Image.MAX_IMAGE_PIXELS == ConfigDefaults.MAX_IMAGE_PIXELS
+
+
+def test_oversized_image_raises_decompression_bomb():
+    from PIL import Image
+
+    original = Image.MAX_IMAGE_PIXELS
+    Image.MAX_IMAGE_PIXELS = 100
+    try:
+        img = Image.new("RGB", (20, 20))  # 400 px > 100 limit
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        buf.seek(0)
+        with pytest.raises(Image.DecompressionBombError):
+            Image.open(buf).load()
+    finally:
+        Image.MAX_IMAGE_PIXELS = original

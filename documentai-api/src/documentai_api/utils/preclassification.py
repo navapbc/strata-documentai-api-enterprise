@@ -1,5 +1,6 @@
 """Document preclassification using Bedrock vision models."""
 
+import re
 import time
 from decimal import Decimal
 from typing import Any
@@ -68,6 +69,13 @@ def _build_content_block(document_bytes: bytes, content_type: str) -> dict[str, 
     return {"image": {"format": content_type.split("/")[1], "source": {"bytes": document_bytes}}}
 
 
+def _sanitize_category(user_category: str | None) -> str:
+    """Strip characters that could break out of the prompt template."""
+    if not user_category:
+        return "unknown"
+    return re.sub(r"[^a-z0-9 _-]", " ", user_category.lower()).strip() or "unknown"
+
+
 def preclassify_document(
     document_bytes: bytes, content_type: str, user_category: str | None = None
 ) -> BedrockClassificationResult:
@@ -86,7 +94,9 @@ def preclassify_document(
             document_type="other_document", confidence=0.0, document_count=1
         )
 
-    prompt = _get_classification_prompt().replace("{user_category}", user_category or "unknown")
+    prompt = _get_classification_prompt().replace(
+        "{user_category}", _sanitize_category(user_category)
+    )
     content_block = _build_content_block(document_bytes, content_type)
 
     messages = [

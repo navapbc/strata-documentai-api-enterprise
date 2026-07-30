@@ -51,6 +51,7 @@ class EnvVars(StrEnum):
     API_AUTH_INSECURE_SHARED_KEY_PARAM = "API_AUTH_INSECURE_SHARED_KEY_PARAM"
     API_AUTH_ENABLED = "API_AUTH_ENABLED"
     API_AUTH_CACHE_TTL = "API_AUTH_CACHE_TTL"
+    API_KEY_PEPPER_PARAM = "API_KEY_PEPPER_PARAM"
     API_KEYS_TABLE_NAME = "API_KEYS_TABLE_NAME"
     TENANTS_TABLE_NAME = "TENANTS_TABLE_NAME"
     TENANT_REQUEST_COUNTS_TABLE_NAME = "TENANT_REQUEST_COUNTS_TABLE_NAME"
@@ -144,10 +145,20 @@ class AWSEnvConfig(PydanticBaseEnvConfig):
 class AppEnvConfig(PydanticBaseEnvConfig):
     api_auth_insecure_shared_key: str = ""
     api_auth_insecure_shared_key_param: str | None = None
+    api_key_pepper_param: str | None = None
     api_auth_enabled: bool = False
     api_auth_cache_ttl: int = 300
     presigned_url_expiry_seconds: int = 900
     api_base_url: str = "http://localhost:8000"
+    cors_allowed_origins: list[str] = []
+
+    def get_cors_origins(self) -> list[str]:
+        """Return configured origins, or ["*"] in non-hosted environments."""
+        if self.cors_allowed_origins:
+            return self.cors_allowed_origins
+
+        return [] if self.is_hosted_env() else ["*"]
+
     image_tag: str | None = None
     environment: str = "local"
     host: str = "127.0.0.1"
@@ -156,11 +167,9 @@ class AppEnvConfig(PydanticBaseEnvConfig):
     def is_hosted_env(self) -> bool:
         """Whether the app is running in a deployed (non-local) environment.
 
-        Detected via the Lambda runtime marker (`AWS_LAMBDA_FUNCTION_NAME`, set
-        automatically by AWS), which is true for every real deployment regardless of
-        the `ENVIRONMENT` name. The app is deployed exclusively to Lambda today; if we
-        ever host it elsewhere (ECS/EC2/etc.), extend this with that platform's signal.
-        Local dev and the test suite run outside Lambda, so they are treated as non-hosted.
+        Detected solely via the Lambda runtime marker (`AWS_LAMBDA_FUNCTION_NAME`,
+        set automatically by AWS). This ensures local/test runs are never treated
+        as hosted regardless of the ENVIRONMENT variable value.
         """
         return bool(os.environ.get(EnvVars.AWS_LAMBDA_FUNCTION_NAME))
 
@@ -168,6 +177,7 @@ class AppEnvConfig(PydanticBaseEnvConfig):
         """Resolve the insecure shared key from SSM if param is set, else use env var."""
         if self.api_auth_insecure_shared_key:
             return self.api_auth_insecure_shared_key
+
         if self.api_auth_insecure_shared_key_param:
             ssm = boto3.client("ssm")
             response = ssm.get_parameter(
@@ -175,6 +185,14 @@ class AppEnvConfig(PydanticBaseEnvConfig):
             )
             return response["Parameter"]["Value"]
         return ""
+
+    def resolve_api_key_pepper(self) -> str | None:
+        """Resolve the API key pepper from SSM SecureString. Returns None if not configured."""
+        if not self.api_key_pepper_param:
+            return None
+        ssm = boto3.client("ssm")
+        response = ssm.get_parameter(Name=self.api_key_pepper_param, WithDecryption=True)
+        return response["Parameter"]["Value"]
 
 
 @lru_cache

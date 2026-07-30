@@ -70,7 +70,7 @@ app.include_router(auth_events_router)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=get_app_env_config().get_cors_origins(),
     allow_credentials=False,
     allow_methods=["GET", "PUT", "POST", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "x-api-key", "API-Key", "Authorization", "X-Trace-ID"],

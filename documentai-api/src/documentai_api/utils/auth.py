@@ -1,11 +1,13 @@
 """API key authentication utilities."""
 
 import hashlib
+import hmac
 import secrets
 import threading
 import time
 from collections import OrderedDict
 from datetime import UTC, datetime
+from functools import lru_cache
 from typing import Annotated, Any
 
 from fastapi import Depends, HTTPException, status
@@ -43,8 +45,76 @@ _LAST_USED_THREAD_NAME = "auth-lastused"  # named so tests can drain leaked upda
 
 
 def _hash_key(api_key: str) -> str:
-    """Return SHA-256 hash of the given API key."""
+    """Return SHA-256 hash of the given API key (legacy, no pepper)."""
     return hashlib.sha256(api_key.encode()).hexdigest()
+
+
+@lru_cache(maxsize=1)
+def _get_pepper() -> str | None:
+    """Fetch the API key pepper from SSM once and cache it for the process lifetime."""
+    try:
+        return get_app_env_config().resolve_api_key_pepper()
+    except Exception as e:
+        logger.warning(f"Failed to resolve API key pepper: {e}")
+        return None
+
+
+def _hash_key_with_pepper(api_key: str, pepper: str) -> str:
+    """Return HMAC-SHA256 of the API key using the pepper as the key."""
+    return hmac.new(pepper.encode(), api_key.encode(), hashlib.sha256).hexdigest()
+
+
+def _compute_key_hash(api_key: str) -> str:
+    """Hash an API key using HMAC-SHA256+pepper if configured, else plain SHA-256."""
+    pepper = _get_pepper()
+    if pepper:
+        return _hash_key_with_pepper(api_key, pepper)
+    return _hash_key(api_key)
+
+
+def _lookup_and_maybe_migrate(api_key: str) -> dict[str, Any] | None:
+    """Look up an API key with pepper-aware fallback.
+
+    If a pepper is configured, tries the HMAC hash first, then falls back to
+    plain SHA-256 for legacy keys. On a successful legacy hit, re-hashes with
+    HMAC and updates DDB so the key is migrated on next auth.
+    """
+    pepper = _get_pepper()
+
+    if pepper:
+        record = _lookup_key_in_ddb(_hash_key_with_pepper(api_key, pepper))
+        if record:
+            return record
+
+    # Legacy fallback: plain SHA-256
+    legacy_hash = _hash_key(api_key)
+    record = _lookup_key_in_ddb(legacy_hash)
+    if not record:
+        return None
+
+    if pepper:
+        _migrate_key_hash(legacy_hash, _hash_key_with_pepper(api_key, pepper))
+
+    return record
+
+
+def _migrate_key_hash(old_hash: str, new_hash: str) -> None:
+    """Replace an old key hash with a new one in DDB. Best-effort - failures are logged."""
+    from documentai_api.services import ddb as ddb_service
+
+    table_name = get_aws_config().api_keys_table_name
+    if not table_name:
+        return
+    try:
+        existing = _lookup_key_in_ddb(old_hash)
+        if not existing:
+            return
+        ddb_service.put_item(table_name, {**existing, ApiKeyRecord.KEY_HASH: new_hash})
+        ddb_service.delete_item(table_name, {ApiKeyRecord.KEY_HASH: old_hash})
+        get_cache().invalidate(old_hash)
+        logger.info("Migrated API key hash to HMAC-SHA256")
+    except Exception as e:
+        logger.warning(f"Failed to migrate key hash: {e}")
 
 
 def _get_cache_ttl_minutes() -> int:
@@ -152,12 +222,13 @@ def _verify_with_ddb(api_key: str) -> None:
     if not _is_valid_key_format(api_key):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
 
-    key_hash = _hash_key(api_key)
+    key_hash = _compute_key_hash(api_key)
 
     cache = get_cache()
     record = cache.get(key_hash)
+
     if record is None:
-        record = _lookup_key_in_ddb(key_hash)
+        record = _lookup_and_maybe_migrate(api_key)
         if record:
             cache.add(key_hash, record, ttl_minutes=_get_cache_ttl_minutes())
 
@@ -267,7 +338,7 @@ def generate_api_key(
 
     random_part = secrets.token_urlsafe(32)[:32]
     api_key = f"docai_{random_part}"
-    key_hash = _hash_key(api_key)
+    key_hash = _compute_key_hash(api_key)
 
     table_name = get_aws_config().api_keys_table_name
     if not table_name:
@@ -335,7 +406,7 @@ def deactivate_api_key(key_hash: str) -> bool:
     """Deactivate an API key by setting isActive=false in DynamoDB.
 
     Args:
-        key_hash: SHA-256 hash of the key to deactivate.
+        key_hash: Hash of the key to deactivate (HMAC-SHA256 if pepper is configured, else SHA-256).
 
     Returns:
         True if the key was found and deactivated, False if not found.
@@ -405,12 +476,13 @@ def _get_user_context_from_api_key_from_ddb(api_key: str) -> UserContext:
     if not _is_valid_key_format(api_key):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
 
-    key_hash = _hash_key(api_key)
+    key_hash = _compute_key_hash(api_key)
 
     cache = get_cache()
     record = cache.get(key_hash)
+
     if record is None:
-        record = _lookup_key_in_ddb(key_hash)
+        record = _lookup_and_maybe_migrate(api_key)
         if record:
             cache.add(key_hash, record, ttl_minutes=_get_cache_ttl_minutes())
 
@@ -449,7 +521,13 @@ async def get_user_context_with_fallback(
     Returns a UserContext in both cases. Used for endpoints that need to
     serve both machine clients (API key) and admin UI users (JWT).
     """
-    from documentai_api.utils.jwt_auth import _decode_and_verify, get_tenant_id
+    from documentai_api.utils.jwt_auth import (
+        SUPER_ADMIN,
+        _decode_and_verify,
+        get_tenant_id,
+        is_super_admin,
+        require_role,
+    )
 
     # Try API key first
     if api_key:
@@ -462,9 +540,25 @@ async def get_user_context_with_fallback(
     if credentials:
         try:
             claims = _decode_and_verify(credentials.credentials)
-            tenant_id = get_tenant_id(claims) or "__admin__"
+            # Reject unapproved users (no group membership) before resolving tenant.
+            require_role(claims)
+
+            # Super-admin sentinel is only granted via explicit group membership,
+            # never from the absence of a tenant claim.
+            if is_super_admin(claims):
+                tenant_id = SUPER_ADMIN
+            else:
+                tenant_id = get_tenant_id(claims)
+                if not tenant_id:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Account has no tenant assigned. Contact an administrator.",
+                    )
             api_key_name = claims.get("email") or claims.get("sub", "unknown")
             return UserContext(tenant_id=tenant_id, api_key_name=api_key_name, auth_method="jwt")
+
+        except HTTPException:
+            raise
         except Exception as e:
             # debug, not warning: this fires on every expired/garbage bearer token
             # (routine, caller-controlled), so warning-level would be noise + a log-spam vector.
@@ -494,7 +588,9 @@ def resolve_tenant_from_context(
         return auth.tenant_id
 
     # JWT caller
-    if auth.tenant_id == "__admin__":
+    from documentai_api.utils.jwt_auth import SUPER_ADMIN
+
+    if auth.tenant_id == SUPER_ADMIN:
         return requested_tenant_id
 
     # Tenant-admin

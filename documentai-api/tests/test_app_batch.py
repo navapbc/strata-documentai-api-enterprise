@@ -17,6 +17,11 @@ def _disable_auth(disable_auth):
     pass
 
 
+@pytest.fixture(autouse=True)
+def _mock_quota(mocker):
+    mocker.patch("documentai_api.app_batch.increment_and_check")
+
+
 @pytest.fixture
 def pdf_file():
     """Factory for a test PDF file tuple suitable for httpx files={...}."""
