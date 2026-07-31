@@ -3655,6 +3655,55 @@
         ]
       }
     },
+    "/v1/documents/{job_id}/evaluation": {
+      "get": {
+        "tags": [
+          "Documents:Query"
+        ],
+        "summary": "Get Document Evaluation",
+        "description": "Return a per-check evaluation breakdown for a processed document.",
+        "operationId": "get_document_evaluation_v1_documents__job_id__evaluation_get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvaluationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/": {
       "get": {
         "summary": "Root",
@@ -5807,6 +5856,87 @@
           "results"
         ],
         "title": "DocumentSearchResponse"
+      },
+      "EvaluationEntry": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "EvaluationEntry"
+      },
+      "EvaluationResponse": {
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "title": "Jobid"
+          },
+          "createdAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Createdat"
+          },
+          "responseCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsecode"
+          },
+          "responseCodeDescription": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsecodedescription"
+          },
+          "evaluations": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/EvaluationEntry"
+            },
+            "type": "object",
+            "title": "Evaluations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "jobId",
+          "createdAt",
+          "responseCode",
+          "responseCodeDescription",
+          "evaluations"
+        ],
+        "title": "EvaluationResponse"
       },
       "ExtractionRuleDeleteResponse": {
         "properties": {
