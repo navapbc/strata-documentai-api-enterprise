@@ -287,7 +287,7 @@ def test_detect_blur_empty_quadrant_llm_fallback(
 
     result = detect_blur(b"fake", "image/jpeg")
     assert result.is_blurry is expected_blurry
-    assert result.quadrant_stats["bottom_left"]["llm_detected_text"] is expected_blurry
+    assert result.quadrant_stats["bottom_left"]["is_text_detected_by_llm"] is expected_blurry
     mock_llm.assert_called_once()
 
 
@@ -316,6 +316,47 @@ def test_detect_blur_llm_skipped_when_confidence_already_failed(mock_textract, m
     result = detect_blur(b"fake", "image/jpeg")
     assert result.is_blurry is True
     mock_llm.assert_not_called()
+
+
+def test_detect_blur_quadrant_fails_low_avg_sets_reason(mock_textract, mock_llm):
+    words = (
+        _quadrant_words(6, Quadrant.TOP_LEFT, 70.0)
+        + _quadrant_words(6, Quadrant.TOP_RIGHT, 99.0)
+        + _quadrant_words(6, Quadrant.BOTTOM_LEFT, 99.0)
+        + _quadrant_words(6, Quadrant.BOTTOM_RIGHT, 99.0)
+    )
+    mock_textract.detect_document_text.return_value = _textract_response(words)
+    result = detect_blur(b"fake", "image/jpeg")
+    assert result.is_blurry is True
+    assert result.blur_reason_text is not None
+    assert "did not meet" in result.blur_reason_text
+
+
+def test_detect_blur_llm_fallback_sets_reason(mock_textract, mock_llm):
+    words = (
+        _quadrant_words(10, Quadrant.TOP_LEFT, 99.0)
+        + _quadrant_words(10, Quadrant.TOP_RIGHT, 99.0)
+        + _quadrant_words(6, Quadrant.BOTTOM_RIGHT, 99.0)
+    )
+    mock_textract.detect_document_text.return_value = _textract_response(words)
+    mock_llm.return_value = {"bottom_left": True}
+    result = detect_blur(b"fake", "image/jpeg")
+    assert result.is_blurry is True
+    assert result.blur_reason_text is not None
+    assert "OCR did not detect" in result.blur_reason_text
+
+
+def test_detect_blur_page_fallback_sets_reason(mock_textract, mock_llm):
+    words = (
+        _quadrant_words(2, Quadrant.TOP_LEFT, 70.0)
+        + _quadrant_words(2, Quadrant.TOP_RIGHT, 70.0)
+        + _quadrant_words(2, Quadrant.BOTTOM_LEFT, 70.0)
+        + _quadrant_words(2, Quadrant.BOTTOM_RIGHT, 70.0)
+    )
+    mock_textract.detect_document_text.return_value = _textract_response(words)
+    result = detect_blur(b"fake", "image/jpeg")
+    assert result.is_blurry is True
+    assert result.blur_reason_text is not None
 
 
 # =============================================================================

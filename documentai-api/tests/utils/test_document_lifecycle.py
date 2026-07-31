@@ -338,7 +338,7 @@ def test_set_processing_status_started_returns_false_when_record_missing(ddb_doc
         ),
         (
             lifecycle_util.classify_as_not_implemented,
-            ResponseCodes.DOCUMENT_TYPE_NOT_IMPLEMENTED,
+            ResponseCodes.NO_BLUEPRINT_MATCHED,
             ProcessStatus.SUCCESS,
             None,
             None,
@@ -352,7 +352,7 @@ def test_set_processing_status_started_returns_false_when_record_missing(ddb_doc
         ),
         (
             lifecycle_util.classify_as_no_custom_blueprint_matched,
-            ResponseCodes.DOCUMENT_TYPE_NOT_IMPLEMENTED,
+            ResponseCodes.NO_BLUEPRINT_MATCHED,
             ProcessStatus.NO_CUSTOM_BLUEPRINT_MATCHED,
             None,
             None,
@@ -401,6 +401,11 @@ def test_classify_functions(
 
     if function == lifecycle_util.classify_as_success:
         expected_call["below_extraction_confidence_floor"] = False
+        expected_call["extraction_rules_configured"] = None
+        expected_call["missing_required_field_list"] = None
+        expected_call["required_field_list"] = None
+        expected_call["applied_extraction_confidence_floor"] = None
+        expected_call["used_default_confidence_floor"] = None
         expected_call["result_processor_started_at"] = None
 
     if function in (

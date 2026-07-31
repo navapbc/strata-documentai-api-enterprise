@@ -18,8 +18,12 @@ from documentai_api.utils.document_lifecycle import (
     classify_as_no_document_detected,
     classify_as_success,
 )
+from documentai_api.utils.extraction_rules import get_missing_required_fields
 from documentai_api.utils.response_codes import ResponseCodes
-from documentai_api.utils.tenants import get_extraction_confidence_floor
+from documentai_api.utils.tenants import (
+    get_extraction_confidence_floor,
+    tenant_has_confidence_floor,
+)
 
 logger = get_logger(__name__)
 
@@ -148,20 +152,31 @@ def process_bda_output(
         # Check average confidence against tenant's extraction confidence floor
         tenant_id = ddb_record.get(DocumentMetadata.TENANT_ID)
         response_code = results.response_code or ResponseCodes.SUCCESS
-        below_floor = _is_below_extraction_confidence_floor(results, tenant_id)
+        confidence_floor = get_extraction_confidence_floor(tenant_id)
+        used_default_floor = not tenant_has_confidence_floor(tenant_id)
+        below_floor = _is_below_extraction_confidence_floor(results, confidence_floor)
+        rule_fields = get_missing_required_fields(
+            tenant_id, document_class, results.empty_field_list, results.fields_missing_geometry
+        )
+        missing_required_field_list, required_field_list = rule_fields or (None, None)
 
         return classify_as_success(
             object_key=file_name,
             response_code=response_code,
             data=classification_data,
             below_extraction_confidence_floor=below_floor,
+            extraction_rules_configured=rule_fields is not None,
+            missing_required_field_list=missing_required_field_list,
+            required_field_list=required_field_list,
+            applied_extraction_confidence_floor=confidence_floor,
+            used_default_confidence_floor=used_default_floor,
             result_processor_started_at=result_processor_started_at,
         )
 
 
 def _is_below_extraction_confidence_floor(
     results: BdaProcessingResults,
-    tenant_id: str | None,
+    confidence_floor: float,
 ) -> bool:
     """Check if average non-empty field confidence is below the tenant's floor."""
     avg_confidence = calculate_average_non_empty_confidence(
@@ -170,7 +185,7 @@ def _is_below_extraction_confidence_floor(
     if avg_confidence is None:
         return False
 
-    return avg_confidence < get_extraction_confidence_floor(tenant_id)
+    return avg_confidence < confidence_floor
 
 
 __all__ = ["process_bda_output"]

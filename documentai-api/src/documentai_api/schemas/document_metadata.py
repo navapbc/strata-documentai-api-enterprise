@@ -80,7 +80,9 @@ class DocumentMetadata:
     BLUR_ANALYSIS_FAILED = "blurAnalysisFailed"
     OCR_AVG_WORD_CONFIDENCE = "ocrAvgWordConfidence"
     DOCUMENT_WORD_COUNT = "documentWordCount"
-    BLUR_LLM_CHECKED = "blurLlmChecked"
+    BLUR_LLM_CHECKED = "wasBlurLlmInvoked"
+    IS_DOCUMENT_BLURRY_REASON = "isDocumentBlurryReason"
+    DOCUMENT_WORD_QUADRANT_STATS = "documentWordQuadrantStats"
     DOCUMENT_METRICS_RAW = "documentMetricsRaw"
     DOCUMENT_METRICS_NORMALIZED = "documentMetricsNormalized"
 
@@ -105,6 +107,11 @@ class DocumentMetadata:
         "matchedBlueprintFieldNotEmptyAvgConfidence"
     )
     BELOW_EXTRACTION_CONFIDENCE_FLOOR = "belowExtractionConfidenceFloor"
+    EXTRACTION_RULES_CONFIGURED = "extractionRulesConfigured"
+    MISSING_REQUIRED_FIELD_LIST = "missingRequiredFieldList"
+    REQUIRED_FIELD_LIST = "requiredFieldList"
+    EXTRACTION_CONFIDENCE_THRESHOLD = "extractionConfidenceThreshold"
+    USED_DEFAULT_EXTRACTION_CONFIDENCE_THRESHOLD = "usedDefaultExtractionConfidenceThreshold"
 
     # extraction method
     EXTRACT_METHOD = "extractionMethod"

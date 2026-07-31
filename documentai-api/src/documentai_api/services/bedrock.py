@@ -17,15 +17,25 @@ if TYPE_CHECKING:
     wait=wait_exponential_jitter(initial=1, max=10),
 )
 def invoke_model(
-    model_id: str, messages: list[Any], max_tokens: int = 256, temperature: float | None = None
+    model_id: str,
+    messages: list[Any],
+    max_tokens: int = 256,
+    temperature: float | None = None,
+    system: list[Any] | None = None,
 ) -> Any:
     client = AWSClientFactory.get_bedrock_runtime_client()
     inference_config: InferenceConfigurationTypeDef = {"maxTokens": max_tokens}
     if temperature is not None:
         inference_config["temperature"] = temperature
-    response = client.converse(
-        modelId=model_id,
-        messages=messages,
-        inferenceConfig=inference_config,
-    )
+
+    kwargs: dict[str, Any] = {
+        "modelId": model_id,
+        "messages": messages,
+        "inferenceConfig": inference_config,
+    }
+
+    if system is not None:
+        kwargs["system"] = system
+    response = client.converse(**kwargs)
+
     return response

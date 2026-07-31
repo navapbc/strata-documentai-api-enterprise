@@ -31,8 +31,8 @@ from documentai_api.utils.bda_invoker import (
 from documentai_api.utils.dates import strip_time
 from documentai_api.utils.ddb import get_ddb_record
 from documentai_api.utils.document_lifecycle import (
+    classify_as_extraction_not_configured,
     classify_as_failed,
-    classify_as_no_custom_blueprint_matched,
     classify_as_not_implemented,
     set_bda_processing_status_started,
     set_processing_status_started,
@@ -283,7 +283,7 @@ def main(
                 logger.info(f"Optimized {ddb_key} and invoked BDA")
             else:
                 logger.info(f"{ddb_key} preclassified as other_document; skipping BDA (flag on)")
-                classify_as_no_custom_blueprint_matched(
+                classify_as_extraction_not_configured(
                     object_key=ddb_key,
                     data=ClassificationData(
                         additional_info="Preclassified as other_document; BDA skipped per feature flag"
@@ -320,7 +320,7 @@ def main(
             invoke_bda(bucket_name, object_key, ddb_key, preclassification_category)
         else:
             logger.info(f"{ddb_key} preclassified as other_document; skipping BDA (flag on)")
-            classify_as_no_custom_blueprint_matched(
+            classify_as_extraction_not_configured(
                 object_key=ddb_key,
                 data=ClassificationData(
                     additional_info="Preclassified as other_document; BDA skipped per feature flag"

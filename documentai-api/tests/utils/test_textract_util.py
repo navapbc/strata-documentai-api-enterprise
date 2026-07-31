@@ -312,6 +312,10 @@ def test_finalize_textract_result_calls_classify_as_success(mocker):
     mock_classify = mocker.patch("documentai_api.utils.document_lifecycle.classify_as_success")
     mocker.patch("documentai_api.utils.ddb.get_ddb_record", return_value={"tenantId": "t1"})
     mocker.patch("documentai_api.utils.tenants.get_extraction_confidence_floor", return_value=0.65)
+    mocker.patch("documentai_api.utils.tenants.tenant_has_confidence_floor", return_value=False)
+    mocker.patch(
+        "documentai_api.utils.extraction_rules.get_missing_required_fields", return_value=None
+    )
 
     started = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
     completed = datetime(2025, 1, 1, 12, 0, 2, tzinfo=UTC)
@@ -341,6 +345,10 @@ def test_finalize_textract_result_sets_below_floor_when_low_confidence(mocker):
     mock_classify = mocker.patch("documentai_api.utils.document_lifecycle.classify_as_success")
     mocker.patch("documentai_api.utils.ddb.get_ddb_record", return_value={"tenantId": "t1"})
     mocker.patch("documentai_api.utils.tenants.get_extraction_confidence_floor", return_value=0.90)
+    mocker.patch("documentai_api.utils.tenants.tenant_has_confidence_floor", return_value=False)
+    mocker.patch(
+        "documentai_api.utils.extraction_rules.get_missing_required_fields", return_value=None
+    )
 
     started = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
     completed = datetime(2025, 1, 1, 12, 0, 2, tzinfo=UTC)

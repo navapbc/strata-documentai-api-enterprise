@@ -420,7 +420,7 @@ def test_main_skips_bda_when_no_match_and_flag_on(input_pdf, mocker, mock_invoke
     )
 
     mock_classify_no_match = mocker.patch(
-        "documentai_api.jobs.document_processor.main.classify_as_no_custom_blueprint_matched"
+        "documentai_api.jobs.document_processor.main.classify_as_extraction_not_configured"
     )
 
     mock_get = mocker.patch("documentai_api.jobs.document_processor.main.get_ddb_record")

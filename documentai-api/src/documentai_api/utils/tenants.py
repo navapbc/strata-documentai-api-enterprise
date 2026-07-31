@@ -26,6 +26,14 @@ def get_extraction_confidence_floor(tenant_id: str | None) -> float:
     return ConfigDefaults.FIELD_CONFIDENCE_THRESHOLD
 
 
+def tenant_has_confidence_floor(tenant_id: str | None) -> bool:
+    """Return True if the tenant has an explicit confidence floor configured."""
+    if not tenant_id:
+        return False
+    record = _table.get(tenant_id)
+    return bool(record and TenantRecord.EXTRACTION_CONFIDENCE_FLOOR in record)
+
+
 def list_tenants(*, active_only: bool = True) -> list[dict[str, Any]]:
     """List all tenants, optionally filtered to active only."""
     return _table.list_all(active_only=active_only)
