@@ -401,6 +401,11 @@ def test_classify_functions(
 
     if function == lifecycle_util.classify_as_success:
         expected_call["below_extraction_confidence_floor"] = False
+        expected_call["extraction_rules_configured"] = None
+        expected_call["missing_required_field_list"] = None
+        expected_call["required_field_list"] = None
+        expected_call["applied_extraction_confidence_floor"] = None
+        expected_call["used_default_confidence_floor"] = None
         expected_call["result_processor_started_at"] = None
 
     if function in (

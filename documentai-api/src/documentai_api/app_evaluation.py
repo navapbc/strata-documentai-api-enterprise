@@ -1,6 +1,7 @@
 """Evaluation endpoint - returns per-check pass/fail/not_evaluated breakdown for a document."""
 
 import asyncio
+import json
 import uuid
 from typing import Any
 
@@ -46,7 +47,7 @@ _PRE_EXTRACTION_STOP_MAP: dict[str, tuple[str, str]] = {
         NotEvaluatedReason.STOPPED_BLURRY,
     ),
     ResponseCodes.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE: (
-        EvaluationKey.MULTIPLE_DOCUMENTS,
+        EvaluationKey.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
         NotEvaluatedReason.STOPPED_MULTIPLE_DOCUMENTS,
     ),
 }
@@ -58,10 +59,21 @@ _EXTRACTION_TIER = {
     ResponseCodes.LOW_EXTRACTION_CONFIDENCE,
 }
 
-_STOP_FAIL_REASONS = {
+_STOP_FAIL_REASONS: dict[str, str] = {
+    EvaluationKey.PASSWORD_PROTECTED: "Document is password protected.",
     EvaluationKey.DOCUMENT_DETECTED: "Insufficient text detected to identify a document.",
-    EvaluationKey.MULTIPLE_DOCUMENTS: "Multiple documents were detected on a single page.",
+    EvaluationKey.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE: "Multiple documents were detected on a single page.",
 }
+
+_BLUR_STOP_FALLBACK = "Document was flagged as blurry."
+
+
+def _stop_fail_entry(key: str, ddb_record: dict[str, Any]) -> EvaluationEntry:
+    """Return a guaranteed-fail entry for the stop key, driven by the response code."""
+    if key == EvaluationKey.BLUR:
+        reason = ddb_record.get(DocumentMetadata.IS_DOCUMENT_BLURRY_REASON) or _BLUR_STOP_FALLBACK
+        return EvaluationEntry(status=_FAIL, reason=reason)
+    return EvaluationEntry(status=_FAIL, reason=_STOP_FAIL_REASONS[key])
 
 
 def _evaluate_key(key: str, ddb_record: dict[str, Any]) -> EvaluationEntry:
@@ -82,35 +94,62 @@ def _evaluate_key(key: str, ddb_record: dict[str, Any]) -> EvaluationEntry:
             return EvaluationEntry(status=_FAIL, reason=reason)
         return EvaluationEntry(status=_PASS, reason=reason)
 
-    if key == EvaluationKey.MULTIPLE_DOCUMENTS:
+    if key == EvaluationKey.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE:
         # No stored boolean - reaching this key means only one document was detected.
-        return EvaluationEntry(status=_PASS, reason=None)
+        return EvaluationEntry(status=_PASS, reason="No multiple documents detected.")
 
     if key == EvaluationKey.MISCATEGORIZATION:
         category_match = ddb_record.get(DocumentMetadata.PRECLASSIFICATION_CATEGORY_MATCH)
         if category_match is False:
-            return EvaluationEntry(
-                status=_FAIL, reason="Document category did not match the expected type."
+            expected = ddb_record.get(DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY)
+            detected = ddb_record.get(DocumentMetadata.PRECLASSIFICATION_CATEGORY)
+            detail = (
+                f"The detected document type ({detected.lower()}) does not appear to belong to the provided document category ({expected.lower()})."
+                if expected and detected
+                else "Document category did not match the expected type."
             )
+            return EvaluationEntry(status=_FAIL, reason=detail)
         return EvaluationEntry(status=_PASS, reason=None)
 
     if key == EvaluationKey.MISSING_FIELDS:
-        empty_list = ddb_record.get(DocumentMetadata.BDA_MATCHED_BLUEPRINT_FIELD_EMPTY_LIST) or []
-        if empty_list:
-            # TODO: hydrate with specific missing field names
-            return EvaluationEntry(
-                status=_FAIL, reason="One or more required fields were not extracted."
-            )
-        return EvaluationEntry(status=_PASS, reason=None)
-
-    if key == EvaluationKey.EXTRACTION_CONFIDENCE:
-        if ddb_record.get(DocumentMetadata.BELOW_EXTRACTION_CONFIDENCE_FLOOR):
-            # TODO: hydrate with per-field confidence scores
+        if DocumentMetadata.EXTRACTION_RULES_CONFIGURED not in ddb_record:
+            return EvaluationEntry(status=_NOT_EVALUATED, reason=NotEvaluatedReason.LEGACY_DOCUMENT)
+        if ddb_record.get(DocumentMetadata.EXTRACTION_RULES_CONFIGURED) is False:
+            return EvaluationEntry(status=_NOT_EVALUATED, reason="Extraction rules not configured.")
+        raw = ddb_record.get(DocumentMetadata.MISSING_REQUIRED_FIELD_LIST)
+        missing_required = json.loads(raw) if isinstance(raw, str) else (raw or [])
+        if missing_required:
             return EvaluationEntry(
                 status=_FAIL,
-                reason="Average field confidence was below the required threshold.",
+                reason=f"One or more required fields were not extracted: {', '.join(missing_required)}.",
             )
-        return EvaluationEntry(status=_PASS, reason=None)
+        raw_required = ddb_record.get(DocumentMetadata.REQUIRED_FIELD_LIST)
+        required = (
+            json.loads(raw_required) if isinstance(raw_required, str) else (raw_required or [])
+        )
+        reason = f"All required fields were extracted: {', '.join(required)}." if required else None
+        return EvaluationEntry(status=_PASS, reason=reason)
+
+    if key == EvaluationKey.EXTRACTION_CONFIDENCE:
+        if DocumentMetadata.EXTRACTION_CONFIDENCE_THRESHOLD not in ddb_record:
+            return EvaluationEntry(status=_NOT_EVALUATED, reason=NotEvaluatedReason.LEGACY_DOCUMENT)
+        avg = ddb_record.get(DocumentMetadata.BDA_MATCHED_BLUEPRINT_FIELD_NOT_EMPTY_AVG_CONFIDENCE)
+        floor = ddb_record.get(DocumentMetadata.EXTRACTION_CONFIDENCE_THRESHOLD)
+        used_default = ddb_record.get(DocumentMetadata.USED_DEFAULT_EXTRACTION_CONFIDENCE_THRESHOLD)
+        avg_pct = f" ({avg:.0%})" if avg is not None else ""
+        threshold_label = "default" if used_default else "tenant-configured"
+        floor_pct = f" ({floor:.0%})" if floor is not None else ""
+
+        if ddb_record.get(DocumentMetadata.BELOW_EXTRACTION_CONFIDENCE_FLOOR):
+            return EvaluationEntry(
+                status=_FAIL,
+                reason=f"Average field confidence{avg_pct} did not meet the {threshold_label} required threshold{floor_pct}.",
+            )
+
+        return EvaluationEntry(
+            status=_PASS,
+            reason=f"Average field confidence{avg_pct} exceeded the {threshold_label} required threshold{floor_pct}.",
+        )
 
     return EvaluationEntry(status=_NOT_EVALUATED, reason=None)
 
@@ -181,10 +220,7 @@ def _build_evaluations(
         if i < stop_index:
             result[key] = _evaluate_key(key, ddb_record)
         elif i == stop_index:
-            if key in _STOP_FAIL_REASONS:
-                result[key] = EvaluationEntry(status=_FAIL, reason=_STOP_FAIL_REASONS[key])
-            else:
-                result[key] = _evaluate_key(key, ddb_record)
+            result[key] = _stop_fail_entry(key, ddb_record)
         else:
             result[key] = EvaluationEntry(status=_NOT_EVALUATED, reason=not_evaluated_reason)
 

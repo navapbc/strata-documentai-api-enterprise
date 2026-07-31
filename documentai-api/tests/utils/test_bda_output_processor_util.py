@@ -73,6 +73,14 @@ def test_process_bda_output_blueprint_matched_without_user_category():
             "documentai_api.utils.bda_output_processor.get_extraction_confidence_floor",
             return_value=0.7,
         ),
+        patch(
+            "documentai_api.utils.bda_output_processor.tenant_has_confidence_floor",
+            return_value=False,
+        ),
+        patch(
+            "documentai_api.utils.bda_output_processor.get_missing_required_fields",
+            return_value=None,
+        ),
     ):
         mock_extract_uri.return_value = MOCK_S3_URI
         mock_get_json.return_value = {
@@ -104,6 +112,14 @@ def test_process_bda_output_blueprint_matched():
         patch(
             "documentai_api.utils.bda_output_processor.get_extraction_confidence_floor",
             return_value=0.7,
+        ),
+        patch(
+            "documentai_api.utils.bda_output_processor.tenant_has_confidence_floor",
+            return_value=False,
+        ),
+        patch(
+            "documentai_api.utils.bda_output_processor.get_missing_required_fields",
+            return_value=None,
         ),
     ):
         mock_extract_uri.return_value = MOCK_S3_URI
@@ -186,12 +202,6 @@ def test_is_below_extraction_confidence_floor(
         field_confidence_map_list=field_confidence_map_list,
         empty_field_list=empty_fields,
     )
-    with patch(
-        "documentai_api.utils.bda_output_processor.get_extraction_confidence_floor",
-        return_value=floor,
-    ):
-        result = bda_output_processor_util._is_below_extraction_confidence_floor(
-            results, "test-tenant"
-        )
+    result = bda_output_processor_util._is_below_extraction_confidence_floor(results, floor)
 
     assert result is expected

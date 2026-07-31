@@ -24,7 +24,7 @@ logger = get_logger(__name__)
 _TERMINAL_STATUS_RESPONSES: dict[str, dict[str, Any]] = {
     ProcessStatus.NO_CUSTOM_BLUEPRINT_MATCHED.value: {
         "jobStatus": "completed",
-        "message": "Document processed but no matching template found",
+        "message": "No matching blueprint found",
         "fields": {},
         "responseCode": ResponseCodes.NO_BLUEPRINT_MATCHED,
         "responseMessage": ResponseCodes.get_message(ResponseCodes.NO_BLUEPRINT_MATCHED),

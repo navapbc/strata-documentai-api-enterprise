@@ -18,7 +18,7 @@ _ALL_KEYS = {
     EvaluationKey.PASSWORD_PROTECTED,
     EvaluationKey.DOCUMENT_DETECTED,
     EvaluationKey.BLUR,
-    EvaluationKey.MULTIPLE_DOCUMENTS,
+    EvaluationKey.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
     EvaluationKey.MISCATEGORIZATION,
     EvaluationKey.MISSING_FIELDS,
     EvaluationKey.EXTRACTION_CONFIDENCE,
@@ -136,7 +136,9 @@ def test_evaluation_success_clean_document_all_pass(api_client, mocker):
             DocumentMetadata.IS_PASSWORD_PROTECTED: False,
             DocumentMetadata.IS_DOCUMENT_BLURRY: False,
             DocumentMetadata.PRECLASSIFICATION_CATEGORY_MATCH: True,
-            DocumentMetadata.BDA_MATCHED_BLUEPRINT_FIELD_EMPTY_LIST: [],
+            DocumentMetadata.MISSING_REQUIRED_FIELD_LIST: [],
+            DocumentMetadata.EXTRACTION_RULES_CONFIGURED: True,
+            DocumentMetadata.EXTRACTION_CONFIDENCE_THRESHOLD: 0.65,
         },
     )
     evals = api_client.get(EVALUATION_URL).json()["evaluations"]
@@ -196,16 +198,37 @@ def test_evaluation_success_miscategorization_from_signal(api_client, mocker):
 def test_evaluation_success_missing_fields_from_signal(api_client, mocker):
     mocker.patch("documentai_api.app_evaluation.get_job_status").return_value = _job(
         ResponseCodes.SUCCESS,
-        extra_ddb={DocumentMetadata.BDA_MATCHED_BLUEPRINT_FIELD_EMPTY_LIST: ["field_a", "field_b"]},
+        extra_ddb={
+            DocumentMetadata.MISSING_REQUIRED_FIELD_LIST: ["field_a", "field_b"],
+            DocumentMetadata.EXTRACTION_RULES_CONFIGURED: True,
+        },
     )
     evals = api_client.get(EVALUATION_URL).json()["evaluations"]
     assert evals[EvaluationKey.MISSING_FIELDS]["status"] == _FAIL
 
 
+def test_evaluation_legacy_document_missing_fields_and_confidence_not_evaluated(api_client, mocker):
+    """Docs processed before enrichment lack sentinel fields — both keys report not_evaluated."""
+    mocker.patch("documentai_api.app_evaluation.get_job_status").return_value = _job(
+        ResponseCodes.SUCCESS,
+        extra_ddb={},  # no EXTRACTION_RULES_CONFIGURED, no EXTRACTION_CONFIDENCE_THRESHOLD
+    )
+    evals = api_client.get(EVALUATION_URL).json()["evaluations"]
+    assert evals[EvaluationKey.MISSING_FIELDS]["status"] == _NOT_EVALUATED
+    assert evals[EvaluationKey.MISSING_FIELDS]["reason"] == NotEvaluatedReason.LEGACY_DOCUMENT
+    assert evals[EvaluationKey.EXTRACTION_CONFIDENCE]["status"] == _NOT_EVALUATED
+    assert (
+        evals[EvaluationKey.EXTRACTION_CONFIDENCE]["reason"] == NotEvaluatedReason.LEGACY_DOCUMENT
+    )
+
+
 def test_evaluation_success_extraction_confidence_from_signal(api_client, mocker):
     mocker.patch("documentai_api.app_evaluation.get_job_status").return_value = _job(
         ResponseCodes.SUCCESS,
-        extra_ddb={DocumentMetadata.BELOW_EXTRACTION_CONFIDENCE_FLOOR: True},
+        extra_ddb={
+            DocumentMetadata.BELOW_EXTRACTION_CONFIDENCE_FLOOR: True,
+            DocumentMetadata.EXTRACTION_CONFIDENCE_THRESHOLD: 0.65,
+        },
     )
     evals = api_client.get(EVALUATION_URL).json()["evaluations"]
     assert evals[EvaluationKey.EXTRACTION_CONFIDENCE]["status"] == _FAIL
@@ -255,7 +278,7 @@ def test_evaluation_success_password_protected_pass_reason(api_client, mocker):
         ),
         (
             ResponseCodes.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
-            EvaluationKey.MULTIPLE_DOCUMENTS,
+            EvaluationKey.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
             NotEvaluatedReason.STOPPED_MULTIPLE_DOCUMENTS,
         ),
     ],
@@ -292,8 +315,8 @@ def test_evaluation_stop_code_reached_keys_use_signals(api_client, mocker):
     # blur is before multipleDocuments in the pipeline — it was reached
     assert evals[EvaluationKey.BLUR]["status"] == _FAIL
     assert evals[EvaluationKey.BLUR]["reason"] == "Low sharpness."
-    # multipleDocuments is the stop key
-    assert evals[EvaluationKey.MULTIPLE_DOCUMENTS]["status"] == _FAIL
+    # multipleDocumentsOnSinglePage is the stop key
+    assert evals[EvaluationKey.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE]["status"] == _FAIL
 
 
 # =============================================================================
@@ -307,8 +330,10 @@ def test_evaluation_extraction_trio_all_evaluated_independently(api_client, mock
         ResponseCodes.MISSING_FIELDS,
         extra_ddb={
             DocumentMetadata.PRECLASSIFICATION_CATEGORY_MATCH: False,
-            DocumentMetadata.BDA_MATCHED_BLUEPRINT_FIELD_EMPTY_LIST: ["field_a"],
+            DocumentMetadata.MISSING_REQUIRED_FIELD_LIST: ["field_a"],
+            DocumentMetadata.EXTRACTION_RULES_CONFIGURED: True,
             DocumentMetadata.BELOW_EXTRACTION_CONFIDENCE_FLOOR: True,
+            DocumentMetadata.EXTRACTION_CONFIDENCE_THRESHOLD: 0.65,
         },
     )
     evals = api_client.get(EVALUATION_URL).json()["evaluations"]
@@ -321,7 +346,10 @@ def test_evaluation_extraction_trio_no_not_evaluated(api_client, mocker):
     """For 101/102/105, extractionConfidence is never not_evaluated — it has a stored signal."""
     mocker.patch("documentai_api.app_evaluation.get_job_status").return_value = _job(
         ResponseCodes.MISCATEGORIZED,
-        extra_ddb={DocumentMetadata.PRECLASSIFICATION_CATEGORY_MATCH: False},
+        extra_ddb={
+            DocumentMetadata.PRECLASSIFICATION_CATEGORY_MATCH: False,
+            DocumentMetadata.EXTRACTION_CONFIDENCE_THRESHOLD: 0.65,
+        },
     )
     evals = api_client.get(EVALUATION_URL).json()["evaluations"]
     assert evals[EvaluationKey.EXTRACTION_CONFIDENCE]["status"] != _NOT_EVALUATED
@@ -355,7 +383,11 @@ def test_evaluation_no_blueprint_matched_with_arn_evaluates_from_signals(api_cli
     """002 + BDA_INVOCATION_ARN present -> BDA ran, evaluate all keys from signals."""
     mocker.patch("documentai_api.app_evaluation.get_job_status").return_value = _job(
         ResponseCodes.NO_BLUEPRINT_MATCHED,
-        extra_ddb={DocumentMetadata.BDA_INVOCATION_ARN: "arn:aws:bda:us-east-1:123:job/1"},
+        extra_ddb={
+            DocumentMetadata.BDA_INVOCATION_ARN: "arn:aws:bda:us-east-1:123:job/1",
+            DocumentMetadata.EXTRACTION_RULES_CONFIGURED: True,
+            DocumentMetadata.EXTRACTION_CONFIDENCE_THRESHOLD: 0.65,
+        },
     )
     evals = api_client.get(EVALUATION_URL).json()["evaluations"]
     assert set(evals.keys()) == _ALL_KEYS

@@ -42,6 +42,11 @@ def classify_as_success(
     response_code: str,
     data: ClassificationData,
     below_extraction_confidence_floor: bool = False,
+    extraction_rules_configured: bool | None = None,
+    missing_required_field_list: list[str] | None = None,
+    required_field_list: list[str] | None = None,
+    applied_extraction_confidence_floor: float | None = None,
+    used_default_confidence_floor: bool | None = None,
     result_processor_started_at: str | None = None,
 ) -> dict[str, Any]:
     """Mark file processing as completed."""
@@ -57,6 +62,11 @@ def classify_as_success(
         internal_api_response=internal_api_response,
         data=data,
         below_extraction_confidence_floor=below_extraction_confidence_floor,
+        extraction_rules_configured=extraction_rules_configured,
+        missing_required_field_list=missing_required_field_list,
+        required_field_list=required_field_list,
+        applied_extraction_confidence_floor=applied_extraction_confidence_floor,
+        used_default_confidence_floor=used_default_confidence_floor,
         result_processor_started_at=result_processor_started_at,
     )
 

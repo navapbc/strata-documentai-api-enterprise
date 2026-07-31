@@ -11,7 +11,7 @@ class EvaluationKey:
     PASSWORD_PROTECTED = "passwordProtected"
     DOCUMENT_DETECTED = "documentDetected"
     BLUR = "blurDetection"
-    MULTIPLE_DOCUMENTS = "multipleDocuments"
+    MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE = "multipleDocumentsOnSinglePage"
     MISCATEGORIZATION = "miscategorization"
     MISSING_FIELDS = "missingFields"
     EXTRACTION_CONFIDENCE = "extractionConfidence"
@@ -21,7 +21,7 @@ EVALUATION_PIPELINE: list[str] = [
     EvaluationKey.PASSWORD_PROTECTED,
     EvaluationKey.DOCUMENT_DETECTED,
     EvaluationKey.BLUR,
-    EvaluationKey.MULTIPLE_DOCUMENTS,
+    EvaluationKey.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
     EvaluationKey.MISCATEGORIZATION,
     EvaluationKey.MISSING_FIELDS,
     EvaluationKey.EXTRACTION_CONFIDENCE,
@@ -55,3 +55,6 @@ class NotEvaluatedReason:
     )
     EXTRACTION_NOT_EXECUTED = "Not reached - extraction did not run."
     BLUR_NOT_APPLICABLE = "Not evaluated - blur detection does not apply to this document type."
+    LEGACY_DOCUMENT = (
+        "Evaluation data not available for documents processed before this feature was enabled."
+    )

@@ -107,6 +107,11 @@ class DocumentMetadata:
         "matchedBlueprintFieldNotEmptyAvgConfidence"
     )
     BELOW_EXTRACTION_CONFIDENCE_FLOOR = "belowExtractionConfidenceFloor"
+    EXTRACTION_RULES_CONFIGURED = "extractionRulesConfigured"
+    MISSING_REQUIRED_FIELD_LIST = "missingRequiredFieldList"
+    REQUIRED_FIELD_LIST = "requiredFieldList"
+    EXTRACTION_CONFIDENCE_THRESHOLD = "extractionConfidenceThreshold"
+    USED_DEFAULT_EXTRACTION_CONFIDENCE_THRESHOLD = "usedDefaultExtractionConfidenceThreshold"
 
     # extraction method
     EXTRACT_METHOD = "extractionMethod"

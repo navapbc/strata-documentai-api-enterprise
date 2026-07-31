@@ -147,6 +147,11 @@ def _build_update_expression(
     bda_project_arn_used: str | None = None,
     error_message: str | None = None,
     below_extraction_confidence_floor: bool = False,
+    extraction_rules_configured: bool | None = None,
+    missing_required_field_list: list[str] | None = None,
+    required_field_list: list[str] | None = None,
+    applied_extraction_confidence_floor: float | None = None,
+    used_default_confidence_floor: bool | None = None,
 ) -> tuple[str, dict[str, Any]]:
     """Build DynamoDB update expression and values."""
     updates = [
@@ -229,6 +234,34 @@ def _build_update_expression(
     if below_extraction_confidence_floor:
         updates.append(f"{DocumentMetadata.BELOW_EXTRACTION_CONFIDENCE_FLOOR} = :belowFloor")
         values[":belowFloor"] = True
+
+    if extraction_rules_configured is not None:
+        updates.append(
+            f"{DocumentMetadata.EXTRACTION_RULES_CONFIGURED} = :extractionRulesConfigured"
+        )
+        values[":extractionRulesConfigured"] = extraction_rules_configured
+
+    if missing_required_field_list is not None:
+        updates.append(
+            f"{DocumentMetadata.MISSING_REQUIRED_FIELD_LIST} = :missingRequiredFieldList"
+        )
+        values[":missingRequiredFieldList"] = json.dumps(missing_required_field_list)
+
+    if required_field_list is not None:
+        updates.append(f"{DocumentMetadata.REQUIRED_FIELD_LIST} = :requiredFieldList")
+        values[":requiredFieldList"] = json.dumps(required_field_list)
+
+    if applied_extraction_confidence_floor is not None:
+        updates.append(
+            f"{DocumentMetadata.EXTRACTION_CONFIDENCE_THRESHOLD} = :extractionConfidenceThreshold"
+        )
+        values[":extractionConfidenceThreshold"] = Decimal(str(applied_extraction_confidence_floor))
+
+    if used_default_confidence_floor is not None:
+        updates.append(
+            f"{DocumentMetadata.USED_DEFAULT_EXTRACTION_CONFIDENCE_THRESHOLD} = :usedDefaultExtractionConfidenceThreshold"
+        )
+        values[":usedDefaultExtractionConfidenceThreshold"] = used_default_confidence_floor
 
     return "SET " + ", ".join(updates), values
 
@@ -317,6 +350,11 @@ def update_ddb(
     bda_project_arn_used: str | None = None,
     error_message: str | None = None,
     below_extraction_confidence_floor: bool = False,
+    extraction_rules_configured: bool | None = None,
+    missing_required_field_list: list[str] | None = None,
+    required_field_list: list[str] | None = None,
+    applied_extraction_confidence_floor: float | None = None,
+    used_default_confidence_floor: bool | None = None,
     pages_sent_to_bda: int | None = None,
     result_processor_started_at: str | None = None,
 ) -> None:
@@ -332,6 +370,11 @@ def update_ddb(
             bda_project_arn_used=bda_project_arn_used,
             error_message=error_message,
             below_extraction_confidence_floor=below_extraction_confidence_floor,
+            extraction_rules_configured=extraction_rules_configured,
+            missing_required_field_list=missing_required_field_list,
+            required_field_list=required_field_list,
+            applied_extraction_confidence_floor=applied_extraction_confidence_floor,
+            used_default_confidence_floor=used_default_confidence_floor,
         )
 
         if pages_sent_to_bda is not None:

@@ -6,6 +6,7 @@ from documentai_api.config.env import EnvVars
 from documentai_api.utils.extraction_rules import (
     apply_extraction_rules,
     delete_rule,
+    get_missing_required_fields,
     get_rules,
     upsert_rule,
 )
@@ -189,3 +190,41 @@ def test_apply_extraction_rules_missing_fields(
     for f in excluded_from_result:
         assert f not in result.fields
     assert sorted(result.missing_required_field_list) == sorted(expected_missing_required)
+
+
+def test_get_missing_required_fields_one_empty(extraction_rules_table):
+    """A required field that came back empty is reported as missing."""
+    extraction_rules_table.put_item(
+        Item={
+            "tenantId": "t1",
+            "documentType": "W2",
+            "requiredFields": ["ssn", "wages"],
+            "optionalFields": [],
+            "createdAt": "2026-01-01",
+            "updatedAt": "2026-01-01",
+        }
+    )
+    missing, required = get_missing_required_fields(
+        "t1", "W2", empty_fields=["ssn"], fields_missing_geometry=[]
+    )
+    assert missing == ["ssn"]
+    assert required == ["ssn", "wages"]
+
+
+def test_get_missing_required_fields_all_present(extraction_rules_table):
+    """No empty or geometry-missing fields → missing list is empty."""
+    extraction_rules_table.put_item(
+        Item={
+            "tenantId": "t1",
+            "documentType": "W2",
+            "requiredFields": ["ssn", "wages"],
+            "optionalFields": [],
+            "createdAt": "2026-01-01",
+            "updatedAt": "2026-01-01",
+        }
+    )
+    missing, required = get_missing_required_fields(
+        "t1", "W2", empty_fields=[], fields_missing_geometry=[]
+    )
+    assert missing == []
+    assert required == ["ssn", "wages"]
