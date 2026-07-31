@@ -116,6 +116,14 @@ class UpsertDdbData(BaseModel):
         default=None, json_schema_extra=_ddb_metadata_map("documentWordCount", ":wordCount")
     )
     blur_llm_checked: bool = False
+    blur_reason_text: str | None = Field(
+        default=None,
+        json_schema_extra=_ddb_metadata_map("isDocumentBlurryReason", ":isDocumentBlurryReason"),
+    )
+    blur_quadrant_stats: dict[str, Any] | None = Field(
+        default=None,
+        json_schema_extra=_ddb_metadata_map("documentWordQuadrantStats", ":wordQuadrantStats"),
+    )
     pre_classification: PreClassificationDdbFields | None = None
     external_document_id: str | None = Field(
         default=None, json_schema_extra=_ddb_metadata_map("externalDocumentId", ":extDocId")

@@ -22,6 +22,7 @@ from documentai_api.utils.ddb import (
     update_ddb,
     upsert_ddb,
 )
+from documentai_api.utils.evaluations import BlurSkipReason
 from documentai_api.utils.preclassification import find_matching_blueprint, preclassify_document
 from documentai_api.utils.response_builder import get_internal_api_response
 from documentai_api.utils.response_codes import ResponseCodes
@@ -93,7 +94,7 @@ def classify_as_not_implemented(object_key: str, data: ClassificationData) -> di
     """Mark file processing as not implemented."""
     internal_api_response: InternalApiResponse = get_internal_api_response(
         object_key=object_key,
-        response_code=ResponseCodes.DOCUMENT_TYPE_NOT_IMPLEMENTED,
+        response_code=ResponseCodes.NO_BLUEPRINT_MATCHED,
         matched_document_class=None,
     )
 
@@ -186,12 +187,14 @@ def is_selected_for_processing(
 
 
 def classify_as_no_custom_blueprint_matched(
-    object_key: str, data: ClassificationData, result_processor_started_at: str | None = None
+    object_key: str,
+    data: ClassificationData,
+    result_processor_started_at: str | None = None,
 ) -> dict[str, Any]:
-    """Mark file processing as not implemented."""
+    """Mark file as sent to BDA with no matching blueprint (005)."""
     internal_api_response: InternalApiResponse = get_internal_api_response(
         object_key=object_key,
-        response_code=ResponseCodes.DOCUMENT_TYPE_NOT_IMPLEMENTED,
+        response_code=ResponseCodes.NO_BLUEPRINT_MATCHED,
         matched_document_class=None,
     )
 
@@ -203,7 +206,27 @@ def classify_as_no_custom_blueprint_matched(
         result_processor_started_at=result_processor_started_at,
     )
 
-    # convert dataclass to dict for JSON serialization
+    return internal_api_response.__dict__
+
+
+def classify_as_extraction_not_configured(
+    object_key: str,
+    data: ClassificationData,
+) -> dict[str, Any]:
+    """Mark file as excluded because preclassification returned no known document class (002)."""
+    internal_api_response: InternalApiResponse = get_internal_api_response(
+        object_key=object_key,
+        response_code=ResponseCodes.SKIPPED_PER_PRECLASSIFICATION,
+        matched_document_class=None,
+    )
+
+    update_ddb(
+        object_key=object_key,
+        status=ProcessStatus.EXCLUDED_PER_PRECLASSIFICATION,
+        internal_api_response=internal_api_response,
+        data=data,
+    )
+
     return internal_api_response.__dict__
 
 
@@ -360,6 +383,8 @@ def upsert_initial_ddb_record(
     ocr_avg_word_confidence: float | None = None
     document_word_count: int | None = None
     blur_llm_checked = False
+    blur_quadrant_stats: dict[str, Any] | None = None
+    blur_reason_text: str | None = None
     processing_percentage: float | None = None
     processing_assigned_value: float | None = None
     pre_classification_document_type = None
@@ -384,6 +409,7 @@ def upsert_initial_ddb_record(
     if is_password_protected:
         process_status = ProcessStatus.PASSWORD_PROTECTED
         response_code = ResponseCodes.PASSWORD_PROTECTED
+        blur_reason_text = BlurSkipReason.PASSWORD_PROTECTED
         textract_result = None
 
     elif not is_processing_selected:
@@ -398,12 +424,16 @@ def upsert_initial_ddb_record(
             decrement(tenant_id, upload_date)
         process_status = ProcessStatus.PROCESSING_EXCLUDED
         response_code = ResponseCodes.PROCESSING_EXCLUDED
+        blur_reason_text = BlurSkipReason.PROCESSING_EXCLUDED
         textract_result = None
 
     else:
         # Textract-based blur detection (deterministic, confidence-score based)
         blur_enabled = is_blur_detection_enabled()
         blur_enforced = is_blur_rejection_enforced()
+
+        if not blur_enabled:
+            blur_reason_text = BlurSkipReason.DETECTION_DISABLED
 
         if blur_enabled:
             blur_result = detect_blur(file_bytes, content_type)
@@ -412,6 +442,11 @@ def upsert_initial_ddb_record(
             ocr_avg_word_confidence = blur_result.avg_confidence
             document_word_count = blur_result.word_count
             blur_llm_checked = blur_result.llm_checked
+            blur_quadrant_stats = blur_result.quadrant_stats
+            blur_reason_text = blur_result.blur_reason_text
+
+            if blur_result.is_not_document:
+                blur_reason_text = BlurSkipReason.NOT_A_DOCUMENT
 
             if blur_result.is_not_document and blur_enforced:
                 process_status = ProcessStatus.NO_DOCUMENT_DETECTED
@@ -510,6 +545,8 @@ def upsert_initial_ddb_record(
             ocr_avg_word_confidence=ocr_avg_word_confidence,
             document_word_count=document_word_count,
             blur_llm_checked=blur_llm_checked,
+            blur_quadrant_stats=blur_quadrant_stats,
+            blur_reason_text=blur_reason_text,
             is_password_protected=is_password_protected,
             pre_classification=PreClassificationDdbFields(
                 document_type=pre_classification_document_type,

@@ -338,7 +338,7 @@ def test_set_processing_status_started_returns_false_when_record_missing(ddb_doc
         ),
         (
             lifecycle_util.classify_as_not_implemented,
-            ResponseCodes.DOCUMENT_TYPE_NOT_IMPLEMENTED,
+            ResponseCodes.NO_BLUEPRINT_MATCHED,
             ProcessStatus.SUCCESS,
             None,
             None,
@@ -352,7 +352,7 @@ def test_set_processing_status_started_returns_false_when_record_missing(ddb_doc
         ),
         (
             lifecycle_util.classify_as_no_custom_blueprint_matched,
-            ResponseCodes.DOCUMENT_TYPE_NOT_IMPLEMENTED,
+            ResponseCodes.NO_BLUEPRINT_MATCHED,
             ProcessStatus.NO_CUSTOM_BLUEPRINT_MATCHED,
             None,
             None,

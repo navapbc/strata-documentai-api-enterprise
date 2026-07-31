@@ -394,16 +394,24 @@ def _apply_ddb_fields(
     for field_name, field_info in type(model).model_fields.items():
         if field_name not in set_fields:
             continue
+
         extra = field_info.json_schema_extra
+
         if not isinstance(extra, dict) or "ddb_attr" not in extra:
             continue
+
         value = set_fields[field_name]
+
         # skip explicit None: leave the attribute absent rather than writing a
         # DynamoDB NULL (sparse items are idiomatic; absent == "not provided")
         if value is None:
             continue
+
         if isinstance(value, float):
             value = Decimal(str(value))
+        elif isinstance(value, dict):
+            value = json.dumps(value)
+
         ddb_attr = str(extra["ddb_attr"])
         ddb_param = str(extra["ddb_param"])
         expr_fields.append(f"{ddb_attr} = {ddb_param}")

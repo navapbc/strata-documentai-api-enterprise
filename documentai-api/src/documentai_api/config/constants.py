@@ -314,6 +314,7 @@ class ProcessStatus(StrEnum):
     BLURRY_DOCUMENT_DETECTED = "blurry_document_detected"
     CONVERSION_FAILED = "conversion_failed"
     DELETED = "deleted"
+    EXCLUDED_PER_PRECLASSIFICATION = "excluded_per_preclassification"
     FAILED = "failed"
     MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE = "multiple_documents_single_page"
     NO_CUSTOM_BLUEPRINT_MATCHED = "no_custom_blueprint_matched"
@@ -351,6 +352,7 @@ class ProcessStatus(StrEnum):
             cls.NO_CUSTOM_BLUEPRINT_MATCHED,
             cls.NO_DOCUMENT_DETECTED,
             cls.NOT_IMPLEMENTED,
+            cls.EXCLUDED_PER_PRECLASSIFICATION,
             cls.PASSWORD_PROTECTED,
             cls.PROCESSING_EXCLUDED,
             cls.SUCCESS,
@@ -386,6 +388,7 @@ class ProcessStatus(StrEnum):
             cls.SUCCESS,
             cls.NO_CUSTOM_BLUEPRINT_MATCHED,
             cls.NOT_IMPLEMENTED,
+            cls.EXCLUDED_PER_PRECLASSIFICATION,
         ]
 
 

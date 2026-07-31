@@ -80,7 +80,9 @@ class DocumentMetadata:
     BLUR_ANALYSIS_FAILED = "blurAnalysisFailed"
     OCR_AVG_WORD_CONFIDENCE = "ocrAvgWordConfidence"
     DOCUMENT_WORD_COUNT = "documentWordCount"
-    BLUR_LLM_CHECKED = "blurLlmChecked"
+    BLUR_LLM_CHECKED = "wasBlurLlmInvoked"
+    IS_DOCUMENT_BLURRY_REASON = "isDocumentBlurryReason"
+    DOCUMENT_WORD_QUADRANT_STATS = "documentWordQuadrantStats"
     DOCUMENT_METRICS_RAW = "documentMetricsRaw"
     DOCUMENT_METRICS_NORMALIZED = "documentMetricsNormalized"
 

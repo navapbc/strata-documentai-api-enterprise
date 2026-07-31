@@ -86,9 +86,9 @@ def test_get_internal_api_response(response_code, matched_document_class, ddb_do
             None,
             False,
             "completed",
-            "Document processed but no matching template found",
+            "No matching blueprint found",
             None,
-            ResponseCodes.DOCUMENT_TYPE_NOT_IMPLEMENTED,
+            ResponseCodes.NO_BLUEPRINT_MATCHED,
         ),
         (
             ProcessStatus.FAILED.value,

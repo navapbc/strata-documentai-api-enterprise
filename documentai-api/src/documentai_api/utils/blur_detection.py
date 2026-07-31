@@ -33,6 +33,7 @@ class BlurResult:
     low_confidence_percent: float | None = None
     llm_checked: bool = False
     quadrant_stats: dict[str, Any] | None = None
+    blur_reason_text: str | None = None
     duration_seconds: Decimal | None = None
 
 
@@ -68,9 +69,12 @@ def _check_quadrant(
     """Return True if a populated quadrant is blurry (high low-confidence % or low avg)."""
     confidences = [w["Confidence"] for w in words]
     avg = sum(confidences) / len(confidences)
+
     if avg < min_avg_confidence:
         return True
+
     low = sum(1 for c in confidences if c < confidence_floor)
+
     return (low / len(words)) * 100 > max_low_pct
 
 
@@ -153,15 +157,98 @@ def _check_empty_quadrants_for_text(
     return results
 
 
+def _partition_words_into_quadrants(words: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    quadrants: dict[str, list[dict[str, Any]]] = {
+        "top_left": [],
+        "top_right": [],
+        "bottom_left": [],
+        "bottom_right": [],
+    }
+
+    for w in words:
+        bbox = w["Geometry"]["BoundingBox"]
+        key = (
+            ("top" if bbox["Top"] < 0.5 else "bottom")
+            + "_"
+            + ("left" if bbox["Left"] < 0.5 else "right")
+        )
+        quadrants[key].append(w)
+
+    return quadrants
+
+
+def _evaluate_quadrants(
+    quadrants: dict[str, list[dict[str, Any]]],
+    confidence_floor: float,
+    max_low_pct: float,
+    min_avg_confidence: float,
+    min_word_count: int,
+) -> tuple[list[str], dict[str, Any], str | None]:
+    """Evaluate populated quadrants for blur. Returns (failed_quadrants, quadrant_stats, blur_reason_text)."""
+    failed_quadrants: list[str] = []
+    quadrant_stats: dict[str, Any] = {}
+    blur_reason_text: str | None = None
+
+    for name, qwords in quadrants.items():
+        if len(qwords) >= min_word_count:
+            q_confidences = [w["Confidence"] for w in qwords]
+            q_avg = sum(q_confidences) / len(q_confidences)
+            q_low_pct = (sum(1 for c in q_confidences if c < confidence_floor) / len(qwords)) * 100
+            quadrant_stats[name] = {
+                "word_count": len(qwords),
+                "avg_confidence": round(q_avg, 1),
+                "low_confidence_percent": round(q_low_pct, 1),
+            }
+            if _check_quadrant(qwords, confidence_floor, max_low_pct, min_avg_confidence):
+                failed_quadrants.append(name)
+                if q_avg < min_avg_confidence:
+                    blur_reason_text = (
+                        f"OCR confidence in the {name.replace('_', ' ')} quadrant averaged "
+                        f"{q_avg:.2f}%. The value did not meet the minimum required {min_avg_confidence:.2f}%."
+                    )
+                else:
+                    blur_reason_text = (
+                        f"{q_low_pct:.2f}% of words in the {name.replace('_', ' ')} quadrant "
+                        f"were low-confidence. The value exceeded the allowed {max_low_pct:.2f}%."
+                    )
+                break
+        else:
+            quadrant_stats[name] = {
+                "word_count": len(qwords),
+                "avg_confidence": 0.0,
+                "low_confidence_percent": 0.0,
+                "skipped": True,
+            }
+
+    return failed_quadrants, quadrant_stats, blur_reason_text
+
+
+def _page_fallback_result(
+    avg_confidence: float,
+    low_confidence_percent: float,
+    min_avg_confidence: float,
+    max_low_confidence_percent: float,
+) -> tuple[bool, str | None]:
+    """Whole-page fallback when all quadrants were skipped. Returns (is_blurry, blur_reason_text)."""
+    if avg_confidence < min_avg_confidence:
+        return True, (
+            f"OCR confidence averaged {avg_confidence:.2f}% across all words. "
+            f"The value did not meet the minimum required {min_avg_confidence:.2f}%."
+        )
+
+    if low_confidence_percent > max_low_confidence_percent:
+        return True, (
+            f"{low_confidence_percent:.2f}% of all words were low-confidence. "
+            f"The value exceeded the allowed {max_low_confidence_percent:.2f}%."
+        )
+
+    return False, None
+
+
 def detect_blur(image_bytes: bytes, content_type: str | None = None) -> BlurResult:
     """Detect blur using Textract OCR word confidence scores with quadrant analysis.
 
     Only runs on images. PDFs and other content types are skipped (returns not blurry).
-
-    Splits the page into 4 quadrants based on word bounding box positions.
-    Only quadrants with sufficient words are evaluated. If any populated quadrant
-    has too many low-confidence words or low average confidence, the document
-    is flagged as blurry.
 
     Args:
         image_bytes: Image bytes to analyze.
@@ -175,9 +262,10 @@ def detect_blur(image_bytes: bytes, content_type: str | None = None) -> BlurResu
     if not content_type:
         content_type = "image/jpeg"
 
-    # Only run on images - PDFs require render-first-page which is out of scope here
     if not content_type.startswith("image/"):
-        return BlurResult(is_blurry=False)
+        return BlurResult(
+            is_blurry=False, blur_reason_text="Blur check not performed - document is not an image."
+        )
 
     confidence_floor = ConfigDefaults.BLUR_CONFIDENCE_FLOOR
     min_word_count = ConfigDefaults.BLUR_MIN_WORD_COUNT
@@ -193,72 +281,29 @@ def detect_blur(image_bytes: bytes, content_type: str | None = None) -> BlurResu
         words = [b for b in response["Blocks"] if b["BlockType"] == "WORD"]
         word_count = len(words)
 
-        # Too few words to be a real document (blank, dark, or non-document image)
         if word_count < min_word_count:
             return BlurResult(
                 is_blurry=False,
                 is_not_document=True,
                 avg_confidence=0.0,
                 word_count=word_count,
+                blur_reason_text="Insufficient text detected to identify a document.",
                 duration_seconds=Decimal(str(elapsed)),
             )
 
-        # Partition words into quadrants by bounding box position
-        quadrants: dict[str, list[dict[str, Any]]] = {
-            "top_left": [],
-            "top_right": [],
-            "bottom_left": [],
-            "bottom_right": [],
-        }
-        for w in words:
-            bbox = w["Geometry"]["BoundingBox"]
-            top = bbox["Top"]
-            left = bbox["Left"]
-            if top < 0.5:
-                if left < 0.5:
-                    quadrants["top_left"].append(w)
-                else:
-                    quadrants["top_right"].append(w)
-            else:
-                if left < 0.5:
-                    quadrants["bottom_left"].append(w)
-                else:
-                    quadrants["bottom_right"].append(w)
+        quadrants = _partition_words_into_quadrants(words)
+        failed_quadrants, quadrant_stats, blur_reason_text = _evaluate_quadrants(
+            quadrants,
+            confidence_floor,
+            max_low_confidence_percent,
+            min_avg_confidence,
+            min_word_count,
+        )
 
-        # Only check quadrants that have enough words to evaluate.
-        # Empty or sparse quadrants are checked via LLM fallback if they
-        # have 0 words - to distinguish blur-destroyed text from non-text regions.
-        # Short-circuits after first failure (one blurry quadrant is sufficient).
-        failed_quadrants = []
-        quadrant_stats = {}
-        for name, qwords in quadrants.items():
-            if len(qwords) >= min_word_count:
-                q_confidences = [w["Confidence"] for w in qwords]
-                q_avg = sum(q_confidences) / len(q_confidences)
-                q_low = sum(1 for c in q_confidences if c < confidence_floor)
-                q_low_pct = (q_low / len(qwords)) * 100
-                quadrant_stats[name] = {
-                    "word_count": len(qwords),
-                    "avg_confidence": round(q_avg, 1),
-                    "low_confidence_percent": round(q_low_pct, 1),
-                }
-                if _check_quadrant(
-                    qwords, confidence_floor, max_low_confidence_percent, min_avg_confidence
-                ):
-                    failed_quadrants.append(name)
-                    break
-            else:
-                quadrant_stats[name] = {
-                    "word_count": len(qwords),
-                    "avg_confidence": 0.0,
-                    "low_confidence_percent": 0.0,
-                    "skipped": True,
-                }
-
-        # For empty quadrants on text-dense documents, crop each and ask
-        # Nova Pro if blur destroyed text in that region (one call per quadrant).
-        # Skip if we already found a blurry quadrant via confidence check.
+        # For empty quadrants on text-dense documents, ask the LLM whether blur
+        # destroyed text in that region. Skip if confidence check already failed.
         llm_checked = False
+
         if not failed_quadrants:
             empty_quadrant_names = [
                 name
@@ -274,29 +319,35 @@ def detect_blur(image_bytes: bytes, content_type: str | None = None) -> BlurResu
                         "avg_confidence": 0.0,
                         "low_confidence_percent": 0.0,
                         "skipped": False,
-                        "llm_detected_text": has_text,
+                        "is_text_detected_by_llm": has_text,
                     }
                     if has_text:
                         failed_quadrants.append(name)
+                        blur_reason_text = (
+                            f"OCR did not detect any words in the {name.replace('_', ' ')} quadrant; "
+                            f"an LLM confirmed the region contained blurred or unreadable text."
+                        )
 
         confidences = [w["Confidence"] for w in words]
         avg_confidence = sum(confidences) / len(confidences)
-        low_confidence_words = sum(1 for c in confidences if c < confidence_floor)
-        low_confidence_percent = (low_confidence_words / word_count) * 100
+        low_confidence_percent = (
+            sum(1 for c in confidences if c < confidence_floor) / word_count
+        ) * 100
 
-        # If any populated quadrant failed, it's blurry (partial/regional blur).
-        # If ALL quadrants were sparse (skipped), fall back to whole-page stats
-        # so uniformly-blurry pages with scattered words don't escape.
         all_quadrants_skipped = all(q.get("skipped", False) for q in quadrant_stats.values())
+
         if failed_quadrants:
             is_blurry = True
         elif all_quadrants_skipped:
-            is_blurry = (
-                avg_confidence < min_avg_confidence
-                or low_confidence_percent > max_low_confidence_percent
+            is_blurry, blur_reason_text = _page_fallback_result(
+                avg_confidence,
+                low_confidence_percent,
+                min_avg_confidence,
+                max_low_confidence_percent,
             )
         else:
             is_blurry = False
+            blur_reason_text = "No blur indicators detected."
 
         logger.info(
             "Blur detection complete",
@@ -316,9 +367,12 @@ def detect_blur(image_bytes: bytes, content_type: str | None = None) -> BlurResu
             low_confidence_percent=low_confidence_percent,
             llm_checked=llm_checked,
             quadrant_stats=quadrant_stats,
+            blur_reason_text=blur_reason_text,
             duration_seconds=Decimal(str(elapsed)),
         )
 
     except Exception as e:
         logger.warning(f"Blur detection failed: {e}")
-        return BlurResult(is_blurry=False, analysis_failed=True)
+        return BlurResult(
+            is_blurry=False, analysis_failed=True, blur_reason_text="Blur analysis failed."
+        )

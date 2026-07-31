@@ -23,6 +23,7 @@ from documentai_api.app_demo import router as demo_router
 from documentai_api.app_dictionary import router as dictionary_router
 from documentai_api.app_document_categories import router as document_categories_router
 from documentai_api.app_documents import router as documents_router
+from documentai_api.app_evaluation import router as evaluation_router
 from documentai_api.app_extraction_rules import router as extraction_rules_router
 from documentai_api.app_me import router as me_router
 from documentai_api.app_metrics import router as metrics_router
@@ -67,6 +68,7 @@ app.include_router(demo_router)
 app.include_router(me_router)
 app.include_router(metrics_router)
 app.include_router(auth_events_router)
+app.include_router(evaluation_router)
 
 app.add_middleware(
     CORSMiddleware,
