@@ -256,6 +256,36 @@ def test_build_v1_api_response(
     assert response == expected_response
 
 
+def test_build_v1_api_response_no_custom_blueprint_matched_but_miscategorized(
+    ddb_doc_metadata_table,
+):
+    """A preclassification category mismatch should surface as 102  when no blueprint match."""
+    year = datetime.now().year
+    created_at = datetime(year, 1, 1, 12, 0, 0, tzinfo=UTC)
+
+    ddb_record = {
+        DocumentMetadata.FILE_NAME: "test-key",
+        DocumentMetadata.JOB_ID: "test-job-id",
+        DocumentMetadata.CREATED_AT: created_at.isoformat(),
+        DocumentMetadata.PRECLASSIFICATION_CATEGORY_MATCH: False,
+    }
+    ddb_doc_metadata_table.put_item(Item=ddb_record)
+
+    response = response_builder_util.build_v1_api_response(
+        "test-key",
+        ProcessStatus.NO_CUSTOM_BLUEPRINT_MATCHED.value,
+        data=None,
+        error_message=None,
+        include_extracted_data=False,
+    )
+
+    assert response["responseCode"] == ResponseCodes.MISCATEGORIZED
+    assert response["responseMessage"] == ResponseCodes.get_message(ResponseCodes.MISCATEGORIZED)
+    # message/jobStatus stay as the terminal default - only the response code changes
+    assert response["message"] == "No matching blueprint found"
+    assert response["jobStatus"] == "completed"
+
+
 def test_build_v1_api_response_no_record(
     ddb_doc_metadata_table,
 ):
@@ -616,7 +646,7 @@ def test_build_v1_api_response_missing_geometry_and_empty_fields_trigger_101(
 def test_build_v1_api_response_success_response_code_precedence(
     s3_bucket, ddb_doc_metadata_table, below_floor, category_match, expected_code
 ):
-    """_resolve_success_fields precedence: 102 beats 105, both lose to 101."""
+    """_resolve_response_code precedence: 102 beats 105, both lose to 101."""
     import json
 
     bda_results = {
