@@ -234,27 +234,48 @@ def _apply_extraction_rules(
         return fields, []
 
 
-def _resolve_success_fields(
+def _resolve_response_code(
+    job_status: str,
     ddb_record: dict[str, Any],
-    missing_required: list[str],
-) -> tuple[str, bool]:
-    """Resolve responseCode for the SUCCESS path with precedence 101 > 102 > 105 > 100.
+    missing_required: list[str] | None = None,
+) -> tuple[str | None, bool]:
+    """Resolve (responseCode, below_extraction_confidence_floor) for any job_status.
 
-    Returns (response_code, below_extraction_confidence_floor).
+    SUCCESS precedence: 101 (missing fields) > 102 (miscategorized) > 105 (low
+    confidence) > 000. NO_CUSTOM_BLUEPRINT_MATCHED also resolves to 102 when
+    preclassification already flagged a category mismatch, so BDA failing to
+    match a blueprint doesn't mask a known miscategorization. Every other
+    terminal status keeps its fixed default from _TERMINAL_STATUS_RESPONSES.
+    Returns (None, False) while the job is still processing.
     """
-    below_floor = bool(ddb_record.get(DocumentMetadata.BELOW_EXTRACTION_CONFIDENCE_FLOOR))
     category_match = ddb_record.get(DocumentMetadata.PRECLASSIFICATION_CATEGORY_MATCH)
 
-    if missing_required:
-        return ResponseCodes.MISSING_FIELDS, below_floor
+    if job_status == ProcessStatus.SUCCESS.value:
+        below_floor = bool(ddb_record.get(DocumentMetadata.BELOW_EXTRACTION_CONFIDENCE_FLOOR))
 
-    if category_match is False:
-        return ResponseCodes.MISCATEGORIZED, below_floor
+        if missing_required:
+            return ResponseCodes.MISSING_FIELDS, below_floor
 
-    if below_floor:
-        return ResponseCodes.LOW_EXTRACTION_CONFIDENCE, below_floor
+        if category_match is False:
+            return ResponseCodes.MISCATEGORIZED, below_floor
 
-    return ResponseCodes.SUCCESS, below_floor
+        if below_floor:
+            return ResponseCodes.LOW_EXTRACTION_CONFIDENCE, below_floor
+
+        return ResponseCodes.SUCCESS, below_floor
+
+    # SUCCESS and NO_CUSTOM_BLUEPRINT_MATCHED are the only statuses where
+    # miscategorization is surfaced; all other terminal statuses (password-protected,
+    # multiple documents, etc.) are more actionable and take precedence.
+    #   - SUCCESS handles miscategorization inline (but only after missing-fields check).
+    #   - NO_CUSTOM_BLUEPRINT_MATCHED is handled explicitly here
+    if job_status == ProcessStatus.NO_CUSTOM_BLUEPRINT_MATCHED.value and category_match is False:
+        return ResponseCodes.MISCATEGORIZED, False
+
+    if terminal := _TERMINAL_STATUS_RESPONSES.get(job_status):
+        return terminal.get("responseCode"), False
+
+    return None, False
 
 
 def build_v1_api_response(
@@ -313,7 +334,13 @@ def build_v1_api_response(
         if missing_required:
             base_response["missingRequiredFieldList"] = missing_required
 
-        response_code, below_floor = _resolve_success_fields(ddb_record, missing_required)
+        response_code, below_floor = _resolve_response_code(
+            job_status, ddb_record, missing_required
+        )
+
+        if response_code is None:
+            raise ValueError("_resolve_response_code returned no code for a SUCCESS job_status")
+
         base_response["jobStatus"] = "completed"
         base_response["message"] = "Document processed successfully"
         base_response["responseCode"] = response_code
@@ -328,6 +355,11 @@ def build_v1_api_response(
 
     elif terminal := _TERMINAL_STATUS_RESPONSES.get(job_status):
         base_response.update(terminal)
+
+        response_code, _ = _resolve_response_code(job_status, ddb_record)
+        if response_code:
+            base_response["responseCode"] = response_code
+            base_response["responseMessage"] = ResponseCodes.get_message(response_code)
 
         if data and data.additional_info:
             base_response["additionalInfo"] = data.additional_info
