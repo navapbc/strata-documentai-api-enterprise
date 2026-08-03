@@ -2340,6 +2340,8 @@ td {
   gap: 12px;
   border-right: 1px solid var(--color-border, #e5e7eb);
   padding-right: 16px;
+  position: relative;
+  overflow: visible;
 }
 
 .metrics-tabs {
@@ -2420,7 +2422,8 @@ td {
 
 .metrics-timeframe {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: 0.5rem;
 }
 
@@ -2433,12 +2436,18 @@ td {
   font-family: inherit;
   background: white;
   margin: 0;
+  height: 2rem;
+  box-sizing: border-box;
 }
 
 .metrics-custom-range {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.metrics-custom-range .btn-primary {
+  margin-top: 4px;
 }
 
 .metrics-custom-field {
@@ -2448,19 +2457,23 @@ td {
 }
 
 .metrics-custom-field label {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
+  font-family: inherit;
   color: #71767a;
 }
 
+.metrics-custom-field input[type="date"],
 .metrics-controls input[type="date"] {
-  width: auto;
+  width: 100%;
   margin: 0;
-  padding: 0.375rem 0.5rem;
+  padding: 0.375rem 0.75rem;
   border: 1px solid var(--border, #dfe1e2);
   border-radius: 10px;
   font-size: 0.8125rem;
   font-family: inherit;
   background: white;
+  height: 2rem;
+  box-sizing: border-box;
 }
 
 .metrics-top-grid {
@@ -2566,24 +2579,29 @@ td {
 
 .metric-card {
   border-radius: 8px;
-  padding: 20px;
+  padding: 15px 5px 20px 10px;
   min-height: 100px;
   border: 1px solid #dfe1e2;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
 }
 
 .metric-card--good {
-  background: #f2fbf2;
+  background: #bbf7b0;
+  border-color: #4ade80;
 }
 .metric-card--warn {
-  background: #fefaf0;
+  background: #fefce8;
+  border-color: #fef08a;
 }
 .metric-card--bad {
-  background: #fde8e8;
+  background: #fecaca;
+  border-color: #f87171;
 }
 .metric-card--neutral {
-  background: #f0f5fb;
+  background: #bfdbfe;
+  border-color: #60a5fa;
 }
 
 .metric-card-header {
@@ -2593,25 +2611,23 @@ td {
   margin-bottom: 12px;
 }
 
-.metric-card-icon {
-  color: #a9aeb1;
-  display: flex;
-  flex-shrink: 0;
-}
-
-.metric-card-icon svg {
-  width: 20px;
-  height: 20px;
-}
-
 .metric-card-value {
   font-size: 1.25rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1;
-  flex: 1;
+  margin-top: auto;
+}
+
+.metric-card-icon {
+  color: #6b7280;
   display: flex;
-  align-items: center;
+  flex-shrink: 0;
+}
+
+.metric-card-icon svg {
+  width: 18px;
+  height: 18px;
 }
 
 .metric-card-label {
@@ -2677,19 +2693,19 @@ td {
 }
 
 .metrics-bar-fill--success {
-  background: #00a91c;
+  background: #16a34a;
 }
 .metrics-bar-fill--warn {
-  background: #ffbe2e;
+  background: #d97706;
 }
 .metrics-bar-fill--danger {
-  background: #d54309;
+  background: #dc2626;
 }
 .metrics-bar-fill--neutral {
-  background: #71767a;
+  background: #4b5563;
 }
 .metrics-bar-fill--primary {
-  background: #005ea2;
+  background: #2563eb;
 }
 
 .metrics-bar-value {
