@@ -72,6 +72,12 @@ function _getDateRange() {
   if (val === "custom") {
     return { startDate: _startInput.value, endDate: _endInput.value };
   }
+  if (val === "1") {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const d = _fmt(yesterday);
+    return { startDate: d, endDate: d };
+  }
   const end = new Date();
   const start = new Date();
   start.setDate(end.getDate() - parseInt(val));
@@ -81,7 +87,10 @@ function _getDateRange() {
 async function load() {
   const { startDate, endDate } = _getDateRange();
   if (!startDate) return;
-
+  if (endDate && startDate > endDate) {
+    Toast.show("End date must be after start date.", "error");
+    return;
+  }
   const thisLoad = ++_loadId;
 
   _tabVolume.replaceChildren();
@@ -123,6 +132,7 @@ const ICONS = {
   extractions: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>`,
   check: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`,
   error: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 9l-6 6M9 9l6 6"/></svg>`,
+  other: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><rect x="25.5" y="5.5" width="17" height="17"/><rect x="25.5" y="25.5" width="17" height="17"/><rect x="5.5" y="5.5" width="17" height="17"/><rect x="5.5" y="25.5" width="17" height="17"/></svg>`,
   blurry: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23" stroke-linecap="round"/></svg>`,
   nodoc: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>`,
   lock: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path stroke-linecap="round" stroke-linejoin="round" d="M7 11V7a5 5 0 0110 0v4"/></svg>`,
@@ -185,15 +195,15 @@ function renderVolume(summary, timing = {}) {
     blueprintMatched > 0 ? ((successCount / blueprintMatched) * 100).toFixed(1) : null;
 
   const funnelStages = [
-    { label: "Documents Received", value: totalRecords, pct: null, bg: "#dbeafe" },
-    { label: "Extractions", value: bdaInvocations, pct: extractionPct, bg: "#bfdbfe" },
+    { label: "Documents Received", value: totalRecords, pct: null, bg: "#bfdbfe" },
+    { label: "Extractions", value: bdaInvocations, pct: extractionPct, bg: "#93c5fd" },
     {
       label: "Document Type Identified",
       value: blueprintMatched,
       pct: blueprintPct,
-      bg: "#e0e7ff",
+      bg: "#a5b4fc",
     },
-    { label: "Validation Passed", value: successCount, pct: validationPct, bg: "#d1fae5" },
+    { label: "Validation Passed", value: successCount, pct: validationPct, bg: "#86efac" },
   ];
 
   const maxVal = funnelStages[0].value || 1;
@@ -245,7 +255,7 @@ function renderVolume(summary, timing = {}) {
     extractionFailures.push({
       label: "Other",
       value: extractionGap - extractionAccounted,
-      icon: ICONS.error,
+      icon: ICONS.other,
     });
 
   const validationGap = blueprintMatched - successCount;
@@ -259,7 +269,7 @@ function renderVolume(summary, timing = {}) {
     validationFailures.push({
       label: "Other",
       value: validationGap - validationAccounted,
-      icon: ICONS.error,
+      icon: ICONS.other,
     });
 
   function failureGroup(label, cards) {
@@ -285,16 +295,16 @@ function renderVolume(summary, timing = {}) {
   const timingLink = h(
     "button",
     { className: "metrics-timing-callout-link" },
-    "see Timing tab for breakdown",
+    "See Timing tab for breakdown",
   );
-  timingLink.addEventListener("click", () =>
-    _root.querySelector(".metrics-tab[data-tab='timing']").click(),
-  );
+  timingLink.addEventListener("click", (e) => {
+    e.preventDefault();
+    _root.querySelector(".metrics-tab[data-tab='timing']").click();
+  });
   const timingCallout = h(
     "div",
     { className: "metrics-timing-callout" },
-    h("span", {}, `End-to-end avg ${avg}s - `),
-    timingLink,
+    h("span", {}, `End-to-end avg ${avg}s – `, timingLink),
   );
 
   _tabVolume.replaceChildren(
