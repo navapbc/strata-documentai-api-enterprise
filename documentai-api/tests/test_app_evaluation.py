@@ -19,6 +19,7 @@ _ALL_KEYS = {
     EvaluationKey.DOCUMENT_DETECTED,
     EvaluationKey.BLUR,
     EvaluationKey.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
+    EvaluationKey.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
     EvaluationKey.MISCATEGORIZATION,
     EvaluationKey.MISSING_FIELDS,
     EvaluationKey.EXTRACTION_CONFIDENCE,
@@ -280,6 +281,11 @@ def test_evaluation_success_password_protected_pass_reason(api_client, mocker):
             ResponseCodes.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
             EvaluationKey.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
             NotEvaluatedReason.STOPPED_MULTIPLE_DOCUMENTS,
+        ),
+        (
+            ResponseCodes.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
+            EvaluationKey.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
+            NotEvaluatedReason.STOPPED_MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
         ),
     ],
 )

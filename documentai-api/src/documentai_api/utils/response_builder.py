@@ -77,6 +77,12 @@ _TERMINAL_STATUS_RESPONSES: dict[str, dict[str, Any]] = {
             ResponseCodes.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE
         ),
     },
+    ProcessStatus.MULTIPLE_DOCUMENTS_IN_MULTIPAGE.value: {
+        "jobStatus": "completed",
+        "message": "Document type not supported",
+        "responseCode": ResponseCodes.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
+        "responseMessage": ResponseCodes.get_message(ResponseCodes.MULTIPLE_DOCUMENTS_IN_MULTIPAGE),
+    },
     ProcessStatus.PROCESSING_EXCLUDED.value: {
         "jobStatus": "completed",
         "message": "Document not chosen for extraction",

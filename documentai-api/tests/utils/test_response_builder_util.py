@@ -131,6 +131,16 @@ def test_get_internal_api_response(response_code, matched_document_class, ddb_do
             ResponseCodes.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
         ),
         (
+            ProcessStatus.MULTIPLE_DOCUMENTS_IN_MULTIPAGE.value,
+            None,
+            None,
+            False,
+            "completed",
+            "Document type not supported",
+            None,
+            ResponseCodes.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
+        ),
+        (
             ProcessStatus.PASSWORD_PROTECTED.value,
             None,
             "Unsupported type",

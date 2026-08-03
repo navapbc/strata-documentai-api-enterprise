@@ -354,6 +354,31 @@ def test_document_count_clamped_to_non_negative(monkeypatch):
     assert result.document_count == 0
 
 
+def test_document_types_parsed_from_response(monkeypatch):
+    """document_types list is parsed and passed through from the LLM response."""
+    response = _mock_invoke_response(
+        {
+            "document_type": "multipage",
+            "confidence": 0.9,
+            "document_count": 1,
+            "document_types": ["W2", "paystub"],
+        }
+    )
+    _patch_invoke(monkeypatch, response)
+    result = preclassify_document(SAMPLE_IMAGE, "image/png")
+    assert result.document_types == ["W2", "paystub"]
+
+
+def test_document_types_defaults_to_empty_list(monkeypatch):
+    """When document_types is absent from the response, defaults to empty list."""
+    response = _mock_invoke_response(
+        {"document_type": "W2", "confidence": 0.9, "document_count": 1}
+    )
+    _patch_invoke(monkeypatch, response)
+    result = preclassify_document(SAMPLE_IMAGE, "image/png")
+    assert result.document_types == []
+
+
 def test_get_model_id_uses_default(monkeypatch):
     """When no SSM param configured, returns the default model ID."""
     from documentai_api.config.constants import PreClassificationDefaults

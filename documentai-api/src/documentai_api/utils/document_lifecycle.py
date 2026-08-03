@@ -26,7 +26,11 @@ from documentai_api.utils.evaluations import BlurSkipReason
 from documentai_api.utils.preclassification import find_matching_blueprint, preclassify_document
 from documentai_api.utils.response_builder import get_internal_api_response
 from documentai_api.utils.response_codes import ResponseCodes
-from documentai_api.utils.ssm import is_blur_detection_enabled, is_blur_rejection_enforced
+from documentai_api.utils.ssm import (
+    is_blur_detection_enabled,
+    is_blur_rejection_enforced,
+    is_multipage_document_flagging_enabled,
+)
 from documentai_api.utils.textract import finalize_textract_result, try_textract_identity
 
 logger = get_logger(__name__)
@@ -261,6 +265,26 @@ def classify_as_multiple_documents_on_page(
     return internal_api_response.__dict__
 
 
+def classify_as_multiple_documents_in_multipage(
+    object_key: str, data: ClassificationData
+) -> dict[str, Any]:
+    """Mark file processing as multiple distinct document types detected across pages."""
+    internal_api_response: InternalApiResponse = get_internal_api_response(
+        object_key=object_key,
+        response_code=ResponseCodes.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
+        matched_document_class=None,
+    )
+
+    update_ddb(
+        object_key=object_key,
+        status=ProcessStatus.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
+        internal_api_response=internal_api_response,
+        data=data,
+    )
+
+    return internal_api_response.__dict__
+
+
 # =============================================================================
 # BDA processing status setters
 # =============================================================================
@@ -491,6 +515,16 @@ def upsert_initial_ddb_record(
             if result.document_count > 1:
                 process_status = ProcessStatus.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE
                 response_code = ResponseCodes.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE
+                textract_result = None
+
+            elif (
+                pages_detected
+                and pages_detected > 1
+                and len(set(result.document_types)) > 1
+                and is_multipage_document_flagging_enabled()
+            ):
+                process_status = ProcessStatus.MULTIPLE_DOCUMENTS_IN_MULTIPAGE
+                response_code = ResponseCodes.MULTIPLE_DOCUMENTS_IN_MULTIPAGE
                 textract_result = None
 
             else:

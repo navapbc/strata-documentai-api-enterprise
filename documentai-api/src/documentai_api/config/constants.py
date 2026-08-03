@@ -316,6 +316,7 @@ class ProcessStatus(StrEnum):
     DELETED = "deleted"
     EXCLUDED_PER_PRECLASSIFICATION = "excluded_per_preclassification"
     FAILED = "failed"
+    MULTIPLE_DOCUMENTS_IN_MULTIPAGE = "multiple_documents_in_multipage"
     MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE = "multiple_documents_single_page"
     NO_CUSTOM_BLUEPRINT_MATCHED = "no_custom_blueprint_matched"
     NO_DOCUMENT_DETECTED = "no_document_detected"
@@ -348,6 +349,7 @@ class ProcessStatus(StrEnum):
             cls.CONVERSION_FAILED,
             cls.DELETED,
             cls.FAILED,
+            cls.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
             cls.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
             cls.NO_CUSTOM_BLUEPRINT_MATCHED,
             cls.NO_DOCUMENT_DETECTED,
@@ -360,7 +362,11 @@ class ProcessStatus(StrEnum):
 
     @classmethod
     def is_not_supported(cls, value: str) -> bool:
-        return value in [cls.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE, cls.PASSWORD_PROTECTED]
+        return value in [
+            cls.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
+            cls.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
+            cls.PASSWORD_PROTECTED,
+        ]
 
     @classmethod
     def is_pending_extraction(cls, value: str) -> bool:
@@ -462,7 +468,8 @@ class PreClassificationDefaults:
             "First, perform this evaluation step-by-step:",
             "1. Examine the visual layout of the page. Look for distinct borders, separate rectangles, multiple photos, or independent snippets (e.g., multiple receipts or cards placed on a single scanner bed).",
             "2. Count how many individual, separate documents or items are visually present on this single page/file.",
-            '3. Check if the document is directly and primarily a "{user_category}" document.',
+            "3. If the file has multiple pages, identify the distinct document type on each page (e.g. W2, paystub). List them in document_types.",
+            '4. Check if the document is directly and primarily a "{user_category}" document.',
             '   - Note: If it merely mentions or relates to "{user_category}" in a secondary way, set category_match to false.',
             "",
             "Then, output your final answer strictly as a raw JSON object with no markdown formatting or backticks:",
@@ -470,7 +477,8 @@ class PreClassificationDefaults:
             '  "document_type": "<short description>",',
             '  "confidence": <float between 0.0 and 1.0>,',
             '  "document_count": <integer count of distinct visual document items found on the page>,',
-            '  "category_match": <true or false based on step 3>,',
+            '  "document_types": [<list of distinct document type strings, one per page>],',
+            '  "category_match": <true or false based on step 4>,',
             '  "is_identity_document": <true if passport or driver\'s license, else false>',
             "}",
         ]
@@ -597,6 +605,7 @@ class FeatureFlags:
     PRECLASSIFICATION_BASED_ROUTING = "preclassification-based-routing"
     SKIP_BDA_IF_UNCLASSIFIED = "skip-bda-if-unclassified"
     ENABLE_PRECLASSIFICATION_BLUEPRINT_MATCHING = "enable-preclassification-blueprint-matching"
+    FLAG_MULTIPLE_DOCUMENTS_IN_MULTIPAGE = "flag-multiple-documents-in-multipage"
 
 
 ATHENA_QUERY_TIMEOUT_SECONDS = 300

@@ -1,6 +1,6 @@
 """DTOs for document classification operations."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from decimal import Decimal
 
 
@@ -24,6 +24,7 @@ class BedrockClassificationResult:
     document_type: str
     confidence: float
     document_count: int
+    document_types: list[str] = field(default_factory=list)
     category_match: bool | None = None
     is_identity_document: bool = False
     input_tokens: int | None = None

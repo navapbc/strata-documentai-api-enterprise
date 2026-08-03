@@ -312,6 +312,7 @@ module "config" {
     "feature-flags/enable-blur-detection"                       = "true"
     "feature-flags/enforce-blur-rejection"                      = "true"
     "feature-flags/include-missing-geo-with-missing-fields"     = "true"
+    "feature-flags/flag-multiple-documents-in-multipage"        = "true"
     # Thresholds
     # Vision model ids - swappable at runtime via SSM (no redeploy). Kept as
     # separate params so preclassification and bbox detection can be tuned apart.
@@ -334,6 +335,7 @@ module "config" {
     "feature-flags/enable-blur-detection"                       = "^(true|false)$"
     "feature-flags/enforce-blur-rejection"                      = "^(true|false)$"
     "feature-flags/include-missing-geo-with-missing-fields"     = "^(true|false)$"
+    "feature-flags/flag-multiple-documents-in-multipage"        = "^(true|false)$"
   }
 }
 

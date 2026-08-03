@@ -116,3 +116,12 @@ def is_preclassification_blueprint_matching_enabled() -> bool:
     decisions are made from them. Default: true.
     """
     return _get_flag(FeatureFlags.ENABLE_PRECLASSIFICATION_BLUEPRINT_MATCHING, default=True)
+
+
+def is_multipage_document_flagging_enabled() -> bool:
+    """Whether multipage documents containing multiple distinct document types are flagged.
+
+    When enabled, a multipage PDF where preclassification identifies more than one
+    distinct document type across pages is rejected with response code 401. Default: true.
+    """
+    return _get_flag(FeatureFlags.FLAG_MULTIPLE_DOCUMENTS_IN_MULTIPAGE, default=True)

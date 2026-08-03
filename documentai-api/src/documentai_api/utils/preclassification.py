@@ -36,6 +36,7 @@ class _PreclassificationResponse(BaseModel):
     document_type: str = "other_document"
     confidence: float = 0.0
     document_count: int = 1
+    document_types: list[str] = []
     category_match: bool = True
     is_identity_document: bool = False
 
@@ -129,6 +130,7 @@ def preclassify_document(
             document_type=document_type,
             confidence=max(0.0, min(1.0, parsed.confidence)),
             document_count=max(0, parsed.document_count),
+            document_types=parsed.document_types,
             category_match=parsed.category_match if user_category else None,
             is_identity_document=parsed.is_identity_document,
             input_tokens=usage.get("inputTokens"),
