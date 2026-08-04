@@ -1,3 +1,16 @@
+import {
+  Chart,
+  BarController,
+  LineController,
+  BarElement,
+  LineElement,
+  PointElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+  Legend,
+  Filler,
+} from "chart.js";
 import * as MetricsService from "../../services/metrics.js";
 import * as TenantContext from "../../utils/tenant-context.js";
 import * as Toast from "../../utils/toast.js";
@@ -5,15 +18,29 @@ import { tpl } from "../../utils/tpl.js";
 import { h } from "../../utils/dom.js";
 import html from "./metrics.html";
 
+Chart.register(
+  BarController,
+  LineController,
+  BarElement,
+  LineElement,
+  PointElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+  Legend,
+  Filler,
+);
+
 const tmpl = tpl(html);
 
 let _root;
 let _startInput, _endInput, _loadBtn, _timeframeSelect, _customRange;
-let _tabVolume, _tabDocTypes, _tabCodes, _tabTiming;
+let _tabVolume, _tabDocTypes, _tabOutcomes, _tabTiming;
 let _emptyEl;
 let _tenantUnsub = null;
 let _loadId = 0;
 let _activeTab = "volume";
+let _volumeChart = null;
 
 export function mount(root) {
   _root = root;
@@ -26,7 +53,7 @@ export function mount(root) {
   _customRange = root.querySelector("#metrics-custom-range");
   _tabVolume = root.querySelector("#metrics-tab-volume");
   _tabDocTypes = root.querySelector("#metrics-tab-document-types");
-  _tabCodes = root.querySelector("#metrics-tab-response-codes");
+  _tabOutcomes = root.querySelector("#metrics-tab-outcomes");
   _tabTiming = root.querySelector("#metrics-tab-timing");
   _emptyEl = root.querySelector("#metrics-empty");
 
@@ -39,9 +66,20 @@ export function mount(root) {
     }
   });
 
+  const validTabs = ["volume", "document-types", "outcomes", "timing"];
+  const hashTab = location.hash.replace("#", "").split("/")[1];
+  _activeTab = validTabs.includes(hashTab) ? hashTab : "volume";
+  root.querySelectorAll(".metrics-tab").forEach((btn) => {
+    if (btn.dataset.tab === _activeTab) btn.classList.add("active");
+    else btn.classList.remove("active");
+  });
+  root.querySelectorAll(".metrics-tab-panel").forEach((p) => p.classList.add("hidden"));
+  root.querySelector(`#metrics-tab-${_activeTab}`)?.classList.remove("hidden");
+
   root.querySelectorAll(".metrics-tab").forEach((btn) => {
     btn.addEventListener("click", () => {
       _activeTab = btn.dataset.tab;
+      location.hash = `metrics/${_activeTab}`;
       root.querySelectorAll(".metrics-tab").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       root.querySelectorAll(".metrics-tab-panel").forEach((p) => p.classList.add("hidden"));
@@ -60,6 +98,8 @@ export function unmount(_root) {
     _tenantUnsub();
     _tenantUnsub = null;
   }
+  _volumeChart?.destroy();
+  _volumeChart = null;
   _root = null;
 }
 
@@ -91,11 +131,18 @@ async function load() {
     Toast.show("End date must be after start date.", "error");
     return;
   }
+  if (startDate && endDate) {
+    const days = (new Date(endDate) - new Date(startDate)) / 86400000;
+    if (days > 90) {
+      Toast.show("Custom range cannot exceed 90 days.", "error");
+      return;
+    }
+  }
   const thisLoad = ++_loadId;
 
   _tabVolume.replaceChildren();
   _tabDocTypes.replaceChildren();
-  _tabCodes.replaceChildren();
+  _tabOutcomes.replaceChildren();
   _tabTiming.replaceChildren();
   _emptyEl.textContent = "Loading...";
   _emptyEl.classList.remove("hidden");
@@ -116,10 +163,11 @@ async function load() {
     }
 
     _emptyEl.classList.add("hidden");
-    renderVolume(summary, summary.timingStats);
+    const dailyStats = resp.dailyStats || [];
+    renderVolume(summary, dailyStats);
     renderDocumentTypes(summary.byClassification);
-    renderResponseCodes(summary.byResponseCode);
-    renderTiming(summary.timingStats);
+    renderOutcomes(summary, summary.byResponseCode);
+    renderTiming(summary.timingStats, dailyStats);
   } catch (e) {
     if (thisLoad !== _loadId) return;
     _emptyEl.textContent = `Failed to load: ${e.message}`;
@@ -175,7 +223,7 @@ function _codeCount(byCode, prefix) {
     .reduce((sum, [, v]) => sum + v, 0);
 }
 
-function renderVolume(summary, timing = {}) {
+function renderVolume(summary, dailyStats = []) {
   const totalRecords = summary.totalRecords || 0;
   const bdaInvocations = summary.totalExtractionInvocations ?? summary.totalBdaInvocations ?? 0;
   const byCode = summary.byResponseCode || {};
@@ -229,8 +277,35 @@ function renderVolume(summary, timing = {}) {
     }),
   );
 
-  // Extraction failures: didn't reach BDA (103, 104, 106, 400, 999, 004, 003)
-  const extractionGap = totalRecords - bdaInvocations;
+  _tabVolume.replaceChildren(
+    h("div", { className: "metrics-chart-label" }, "Document processing pipeline"),
+    funnelEl,
+  );
+
+  if (dailyStats.length >= 1) {
+    _volumeChart = _mountChart(
+      _tabVolume,
+      _volumeChart,
+      buildVolumeChartConfig(dailyStats),
+      "Documents Received per Day",
+    );
+  }
+}
+
+function renderOutcomes(summary, byResponseCode) {
+  const byCode = summary.byResponseCode || {};
+  const totalRecords = summary.totalRecords || 0;
+  const bdaInvocations = summary.totalExtractionInvocations ?? summary.totalBdaInvocations ?? 0;
+  const successCount = _codeCount(byCode, "000");
+  const blueprintMatched =
+    summary.totalDocumentsRecognized ??
+    _codeCount(byCode, "101") +
+      _codeCount(byCode, "102") +
+      _codeCount(byCode, "105") +
+      successCount;
+  const extractionGap = Math.max(0, totalRecords - bdaInvocations);
+  const validationGap = Math.max(0, blueprintMatched - successCount);
+
   const extractionFailures = [
     { label: "No Document Detected", value: _codeCount(byCode, "103"), icon: ICONS.nodoc },
     { label: "Blurry Document", value: _codeCount(byCode, "104"), icon: ICONS.blurry },
@@ -263,7 +338,6 @@ function renderVolume(summary, timing = {}) {
       icon: ICONS.other,
     });
 
-  const validationGap = blueprintMatched - successCount;
   const validationFailures = [
     { label: "Missing Fields", value: _codeCount(byCode, "101"), icon: ICONS.missingfields },
     { label: "Miscategorized", value: _codeCount(byCode, "102"), icon: ICONS.miscat },
@@ -281,7 +355,7 @@ function renderVolume(summary, timing = {}) {
     return h(
       "div",
       { className: "metrics-failure-group" },
-      h("div", { className: "metrics-failure-group-label" }, label),
+      h("div", { className: "metrics-chart-label" }, label),
       h(
         "div",
         { className: "metrics-cards-row" },
@@ -296,24 +370,11 @@ function renderVolume(summary, timing = {}) {
     );
   }
 
-  const avg = (timing.totalProcessingTimeAvg || 0).toFixed(1);
-  const timingLink = h(
-    "button",
-    { className: "metrics-timing-callout-link" },
-    "See Timing tab for breakdown",
-  );
-  timingLink.addEventListener("click", (e) => {
-    e.preventDefault();
-    _root.querySelector(".metrics-tab[data-tab='timing']").click();
-  });
-  const timingCallout = h(
-    "div",
-    { className: "metrics-timing-callout" },
-    h("span", {}, `End-to-end avg ${avg}s – `, timingLink),
-  );
+  if (!byResponseCode || Object.keys(byResponseCode).length === 0) return;
 
-  _tabVolume.replaceChildren(
-    funnelEl,
+  const bars = computeBarData(byResponseCode, { filterNull: true, sortByKey: true });
+
+  _tabOutcomes.replaceChildren(
     failureGroup(
       `${extractionGap.toLocaleString()} documents did not qualify for extraction`,
       extractionFailures,
@@ -322,49 +383,7 @@ function renderVolume(summary, timing = {}) {
       `${validationGap.toLocaleString()} extracted documents did not satisfy business rules`,
       validationFailures,
     ),
-    timingCallout,
-  );
-}
-
-function renderDocumentTypes(byClassification) {
-  if (!byClassification || Object.keys(byClassification).length === 0) return;
-
-  const sorted = Object.entries(byClassification)
-    .map(([k, v]) => [k === "null" ? "Unclassified" : k, v])
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10);
-  const max = sorted[0][1];
-
-  _tabDocTypes.replaceChildren(
-    h(
-      "div",
-      { className: "metrics-panel" },
-      ...sorted.map(([docType, count]) =>
-        h(
-          "div",
-          { className: "metrics-bar-row" },
-          h("span", { className: "metrics-bar-label", title: docType }, docType),
-          h(
-            "div",
-            { className: "metrics-bar-track" },
-            h("div", {
-              className: "metrics-bar-fill metrics-bar-fill--primary",
-              style: `width: ${(count / max) * 100}%`,
-            }),
-          ),
-          h("span", { className: "metrics-bar-value" }, count.toLocaleString()),
-        ),
-      ),
-    ),
-  );
-}
-
-function renderResponseCodes(byResponseCode) {
-  if (!byResponseCode || Object.keys(byResponseCode).length === 0) return;
-
-  const bars = computeBarData(byResponseCode, { filterNull: true, sortByKey: true });
-
-  _tabCodes.replaceChildren(
+    h("div", { className: "metrics-chart-label" }, "Response Codes"),
     h(
       "div",
       { className: "metrics-panel" },
@@ -388,7 +407,41 @@ function renderResponseCodes(byResponseCode) {
   );
 }
 
-function renderTiming(timing = {}) {
+function renderDocumentTypes(byClassification) {
+  if (!byClassification || Object.keys(byClassification).length === 0) return;
+
+  const sorted = Object.entries(byClassification)
+    .map(([k, v]) => [k === "null" ? "Unclassified" : k, v])
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10);
+  const max = sorted[0][1];
+
+  _tabDocTypes.replaceChildren(
+    h("div", { className: "metrics-chart-label" }, "Top Document Types"),
+    h(
+      "div",
+      { className: "metrics-panel" },
+      ...sorted.map(([docType, count]) =>
+        h(
+          "div",
+          { className: "metrics-bar-row" },
+          h("span", { className: "metrics-bar-label", title: docType }, docType),
+          h(
+            "div",
+            { className: "metrics-bar-track" },
+            h("div", {
+              className: "metrics-bar-fill metrics-bar-fill--primary",
+              style: `width: ${(count / max) * 100}%`,
+            }),
+          ),
+          h("span", { className: "metrics-bar-value" }, count.toLocaleString()),
+        ),
+      ),
+    ),
+  );
+}
+
+function renderTiming(timing = {}, dailyStats = []) {
   const timingCards = [
     {
       label: "Extraction Time Avg.",
@@ -411,8 +464,211 @@ function renderTiming(timing = {}) {
   ];
 
   _tabTiming.replaceChildren(
+    h("div", { className: "metrics-chart-label" }, "Timing metrics"),
     h("div", { className: "metrics-cards-row" }, ...timingCards.map(renderCardEl)),
   );
+
+  if (dailyStats.length >= 1) {
+    const timingWrap = h("div", { className: "metrics-heatmap-half" });
+    timingWrap.appendChild(
+      h("div", { className: "metrics-chart-label" }, "Processing Time per Day"),
+    );
+    const timingChartWrap = h("div", { className: "metrics-chart" });
+    const timingCanvas = document.createElement("canvas");
+    timingChartWrap.appendChild(timingCanvas);
+    timingWrap.appendChild(timingChartWrap);
+    new Chart(timingCanvas, buildTimingChartConfig(dailyStats));
+
+    const dowWrap = h("div", { className: "metrics-heatmap-half" });
+    dowWrap.appendChild(
+      h("div", { className: "metrics-chart-label" }, "Avg Processing Time by Day of Week"),
+    );
+    dowWrap.appendChild(buildDowTimingGridEl(dailyStats));
+
+    _tabTiming.appendChild(h("div", { className: "metrics-heatmap-row" }, timingWrap, dowWrap));
+  }
+}
+
+function _labelDate(dateStr) {
+  const [, m, d] = dateStr.split("-");
+  return `${parseInt(m)}/${parseInt(d)}`;
+}
+
+export function buildVolumeChartConfig(dailyStats) {
+  return {
+    type: "bar",
+    data: {
+      labels: dailyStats.map((d) => _labelDate(d.date)),
+      datasets: [
+        {
+          label: "Documents",
+          data: dailyStats.map((d) => d.totalRecords ?? 0),
+          backgroundColor: "#3b82f6",
+          borderRadius: 3,
+          borderSkipped: false,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { mode: "index" } },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: "#9ca3af", font: { size: 10 }, maxTicksLimit: 10 },
+        },
+        y: {
+          grid: { color: "#e5e7eb" },
+          ticks: { color: "#9ca3af", font: { size: 10 } },
+          beginAtZero: true,
+        },
+      },
+    },
+    plugins: [
+      {
+        afterDraw(chart) {
+          const {
+            ctx,
+            data,
+            scales: { x, y },
+          } = chart;
+          ctx.save();
+          ctx.font = "10px sans-serif";
+          ctx.fillStyle = "#6b7280";
+          ctx.textAlign = "center";
+          data.datasets[0].data.forEach((val, i) => {
+            if (!val) return;
+            const xPos = x.getPixelForValue(i);
+            const yPos = y.getPixelForValue(val) - 4;
+            ctx.fillText(val.toLocaleString(), xPos, yPos);
+          });
+          ctx.restore();
+        },
+      },
+    ],
+  };
+}
+
+export function buildTimingChartConfig(dailyStats) {
+  return {
+    type: "bar",
+    data: {
+      labels: dailyStats.map((d) => _labelDate(d.date)),
+      datasets: [
+        {
+          label: "Extraction (s)",
+          data: dailyStats.map((d) => d.timingStats?.bdaProcessingTimeAvg ?? null),
+          backgroundColor: "#3b82f6",
+          borderRadius: 0,
+          stack: "timing",
+        },
+        {
+          label: "Queue (s)",
+          data: dailyStats.map((d) => d.timingStats?.bdaWaitTimeAvg ?? null),
+          backgroundColor: "#a5b4fc",
+          borderRadius: 3,
+          stack: "timing",
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: "bottom",
+          labels: { color: "#6b7280", font: { size: 10 }, boxWidth: 12 },
+        },
+        tooltip: {
+          mode: "index",
+          callbacks: {
+            footer: (items) => `Total: ${items.reduce((s, i) => s + (i.raw ?? 0), 0).toFixed(1)}s`,
+          },
+        },
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: "#9ca3af", font: { size: 10 }, maxTicksLimit: 10 },
+          stacked: true,
+        },
+        y: {
+          grid: { color: "#e5e7eb" },
+          ticks: { color: "#9ca3af", font: { size: 10 }, callback: (v) => `${v}s` },
+          beginAtZero: true,
+          stacked: true,
+        },
+      },
+    },
+  };
+}
+
+export function buildDowTimingGridEl(dailyStats) {
+  const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const totals = Array.from({ length: 7 }, () => ({ ext: 0, queue: 0, total: 0, count: 0 }));
+
+  dailyStats.forEach((d) => {
+    const dow = new Date(d.date + "T00:00:00").getDay();
+    const t = d.timingStats;
+    if (t?.totalProcessingTimeAvg != null) {
+      totals[dow].ext += t.bdaProcessingTimeAvg ?? 0;
+      totals[dow].queue += t.bdaWaitTimeAvg ?? 0;
+      totals[dow].total += t.totalProcessingTimeAvg;
+      totals[dow].count++;
+    }
+  });
+
+  const rows = totals.map(({ ext, queue, total, count }, i) =>
+    count > 0
+      ? {
+          day: DAY_LABELS[i],
+          ext: (ext / count).toFixed(1),
+          queue: (queue / count).toFixed(1),
+          total: (total / count).toFixed(1),
+          count,
+        }
+      : { day: DAY_LABELS[i], ext: null, queue: null, total: null, count: 0 },
+  );
+
+  function totalColor(val) {
+    if (val === null) return "";
+    return val < 15 ? "timing-good" : val < 30 ? "timing-warn" : "timing-bad";
+  }
+
+  const grid = h(
+    "div",
+    { className: "metrics-dow-grid" },
+    h("div", { className: "metrics-dow-header" }, ""),
+    h("div", { className: "metrics-dow-header" }, "Extraction"),
+    h("div", { className: "metrics-dow-header" }, "Queue"),
+    h("div", { className: "metrics-dow-header" }, "Total"),
+    ...rows.flatMap(({ day, ext, queue, total }) => [
+      h("div", { className: "metrics-dow-day" }, day),
+      h("div", { className: "metrics-dow-cell" }, ext !== null ? `${ext}s` : "-"),
+      h("div", { className: "metrics-dow-cell" }, queue !== null ? `${queue}s` : "-"),
+      h(
+        "div",
+        {
+          className: `metrics-dow-cell metrics-dow-total ${totalColor(total !== null ? parseFloat(total) : null)}`,
+        },
+        total !== null ? `${total}s` : "-",
+      ),
+    ]),
+  );
+
+  return grid;
+}
+
+function _mountChart(container, chartRef, config, label) {
+  chartRef?.destroy();
+  if (label) container.appendChild(h("div", { className: "metrics-chart-label" }, label));
+  const wrap = h("div", { className: "metrics-chart" });
+  const canvas = document.createElement("canvas");
+  wrap.appendChild(canvas);
+  container.appendChild(wrap);
+  return new Chart(canvas, config);
 }
 
 export function computeBarData(entries, { filterNull = false, sortByKey = false } = {}) {

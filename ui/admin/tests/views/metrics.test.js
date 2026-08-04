@@ -1,10 +1,30 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll, vi } from "vitest";
+
+vi.mock("chart.js", () => ({
+  Chart: Object.assign(vi.fn(), { register: vi.fn() }),
+  BarController: {},
+  LineController: {},
+  BarElement: {},
+  LineElement: {},
+  PointElement: {},
+  CategoryScale: {},
+  LinearScale: {},
+  Tooltip: {},
+  Filler: {},
+}));
 import {
   _statusColor,
   _humanizeStatus,
   _codeColor,
   computeBarData,
+  buildVolumeChartConfig,
+  buildTimingChartConfig,
 } from "../../src/views/metrics/metrics.js";
+
+beforeAll(() => {
+  // jsdom doesn't implement createElementNS SVG fully but enough for attribute checks
+  if (!globalThis.document) return;
+});
 
 describe("_statusColor", () => {
   it("returns success for Success", () => {
@@ -120,5 +140,70 @@ describe("computeBarData", () => {
     expect(firstBar.widthPct).toBe(25); // 50/200 * 100
     const secondBar = bars[1];
     expect(secondBar.widthPct).toBe(100); // 200/200 * 100
+  });
+});
+
+const DAILY_STATS = [
+  {
+    date: "2024-01-01",
+    totalRecords: 10,
+    timingStats: { totalProcessingTimeAvg: 5, bdaProcessingTimeAvg: 3, bdaWaitTimeAvg: 1 },
+  },
+  {
+    date: "2024-01-02",
+    totalRecords: 20,
+    timingStats: { totalProcessingTimeAvg: 6, bdaProcessingTimeAvg: 4, bdaWaitTimeAvg: 2 },
+  },
+  {
+    date: "2024-01-03",
+    totalRecords: 15,
+    timingStats: { totalProcessingTimeAvg: 4, bdaProcessingTimeAvg: 2, bdaWaitTimeAvg: 1 },
+  },
+];
+
+describe("buildVolumeChartConfig", () => {
+  it("returns a bar chart config", () => {
+    const config = buildVolumeChartConfig(DAILY_STATS);
+    expect(config.type).toBe("bar");
+  });
+
+  it("has one dataset with correct data length", () => {
+    const config = buildVolumeChartConfig(DAILY_STATS);
+    expect(config.data.datasets).toHaveLength(1);
+    expect(config.data.datasets[0].data).toHaveLength(DAILY_STATS.length);
+  });
+
+  it("maps totalRecords to dataset values", () => {
+    const config = buildVolumeChartConfig(DAILY_STATS);
+    expect(config.data.datasets[0].data).toEqual([10, 20, 15]);
+  });
+
+  it("formats labels as M/D", () => {
+    const config = buildVolumeChartConfig(DAILY_STATS);
+    expect(config.data.labels).toEqual(["1/1", "1/2", "1/3"]);
+  });
+});
+
+describe("buildTimingChartConfig", () => {
+  it("returns a line chart config", () => {
+    const config = buildTimingChartConfig(DAILY_STATS);
+    expect(config.type).toBe("line");
+  });
+
+  it("has 3 datasets (end-to-end, extraction, queue)", () => {
+    const config = buildTimingChartConfig(DAILY_STATS);
+    expect(config.data.datasets).toHaveLength(3);
+  });
+
+  it("maps timing fields correctly", () => {
+    const config = buildTimingChartConfig(DAILY_STATS);
+    expect(config.data.datasets[0].data).toEqual([5, 6, 4]); // totalProcessingTimeAvg
+    expect(config.data.datasets[1].data).toEqual([3, 4, 2]); // bdaProcessingTimeAvg
+    expect(config.data.datasets[2].data).toEqual([1, 2, 1]); // bdaWaitTimeAvg
+  });
+
+  it("uses the same labels as volume chart", () => {
+    const config = buildTimingChartConfig(DAILY_STATS);
+    expect(config.data.labels).toEqual(["1/1", "1/2", "1/3"]);
   });
 });
