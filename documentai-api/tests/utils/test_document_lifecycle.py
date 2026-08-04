@@ -32,7 +32,7 @@ class _Mock:
 
 
 _DEFAULT_PRECLASSIFY = BedrockClassificationResult(
-    document_type="W2", confidence=0.95, document_count=1
+    document_type="W2", confidence=0.95, max_document_count_on_page=1
 )
 _DEFAULT_BLUR = BlurResult(
     is_blurry=False, is_not_document=False, word_count=20, avg_confidence=95.0
@@ -135,7 +135,7 @@ def _upsert(
             "application/pdf",
             False,
             BedrockClassificationResult(
-                document_type="other_document", confidence=0.3, document_count=1
+                document_type="other_document", confidence=0.3, max_document_count_on_page=1
             ),
             ProcessStatus.BLURRY_DOCUMENT_DETECTED,
             True,
@@ -146,7 +146,7 @@ def _upsert(
             "application/pdf",
             False,
             BedrockClassificationResult(
-                document_type="not_a_document", confidence=0.9, document_count=1
+                document_type="not_a_document", confidence=0.9, max_document_count_on_page=1
             ),
             ProcessStatus.NO_DOCUMENT_DETECTED,
             True,
@@ -156,7 +156,9 @@ def _upsert(
             "income",
             "application/pdf",
             False,
-            BedrockClassificationResult(document_type="W2", confidence=0.95, document_count=2),
+            BedrockClassificationResult(
+                document_type="W2", confidence=0.95, max_document_count_on_page=2
+            ),
             ProcessStatus.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
             True,
             None,
@@ -165,7 +167,9 @@ def _upsert(
             "income",
             "image/jpeg",
             False,
-            BedrockClassificationResult(document_type="W2", confidence=0.95, document_count=1),
+            BedrockClassificationResult(
+                document_type="W2", confidence=0.95, max_document_count_on_page=1
+            ),
             ProcessStatus.PENDING_IMAGE_OPTIMIZATION,
             False,
             None,
@@ -174,7 +178,9 @@ def _upsert(
             "income",
             "application/pdf",
             False,
-            BedrockClassificationResult(document_type="W2", confidence=0.95, document_count=1),
+            BedrockClassificationResult(
+                document_type="W2", confidence=0.95, max_document_count_on_page=1
+            ),
             ProcessStatus.NOT_STARTED,
             False,
             None,
@@ -183,7 +189,9 @@ def _upsert(
             None,
             "application/pdf",
             False,
-            BedrockClassificationResult(document_type="W2", confidence=0.95, document_count=1),
+            BedrockClassificationResult(
+                document_type="W2", confidence=0.95, max_document_count_on_page=1
+            ),
             ProcessStatus.NOT_STARTED,
             False,
             None,
@@ -537,7 +545,7 @@ def test_upsert_initial_ddb_record_routes_to_textract_when_enabled(
     lifecycle_mocks[_Mock.PRECLASSIFY_DOCUMENT].return_value = BedrockClassificationResult(
         document_type="driver's license",
         confidence=0.95,
-        document_count=1,
+        max_document_count_on_page=1,
         is_identity_document=True,
     )
     lifecycle_mocks[_Mock.TRY_TEXTRACT_IDENTITY].return_value = _DEFAULT_TEXTRACT_RESULT
@@ -557,7 +565,7 @@ def test_upsert_initial_ddb_record_unknown_category_with_textract_does_not_crash
 ):
     """Regression: user_provided_document_category=None must not crash with Textract path."""
     lifecycle_mocks[_Mock.PRECLASSIFY_DOCUMENT].return_value = BedrockClassificationResult(
-        document_type="driver's license", confidence=0.95, document_count=1
+        document_type="driver's license", confidence=0.95, max_document_count_on_page=1
     )
 
     _upsert(s3_bucket, content_type="image/jpeg", user_provided_document_category=None)
@@ -572,7 +580,7 @@ def test_upsert_initial_ddb_record_falls_through_when_textract_returns_none(
 ):
     """When textract returns None (flag off or failure), falls through to BDA path."""
     lifecycle_mocks[_Mock.PRECLASSIFY_DOCUMENT].return_value = BedrockClassificationResult(
-        document_type="driver's license", confidence=0.95, document_count=1
+        document_type="driver's license", confidence=0.95, max_document_count_on_page=1
     )
 
     _upsert(s3_bucket, content_type="image/jpeg", user_provided_document_category="identity")
@@ -618,7 +626,7 @@ def test_upsert_initial_ddb_record_stores_blueprint_no_match(
 ):
     """When blueprint matcher finds no match, fields reflect that."""
     lifecycle_mocks[_Mock.PRECLASSIFY_DOCUMENT].return_value = BedrockClassificationResult(
-        document_type="other_document", confidence=0.3, document_count=1
+        document_type="other_document", confidence=0.3, max_document_count_on_page=1
     )
     lifecycle_mocks[_Mock.FIND_MATCHING_BLUEPRINT].return_value = PreclassificationMatchResult(
         matched_document_type=None,
@@ -647,17 +655,17 @@ def test_upsert_initial_ddb_record_stores_blueprint_no_match(
 # =============================================================================
 
 
-def test_upsert_initial_ddb_record_flags_multipage_with_distinct_types(
+def test_upsert_initial_ddb_record_flags_multipage_with_inconsistency(
     ddb_doc_metadata_table, s3_bucket, lifecycle_mocks
 ):
-    """Multipage PDF with distinct document types per page is flagged as 401."""
+    """Multipage PDF where LLM detects inconsistency across pages is flagged as 401."""
     lifecycle_mocks[_Mock.GET_PAGE_COUNT].return_value = 2
     lifecycle_mocks[_Mock.IS_BLUR_DETECTION_ENABLED].return_value = False
     lifecycle_mocks[_Mock.PRECLASSIFY_DOCUMENT].return_value = BedrockClassificationResult(
         document_type="multipage",
         confidence=0.95,
-        document_count=1,
-        document_types=["W2", "paystub"],
+        max_document_count_on_page=1,
+        has_multipage_inconsistency=True,
     )
 
     _upsert(s3_bucket)
@@ -670,15 +678,15 @@ def test_upsert_initial_ddb_record_flags_multipage_with_distinct_types(
 def test_upsert_initial_ddb_record_multipage_flag_disabled_proceeds_to_bda(
     ddb_doc_metadata_table, s3_bucket, lifecycle_mocks
 ):
-    """When flag is off, multipage doc with distinct types proceeds normally."""
+    """When flag is off, multipage doc with inconsistency proceeds normally."""
     lifecycle_mocks[_Mock.GET_PAGE_COUNT].return_value = 2
     lifecycle_mocks[_Mock.IS_BLUR_DETECTION_ENABLED].return_value = False
     lifecycle_mocks[_Mock.IS_MULTIPAGE_DOCUMENT_FLAGGING_ENABLED].return_value = False
     lifecycle_mocks[_Mock.PRECLASSIFY_DOCUMENT].return_value = BedrockClassificationResult(
         document_type="multipage",
         confidence=0.95,
-        document_count=1,
-        document_types=["W2", "paystub"],
+        max_document_count_on_page=1,
+        has_multipage_inconsistency=True,
     )
 
     _upsert(s3_bucket)
@@ -687,17 +695,17 @@ def test_upsert_initial_ddb_record_multipage_flag_disabled_proceeds_to_bda(
     assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.NOT_STARTED
 
 
-def test_upsert_initial_ddb_record_multipage_same_type_proceeds_to_bda(
+def test_upsert_initial_ddb_record_multipage_consistent_proceeds_to_bda(
     ddb_doc_metadata_table, s3_bucket, lifecycle_mocks
 ):
-    """Multipage PDF where all pages are the same type is NOT flagged — set() dedup must gate it."""
+    """Multipage PDF with no inconsistency detected is NOT flagged."""
     lifecycle_mocks[_Mock.GET_PAGE_COUNT].return_value = 2
     lifecycle_mocks[_Mock.IS_BLUR_DETECTION_ENABLED].return_value = False
     lifecycle_mocks[_Mock.PRECLASSIFY_DOCUMENT].return_value = BedrockClassificationResult(
         document_type="W2",
         confidence=0.95,
-        document_count=1,
-        document_types=["W2", "W2"],
+        max_document_count_on_page=1,
+        has_multipage_inconsistency=False,
     )
 
     _upsert(s3_bucket)
@@ -706,16 +714,16 @@ def test_upsert_initial_ddb_record_multipage_same_type_proceeds_to_bda(
     assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.NOT_STARTED
 
 
-def test_upsert_initial_ddb_record_single_page_distinct_types_not_flagged(
+def test_upsert_initial_ddb_record_single_page_inconsistency_not_flagged(
     ddb_doc_metadata_table, s3_bucket, lifecycle_mocks
 ):
-    """pages_detected=1 gates the check — document_types content is irrelevant on single-page docs."""
+    """pages_detected=1 gates the check — has_multipage_inconsistency is ignored on single-page docs."""
     lifecycle_mocks[_Mock.IS_BLUR_DETECTION_ENABLED].return_value = False
     lifecycle_mocks[_Mock.PRECLASSIFY_DOCUMENT].return_value = BedrockClassificationResult(
         document_type="W2",
         confidence=0.95,
-        document_count=1,
-        document_types=["W2", "paystub"],
+        max_document_count_on_page=1,
+        has_multipage_inconsistency=True,
     )
 
     _upsert(s3_bucket)

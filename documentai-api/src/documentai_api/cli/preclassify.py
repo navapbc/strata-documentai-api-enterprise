@@ -34,14 +34,17 @@ def main(
 
     result = preclassify_document(file.read_bytes(), content_type, category)
 
-    typer.echo(f"document_type:       {result.document_type}")
-    typer.echo(f"confidence:          {result.confidence}")
-    typer.echo(f"document_count:      {result.document_count}")
-    typer.echo(f"category_match:      {result.category_match}")
-    typer.echo(f"is_identity_document:{result.is_identity_document}")
-    typer.echo(f"model_id:            {result.model_id}")
-    typer.echo(f"duration_seconds:    {result.duration_seconds}s")
-    typer.echo(f"tokens (in/out):     {result.input_tokens}/{result.output_tokens}")
+    typer.echo(f"document_type:               {result.document_type}")
+    typer.echo(f"confidence:                  {result.confidence}")
+    typer.echo(f"max_document_count_on_page:  {result.max_document_count_on_page}")
+    typer.echo(f"max_count_reason:            {result.max_document_count_on_page_reason}")
+    typer.echo(f"has_multipage_inconsistency: {result.has_multipage_inconsistency}")
+    typer.echo(f"inconsistency_reason:        {result.has_multipage_inconsistency_reason}")
+    typer.echo(f"category_match:              {result.category_match}")
+    typer.echo(f"is_identity_document:        {result.is_identity_document}")
+    typer.echo(f"model_id:                    {result.model_id}")
+    typer.echo(f"duration_seconds:            {result.duration_seconds}s")
+    typer.echo(f"tokens (in/out):             {result.input_tokens}/{result.output_tokens}")
 
 
 if __name__ == "__main__":

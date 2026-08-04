@@ -67,7 +67,7 @@ _STOP_FAIL_REASONS: dict[str, str] = {
     EvaluationKey.PASSWORD_PROTECTED: "Document is password protected.",
     EvaluationKey.DOCUMENT_DETECTED: "Insufficient text detected to identify a document.",
     EvaluationKey.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE: "Multiple documents were detected on a single page.",
-    EvaluationKey.MULTIPLE_DOCUMENTS_IN_MULTIPAGE: "Multiple document types were detected across pages.",
+    EvaluationKey.MULTIPLE_DOCUMENTS_IN_MULTIPAGE: "Pages are not continuations of a single document instance.",
 }
 
 _BLUR_STOP_FALLBACK = "Document was flagged as blurry."
@@ -104,9 +104,9 @@ def _evaluate_key(key: str, ddb_record: dict[str, Any]) -> EvaluationEntry:
         return EvaluationEntry(status=_PASS, reason="No multiple documents detected.")
 
     if key == EvaluationKey.MULTIPLE_DOCUMENTS_IN_MULTIPAGE:
-        # No stored boolean - reaching this key means no mixed document types across pages.
+        # No stored boolean - reaching this key means pages are continuations of a single document instance.
         return EvaluationEntry(
-            status=_PASS, reason="No multiple document types detected across pages."
+            status=_PASS, reason="Pages are continuations of a single document instance."
         )
 
     if key == EvaluationKey.MISCATEGORIZATION:

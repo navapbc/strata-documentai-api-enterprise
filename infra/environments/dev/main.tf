@@ -320,7 +320,7 @@ module "config" {
     #   Pro   - blur empty-quadrant check (spatial reasoning over image crops)
     #   Micro - supplemental extraction: text-only field matching over Textract WORD
     #           blocks (no image sent), cheapest/fastest for basic text-in/text-out
-    "models/classification-model-id"          = "us.amazon.nova-lite-v1:0"
+    "models/classification-model-id"          = "us.amazon.nova-pro-v1:0"
     "models/bounding-box-model-id"            = "us.amazon.nova-lite-v1:0"
     "models/blur-quadrant-model-id"           = "us.amazon.nova-pro-v1:0"
     "models/supplemental-extraction-model-id" = "us.amazon.nova-micro-v1:0"

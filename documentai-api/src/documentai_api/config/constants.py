@@ -451,7 +451,7 @@ class PreclassificationCategory(StrEnum):
 
 
 class PreClassificationDefaults:
-    MODEL_ID = "us.amazon.nova-lite-v1:0"
+    MODEL_ID = "us.amazon.nova-pro-v1:0"
     # Converse API supports more document types (csv, html, txt, md, docx, xlsx)
     # but those are rejected at the upload layer before reaching preclassification.
     SUPPORTED_CONTENT_TYPES = (
@@ -467,17 +467,19 @@ class PreClassificationDefaults:
             "",
             "First, perform this evaluation step-by-step:",
             "1. Examine the visual layout of the page. Look for distinct borders, separate rectangles, multiple photos, or independent snippets (e.g., multiple receipts or cards placed on a single scanner bed).",
-            "2. Count how many individual, separate documents or items are visually present on this single page/file.",
-            "3. If the file has multiple pages, identify the distinct document type on each page (e.g. W2, paystub). List them in document_types.",
+            "2. For each page, count how many individual, separate documents or items are visually present. max_document_count_on_page is the highest per-page count across the document, not a sum across pages.",
+            "3. Evaluate multi-page consistency: pages belong together only if they are clearly continuation pages of the exact same document instance for the exact same individual (e.g. page 2 of the same W2, the same bank statement continued).",
             '4. Check if the document is directly and primarily a "{user_category}" document.',
-            '   - Note: If it merely mentions or relates to "{user_category}" in a secondary way, set category_match to false.',
+            '   - Set category_match to false if: the document type does not match "{user_category}", max_document_count_on_page > 1, or has_multipage_inconsistency is true.',
             "",
             "Then, output your final answer strictly as a raw JSON object with no markdown formatting or backticks:",
             "{",
             '  "document_type": "<short description>",',
             '  "confidence": <float between 0.0 and 1.0>,',
-            '  "document_count": <integer count of distinct visual document items found on the page>,',
-            '  "document_types": [<list of distinct document type strings, one per page>],',
+            '  "max_document_count_on_page": <integer, maximum number of distinct visual document items found on any single page>,',
+            '  "max_document_count_on_page_reason": "<brief explanation of what was counted on each page>",',
+            '  "has_multipage_inconsistency": <false only if all pages are continuations of the exact same document instance for the exact same individual, otherwise true>,',
+            '  "has_multipage_inconsistency_reason": "<brief explanation of why pages are consistent or inconsistent>",',
             '  "category_match": <true or false based on step 4>,',
             '  "is_identity_document": <true if passport or driver\'s license, else false>',
             "}",

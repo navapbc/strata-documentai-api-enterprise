@@ -31,7 +31,7 @@ def mock_preclassification(mocker):
         return_value=BedrockClassificationResult(
             document_type="tax_documents",
             confidence=0.95,
-            document_count=1,
+            max_document_count_on_page=1,
         ),
     )
 
@@ -415,7 +415,7 @@ def test_main_skips_bda_when_no_match_and_flag_on(input_pdf, mocker, mock_invoke
         return_value=BedrockClassificationResult(
             document_type="other_document",
             confidence=0.5,
-            document_count=1,
+            max_document_count_on_page=1,
         ),
     )
 

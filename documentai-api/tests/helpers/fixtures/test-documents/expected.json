@@ -165,6 +165,35 @@
     "preclassificationCategory": null,
     "responseCode": "104"
   },
+  "synthetic-multipage-mixed-paystub-photo.pdf": {
+    "//": [
+      "Multipage PDF combining two different pay stubs (different employees).",
+      "Same-type/different-individual detection is best-effort (~78% reliable at temp=0).",
+      "reruns=2 gives 3 attempts, reducing CI flake rate to ~1%."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "application/pdf",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "reruns_override": 2,
+    "responseCode": "401"
+  },
+  "synthetic-multipage-mixed-state-id-paystub.pdf": {
+    "//": [
+      "Multipage PDF combining a state photo ID and a pay stub - two distinct document types.",
+      "Preclassification consistently returns has_multipage_inconsistency: true.",
+      "Requires FLAG_MULTIPLE_DOCUMENTS_IN_MULTIPAGE, which defaults to true."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "application/pdf",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "401"
+  },
   "synthetic-password-protected.pdf": {
     "//": [
       "Encrypted PDF. Detected as password protected before preclassification, so it ",

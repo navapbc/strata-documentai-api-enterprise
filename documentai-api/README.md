@@ -153,7 +153,7 @@ A [Postman collection](../docs/documentai-api/postman/DocumentAI.postman_collect
 
 See the [API route map](../docs/documentai-api/diagrams/api-routes.mmd) for a visual overview grouped by auth scheme.
 
-Runtime behavior can be toggled without redeploying via [feature flags](../docs/documentai-api/feature-flags.md) stored in SSM Parameter Store.
+Runtime behavior can be toggled without redeploying via [feature flags](../docs/documentai-api/feature-flags.md) stored in SSM Parameter Store. Response codes are documented in [response-codes.md](../docs/documentai-api/response-codes.md).
 
 ### Document Processing (API-Key auth)
 

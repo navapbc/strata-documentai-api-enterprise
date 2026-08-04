@@ -45,6 +45,7 @@ def load_test_cases() -> list[Case]:
                     content_type=expected.get("content_type"),
                 ),
             ),
+            marks=[pytest.mark.flaky(reruns=expected.get("reruns_override", 0))],
             id=filename,
         )
         for filename, expected in cases.items()
@@ -114,9 +115,14 @@ def test_post_document(test_case, base_url, api_key):
     if expected_result.preclassification_category is not None:
         expect_not_none.append(DocumentMetadata.PRECLASSIFICATION_CATEGORY)
 
-    # Password-protected and blurry docs short-circuit before BDA, so BDA
+    # Password-protected, blurry, and multi-document docs short-circuit before BDA, so BDA
     # output and the processed-date timestamp are never written.
-    if not expected_result.is_blurry and not expected_result.is_password_protected:
+    short_circuits_before_bda = (
+        expected_result.is_blurry
+        or expected_result.is_password_protected
+        or expected_result.response_code in {"400", "401"}
+    )
+    if not short_circuits_before_bda:
         expect_not_none += [
             DocumentMetadata.BDA_OUTPUT_S3_URI,
             DocumentMetadata.PROCESSED_DATE,

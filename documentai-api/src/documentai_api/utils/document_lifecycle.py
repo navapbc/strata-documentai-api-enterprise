@@ -428,6 +428,10 @@ def upsert_initial_ddb_record(
     pre_classification_output_tokens = None
     pre_classification_duration_seconds = None
     pre_classification_model_id = None
+    pre_classification_max_document_count_on_page = None
+    pre_classification_max_document_count_on_page_reason: str | None = None
+    pre_classification_has_multipage_inconsistency: bool | None = None
+    pre_classification_has_multipage_inconsistency_reason: str | None = None
     pre_classification_blueprint_match_result: PreclassificationMatchResult | None = None
     textract_result = None
 
@@ -511,8 +515,16 @@ def upsert_initial_ddb_record(
             pre_classification_output_tokens = result.output_tokens
             pre_classification_duration_seconds = result.duration_seconds
             pre_classification_model_id = result.model_id
+            pre_classification_max_document_count_on_page = result.max_document_count_on_page
+            pre_classification_max_document_count_on_page_reason = (
+                result.max_document_count_on_page_reason
+            )
+            pre_classification_has_multipage_inconsistency = result.has_multipage_inconsistency
+            pre_classification_has_multipage_inconsistency_reason = (
+                result.has_multipage_inconsistency_reason
+            )
 
-            if result.document_count > 1:
+            if result.max_document_count_on_page > 1:
                 process_status = ProcessStatus.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE
                 response_code = ResponseCodes.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE
                 textract_result = None
@@ -520,7 +532,7 @@ def upsert_initial_ddb_record(
             elif (
                 pages_detected
                 and pages_detected > 1
-                and len(set(result.document_types)) > 1
+                and result.has_multipage_inconsistency
                 and is_multipage_document_flagging_enabled()
             ):
                 process_status = ProcessStatus.MULTIPLE_DOCUMENTS_IN_MULTIPAGE
@@ -625,6 +637,10 @@ def upsert_initial_ddb_record(
                     if pre_classification_blueprint_match_result
                     else None
                 ),
+                max_document_count_on_page=pre_classification_max_document_count_on_page,
+                max_document_count_on_page_reason=pre_classification_max_document_count_on_page_reason,
+                has_multipage_inconsistency=pre_classification_has_multipage_inconsistency,
+                has_multipage_inconsistency_reason=pre_classification_has_multipage_inconsistency_reason,
             ),
             document_processor_started_at=document_processor_started_at,
             is_document_processor_cold_start=is_document_processor_cold_start,

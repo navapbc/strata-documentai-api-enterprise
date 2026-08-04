@@ -31,7 +31,7 @@ class ResponseCodes:
             cls.NO_DOCUMENT_DETECTED: "No document detected",
             cls.BLURRY_DOCUMENT_DETECTED: "Document is blurry",
             cls.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE: "Multiple documents detected on single page",
-            cls.MULTIPLE_DOCUMENTS_IN_MULTIPAGE: "Multiple document types detected in multipage document",
+            cls.MULTIPLE_DOCUMENTS_IN_MULTIPAGE: "Pages are not continuations of a single document instance",
             cls.INTERNAL_PROCESSING_ERROR: "Internal processing error",
         }
         return messages.get(code, "")
