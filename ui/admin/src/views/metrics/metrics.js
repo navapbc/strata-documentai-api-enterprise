@@ -236,6 +236,11 @@ function renderVolume(summary, timing = {}) {
     { label: "Blurry Document", value: _codeCount(byCode, "104"), icon: ICONS.blurry },
     { label: "Password Protected", value: _codeCount(byCode, "106"), icon: ICONS.lock },
     { label: "Multiple Docs on Page", value: _codeCount(byCode, "400"), icon: ICONS.stack },
+    {
+      label: "Multiple Doc Types in Multipage",
+      value: _codeCount(byCode, "401"),
+      icon: ICONS.stack,
+    },
     { label: "System Error", value: _codeCount(byCode, "999"), icon: ICONS.error },
     {
       label: "Not Chosen for Extraction",
@@ -438,6 +443,7 @@ export function _humanizeStatus(status) {
     blurry_document_detected: "Blurry Document",
     password_protected: "Password Protected",
     multiple_documents_single_page: "Multiple Documents",
+    multiple_documents_in_multipage: "Multiple Doc Types in Multipage",
     ai_consent_declined: "AI Consent Declined",
     conversion_failed: "Conversion Failed",
   };

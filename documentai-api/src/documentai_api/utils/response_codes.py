@@ -12,6 +12,7 @@ class ResponseCodes:
     LOW_EXTRACTION_CONFIDENCE = "105"
     PASSWORD_PROTECTED = "106"
     MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE = "400"
+    MULTIPLE_DOCUMENTS_IN_MULTIPAGE = "401"
     INTERNAL_PROCESSING_ERROR = "999"
 
     @classmethod
@@ -30,6 +31,7 @@ class ResponseCodes:
             cls.NO_DOCUMENT_DETECTED: "No document detected",
             cls.BLURRY_DOCUMENT_DETECTED: "Document is blurry",
             cls.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE: "Multiple documents detected on single page",
+            cls.MULTIPLE_DOCUMENTS_IN_MULTIPAGE: "Pages are not continuations of a single document instance",
             cls.INTERNAL_PROCESSING_ERROR: "Internal processing error",
         }
         return messages.get(code, "")

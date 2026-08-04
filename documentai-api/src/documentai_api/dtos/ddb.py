@@ -71,6 +71,26 @@ class PreClassificationDdbFields(BaseModel):
             "preclassificationBlueprintMatchDurationSeconds", ":pcbmds"
         ),
     )
+    max_document_count_on_page: int | None = Field(
+        default=None,
+        json_schema_extra=_ddb_metadata_map("preclassificationMaxDocumentCountOnPage", ":pcmdcop"),
+    )
+    max_document_count_on_page_reason: str | None = Field(
+        default=None,
+        json_schema_extra=_ddb_metadata_map(
+            "preclassificationMaxDocumentCountOnPageReason", ":pcmdcopr"
+        ),
+    )
+    has_multipage_inconsistency: bool | None = Field(
+        default=None,
+        json_schema_extra=_ddb_metadata_map("preclassificationHasMultipageInconsistency", ":pchmi"),
+    )
+    has_multipage_inconsistency_reason: str | None = Field(
+        default=None,
+        json_schema_extra=_ddb_metadata_map(
+            "preclassificationHasMultipageInconsistencyReason", ":pcpmir"
+        ),
+    )
 
 
 class UpsertDdbData(BaseModel):

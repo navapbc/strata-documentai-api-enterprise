@@ -312,6 +312,7 @@ module "config" {
     "feature-flags/enable-blur-detection"                       = "true"
     "feature-flags/enforce-blur-rejection"                      = "true"
     "feature-flags/include-missing-geo-with-missing-fields"     = "true"
+    "feature-flags/flag-multiple-documents-in-multipage"        = "true"
     # Thresholds
     # Vision model ids - swappable at runtime via SSM (no redeploy). Kept as
     # separate params so preclassification and bbox detection can be tuned apart.
@@ -319,7 +320,7 @@ module "config" {
     #   Pro   - blur empty-quadrant check (spatial reasoning over image crops)
     #   Micro - supplemental extraction: text-only field matching over Textract WORD
     #           blocks (no image sent), cheapest/fastest for basic text-in/text-out
-    "models/classification-model-id"          = "us.amazon.nova-lite-v1:0"
+    "models/classification-model-id"          = "us.amazon.nova-pro-v1:0"
     "models/bounding-box-model-id"            = "us.amazon.nova-lite-v1:0"
     "models/blur-quadrant-model-id"           = "us.amazon.nova-pro-v1:0"
     "models/supplemental-extraction-model-id" = "us.amazon.nova-micro-v1:0"
@@ -334,6 +335,7 @@ module "config" {
     "feature-flags/enable-blur-detection"                       = "^(true|false)$"
     "feature-flags/enforce-blur-rejection"                      = "^(true|false)$"
     "feature-flags/include-missing-geo-with-missing-fields"     = "^(true|false)$"
+    "feature-flags/flag-multiple-documents-in-multipage"        = "^(true|false)$"
   }
 }
 

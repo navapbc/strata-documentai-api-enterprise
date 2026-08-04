@@ -12,6 +12,7 @@ class EvaluationKey:
     DOCUMENT_DETECTED = "documentDetected"
     BLUR = "blurDetection"
     MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE = "multipleDocumentsOnSinglePage"
+    MULTIPLE_DOCUMENTS_IN_MULTIPAGE = "multipleDocumentsInMultipage"
     MISCATEGORIZATION = "miscategorization"
     MISSING_FIELDS = "missingFields"
     EXTRACTION_CONFIDENCE = "extractionConfidence"
@@ -22,6 +23,7 @@ EVALUATION_PIPELINE: list[str] = [
     EvaluationKey.DOCUMENT_DETECTED,
     EvaluationKey.BLUR,
     EvaluationKey.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
+    EvaluationKey.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
     EvaluationKey.MISCATEGORIZATION,
     EvaluationKey.MISSING_FIELDS,
     EvaluationKey.EXTRACTION_CONFIDENCE,
@@ -53,6 +55,7 @@ class NotEvaluatedReason:
     STOPPED_MULTIPLE_DOCUMENTS = (
         "Not reached - processing stopped after multiple documents were detected."
     )
+    STOPPED_MULTIPLE_DOCUMENTS_IN_MULTIPAGE = "Not reached - processing stopped because pages are not continuations of a single document instance."
     EXTRACTION_NOT_EXECUTED = "Not reached - extraction did not run."
     BLUR_NOT_APPLICABLE = "Not evaluated - blur detection does not apply to this document type."
     LEGACY_DOCUMENT = (

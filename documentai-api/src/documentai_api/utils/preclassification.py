@@ -35,7 +35,10 @@ class _PreclassificationResponse(BaseModel):
 
     document_type: str = "other_document"
     confidence: float = 0.0
-    document_count: int = 1
+    max_document_count_on_page: int = 1
+    max_document_count_on_page_reason: str = ""
+    has_multipage_inconsistency: bool = False
+    has_multipage_inconsistency_reason: str = ""
     category_match: bool = True
     is_identity_document: bool = False
 
@@ -54,10 +57,6 @@ def _get_model_id() -> str:
     if not param_name:
         return PreClassificationDefaults.MODEL_ID
     return get_parameter_value(param_name, default=PreClassificationDefaults.MODEL_ID)
-
-
-def _get_classification_prompt() -> str:
-    return PreClassificationDefaults.PROMPT
 
 
 def _build_content_block(document_bytes: bytes, content_type: str) -> dict[str, Any]:
@@ -83,7 +82,7 @@ def preclassify_document(
     if content_type not in SUPPORTED_CLASSIFICATION_TYPES:
         logger.info(f"Unsupported content type for classification: {content_type}")
         return BedrockClassificationResult(
-            document_type="other_document", confidence=0.0, document_count=1
+            document_type="other_document", confidence=0.0, max_document_count_on_page=1
         )
 
     if content_type.startswith("image/") and len(document_bytes) > int(
@@ -91,10 +90,10 @@ def preclassify_document(
     ):
         logger.info("Image exceeds 5MB, skipping classification")
         return BedrockClassificationResult(
-            document_type="other_document", confidence=0.0, document_count=1
+            document_type="other_document", confidence=0.0, max_document_count_on_page=1
         )
 
-    prompt = _get_classification_prompt().replace(
+    prompt = PreClassificationDefaults.PROMPT.replace(
         "{user_category}", _sanitize_category(user_category)
     )
     content_block = _build_content_block(document_bytes, content_type)
@@ -120,7 +119,7 @@ def preclassify_document(
         except ValidationError as e:
             logger.warning(f"Bedrock classification returned output failing schema validation: {e}")
             return BedrockClassificationResult(
-                document_type="other_document", confidence=0.0, document_count=1
+                document_type="other_document", confidence=0.0, max_document_count_on_page=1
             )
 
         document_type = parsed.document_type
@@ -128,7 +127,10 @@ def preclassify_document(
         classification = BedrockClassificationResult(
             document_type=document_type,
             confidence=max(0.0, min(1.0, parsed.confidence)),
-            document_count=max(0, parsed.document_count),
+            max_document_count_on_page=max(0, parsed.max_document_count_on_page),
+            max_document_count_on_page_reason=parsed.max_document_count_on_page_reason,
+            has_multipage_inconsistency=parsed.has_multipage_inconsistency,
+            has_multipage_inconsistency_reason=parsed.has_multipage_inconsistency_reason,
             category_match=parsed.category_match if user_category else None,
             is_identity_document=parsed.is_identity_document,
             input_tokens=usage.get("inputTokens"),
@@ -141,7 +143,7 @@ def preclassify_document(
             f"Pre-classification complete in {elapsed}s: "
             f"type={classification.document_type}, "
             f"confidence={classification.confidence}, "
-            f"document_count={classification.document_count}, "
+            f"max_document_count_on_page={classification.max_document_count_on_page}, "
             f"user_category={user_category}, "
             f"category_match={classification.category_match}"
         )
@@ -150,7 +152,7 @@ def preclassify_document(
     except Exception as e:
         logger.warning(f"Document classification failed: {e}")
         return BedrockClassificationResult(
-            document_type="other_document", confidence=0.0, document_count=1
+            document_type="other_document", confidence=0.0, max_document_count_on_page=1
         )
 
 

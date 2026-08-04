@@ -50,6 +50,10 @@ _PRE_EXTRACTION_STOP_MAP: dict[str, tuple[str, str]] = {
         EvaluationKey.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
         NotEvaluatedReason.STOPPED_MULTIPLE_DOCUMENTS,
     ),
+    ResponseCodes.MULTIPLE_DOCUMENTS_IN_MULTIPAGE: (
+        EvaluationKey.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
+        NotEvaluatedReason.STOPPED_MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
+    ),
 }
 
 _EXTRACTION_TIER = {
@@ -63,6 +67,7 @@ _STOP_FAIL_REASONS: dict[str, str] = {
     EvaluationKey.PASSWORD_PROTECTED: "Document is password protected.",
     EvaluationKey.DOCUMENT_DETECTED: "Insufficient text detected to identify a document.",
     EvaluationKey.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE: "Multiple documents were detected on a single page.",
+    EvaluationKey.MULTIPLE_DOCUMENTS_IN_MULTIPAGE: "Pages are not continuations of a single document instance.",
 }
 
 _BLUR_STOP_FALLBACK = "Document was flagged as blurry."
@@ -97,6 +102,12 @@ def _evaluate_key(key: str, ddb_record: dict[str, Any]) -> EvaluationEntry:
     if key == EvaluationKey.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE:
         # No stored boolean - reaching this key means only one document was detected.
         return EvaluationEntry(status=_PASS, reason="No multiple documents detected.")
+
+    if key == EvaluationKey.MULTIPLE_DOCUMENTS_IN_MULTIPAGE:
+        # No stored boolean - reaching this key means pages are continuations of a single document instance.
+        return EvaluationEntry(
+            status=_PASS, reason="Pages are continuations of a single document instance."
+        )
 
     if key == EvaluationKey.MISCATEGORIZATION:
         category_match = ddb_record.get(DocumentMetadata.PRECLASSIFICATION_CATEGORY_MATCH)
