@@ -6466,6 +6466,34 @@
             "type": "object",
             "title": "Byresponsecode"
           },
+          "byFileType": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Byfiletype"
+          },
+          "byUserCategory": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Byusercategory"
+          },
+          "byUploadMethod": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Byuploadmethod"
+          },
+          "byHour": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Byhour"
+          },
           "timingStats": {
             "$ref": "#/components/schemas/TimingStats",
             "default": {
@@ -6571,6 +6599,34 @@
             },
             "type": "object",
             "title": "Byresponsecode"
+          },
+          "byFileType": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Byfiletype"
+          },
+          "byUserCategory": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Byusercategory"
+          },
+          "byUploadMethod": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Byuploadmethod"
+          },
+          "byHour": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Byhour"
           },
           "timingStats": {
             "$ref": "#/components/schemas/TimingStats",
