@@ -19,6 +19,14 @@ import * as Toast from "../../utils/toast.js";
 import { tpl } from "../../utils/tpl.js";
 import { h } from "../../utils/dom.js";
 import html from "./metrics.html";
+import {
+  buildVolumeChartConfig,
+  buildHourHeatmapEl,
+  buildTimingChartConfig,
+  buildDowTimingGridEl,
+  computeBarData,
+  getResponseCodeClass,
+} from "./charts.js";
 
 Chart.register(
   BarController,
@@ -36,6 +44,7 @@ Chart.register(
 );
 
 const tmpl = tpl(html);
+const _bodyFont = getComputedStyle(document.body).fontFamily;
 
 let _root;
 let _startInput, _endInput, _loadBtn, _timeframeSelect, _customRange;
@@ -289,14 +298,14 @@ function renderVolume(summary, dailyStats = []) {
             ctx.textBaseline = "middle";
             ctx.textAlign = "left";
             ctx.fillStyle = "#111827";
-            ctx.font = "bold 13px sans-serif";
+            ctx.font = `bold 13px ${_bodyFont}`;
             ctx.fillText(stage.value.toLocaleString(), 10, yPos - 14);
             ctx.fillStyle = "#374151";
-            ctx.font = "600 11px sans-serif";
+            ctx.font = `450 11px ${_bodyFont}`;
             ctx.fillText(stage.label, 10, yPos);
             if (stage.pct) {
               ctx.fillStyle = "#6b7280";
-              ctx.font = "11px sans-serif";
+              ctx.font = `11px ${_bodyFont}`;
               ctx.fillText(`${stage.pct}%`, 10, yPos + 14);
             }
           });
@@ -343,50 +352,57 @@ function renderVolume(summary, dailyStats = []) {
   const byUserCategory = summary.byUserCategory || {};
   const byUploadMethod = summary.byUploadMethod || {};
 
-  function buildBarPanel(data, label) {
-    const wrap = h("div", { className: "metrics-split-third" });
-    const bars = computeBarData(data, { filterNull: true });
-    wrap.appendChild(h("div", { className: "metrics-chart-label" }, label));
-    if (bars.length > 0) {
-      const total = bars.reduce((s, { count }) => s + count, 0);
-      wrap.appendChild(
-        h(
-          "div",
-          { className: "metrics-panel" },
-          ...bars.map(({ label: l, count, widthPct }) =>
-            h(
-              "div",
-              { className: "metrics-bar-row" },
-              h("span", { className: "metrics-bar-label", title: l }, l),
-              h(
-                "div",
-                { className: "metrics-bar-track" },
-                h("div", {
-                  className: "metrics-bar-fill metrics-bar-fill--primary",
-                  style: `width: ${widthPct}%`,
-                }),
-              ),
-              h("span", { className: "metrics-bar-value" }, count.toLocaleString()),
-            ),
-          ),
-          h("div", { className: "metrics-bar-total" }, `Total: ${total.toLocaleString()}`),
-        ),
-      );
-    } else {
-      wrap.appendChild(h("div", { className: "metrics-empty-hint" }, "No data"));
-    }
-    return wrap;
-  }
-
   _tabVolume.appendChild(
     h(
       "div",
       { className: "metrics-split-row" },
-      buildBarPanel(byFileType, "File Types"),
-      buildBarPanel(byUserCategory, "Tenant-Provided Document Categories"),
-      buildBarPanel(byUploadMethod, "Upload Methods"),
+      buildBarCol(byFileType, "File Types", { filterNull: true }),
+      buildBarCol(byUserCategory, "Tenant-Provided Document Categories", { filterNull: true }),
+      buildBarCol(byUploadMethod, "Upload Methods", { filterNull: true }),
     ),
   );
+}
+
+function buildBarCol(data, label, opts = {}) {
+  const bars = computeBarData(data, {
+    filterNull: opts.filterNull || !opts.nullLabel,
+    sortByKey: opts.sortByKey,
+    nullLabel: opts.nullLabel,
+  });
+  const wrap = h(
+    "div",
+    { className: "metrics-split-third" },
+    h("div", { className: "metrics-chart-label" }, label),
+  );
+  if (bars.length === 0) {
+    wrap.appendChild(h("div", { className: "metrics-empty-hint" }, "No data"));
+    return wrap;
+  }
+  const total = bars.reduce((s, { count }) => s + count, 0);
+  wrap.appendChild(
+    h(
+      "div",
+      { className: `metrics-panel${opts.tall ? " metrics-panel--tall" : ""}` },
+      ...bars.map(({ label: l, count, widthPct }) =>
+        h(
+          "div",
+          { className: "metrics-bar-row" },
+          h("span", { className: "metrics-bar-label", title: l }, l),
+          h(
+            "div",
+            { className: "metrics-bar-track" },
+            h("div", {
+              className: `metrics-bar-fill metrics-bar-fill--${opts.colorFn ? opts.colorFn(l) : "primary"}`,
+              style: `width: ${widthPct}%`,
+            }),
+          ),
+          h("span", { className: "metrics-bar-value" }, count.toLocaleString()),
+        ),
+      ),
+      h("div", { className: "metrics-bar-total" }, `Total: ${total.toLocaleString()}`),
+    ),
+  );
+  return wrap;
 }
 
 function renderOutcomes(summary, byClassification, byResponseCode) {
@@ -394,34 +410,16 @@ function renderOutcomes(summary, byClassification, byResponseCode) {
 
   if (!byResponseCode || Object.keys(byResponseCode).length === 0) return;
 
-  function buildBarCol(data, label, opts = {}) {
-    const bars = computeBarData(data, { filterNull: !opts.nullLabel, sortByKey: opts.sortByKey, nullLabel: opts.nullLabel });
-    const total = bars.reduce((s, { count }) => s + count, 0);
-    return h("div", { className: "metrics-split-third" },
-      h("div", { className: "metrics-chart-label" }, label),
-      h("div", { className: `metrics-panel${opts.tall ? " metrics-panel--tall" : ""}` },
-        ...bars.map(({ label: l, count, widthPct }) =>
-          h("div", { className: "metrics-bar-row" },
-            h("span", { className: "metrics-bar-label", title: l }, l),
-            h("div", { className: "metrics-bar-track" },
-              h("div", { className: `metrics-bar-fill metrics-bar-fill--${opts.colorFn ? opts.colorFn(l) : "primary"}`, style: `width: ${widthPct}%` }),
-            ),
-            h("span", { className: "metrics-bar-value" }, count.toLocaleString()),
-          ),
-        ),
-        h("div", { className: "metrics-bar-total" }, `Total: ${total.toLocaleString()}`),
-      ),
-    );
-  }
-
   // Row 1: summary cards | response codes | (empty)
-  const successCount2 = _codeCount(byCode, "000");
+  const successCount2 = _codeCount(byCode, "0");
   const warnCount = _codeCount(byCode, "1");
   const errorCount = _codeCount(byCode, "4") + _codeCount(byCode, "9");
   const donutTotal = successCount2 + warnCount + errorCount;
-  const pct = (n) => donutTotal > 0 ? `${((n / donutTotal) * 100).toFixed(1)}%` : "";
+  const pct = (n) => (donutTotal > 0 ? `${((n / donutTotal) * 100).toFixed(1)}%` : "");
   const donutCanvas = document.createElement("canvas");
-  const donutCol = h("div", { className: "metrics-split-third" },
+  const donutCol = h(
+    "div",
+    { className: "metrics-split-third" },
     h("div", { className: "metrics-chart-label" }, "Processing Statuses"),
     h("div", { className: "metrics-panel metrics-panel--tall metrics-chart" }, donutCanvas),
   );
@@ -429,45 +427,72 @@ function renderOutcomes(summary, byClassification, byResponseCode) {
     type: "doughnut",
     data: {
       labels: ["Success (0XX)", "Validation (1XX)", "Error (4XX/9XX)"],
-      datasets: [{ data: [successCount2, warnCount, errorCount], backgroundColor: ["#86efac", "#fde68a", "#fca5a5"], borderWidth: 0 }],
+      datasets: [
+        {
+          data: [successCount2, warnCount, errorCount],
+          backgroundColor: ["#86efac", "#fde68a", "#fca5a5"],
+          borderWidth: 0,
+        },
+      ],
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       events: ["mousemove", "mouseout"],
-      plugins: { legend: { display: true, position: "bottom", labels: { color: "#6b7280", font: { size: 10 }, boxWidth: 12 } }, tooltip: { enabled: true } },
-    },
-    plugins: [{
-      afterDraw(chart) {
-        const { ctx, data } = chart;
-        const dataset = chart.getDatasetMeta(0);
-        ctx.save();
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        dataset.data.forEach((arc, i) => {
-          const val = data.datasets[0].data[i];
-          if (!val || val / donutTotal < 0.05) return;
-          const label = pct(val);
-          const angle = (arc.startAngle + arc.endAngle) / 2;
-          const r = (arc.innerRadius + arc.outerRadius) / 2;
-          const x = arc.x + Math.cos(angle) * r;
-          const y = arc.y + Math.sin(angle) * r;
-          ctx.fillStyle = "#111827";
-          ctx.font = "11px sans-serif";
-          ctx.fillText(label, x, y);
-        });
-        ctx.restore();
+      plugins: {
+        legend: {
+          display: true,
+          position: "bottom",
+          labels: { color: "#6b7280", font: { size: 10 }, boxWidth: 12 },
+        },
+        tooltip: { enabled: true },
       },
-    }],
+    },
+    plugins: [
+      {
+        afterDraw(chart) {
+          const { ctx, data } = chart;
+          const dataset = chart.getDatasetMeta(0);
+          ctx.save();
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          dataset.data.forEach((arc, i) => {
+            const val = data.datasets[0].data[i];
+            if (!val || val / donutTotal < 0.05) return;
+            const label = pct(val);
+            const angle = (arc.startAngle + arc.endAngle) / 2;
+            const r = (arc.innerRadius + arc.outerRadius) / 2;
+            const x = arc.x + Math.cos(angle) * r;
+            const y = arc.y + Math.sin(angle) * r;
+            ctx.fillStyle = "#111827";
+            ctx.font = `11px ${_bodyFont}`;
+            ctx.fillText(label, x, y);
+          });
+          ctx.restore();
+        },
+      },
+    ],
   });
 
   _tabOutcomes.replaceChildren(
-    h("div", { className: "metrics-split-row" },
-      buildBarCol(byResponseCode, "Response Codes", { sortByKey: true, colorFn: _codeColor, nullLabel: "No Response Code", tall: true }),
+    h(
+      "div",
+      { className: "metrics-split-row" },
+      buildBarCol(byResponseCode, "Response Codes", {
+        sortByKey: true,
+        colorFn: getResponseCodeClass,
+        nullLabel: "No Response Code",
+        tall: true,
+      }),
       donutCol,
       byClassification && Object.keys(byClassification).length > 0
         ? buildBarCol(
-            Object.fromEntries(Object.entries(byClassification).map(([k, v]) => [k === "null" ? "Unclassified" : k, v])),
+            Object.fromEntries(
+              Object.entries(byClassification).map(([k, v]) => [
+                k === "null" ? "Unclassified" : k,
+                v,
+              ]),
+            ),
             "Detected Document Types",
             { tall: true },
           )
@@ -522,356 +547,4 @@ function renderTiming(timing = {}, dailyStats = []) {
 
     _tabTiming.appendChild(h("div", { className: "metrics-split-row" }, timingWrap, dowWrap));
   }
-}
-
-function _labelDate(dateStr) {
-  const [, m, d] = dateStr.split("-");
-  return `${parseInt(m)}/${parseInt(d)}`;
-}
-
-export function buildVolumeChartConfig(dailyStats) {
-  return {
-    type: "bar",
-    data: {
-      labels: dailyStats.map((d) => _labelDate(d.date)),
-      datasets: [
-        {
-          label: "Documents",
-          data: dailyStats.map((d) => d.totalRecords ?? 0),
-          backgroundColor: "#3b82f6",
-          borderRadius: 3,
-          borderSkipped: false,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      events: [],
-      plugins: { legend: { display: false }, tooltip: { enabled: false } },
-      scales: {
-        x: {
-          grid: { display: false },
-          ticks: { color: "#9ca3af", font: { size: 10 }, maxTicksLimit: 10 },
-        },
-        y: {
-          grid: { display: false },
-          ticks: { color: "#9ca3af", font: { size: 10 } },
-          beginAtZero: true,
-        },
-      },
-    },
-    plugins: [
-      {
-        afterDraw(chart) {
-          const {
-            ctx,
-            data,
-            scales: { x, y },
-          } = chart;
-          ctx.save();
-          ctx.font = "10px sans-serif";
-          ctx.fillStyle = "#6b7280";
-          ctx.textAlign = "center";
-          data.datasets[0].data.forEach((val, i) => {
-            if (!val) return;
-            const xPos = x.getPixelForValue(i);
-            const yPos = y.getPixelForValue(val) - 4;
-            ctx.fillText(val.toLocaleString(), xPos, yPos);
-          });
-          ctx.restore();
-        },
-      },
-    ],
-  };
-}
-
-export function buildHourHeatmapEl(dailyStats) {
-  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  // grid[dow][hour] = count
-  const grid = Array.from({ length: 7 }, () => Array(24).fill(0));
-
-  for (const d of dailyStats) {
-    if (!d.byHour || !d.date) continue;
-    const dow = new Date(d.date + "T00:00:00").getDay();
-    for (let utcHr = 0; utcHr < 24; utcHr++) {
-      const count = d.byHour[String(utcHr)] ?? 0;
-      if (!count) continue;
-      const localHr = _utcHourToLocal(utcHr, d.date, tz);
-      grid[dow][localHr] += count;
-    }
-  }
-
-  const max = Math.max(...grid.flat());
-
-  function intensity(count) {
-    if (!count || max === 0) return 0;
-    return Math.ceil((count / max) * 4);
-  }
-
-  const hourLabels = h(
-    "div",
-    { className: "metrics-hour-header" },
-    h("div", { className: "metrics-hour-day-label" }), // spacer
-    ...Array.from({ length: 24 }, (_, i) => {
-      let label = "";
-      if (i % 3 === 0) {
-        const h12 = i % 12 || 12;
-        label = `${h12}${i < 12 ? "a" : "p"}`;
-      }
-      return h("div", { className: "metrics-hour-label" }, label);
-    }),
-  );
-
-  const rows = DAY_LABELS.map((day, dow) =>
-    h(
-      "div",
-      { className: "metrics-hour-row" },
-      h("div", { className: "metrics-hour-day-label" }, day),
-      ...Array.from({ length: 24 }, (_, hr) => {
-        const count = grid[dow][hr];
-        const cell = h("div", {
-          className: `metrics-heatmap-cell metrics-heatmap-cell--${intensity(count)}`,
-        });
-        const h12 = hr % 12 || 12;
-        const ampm = hr < 12 ? "am" : "pm";
-        cell.title = `${DAY_LABELS[dow]} ${h12}:00${ampm} (${tz}) - ${count.toLocaleString()} doc${count !== 1 ? "s" : ""}`;
-        return cell;
-      }),
-    ),
-  );
-
-  const total = grid.flat().reduce((s, c) => s + c, 0);
-
-  let peakLabel = "-",
-    peakDow = 0,
-    peakHr = 0;
-  if (total > 0) {
-    grid.forEach((hours, dow) =>
-      hours.forEach((c, hr) => {
-        if (c > grid[peakDow][peakHr]) {
-          peakDow = dow;
-          peakHr = hr;
-        }
-      }),
-    );
-    const h12 = peakHr % 12 || 12;
-    const ampm = peakHr < 12 ? "am" : "pm";
-    peakLabel = `${DAY_LABELS[peakDow]} ${h12}${ampm}`;
-  }
-
-  const footer = h(
-    "div",
-    { className: "metrics-heatmap-footer" },
-    h(
-      "div",
-      { className: "metrics-heatmap-meta" },
-      h(
-        "span",
-        { className: "metrics-heatmap-meta-item" },
-        `Peak: ${peakLabel}${total > 0 ? ` - ${grid[peakDow][peakHr].toLocaleString()} docs` : ""}`,
-      ),
-    ),
-    h(
-      "div",
-      { className: "metrics-heatmap-legend" },
-      h("span", { className: "metrics-heatmap-legend-label" }, "less"),
-      ...[0, 1, 2, 3, 4].map((i) =>
-        h("div", { className: `metrics-heatmap-cell metrics-heatmap-cell--${i}` }),
-      ),
-      h("span", { className: "metrics-heatmap-legend-label" }, "more"),
-    ),
-  );
-
-  const totalRow = h(
-    "div",
-    { className: "metrics-heatmap-total" },
-    `Total: ${total.toLocaleString()}`,
-  );
-
-  return h(
-    "div",
-    { className: "metrics-chart metrics-heatmap" },
-    hourLabels,
-    ...rows,
-    footer,
-    totalRow,
-  );
-}
-
-function _utcHourToLocal(utcHour, dateStr, tz) {
-  const utcDate = new Date(`${dateStr}T${String(utcHour).padStart(2, "0")}:00:00Z`);
-  return (
-    parseInt(
-      new Intl.DateTimeFormat("en-US", { hour: "numeric", hour12: false, timeZone: tz }).format(
-        utcDate,
-      ),
-      10,
-    ) % 24
-  );
-}
-
-export function buildTimingChartConfig(dailyStats) {
-  return {
-    type: "bar",
-    data: {
-      labels: dailyStats.map((d) => _labelDate(d.date)),
-      datasets: [
-        {
-          label: "Extraction (s)",
-          data: dailyStats.map((d) => d.timingStats?.bdaProcessingTimeAvg ?? null),
-          backgroundColor: "#3b82f6",
-          borderRadius: 0,
-          stack: "timing",
-        },
-        {
-          label: "Queue (s)",
-          data: dailyStats.map((d) => d.timingStats?.bdaWaitTimeAvg ?? null),
-          backgroundColor: "#a5b4fc",
-          borderRadius: 3,
-          stack: "timing",
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: true,
-          position: "bottom",
-          labels: { color: "#6b7280", font: { size: 10 }, boxWidth: 12 },
-        },
-        tooltip: {
-          mode: "index",
-          callbacks: {
-            footer: (items) => `Total: ${items.reduce((s, i) => s + (i.raw ?? 0), 0).toFixed(1)}s`,
-          },
-        },
-      },
-      scales: {
-        x: {
-          grid: { display: false },
-          ticks: { color: "#9ca3af", font: { size: 10 }, maxTicksLimit: 10 },
-          stacked: true,
-        },
-        y: {
-          grid: { color: "#e5e7eb" },
-          ticks: { color: "#9ca3af", font: { size: 10 }, callback: (v) => `${v}s` },
-          beginAtZero: true,
-          stacked: true,
-        },
-      },
-    },
-  };
-}
-
-export function buildDowTimingGridEl(dailyStats) {
-  const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const totals = Array.from({ length: 7 }, () => ({ ext: 0, queue: 0, total: 0, count: 0 }));
-
-  dailyStats.forEach((d) => {
-    const dow = new Date(d.date + "T00:00:00").getDay();
-    const t = d.timingStats;
-    if (t?.totalProcessingTimeAvg != null) {
-      totals[dow].ext += t.bdaProcessingTimeAvg ?? 0;
-      totals[dow].queue += t.bdaWaitTimeAvg ?? 0;
-      totals[dow].total += t.totalProcessingTimeAvg;
-      totals[dow].count++;
-    }
-  });
-
-  const rows = totals.map(({ ext, queue, total, count }, i) =>
-    count > 0
-      ? {
-          day: DAY_LABELS[i],
-          ext: (ext / count).toFixed(1),
-          queue: (queue / count).toFixed(1),
-          total: (total / count).toFixed(1),
-          count,
-        }
-      : { day: DAY_LABELS[i], ext: null, queue: null, total: null, count: 0 },
-  );
-
-  function totalColor(val) {
-    if (val === null) return "";
-    return val < 15 ? "timing-good" : val < 30 ? "timing-warn" : "timing-bad";
-  }
-
-  const grid = h(
-    "div",
-    { className: "metrics-dow-grid" },
-    h("div", { className: "metrics-dow-header" }, ""),
-    h("div", { className: "metrics-dow-header" }, "Extraction"),
-    h("div", { className: "metrics-dow-header" }, "Queue"),
-    h("div", { className: "metrics-dow-header" }, "Total"),
-    ...rows.flatMap(({ day, ext, queue, total }) => [
-      h("div", { className: "metrics-dow-day" }, day),
-      h("div", { className: "metrics-dow-cell" }, ext !== null ? `${ext}s` : "-"),
-      h("div", { className: "metrics-dow-cell" }, queue !== null ? `${queue}s` : "-"),
-      h(
-        "div",
-        {
-          className: `metrics-dow-cell metrics-dow-total ${totalColor(total !== null ? parseFloat(total) : null)}`,
-        },
-        total !== null ? `${total}s` : "-",
-      ),
-    ]),
-  );
-
-  return grid;
-}
-
-function _mountChart(container, chartRef, config, label) {
-  chartRef?.destroy();
-  if (label) container.appendChild(h("div", { className: "metrics-chart-label" }, label));
-  const wrap = h("div", { className: "metrics-chart" });
-  const canvas = document.createElement("canvas");
-  wrap.appendChild(canvas);
-  container.appendChild(wrap);
-  return new Chart(canvas, config);
-}
-
-export function computeBarData(entries, { filterNull = false, sortByKey = false, nullLabel = null } = {}) {
-  let items = Object.entries(entries);
-  if (filterNull) items = items.filter(([k]) => k !== "null");
-  else if (nullLabel) items = items.map(([k, v]) => [k === "null" ? nullLabel : k, v]);
-  if (sortByKey) items.sort((a, b) => a[0].localeCompare(b[0]));
-  else items.sort((a, b) => b[1] - a[1]);
-  const max = items.length > 0 ? Math.max(...items.map(([, c]) => c)) : 1;
-  return items.map(([label, count]) => ({
-    label,
-    count,
-    widthPct: (count / max) * 100,
-  }));
-}
-
-export function _statusColor(status) {
-  if (status === "Success") return "success";
-  if (status === "Failed") return "danger";
-  return "neutral";
-}
-
-export function _humanizeStatus(status) {
-  const map = {
-    success: "Success",
-    failed: "Failed",
-    no_document_detected: "No Document Detected",
-    no_custom_blueprint_matched: "No Blueprint Matched",
-    blurry_document_detected: "Blurry Document",
-    password_protected: "Password Protected",
-    multiple_documents_single_page: "Multiple Documents",
-    multiple_documents_in_multipage: "Multiple Doc Types in Multipage",
-    ai_consent_declined: "AI Consent Declined",
-    conversion_failed: "Conversion Failed",
-  };
-  return map[status] || status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-export function _codeColor(code) {
-  if (code.startsWith("000")) return "success";
-  if (code.startsWith("0")) return "warn";
-  if (code.startsWith("1")) return "warn";
-  return "danger";
 }

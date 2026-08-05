@@ -198,11 +198,6 @@ def _initialize_stats(target_date: str) -> dict[str, Any]:
     }
 
 
-def _content_type_to_ext(content_type: str) -> str:
-    ct = content_type.lower().split(";")[0].strip()
-    return FileValidation.CONTENT_TYPE_TO_EXT.get(ct, "unknown")
-
-
 def _process_record(record: dict[str, Any], stats: dict[str, Any]) -> None:
     """Process a single record into aggregation stats."""
     stats["total_records"] += 1
@@ -223,7 +218,7 @@ def _process_record(record: dict[str, Any], stats: dict[str, Any]) -> None:
 
     # count by file type (derived from content_type)
     content_type = record.get("content_type") or ""
-    file_type = _content_type_to_ext(content_type)
+    file_type = FileValidation.get_extension(content_type, unknown="unknown")
     stats["by_file_type"][file_type] = stats["by_file_type"].get(file_type, 0) + 1
 
     # count by user-provided category

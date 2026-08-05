@@ -109,9 +109,25 @@ function showDashboard(session) {
   app.querySelectorAll("[id$='-nav-badge']").forEach((b) => {
     const view = b.id.replace("-nav-badge", "");
     const cfg = getBadge(view);
-    if (!cfg) { b.remove(); return; }
+    if (!cfg) {
+      b.remove();
+      return;
+    }
     b.textContent = cfg.label;
-    b.className = "nav-badge-updated";
+    b.className = `nav-badge-${cfg.variant}`;
+  });
+
+  app.querySelectorAll(".nav-section").forEach((section) => {
+    const hasActiveBadge = [...section.querySelectorAll(".nav-item")].some((item) =>
+      getBadge(item.dataset.view),
+    );
+    if (!hasActiveBadge) return;
+    const header = section.querySelector(".nav-section-header");
+    if (header && !header.querySelector(".nav-section-badge-dot")) {
+      const dot = document.createElement("span");
+      dot.className = "nav-section-badge-dot";
+      header.appendChild(dot);
+    }
   });
 
   // Connected info
@@ -239,7 +255,7 @@ function activateNavItem(viewName) {
     const badgeCfg = getBadge(viewName);
     if (badgeCfg) {
       const badge = document.createElement("span");
-      badge.className = `nav-badge-${badgeCfg.label === "New" ? "new" : "updated"}`;
+      badge.className = `nav-badge-${badgeCfg.variant}`;
       badge.textContent = badgeCfg.label;
       title.appendChild(badge);
     }

@@ -3,81 +3,48 @@ import { describe, it, expect, beforeAll, vi } from "vitest";
 vi.mock("chart.js", () => ({
   Chart: Object.assign(vi.fn(), { register: vi.fn() }),
   BarController: {},
+  DoughnutController: {},
   LineController: {},
+  ArcElement: {},
   BarElement: {},
   LineElement: {},
   PointElement: {},
   CategoryScale: {},
   LinearScale: {},
   Tooltip: {},
+  Legend: {},
   Filler: {},
 }));
 import {
-  _statusColor,
-  _humanizeStatus,
-  _codeColor,
   computeBarData,
   buildVolumeChartConfig,
   buildTimingChartConfig,
-} from "../../src/views/metrics/metrics.js";
+  getResponseCodeClass,
+} from "../../src/views/metrics/charts.js";
 
 beforeAll(() => {
   // jsdom doesn't implement createElementNS SVG fully but enough for attribute checks
   if (!globalThis.document) return;
 });
 
-describe("_statusColor", () => {
-  it("returns success for Success", () => {
-    expect(_statusColor("Success")).toBe("success");
-  });
-
-  it("returns danger for Failed", () => {
-    expect(_statusColor("Failed")).toBe("danger");
-  });
-
-  it("returns neutral for other statuses", () => {
-    expect(_statusColor("No Document Detected")).toBe("neutral");
-    expect(_statusColor("Blurry Document")).toBe("neutral");
-  });
-});
-
-describe("_humanizeStatus", () => {
-  it("maps known statuses", () => {
-    expect(_humanizeStatus("success")).toBe("Success");
-    expect(_humanizeStatus("failed")).toBe("Failed");
-    expect(_humanizeStatus("no_document_detected")).toBe("No Document Detected");
-    expect(_humanizeStatus("no_custom_blueprint_matched")).toBe("No Blueprint Matched");
-    expect(_humanizeStatus("multiple_documents_single_page")).toBe("Multiple Documents");
-    expect(_humanizeStatus("ai_consent_declined")).toBe("AI Consent Declined");
-    expect(_humanizeStatus("conversion_failed")).toBe("Conversion Failed");
-    expect(_humanizeStatus("password_protected")).toBe("Password Protected");
-    expect(_humanizeStatus("blurry_document_detected")).toBe("Blurry Document");
-  });
-
-  it("falls back to title case for unknown statuses", () => {
-    expect(_humanizeStatus("some_new_status")).toBe("Some New Status");
-  });
-});
-
-describe("_codeColor", () => {
+describe("getResponseCodeClass", () => {
   it("returns success for 000 codes", () => {
-    expect(_codeColor("000 - Document validation passed")).toBe("success");
+    expect(getResponseCodeClass("000 - Document validation passed")).toBe("success");
   });
 
   it("returns warn for other 0xx codes", () => {
-    expect(_codeColor("001 - Bitmap received")).toBe("warn");
-    expect(_codeColor("002 - Type not implemented")).toBe("warn");
+    expect(getResponseCodeClass("001 - Bitmap received")).toBe("warn");
+    expect(getResponseCodeClass("002 - Type not implemented")).toBe("warn");
   });
 
   it("returns warn for 1xx codes", () => {
-    expect(_codeColor("101 - Missing fields")).toBe("warn");
-    expect(_codeColor("103 - No document detected")).toBe("warn");
-    expect(_codeColor("104 - Blurry document")).toBe("warn");
+    expect(getResponseCodeClass("101 - Missing fields")).toBe("warn");
+    expect(getResponseCodeClass("103 - No document detected")).toBe("warn");
   });
 
-  it("returns danger for 4xx and 999 codes", () => {
-    expect(_codeColor("400 - Multiple documents")).toBe("danger");
-    expect(_codeColor("999 - Internal error")).toBe("danger");
+  it("returns danger for 4xx and 9xx codes", () => {
+    expect(getResponseCodeClass("400 - Multiple documents")).toBe("danger");
+    expect(getResponseCodeClass("999 - Internal error")).toBe("danger");
   });
 });
 
@@ -185,21 +152,20 @@ describe("buildVolumeChartConfig", () => {
 });
 
 describe("buildTimingChartConfig", () => {
-  it("returns a line chart config", () => {
+  it("returns a bar chart config", () => {
     const config = buildTimingChartConfig(DAILY_STATS);
-    expect(config.type).toBe("line");
+    expect(config.type).toBe("bar");
   });
 
-  it("has 3 datasets (end-to-end, extraction, queue)", () => {
+  it("has 2 datasets (extraction, queue)", () => {
     const config = buildTimingChartConfig(DAILY_STATS);
-    expect(config.data.datasets).toHaveLength(3);
+    expect(config.data.datasets).toHaveLength(2);
   });
 
   it("maps timing fields correctly", () => {
     const config = buildTimingChartConfig(DAILY_STATS);
-    expect(config.data.datasets[0].data).toEqual([5, 6, 4]); // totalProcessingTimeAvg
-    expect(config.data.datasets[1].data).toEqual([3, 4, 2]); // bdaProcessingTimeAvg
-    expect(config.data.datasets[2].data).toEqual([1, 2, 1]); // bdaWaitTimeAvg
+    expect(config.data.datasets[0].data).toEqual([3, 4, 2]); // bdaProcessingTimeAvg
+    expect(config.data.datasets[1].data).toEqual([1, 2, 1]); // bdaWaitTimeAvg
   });
 
   it("uses the same labels as volume chart", () => {

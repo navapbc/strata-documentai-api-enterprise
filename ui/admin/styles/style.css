@@ -317,8 +317,24 @@ form button[type="submit"]:not(.btn-primary):not(.btn-secondary):not(.btn-outlin
   line-height: 1.6;
 }
 
-.nav-badge-new { background: #22c55e; }
-.nav-badge-updated { background: #f59e0b; }
+.nav-badge-new {
+  background: #22c55e;
+}
+.nav-badge-updated {
+  background: #f59e0b;
+}
+
+.nav-section-badge-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f59e0b;
+  margin-left: 6px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+}
 
 #view-title .nav-badge-new,
 #view-title .nav-badge-updated {
