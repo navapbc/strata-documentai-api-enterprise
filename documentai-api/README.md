@@ -213,6 +213,21 @@ API keys can be created via:
 
 Additional CLI commands: `api-keys list`, `api-keys deactivate`.
 
+### Aggregating Metrics
+
+The metrics aggregator runs on a daily schedule in Lambda. To run it on demand against a deployed environment:
+
+```bash
+make metrics-agg DATE=2025-01-15                        # Single date
+make metrics-agg DATE=2025-01-01 END=2025-01-31         # Date range
+make metrics-agg-last-n-days DAYS=7                     # Last N days from today
+make metrics-agg DATE=2025-01-15 OVERWRITE=1            # Force overwrite existing
+```
+
+Requires AWS access and `DDB_EXPORT_BUCKET_NAME` set in the environment.
+
+> **Note:** `metrics-agg-last-n-days` uses macOS `date -v` syntax. On Linux use `date -d "N days ago"` directly or run via the CLI: `uv run --frozen metrics_aggregator backfill <start> <end>`.
+
 ### Generating Usage Reports
 
 A per-tenant monthly usage report (pages, bytes, Bedrock tokens) is produced by a

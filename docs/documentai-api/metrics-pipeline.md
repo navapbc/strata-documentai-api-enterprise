@@ -23,6 +23,24 @@ The admin console exposes metrics for a configurable date range at daily or mont
 
 For deeper analysis, the raw metrics data in S3 is queryable via Athena. A usage report command generates a per-tenant monthly summary covering pages processed, bytes, and Bedrock tokens - useful for billing and capacity planning.
 
+## Running the aggregator manually
+
+The aggregator Lambda runs on a daily schedule but can be triggered on demand:
+
+```bash
+make metrics-agg DATE=2025-01-15                  # Single date
+make metrics-agg DATE=2025-01-01 END=2025-01-31   # Date range
+make metrics-agg-last-n-days DAYS=7               # Last 7 days
+make metrics-agg DATE=2025-01-15 OVERWRITE=1      # Force overwrite
+```
+
+Or directly via the CLI:
+
+```bash
+uv run --frozen metrics_aggregator cli 2025-01-15
+uv run --frozen metrics_aggregator backfill 2025-01-01 2025-01-31
+```
+
 ## Tenant scoping
 
 Metrics are always scoped to the tenant that submitted the document. Aggregated stats are stored with a tenant partition, so queries for one tenant never include another tenant's data.

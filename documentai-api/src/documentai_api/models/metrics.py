@@ -34,6 +34,10 @@ class MetricsSummary(BaseApiResponse):
     by_status: dict[str, int] = Field(default_factory=dict)
     by_classification: dict[str, int] = Field(default_factory=dict)
     by_response_code: dict[str, int] = Field(default_factory=dict)
+    by_file_type: dict[str, int] = Field(default_factory=dict)
+    by_user_category: dict[str, int] = Field(default_factory=dict)
+    by_upload_method: dict[str, int] = Field(default_factory=dict)
+    by_hour: dict[str, int] = Field(default_factory=dict)
     timing_stats: TimingStats = TimingStats()
     usage_stats: UsageStats = UsageStats()
 
@@ -49,6 +53,10 @@ class PeriodStats(BaseApiResponse):
     by_status: dict[str, int] = Field(default_factory=dict)
     by_classification: dict[str, int] = Field(default_factory=dict)
     by_response_code: dict[str, int] = Field(default_factory=dict)
+    by_file_type: dict[str, int] = Field(default_factory=dict)
+    by_user_category: dict[str, int] = Field(default_factory=dict)
+    by_upload_method: dict[str, int] = Field(default_factory=dict)
+    by_hour: dict[str, int] = Field(default_factory=dict)
     timing_stats: TimingStats = TimingStats()
     usage_stats: UsageStats = UsageStats()
 

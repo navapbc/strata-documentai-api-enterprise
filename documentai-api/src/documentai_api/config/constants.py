@@ -541,6 +541,15 @@ class MetricsAggregatorTargetDate:
     YESTERDAY = "yesterday"
 
 
+class MetricsDisplayValues:
+    NOT_SPECIFIED = "not specified"
+    _LEGACY_UNSET = ("unknown", "not specified", "null", "")
+
+    @staticmethod
+    def is_legacy_unset(value: str) -> bool:
+        return value.strip().lower() in MetricsDisplayValues._LEGACY_UNSET
+
+
 class TimingMetrics:
     TOTAL_PROCESSING_TIME = "total_processing_time"
     BDA_PROCESSING_TIME = "bda_processing_time"

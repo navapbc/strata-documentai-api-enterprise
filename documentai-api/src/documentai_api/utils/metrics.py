@@ -156,6 +156,10 @@ def build_summary(stats_list: list[dict[str, Any]]) -> dict[str, Any]:
     by_status: dict[str, int] = {}
     by_classification: dict[str, int] = {}
     by_response_code: dict[str, int] = {}
+    by_file_type: dict[str, int] = {}
+    by_user_category: dict[str, int] = {}
+    by_upload_method: dict[str, int] = {}
+    by_hour: dict[str, int] = {}
     total_records = 0
     total_bda_invocations = 0
     total_textract_extractions = 0
@@ -177,6 +181,18 @@ def build_summary(stats_list: list[dict[str, Any]]) -> dict[str, Any]:
 
         for code, count in stats.get("by_response_code", {}).items():
             by_response_code[code] = by_response_code.get(code, 0) + count
+
+        for ft, count in stats.get("by_file_type", {}).items():
+            by_file_type[ft] = by_file_type.get(ft, 0) + count
+
+        for cat, count in stats.get("by_user_category", {}).items():
+            by_user_category[cat] = by_user_category.get(cat, 0) + count
+
+        for method, count in stats.get("by_upload_method", {}).items():
+            by_upload_method[method] = by_upload_method.get(method, 0) + count
+
+        for hour, count in stats.get("by_hour", {}).items():
+            by_hour[hour] = by_hour.get(hour, 0) + count
 
         if "timing_stats" in stats:
             timing = stats["timing_stats"]
@@ -225,6 +241,10 @@ def build_summary(stats_list: list[dict[str, Any]]) -> dict[str, Any]:
         "by_status": by_status,
         "by_classification": by_classification,
         "by_response_code": by_response_code,
+        "by_file_type": by_file_type,
+        "by_user_category": by_user_category,
+        "by_upload_method": by_upload_method,
+        "by_hour": by_hour,
         "timing_stats": timing_stats,
         "usage_stats": usage_stats,
     }

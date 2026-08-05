@@ -31,6 +31,8 @@
 	stop \
 	test \
 	test-e2e \
+	metrics-agg \
+	metrics-agg-last-n-days \
 	usage-report \
 
 .DEFAULT_GOAL := help
@@ -75,6 +77,7 @@ RUN_CMD := docker compose run $(DOCKER_EXEC_ARGS) --rm $(APP_NAME)
 endif
 
 PY_RUN_CMD := $(RUN_CMD) uv run --frozen
+AWS_RUN_CMD := uv run --frozen
 
 ifdef CI
 FMT_ARGS := --check
@@ -198,14 +201,14 @@ api-key: ## Mint an API key (NAME=client ENVIRONMENT=dev TENANT=tenant-id [EXPIR
 	@:$(call check_defined, NAME, client name, e.g. NAME=my-client)
 	@:$(call check_defined, ENVIRONMENT, environment, e.g. ENVIRONMENT=dev)
 	@:$(call check_defined, TENANT, tenant ID, e.g. TENANT=my-tenant)
-	uv run --frozen api-keys generate --api-key-name "$(NAME)" --environment "$(ENVIRONMENT)" --tenant-id "$(TENANT)" $(if $(EXPIRES),--expires-at "$(EXPIRES)",)
+	$(AWS_RUN_CMD) api-keys generate --api-key-name "$(NAME)" --environment "$(ENVIRONMENT)" --tenant-id "$(TENANT)" $(if $(EXPIRES),--expires-at "$(EXPIRES)",)
 
 api-key-list: ## List API keys ([NAME=client] [INCLUDE_INACTIVE=1]).
-	uv run --frozen api-keys list $(if $(NAME),--api-key-name "$(NAME)",) $(if $(INCLUDE_INACTIVE),--include-inactive,)
+	$(AWS_RUN_CMD) api-keys list $(if $(NAME),--api-key-name "$(NAME)",) $(if $(INCLUDE_INACTIVE),--include-inactive,)
 
 api-key-deactivate: ## Deactivate API key(s) (NAME=client [API_KEY=key] [ALL=1]).
 	@:$(call check_defined, NAME, client name, e.g. NAME=my-client)
-	uv run --frozen api-keys deactivate --api-key-name "$(NAME)" $(if $(API_KEY),--api-key "$(API_KEY)",) $(if $(ALL),--all,)
+	$(AWS_RUN_CMD) api-keys deactivate --api-key-name "$(NAME)" $(if $(API_KEY),--api-key "$(API_KEY)",) $(if $(ALL),--all,)
 
 tenant: ## Create a tenant (TENANT=tenant-id DISPLAY_NAME="name" [CONTACT=email] [CONFIDENCE_FLOOR=0.8]).
 # Runs natively (not in container) - needs host AWS credentials for DynamoDB.
@@ -213,18 +216,31 @@ tenant: ## Create a tenant (TENANT=tenant-id DISPLAY_NAME="name" [CONTACT=email]
 #   make tenant TENANT=my-tenant DISPLAY_NAME="My Tenant"
 	@:$(call check_defined, TENANT, tenant ID, e.g. TENANT=my-tenant)
 	@:$(call check_defined, DISPLAY_NAME, display name, e.g. DISPLAY_NAME="My Tenant")
-	uv run --frozen tenants create --tenant-id "$(TENANT)" --display-name "$(DISPLAY_NAME)" $(if $(CONTACT),--primary-contact "$(CONTACT)",) $(if $(CONFIDENCE_FLOOR),--extraction-confidence-floor "$(CONFIDENCE_FLOOR)",)
+	$(AWS_RUN_CMD) tenants create --tenant-id "$(TENANT)" --display-name "$(DISPLAY_NAME)" $(if $(CONTACT),--primary-contact "$(CONTACT)",) $(if $(CONFIDENCE_FLOOR),--extraction-confidence-floor "$(CONFIDENCE_FLOOR)",)
 
 tenant-list: ## List tenants ([INCLUDE_INACTIVE=1]).
-	uv run --frozen tenants list $(if $(INCLUDE_INACTIVE),--include-inactive,)
+	$(AWS_RUN_CMD) tenants list $(if $(INCLUDE_INACTIVE),--include-inactive,)
 
 tenant-deactivate: ## Deactivate a tenant (TENANT=tenant-id).
 	@:$(call check_defined, TENANT, tenant ID, e.g. TENANT=my-tenant)
-	uv run --frozen tenants deactivate --tenant-id "$(TENANT)"
+	$(AWS_RUN_CMD) tenants deactivate --tenant-id "$(TENANT)"
 
 pull-blueprint-fields: ## Write blueprint field labels (ARN=project-arn required)
 	@:$(call check_defined, ARN, BDA project ARN, e.g. ARN=arn:aws:bedrock:us-east-1:123:data-automation-project/abc)
-	uv run --frozen pull-blueprint-fields --project-arn "$(ARN)"
+	$(AWS_RUN_CMD) pull-blueprint-fields --project-arn "$(ARN)"
+
+metrics-agg: ## Aggregate metrics for a date or range (DATE=YYYY-MM-DD [END=YYYY-MM-DD] [OVERWRITE=1])
+	@:$(call check_defined, DATE, target date, e.g. DATE=2025-01-15)
+	$(if $(END), \
+		$(AWS_RUN_CMD) metrics_aggregator backfill "$(DATE)" "$(END)" $(if $(OVERWRITE),--overwrite,), \
+		$(AWS_RUN_CMD) metrics_aggregator cli "$(DATE)" $(if $(OVERWRITE),--overwrite,))
+
+metrics-agg-last-n-days: ## Aggregate metrics for the last N days (DAYS=7 [OVERWRITE=1])
+	@:$(call check_defined, DAYS, number of days, e.g. DAYS=7)
+	$(AWS_RUN_CMD) metrics_aggregator backfill \
+		"$(shell date -v-$(DAYS)d +%Y-%m-%d)" \
+		"$(shell date +%Y-%m-%d)" \
+		$(if $(OVERWRITE),--overwrite,)
 
 usage-report: ## Generate tenant usage report (MONTH=YYYY-MM required)
 	@:$(call check_defined, MONTH, target month, e.g. MONTH=2026-01)
@@ -232,7 +248,7 @@ usage-report: ## Generate tenant usage report (MONTH=YYYY-MM required)
 	@:$(call check_defined, GLUE_DATABASE_NAME, Glue database name)
 	@:$(call check_defined, DDB_RAW_DATA_TABLE_NAME, Glue table name)
 	@:$(call check_defined, ATHENA_WORKGROUP_NAME, Athena workgroup name)
-	uv run --frozen usage_report "$(MONTH)"
+	$(AWS_RUN_CMD) usage_report "$(MONTH)"
 
 openapi-spec: ## Export openapi spec to docs directory and regenerate Postman collection
 	$(PY_RUN_CMD) export-openapi > $(APP_DOCS_DIR)/openapi.json
