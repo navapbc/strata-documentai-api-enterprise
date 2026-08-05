@@ -11,6 +11,15 @@ import * as HttpClient from "./services/http.js";
 import * as Auth from "./services/auth.js";
 import * as Audit from "./services/audit.js";
 
+import BADGES from "./badges.json";
+
+const _now = new Date();
+function getBadge(view) {
+  const cfg = BADGES[view];
+  if (!cfg || _now >= new Date(cfg.expiry)) return null;
+  return cfg;
+}
+
 import pendingHtml from "./views/pending/pending.html";
 import dashboardHtml from "./views/sidebar/sidebar.html";
 import { tpl } from "./utils/tpl.js";
@@ -97,6 +106,13 @@ function showDashboard(session) {
   HttpClient.configure({ baseUrl: CONFIG.apiUrl, jwt: session.idToken, apiKey: "" });
   app.replaceChildren(dashboardTmpl());
   _mainContent = app.querySelector("#main-content");
+  app.querySelectorAll("[id$='-nav-badge']").forEach((b) => {
+    const view = b.id.replace("-nav-badge", "");
+    const cfg = getBadge(view);
+    if (!cfg) { b.remove(); return; }
+    b.textContent = cfg.label;
+    b.className = "nav-badge-updated";
+  });
 
   // Connected info
   app.querySelector("#connected-url").textContent = session.email;
@@ -218,7 +234,16 @@ function activateNavItem(viewName) {
   }
 
   const title = app.querySelector("#view-title");
-  if (title) title.textContent = navItem.textContent.trim();
+  if (title) {
+    title.textContent = (navItem.dataset.title || navItem.textContent).trim();
+    const badgeCfg = getBadge(viewName);
+    if (badgeCfg) {
+      const badge = document.createElement("span");
+      badge.className = `nav-badge-${badgeCfg.label === "New" ? "new" : "updated"}`;
+      badge.textContent = badgeCfg.label;
+      title.appendChild(badge);
+    }
+  }
   navigateTo(viewName);
 }
 

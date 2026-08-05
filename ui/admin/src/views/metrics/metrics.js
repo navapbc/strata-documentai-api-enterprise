@@ -1,7 +1,9 @@
 import {
   Chart,
   BarController,
+  DoughnutController,
   LineController,
+  ArcElement,
   BarElement,
   LineElement,
   PointElement,
@@ -20,7 +22,9 @@ import html from "./metrics.html";
 
 Chart.register(
   BarController,
+  DoughnutController,
   LineController,
+  ArcElement,
   BarElement,
   LineElement,
   PointElement,
@@ -35,7 +39,7 @@ const tmpl = tpl(html);
 
 let _root;
 let _startInput, _endInput, _loadBtn, _timeframeSelect, _customRange;
-let _tabVolume, _tabDocTypes, _tabOutcomes, _tabTiming;
+let _tabVolume, _tabOutcomes, _tabTiming;
 let _emptyEl;
 let _tenantUnsub = null;
 let _loadId = 0;
@@ -51,7 +55,7 @@ export function mount(root) {
   _timeframeSelect = root.querySelector("#metrics-timeframe");
   _customRange = root.querySelector("#metrics-custom-range");
   _tabVolume = root.querySelector("#metrics-tab-volume");
-  _tabDocTypes = root.querySelector("#metrics-tab-document-types");
+
   _tabOutcomes = root.querySelector("#metrics-tab-outcomes");
   _tabTiming = root.querySelector("#metrics-tab-timing");
   _emptyEl = root.querySelector("#metrics-empty");
@@ -65,7 +69,7 @@ export function mount(root) {
     }
   });
 
-  const validTabs = ["volume", "document-types", "outcomes", "timing"];
+  const validTabs = ["volume", "outcomes", "timing"];
   const hashTab = location.hash.replace("#", "").split("/")[1];
   _activeTab = validTabs.includes(hashTab) ? hashTab : "volume";
   root.querySelectorAll(".metrics-tab").forEach((btn) => {
@@ -138,7 +142,6 @@ async function load() {
   const thisLoad = ++_loadId;
 
   _tabVolume.replaceChildren();
-  _tabDocTypes.replaceChildren();
   _tabOutcomes.replaceChildren();
   _tabTiming.replaceChildren();
   _emptyEl.textContent = "Loading...";
@@ -162,8 +165,7 @@ async function load() {
     _emptyEl.classList.add("hidden");
     const dailyStats = resp.dailyStats || [];
     renderVolume(summary, dailyStats);
-    renderDocumentTypes(summary.byClassification);
-    renderOutcomes(summary, summary.byResponseCode);
+    renderOutcomes(summary, summary.byClassification, summary.byResponseCode);
     renderTiming(summary.timingStats, dailyStats);
   } catch (e) {
     if (thisLoad !== _loadId) return;
@@ -387,103 +389,89 @@ function renderVolume(summary, dailyStats = []) {
   );
 }
 
-function renderOutcomes(summary, byResponseCode) {
+function renderOutcomes(summary, byClassification, byResponseCode) {
   const byCode = summary.byResponseCode || {};
-  const totalRecords = summary.totalRecords || 0;
-  const bdaInvocations = summary.totalExtractionInvocations ?? summary.totalBdaInvocations ?? 0;
-  const successCount = _codeCount(byCode, "0");
-  const preExtractionStop = Math.max(0, totalRecords - bdaInvocations);
-  const validationGap =
-    _codeCount(byCode, "101") + _codeCount(byCode, "102") + _codeCount(byCode, "105");
 
   if (!byResponseCode || Object.keys(byResponseCode).length === 0) return;
 
-  const bars = computeBarData(byResponseCode, { filterNull: true, sortByKey: true });
+  function buildBarCol(data, label, opts = {}) {
+    const bars = computeBarData(data, { filterNull: !opts.nullLabel, sortByKey: opts.sortByKey, nullLabel: opts.nullLabel });
+    const total = bars.reduce((s, { count }) => s + count, 0);
+    return h("div", { className: "metrics-split-third" },
+      h("div", { className: "metrics-chart-label" }, label),
+      h("div", { className: `metrics-panel${opts.tall ? " metrics-panel--tall" : ""}` },
+        ...bars.map(({ label: l, count, widthPct }) =>
+          h("div", { className: "metrics-bar-row" },
+            h("span", { className: "metrics-bar-label", title: l }, l),
+            h("div", { className: "metrics-bar-track" },
+              h("div", { className: `metrics-bar-fill metrics-bar-fill--${opts.colorFn ? opts.colorFn(l) : "primary"}`, style: `width: ${widthPct}%` }),
+            ),
+            h("span", { className: "metrics-bar-value" }, count.toLocaleString()),
+          ),
+        ),
+        h("div", { className: "metrics-bar-total" }, `Total: ${total.toLocaleString()}`),
+      ),
+    );
+  }
 
-  const summaryCards = [
-    {
-      label: "Successful Responses",
-      value: successCount.toLocaleString(),
-      status: successCount > 0 ? "good" : "neutral",
-      icon: ICONS.check,
+  // Row 1: summary cards | response codes | (empty)
+  const successCount2 = _codeCount(byCode, "000");
+  const warnCount = _codeCount(byCode, "1");
+  const errorCount = _codeCount(byCode, "4") + _codeCount(byCode, "9");
+  const donutTotal = successCount2 + warnCount + errorCount;
+  const pct = (n) => donutTotal > 0 ? `${((n / donutTotal) * 100).toFixed(1)}%` : "";
+  const donutCanvas = document.createElement("canvas");
+  const donutCol = h("div", { className: "metrics-split-third" },
+    h("div", { className: "metrics-chart-label" }, "Processing Statuses"),
+    h("div", { className: "metrics-panel metrics-panel--tall metrics-chart" }, donutCanvas),
+  );
+  new Chart(donutCanvas, {
+    type: "doughnut",
+    data: {
+      labels: ["Success (0XX)", "Validation (1XX)", "Error (4XX/9XX)"],
+      datasets: [{ data: [successCount2, warnCount, errorCount], backgroundColor: ["#86efac", "#fde68a", "#fca5a5"], borderWidth: 0 }],
     },
-    {
-      label: "Did Not Pass Rules",
-      value: validationGap.toLocaleString(),
-      status: validationGap > 0 ? "bad" : "good",
-      icon: ICONS.missingfields,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      events: ["mousemove", "mouseout"],
+      plugins: { legend: { display: true, position: "bottom", labels: { color: "#6b7280", font: { size: 10 }, boxWidth: 12 } }, tooltip: { enabled: true } },
     },
-    {
-      label: "Extraction Not Attempted",
-      value: preExtractionStop.toLocaleString(),
-      status: preExtractionStop > 0 ? "bad" : "good",
-      icon: ICONS.nodoc,
-    },
-    {
-      label: "Multiple Documents Detected",
-      value: (_codeCount(byCode, "400") + _codeCount(byCode, "401")).toLocaleString(),
-      status: _codeCount(byCode, "400") + _codeCount(byCode, "401") > 0 ? "bad" : "good",
-      icon: ICONS.stack,
-    },
-  ];
+    plugins: [{
+      afterDraw(chart) {
+        const { ctx, data } = chart;
+        const dataset = chart.getDatasetMeta(0);
+        ctx.save();
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        dataset.data.forEach((arc, i) => {
+          const val = data.datasets[0].data[i];
+          if (!val || val / donutTotal < 0.05) return;
+          const label = pct(val);
+          const angle = (arc.startAngle + arc.endAngle) / 2;
+          const r = (arc.innerRadius + arc.outerRadius) / 2;
+          const x = arc.x + Math.cos(angle) * r;
+          const y = arc.y + Math.sin(angle) * r;
+          ctx.fillStyle = "#111827";
+          ctx.font = "11px sans-serif";
+          ctx.fillText(label, x, y);
+        });
+        ctx.restore();
+      },
+    }],
+  });
 
   _tabOutcomes.replaceChildren(
-    h("div", { className: "metrics-chart-label" }, "Outcome summary"),
-    h("div", { className: "metrics-cards-row" }, ...summaryCards.map(renderCardEl)),
-    h("div", { className: "metrics-chart-label" }, "Response Codes"),
-    h(
-      "div",
-      { className: "metrics-panel" },
-      ...bars.map(({ label, count, widthPct }) =>
-        h(
-          "div",
-          { className: "metrics-bar-row" },
-          h("span", { className: "metrics-bar-label", title: label }, label),
-          h(
-            "div",
-            { className: "metrics-bar-track" },
-            h("div", {
-              className: `metrics-bar-fill metrics-bar-fill--${_codeColor(label)}`,
-              style: `width: ${widthPct}%`,
-            }),
-          ),
-          h("span", { className: "metrics-bar-value" }, count.toLocaleString()),
-        ),
-      ),
-    ),
-  );
-}
-
-function renderDocumentTypes(byClassification) {
-  if (!byClassification || Object.keys(byClassification).length === 0) return;
-
-  const sorted = Object.entries(byClassification)
-    .map(([k, v]) => [k === "null" ? "Unclassified" : k, v])
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10);
-  const max = sorted[0][1];
-
-  _tabDocTypes.replaceChildren(
-    h("div", { className: "metrics-chart-label" }, "Top Document Types"),
-    h(
-      "div",
-      { className: "metrics-panel" },
-      ...sorted.map(([docType, count]) =>
-        h(
-          "div",
-          { className: "metrics-bar-row" },
-          h("span", { className: "metrics-bar-label", title: docType }, docType),
-          h(
-            "div",
-            { className: "metrics-bar-track" },
-            h("div", {
-              className: "metrics-bar-fill metrics-bar-fill--primary",
-              style: `width: ${(count / max) * 100}%`,
-            }),
-          ),
-          h("span", { className: "metrics-bar-value" }, count.toLocaleString()),
-        ),
-      ),
+    h("div", { className: "metrics-split-row" },
+      buildBarCol(byResponseCode, "Response Codes", { sortByKey: true, colorFn: _codeColor, nullLabel: "No Response Code", tall: true }),
+      donutCol,
+      byClassification && Object.keys(byClassification).length > 0
+        ? buildBarCol(
+            Object.fromEntries(Object.entries(byClassification).map(([k, v]) => [k === "null" ? "Unclassified" : k, v])),
+            "Detected Document Types",
+            { tall: true },
+          )
+        : h("div", { className: "metrics-split-third" }),
     ),
   );
 }
@@ -845,9 +833,10 @@ function _mountChart(container, chartRef, config, label) {
   return new Chart(canvas, config);
 }
 
-export function computeBarData(entries, { filterNull = false, sortByKey = false } = {}) {
+export function computeBarData(entries, { filterNull = false, sortByKey = false, nullLabel = null } = {}) {
   let items = Object.entries(entries);
   if (filterNull) items = items.filter(([k]) => k !== "null");
+  else if (nullLabel) items = items.map(([k, v]) => [k === "null" ? nullLabel : k, v]);
   if (sortByKey) items.sort((a, b) => a[0].localeCompare(b[0]));
   else items.sort((a, b) => b[1] - a[1]);
   const max = items.length > 0 ? Math.max(...items.map(([, c]) => c)) : 1;
