@@ -10,7 +10,11 @@
     "messages so a known failure is distinguishable from new drift.",
     "Cases with issue=null are green controls guarding correct behavior.",
     "forbiddenResponseCodes is used where the tenant code table has no code",
-    "for the anomaly yet: the spec floor is 'must not validate clean (000)'."
+    "for the anomaly yet: the spec floor is 'must not validate clean (000)'.",
+    "e2e_enabled=false means the tenant ruled the edge case out of scope for",
+    "the API: the fixture and its spec stay committed for the record but the",
+    "case is not collected. Each disabled case records the decision and date",
+    "in its own comment block. See README.md 'Tenant triage'."
   ],
   "synthetic-probe-payslip-clean-scan.jpg": {
     "//": [
@@ -176,10 +180,16 @@
     "//": [
       "KF-5: miscategorization gate never fires. Chimera: 'Form W-2' banner",
       "over a body that is 100% bank statement, declared category=income.",
-      "Spec: 102 MISCATEGORIZED (per PROBE-102-REPORT's re-validation list)."
+      "Spec: 102 MISCATEGORIZED (per PROBE-102-REPORT's re-validation list).",
+      "DISABLED 2026-07-30: the tenant ruled document type mismatches (edge",
+      "case 5) out of scope for the API. Last observed still 000 on 2026-07-30",
+      "(jobId 86cc602f). NOTE: the declared-category leg of KF-5",
+      "(test_miscategorized_declared_category) turned GREEN on 2026-07-30 and is",
+      "deliberately kept enabled as a regression guard - only the content-vs-",
+      "layout chimera legs are disabled here."
     ],
     "issue": "KF-5",
-    "e2e_enabled": true,
+    "e2e_enabled": false,
     "category": "income",
     "content_type": "image/jpeg",
     "allowedResponseCodes": ["102"],
@@ -188,10 +198,13 @@
   "synthetic-probe-chimera-payslip-title-receipt-body.jpeg": {
     "//": [
       "KF-5: chimera: 'PAYSLIP / PAY STATEMENT' header over a 100%",
-      "grocery-receipt body, declared category=income. Spec: 102."
+      "grocery-receipt body, declared category=income. Spec: 102.",
+      "DISABLED 2026-07-30: edge case 5 out of scope (see the w2-title-bank-body",
+      "case for the full decision). Last observed still 000 on 2026-07-30 (jobId",
+      "a25bc672) despite the declared-category check going live the same day."
     ],
     "issue": "KF-5",
-    "e2e_enabled": true,
+    "e2e_enabled": false,
     "category": "income",
     "content_type": "image/jpeg",
     "allowedResponseCodes": ["102"],
@@ -200,10 +213,13 @@
   "synthetic-probe-chimera-receipt-title-payslip-body.jpeg": {
     "//": [
       "KF-5: chimera: thermal-receipt layout whose line items are payroll",
-      "content. Spec: 102 - the layout/content contradiction should be flagged."
+      "content. Spec: 102 - the layout/content contradiction should be flagged.",
+      "DISABLED 2026-07-30: edge case 5 out of scope (see the w2-title-bank-body",
+      "case for the full decision). Last observed still 000 on 2026-07-30 (jobId",
+      "6fd02b87)."
     ],
     "issue": "KF-5",
-    "e2e_enabled": true,
+    "e2e_enabled": false,
     "category": "income",
     "content_type": "image/jpeg",
     "allowedResponseCodes": ["102"],
@@ -269,10 +285,13 @@
       "KF-3: tampered document accepted clean. Payslip scan with overwritten",
       "gross/net digits (mismatched font, correction-fluid rectangles,",
       "hand-rewritten date). No tenant response code exists for tampering yet,",
-      "so the spec floor is: must NOT validate clean with 000."
+      "so the spec floor is: must NOT validate clean with 000.",
+      "DISABLED 2026-07-30: the tenant ruled tampered documents (edge case 3)",
+      "out of scope for the API. Last observed still 000 on 2026-07-30 (jobId",
+      "15c7db5a). Re-enable if document authenticity comes back into scope."
     ],
     "issue": "KF-3",
-    "e2e_enabled": true,
+    "e2e_enabled": false,
     "category": "income",
     "content_type": "image/jpeg",
     "forbiddenResponseCodes": ["000"],
@@ -282,10 +301,13 @@
     "//": [
       "KF-4: fabricated document accepted. Home-made employer letter (clipart",
       "logo, typed 'signature', round numbers). No authenticity code exists",
-      "yet: spec floor is must NOT validate clean with 000."
+      "yet: spec floor is must NOT validate clean with 000.",
+      "DISABLED 2026-07-30: the tenant ruled fabricated documents (edge case 4)",
+      "out of scope for the API. Last observed still 000 on 2026-07-30 (jobId",
+      "eac84c4c). Re-enable if document authenticity comes back into scope."
     ],
     "issue": "KF-4",
-    "e2e_enabled": true,
+    "e2e_enabled": false,
     "category": "income",
     "content_type": "image/jpeg",
     "forbiddenResponseCodes": ["000"],
@@ -295,10 +317,14 @@
     "//": [
       "KF-6: name discrepancy undetected. Payslip header 'Jordan A. Rivera'",
       "vs pay-line 'Jordyn Riviera'. No business-rule code exists yet: spec",
-      "floor is must NOT validate clean with 000."
+      "floor is must NOT validate clean with 000.",
+      "DISABLED 2026-07-30: name discrepancies (edge case 6) ruled out of scope.",
+      "This one did NOT come from the tenant's 2026-07-30 Slack triage, which",
+      "did not mention edge case 6 either way - it was decided directly in the",
+      "follow-up. Last observed still 000 on 2026-07-30 (jobId a4b84d63)."
     ],
     "issue": "KF-6",
-    "e2e_enabled": true,
+    "e2e_enabled": false,
     "category": "income",
     "content_type": "image/jpeg",
     "forbiddenResponseCodes": ["000"],
@@ -307,10 +333,13 @@
   "synthetic-probe-payslip-stale-income.jpg": {
     "//": [
       "KF-14: income outside the eligibility window not flagged. Payslip with",
-      "2023 pay dates. Spec floor: must NOT validate clean with 000."
+      "2023 pay dates. Spec floor: must NOT validate clean with 000.",
+      "DISABLED 2026-07-30: the tenant ruled the date-validation cases (13, 14,",
+      "15) out of scope for the API. Last observed still 000 on 2026-07-30",
+      "(jobId c143e381)."
     ],
     "issue": "KF-14",
-    "e2e_enabled": true,
+    "e2e_enabled": false,
     "category": "income",
     "content_type": "image/jpeg",
     "forbiddenResponseCodes": ["000"],
@@ -320,10 +349,13 @@
     "//": [
       "KF-15: future-dated document not flagged. Payslip with PayDate",
       "2026-11-06 (months in the future). Spec floor: must NOT validate clean",
-      "with 000."
+      "with 000.",
+      "DISABLED 2026-07-30: the tenant ruled the date-validation cases (13, 14,",
+      "15) out of scope for the API. Last observed still 000 on 2026-07-30",
+      "(jobId 65729f3e)."
     ],
     "issue": "KF-15",
-    "e2e_enabled": true,
+    "e2e_enabled": false,
     "category": "income",
     "content_type": "image/jpeg",
     "forbiddenResponseCodes": ["000"],
@@ -333,10 +365,13 @@
     "//": [
       "KF-16: implausible employer not flagged. Payslip with employer at",
       "'P.O. Box 0000', ZIP '00000', city 'Nowhere'. Spec floor: must NOT",
-      "validate clean with 000."
+      "validate clean with 000.",
+      "DISABLED 2026-07-30: the tenant ruled invalid employer (edge case 16) out",
+      "of scope for the API. Last observed still 000 on 2026-07-30 (jobId",
+      "adabcb17)."
     ],
     "issue": "KF-16",
-    "e2e_enabled": true,
+    "e2e_enabled": false,
     "category": "income",
     "content_type": "image/jpeg",
     "forbiddenResponseCodes": ["000"],
@@ -372,10 +407,13 @@
       "date. A consumer reading YTD as calendar-year-to-date underestimates",
       "annual income by an order of magnitude. No tenant code exists for",
       "reporting-basis anomalies: spec floor is must NOT validate clean with",
-      "000."
+      "000.",
+      "DISABLED 2026-07-30: the tenant grouped this with the date-validation",
+      "cases (13, 14, 15) and ruled them out of scope for the API. Last observed",
+      "still 000 on 2026-07-30 (jobId 17c6e344)."
     ],
     "issue": "KF-13",
-    "e2e_enabled": true,
+    "e2e_enabled": false,
     "category": "income",
     "content_type": "image/jpeg",
     "forbiddenResponseCodes": ["000"],

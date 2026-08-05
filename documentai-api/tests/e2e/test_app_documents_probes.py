@@ -6,7 +6,9 @@ numbered by tenant edge case - and fixture provenance) and asserts the behavior
 the tenant spec says
 the input SHOULD produce - not the behavior the API produces today. Cases
 tagged with an issue id are EXPECTED TO FAIL (plain red, no xfail) until the
-corresponding gate is implemented; untagged cases are green controls.
+corresponding gate is implemented; untagged cases are green controls. Cases the
+tenant has ruled out of scope are e2e_enabled=false in expected.json and are not
+collected - the fixture and spec stay committed for the record.
 
 Every case also records the observed 2026-07 behavior in expected.json; it is
 echoed into the assertion message so a red test distinguishes "still failing
@@ -275,13 +277,18 @@ def test_probe_document(case, base_url, api_key):
 
 
 def test_miscategorized_declared_category(base_url, api_key):
-    """KF-5 (declared-category leg) - fails against the current backend.
+    """KF-5 (declared-category leg) - GREEN regression guard since 2026-07-30.
 
     A payslip uploaded with category=identity is a categorically impossible
     pairing; the spec's declared-vs-detected comparison should reject it with
-    102 MISCATEGORIZED. Observed: the category field is enum-validated at
-    upload but otherwise inert - every declared/detected mismatch in the probe
-    runs returned 000.
+    102 MISCATEGORIZED. Through 2026-07-13 the category field was enum-validated
+    at upload but otherwise inert and every declared/detected mismatch returned
+    000; on 2026-07-30 this pairing returned 102 and the case went green.
+
+    Edge case 5 is out of scope per the 2026-07-30 tenant triage, so the three
+    chimera fixtures are e2e_enabled=false in expected.json. This leg is kept
+    enabled anyway: it now guards working behavior rather than asserting an
+    unimplemented gate.
     """
     outcome = _upload_and_poll(
         base_url,
@@ -293,7 +300,9 @@ def test_miscategorized_declared_category(base_url, api_key):
     assert outcome.completed, outcome.describe()
     assert outcome.body.get("responseCode") == "102", (
         f"[KF-5] spec expects 102 MISCATEGORIZED for a payslip declared as identity "
-        f"({outcome.describe()}); known 2026-07 behavior: 000 / Payslip, category inert"
+        f"({outcome.describe()}); this passed on 2026-07-30, so a failure here is a "
+        f"REGRESSION in the declared-vs-detected category check, not the old known "
+        f"failure (which was 000 / Payslip, category inert)"
     )
 
 
