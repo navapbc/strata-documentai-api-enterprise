@@ -2084,7 +2084,7 @@ td {
   display: none;
 }
 
-/* Responsive: tablet / small laptop */
+/*Responsive - tablet / small laptop */
 @media (max-width: 1024px) {
   .sidebar {
     width: 200px;
@@ -2107,7 +2107,7 @@ td {
   }
 }
 
-/* Responsive: narrow tablet */
+/*Responsive - narrow tablet */
 @media (max-width: 768px) {
   .sidebar {
     display: none;
@@ -2416,6 +2416,7 @@ td {
 .metrics-main {
   flex: 1;
   min-width: 0;
+  overflow-y: auto;
 }
 
 .metrics-tab-panel {
@@ -2770,12 +2771,13 @@ td {
 
 .metrics-split-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 16px;
   align-items: stretch;
 }
 
 .metrics-split-half {
-  flex: 1;
+  flex: 1 1 380px;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -2783,7 +2785,7 @@ td {
 }
 
 .metrics-split-third {
-  flex: 1 1 0;
+  flex: 1 1 340px;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -2963,4 +2965,48 @@ td {
 .metrics-heatmap-legend-label {
   font-size: 0.65rem;
   color: #9ca3af;
+}
+
+/* Responsive - stack the metrics tab/timeframe menu above content instead of
+   beside it - the 200px fixed sidebar otherwise eats ~half a phone screen.
+   Matches the app's existing tablet breakpoint (1024px), not just the phone
+   one (768px): iPad portrait sits in the 769-1024px range and is just as
+   squeezed by the persistent inner sidebar as a phone is. */
+@media (max-width: 1024px) {
+  .metrics-layout {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .metrics-sidebar {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    border-right: none;
+    border-bottom: 1px solid var(--color-border, #e5e7eb);
+    padding-right: 0;
+    padding-bottom: 12px;
+  }
+
+  .metrics-timeframe {
+    width: auto;
+    flex: 0 0 auto;
+  }
+
+  .metrics-timeframe select {
+    width: auto;
+  }
+
+  .metrics-tabs {
+    flex-direction: row;
+    flex: 1;
+    overflow-x: auto;
+  }
+
+  .metrics-tab {
+    width: auto;
+    white-space: nowrap;
+  }
 }
