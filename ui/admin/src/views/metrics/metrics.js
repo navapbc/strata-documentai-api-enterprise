@@ -1,15 +1,54 @@
+import {
+  Chart,
+  BarController,
+  DoughnutController,
+  LineController,
+  ArcElement,
+  BarElement,
+  LineElement,
+  PointElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+  Legend,
+  Filler,
+} from "chart.js";
 import * as MetricsService from "../../services/metrics.js";
 import * as TenantContext from "../../utils/tenant-context.js";
 import * as Toast from "../../utils/toast.js";
 import { tpl } from "../../utils/tpl.js";
 import { h } from "../../utils/dom.js";
 import html from "./metrics.html";
+import {
+  buildVolumeChartConfig,
+  buildHourHeatmapEl,
+  buildTimingChartConfig,
+  buildDowTimingGridEl,
+  computeBarData,
+  getResponseCodeClass,
+} from "./charts.js";
+
+Chart.register(
+  BarController,
+  DoughnutController,
+  LineController,
+  ArcElement,
+  BarElement,
+  LineElement,
+  PointElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+  Legend,
+  Filler,
+);
 
 const tmpl = tpl(html);
+const _bodyFont = getComputedStyle(document.body).fontFamily;
 
 let _root;
 let _startInput, _endInput, _loadBtn, _timeframeSelect, _customRange;
-let _tabVolume, _tabDocTypes, _tabCodes, _tabTiming;
+let _tabVolume, _tabOutcomes, _tabTiming;
 let _emptyEl;
 let _tenantUnsub = null;
 let _loadId = 0;
@@ -25,8 +64,8 @@ export function mount(root) {
   _timeframeSelect = root.querySelector("#metrics-timeframe");
   _customRange = root.querySelector("#metrics-custom-range");
   _tabVolume = root.querySelector("#metrics-tab-volume");
-  _tabDocTypes = root.querySelector("#metrics-tab-document-types");
-  _tabCodes = root.querySelector("#metrics-tab-response-codes");
+
+  _tabOutcomes = root.querySelector("#metrics-tab-outcomes");
   _tabTiming = root.querySelector("#metrics-tab-timing");
   _emptyEl = root.querySelector("#metrics-empty");
 
@@ -39,9 +78,20 @@ export function mount(root) {
     }
   });
 
+  const validTabs = ["volume", "outcomes", "timing"];
+  const hashTab = location.hash.replace("#", "").split("/")[1];
+  _activeTab = validTabs.includes(hashTab) ? hashTab : "volume";
+  root.querySelectorAll(".metrics-tab").forEach((btn) => {
+    if (btn.dataset.tab === _activeTab) btn.classList.add("active");
+    else btn.classList.remove("active");
+  });
+  root.querySelectorAll(".metrics-tab-panel").forEach((p) => p.classList.add("hidden"));
+  root.querySelector(`#metrics-tab-${_activeTab}`)?.classList.remove("hidden");
+
   root.querySelectorAll(".metrics-tab").forEach((btn) => {
     btn.addEventListener("click", () => {
       _activeTab = btn.dataset.tab;
+      location.hash = `metrics/${_activeTab}`;
       root.querySelectorAll(".metrics-tab").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       root.querySelectorAll(".metrics-tab-panel").forEach((p) => p.classList.add("hidden"));
@@ -91,11 +141,17 @@ async function load() {
     Toast.show("End date must be after start date.", "error");
     return;
   }
+  if (startDate && endDate) {
+    const days = (new Date(endDate) - new Date(startDate)) / 86400000;
+    if (days > 90) {
+      Toast.show("Custom range cannot exceed 90 days.", "error");
+      return;
+    }
+  }
   const thisLoad = ++_loadId;
 
   _tabVolume.replaceChildren();
-  _tabDocTypes.replaceChildren();
-  _tabCodes.replaceChildren();
+  _tabOutcomes.replaceChildren();
   _tabTiming.replaceChildren();
   _emptyEl.textContent = "Loading...";
   _emptyEl.classList.remove("hidden");
@@ -116,10 +172,10 @@ async function load() {
     }
 
     _emptyEl.classList.add("hidden");
-    renderVolume(summary, summary.timingStats);
-    renderDocumentTypes(summary.byClassification);
-    renderResponseCodes(summary.byResponseCode);
-    renderTiming(summary.timingStats);
+    const dailyStats = resp.dailyStats || [];
+    renderVolume(summary, dailyStats);
+    renderOutcomes(summary, summary.byClassification, summary.byResponseCode);
+    renderTiming(summary.timingStats, dailyStats);
   } catch (e) {
     if (thisLoad !== _loadId) return;
     _emptyEl.textContent = `Failed to load: ${e.message}`;
@@ -175,7 +231,7 @@ function _codeCount(byCode, prefix) {
     .reduce((sum, [, v]) => sum + v, 0);
 }
 
-function renderVolume(summary, timing = {}) {
+function renderVolume(summary, dailyStats = []) {
   const totalRecords = summary.totalRecords || 0;
   const bdaInvocations = summary.totalExtractionInvocations ?? summary.totalBdaInvocations ?? 0;
   const byCode = summary.byResponseCode || {};
@@ -197,198 +253,255 @@ function renderVolume(summary, timing = {}) {
   const funnelStages = [
     { label: "Documents Received", value: totalRecords, pct: null, bg: "#bfdbfe" },
     { label: "Extractions", value: bdaInvocations, pct: extractionPct, bg: "#93c5fd" },
-    {
-      label: "Document Type Identified",
-      value: blueprintMatched,
-      pct: blueprintPct,
-      bg: "#a5b4fc",
-    },
+    { label: "Doc Type Identified", value: blueprintMatched, pct: blueprintPct, bg: "#a5b4fc" },
     { label: "Validation Passed", value: successCount, pct: validationPct, bg: "#86efac" },
   ];
 
-  const maxVal = funnelStages[0].value || 1;
-  const funnelEl = h(
+  const funnelCanvas = document.createElement("canvas");
+  const funnelWrap = h("div", { className: "metrics-chart metrics-funnel-chart" }, funnelCanvas);
+  new Chart(funnelCanvas, {
+    type: "bar",
+    data: {
+      labels: funnelStages.map((s) => s.label),
+      datasets: [
+        {
+          data: funnelStages.map((s) => s.value),
+          backgroundColor: funnelStages.map((s) => s.bg),
+          borderRadius: 4,
+          borderSkipped: false,
+          barPercentage: 0.975,
+          categoryPercentage: 0.975,
+        },
+      ],
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: false,
+      events: [],
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      scales: {
+        x: { display: false, beginAtZero: true, max: totalRecords || 1 },
+        y: { display: false },
+      },
+    },
+    plugins: [
+      {
+        afterDraw(chart) {
+          const {
+            ctx,
+            scales: { y },
+          } = chart;
+          ctx.save();
+          funnelStages.forEach((stage, i) => {
+            const yPos = y.getPixelForValue(i);
+            ctx.textBaseline = "middle";
+            ctx.textAlign = "left";
+            ctx.fillStyle = "#111827";
+            ctx.font = `bold 13px ${_bodyFont}`;
+            ctx.fillText(stage.value.toLocaleString(), 10, yPos - 14);
+            ctx.fillStyle = "#374151";
+            ctx.font = `450 11px ${_bodyFont}`;
+            ctx.fillText(stage.label, 10, yPos);
+            if (stage.pct) {
+              ctx.fillStyle = "#6b7280";
+              ctx.font = `11px ${_bodyFont}`;
+              ctx.fillText(`${stage.pct}%`, 10, yPos + 14);
+            }
+          });
+          ctx.restore();
+        },
+      },
+    ],
+  });
+
+  // Row 1: Funnel + Documents per Day + Heatmap
+  const funnelWrapCol = h(
     "div",
-    { className: "metrics-funnel" },
-    ...funnelStages.map((stage, i) => {
-      const heightPct = (stage.value / maxVal) * 100;
-      const topInset = (100 - heightPct) / 2;
-      const next = funnelStages[i + 1];
-      const nextHeightPct = next ? (next.value / maxVal) * 100 : heightPct;
-      const nextTopInset = (100 - nextHeightPct) / 2;
-      const clip = `polygon(0% ${topInset}%, 100% ${nextTopInset}%, 100% ${100 - nextTopInset}%, 0% ${100 - topInset}%)`;
-      return h(
-        "div",
-        { className: "metrics-funnel-stage", style: `background:${stage.bg};clip-path:${clip}` },
-        h("div", { className: "metrics-funnel-value" }, stage.value.toLocaleString()),
-        h("div", { className: "metrics-funnel-label" }, stage.label),
-        stage.pct !== null
-          ? h("div", { className: "metrics-funnel-pct" }, `${stage.pct}%`)
-          : h("div", { className: "metrics-funnel-pct" }, ""),
-      );
-    }),
+    { className: "metrics-split-third" },
+    h("div", { className: "metrics-chart-label" }, "Document processing pipeline"),
+    funnelWrap,
   );
 
-  // Extraction failures: didn't reach BDA (103, 104, 106, 400, 999, 004, 003)
-  const extractionGap = totalRecords - bdaInvocations;
-  const extractionFailures = [
-    { label: "No Document Detected", value: _codeCount(byCode, "103"), icon: ICONS.nodoc },
-    { label: "Blurry Document", value: _codeCount(byCode, "104"), icon: ICONS.blurry },
-    { label: "Password Protected", value: _codeCount(byCode, "106"), icon: ICONS.lock },
-    { label: "Multiple Docs on Page", value: _codeCount(byCode, "400"), icon: ICONS.stack },
-    {
-      label: "Multiple Doc Types in Multipage",
-      value: _codeCount(byCode, "401"),
-      icon: ICONS.stack,
-    },
-    { label: "System Error", value: _codeCount(byCode, "999"), icon: ICONS.error },
-    {
-      label: "Not Chosen for Extraction",
-      value: _codeCount(byCode, "004"),
-      icon: ICONS.skip,
-      warn: true,
-    },
-    {
-      label: "AI Consent Declined",
-      value: _codeCount(byCode, "003"),
-      icon: ICONS.hand,
-      warn: true,
-    },
-  ];
-  const extractionAccounted = extractionFailures.reduce((s, c) => s + c.value, 0);
-  if (extractionGap - extractionAccounted > 0)
-    extractionFailures.push({
-      label: "Other",
-      value: extractionGap - extractionAccounted,
-      icon: ICONS.other,
-    });
-
-  const validationGap = blueprintMatched - successCount;
-  const validationFailures = [
-    { label: "Missing Fields", value: _codeCount(byCode, "101"), icon: ICONS.missingfields },
-    { label: "Miscategorized", value: _codeCount(byCode, "102"), icon: ICONS.miscat },
-    { label: "Low Confidence", value: _codeCount(byCode, "105"), icon: ICONS.lowconf },
-  ];
-  const validationAccounted = validationFailures.reduce((s, c) => s + c.value, 0);
-  if (validationGap - validationAccounted > 0)
-    validationFailures.push({
-      label: "Other",
-      value: validationGap - validationAccounted,
-      icon: ICONS.other,
-    });
-
-  function failureGroup(label, cards) {
-    return h(
-      "div",
-      { className: "metrics-failure-group" },
-      h("div", { className: "metrics-failure-group-label" }, label),
-      h(
-        "div",
-        { className: "metrics-cards-row" },
-        ...cards.map((c) =>
-          renderCardEl({
-            ...c,
-            value: c.value.toLocaleString(),
-            status: c.value === 0 ? "good" : c.warn ? "warn" : "bad",
-          }),
-        ),
-      ),
+  const docsPerDayWrap = h("div", { className: "metrics-split-third" });
+  if (dailyStats.length >= 1) {
+    docsPerDayWrap.appendChild(
+      h("div", { className: "metrics-chart-label" }, "Documents Received per Day (UTC)"),
     );
+    const chartWrap = h("div", { className: "metrics-chart" });
+    const canvas = document.createElement("canvas");
+    chartWrap.appendChild(canvas);
+    new Chart(canvas, buildVolumeChartConfig(dailyStats));
+    docsPerDayWrap.appendChild(chartWrap);
   }
 
-  const avg = (timing.totalProcessingTimeAvg || 0).toFixed(1);
-  const timingLink = h(
-    "button",
-    { className: "metrics-timing-callout-link" },
-    "See Timing tab for breakdown",
-  );
-  timingLink.addEventListener("click", (e) => {
-    e.preventDefault();
-    _root.querySelector(".metrics-tab[data-tab='timing']").click();
-  });
-  const timingCallout = h(
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const hourWrap = h(
     "div",
-    { className: "metrics-timing-callout" },
-    h("span", {}, `End-to-end avg ${avg}s – `, timingLink),
+    { className: "metrics-split-third" },
+    h("div", { className: "metrics-chart-label" }, `Submissions by Hour of Day (${tz})`),
+    buildHourHeatmapEl(dailyStats),
   );
 
   _tabVolume.replaceChildren(
-    funnelEl,
-    failureGroup(
-      `${extractionGap.toLocaleString()} documents did not qualify for extraction`,
-      extractionFailures,
-    ),
-    failureGroup(
-      `${validationGap.toLocaleString()} extracted documents did not satisfy business rules`,
-      validationFailures,
-    ),
-    timingCallout,
+    h("div", { className: "metrics-split-row" }, funnelWrapCol, docsPerDayWrap, hourWrap),
   );
-}
 
-function renderDocumentTypes(byClassification) {
-  if (!byClassification || Object.keys(byClassification).length === 0) return;
+  // Row 2: File Types + User Categories + Upload Methods
+  const byFileType = summary.byFileType || {};
+  const byUserCategory = summary.byUserCategory || {};
+  const byUploadMethod = summary.byUploadMethod || {};
 
-  const sorted = Object.entries(byClassification)
-    .map(([k, v]) => [k === "null" ? "Unclassified" : k, v])
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10);
-  const max = sorted[0][1];
-
-  _tabDocTypes.replaceChildren(
+  _tabVolume.appendChild(
     h(
       "div",
-      { className: "metrics-panel" },
-      ...sorted.map(([docType, count]) =>
-        h(
-          "div",
-          { className: "metrics-bar-row" },
-          h("span", { className: "metrics-bar-label", title: docType }, docType),
-          h(
-            "div",
-            { className: "metrics-bar-track" },
-            h("div", {
-              className: "metrics-bar-fill metrics-bar-fill--primary",
-              style: `width: ${(count / max) * 100}%`,
-            }),
-          ),
-          h("span", { className: "metrics-bar-value" }, count.toLocaleString()),
-        ),
-      ),
+      { className: "metrics-split-row" },
+      buildBarCol(byFileType, "File Types", { filterNull: true }),
+      buildBarCol(byUserCategory, "Tenant-Provided Document Categories", { filterNull: true }),
+      buildBarCol(byUploadMethod, "Upload Methods", { filterNull: true }),
     ),
   );
 }
 
-function renderResponseCodes(byResponseCode) {
-  if (!byResponseCode || Object.keys(byResponseCode).length === 0) return;
-
-  const bars = computeBarData(byResponseCode, { filterNull: true, sortByKey: true });
-
-  _tabCodes.replaceChildren(
+function buildBarCol(data, label, opts = {}) {
+  const bars = computeBarData(data, {
+    filterNull: opts.filterNull || !opts.nullLabel,
+    sortByKey: opts.sortByKey,
+    nullLabel: opts.nullLabel,
+  });
+  const wrap = h(
+    "div",
+    { className: "metrics-split-third" },
+    h("div", { className: "metrics-chart-label" }, label),
+  );
+  if (bars.length === 0) {
+    wrap.appendChild(h("div", { className: "metrics-empty-hint" }, "No data"));
+    return wrap;
+  }
+  const total = bars.reduce((s, { count }) => s + count, 0);
+  wrap.appendChild(
     h(
       "div",
-      { className: "metrics-panel" },
-      ...bars.map(({ label, count, widthPct }) =>
+      { className: `metrics-panel${opts.tall ? " metrics-panel--tall" : ""}` },
+      ...bars.map(({ label: l, count, widthPct }) =>
         h(
           "div",
           { className: "metrics-bar-row" },
-          h("span", { className: "metrics-bar-label", title: label }, label),
+          h("span", { className: "metrics-bar-label", title: l }, l),
           h(
             "div",
             { className: "metrics-bar-track" },
             h("div", {
-              className: `metrics-bar-fill metrics-bar-fill--${_codeColor(label)}`,
+              className: `metrics-bar-fill metrics-bar-fill--${opts.colorFn ? opts.colorFn(l) : "primary"}`,
               style: `width: ${widthPct}%`,
             }),
           ),
           h("span", { className: "metrics-bar-value" }, count.toLocaleString()),
         ),
       ),
+      h("div", { className: "metrics-bar-total" }, `Total: ${total.toLocaleString()}`),
+    ),
+  );
+  return wrap;
+}
+
+function renderOutcomes(summary, byClassification, byResponseCode) {
+  const byCode = summary.byResponseCode || {};
+
+  if (!byResponseCode || Object.keys(byResponseCode).length === 0) return;
+
+  // Row 1: summary cards | response codes | (empty)
+  const successCount2 = _codeCount(byCode, "0");
+  const warnCount = _codeCount(byCode, "1");
+  const errorCount = _codeCount(byCode, "4") + _codeCount(byCode, "9");
+  const donutTotal = successCount2 + warnCount + errorCount;
+  const pct = (n) => (donutTotal > 0 ? `${((n / donutTotal) * 100).toFixed(1)}%` : "");
+  const donutCanvas = document.createElement("canvas");
+  const donutCol = h(
+    "div",
+    { className: "metrics-split-third" },
+    h("div", { className: "metrics-chart-label" }, "Processing Statuses"),
+    h("div", { className: "metrics-panel metrics-panel--tall metrics-chart" }, donutCanvas),
+  );
+  new Chart(donutCanvas, {
+    type: "doughnut",
+    data: {
+      labels: ["Success (0XX)", "Validation (1XX)", "Error (4XX/9XX)"],
+      datasets: [
+        {
+          data: [successCount2, warnCount, errorCount],
+          backgroundColor: ["#86efac", "#fde68a", "#fca5a5"],
+          borderWidth: 0,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      events: ["mousemove", "mouseout"],
+      plugins: {
+        legend: {
+          display: true,
+          position: "bottom",
+          labels: { color: "#6b7280", font: { size: 10 }, boxWidth: 12 },
+        },
+        tooltip: { enabled: true },
+      },
+    },
+    plugins: [
+      {
+        afterDraw(chart) {
+          const { ctx, data } = chart;
+          const dataset = chart.getDatasetMeta(0);
+          ctx.save();
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          dataset.data.forEach((arc, i) => {
+            const val = data.datasets[0].data[i];
+            if (!val || val / donutTotal < 0.05) return;
+            const label = pct(val);
+            const angle = (arc.startAngle + arc.endAngle) / 2;
+            const r = (arc.innerRadius + arc.outerRadius) / 2;
+            const x = arc.x + Math.cos(angle) * r;
+            const y = arc.y + Math.sin(angle) * r;
+            ctx.fillStyle = "#111827";
+            ctx.font = `11px ${_bodyFont}`;
+            ctx.fillText(label, x, y);
+          });
+          ctx.restore();
+        },
+      },
+    ],
+  });
+
+  _tabOutcomes.replaceChildren(
+    h(
+      "div",
+      { className: "metrics-split-row" },
+      buildBarCol(byResponseCode, "Response Codes", {
+        sortByKey: true,
+        colorFn: getResponseCodeClass,
+        nullLabel: "No Response Code",
+        tall: true,
+      }),
+      donutCol,
+      byClassification && Object.keys(byClassification).length > 0
+        ? buildBarCol(
+            Object.fromEntries(
+              Object.entries(byClassification).map(([k, v]) => [
+                k === "null" ? "Unclassified" : k,
+                v,
+              ]),
+            ),
+            "Detected Document Types",
+            { tall: true },
+          )
+        : h("div", { className: "metrics-split-third" }),
     ),
   );
 }
 
-function renderTiming(timing = {}) {
+function renderTiming(timing = {}, dailyStats = []) {
   const timingCards = [
     {
       label: "Extraction Time Avg.",
@@ -411,48 +524,27 @@ function renderTiming(timing = {}) {
   ];
 
   _tabTiming.replaceChildren(
+    h("div", { className: "metrics-chart-label" }, "Timing metrics"),
     h("div", { className: "metrics-cards-row" }, ...timingCards.map(renderCardEl)),
   );
-}
 
-export function computeBarData(entries, { filterNull = false, sortByKey = false } = {}) {
-  let items = Object.entries(entries);
-  if (filterNull) items = items.filter(([k]) => k !== "null");
-  if (sortByKey) items.sort((a, b) => a[0].localeCompare(b[0]));
-  else items.sort((a, b) => b[1] - a[1]);
-  const max = items.length > 0 ? Math.max(...items.map(([, c]) => c)) : 1;
-  return items.map(([label, count]) => ({
-    label,
-    count,
-    widthPct: (count / max) * 100,
-  }));
-}
+  if (dailyStats.length >= 1) {
+    const timingWrap = h("div", { className: "metrics-split-half" });
+    timingWrap.appendChild(
+      h("div", { className: "metrics-chart-label" }, "Processing Time per Day (UTC)"),
+    );
+    const timingChartWrap = h("div", { className: "metrics-chart" });
+    const timingCanvas = document.createElement("canvas");
+    timingChartWrap.appendChild(timingCanvas);
+    timingWrap.appendChild(timingChartWrap);
+    new Chart(timingCanvas, buildTimingChartConfig(dailyStats));
 
-export function _statusColor(status) {
-  if (status === "Success") return "success";
-  if (status === "Failed") return "danger";
-  return "neutral";
-}
+    const dowWrap = h("div", { className: "metrics-split-half" });
+    dowWrap.appendChild(
+      h("div", { className: "metrics-chart-label" }, "Avg Processing Time by Day of Week"),
+    );
+    dowWrap.appendChild(buildDowTimingGridEl(dailyStats));
 
-export function _humanizeStatus(status) {
-  const map = {
-    success: "Success",
-    failed: "Failed",
-    no_document_detected: "No Document Detected",
-    no_custom_blueprint_matched: "No Blueprint Matched",
-    blurry_document_detected: "Blurry Document",
-    password_protected: "Password Protected",
-    multiple_documents_single_page: "Multiple Documents",
-    multiple_documents_in_multipage: "Multiple Doc Types in Multipage",
-    ai_consent_declined: "AI Consent Declined",
-    conversion_failed: "Conversion Failed",
-  };
-  return map[status] || status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-export function _codeColor(code) {
-  if (code.startsWith("000")) return "success";
-  if (code.startsWith("0")) return "warn";
-  if (code.startsWith("1")) return "warn";
-  return "danger";
+    _tabTiming.appendChild(h("div", { className: "metrics-split-row" }, timingWrap, dowWrap));
+  }
 }

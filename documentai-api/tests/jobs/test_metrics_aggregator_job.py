@@ -520,6 +520,9 @@ def test_process_record_logs_warning_for_invalid_timing(caplog):
         "by_status": {},
         "by_classification": {},
         "by_response_code": {},
+        "by_file_type": {},
+        "by_user_category": {},
+        "by_upload_method": {},
         "by_hour": {},
         "timing_stats": {
             "total_processing_time_sum": 0,

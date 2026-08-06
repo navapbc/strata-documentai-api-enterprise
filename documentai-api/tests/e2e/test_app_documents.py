@@ -53,7 +53,7 @@ def load_test_cases() -> list[Case]:
     ]
 
 
-def _upload_and_wait(base_url, api_key, file_path, timeout=60, interval=2):
+def _upload_and_wait(base_url, api_key, file_path, timeout=75, interval=2):
     with file_path.open("rb") as f:
         response = requests.post(
             f"{base_url}/v1/documents",

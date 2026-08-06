@@ -287,8 +287,9 @@ class FileValidation:
     }
 
     @staticmethod
-    def get_extension(content_type: str) -> str:
-        return FileValidation.CONTENT_TYPE_TO_EXT.get(content_type, "bin")
+    def get_extension(content_type: str, unknown: str = "bin") -> str:
+        ct = content_type.lower().split(";")[0].strip()
+        return FileValidation.CONTENT_TYPE_TO_EXT.get(ct, unknown)
 
 
 class TextractConfig:
@@ -539,6 +540,15 @@ class MetricsGranularity(StrEnum):
 class MetricsAggregatorTargetDate:
     TODAY = "today"
     YESTERDAY = "yesterday"
+
+
+class MetricsDisplayValues:
+    NOT_SPECIFIED = "not specified"
+    _LEGACY_UNSET = ("unknown", "not specified", "null", "")
+
+    @staticmethod
+    def is_legacy_unset(value: str) -> bool:
+        return value.strip().lower() in MetricsDisplayValues._LEGACY_UNSET
 
 
 class TimingMetrics:
