@@ -16,7 +16,7 @@ from documentai_api.models.document_category import (
 from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
 from documentai_api.schemas.document_category import DocumentCategoryRecord
 from documentai_api.utils import document_categories as categories_util
-from documentai_api.utils.audit import log_event
+from documentai_api.utils.audit_log import log_event
 from documentai_api.utils.jwt_auth import resolve_tenant, tenant_scope
 
 logger = get_logger(__name__)

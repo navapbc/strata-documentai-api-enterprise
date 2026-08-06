@@ -130,7 +130,7 @@ describe("tenants view", () => {
     TenantsView.mount(root);
     await flush();
 
-    root.querySelector(".btn-secondary").click();
+    root.querySelector(".btn-icon").click();
     expect(root.querySelector("#tenant-modal").classList.contains("hidden")).toBe(false);
     expect(root.querySelector("#tenant-id").value).toBe(tenant.tenantId);
     expect(root.querySelector("#tenant-id").disabled).toBe(true);
@@ -143,7 +143,7 @@ describe("tenants view", () => {
     TenantsView.mount(root);
     await flush();
 
-    root.querySelector(".btn-secondary").click();
+    root.querySelector(".btn-icon").click();
     submitTenantForm(root, undefined, "Updated Name", "new@co.com", "65");
     await flush();
 
@@ -180,7 +180,7 @@ describe("tenants view", () => {
     TenantsView.mount(root);
     await flush();
 
-    root.querySelector(".btn-secondary").click();
+    root.querySelector(".btn-icon").click();
     expect(root.querySelector("#tenant-max-writes-per-day").value).toBe("100");
     expect(root.querySelector("#tenant-max-writes-per-month").value).toBe("3000");
     expect(root.querySelector("#tenant-confidence-floor").value).toBe("65");
@@ -192,7 +192,7 @@ describe("tenants view", () => {
     TenantsView.mount(root);
     await flush();
 
-    root.querySelector(".btn-secondary").click();
+    root.querySelector(".btn-icon").click();
     submitTenantForm(root, undefined, "Updated Name", "new@co.com", "65", "200", "5000");
     await flush();
 
@@ -211,7 +211,7 @@ describe("tenants view", () => {
     TenantsView.mount(root);
     await flush();
 
-    root.querySelector(".btn-outline-danger").click();
+    root.querySelector(".btn-icon-danger").click();
     expect(root.querySelector("#tenant-delete-modal").classList.contains("hidden")).toBe(false);
     expect(root.querySelector("#tenant-delete-name").textContent).toBe(tenant.displayName);
   });
@@ -222,7 +222,7 @@ describe("tenants view", () => {
     TenantsView.mount(root);
     await flush();
 
-    root.querySelector(".btn-outline-danger").click();
+    root.querySelector(".btn-icon-danger").click();
     root.querySelector("#tenant-delete-confirm").click();
     await flush();
 
@@ -235,7 +235,7 @@ describe("tenants view", () => {
     TenantsView.mount(root);
     await flush();
 
-    root.querySelector(".btn-outline-danger").click();
+    root.querySelector(".btn-icon-danger").click();
     root.querySelector("#tenant-delete-cancel").click();
     expect(root.querySelector("#tenant-delete-modal").classList.contains("hidden")).toBe(true);
     expect(mockRemove).not.toHaveBeenCalled();

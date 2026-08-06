@@ -16,6 +16,8 @@
 	format \
 	lint \
 	test \
+	test-api \
+	test-ui \
 	secret-scan \
 	install-hooks \
 	adr-log \
@@ -149,8 +151,12 @@ lint: ## Run all linters
 	cd ui/admin && npm run lint
 	cd ui/demo && npm run lint
 
-test: ## Run all tests
+test: test-api test-ui  ## Run all tests
+
+test-api:  ## Run API tests only
 	$(MAKE) -C documentai-api test
+
+test-ui:  ## Run UI tests only
 	cd ui/admin && npm test
 	cd ui/demo && npm test
 

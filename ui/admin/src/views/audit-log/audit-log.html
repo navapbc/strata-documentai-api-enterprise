@@ -1,24 +1,63 @@
-<table id="audit-table">
-  <thead>
-    <tr>
-      <th style="width: 2.5rem">#</th>
-      <th class="th-sort-disabled" title="Sorting requires server-side support">Timestamp</th>
-      <th class="th-sort-disabled" title="Sorting requires server-side support">Actor</th>
-      <th class="th-sort-disabled" title="Sorting requires server-side support">Action</th>
-      <th class="th-sort-disabled" title="Sorting requires server-side support">Target Type</th>
-      <th class="th-sort-disabled" title="Sorting requires server-side support">Target ID</th>
-      <th class="th-sort-disabled" title="Sorting requires server-side support">Tenant</th>
-      <th>Metadata</th>
-    </tr>
-  </thead>
-  <tbody id="audit-tbody"></tbody>
-</table>
-<p id="no-audit-events" class="empty-state hidden">No audit events found.</p>
-<div class="pagination-controls" style="align-items: center; gap: 0.75rem">
-  <button id="audit-prev-btn" class="btn-secondary" disabled>← Previous</button>
-  <span
-    id="audit-page-indicator"
-    style="font-size: 0.8125rem; color: #6b7280; min-width: 4rem; text-align: center"
-  ></span>
-  <button id="audit-next-btn" class="btn-secondary" disabled>Next →</button>
+<div class="metrics-layout">
+  <div class="metrics-sidebar">
+    <div class="metrics-timeframe">
+      <label class="metrics-timeframe-label">Date Range</label>
+      <select id="audit-timeframe">
+        <option value="1">Yesterday</option>
+        <option value="7">Last 7 days</option>
+        <option value="30" selected>Last 30 days</option>
+        <option value="90">Last 90 days</option>
+        <option value="custom">Custom</option>
+      </select>
+      <div id="audit-custom-range" class="metrics-custom-range hidden">
+        <div class="metrics-custom-field">
+          <label for="audit-start-date">Start</label>
+          <input type="date" id="audit-start-date" />
+        </div>
+        <div class="metrics-custom-field">
+          <label for="audit-end-date">End</label>
+          <input type="date" id="audit-end-date" />
+        </div>
+        <button id="audit-load-btn" class="btn-primary">Load</button>
+      </div>
+    </div>
+    <div class="metrics-timeframe">
+      <label class="metrics-timeframe-label">Action</label>
+      <select class="tenant-select" id="audit-action-filter">
+        <option value="">All actions</option>
+      </select>
+    </div>
+    <div class="metrics-timeframe">
+      <label class="metrics-timeframe-label">Actor</label>
+      <select class="tenant-select" id="audit-actor-filter">
+        <option value="">All actors</option>
+      </select>
+    </div>
+  </div>
+  <div class="metrics-main">
+    <table id="audit-table" class="hidden">
+      <thead>
+        <tr>
+          <th style="width: 2.5rem">#</th>
+          <th class="th-sort-disabled" title="Sorting requires server-side support">Timestamp</th>
+          <th class="th-sort-disabled" title="Sorting requires server-side support">Actor</th>
+          <th class="th-sort-disabled" title="Sorting requires server-side support">Action</th>
+        </tr>
+      </thead>
+      <tbody id="audit-tbody"></tbody>
+    </table>
+    <p id="no-audit-events" class="empty-state hidden">No audit events found.</p>
+    <div
+      id="audit-pagination"
+      class="pagination-controls hidden"
+      style="align-items: center; gap: 0.75rem"
+    >
+      <button id="audit-prev-btn" class="btn-secondary" disabled>← Previous</button>
+      <span
+        id="audit-page-indicator"
+        style="font-size: 0.8125rem; color: #6b7280; min-width: 4rem; text-align: center"
+      ></span>
+      <button id="audit-next-btn" class="btn-secondary" disabled>Next →</button>
+    </div>
+  </div>
 </div>

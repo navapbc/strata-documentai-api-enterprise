@@ -64,6 +64,8 @@ async function load() {
 
   _empty.textContent = "Loading...";
   _empty.classList.remove("hidden");
+  _downloadBtn.disabled = true;
+  _downloadBtn.classList.add("hidden");
   _tableContainer.querySelectorAll("table").forEach((t) => t.remove());
 
   try {
@@ -90,10 +92,13 @@ function renderTable() {
   if (!_currentData.length) {
     _empty.textContent = "No data available for this period.";
     _empty.classList.remove("hidden");
+    _downloadBtn.disabled = true;
     return;
   }
 
   _empty.classList.add("hidden");
+  _downloadBtn.disabled = false;
+  _downloadBtn.classList.remove("hidden");
 
   const columns =
     _currentGranularity === "daily"

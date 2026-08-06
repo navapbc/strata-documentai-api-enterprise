@@ -125,7 +125,11 @@ def get_roles(claims: dict[str, Any]) -> list[str]:
 
 
 def get_tenant_id(claims: dict[str, Any]) -> str | None:
-    """Return the tenant the caller belongs to, if any."""
+    """Return the tenant this caller is scoped to administer, if any.
+
+    This is an authorization scope, not membership - super-admins always
+    have none (they aren't scoped to any single tenant).
+    """
     return claims.get("custom:tenant_id")
 
 

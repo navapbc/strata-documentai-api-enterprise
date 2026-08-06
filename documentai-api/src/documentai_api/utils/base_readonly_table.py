@@ -93,5 +93,30 @@ class ReadOnlyTable:
         if start_key:
             kwargs["ExclusiveStartKey"] = start_key
 
+        # When a FilterExpression is present, DynamoDB applies Limit *before*
+        # filtering, so a single page may return fewer items than requested.
+        # Paginate internally until we have enough results or the index is exhausted.
+        # Return all collected items (never truncate) enabling the cursor to always
+        # point past every item we return; truncating would silently drop the
+        # surplus matches as the cursor already skips past them.
+        if filter_expression is not None and limit:
+            collected: list[dict[str, Any]] = []
+            last_key = start_key
+
+            while len(collected) < limit:
+                page_kwargs = {**kwargs, "Limit": limit}
+                if last_key:
+                    page_kwargs["ExclusiveStartKey"] = last_key
+                elif "ExclusiveStartKey" in page_kwargs:
+                    del page_kwargs["ExclusiveStartKey"]
+
+                resp = table.query(**page_kwargs)
+                collected.extend(resp.get("Items", []))
+                last_key = resp.get("LastEvaluatedKey")
+                if not last_key:
+                    break
+
+            return collected, last_key
+
         response = table.query(**kwargs)
         return response.get("Items", []), response.get("LastEvaluatedKey")

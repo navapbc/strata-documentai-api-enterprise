@@ -215,6 +215,7 @@ def audit_events_table(aws_credentials, monkeypatch):
                 {"AttributeName": "tenantId", "AttributeType": "S"},
                 {"AttributeName": "timestamp#eventId", "AttributeType": "S"},
                 {"AttributeName": "action", "AttributeType": "S"},
+                {"AttributeName": "actorEmail", "AttributeType": "S"},
             ],
             GlobalSecondaryIndexes=[
                 {
@@ -224,7 +225,15 @@ def audit_events_table(aws_credentials, monkeypatch):
                         {"AttributeName": "timestamp#eventId", "KeyType": "RANGE"},
                     ],
                     "Projection": {"ProjectionType": "ALL"},
-                }
+                },
+                {
+                    "IndexName": "actor-email-timestamp-index",
+                    "KeySchema": [
+                        {"AttributeName": "actorEmail", "KeyType": "HASH"},
+                        {"AttributeName": "timestamp#eventId", "KeyType": "RANGE"},
+                    ],
+                    "Projection": {"ProjectionType": "ALL"},
+                },
             ],
             BillingMode="PAY_PER_REQUEST",
         )

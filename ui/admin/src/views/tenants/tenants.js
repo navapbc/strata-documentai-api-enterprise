@@ -3,13 +3,14 @@ import * as TenantContext from "../../utils/tenant-context.js";
 import * as Helpers from "../../utils/helpers.js";
 import { openModal, closeModal } from "../../utils/modal.js";
 import * as Toast from "../../utils/toast.js";
-import { h } from "../../utils/dom.js";
+import { h, iconBtn } from "../../utils/dom.js";
 import { tpl } from "../../utils/tpl.js";
 import html from "./tenants.html";
 
 const tmpl = tpl(html);
 
-let _root, _tbody, _noTenants, _createBtn, _refreshBtn, _showInactive;
+let _root, _tbody, _noTenants, _createBtn;
+let _showInactive;
 let _modal,
   _form,
   _idInput,
@@ -33,17 +34,15 @@ export function mount(root) {
   _root = root;
   root.replaceChildren(tmpl());
 
-  // Inject actions into shared header
   _showInactive = h("input", { type: "checkbox", id: "show-inactive-tenants" });
   _createBtn = h("button", { className: "btn-primary" }, "Create Tenant");
-  _refreshBtn = h("button", { className: "btn-secondary" }, "Refresh");
   const label = h(
     "label",
     { className: "inline-checkbox" },
     _showInactive,
     document.createTextNode(" Show inactive"),
   );
-  Helpers.setViewActions(label, _createBtn, _refreshBtn);
+  Helpers.setViewActions(label, _createBtn);
 
   _tbody = root.querySelector("#tenants-tbody");
   _noTenants = root.querySelector("#no-tenants");
@@ -67,7 +66,6 @@ export function mount(root) {
   _deleteConfirm = root.querySelector("#tenant-delete-confirm");
 
   _createBtn.addEventListener("click", openCreateModal);
-  _refreshBtn.addEventListener("click", () => load());
   _showInactive.addEventListener("change", () => load());
   _cancelBtn.addEventListener("click", closeTenantModal);
   _form.addEventListener("submit", handleSubmit);
@@ -119,10 +117,10 @@ function renderTable(tenants) {
     const statusEl = t.isActive
       ? h("span", { className: "badge badge-success" }, "Active")
       : h("span", { className: "badge badge-neutral" }, "Inactive");
-    const editBtn = h("button", { className: "btn-sm btn-secondary" }, "Edit");
+    const editBtn = iconBtn("edit", "Edit");
     const actionsWrapper = h("div", { className: "row-actions" }, editBtn);
     if (t.isActive) {
-      const delBtn = h("button", { className: "btn-sm btn-outline-danger" }, "Deactivate");
+      const delBtn = iconBtn("discard", "Deactivate", "btn-icon-danger");
       delBtn.addEventListener("click", () => openDeleteModal(t));
       actionsWrapper.appendChild(delBtn);
     }

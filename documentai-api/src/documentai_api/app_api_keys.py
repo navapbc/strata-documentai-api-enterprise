@@ -16,7 +16,7 @@ from documentai_api.models.api_key import (
 )
 from documentai_api.schemas.api_key import ApiKeyRecord
 from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
-from documentai_api.utils.audit import log_event
+from documentai_api.utils.audit_log import log_event
 from documentai_api.utils.auth import (
     deactivate_api_key,
     find_api_key_by_prefix,

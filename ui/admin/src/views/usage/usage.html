@@ -1,11 +1,11 @@
-<div class="usage-view">
-  <div class="usage-controls">
-    <div class="usage-field">
-      <label for="usage-year">Year</label>
+<div class="usage-view metrics-layout">
+  <div class="metrics-sidebar">
+    <div class="metrics-timeframe">
+      <label class="metrics-timeframe-label">Year</label>
       <select id="usage-year"></select>
     </div>
-    <div class="usage-field">
-      <label for="usage-month">Month</label>
+    <div class="metrics-timeframe">
+      <label class="metrics-timeframe-label">Month</label>
       <select id="usage-month">
         <option value="01">January</option>
         <option value="02">February</option>
@@ -21,16 +21,20 @@
         <option value="12">December</option>
       </select>
     </div>
-    <div class="usage-field">
-      <label for="usage-granularity">Granularity</label>
+    <div class="metrics-timeframe">
+      <label class="metrics-timeframe-label">Granularity</label>
       <select id="usage-granularity">
         <option value="monthly">Monthly</option>
         <option value="daily">Daily</option>
       </select>
     </div>
-    <button id="usage-download-btn" class="btn-secondary">Download CSV</button>
   </div>
-  <div id="usage-table-container">
-    <p id="usage-empty" class="empty-state">Loading...</p>
+  <div class="metrics-main">
+    <div class="usage-table-header">
+      <button id="usage-download-btn" class="btn-primary hidden" disabled>Download CSV</button>
+    </div>
+    <div id="usage-table-container">
+      <p id="usage-empty" class="empty-state">Loading...</p>
+    </div>
   </div>
 </div>

@@ -14,7 +14,7 @@ from documentai_api.models.extraction_rule import (
     ExtractionRulesListResponse,
 )
 from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
-from documentai_api.utils.audit import log_event
+from documentai_api.utils.audit_log import log_event
 from documentai_api.utils.auth import get_user_context_with_fallback
 
 logger = get_logger(__name__)
