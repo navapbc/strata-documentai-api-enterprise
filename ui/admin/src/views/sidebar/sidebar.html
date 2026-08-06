@@ -13,7 +13,9 @@
           <span class="nav-arrow">▸</span> Tenants
         </button>
         <div class="nav-section-body hidden" id="section-tenants">
-          <a class="nav-item" data-view="tenants">Manage Tenants</a>
+          <a class="nav-item" data-view="tenants"
+            >Manage Tenants <span id="tenants-nav-badge"></span
+          ></a>
         </div>
       </div>
 
@@ -22,7 +24,7 @@
           <span class="nav-arrow">▸</span> Users
         </button>
         <div class="nav-section-body hidden" id="section-users">
-          <a class="nav-item" data-view="users">Manage Users</a>
+          <a class="nav-item" data-view="users">Manage Users <span id="users-nav-badge"></span></a>
         </div>
       </div>
 
@@ -31,7 +33,7 @@
           <span class="nav-arrow">▸</span> API Keys
         </button>
         <div class="nav-section-body hidden" id="section-keys">
-          <a class="nav-item" data-view="keys">Manage API Keys</a>
+          <a class="nav-item" data-view="keys">Manage API Keys <span id="keys-nav-badge"></span></a>
         </div>
       </div>
 
@@ -40,10 +42,18 @@
           <span class="nav-arrow">▸</span> Documents
         </button>
         <div class="nav-section-body hidden" id="section-docs">
-          <a class="nav-item" data-view="documents">Recently Processed</a>
-          <a class="nav-item" data-view="doc-categories">Manage Document Categories</a>
-          <a class="nav-item" data-view="extraction-rules">Manage Extraction Rules</a>
-          <a class="nav-item" data-view="test-documents">Test Document Extraction</a>
+          <a class="nav-item" data-view="documents"
+            >Recently Processed <span id="documents-nav-badge"></span
+          ></a>
+          <a class="nav-item" data-view="doc-categories"
+            >Manage Document Categories <span id="doc-categories-nav-badge"></span
+          ></a>
+          <a class="nav-item" data-view="extraction-rules"
+            >Manage Extraction Rules <span id="extraction-rules-nav-badge"></span
+          ></a>
+          <a class="nav-item" data-view="test-documents"
+            >Test Document Extraction <span id="test-documents-nav-badge"></span
+          ></a>
           <!-- <a class="nav-item" data-view="document-search">Search Documents</a> TODO: wire up backend search (FilterExpression on tenant index or similar) -->
         </div>
       </div>
@@ -53,7 +63,9 @@
           <span class="nav-arrow">▸</span> Audit Log
         </button>
         <div class="nav-section-body hidden" id="section-audit-log">
-          <a class="nav-item" data-view="audit-log">View Audit Log Events</a>
+          <a class="nav-item" data-view="audit-log"
+            >View Log Events <span class="nav-badge-updated" id="audit-log-nav-badge"></span
+          ></a>
         </div>
       </div>
 
@@ -66,7 +78,9 @@
             >Metrics Dashboard
             <span class="nav-badge-updated" id="metrics-nav-badge">Updated</span></a
           >
-          <a class="nav-item" data-view="usage">Usage Tracking</a>
+          <a class="nav-item" data-view="usage"
+            >Usage Tracking <span id="usage-nav-badge"></span
+          ></a>
         </div>
       </div>
     </nav>

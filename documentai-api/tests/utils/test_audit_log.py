@@ -1,7 +1,7 @@
 """Tests for audit event logging utility."""
 
 from documentai_api.schemas.audit_event import GLOBAL_TENANT, AuditEventRecord
-from documentai_api.utils.audit import log_event
+from documentai_api.utils.audit_log import log_event
 
 CLAIMS = {"sub": "test-user", "email": "admin@example.com"}
 

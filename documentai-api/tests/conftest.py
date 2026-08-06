@@ -227,6 +227,7 @@ pytest.register_assert_rewrite("tests.helpers")
 pytest_plugins = (
     "tests.helpers.fixtures.aws",
     "tests.helpers.fixtures.bda",
+    "tests.helpers.fixtures.cognito",
     "tests.helpers.fixtures.db.ddb",
     "tests.helpers.fixtures.documents",
 )

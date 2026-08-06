@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, vi } from "vitest";
+import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from "vitest";
 
 vi.mock("chart.js", () => ({
   Chart: Object.assign(vi.fn(), { register: vi.fn() }),
@@ -171,5 +171,37 @@ describe("buildTimingChartConfig", () => {
   it("uses the same labels as volume chart", () => {
     const config = buildTimingChartConfig(DAILY_STATS);
     expect(config.data.labels).toEqual(["1/1", "1/2", "1/3"]);
+  });
+});
+
+describe("metrics view date format", () => {
+  let root, mockGet;
+
+  beforeEach(async () => {
+    vi.resetModules();
+    mockGet = vi.fn().mockResolvedValue({ summary: null, dailyStats: [] });
+    vi.doMock("../../src/services/metrics.js", () => ({ get: mockGet }));
+    vi.doMock("../../src/utils/tenant-context.js", () => ({
+      getTenantId: vi.fn(() => null),
+      onChange: vi.fn(() => () => {}),
+    }));
+    vi.doMock("../../src/utils/toast.js", () => ({ show: vi.fn() }));
+    vi.doMock("../../src/utils/helpers.js", () => ({}));
+    root = document.createElement("div");
+    document.body.appendChild(root);
+    const MetricsView = await import("../../src/views/metrics/metrics.js");
+    MetricsView.mount(root);
+    await new Promise((r) => setTimeout(r, 0));
+  });
+
+  afterEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  it("sends bare YYYY-MM-DD dates to metrics service (not ISO timestamps)", () => {
+    expect(mockGet).toHaveBeenCalled();
+    const { startDate, endDate } = mockGet.mock.calls[0][0];
+    expect(startDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(endDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 });

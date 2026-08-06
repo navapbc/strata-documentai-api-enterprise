@@ -2,7 +2,7 @@ import * as Helpers from "../../utils/helpers.js";
 import * as KeysService from "../../services/keys.js";
 import * as TenantContext from "../../utils/tenant-context.js";
 import { openModal, closeModal } from "../../utils/modal.js";
-import { h } from "../../utils/dom.js";
+import { h, iconBtn } from "../../utils/dom.js";
 import { tpl } from "../../utils/tpl.js";
 import * as Toast from "../../utils/toast.js";
 import html from "./keys.html";
@@ -10,9 +10,8 @@ import html from "./keys.html";
 const tmpl = tpl(html);
 
 let _root, _tbody, _noKeys, _createKeyBtn;
-let _createModal, _createForm, _cancelCreate;
 let _keyCreatedModal, _newKeyValue, _copyKeyBtn, _closeCreated;
-let _refreshKeysBtn;
+let _createModal, _createForm, _cancelCreate;
 let _revokeModal, _revokeKeyPrefix, _cancelRevoke, _confirmRevoke;
 let _pendingRevokeKey = null;
 let _showInactiveToggle;
@@ -26,17 +25,15 @@ export function mount(root) {
   _root = root;
   root.replaceChildren(tmpl());
 
-  // Inject actions into shared header
   _showInactiveToggle = h("input", { type: "checkbox", id: "show-inactive-keys" });
   _createKeyBtn = h("button", { className: "btn-primary" }, "Create Key");
-  _refreshKeysBtn = h("button", { className: "btn-secondary" }, "Refresh");
   const label = h(
     "label",
     { className: "inline-checkbox" },
     _showInactiveToggle,
     document.createTextNode(" Show revoked"),
   );
-  Helpers.setViewActions(label, _createKeyBtn, _refreshKeysBtn);
+  Helpers.setViewActions(label, _createKeyBtn);
 
   _tbody = root.querySelector("#keys-tbody");
   _noKeys = root.querySelector("#no-keys");
@@ -57,7 +54,6 @@ export function mount(root) {
   _createForm.addEventListener("submit", handleCreate);
   _copyKeyBtn.addEventListener("click", copyKey);
   _closeCreated.addEventListener("click", () => closeModal(_keyCreatedModal));
-  _refreshKeysBtn.addEventListener("click", () => load());
   _cancelRevoke.addEventListener("click", closeRevokeModal);
   _confirmRevoke.addEventListener("click", handleConfirmRevoke);
 
@@ -183,7 +179,7 @@ function renderTable(keys) {
   for (const key of sorted) {
     const isActive = key.isActive !== false;
     const actionEl = isActive
-      ? h("button", { className: "btn-outline-danger btn-sm" }, "Revoke")
+      ? iconBtn("discard", "Revoke", "btn-icon-danger")
       : h("span", { className: "badge badge-revoked" }, "Revoked");
     const tr = h(
       "tr",
@@ -192,7 +188,7 @@ function renderTable(keys) {
       h("td", null, key.apiKeyName || "-"),
       h("td", null, key.emailAddress || "-"),
       h("td", null, key.environment || "-"),
-      h("td", null, h("code", null, key.keyPrefix ? key.keyPrefix + "…" : "-")),
+      h("td", null, h("span", null, key.keyPrefix ? key.keyPrefix + "…" : "-")),
       h(
         "td",
         { title: key.lastUsed ? Helpers.formatDateTime(key.lastUsed) : "" },

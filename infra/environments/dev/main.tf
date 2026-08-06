@@ -192,7 +192,14 @@ module "audit_events" {
       hash_key_type = "S"
       sort_key      = "timestamp#eventId"
       sort_key_type = "S"
-    }
+    },
+    {
+      name          = "actor-email-timestamp-index"
+      hash_key      = "actorEmail"
+      hash_key_type = "S"
+      sort_key      = "timestamp#eventId"
+      sort_key_type = "S"
+    },
   ]
 }
 module "extraction_rules" {

@@ -3,7 +3,7 @@ import * as TenantContext from "../../utils/tenant-context.js";
 import * as Helpers from "../../utils/helpers.js";
 import * as Toast from "../../utils/toast.js";
 import { openModal, closeModal } from "../../utils/modal.js";
-import { h } from "../../utils/dom.js";
+import { h, iconBtn } from "../../utils/dom.js";
 import { tpl } from "../../utils/tpl.js";
 import html from "./document-categories.html";
 
@@ -121,10 +121,10 @@ function renderTable(categories) {
     const statusEl = cat.isActive
       ? h("span", { className: "badge badge-success" }, "Active")
       : h("span", { className: "badge badge-neutral" }, "Inactive");
-    const editBtn = h("button", { className: "btn-sm btn-secondary" }, "Edit");
+    const editBtn = iconBtn("edit", "Edit");
     const actionsWrapper = h("div", { className: "row-actions" }, editBtn);
     if (cat.isActive) {
-      const delBtn = h("button", { className: "btn-sm btn-outline-danger" }, "Deactivate");
+      const delBtn = iconBtn("discard", "Deactivate", "btn-icon-danger");
       delBtn.addEventListener("click", () => deactivate(cat));
       actionsWrapper.appendChild(delBtn);
     }
