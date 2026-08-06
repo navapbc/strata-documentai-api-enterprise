@@ -33,6 +33,8 @@ DocumentAI is not a policy or eligibility engine. It does not approve, deny, clo
 
 The core service is designed for reuse across programs, agencies, and states without hard-coding individual program policies.
 
+*Learn more about DocumentAI's business rules [here](docs/documentai-api/business-rules.md)*
+  
 ## See it in action
 
 **Local API setup** - clone, configure, and run the API locally with no AWS needed.
