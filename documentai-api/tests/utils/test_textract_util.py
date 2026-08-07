@@ -309,7 +309,7 @@ def test_try_textract_identity_duplicate_dates_falls_back_despite_supplemental(
 
 
 def test_finalize_textract_result_calls_classify_as_success(mocker):
-    mock_classify = mocker.patch("documentai_api.utils.document_lifecycle.classify_as_success")
+    mock_classify = mocker.patch("documentai_api.utils.document_classification.classify_as_success")
     mocker.patch("documentai_api.utils.ddb.get_ddb_record", return_value={"tenantId": "t1"})
     mocker.patch("documentai_api.utils.tenants.get_extraction_confidence_floor", return_value=0.65)
     mocker.patch("documentai_api.utils.tenants.tenant_has_confidence_floor", return_value=False)
@@ -342,7 +342,7 @@ def test_finalize_textract_result_calls_classify_as_success(mocker):
 
 
 def test_finalize_textract_result_sets_below_floor_when_low_confidence(mocker):
-    mock_classify = mocker.patch("documentai_api.utils.document_lifecycle.classify_as_success")
+    mock_classify = mocker.patch("documentai_api.utils.document_classification.classify_as_success")
     mocker.patch("documentai_api.utils.ddb.get_ddb_record", return_value={"tenantId": "t1"})
     mocker.patch("documentai_api.utils.tenants.get_extraction_confidence_floor", return_value=0.90)
     mocker.patch("documentai_api.utils.tenants.tenant_has_confidence_floor", return_value=False)

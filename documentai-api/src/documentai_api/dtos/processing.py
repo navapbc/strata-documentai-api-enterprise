@@ -54,6 +54,9 @@ class OptimizationResult:
     file_size_bytes: int | None = None
     too_large: bool = False
     failed: bool = False
+    fetch_duration_seconds: Decimal | None = None
+    crop_block_duration_seconds: Decimal | None = None
+    write_duration_seconds: Decimal | None = None
 
 
 @dataclass

@@ -52,12 +52,12 @@ from documentai_api.utils.batch_operations import (
     query_jobs_by_batch_id,
     update_batch_status,
 )
-from documentai_api.utils.document_lifecycle import (
+from documentai_api.utils.document_classification import (
     classify_as_ai_consent_declined,
     classify_as_conversion_failed,
     classify_as_failed,
-    insert_minimal_ddb_record,
 )
+from documentai_api.utils.document_lifecycle import insert_minimal_ddb_record
 from documentai_api.utils.tenant_access import validate_batch_tenant_access
 from documentai_api.utils.uploads import (
     ImageConversionError,
