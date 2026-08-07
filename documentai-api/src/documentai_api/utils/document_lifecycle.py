@@ -1,6 +1,9 @@
-"""Document classification state machine and initial record creation."""
+"""Document lifecycle: initial record creation and pre-extraction pipeline."""
 
 import random
+from concurrent.futures import Future, ThreadPoolExecutor
+from dataclasses import dataclass
+from decimal import Decimal
 from typing import Any
 
 from botocore.exceptions import ClientError
@@ -11,17 +14,14 @@ from documentai_api.config.constants import (
     ProcessStatus,
 )
 from documentai_api.config.env import EnvVars, get_required_env
-from documentai_api.dtos.classification import ClassificationData, PreclassificationMatchResult
-from documentai_api.dtos.ddb import PreClassificationDdbFields, UpsertDdbData
+from documentai_api.dtos.classification import PreclassificationMatchResult
+from documentai_api.dtos.ddb import InitialDdbRecord, PreClassificationDdbFields, UpdateDdbRecord
 from documentai_api.dtos.processing import InternalApiResponse
 from documentai_api.logging import get_logger
 from documentai_api.models.document_record import DocumentRecord
 from documentai_api.services import s3 as s3_service
-from documentai_api.utils.blur_detection import detect_blur
-from documentai_api.utils.ddb import (
-    update_ddb,
-    upsert_ddb,
-)
+from documentai_api.utils.blur_detection import BlurResult, detect_blur
+from documentai_api.utils.ddb import update_ddb, upsert_ddb
 from documentai_api.utils.evaluations import BlurSkipReason
 from documentai_api.utils.preclassification import find_matching_blueprint, preclassify_document
 from documentai_api.utils.response_builder import get_internal_api_response
@@ -36,148 +36,19 @@ from documentai_api.utils.textract import finalize_textract_result, try_textract
 logger = get_logger(__name__)
 
 
-# =============================================================================
-# Classification state machine
-# =============================================================================
+@dataclass
+class _BlurOutcome:
+    blur_result: BlurResult | None
+    process_status: str | None  # None = not terminal, continue to preclassification
+    response_code: str | None
 
 
-def classify_as_success(
-    object_key: str,
-    response_code: str,
-    data: ClassificationData,
-    below_extraction_confidence_floor: bool = False,
-    extraction_rules_configured: bool | None = None,
-    missing_required_field_list: list[str] | None = None,
-    required_field_list: list[str] | None = None,
-    applied_extraction_confidence_floor: float | None = None,
-    used_default_confidence_floor: bool | None = None,
-    result_processor_started_at: str | None = None,
-) -> dict[str, Any]:
-    """Mark file processing as completed."""
-    internal_api_response: InternalApiResponse = get_internal_api_response(
-        object_key=object_key,
-        response_code=response_code,
-        matched_document_class=data.matched_document_class,
-    )
-
-    update_ddb(
-        object_key=object_key,
-        status=ProcessStatus.SUCCESS,
-        internal_api_response=internal_api_response,
-        data=data,
-        below_extraction_confidence_floor=below_extraction_confidence_floor,
-        extraction_rules_configured=extraction_rules_configured,
-        missing_required_field_list=missing_required_field_list,
-        required_field_list=required_field_list,
-        applied_extraction_confidence_floor=applied_extraction_confidence_floor,
-        used_default_confidence_floor=used_default_confidence_floor,
-        result_processor_started_at=result_processor_started_at,
-    )
-
-    # convert dataclass to dict for JSON serialization
-    return internal_api_response.__dict__
-
-
-def classify_as_failed(
-    object_key: str,
-    error_message: str,
-    data: ClassificationData,
-    result_processor_started_at: str | None = None,
-) -> dict[str, Any]:
-    """Mark file processing as failed with error message."""
-    internal_api_response: InternalApiResponse = get_internal_api_response(
-        object_key=object_key,
-        response_code=ResponseCodes.INTERNAL_PROCESSING_ERROR,
-        matched_document_class=None,
-    )
-
-    update_ddb(
-        object_key=object_key,
-        status=ProcessStatus.FAILED,
-        internal_api_response=internal_api_response,
-        error_message=error_message,
-        data=data,
-        result_processor_started_at=result_processor_started_at,
-    )
-
-    # convert dataclass to dict for JSON serialization
-    return internal_api_response.__dict__
-
-
-def classify_as_not_implemented(object_key: str, data: ClassificationData) -> dict[str, Any]:
-    """Mark file processing as not implemented."""
-    internal_api_response: InternalApiResponse = get_internal_api_response(
-        object_key=object_key,
-        response_code=ResponseCodes.NO_BLUEPRINT_MATCHED,
-        matched_document_class=None,
-    )
-
-    update_ddb(
-        object_key=object_key,
-        status=ProcessStatus.SUCCESS,
-        internal_api_response=internal_api_response,
-        data=data,
-    )
-
-    # convert dataclass to dict for JSON serialization
-    return internal_api_response.__dict__
-
-
-def classify_as_no_document_detected(
-    object_key: str, data: ClassificationData, result_processor_started_at: str | None = None
-) -> dict[str, Any]:
-    """Mark file processing as no document detected."""
-    internal_api_response: InternalApiResponse = get_internal_api_response(
-        object_key=object_key,
-        response_code=ResponseCodes.NO_DOCUMENT_DETECTED,
-        matched_document_class=None,
-    )
-
-    update_ddb(
-        object_key=object_key,
-        status=ProcessStatus.NO_DOCUMENT_DETECTED,
-        internal_api_response=internal_api_response,
-        data=data,
-        result_processor_started_at=result_processor_started_at,
-    )
-
-    # convert dataclass to dict for JSON serialization
-    return internal_api_response.__dict__
-
-
-def classify_as_ai_consent_declined(object_key: str) -> dict[str, Any]:
-    """Mark file as not processed due to AI consent not provided."""
-    internal_api_response: InternalApiResponse = get_internal_api_response(
-        object_key=object_key,
-        response_code=ResponseCodes.AI_CONSENT_DECLINED,
-        matched_document_class=None,
-    )
-
-    update_ddb(
-        object_key=object_key,
-        status=ProcessStatus.AI_CONSENT_DECLINED,
-        internal_api_response=internal_api_response,
-    )
-
-    return internal_api_response.__dict__
-
-
-def classify_as_conversion_failed(object_key: str, error_message: str) -> dict[str, Any]:
-    """Mark file as failed due to image format conversion error."""
-    internal_api_response: InternalApiResponse = get_internal_api_response(
-        object_key=object_key,
-        response_code=ResponseCodes.INTERNAL_PROCESSING_ERROR,
-        matched_document_class=None,
-    )
-
-    update_ddb(
-        object_key=object_key,
-        status=ProcessStatus.CONVERSION_FAILED,
-        internal_api_response=internal_api_response,
-        error_message=error_message,
-    )
-
-    return internal_api_response.__dict__
+@dataclass
+class _PreclassificationOutcome:
+    process_status: str
+    response_code: str
+    pre_classification: PreClassificationDdbFields | None
+    textract_result: Any
 
 
 def is_selected_for_processing(
@@ -194,95 +65,12 @@ def is_selected_for_processing(
         return True, None, None
 
     percent_processed = get_processing_percentage(tenant_id, category_name)
+
     if percent_processed >= 1.0:
         return True, percent_processed, None
+
     selected_value = random.random()
     return selected_value < percent_processed, percent_processed, selected_value
-
-
-def classify_as_no_custom_blueprint_matched(
-    object_key: str,
-    data: ClassificationData,
-    result_processor_started_at: str | None = None,
-) -> dict[str, Any]:
-    """Mark file as sent to BDA with no matching blueprint (005)."""
-    internal_api_response: InternalApiResponse = get_internal_api_response(
-        object_key=object_key,
-        response_code=ResponseCodes.NO_BLUEPRINT_MATCHED,
-        matched_document_class=None,
-    )
-
-    update_ddb(
-        object_key=object_key,
-        status=ProcessStatus.NO_CUSTOM_BLUEPRINT_MATCHED,
-        internal_api_response=internal_api_response,
-        data=data,
-        result_processor_started_at=result_processor_started_at,
-    )
-
-    return internal_api_response.__dict__
-
-
-def classify_as_extraction_not_configured(
-    object_key: str,
-    data: ClassificationData,
-) -> dict[str, Any]:
-    """Mark file as excluded because preclassification returned no known document class (002)."""
-    internal_api_response: InternalApiResponse = get_internal_api_response(
-        object_key=object_key,
-        response_code=ResponseCodes.SKIPPED_PER_PRECLASSIFICATION,
-        matched_document_class=None,
-    )
-
-    update_ddb(
-        object_key=object_key,
-        status=ProcessStatus.EXCLUDED_PER_PRECLASSIFICATION,
-        internal_api_response=internal_api_response,
-        data=data,
-    )
-
-    return internal_api_response.__dict__
-
-
-def classify_as_multiple_documents_on_page(
-    object_key: str, data: ClassificationData
-) -> dict[str, Any]:
-    """Mark file processing as multiple documents detected on single page."""
-    internal_api_response: InternalApiResponse = get_internal_api_response(
-        object_key=object_key,
-        response_code=ResponseCodes.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
-        matched_document_class=None,
-    )
-
-    update_ddb(
-        object_key=object_key,
-        status=ProcessStatus.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
-        internal_api_response=internal_api_response,
-        data=data,
-    )
-
-    # convert dataclass to dict for JSON serialization
-    return internal_api_response.__dict__
-
-
-def classify_as_multiple_documents_in_multipage(
-    object_key: str, data: ClassificationData
-) -> dict[str, Any]:
-    """Mark file processing as multiple distinct document types detected across pages."""
-    internal_api_response: InternalApiResponse = get_internal_api_response(
-        object_key=object_key,
-        response_code=ResponseCodes.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
-        matched_document_class=None,
-    )
-
-    update_ddb(
-        object_key=object_key,
-        status=ProcessStatus.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
-        internal_api_response=internal_api_response,
-        data=data,
-    )
-
-    return internal_api_response.__dict__
 
 
 # =============================================================================
@@ -295,23 +83,31 @@ def set_bda_processing_status_started(
     bda_invocation_arn: str,
     bda_project_arn_used: str | None = None,
     pages_sent_to_bda: int | None = None,
+    bda_invoke_duration_seconds: Decimal | None = None,
+    bda_invoke_retry_count: int | None = None,
 ) -> None:
     """Mark file processing as started with BDA job ARN."""
     update_ddb(
-        object_key=object_key,
-        status=ProcessStatus.STARTED,
-        internal_api_response=None,
-        bda_invocation_arn=bda_invocation_arn,
-        bda_project_arn_used=bda_project_arn_used,
-        pages_sent_to_bda=pages_sent_to_bda,
+        UpdateDdbRecord(
+            object_key=object_key,
+            status=ProcessStatus.STARTED,
+            internal_api_response=None,
+            bda_invocation_arn=bda_invocation_arn,
+            bda_project_arn_used=bda_project_arn_used,
+            pages_sent_to_bda=pages_sent_to_bda,
+            bda_invoke_duration_seconds=bda_invoke_duration_seconds,
+            bda_invoke_retry_count=bda_invoke_retry_count,
+        )
     )
 
 
 def set_bda_processing_status_not_started(object_key: str) -> None:
     update_ddb(
-        object_key=object_key,
-        status=ProcessStatus.NOT_STARTED,
-        internal_api_response=None,
+        UpdateDdbRecord(
+            object_key=object_key,
+            status=ProcessStatus.NOT_STARTED,
+            internal_api_response=None,
+        )
     )
 
 
@@ -353,7 +149,7 @@ def insert_minimal_ddb_record(record: DocumentRecord) -> None:
     in place (preserving createdAt, job_id, trace_id) rather than overwriting.
     """
     upsert_ddb(
-        UpsertDdbData(
+        InitialDdbRecord(
             object_key=record.ddb_key,
             original_file_name=record.original_file_name,
             user_provided_document_category=record.category,
@@ -380,6 +176,126 @@ def insert_minimal_ddb_record(record: DocumentRecord) -> None:
     )
 
 
+def _get_blur_outcome(file_bytes: bytes, content_type: str) -> _BlurOutcome:
+    """Run blur detection and return a terminal process_status if the document is rejected.
+
+    Returns _BlurOutcome with process_status=None when blur detection passes or is
+    disabled, signalling the caller to continue to preclassification.
+    """
+    blur_enabled = is_blur_detection_enabled()
+    blur_enforced = is_blur_rejection_enforced()
+
+    if not blur_enabled:
+        return _BlurOutcome(
+            blur_result=BlurResult(
+                is_blurry=False, blur_reason_text=BlurSkipReason.DETECTION_DISABLED
+            ),
+            process_status=None,
+            response_code=None,
+        )
+
+    blur_result = detect_blur(file_bytes, content_type)
+
+    if blur_result.is_not_document:
+        blur_result.blur_reason_text = BlurSkipReason.NOT_A_DOCUMENT
+
+    if blur_result.is_not_document and blur_enforced:
+        return _BlurOutcome(
+            blur_result, ProcessStatus.NO_DOCUMENT_DETECTED, ResponseCodes.NO_DOCUMENT_DETECTED
+        )
+
+    if blur_result.is_blurry and blur_enforced:
+        return _BlurOutcome(
+            blur_result,
+            ProcessStatus.BLURRY_DOCUMENT_DETECTED,
+            ResponseCodes.BLURRY_DOCUMENT_DETECTED,
+        )
+
+    if blur_result.analysis_failed:
+        logger.warning("Blur detection failed, continuing with preclassification")
+
+    return _BlurOutcome(blur_result, None, None)
+
+
+def _run_preclassification(
+    file_bytes: bytes,
+    content_type: str,
+    user_provided_document_category: str | None,
+    pages_detected: int | None,
+    ddb_key: str,
+) -> _PreclassificationOutcome:
+    """Run preclassification and blueprint matching concurrently.
+
+    Both Bedrock calls are independent network-bound invocations with no data
+    dependency. Running them in parallel cuts ~5.3s off the pre-BDA wall-clock
+    time (sequential: ~10.8s, parallel: ~5.5s).
+
+    Tradeoff: find_matching_blueprint always fires, even for the subset of
+    documents that preclassify flags as multi-doc or multipage-inconsistent
+    (where the result would be discarded).
+    """
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        blueprint_future: Future[PreclassificationMatchResult] = executor.submit(
+            find_matching_blueprint, file_bytes, content_type
+        )
+        preclassification = preclassify_document(
+            file_bytes, content_type, user_provided_document_category or None
+        )
+
+    if preclassification.max_document_count_on_page > 1:
+        return _PreclassificationOutcome(
+            ProcessStatus.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
+            ResponseCodes.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
+            pre_classification=PreClassificationDdbFields.from_results(preclassification, None),
+            textract_result=None,
+        )
+
+    if (
+        pages_detected
+        and pages_detected > 1
+        and preclassification.has_multipage_inconsistency
+        and is_multipage_document_flagging_enabled()
+    ):
+        return _PreclassificationOutcome(
+            ProcessStatus.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
+            ResponseCodes.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
+            pre_classification=PreClassificationDdbFields.from_results(preclassification, None),
+            textract_result=None,
+        )
+
+    blueprint_match = blueprint_future.result()
+    pre_classification = PreClassificationDdbFields.from_results(preclassification, blueprint_match)
+    logger.info(
+        "Blueprint match result",
+        extra={
+            "matched_document_type": blueprint_match.matched_document_type,
+            "confidence": blueprint_match.confidence,
+            "duration_seconds": str(blueprint_match.duration_seconds),
+        },
+    )
+
+    textract_result = (
+        try_textract_identity(content_type, file_bytes, ddb_key)
+        if preclassification.is_identity_document
+        else None
+    )
+
+    if textract_result is not None:
+        # Textract succeeded inline; finalize_textract_result transitions to SUCCESS
+        return _PreclassificationOutcome(
+            ProcessStatus.STARTED, ResponseCodes.SUCCESS, pre_classification, textract_result
+        )
+
+    process_status = (
+        ProcessStatus.PENDING_IMAGE_OPTIMIZATION
+        if content_type in FileValidation.GRAYSCALE_CONVERTIBLE
+        else ProcessStatus.NOT_STARTED
+    )
+    return _PreclassificationOutcome(
+        process_status, ResponseCodes.SUCCESS, pre_classification, None
+    )
+
+
 def upsert_initial_ddb_record(
     source_bucket_name: str,
     source_object_key: str,
@@ -393,46 +309,42 @@ def upsert_initial_ddb_record(
     batch_id: str | None = None,
     document_processor_started_at: str | None = None,
     is_document_processor_cold_start: bool | None = None,
+    file_bytes: bytes | None = None,
+    content_type: str | None = None,
+    file_size_bytes: int | None = None,
+    s3_fetch_duration_seconds: Decimal | None = None,
 ) -> None:
     """Run preclassification on the S3 object and upsert its DDB record.
 
     Creates the row if it doesn't exist; updates it in place if it does. Safe
     to call after the API Lambda's insert_minimal_ddb_record - createdAt and
     other minimal-record fields are preserved.
+
+    file_bytes, content_type, and file_size_bytes may be passed in when the
+    caller already has them (e.g. from a get_object response), avoiding
+    redundant S3 round trips.
     """
     if not user_provided_document_category:
         logger.warning(f"Warning: user_provided_document_category is None/empty for {ddb_key}")
 
-    content_type = s3_service.get_content_type(source_bucket_name, source_object_key)
-    file_size_bytes = s3_service.get_file_size_bytes(source_bucket_name, source_object_key)
-    file_bytes = s3_service.get_file_bytes(source_bucket_name, source_object_key)
+    if content_type is None:
+        content_type = s3_service.get_content_type(source_bucket_name, source_object_key)
+
+    if file_size_bytes is None:
+        file_size_bytes = s3_service.get_file_size_bytes(source_bucket_name, source_object_key)
+
+    if file_bytes is None:
+        file_bytes = s3_service.get_file_bytes(source_bucket_name, source_object_key)
 
     response_code = ResponseCodes.SUCCESS
     internal_api_response: InternalApiResponse | None = None
     process_status = ProcessStatus.PENDING_IMAGE_OPTIMIZATION
     pages_detected = document_utils.get_page_count(file_bytes)
     is_password_protected = document_utils.is_password_protected(file_bytes)
-    is_document_blurry = False
-    blur_analysis_failed = False
-    ocr_avg_word_confidence: float | None = None
-    document_word_count: int | None = None
-    blur_llm_checked = False
-    blur_quadrant_stats: dict[str, Any] | None = None
-    blur_reason_text: str | None = None
+    blur_result: BlurResult | None = None
     processing_percentage: float | None = None
     processing_assigned_value: float | None = None
-    pre_classification_document_type = None
-    pre_classification_confidence = None
-    pre_classification_category_match: bool | None = None
-    pre_classification_input_tokens = None
-    pre_classification_output_tokens = None
-    pre_classification_duration_seconds = None
-    pre_classification_model_id = None
-    pre_classification_max_document_count_on_page = None
-    pre_classification_max_document_count_on_page_reason: str | None = None
-    pre_classification_has_multipage_inconsistency: bool | None = None
-    pre_classification_has_multipage_inconsistency_reason: str | None = None
-    pre_classification_blueprint_match_result: PreclassificationMatchResult | None = None
+    pre_classification: PreClassificationDdbFields | None = None
     textract_result = None
 
     # assume document will be processed, but check if it should be excluded by sampling
@@ -447,7 +359,6 @@ def upsert_initial_ddb_record(
     if is_password_protected:
         process_status = ProcessStatus.PASSWORD_PROTECTED
         response_code = ResponseCodes.PASSWORD_PROTECTED
-        blur_reason_text = BlurSkipReason.PASSWORD_PROTECTED
         textract_result = None
 
     elif not is_processing_selected:
@@ -462,115 +373,23 @@ def upsert_initial_ddb_record(
             decrement(tenant_id, upload_date)
         process_status = ProcessStatus.PROCESSING_EXCLUDED
         response_code = ResponseCodes.PROCESSING_EXCLUDED
-        blur_reason_text = BlurSkipReason.PROCESSING_EXCLUDED
         textract_result = None
 
     else:
-        # Textract-based blur detection (deterministic, confidence-score based)
-        blur_enabled = is_blur_detection_enabled()
-        blur_enforced = is_blur_rejection_enforced()
+        blur_outcome = _get_blur_outcome(file_bytes, content_type)
+        blur_result = blur_outcome.blur_result
 
-        if not blur_enabled:
-            blur_reason_text = BlurSkipReason.DETECTION_DISABLED
-
-        if blur_enabled:
-            blur_result = detect_blur(file_bytes, content_type)
-            is_document_blurry = blur_result.is_blurry
-            blur_analysis_failed = blur_result.analysis_failed
-            ocr_avg_word_confidence = blur_result.avg_confidence
-            document_word_count = blur_result.word_count
-            blur_llm_checked = blur_result.llm_checked
-            blur_quadrant_stats = blur_result.quadrant_stats
-            blur_reason_text = blur_result.blur_reason_text
-
-            if blur_result.is_not_document:
-                blur_reason_text = BlurSkipReason.NOT_A_DOCUMENT
-
-            if blur_result.is_not_document and blur_enforced:
-                process_status = ProcessStatus.NO_DOCUMENT_DETECTED
-                response_code = ResponseCodes.NO_DOCUMENT_DETECTED
-                textract_result = None
-
-            elif blur_result.is_blurry and blur_enforced:
-                process_status = ProcessStatus.BLURRY_DOCUMENT_DETECTED
-                response_code = ResponseCodes.BLURRY_DOCUMENT_DETECTED
-                textract_result = None
-
-            elif blur_result.analysis_failed:
-                logger.warning("Blur detection failed, continuing with preclassification")
-
-        if process_status not in (
-            ProcessStatus.NO_DOCUMENT_DETECTED,
-            ProcessStatus.BLURRY_DOCUMENT_DETECTED,
-        ):
-            # Blur check passed or was skipped - run LLM preclassification
-            result = preclassify_document(
-                file_bytes, content_type, user_provided_document_category or None
+        if blur_outcome.process_status is not None:
+            process_status = blur_outcome.process_status
+            response_code = blur_outcome.response_code or ResponseCodes.SUCCESS
+        else:
+            preclassification = _run_preclassification(
+                file_bytes, content_type, user_provided_document_category, pages_detected, ddb_key
             )
-
-            pre_classification_document_type = result.document_type
-            pre_classification_confidence = result.confidence
-            pre_classification_category_match = result.category_match
-            pre_classification_input_tokens = result.input_tokens
-            pre_classification_output_tokens = result.output_tokens
-            pre_classification_duration_seconds = result.duration_seconds
-            pre_classification_model_id = result.model_id
-            pre_classification_max_document_count_on_page = result.max_document_count_on_page
-            pre_classification_max_document_count_on_page_reason = (
-                result.max_document_count_on_page_reason
-            )
-            pre_classification_has_multipage_inconsistency = result.has_multipage_inconsistency
-            pre_classification_has_multipage_inconsistency_reason = (
-                result.has_multipage_inconsistency_reason
-            )
-
-            if result.max_document_count_on_page > 1:
-                process_status = ProcessStatus.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE
-                response_code = ResponseCodes.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE
-                textract_result = None
-
-            elif (
-                pages_detected
-                and pages_detected > 1
-                and result.has_multipage_inconsistency
-                and is_multipage_document_flagging_enabled()
-            ):
-                process_status = ProcessStatus.MULTIPLE_DOCUMENTS_IN_MULTIPAGE
-                response_code = ResponseCodes.MULTIPLE_DOCUMENTS_IN_MULTIPAGE
-                textract_result = None
-
-            else:
-                pre_classification_blueprint_match_result = find_matching_blueprint(
-                    file_bytes, content_type
-                )
-                logger.info(
-                    "Blueprint match result",
-                    extra={
-                        "matched_document_type": pre_classification_blueprint_match_result.matched_document_type,
-                        "confidence": pre_classification_blueprint_match_result.confidence,
-                        "duration_seconds": str(
-                            pre_classification_blueprint_match_result.duration_seconds
-                        ),
-                    },
-                )
-
-                # Check if this is an identity document eligible for Textract
-                textract_result = (
-                    try_textract_identity(content_type, file_bytes, ddb_key)
-                    if result.is_identity_document
-                    else None
-                )
-
-                if textract_result is None:
-                    # Not a Textract-eligible doc or flag is off; route to BDA
-                    if content_type in FileValidation.GRAYSCALE_CONVERTIBLE:
-                        process_status = ProcessStatus.PENDING_IMAGE_OPTIMIZATION
-                    else:
-                        process_status = ProcessStatus.NOT_STARTED
-                else:
-                    # Textract succeeded inline; upsert as STARTED, finalize_textract_result
-                    # will transition to SUCCESS after the upsert
-                    process_status = ProcessStatus.STARTED
+            process_status = preclassification.process_status
+            response_code = preclassification.response_code
+            pre_classification = preclassification.pre_classification
+            textract_result = preclassification.textract_result
 
     # initial status does not qualify for bda processing
     # create the json response signaling the process is complete
@@ -584,7 +403,7 @@ def upsert_initial_ddb_record(
         )
 
     upsert_ddb(
-        UpsertDdbData(
+        InitialDdbRecord(
             object_key=ddb_key,
             original_file_name=original_file_name,
             user_provided_document_category=user_provided_document_category,
@@ -596,56 +415,23 @@ def upsert_initial_ddb_record(
             job_id=job_id,
             trace_id=trace_id,
             batch_id=batch_id,
-            is_document_blurry=is_document_blurry,
-            blur_analysis_failed=blur_analysis_failed,
-            ocr_avg_word_confidence=ocr_avg_word_confidence,
-            document_word_count=document_word_count,
-            blur_llm_checked=blur_llm_checked,
-            blur_quadrant_stats=blur_quadrant_stats,
-            blur_reason_text=blur_reason_text,
+            is_document_blurry=blur_result.is_blurry if blur_result else False,
+            blur_analysis_failed=blur_result.analysis_failed if blur_result else False,
+            ocr_avg_word_confidence=blur_result.avg_confidence if blur_result else None,
+            document_word_count=blur_result.word_count if blur_result else None,
+            blur_llm_checked=blur_result.llm_checked if blur_result else False,
+            blur_quadrant_stats=blur_result.quadrant_stats if blur_result else None,
+            blur_reason_text=blur_result.blur_reason_text
+            if blur_result
+            else BlurSkipReason.from_status(process_status),
+            blur_detection_duration_seconds=blur_result.duration_seconds if blur_result else None,
             is_password_protected=is_password_protected,
-            pre_classification=PreClassificationDdbFields(
-                document_type=pre_classification_document_type,
-                confidence=pre_classification_confidence,
-                category_match=pre_classification_category_match,
-                input_tokens=pre_classification_input_tokens,
-                output_tokens=pre_classification_output_tokens,
-                duration_seconds=pre_classification_duration_seconds,
-                model_id=pre_classification_model_id,
-                blueprint_matched_document_type=(
-                    pre_classification_blueprint_match_result.matched_document_type
-                    if pre_classification_blueprint_match_result
-                    else None
-                ),
-                blueprint_match_confidence=(
-                    pre_classification_blueprint_match_result.confidence
-                    if pre_classification_blueprint_match_result
-                    else None
-                ),
-                blueprint_match_input_tokens=(
-                    pre_classification_blueprint_match_result.input_tokens
-                    if pre_classification_blueprint_match_result
-                    else None
-                ),
-                blueprint_match_output_tokens=(
-                    pre_classification_blueprint_match_result.output_tokens
-                    if pre_classification_blueprint_match_result
-                    else None
-                ),
-                blueprint_match_duration_seconds=(
-                    pre_classification_blueprint_match_result.duration_seconds
-                    if pre_classification_blueprint_match_result
-                    else None
-                ),
-                max_document_count_on_page=pre_classification_max_document_count_on_page,
-                max_document_count_on_page_reason=pre_classification_max_document_count_on_page_reason,
-                has_multipage_inconsistency=pre_classification_has_multipage_inconsistency,
-                has_multipage_inconsistency_reason=pre_classification_has_multipage_inconsistency_reason,
-            ),
+            pre_classification=pre_classification,
             document_processor_started_at=document_processor_started_at,
             is_document_processor_cold_start=is_document_processor_cold_start,
             processing_percentage=processing_percentage,
             processing_assigned_value=processing_assigned_value,
+            s3_fetch_duration_seconds=s3_fetch_duration_seconds,
         )
     )
 

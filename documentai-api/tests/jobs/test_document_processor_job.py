@@ -1,5 +1,8 @@
 """Tests for jobs/document_processor/main.py."""
 
+from decimal import Decimal
+from unittest.mock import ANY, Mock
+
 import pytest
 
 from documentai_api.config.constants import ProcessStatus
@@ -10,6 +13,8 @@ from documentai_api.jobs.document_processor.main import (
     main,
 )
 from documentai_api.schemas.document_metadata import DocumentMetadata
+
+_MAIN_MODULE = "documentai_api.jobs.document_processor.main"
 
 
 @pytest.fixture(autouse=True)
@@ -120,7 +125,11 @@ def test_invoke_bda_success(input_pdf, mocker):
         bda_invocation_arn="arn:aws:bedrock:us-east-1:123456789012:job/abc123",
         bda_project_arn_used="arn:aws:bedrock:us-east-1:123456789012:project/test",
         pages_sent_to_bda=1,
+        bda_invoke_duration_seconds=ANY,
+        bda_invoke_retry_count=0,
     )
+    assert isinstance(mock_set_status.call_args.kwargs["bda_invoke_duration_seconds"], Decimal)
+    assert mock_set_status.call_args.kwargs["bda_invoke_duration_seconds"] >= 0
 
 
 def test_invoke_bda_retryable_failure(input_pdf, mock_invoke, mocker):
@@ -348,6 +357,134 @@ def test_main_propagates_s3_metadata(input_pdf, mocker):
 
 
 # =============================================================================
+# s3_fetch_duration ordering and arithmetic
+# =============================================================================
+
+
+def test_s3_fetch_duration_measured_after_body_read(mocker):
+    """Timer stop must come after Body.read() - guards against the header-only measurement bug."""
+    call_order = []
+    mocker.patch(
+        f"{_MAIN_MODULE}.time.monotonic",
+        side_effect=lambda: (call_order.append("monotonic"), 0.0)[1],
+    )
+    mock_body = Mock()
+    mock_body.read.side_effect = lambda: (call_order.append("read"), b"%PDF-1.4")[1]
+    mocker.patch(
+        f"{_MAIN_MODULE}.s3_service.get_object",
+        return_value={
+            "Body": mock_body,
+            "ContentType": "application/pdf",
+            "ContentLength": 8,
+            "Metadata": {
+                "job-id": "test-job-id",
+                "trace-id": "test-trace-id",
+                "original-file-name": "test-file-name.pdf",
+                "user-provided-document-category": "income",
+            },
+        },
+    )
+    mocker.patch(f"{_MAIN_MODULE}.upsert_initial_ddb_record")
+    mocker.patch(
+        f"{_MAIN_MODULE}.get_ddb_record",
+        side_effect=[
+            None,
+            {DocumentMetadata.PROCESS_STATUS: ProcessStatus.SUCCESS.value},
+        ],
+    )
+
+    from documentai_api.jobs.document_processor.main import main
+
+    main("input/f.pdf", "bucket")
+
+    assert call_order == ["monotonic", "read", "monotonic"]
+
+
+def test_s3_fetch_duration_arithmetic(mocker):
+    """Duration is (stop - start) rounded to 3 decimal places as a Decimal."""
+    mocker.patch(
+        f"{_MAIN_MODULE}.time.monotonic",
+        side_effect=[10.0, 15.1234],
+    )
+    mock_body = Mock()
+    mock_body.read.return_value = b"%PDF-1.4"
+    mocker.patch(
+        f"{_MAIN_MODULE}.s3_service.get_object",
+        return_value={
+            "Body": mock_body,
+            "ContentType": "application/pdf",
+            "ContentLength": 8,
+            "Metadata": {
+                "job-id": "test-job-id",
+                "trace-id": "test-trace-id",
+                "original-file-name": "test-file-name.pdf",
+                "user-provided-document-category": "income",
+            },
+        },
+    )
+    mock_upsert = mocker.patch(f"{_MAIN_MODULE}.upsert_initial_ddb_record")
+    mocker.patch(
+        f"{_MAIN_MODULE}.get_ddb_record",
+        side_effect=[
+            None,
+            {DocumentMetadata.PROCESS_STATUS: ProcessStatus.SUCCESS.value},
+        ],
+    )
+
+    from documentai_api.jobs.document_processor.main import main
+
+    main("input/f.pdf", "bucket")
+
+    assert mock_upsert.call_args.kwargs["s3_fetch_duration_seconds"] == Decimal("5.123")
+
+
+# =============================================================================
+# _invoke_bda retry count
+# =============================================================================
+
+
+@pytest.mark.parametrize("retry_count", [0, 1, 2])
+def test_invoke_bda_retry_count(mocker, retry_count):
+    from botocore.exceptions import ClientError
+
+    throttle = ClientError(
+        {"Error": {"Code": "ThrottlingException", "Message": "Rate exceeded"}},
+        "InvokeDataAutomation",
+    )
+    mock_set_started = mocker.patch(f"{_MAIN_MODULE}.set_bda_processing_status_started")
+    mocker.patch(
+        f"{_MAIN_MODULE}.invoke_bedrock_data_automation",
+        side_effect=[throttle] * retry_count + [("arn", "proj-arn", 1)],
+    )
+
+    from documentai_api.jobs.document_processor.main import _invoke_bda
+
+    _invoke_bda("bucket", "key", "ddb-key")
+
+    assert mock_set_started.call_args.kwargs["bda_invoke_retry_count"] == retry_count
+
+
+def test_bda_invoke_duration_arithmetic(mocker):
+    """bda_invoke_duration_seconds is a Decimal reflecting the actual invoke wall time."""
+    import time
+
+    mock_set_started = mocker.patch(f"{_MAIN_MODULE}.set_bda_processing_status_started")
+
+    def slow_invoke(*a, **kw):
+        time.sleep(0.05)
+        return ("arn", "proj-arn", 1)
+
+    mocker.patch(f"{_MAIN_MODULE}.invoke_bedrock_data_automation", side_effect=slow_invoke)
+
+    from documentai_api.jobs.document_processor.main import _invoke_bda
+
+    _invoke_bda("bucket", "key", "ddb-key")
+
+    duration = mock_set_started.call_args.kwargs["bda_invoke_duration_seconds"]
+    assert Decimal("0.05") <= duration < Decimal("0.5")
+
+
+# =============================================================================
 # _should_invoke_bda tests
 # =============================================================================
 
@@ -479,3 +616,39 @@ def test_main_invokes_bda_when_match_found(input_pdf, mocker, mock_invoke):
     main(input_pdf.key, input_pdf.bucket_name)
 
     mock_invoke.assert_called_once()
+
+
+def test_persist_optimization_metrics_writes_timing_fields(ddb_doc_metadata_table, mocker):
+    """opt_result timing fields are written to DDB when provided."""
+    from documentai_api.jobs.document_processor.main import _persist_optimization_metrics
+
+    ddb_key = "timing-test.png"
+    ddb_doc_metadata_table.put_item(Item={"fileName": ddb_key})
+
+    opt = OptimizationResult(
+        crop_result=CropResult(),
+        fetch_duration_seconds=Decimal("0.123"),
+        crop_block_duration_seconds=Decimal("0.456"),
+        write_duration_seconds=Decimal("0.078"),
+    )
+    _persist_optimization_metrics(ddb_key, opt.crop_result, False, None, opt_result=opt)
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": ddb_key})["Item"]
+    assert item[DocumentMetadata.IMAGE_OPT_FETCH_DURATION_SECONDS] == Decimal("0.123")
+    assert item[DocumentMetadata.IMAGE_OPT_CROP_BLOCK_DURATION_SECONDS] == Decimal("0.456")
+    assert item[DocumentMetadata.IMAGE_OPT_WRITE_DURATION_SECONDS] == Decimal("0.078")
+
+
+def test_persist_optimization_metrics_no_timing_when_opt_result_none(ddb_doc_metadata_table):
+    """Without opt_result, no timing fields are written."""
+    from documentai_api.jobs.document_processor.main import _persist_optimization_metrics
+
+    ddb_key = "no-timing-test.png"
+    ddb_doc_metadata_table.put_item(Item={"fileName": ddb_key})
+
+    _persist_optimization_metrics(ddb_key, CropResult(), False, None, opt_result=None)
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": ddb_key})["Item"]
+    assert DocumentMetadata.IMAGE_OPT_FETCH_DURATION_SECONDS not in item
+    assert DocumentMetadata.IMAGE_OPT_CROP_BLOCK_DURATION_SECONDS not in item
+    assert DocumentMetadata.IMAGE_OPT_WRITE_DURATION_SECONDS not in item

@@ -188,7 +188,7 @@ async def test_dispatch_upload_http_exception_classifies_and_reraises(mocker):
         "documentai_api.utils.uploads.upload_document_for_processing",
         side_effect=HTTPException(status_code=500, detail="S3 error"),
     )
-    mock_classify = mocker.patch("documentai_api.utils.document_lifecycle.classify_as_failed")
+    mock_classify = mocker.patch("documentai_api.utils.document_classification.classify_as_failed")
 
     with pytest.raises(HTTPException) as exc_info:
         await dispatch_upload(
@@ -214,7 +214,7 @@ async def test_dispatch_upload_generic_exception_classifies_and_raises_500(mocke
         "documentai_api.utils.uploads.upload_document_for_processing",
         side_effect=RuntimeError("boom"),
     )
-    mock_classify = mocker.patch("documentai_api.utils.document_lifecycle.classify_as_failed")
+    mock_classify = mocker.patch("documentai_api.utils.document_classification.classify_as_failed")
 
     with pytest.raises(HTTPException) as exc_info:
         await dispatch_upload(
@@ -241,7 +241,7 @@ async def test_dispatch_upload_conversion_error_classifies_and_reraises(mocker):
         side_effect=ImageConversionError("bad image"),
     )
     mock_classify = mocker.patch(
-        "documentai_api.utils.document_lifecycle.classify_as_conversion_failed"
+        "documentai_api.utils.document_classification.classify_as_conversion_failed"
     )
 
     with pytest.raises(ImageConversionError):

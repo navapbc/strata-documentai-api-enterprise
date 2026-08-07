@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 import pytest
 
 from documentai_api.config.constants import ProcessStatus
-from documentai_api.dtos.ddb import UpsertDdbData
+from documentai_api.dtos.ddb import InitialDdbRecord
 from documentai_api.utils import batch_operations as batch_ops
 from documentai_api.utils import ddb as ddb_util
 
@@ -111,7 +111,7 @@ class TestQueryJobsByBatchId:
     def test_returns_jobs_for_batch(self, ddb_doc_metadata_table):
         """query_jobs_by_batch_id returns all jobs associated with a batch."""
         ddb_util.upsert_ddb(
-            UpsertDdbData(
+            InitialDdbRecord(
                 object_key="0-file1.pdf",
                 original_file_name="file1.pdf",
                 process_status=ProcessStatus.SUCCESS.value,
@@ -120,7 +120,7 @@ class TestQueryJobsByBatchId:
             )
         )
         ddb_util.upsert_ddb(
-            UpsertDdbData(
+            InitialDdbRecord(
                 object_key="1-file2.pdf",
                 original_file_name="file2.pdf",
                 process_status=ProcessStatus.STARTED.value,
@@ -129,7 +129,7 @@ class TestQueryJobsByBatchId:
             )
         )
         ddb_util.upsert_ddb(
-            UpsertDdbData(
+            InitialDdbRecord(
                 object_key="0-file3.pdf",
                 original_file_name="file3.pdf",
                 process_status=ProcessStatus.SUCCESS.value,
