@@ -1,17 +1,44 @@
-<table id="users-table">
-  <thead>
-    <tr>
-      <th data-col="email">Email</th>
-      <th>Status</th>
-      <th>Role</th>
-      <th data-col="tenantId">Tenant</th>
-      <th data-col="createdAt">Created</th>
-      <th style="width: 1px; white-space: nowrap">Actions</th>
-    </tr>
-  </thead>
-  <tbody id="users-tbody"></tbody>
-</table>
-<p id="no-users" class="empty-state hidden">No users found.</p>
+<div class="filter-layout">
+  <div class="filter-sidebar">
+    <div class="metrics-timeframe">
+      <label class="metrics-timeframe-label">Email</label>
+      <input type="search" id="users-email-filter" placeholder="Search email…" />
+    </div>
+    <div class="metrics-timeframe">
+      <label class="metrics-timeframe-label">Role</label>
+      <select class="tenant-select" id="users-role-filter">
+        <option value="">All roles</option>
+        <option value="super-admin">super-admin</option>
+        <option value="tenant-admin">tenant-admin</option>
+        <option value="pending">Pending</option>
+      </select>
+    </div>
+    <div class="metrics-timeframe">
+      <label class="metrics-timeframe-label">Status</label>
+      <select class="tenant-select" id="users-status-filter">
+        <option value="">All statuses</option>
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+      </select>
+    </div>
+  </div>
+  <div class="filter-main">
+    <table id="users-table" class="hidden">
+      <thead>
+        <tr>
+          <th data-col="email">Email</th>
+          <th>Status</th>
+          <th data-col="role">Role</th>
+          <th data-col="tenantId">Tenant</th>
+          <th data-col="createdAt">Created</th>
+          <th style="width: 1px; white-space: nowrap">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="users-tbody"></tbody>
+    </table>
+    <p id="no-users" class="empty-state hidden">No users found.</p>
+  </div>
+</div>
 
 <!-- Assign Role Modal -->
 <div id="assign-role-modal" class="modal hidden">

@@ -1,4 +1,5 @@
 {
   "metrics": { "label": "New Look", "variant": "updated", "expiry": "2026-08-31" },
-  "audit-log": { "label": "New Look", "variant": "updated", "expiry": "2026-08-31" }
+  "audit-log": { "label": "New Look", "variant": "updated", "expiry": "2026-08-31" },
+  "users": { "label": "New Look", "variant": "updated", "expiry": "2026-08-31" }
 }

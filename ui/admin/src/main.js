@@ -265,7 +265,8 @@ function activateNavItem(viewName) {
 
 window.addEventListener("hashchange", () => {
   const viewName = location.hash.replace("#", "").split("/")[0];
-  if (VIEWS[viewName] && _mainContent) activateNavItem(viewName);
+  if (VIEWS[viewName] && _mainContent && _currentView !== VIEWS[viewName].module)
+    activateNavItem(viewName);
 });
 
 // --- Auth flow ---

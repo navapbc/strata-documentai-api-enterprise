@@ -65,22 +65,25 @@ describe("keys view", () => {
     expect(mockKeysList).toHaveBeenCalledWith({ includeInactive: false, tenantId: TENANT_ID });
   });
 
-  it("renders keys in table", () => {
+  it("renders keys in table", async () => {
+    mockKeysList.mockResolvedValue({ keys: [buildApiKey()] });
     KeysView.mount(root);
-    KeysView.render([buildApiKey()]);
+    await flush();
     expect(root.querySelectorAll("#keys-tbody tr").length).toBe(1);
     expect(root.querySelector("#no-keys").classList.contains("hidden")).toBe(true);
   });
 
-  it("shows no-keys message when empty", () => {
+  it("shows no-keys message when empty", async () => {
+    mockKeysList.mockResolvedValue({ keys: [] });
     KeysView.mount(root);
-    KeysView.render([]);
+    await flush();
     expect(root.querySelector("#no-keys").classList.contains("hidden")).toBe(false);
   });
 
-  it("revoked keys show badge instead of revoke button", () => {
+  it("revoked keys show badge instead of revoke button", async () => {
+    mockKeysList.mockResolvedValue({ keys: [buildApiKey({ isActive: false })] });
     KeysView.mount(root);
-    KeysView.render([buildApiKey({ isActive: false })]);
+    await flush();
     const tbody = root.querySelector("#keys-tbody");
     expect(tbody.querySelector(".badge-revoked")).toBeTruthy();
     expect(tbody.querySelector(".btn-icon-danger")).toBeFalsy();
@@ -88,10 +91,11 @@ describe("keys view", () => {
 
   // --- Revoke interaction ---
 
-  it("clicking revoke button opens revoke modal", () => {
+  it("clicking revoke button opens revoke modal", async () => {
     const key = buildApiKey();
+    mockKeysList.mockResolvedValue({ keys: [key] });
     KeysView.mount(root);
-    KeysView.render([key]);
+    await flush();
 
     root.querySelector(".btn-icon-danger").click();
 
@@ -114,9 +118,10 @@ describe("keys view", () => {
     expect(mockKeysList).toHaveBeenCalledTimes(2);
   });
 
-  it("cancel revoke closes modal without calling service", () => {
+  it("cancel revoke closes modal without calling service", async () => {
+    mockKeysList.mockResolvedValue({ keys: [buildApiKey()] });
     KeysView.mount(root);
-    KeysView.render([buildApiKey()]);
+    await flush();
 
     root.querySelector(".btn-icon-danger").click();
     root.querySelector("#cancel-revoke").click();

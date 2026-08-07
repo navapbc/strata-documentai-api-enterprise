@@ -781,6 +781,7 @@ data "aws_iam_policy_document" "supporting_services" {
       "cognito-idp:AdminSetUserPassword",
       "cognito-idp:ListUsers",
       # User-management endpoints (super-admin only):
+      "cognito-idp:ListUsersInGroup",
       "cognito-idp:AdminListGroupsForUser",
       "cognito-idp:AdminAddUserToGroup",
       "cognito-idp:AdminRemoveUserFromGroup",
