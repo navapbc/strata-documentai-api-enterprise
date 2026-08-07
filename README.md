@@ -25,6 +25,16 @@ For Strata template applications, see [`navapbc/strata`](https://github.com/nava
 > ⚠️ **Public Preview / Active Development (June 2026)**
 > This project is under active development, but is being designed for out-of-the-box use. APIs, configuration, and features may change.
 
+## Purpose and boundaries
+
+DocumentAI is a configurable document processing service that evaluates uploaded documents and extracts structured information. It can help determine whether a document is processable, readable, complete, and consistent with configured document requirements.
+
+DocumentAI is not a policy or eligibility engine. It does not approve, deny, close, sanction, or terminate benefits, and its results should not be used as the sole basis for an adverse action. Programs remain responsible for defining policy, configuring program-specific rules, and determining when human review is required.
+
+The core service is designed for reuse across programs, agencies, and states without hard-coding individual program policies.
+
+*Learn more about DocumentAI's business rules [here](docs/documentai-api/business-rules.md)*
+  
 ## See it in action
 
 **Local API setup** - clone, configure, wire in real dev AWS resources, and watch a document get processed end to end from a local container.
