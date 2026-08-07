@@ -50,6 +50,10 @@ output "bda_project_arns" {
   value = { for k, v in module.bedrock_data_automation : k => v.project_arn }
 }
 
+output "bda_profile_arn" {
+  value = module.bedrock_data_automation["all"].profile_arn
+}
+
 output "cognito_user_pool_id" {
   value = module.identity_provider.user_pool_id
 }

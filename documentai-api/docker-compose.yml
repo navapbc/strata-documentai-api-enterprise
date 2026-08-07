@@ -12,6 +12,15 @@ services:
       # This is especially true for any dependency or temp directories.
       - documentai-api_venv:/app/.venv
       - ../docs:/docs
+      # Read-only mount of host AWS credentials - only used if AWS_PROFILE is set
+      # and .env points DOCUMENTAI_*/BDA_* at real AWS resources. See
+      # docs/documentai-api/accessing-real-aws-resources-from-docker.md.
+      - ~/.aws:/root/.aws:ro
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - AWS_PROFILE
 
 volumes:
   documentai-api_venv:
