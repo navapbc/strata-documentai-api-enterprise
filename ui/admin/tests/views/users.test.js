@@ -75,7 +75,7 @@ describe("users view", () => {
     UsersView.mount(root);
     await flush();
 
-    root.querySelector("#users-tbody .btn-secondary").click();
+    root.querySelector('#users-tbody [title="Assign Role"]').click();
     await flush();
 
     expect(root.querySelector("#assign-role-modal").classList.contains("hidden")).toBe(false);
@@ -88,7 +88,7 @@ describe("users view", () => {
     UsersView.mount(root);
     await flush();
 
-    root.querySelector("#users-tbody .btn-secondary").click();
+    root.querySelector('#users-tbody [title="Assign Role"]').click();
     await flush();
 
     root.querySelector("#assign-role").value = "super-admin";
@@ -107,7 +107,7 @@ describe("users view", () => {
     UsersView.mount(root);
     await flush();
 
-    root.querySelector("#users-tbody .btn-secondary").click();
+    root.querySelector('#users-tbody [title="Assign Role"]').click();
     await flush();
     root.querySelector("#assign-role-cancel").click();
 
@@ -123,7 +123,7 @@ describe("users view", () => {
     UsersView.mount(root);
     await flush();
 
-    root.querySelector("#users-tbody .btn-outline-danger").click();
+    root.querySelector("#users-tbody .btn-icon-danger").click();
     expect(root.querySelector("#delete-user-modal").classList.contains("hidden")).toBe(false);
     expect(root.querySelector("#delete-user-email").textContent).toBe(user.email);
   });
@@ -134,7 +134,7 @@ describe("users view", () => {
     UsersView.mount(root);
     await flush();
 
-    root.querySelector("#users-tbody .btn-outline-danger").click();
+    root.querySelector("#users-tbody .btn-icon-danger").click();
     root.querySelector("#delete-user-confirm").click();
     await flush();
 
@@ -147,7 +147,7 @@ describe("users view", () => {
     UsersView.mount(root);
     await flush();
 
-    root.querySelector("#users-tbody .btn-outline-danger").click();
+    root.querySelector("#users-tbody .btn-icon-danger").click();
     root.querySelector("#delete-user-cancel").click();
 
     expect(root.querySelector("#delete-user-modal").classList.contains("hidden")).toBe(true);

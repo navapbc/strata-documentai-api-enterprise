@@ -13,7 +13,7 @@
           <span class="nav-arrow">▸</span> Tenants
         </button>
         <div class="nav-section-body hidden" id="section-tenants">
-          <a class="nav-item" data-view="tenants"
+          <a class="nav-item" data-view="tenants" data-title="Manage Tenants"
             >Manage Tenants <span id="tenants-nav-badge"></span
           ></a>
         </div>
@@ -24,7 +24,9 @@
           <span class="nav-arrow">▸</span> Users
         </button>
         <div class="nav-section-body hidden" id="section-users">
-          <a class="nav-item" data-view="users">Manage Users <span id="users-nav-badge"></span></a>
+          <a class="nav-item" data-view="users" data-title="Manage Users"
+            >Manage Users <span id="users-nav-badge"></span
+          ></a>
         </div>
       </div>
 
@@ -33,7 +35,9 @@
           <span class="nav-arrow">▸</span> API Keys
         </button>
         <div class="nav-section-body hidden" id="section-keys">
-          <a class="nav-item" data-view="keys">Manage API Keys <span id="keys-nav-badge"></span></a>
+          <a class="nav-item" data-view="keys" data-title="Manage API Keys"
+            >Manage API Keys <span id="keys-nav-badge"></span
+          ></a>
         </div>
       </div>
 
@@ -42,16 +46,16 @@
           <span class="nav-arrow">▸</span> Documents
         </button>
         <div class="nav-section-body hidden" id="section-docs">
-          <a class="nav-item" data-view="documents"
+          <a class="nav-item" data-view="documents" data-title="Recently Processed"
             >Recently Processed <span id="documents-nav-badge"></span
           ></a>
-          <a class="nav-item" data-view="doc-categories"
+          <a class="nav-item" data-view="doc-categories" data-title="Manage Document Categories"
             >Manage Document Categories <span id="doc-categories-nav-badge"></span
           ></a>
-          <a class="nav-item" data-view="extraction-rules"
+          <a class="nav-item" data-view="extraction-rules" data-title="Manage Extraction Rules"
             >Manage Extraction Rules <span id="extraction-rules-nav-badge"></span
           ></a>
-          <a class="nav-item" data-view="test-documents"
+          <a class="nav-item" data-view="test-documents" data-title="Test Document Extraction"
             >Test Document Extraction <span id="test-documents-nav-badge"></span
           ></a>
           <!-- <a class="nav-item" data-view="document-search">Search Documents</a> TODO: wire up backend search (FilterExpression on tenant index or similar) -->
@@ -63,7 +67,7 @@
           <span class="nav-arrow">▸</span> Audit Log
         </button>
         <div class="nav-section-body hidden" id="section-audit-log">
-          <a class="nav-item" data-view="audit-log"
+          <a class="nav-item" data-view="audit-log" data-title="View Log Events"
             >View Log Events <span class="nav-badge-updated" id="audit-log-nav-badge"></span
           ></a>
         </div>
@@ -78,7 +82,7 @@
             >Metrics Dashboard
             <span class="nav-badge-updated" id="metrics-nav-badge">Updated</span></a
           >
-          <a class="nav-item" data-view="usage"
+          <a class="nav-item" data-view="usage" data-title="Usage Tracking"
             >Usage Tracking <span id="usage-nav-badge"></span
           ></a>
         </div>

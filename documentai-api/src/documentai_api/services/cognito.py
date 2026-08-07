@@ -10,6 +10,7 @@ from documentai_api.utils.aws_client_factory import AWSClientFactory
 logger = get_logger(__name__)
 
 TENANT_ATTRIBUTE = "custom:tenant_id"
+ROLE_GROUPS = ("super-admin", "tenant-admin")
 
 
 def _user_pool_id() -> str:
@@ -40,11 +41,14 @@ def _summarize_user(user: dict[str, Any], groups: list[str] | None) -> CognitoUs
 def list_users(include_groups: bool = True) -> list[CognitoUserItem]:
     """List all users in the pool, optionally with their group memberships.
 
-    Group membership costs one admin_list_groups_for_user call per user, so
-    callers that don't need role information (e.g. the audit actor list,
-    which only reads email/tenant_id) should pass include_groups=False to
-    skip it - result items have groups=None rather than [] in that case, to
-    distinguish "not fetched" from "fetched, no groups".
+    Group membership is fetched by listing each of the fixed role groups
+    (one call per group, not per user) rather than calling
+    admin_list_groups_for_user for every user - that N+1 pattern was slow
+    enough at real pool sizes to be the dominant cost of this endpoint.
+    Callers that don't need role information (e.g. the audit actor list,
+    which only reads email/tenant_id) should still pass include_groups=False
+    to skip it entirely - result items have groups=None rather than [] in
+    that case, to distinguish "not fetched" from "fetched, no groups".
     """
     client = AWSClientFactory.get_cognito_client()
     pool_id = _user_pool_id()
@@ -55,6 +59,17 @@ def list_users(include_groups: bool = True) -> list[CognitoUserItem]:
     for page in paginator.paginate(UserPoolId=pool_id):
         users.extend(page.get("Users", []))
 
+    groups_by_username: dict[str, list[str]] = {}
+
+    if include_groups:
+        group_paginator = client.get_paginator("list_users_in_group")
+        for group_name in ROLE_GROUPS:
+            for page in group_paginator.paginate(UserPoolId=pool_id, GroupName=group_name):
+                for group_user in page.get("Users", []):
+                    group_username = group_user.get("Username")
+                    if group_username:
+                        groups_by_username.setdefault(group_username, []).append(group_name)
+
     enriched: list[CognitoUserItem] = []
 
     for user in users:
@@ -63,13 +78,7 @@ def list_users(include_groups: bool = True) -> list[CognitoUserItem]:
         if not username:
             continue
 
-        group_names: list[str] | None = None
-
-        if include_groups:
-            groups_resp = client.admin_list_groups_for_user(UserPoolId=pool_id, Username=username)
-            group_names = [
-                g["GroupName"] for g in groups_resp.get("Groups", []) if g.get("GroupName")
-            ]
+        group_names = groups_by_username.get(username, []) if include_groups else None
         enriched.append(_summarize_user(user, group_names))
 
     return enriched
@@ -124,7 +133,7 @@ def replace_role(username: str, new_role: str | None) -> None:
     groups_resp = client.admin_list_groups_for_user(UserPoolId=pool_id, Username=username)
     for g in groups_resp.get("Groups", []):
         name = g.get("GroupName")
-        if name in ("super-admin", "tenant-admin"):
+        if name in ROLE_GROUPS:
             client.admin_remove_user_from_group(
                 UserPoolId=pool_id, Username=username, GroupName=name
             )

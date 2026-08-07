@@ -699,7 +699,7 @@ table {
   border-collapse: collapse;
   background: white;
   border-radius: 8px;
-  overflow: hidden;
+  overflow: clip;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
@@ -2440,13 +2440,13 @@ td {
   height: 100%;
 }
 
-.metrics-layout {
+.filter-layout {
   display: flex;
   gap: 24px;
   height: calc(100vh - 11rem);
 }
 
-.metrics-sidebar {
+.filter-sidebar {
   width: 200px;
   flex-shrink: 0;
   display: flex;
@@ -2487,11 +2487,19 @@ td {
   font-weight: 500;
 }
 
-.metrics-main {
+.filter-main {
   flex: 1;
   min-width: 0;
   overflow-y: auto;
   overflow-x: auto;
+}
+
+.filter-main thead th,
+.main-content thead th {
+  position: sticky;
+  top: 0;
+  background: #fafafa;
+  z-index: 1;
 }
 
 .metrics-tab-panel {
@@ -2513,8 +2521,8 @@ td {
   color: var(--color-text-muted, #6b7280);
 }
 
-.metrics-sidebar .btn-primary,
-.metrics-sidebar .btn-secondary {
+.filter-sidebar .btn-primary,
+.filter-sidebar .btn-secondary {
   width: 100%;
 }
 
@@ -3068,12 +3076,12 @@ td {
    one (768px): iPad portrait sits in the 769-1024px range and is just as
    squeezed by the persistent inner sidebar as a phone is. */
 @media (max-width: 1024px) {
-  .metrics-layout {
+  .filter-layout {
     flex-direction: column;
     height: auto;
   }
 
-  .metrics-sidebar {
+  .filter-sidebar {
     width: 100%;
     flex-direction: row;
     flex-wrap: wrap;
