@@ -24,9 +24,9 @@ The platform accepts PDF, JPEG, PNG, and several other image formats (BMP, GIF, 
 
 By default, upload is asynchronous - the API returns a job ID immediately and processing happens in the background. Clients poll for the result using the job ID.
 
-For use cases that need an immediate result, a synchronous endpoint (POST /v1/documents/wait) holds the request open until processing completes and returns the full result, subject to a configurable timeout.
+For use cases that need an immediate result, a synchronous endpoint (POST /v1/documents/wait) holds the request open until processing completes and returns the full result, subject to a configurable timeout. Note the deployed API timeout is capped by the API Gateway integration's ~30s limit - real BDA extraction commonly takes 30+ seconds (40-50s if cold-start). `/wait` can return a 503 from the gateway before processing finishes even if the job succeeds. The async upload and poll pattern doesn't have this ceiling and is what this repo's own local demo (`docs/documentai-api/api-setup-demo.tape`) uses.
 
-## What comes back
+## What is returned
 
 A processed document result includes:
 
@@ -36,3 +36,13 @@ A processed document result includes:
 - A status indicating whether all required fields were found
 
 If extraction rules are configured for the tenant, only the fields allowed by those rules appear in the result. Fields the tenant doesn't need are filtered out before the result is stored.
+
+## Local development
+
+With the default `local.env.example` placeholders, a local upload fails immediately - the placeholder table and bucket names do not exist in AWS.
+
+Execute `make env-from-aws` (from the `documentai-api/` directory) to connect to AWS and generate a local `.env` file. Subsequent uploads use the `.env` file, place files in S3, and trigger the deployed EventBridge pipeline. Polling the local API for the job ID returns a real `completed` status with real extracted fields.
+
+`make env-from-aws` requires an AWS profile with dev account access, for example `AWS_PROFILE=your-profile make env-from-aws`. See [accessing-real-aws-resources-from-docker.md](accessing-real-aws-resources-from-docker.md) for details on how credentials reach the container.
+
+See [`docs/documentai-api/api-setup-demo.tape`](api-setup-demo.tape) for a full recorded walkthrough (clone -> `make env-from-aws` -> upload -> real completion).

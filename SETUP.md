@@ -72,11 +72,14 @@ Only the `dev` environment exists today. To add another, copy `infra/environment
 ```bash
 cd documentai-api
 cp local.env.example .env
+make env-from-aws   # Required for document upload; optional otherwise - see below
 make init
 make start
 ```
 
-Runs at `localhost:8000`. The default `.env` sets `API_AUTH_INSECURE_SHARED_KEY=local-dev-key` - use `API-Key: local-dev-key` in requests. No DynamoDB or Cognito needed.
+Runs at `localhost:8000`. The default `.env` sets `API_AUTH_INSECURE_SHARED_KEY=local-dev-key` - use `API-Key: local-dev-key` in requests. No DynamoDB or Cognito needed for auth or `/health`/`/v1/me`.
+
+`POST /v1/documents` requires deployed AWS resources; the `documentai-*-local` placeholders in `local.env.example` do not exist in AWS. Execute `make env-from-aws` (with an AWS profile granting dev account access) to point `.env` at the real dev tables, buckets, and BDA project.
 
 See [documentai-api/README.md](documentai-api/README.md) for the full command reference.
 

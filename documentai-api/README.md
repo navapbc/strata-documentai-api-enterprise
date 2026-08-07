@@ -60,10 +60,13 @@ The diagram source lives in [`request-lifecycle.mmd`](../docs/documentai-api/dia
 ## Quick Start
 
 ```bash
-cp local.env.example .env    # First time only
-make init                    # Build Docker containers
-make start                   # Start API at localhost:8000
+cp local.env.example .env  # First time only
+make env-from-aws          # Required for document upload; optional otherwise - see below
+make init                 # Build Docker containers
+make start                # Start API at localhost:8000
 ```
+
+`POST /v1/documents` requires deployed AWS resources. The `documentai-*-local` placeholders in `.env` do not point at anything real. `make env-from-aws` (requires an AWS profile with dev account access) wires in the real dev bucket, table, and BDA project. See [document-processing.md](../docs/documentai-api/document-processing.md#local-development) for details.
 
 Or without Docker:
 
@@ -80,6 +83,7 @@ make start-local
 | Command | Description |
 |---------|-------------|
 | `make init` | Build Docker containers |
+| `make env-from-aws` | Point local `.env` at real dev AWS resources (needs an AWS profile with dev access) |
 | `make start` | Start services (detached) |
 | `make run-logs` | Start with log output |
 | `make check` | Run all checks (format, lint, test, test-audit) |
@@ -252,9 +256,9 @@ Most tests use pytest with moto for AWS service mocking - no real AWS infrastruc
 
 - **unit** (default): fast, moto-backed or pure-logic tests.
 - **integration** (`-m integration`): also moto-backed; run separately from the default suite.
-- **e2e** (`-m e2e`): run against **real deployed AWS** and a live API. These need `.env.e2e` (generated from terraform outputs) and are excluded from the default run.
+- **e2e** (`-m e2e`): run against **real deployed AWS** and a live API. Requires `.env.e2e` (generated from Lambda env vars) and are excluded from the default run.
 
-> ⚠️ Never commit .env.e2e. It's generated from live terraform outputs and contains real dev AWS account, API Gateway, bucket, and table identifiers. It's gitignored (both root and `documentai-api/.gitignore`) and must stay that way - treat it as local-only.
+> ⚠️ .env.e2e is generated from live Lambda env vars and contains real dev AWS account, API Gateway, bucket, and table identifiers. It's gitignored (both root and `documentai-api/.gitignore`) and _must not be committed_.
 
 ```bash
 make test                                    # Unit suite (excludes integration + e2e)

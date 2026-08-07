@@ -27,7 +27,7 @@ For Strata template applications, see [`navapbc/strata`](https://github.com/nava
 
 ## See it in action
 
-**Local API setup** - clone, configure, and run the API locally with no AWS needed.
+**Local API setup** - clone, configure, wire in real dev AWS resources, and watch a document get processed end to end from a local container.
 
 ![Local API setup](docs/documentai-api/media/api-setup-demo.gif)
 
