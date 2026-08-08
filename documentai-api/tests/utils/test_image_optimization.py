@@ -331,6 +331,36 @@ def test_optimize_crop_and_grayscale_single_write(s3_bucket, mocker):
     assert put_spy.call_count == 1
 
 
+def test_optimize_timing_fields_set_when_modified(s3_bucket, mocker):
+    """fetch/transform/write_duration_seconds are all positive Decimals when a write occurs."""
+    mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=False)
+    original = _sized_image(100, 100, fmt="JPEG")
+    s3_bucket.put_object(Key="a.jpg", Body=original, ContentType="image/jpeg")
+
+    result = optimize_s3_image(s3_bucket.name, "a.jpg", apply_grayscale=True)
+
+    assert result.fetch_duration_seconds is not None
+    assert result.fetch_duration_seconds >= 0
+    assert result.crop_block_duration_seconds is not None
+    assert result.crop_block_duration_seconds >= 0
+    assert result.write_duration_seconds is not None
+    assert result.write_duration_seconds >= 0
+
+
+def test_optimize_timing_write_duration_none_when_no_modification(s3_bucket, mocker):
+    """write_duration_seconds is None when no crop or grayscale was applied."""
+    mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=False)
+    s3_bucket.put_object(Key="a.pdf", Body=b"%PDF-1.4", ContentType="application/pdf")
+
+    result = optimize_s3_image(s3_bucket.name, "a.pdf", apply_grayscale=False)
+
+    assert result.fetch_duration_seconds is not None
+    assert result.fetch_duration_seconds >= 0
+    assert result.crop_block_duration_seconds is not None
+    assert result.crop_block_duration_seconds >= 0
+    assert result.write_duration_seconds is None
+
+
 def test_optimize_too_large_after_conversion(s3_bucket, mocker):
     """File still over BDA limit after grayscale: too_large=True."""
     mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=False)

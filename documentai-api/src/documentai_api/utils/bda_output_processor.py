@@ -13,7 +13,7 @@ from documentai_api.utils.bda import (
     get_ddb_record_from_bda_output,
     get_text_from_standard_blueprint,
 )
-from documentai_api.utils.document_lifecycle import (
+from documentai_api.utils.document_classification import (
     classify_as_no_custom_blueprint_matched,
     classify_as_no_document_detected,
     classify_as_success,

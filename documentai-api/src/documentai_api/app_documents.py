@@ -44,10 +44,8 @@ from documentai_api.models.api_responses import (
 from documentai_api.models.document_record import DocumentRecord
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.auth import get_user_context_from_api_key
-from documentai_api.utils.document_lifecycle import (
-    classify_as_ai_consent_declined,
-    insert_minimal_ddb_record,
-)
+from documentai_api.utils.document_classification import classify_as_ai_consent_declined
+from documentai_api.utils.document_lifecycle import insert_minimal_ddb_record
 from documentai_api.utils.jobs import JobStatus, get_job_status, poll_for_completion
 from documentai_api.utils.response_builder import build_v1_api_response
 from documentai_api.utils.tenant_access import validate_document_tenant_access
