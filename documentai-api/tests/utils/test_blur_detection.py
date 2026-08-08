@@ -174,6 +174,8 @@ def test_detect_blur_all_quadrants_sharp(mock_textract, mock_llm):
     result = detect_blur(b"fake", "image/jpeg")
     assert result.is_blurry is False
     assert result.word_count == 24
+    assert result.duration_seconds is not None
+    assert result.duration_seconds >= 0
 
 
 def test_detect_blur_quadrant_fails_low_avg(mock_textract, mock_llm):

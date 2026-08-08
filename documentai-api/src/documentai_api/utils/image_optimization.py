@@ -6,6 +6,7 @@ best-effort: a failure leaves the original object untouched so BDA still runs.
 """
 
 import io
+import time
 from decimal import Decimal
 
 from PIL import Image
@@ -150,8 +151,10 @@ def optimize_s3_image(
     result = OptimizationResult(crop_result=CropResult())
 
     try:
+        t0 = time.monotonic()
         response = s3_service.get_object(bucket_name, object_key)
         file_bytes = response["Body"].read()
+        result.fetch_duration_seconds = Decimal(str(round(time.monotonic() - t0, 3)))
         content_type = response.get("ContentType", "application/octet-stream")
     except Exception as e:
         logger.error(f"Failed to download {object_key}: {e}")
@@ -159,6 +162,7 @@ def optimize_s3_image(
         return result
 
     modified = False
+    t1 = time.monotonic()
 
     # --- Crop (best-effort: any failure leaves bytes untouched) ---
     if is_document_crop_enabled() and content_type.startswith("image/"):
@@ -193,9 +197,13 @@ def optimize_s3_image(
             result.grayscale_applied = True
             modified = True
 
+    result.crop_block_duration_seconds = Decimal(str(round(time.monotonic() - t1, 3)))
+
     # --- Single write ---
     if modified:
+        t2 = time.monotonic()
         s3_service.put_object(bucket_name, object_key, file_bytes, content_type)
+        result.write_duration_seconds = Decimal(str(round(time.monotonic() - t2, 3)))
 
     result.file_size_bytes = len(file_bytes)
     result.too_large = is_file_too_large_for_bda(content_type, len(file_bytes))

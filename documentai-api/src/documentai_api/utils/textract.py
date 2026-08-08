@@ -542,7 +542,7 @@ def finalize_textract_result(
     from documentai_api.dtos.classification import ClassificationData
     from documentai_api.utils.bda import calculate_average_non_empty_confidence
     from documentai_api.utils.ddb import get_ddb_record
-    from documentai_api.utils.document_lifecycle import classify_as_success
+    from documentai_api.utils.document_classification import classify_as_success
     from documentai_api.utils.extraction_rules import get_missing_required_fields
     from documentai_api.utils.tenants import (
         get_extraction_confidence_floor,

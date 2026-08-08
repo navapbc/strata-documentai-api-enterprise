@@ -54,10 +54,8 @@ from documentai_api.utils.document_build import (
     mark_document_build_submitted,
     upsert_document_build_page,
 )
-from documentai_api.utils.document_lifecycle import (
-    classify_as_ai_consent_declined,
-    insert_minimal_ddb_record,
-)
+from documentai_api.utils.document_classification import classify_as_ai_consent_declined
+from documentai_api.utils.document_lifecycle import insert_minimal_ddb_record
 from documentai_api.utils.pdf import merge_pages_to_pdf
 from documentai_api.utils.s3 import parse_s3_uri
 from documentai_api.utils.tenant_access import validate_build_tenant_access

@@ -9,12 +9,16 @@ from documentai_api.dtos.classification import (
     ClassificationData,
     PreclassificationMatchResult,
 )
+from documentai_api.dtos.ddb import UpdateDdbRecord
+from documentai_api.dtos.processing import InternalApiResponse
 from documentai_api.schemas.document_metadata import DocumentMetadata
+from documentai_api.utils import document_classification as classification_util
 from documentai_api.utils import document_lifecycle as lifecycle_util
 from documentai_api.utils.blur_detection import BlurResult
 from documentai_api.utils.response_codes import ResponseCodes
 
 _LIFECYCLE_MODULE = "documentai_api.utils.document_lifecycle"
+_CLASSIFICATION_MODULE = "documentai_api.utils.document_classification"
 
 
 class _Mock:
@@ -316,12 +320,16 @@ def test_set_bda_processing_status_started(mocker):
         "test-file", "arn:aws:bda:us-east-1:123:job/1", "arn:aws:project/123"
     )
     mock_update.assert_called_once_with(
-        object_key="test-file",
-        status=ProcessStatus.STARTED,
-        internal_api_response=None,
-        bda_invocation_arn="arn:aws:bda:us-east-1:123:job/1",
-        bda_project_arn_used="arn:aws:project/123",
-        pages_sent_to_bda=None,
+        UpdateDdbRecord(
+            object_key="test-file",
+            status=ProcessStatus.STARTED,
+            internal_api_response=None,
+            bda_invocation_arn="arn:aws:bda:us-east-1:123:job/1",
+            bda_project_arn_used="arn:aws:project/123",
+            pages_sent_to_bda=None,
+            bda_invoke_duration_seconds=None,
+            bda_invoke_retry_count=None,
+        )
     )
 
 
@@ -329,9 +337,11 @@ def test_set_bda_processing_status_not_started(mocker):
     mock_update = mocker.patch(f"{_LIFECYCLE_MODULE}.update_ddb")
     lifecycle_util.set_bda_processing_status_not_started("test-file")
     mock_update.assert_called_once_with(
-        object_key="test-file",
-        status=ProcessStatus.NOT_STARTED,
-        internal_api_response=None,
+        UpdateDdbRecord(
+            object_key="test-file",
+            status=ProcessStatus.NOT_STARTED,
+            internal_api_response=None,
+        )
     )
 
 
@@ -401,35 +411,35 @@ def test_set_processing_status_started_reraises_non_conditional_client_errors(
     ("function", "response_code", "status", "matched_document_class", "error_msg"),
     [
         (
-            lifecycle_util.classify_as_success,
+            classification_util.classify_as_success,
             ResponseCodes.SUCCESS,
             ProcessStatus.SUCCESS,
             "paystub",
             None,
         ),
         (
-            lifecycle_util.classify_as_failed,
+            classification_util.classify_as_failed,
             ResponseCodes.INTERNAL_PROCESSING_ERROR,
             ProcessStatus.FAILED,
             None,
             "Test error",
         ),
         (
-            lifecycle_util.classify_as_not_implemented,
+            classification_util.classify_as_not_implemented,
             ResponseCodes.NO_BLUEPRINT_MATCHED,
             ProcessStatus.SUCCESS,
             None,
             None,
         ),
         (
-            lifecycle_util.classify_as_no_document_detected,
+            classification_util.classify_as_no_document_detected,
             ResponseCodes.NO_DOCUMENT_DETECTED,
             ProcessStatus.NO_DOCUMENT_DETECTED,
             None,
             None,
         ),
         (
-            lifecycle_util.classify_as_no_custom_blueprint_matched,
+            classification_util.classify_as_no_custom_blueprint_matched,
             ResponseCodes.NO_BLUEPRINT_MATCHED,
             ProcessStatus.NO_CUSTOM_BLUEPRINT_MATCHED,
             None,
@@ -440,9 +450,19 @@ def test_set_processing_status_started_reraises_non_conditional_client_errors(
 def test_classify_functions(
     function, response_code, status, matched_document_class, error_msg, mocker
 ):
+
     data = ClassificationData(matched_document_class="paystub")
-    mock_get_response = mocker.patch(f"{_LIFECYCLE_MODULE}.get_internal_api_response")
-    mock_update = mocker.patch(f"{_LIFECYCLE_MODULE}.update_ddb")
+    fake_response = InternalApiResponse(
+        validation_passed=True,
+        document_category=None,
+        matched_document_class=None,
+        response_code="000",
+        response_message="ok",
+    )
+    mock_get_response = mocker.patch(
+        f"{_CLASSIFICATION_MODULE}.get_internal_api_response", return_value=fake_response
+    )
+    mock_update = mocker.patch(f"{_CLASSIFICATION_MODULE}.update_ddb")
 
     args = ["test-file", data]
     if error_msg:
@@ -458,39 +478,51 @@ def test_classify_functions(
         matched_document_class=matched_document_class,
     )
 
-    expected_call = {
-        "object_key": "test-file",
-        "status": status,
-        "internal_api_response": mock_get_response.return_value,
-        "data": data,
-    }
+    expected_dto = UpdateDdbRecord(
+        object_key="test-file",
+        status=status,
+        internal_api_response=fake_response,
+        data=data,
+    )
     if error_msg:
-        expected_call["error_message"] = error_msg
-    if function == lifecycle_util.classify_as_success:
-        expected_call.update(
-            below_extraction_confidence_floor=False,
-            extraction_rules_configured=None,
-            missing_required_field_list=None,
-            required_field_list=None,
-            applied_extraction_confidence_floor=None,
-            used_default_confidence_floor=None,
-            result_processor_started_at=None,
+        expected_dto = expected_dto.model_copy(update={"error_message": error_msg})
+    if function == classification_util.classify_as_success:
+        expected_dto = expected_dto.model_copy(
+            update=dict(
+                below_extraction_confidence_floor=False,
+                extraction_rules_configured=None,
+                missing_required_field_list=None,
+                required_field_list=None,
+                applied_extraction_confidence_floor=None,
+                used_default_confidence_floor=None,
+                result_processor_started_at=None,
+            )
         )
     if function in (
-        lifecycle_util.classify_as_failed,
-        lifecycle_util.classify_as_no_document_detected,
-        lifecycle_util.classify_as_no_custom_blueprint_matched,
+        classification_util.classify_as_failed,
+        classification_util.classify_as_no_document_detected,
+        classification_util.classify_as_no_custom_blueprint_matched,
     ):
-        expected_call["result_processor_started_at"] = None
+        expected_dto = expected_dto.model_copy(update={"result_processor_started_at": None})
 
-    mock_update.assert_called_once_with(**expected_call)
+    mock_update.assert_called_once_with(expected_dto)
 
 
 def test_classify_as_ai_consent_declined(mocker):
-    mock_get_response = mocker.patch(f"{_LIFECYCLE_MODULE}.get_internal_api_response")
-    mock_update = mocker.patch(f"{_LIFECYCLE_MODULE}.update_ddb")
 
-    lifecycle_util.classify_as_ai_consent_declined("test-file")
+    fake_response = InternalApiResponse(
+        validation_passed=True,
+        document_category=None,
+        matched_document_class=None,
+        response_code="000",
+        response_message="ok",
+    )
+    mock_get_response = mocker.patch(
+        f"{_CLASSIFICATION_MODULE}.get_internal_api_response", return_value=fake_response
+    )
+    mock_update = mocker.patch(f"{_CLASSIFICATION_MODULE}.update_ddb")
+
+    classification_util.classify_as_ai_consent_declined("test-file")
 
     mock_get_response.assert_called_once_with(
         object_key="test-file",
@@ -498,9 +530,11 @@ def test_classify_as_ai_consent_declined(mocker):
         matched_document_class=None,
     )
     mock_update.assert_called_once_with(
-        object_key="test-file",
-        status=ProcessStatus.AI_CONSENT_DECLINED,
-        internal_api_response=mock_get_response.return_value,
+        UpdateDdbRecord(
+            object_key="test-file",
+            status=ProcessStatus.AI_CONSENT_DECLINED,
+            internal_api_response=fake_response,
+        )
     )
 
 

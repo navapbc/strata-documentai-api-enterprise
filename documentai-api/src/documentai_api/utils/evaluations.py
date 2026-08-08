@@ -1,5 +1,7 @@
 """Evaluation statuses, keys, pipeline order, and skip reasons for the /evaluation endpoint."""
 
+from documentai_api.config.constants import ProcessStatus
+
 
 class EvaluationStatus:
     PASS = "pass"
@@ -33,8 +35,18 @@ EVALUATION_PIPELINE: list[str] = [
 class BlurSkipReason:
     PASSWORD_PROTECTED = "Blur check was not performed - document is password protected."
     PROCESSING_EXCLUDED = "Blur check was not performed - document was excluded from processing."
-    DETECTION_DISABLED = "Blur detection is not enabled."
-    NOT_A_DOCUMENT = "Blur check was skipped - insufficient text detected to evaluate."
+    DETECTION_DISABLED = (
+        "Blur detection is not enabled."  # config state, no process status equivalent
+    )
+    NOT_A_DOCUMENT = "Blur check was skipped - insufficient text detected to evaluate."  # set directly on blur_result
+
+    @classmethod
+    def from_status(cls, process_status: str) -> str | None:
+        """Map a terminal process status to its blur skip reason."""
+        return {
+            ProcessStatus.PASSWORD_PROTECTED.value: cls.PASSWORD_PROTECTED,
+            ProcessStatus.PROCESSING_EXCLUDED.value: cls.PROCESSING_EXCLUDED,
+        }.get(process_status)
 
 
 class NotEvaluatedReason:
