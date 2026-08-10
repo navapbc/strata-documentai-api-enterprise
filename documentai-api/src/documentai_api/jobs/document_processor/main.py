@@ -86,9 +86,6 @@ def _persist_optimization_metrics(
         DocumentMetadata.CROP_MODEL_ID: crop_result.model_id,
         DocumentMetadata.GRAYSCALE_CONVERSION: grayscale_applied,
         DocumentMetadata.PROCESSED_FILE_SIZE_BYTES: processed_file_size_bytes,
-        DocumentMetadata.IMAGE_OPT_FETCH_DURATION_SECONDS: opt_result.fetch_duration_seconds
-        if opt_result
-        else None,
         DocumentMetadata.IMAGE_OPT_CROP_BLOCK_DURATION_SECONDS: opt_result.crop_block_duration_seconds
         if opt_result
         else None,
@@ -307,6 +304,8 @@ def main(
             bucket_name,
             object_key,
             apply_grayscale=True,
+            file_bytes=s3_file_bytes,
+            content_type=s3_content_type,
         )
         if not opt.too_large and not opt.failed:
             _persist_optimization_metrics(
@@ -348,6 +347,8 @@ def main(
             bucket_name,
             object_key,
             apply_grayscale=False,
+            file_bytes=s3_file_bytes,
+            content_type=s3_content_type,
         )
         _persist_optimization_metrics(
             ddb_key, opt.crop_result, False, opt.file_size_bytes, opt_result=opt

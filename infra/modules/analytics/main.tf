@@ -313,6 +313,30 @@ resource "aws_glue_catalog_table" "raw_metrics" {
       name = "processed_file_size_bytes"
       type = "bigint"
     }
+    columns {
+      name = "s3_fetch_duration_seconds"
+      type = "double"
+    }
+    columns {
+      name = "bda_invoke_duration_seconds"
+      type = "double"
+    }
+    columns {
+      name = "bda_invoke_retry_count"
+      type = "int"
+    }
+    columns {
+      name = "blur_detection_duration_seconds"
+      type = "double"
+    }
+    columns {
+      name = "image_opt_crop_block_duration_seconds"
+      type = "double"
+    }
+    columns {
+      name = "image_opt_write_duration_seconds"
+      type = "double"
+    }
   }
 
   partition_keys {

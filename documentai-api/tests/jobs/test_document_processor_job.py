@@ -238,7 +238,11 @@ def test_main_first_time_image(input_image, mocker, ddb_doc_metadata_table, mock
     assert doc_meta_record[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.STARTED
 
     mock_optimize.assert_called_once_with(
-        input_image.bucket_name, input_image.key, apply_grayscale=True
+        input_image.bucket_name,
+        input_image.key,
+        apply_grayscale=True,
+        file_bytes=ANY,
+        content_type="image/jpeg",
     )
     mock_invoke.assert_called_once_with(
         input_image.bucket_name, input_image.key, expected_object_key, "tax_documents"
@@ -627,14 +631,12 @@ def test_persist_optimization_metrics_writes_timing_fields(ddb_doc_metadata_tabl
 
     opt = OptimizationResult(
         crop_result=CropResult(),
-        fetch_duration_seconds=Decimal("0.123"),
         crop_block_duration_seconds=Decimal("0.456"),
         write_duration_seconds=Decimal("0.078"),
     )
     _persist_optimization_metrics(ddb_key, opt.crop_result, False, None, opt_result=opt)
 
     item = ddb_doc_metadata_table.get_item(Key={"fileName": ddb_key})["Item"]
-    assert item[DocumentMetadata.IMAGE_OPT_FETCH_DURATION_SECONDS] == Decimal("0.123")
     assert item[DocumentMetadata.IMAGE_OPT_CROP_BLOCK_DURATION_SECONDS] == Decimal("0.456")
     assert item[DocumentMetadata.IMAGE_OPT_WRITE_DURATION_SECONDS] == Decimal("0.078")
 
@@ -649,6 +651,5 @@ def test_persist_optimization_metrics_no_timing_when_opt_result_none(ddb_doc_met
     _persist_optimization_metrics(ddb_key, CropResult(), False, None, opt_result=None)
 
     item = ddb_doc_metadata_table.get_item(Key={"fileName": ddb_key})["Item"]
-    assert DocumentMetadata.IMAGE_OPT_FETCH_DURATION_SECONDS not in item
     assert DocumentMetadata.IMAGE_OPT_CROP_BLOCK_DURATION_SECONDS not in item
     assert DocumentMetadata.IMAGE_OPT_WRITE_DURATION_SECONDS not in item
