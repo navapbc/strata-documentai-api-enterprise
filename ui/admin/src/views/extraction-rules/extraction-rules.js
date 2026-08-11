@@ -8,8 +8,7 @@ import * as BlueprintList from "../../panes/blueprint-list.js";
 import * as ExtractionRuleEditor from "../../panes/extraction-rule-editor.js";
 import * as FieldSearch from "../../panes/field-search.js";
 import * as Toast from "../../utils/toast.js";
-import { h } from "../../utils/dom.js";
-import { setViewActions } from "../../utils/helpers.js";
+import * as TenantContext from "../../utils/tenant-context.js";
 import { tpl } from "../../utils/tpl.js";
 import html from "./extraction-rules.html";
 
@@ -20,14 +19,7 @@ let _unsubs = [];
 export function mount(root) {
   root.replaceChildren(tmpl());
 
-  // Inject Save/Discard into shared header
-  const saveBtn = h("button", { className: "btn-primary hidden", id: "bp-save-btn" }, "Save Rules");
-  const discardBtn = h(
-    "button",
-    { className: "btn-secondary hidden", id: "bp-discard-btn" },
-    "Discard",
-  );
-  setViewActions(discardBtn, saveBtn);
+  TenantContext.mountSelect(root.querySelector("#tenant-select"), { placeholder: "Select Tenant" });
 
   _unsubs = [
     BlueprintList.mount(root.querySelector("#bp-list-pane")),
@@ -46,15 +38,12 @@ export function mount(root) {
 }
 
 export function unmount(root) {
+  const tenantSelect = root.querySelector("#tenant-select");
+  if (tenantSelect) TenantContext.unmountSelect(tenantSelect);
   _unsubs.forEach((u) => u && u());
   _unsubs = [];
   Store.reset();
   root.replaceChildren();
-}
-
-export function mountTestView(root) {
-  // Test documents is a separate screen - import and mount it
-  import("../test-documents/test-documents.js").then((mod) => mod.mount(root));
 }
 
 export function hasUnsavedChanges() {
@@ -63,10 +52,6 @@ export function hasUnsavedChanges() {
 
 export function getActiveDocType() {
   return Store.get().activeDocType;
-}
-
-export function clearTestHistory() {
-  // No-op - test history lives in test-documents view
 }
 
 async function loadSchemas() {

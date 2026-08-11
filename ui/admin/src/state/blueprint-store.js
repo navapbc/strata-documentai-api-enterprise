@@ -14,6 +14,7 @@ let _state = {
   ruleExists: false, // whether a rule row exists in DDB for this tenant/docType
   dirty: false, // unsaved changes in editor
   tenantId: null, // selected tenant for rules
+  allRules: [], // all rules for selected tenant
 };
 
 export function get() {
@@ -39,5 +40,6 @@ export function reset() {
     ruleExists: false,
     dirty: false,
     tenantId: null,
+    allRules: [],
   };
 }

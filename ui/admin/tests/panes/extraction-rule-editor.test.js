@@ -13,6 +13,8 @@ vi.mock("../../src/services/rules.js", () => ({
 vi.mock("../../src/utils/tenant-context.js", () => ({
   getTenantId: vi.fn(() => null),
   onChange: vi.fn(() => () => {}),
+  mountSelect: vi.fn(),
+  unmountSelect: vi.fn(),
 }));
 
 vi.mock("../../src/utils/toast.js", () => ({
@@ -30,10 +32,10 @@ describe("extraction-rule-editor pane", () => {
     document.body.appendChild(root);
   });
 
-  it("renders empty state when no activeDocType", () => {
+  it("renders all doc type sections when no activeDocType", () => {
     Store.set({ schemasLoading: false, schemas: { W2: [] }, tenantId: "t" });
     ExtractionRuleEditor.mount(root);
-    expect(root.textContent).toContain("Select a document type");
+    expect(root.querySelector(".doc-type-section")).toBeTruthy();
   });
 
   it("renders fields when activeDocType is set", () => {
@@ -131,9 +133,7 @@ describe("extraction-rule-editor saveRules", () => {
     });
     ExtractionRuleEditor.mount(root);
 
-    // Click save button
-    const saveBtn = document.querySelector("#bp-save-btn");
-    saveBtn.click();
+    root.querySelector(".btn-primary").click();
 
     // Wait for async
     await vi.waitFor(() => {
@@ -152,7 +152,7 @@ describe("extraction-rule-editor saveRules", () => {
     });
     ExtractionRuleEditor.mount(root);
 
-    document.querySelector("#bp-save-btn").click();
+    root.querySelector(".btn-primary").click();
 
     await vi.waitFor(() => {
       expect(Store.get().dirty).toBe(false);
@@ -170,7 +170,7 @@ describe("extraction-rule-editor saveRules", () => {
     });
     ExtractionRuleEditor.mount(root);
 
-    document.querySelector("#bp-save-btn").click();
+    root.querySelector(".btn-primary").click();
 
     await vi.waitFor(() => {
       expect(Toast.show).toHaveBeenCalledWith("Rules saved");
@@ -189,14 +189,14 @@ describe("extraction-rule-editor saveRules", () => {
     });
     ExtractionRuleEditor.mount(root);
 
-    document.querySelector("#bp-save-btn").click();
+    root.querySelector(".btn-primary").click();
 
     await vi.waitFor(() => {
       expect(Toast.show).toHaveBeenCalledWith("Failed to save: DDB error");
     });
   });
 
-  it("does not call put when no tenant", async () => {
+  it("does not render save controls when no tenant", () => {
     Store.set({
       schemasLoading: false,
       schemas: { W2: [{ name: "ssn", type: "string" }] },
@@ -207,10 +207,32 @@ describe("extraction-rule-editor saveRules", () => {
     });
     ExtractionRuleEditor.mount(root);
 
+    expect(root.querySelector(".btn-primary")).toBeNull();
+    expect(RulesService.put).not.toHaveBeenCalled();
+  });
+
+  // Regression: #bp-save-btn/#bp-discard-btn are shared with field-search.js,
+  // which owns them exclusively. The editor pane used to also bind click
+  // handlers to these same buttons, so saving from a field-search result
+  // silently re-saved whatever doc type the editor still had as
+  // activeDocType, using stale (often empty) rules for it.
+  it("does not react to clicks on the shared save/discard buttons", async () => {
+    Store.set({
+      schemasLoading: false,
+      schemas: { W2: [{ name: "ssn", type: "string" }] },
+      activeDocType: "W2",
+      tenantId: "acme",
+      rules: {},
+      dirty: false,
+    });
+    ExtractionRuleEditor.mount(root);
+
     document.querySelector("#bp-save-btn").click();
+    document.querySelector("#bp-discard-btn").click();
     await new Promise((r) => setTimeout(r, 10));
 
     expect(RulesService.put).not.toHaveBeenCalled();
+    expect(RulesService.get).not.toHaveBeenCalled();
   });
 });
 
@@ -238,10 +260,10 @@ describe("extraction-rule-editor header", () => {
     expect(header.textContent).toBe("W2");
   });
 
-  it("does not render header when no activeDocType", () => {
+  it("renders header for each doc type section when no activeDocType", () => {
     Store.set({ schemas: { W2: [{ name: "ssn" }] }, tenantId: "t" });
     ExtractionRuleEditor.mount(root);
-    expect(root.querySelector(".fields-list-header")).toBeFalsy();
+    expect(root.querySelector(".fields-list-header").textContent).toBe("W2");
   });
 });
 

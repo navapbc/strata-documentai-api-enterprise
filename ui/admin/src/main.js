@@ -37,7 +37,6 @@ import * as DocumentCategoriesView from "./views/document-categories/document-ca
 import * as AuditLogView from "./views/audit-log/audit-log.js";
 import * as DocumentsView from "./views/documents/documents.js";
 import * as DocumentSearchView from "./views/document-search/document-search.js";
-import * as TestDocumentsView from "./views/test-documents/test-documents.js";
 import * as UsageView from "./views/usage/usage.js";
 import * as MetricsView from "./views/metrics/metrics.js";
 import * as LoginView from "./views/login/login.js";
@@ -74,13 +73,12 @@ let _mainContent = null;
 const VIEWS = {
   keys: { module: KeysView },
   users: { module: UsersView },
-  tenants: { module: TenantsView, hideTenantBar: true },
+  tenants: { module: TenantsView },
   "extraction-rules": { module: ExtractionRulesView },
   "doc-categories": { module: DocumentCategoriesView },
   "audit-log": { module: AuditLogView },
   documents: { module: DocumentsView },
   "document-search": { module: DocumentSearchView },
-  "test-documents": { module: TestDocumentsView },
   usage: { module: UsageView },
   metrics: { module: MetricsView },
 };
@@ -133,8 +131,7 @@ function showDashboard(session) {
   // Connected info
   app.querySelector("#connected-url").textContent = session.email;
 
-  // Tenant context
-  TenantContext.init(app.querySelector("#global-tenant-select"));
+  // Kick off tenant list fetch so it's cached before views mount
   TenantContext.load();
 
   // Super-admin nav visibility
@@ -214,10 +211,7 @@ function navigateTo(viewName) {
   const viewActions = document.querySelector("#view-actions");
   if (viewActions) viewActions.replaceChildren();
 
-  // Hide tenant filter bar on views that don't need it
   const entry = VIEWS[viewName];
-  const filterBar = document.querySelector(".tenant-filter-bar");
-  if (filterBar) filterBar.classList.toggle("hidden", !!entry?.hideTenantBar);
 
   if (!entry) return;
 

@@ -10,7 +10,7 @@ import html from "./document-categories.html";
 
 const tmpl = tpl(html);
 
-let _root, _tableView, _createBtn, _refreshBtn;
+let _root, _tableView, _createBtn, _refreshBtn, _searchInput, _sourceFilter, _rateFilter;
 let _modal,
   _form,
   _tenantSelect,
@@ -66,6 +66,13 @@ export function mount(root) {
   _deactivateConfirm = root.querySelector("#category-deactivate-confirm");
 
   _tenantUnsub = TenantContext.onChange(() => loadCategories());
+  TenantContext.mountSelect(root.querySelector("#tenant-select"));
+  _searchInput = root.querySelector("#categories-search");
+  _sourceFilter = root.querySelector("#categories-source-filter");
+  _rateFilter = root.querySelector("#categories-rate-filter");
+  _searchInput.addEventListener("input", applyFilters);
+  _sourceFilter.addEventListener("change", applyFilters);
+  _rateFilter.addEventListener("change", applyFilters);
   _createBtn.addEventListener("click", openCreateModal);
   _refreshBtn.addEventListener("click", () => loadCategories());
   _cancelBtn.addEventListener("click", closeEditModal);
@@ -81,6 +88,8 @@ export function unmount(root) {
     _tenantUnsub();
     _tenantUnsub = null;
   }
+  const tenantSelect = root.querySelector("#tenant-select");
+  if (tenantSelect) TenantContext.unmountSelect(tenantSelect);
   _tableView.unbind();
   root.replaceChildren();
 }
@@ -94,10 +103,44 @@ async function loadCategories() {
   try {
     const resp = await CategoriesService.list(TenantContext.getTenantId());
     _allCategories = resp.categories || [];
-    _tableView.setRows(_allCategories);
+    applyFilters();
   } catch (e) {
     _tableView.showError(e.message);
   }
+}
+
+function applyFilters() {
+  const q = _searchInput?.value.trim().toLowerCase();
+  const source = _sourceFilter?.value;
+  const rate = _rateFilter?.value;
+
+  let filtered = _allCategories;
+
+  if (q) {
+    filtered = filtered.filter(
+      (c) =>
+        c.categoryName?.toLowerCase().includes(q) ||
+        c.displayName?.toLowerCase().includes(q) ||
+        c.description?.toLowerCase().includes(q) ||
+        c.tenantId?.toLowerCase().includes(q),
+    );
+  }
+
+  if (source === "system") filtered = filtered.filter((c) => c.isAutoRegistered);
+  else if (source === "manual") filtered = filtered.filter((c) => !c.isAutoRegistered);
+
+  if (rate) {
+    filtered = filtered.filter((c) => {
+      const pct = Math.round((c.processingPercentage ?? 1) * 100);
+      if (rate === "0") return pct === 0;
+      if (rate === "100") return pct === 100;
+      if (rate === "1-50") return pct >= 1 && pct <= 50;
+      if (rate === "51-99") return pct >= 51 && pct <= 99;
+      return true;
+    });
+  }
+
+  _tableView.setRows(filtered);
 }
 
 function renderRow(cat) {
@@ -134,18 +177,13 @@ function renderRow(cat) {
 }
 
 function populateTenantSelect(selectedTenantId, disabled) {
-  const globalSelect = document.querySelector("#global-tenant-select");
   _tenantSelect.innerHTML = '<option value="">- Select tenant -</option>';
-  if (globalSelect) {
-    for (const opt of globalSelect.options) {
-      if (opt.value) {
-        const newOpt = document.createElement("option");
-        newOpt.value = opt.value;
-        newOpt.textContent = opt.textContent;
-        if (opt.value === selectedTenantId) newOpt.selected = true;
-        _tenantSelect.appendChild(newOpt);
-      }
-    }
+  for (const { value, label } of TenantContext.getOptions()) {
+    const opt = document.createElement("option");
+    opt.value = value;
+    opt.textContent = label;
+    if (value === selectedTenantId) opt.selected = true;
+    _tenantSelect.appendChild(opt);
   }
   _tenantSelect.disabled = disabled;
 }

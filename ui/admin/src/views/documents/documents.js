@@ -21,9 +21,8 @@ const tmpl = tpl(html);
 const STORAGE_KEY_ACTIVE = "docai_documents_active_job";
 
 let _root, _listEl, _noDocuments;
-let _statusFilter, _detailPanel, _previewPanel, _detailContent, _collapseBtn;
+let _statusFilter, _detailPanel, _previewPanel, _detailContent;
 let _activeJobId = null;
-let _detailCollapsed = true;
 let _fieldGeometry = null;
 let _resizeObserver = null;
 let _unsubTenant = null;
@@ -36,7 +35,6 @@ export function mount(root) {
   Helpers.setViewActions();
 
   _activeJobId = null;
-  _detailCollapsed = true;
   _fieldGeometry = null;
   _resizeObserver = null;
   _recentDocuments = [];
@@ -47,26 +45,16 @@ export function mount(root) {
   _detailPanel = root.querySelector("#document-detail-panel");
   _previewPanel = root.querySelector("#document-preview-panel");
   _detailContent = root.querySelector("#detail-content");
-  _collapseBtn = root.querySelector("#detail-collapse-btn");
-
-  _collapseBtn.addEventListener("click", toggleDetailPanel);
-  _collapseBtn.classList.add("disabled");
 
   linkFieldHighlighting(_detailContent, _previewPanel);
 
   _statusFilter.addEventListener("change", () => load());
 
+  TenantContext.mountSelect(root.querySelector("#tenant-select"), { placeholder: "Select Tenant" });
   _unsubTenant = TenantContext.onChange(() => {
     _activeJobId = null;
     sessionStorage.removeItem(STORAGE_KEY_ACTIVE);
     clearDetail();
-    // Collapse the detail panel
-    _detailCollapsed = true;
-    _detailPanel.classList.add("collapsed");
-    _root.querySelector(".documents-three-panel").classList.add("detail-collapsed");
-    _collapseBtn.textContent = "\u276E";
-    _collapseBtn.title = "Expand details";
-    // Clear bbox overlay
     clearBboxOverlay(_previewPanel);
     if (_resizeObserver) {
       _resizeObserver.disconnect();
@@ -88,6 +76,8 @@ export function unmount(root) {
     _unsubTenant();
     _unsubTenant = null;
   }
+  const tenantSelect = root.querySelector("#tenant-select");
+  if (tenantSelect) TenantContext.unmountSelect(tenantSelect);
   root.replaceChildren();
 }
 
@@ -95,38 +85,27 @@ function clearDetail() {
   _detailContent.innerHTML = "";
   _previewPanel.innerHTML = '<p class="empty-state">Select a document to preview</p>';
   _previewPanel.classList.remove("watermarked", "watermark-block");
-  _collapseBtn.classList.add("disabled");
 }
 
-function expandDetailPanel() {
-  if (!_detailCollapsed) return;
-  _detailCollapsed = false;
-  _detailPanel.classList.remove("collapsed");
-  _root.querySelector(".documents-three-panel").classList.remove("detail-collapsed");
-  _collapseBtn.textContent = "\u276F";
-  _collapseBtn.title = "Collapse details";
-  _collapseBtn.classList.remove("disabled");
+function showNoDocuments(msg) {
+  if (_noDocuments) {
+    _noDocuments.textContent = msg;
+    _noDocuments.classList.remove("hidden");
+  }
 }
 
-function toggleDetailPanel() {
-  const hasContent = _detailContent.innerHTML.trim().length > 0;
-  if (_detailCollapsed && !hasContent) return;
-  _detailCollapsed = !_detailCollapsed;
-  _detailPanel.classList.toggle("collapsed", _detailCollapsed);
-  _root
-    .querySelector(".documents-three-panel")
-    .classList.toggle("detail-collapsed", _detailCollapsed);
-  _collapseBtn.textContent = _detailCollapsed ? "\u276E" : "\u276F";
-  _collapseBtn.title = _detailCollapsed ? "Expand details" : "Collapse details";
+function hideNoDocuments() {
+  if (_noDocuments) _noDocuments.classList.add("hidden");
 }
 
 export async function load() {
-  const tenantId = TenantContext.getTenantId();
+  const tenantId = TenantContext.getTenantId() || undefined;
+
   if (!tenantId) {
     _recentDocuments = [];
-    renderList();
-    _noDocuments.textContent = "Select a tenant to view recent documents";
-    _noDocuments.classList.remove("hidden");
+    _listEl.innerHTML = "";
+    _previewPanel.innerHTML = '<p class="empty-state">Select a document to preview</p>';
+    showNoDocuments("Select a tenant to view recent documents");
     return;
   }
 
@@ -147,24 +126,58 @@ export async function load() {
     const el = _listEl.querySelector(`[data-job-id="${savedActive}"]`);
     if (el) el.classList.add("active");
     loadDetail(savedActive);
+  } else if (_recentDocuments.length) {
+    const first = _recentDocuments[0];
+    _activeJobId = first.jobId;
+    sessionStorage.setItem(STORAGE_KEY_ACTIVE, first.jobId);
+    _listEl.querySelector(`[data-job-id="${first.jobId}"]`)?.classList.add("active");
+    loadDetail(first.jobId);
   }
+}
+
+function groupByDate(docs) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  const groups = new Map();
+  for (const doc of docs) {
+    const d = new Date(doc.createdAt);
+    d.setHours(0, 0, 0, 0);
+    let label;
+    if (d.getTime() === today.getTime()) label = "Today";
+    else if (d.getTime() === yesterday.getTime()) label = "Yesterday";
+    else
+      label = d.toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: d.getFullYear() !== today.getFullYear() ? "numeric" : undefined,
+      });
+    if (!groups.has(label)) groups.set(label, []);
+    groups.get(label).push(doc);
+  }
+  return groups;
 }
 
 function renderList() {
   _listEl.innerHTML = "";
 
   if (!_recentDocuments.length) {
-    const msg = TenantContext.getTenantId()
-      ? "No documents found"
-      : "Select a tenant to view recent documents";
-    _noDocuments.textContent = msg;
-    _noDocuments.classList.remove("hidden");
+    _previewPanel.innerHTML = '<p class="empty-state">Select a document to preview</p>';
+    showNoDocuments("No documents found");
     return;
   }
 
-  _noDocuments.classList.add("hidden");
-  for (const doc of _recentDocuments) {
-    _listEl.appendChild(buildListItem(doc));
+  hideNoDocuments();
+  _previewPanel.innerHTML = "";
+  const groups = groupByDate(_recentDocuments);
+  for (const [label, docs] of groups) {
+    const heading = h("li", { className: "doc-list-heading metrics-timeframe-label" }, label);
+    _listEl.appendChild(heading);
+    for (const doc of docs) {
+      _listEl.appendChild(buildListItem(doc));
+    }
   }
 }
 
@@ -185,12 +198,7 @@ function buildListItem(doc) {
       "data-job-id": doc.jobId,
     },
     h("div", { className: "doc-list-name" }, doc.fileName || doc.jobId?.slice(0, 8) || "-"),
-    h(
-      "div",
-      { className: "doc-list-meta" },
-      ...(badge ? [badge] : []),
-      h("span", { className: "doc-list-date" }, Helpers.formatDate(doc.createdAt)),
-    ),
+    h("div", { className: "doc-list-meta" }, ...(badge ? [badge] : [])),
   );
   li.addEventListener("click", () => {
     _activeJobId = doc.jobId;
@@ -219,26 +227,32 @@ async function loadDetail(jobId) {
       _fieldGeometry = extractGeometry(detail.fields);
     }
     renderDetail(detail);
-    expandDetailPanel();
-    await loadPreview(jobId, detail.contentType);
+    await loadPreview(jobId, detail.contentType, detail.processStatus);
     if (_fieldGeometry) {
       _resizeObserver = renderBboxOverlay(_previewPanel, _fieldGeometry);
       markFieldsWithGeometry(_detailContent, _fieldGeometry);
-    } else if (detail.fields) {
-      // Textract AnalyzeID doesn't return geometry; show a note so the
-      // absence of bounding boxes isn't mistaken for a bug.
-      const note = document.createElement("p");
-      note.className = "empty-state bbox-unavailable-note";
-      note.textContent = "Bounding boxes not available for this document";
-      _previewPanel.appendChild(note);
+    } else {
+      // Some extraction methods (e.g. Textract AnalyzeID) don't return geometry -
+      // this is expected, not a bug.
+      const note = _detailContent.querySelector(".bbox-unavailable-note");
+      if (!note) {
+        const p = document.createElement("p");
+        p.className = "bbox-unavailable-note empty-state";
+        p.textContent = "Bounding box data is not available for this document.";
+        _detailContent.appendChild(p);
+      }
     }
   } catch (e) {
     _detailContent.textContent = e.message;
-    expandDetailPanel();
   }
 }
 
-async function loadPreview(jobId, contentType) {
+async function loadPreview(jobId, contentType, processStatus) {
+  if (processStatus === "password_protected") {
+    _previewPanel.innerHTML =
+      '<p class="empty-state">Preview unavailable - document is password protected</p>';
+    return;
+  }
   if (!PREVIEWABLE_TYPES.includes(contentType)) {
     _previewPanel.innerHTML = '<p class="empty-state">Preview not available for this file type</p>';
     return;
@@ -306,8 +320,6 @@ function renderDetail(doc) {
 
   // eslint-disable-next-line no-unsanitized/property -- server data rendered with esc()
   _detailContent.innerHTML = sections.join("");
-
-  _collapseBtn.classList.remove("disabled");
 }
 
 function renderSection(title, fields) {

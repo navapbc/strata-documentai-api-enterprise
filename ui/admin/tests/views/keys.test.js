@@ -28,6 +28,8 @@ describe("keys view", () => {
     vi.doMock("../../src/utils/tenant-context.js", () => ({
       getTenantId: mockGetTenantId,
       onChange: vi.fn(() => () => {}),
+      mountSelect: vi.fn(),
+      unmountSelect: vi.fn(),
     }));
     vi.doMock("../../src/utils/helpers.js", () => ({
       esc: (s) => s,

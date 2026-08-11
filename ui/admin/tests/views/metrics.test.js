@@ -184,6 +184,8 @@ describe("metrics view date format", () => {
     vi.doMock("../../src/utils/tenant-context.js", () => ({
       getTenantId: vi.fn(() => null),
       onChange: vi.fn(() => () => {}),
+      mountSelect: vi.fn(),
+      unmountSelect: vi.fn(),
     }));
     vi.doMock("../../src/utils/toast.js", () => ({ show: vi.fn() }));
     vi.doMock("../../src/utils/helpers.js", () => ({}));

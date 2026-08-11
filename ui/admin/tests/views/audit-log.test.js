@@ -25,6 +25,8 @@ describe("audit-log view", () => {
     vi.doMock("../../src/utils/tenant-context.js", () => ({
       getTenantId: vi.fn(() => "acme"),
       onChange: vi.fn(() => () => {}),
+      mountSelect: vi.fn(),
+      unmountSelect: vi.fn(),
     }));
     vi.doMock("../../src/utils/helpers.js", () => ({
       esc: (s) => s,

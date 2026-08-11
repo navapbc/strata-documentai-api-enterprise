@@ -105,6 +105,7 @@ export function mount(root) {
 
   _loadBtn.addEventListener("click", load);
   _tenantUnsub = TenantContext.onChange(() => load());
+  TenantContext.mountSelect(root.querySelector("#tenant-select"));
 
   load();
 }
@@ -114,6 +115,8 @@ export function unmount(_root) {
     _tenantUnsub();
     _tenantUnsub = null;
   }
+  const tenantSelect = _root?.querySelector("#tenant-select");
+  if (tenantSelect) TenantContext.unmountSelect(tenantSelect);
   _root = null;
 }
 

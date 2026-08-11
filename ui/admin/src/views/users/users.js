@@ -61,6 +61,7 @@ export function mount(root) {
   _deleteConfirm.addEventListener("click", handleDeleteUser);
 
   _tenantUnsub = TenantContext.onChange(applyFilters);
+  TenantContext.mountSelect(root.querySelector("#tenant-select"));
 
   load();
 }
@@ -70,6 +71,8 @@ export function unmount(root) {
     _tenantUnsub();
     _tenantUnsub = null;
   }
+  const tenantSelect = root.querySelector("#tenant-select");
+  if (tenantSelect) TenantContext.unmountSelect(tenantSelect);
   _tableView.unbind();
   root.replaceChildren();
 }

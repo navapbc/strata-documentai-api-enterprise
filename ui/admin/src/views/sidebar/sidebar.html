@@ -55,9 +55,6 @@
           <a class="nav-item" data-view="extraction-rules" data-title="Manage Extraction Rules"
             >Manage Extraction Rules <span id="extraction-rules-nav-badge"></span
           ></a>
-          <a class="nav-item" data-view="test-documents" data-title="Test Document Extraction"
-            >Test Document Extraction <span id="test-documents-nav-badge"></span
-          ></a>
           <!-- <a class="nav-item" data-view="document-search">Search Documents</a> TODO: wire up backend search (FilterExpression on tenant index or similar) -->
         </div>
       </div>
@@ -68,7 +65,7 @@
         </button>
         <div class="nav-section-body hidden" id="section-audit-log">
           <a class="nav-item" data-view="audit-log" data-title="View Log Events"
-            >View Log Events <span class="nav-badge-updated" id="audit-log-nav-badge"></span
+            >View Log Events <span id="audit-log-nav-badge"></span
           ></a>
         </div>
       </div>
@@ -79,9 +76,8 @@
         </button>
         <div class="nav-section-body hidden" id="section-reporting">
           <a class="nav-item" data-view="metrics" data-title="Metrics Dashboard"
-            >Metrics Dashboard
-            <span class="nav-badge-updated" id="metrics-nav-badge">Updated</span></a
-          >
+            >Metrics Dashboard <span id="metrics-nav-badge"></span
+          ></a>
           <a class="nav-item" data-view="usage" data-title="Usage Tracking"
             >Usage Tracking <span id="usage-nav-badge"></span
           ></a>
@@ -97,12 +93,6 @@
   <div class="content-header">
     <h2 id="view-title"></h2>
     <div id="view-actions" class="content-actions"></div>
-  </div>
-  <div class="tenant-filter-bar hidden">
-    <label for="global-tenant-select">Tenant</label>
-    <select id="global-tenant-select">
-      <option value="">All Tenants</option>
-    </select>
   </div>
   <main id="main-content" class="main-content"></main>
 </div>

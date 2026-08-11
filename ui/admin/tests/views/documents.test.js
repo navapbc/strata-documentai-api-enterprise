@@ -56,6 +56,8 @@ describe("documents view", () => {
       getTenantId: mockGetTenantId,
       onChange: mockOnChange,
       load: vi.fn(),
+      mountSelect: vi.fn(),
+      unmountSelect: vi.fn(),
     }));
     vi.doMock("../../src/utils/helpers.js", () => ({
       esc: (s) => s,
@@ -207,7 +209,6 @@ describe("documents view", () => {
     expect(root.querySelector("#document-preview-panel").innerHTML).toContain(
       "Select a document to preview",
     );
-    expect(root.querySelector("#document-detail-panel").classList.contains("collapsed")).toBe(true);
   });
 
   it("unmount clears root and unsubscribes from tenant changes", () => {
