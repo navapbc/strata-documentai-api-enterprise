@@ -47,6 +47,8 @@ describe("tenants view", () => {
       getTenantId: vi.fn(() => null),
       onChange: vi.fn(() => () => {}),
       load: vi.fn(),
+      mountSelect: vi.fn(),
+      unmountSelect: vi.fn(),
     }));
     vi.doMock("../../src/utils/helpers.js", () => ({
       esc: (s) => s,

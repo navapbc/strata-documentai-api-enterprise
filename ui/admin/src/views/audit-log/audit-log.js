@@ -70,11 +70,10 @@ export function mount(root) {
 
   _tenantUnsub = TenantContext.onChange(async () => {
     resetPagination();
-    // Rebuild the actor dropdown for the new tenant before loading events -
-    // otherwise load() reads the previous tenant's stale actor selection.
     await loadActors();
     load();
   });
+  TenantContext.mountSelect(root.querySelector("#tenant-select"));
   loadActions();
   loadActors();
   load();
@@ -85,6 +84,8 @@ export function unmount(root) {
     _tenantUnsub();
     _tenantUnsub = null;
   }
+  const tenantSelect = root.querySelector("#tenant-select");
+  if (tenantSelect) TenantContext.unmountSelect(tenantSelect);
   root.replaceChildren();
 }
 

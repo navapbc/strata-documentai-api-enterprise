@@ -74,7 +74,7 @@ let _mainContent = null;
 const VIEWS = {
   keys: { module: KeysView },
   users: { module: UsersView },
-  tenants: { module: TenantsView, hideTenantBar: true },
+  tenants: { module: TenantsView },
   "extraction-rules": { module: ExtractionRulesView },
   "doc-categories": { module: DocumentCategoriesView },
   "audit-log": { module: AuditLogView },
@@ -133,8 +133,7 @@ function showDashboard(session) {
   // Connected info
   app.querySelector("#connected-url").textContent = session.email;
 
-  // Tenant context
-  TenantContext.init(app.querySelector("#global-tenant-select"));
+  // Kick off tenant list fetch so it's cached before views mount
   TenantContext.load();
 
   // Super-admin nav visibility
@@ -214,10 +213,7 @@ function navigateTo(viewName) {
   const viewActions = document.querySelector("#view-actions");
   if (viewActions) viewActions.replaceChildren();
 
-  // Hide tenant filter bar on views that don't need it
   const entry = VIEWS[viewName];
-  const filterBar = document.querySelector(".tenant-filter-bar");
-  if (filterBar) filterBar.classList.toggle("hidden", !!entry?.hideTenantBar);
 
   if (!entry) return;
 

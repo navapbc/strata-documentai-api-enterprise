@@ -33,10 +33,11 @@ describe("main.js router", () => {
     }));
     vi.doMock("../../src/utils/toast.js", () => ({ show: vi.fn() }));
     vi.doMock("../../src/utils/tenant-context.js", () => ({
-      init: vi.fn(),
       load: vi.fn(),
       getTenantId: vi.fn(() => null),
       onChange: vi.fn(() => () => {}),
+      mountSelect: vi.fn(),
+      unmountSelect: vi.fn(),
     }));
     vi.doMock("../../src/services/http.js", () => ({
       adminClient: { request: vi.fn(), configure: vi.fn(), getBaseUrl: () => "" },
@@ -116,7 +117,7 @@ describe("main.js router", () => {
 
     // Dashboard rendered - no default view mounted
     expect(KeysView.mount).not.toHaveBeenCalled();
-    expect(TenantContext.init).toHaveBeenCalled();
+    expect(TenantContext.load).toHaveBeenCalled();
     expect(document.querySelector("#connected-url").textContent).toBe("a@b.com");
   });
 

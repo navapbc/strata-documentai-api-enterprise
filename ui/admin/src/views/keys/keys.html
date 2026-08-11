@@ -1,18 +1,38 @@
-<table id="keys-table" class="hidden">
-  <thead>
-    <tr>
-      <th data-col="tenantId">Tenant</th>
-      <th data-col="apiKeyName">Key Name</th>
-      <th data-col="emailAddress">Email</th>
-      <th data-col="environment">Environment</th>
-      <th data-col="keyPrefix">Key (prefix)</th>
-      <th data-col="lastUsed">Last Used</th>
-      <th style="width: 1px; white-space: nowrap">Actions</th>
-    </tr>
-  </thead>
-  <tbody id="keys-tbody"></tbody>
-</table>
-<p id="no-keys" class="empty-state hidden">No API keys found.</p>
+<div class="filter-layout">
+  <div class="filter-sidebar">
+    <div class="metrics-timeframe">
+      <label class="metrics-timeframe-label">Tenant</label>
+      <select id="tenant-select">
+        <option value="">All Tenants</option>
+      </select>
+    </div>
+    <div class="metrics-timeframe">
+      <label class="metrics-timeframe-label">Email</label>
+      <input type="search" id="keys-email-filter" placeholder="Search email…" />
+    </div>
+    <div class="metrics-timeframe">
+      <label class="metrics-timeframe-label">Filter</label>
+      <input type="search" id="keys-search" placeholder="Name, environment, prefix…" />
+    </div>
+  </div>
+  <div class="filter-main">
+    <table id="keys-table" class="hidden">
+      <thead>
+        <tr>
+          <th data-col="tenantId">Tenant</th>
+          <th data-col="apiKeyName">Key Name</th>
+          <th data-col="emailAddress">Email</th>
+          <th data-col="environment">Environment</th>
+          <th data-col="keyPrefix">Key (prefix)</th>
+          <th data-col="lastUsed">Last Used</th>
+          <th style="width: 1px; white-space: nowrap">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="keys-tbody"></tbody>
+    </table>
+    <p id="no-keys" class="empty-state hidden">No API keys found.</p>
+  </div>
+</div>
 
 <!-- Create Key Modal -->
 <div id="create-modal" class="modal hidden">

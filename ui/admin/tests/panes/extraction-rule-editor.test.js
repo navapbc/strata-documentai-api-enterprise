@@ -13,6 +13,8 @@ vi.mock("../../src/services/rules.js", () => ({
 vi.mock("../../src/utils/tenant-context.js", () => ({
   getTenantId: vi.fn(() => null),
   onChange: vi.fn(() => () => {}),
+  mountSelect: vi.fn(),
+  unmountSelect: vi.fn(),
 }));
 
 vi.mock("../../src/utils/toast.js", () => ({
@@ -30,10 +32,10 @@ describe("extraction-rule-editor pane", () => {
     document.body.appendChild(root);
   });
 
-  it("renders empty state when no activeDocType", () => {
+  it("renders all doc type sections when no activeDocType", () => {
     Store.set({ schemasLoading: false, schemas: { W2: [] }, tenantId: "t" });
     ExtractionRuleEditor.mount(root);
-    expect(root.textContent).toContain("Select a document type");
+    expect(root.querySelector(".doc-type-section")).toBeTruthy();
   });
 
   it("renders fields when activeDocType is set", () => {
@@ -131,9 +133,7 @@ describe("extraction-rule-editor saveRules", () => {
     });
     ExtractionRuleEditor.mount(root);
 
-    // Click save button
-    const saveBtn = document.querySelector("#bp-save-btn");
-    saveBtn.click();
+    root.querySelector(".btn-primary").click();
 
     // Wait for async
     await vi.waitFor(() => {
@@ -152,7 +152,7 @@ describe("extraction-rule-editor saveRules", () => {
     });
     ExtractionRuleEditor.mount(root);
 
-    document.querySelector("#bp-save-btn").click();
+    root.querySelector(".btn-primary").click();
 
     await vi.waitFor(() => {
       expect(Store.get().dirty).toBe(false);
@@ -170,7 +170,7 @@ describe("extraction-rule-editor saveRules", () => {
     });
     ExtractionRuleEditor.mount(root);
 
-    document.querySelector("#bp-save-btn").click();
+    root.querySelector(".btn-primary").click();
 
     await vi.waitFor(() => {
       expect(Toast.show).toHaveBeenCalledWith("Rules saved");
@@ -189,7 +189,7 @@ describe("extraction-rule-editor saveRules", () => {
     });
     ExtractionRuleEditor.mount(root);
 
-    document.querySelector("#bp-save-btn").click();
+    root.querySelector(".btn-primary").click();
 
     await vi.waitFor(() => {
       expect(Toast.show).toHaveBeenCalledWith("Failed to save: DDB error");
@@ -238,10 +238,10 @@ describe("extraction-rule-editor header", () => {
     expect(header.textContent).toBe("W2");
   });
 
-  it("does not render header when no activeDocType", () => {
+  it("renders header for each doc type section when no activeDocType", () => {
     Store.set({ schemas: { W2: [{ name: "ssn" }] }, tenantId: "t" });
     ExtractionRuleEditor.mount(root);
-    expect(root.querySelector(".fields-list-header")).toBeFalsy();
+    expect(root.querySelector(".fields-list-header").textContent).toBe("W2");
   });
 });
 

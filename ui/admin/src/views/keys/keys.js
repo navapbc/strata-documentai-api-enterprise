@@ -18,6 +18,8 @@ let _pendingRevokeKey = null;
 let _showInactiveToggle;
 let _tenantUnsub = null;
 let _allKeys = [];
+let _searchInput = null;
+let _emailFilter = null;
 
 export function mount(root) {
   _root = root;
@@ -61,6 +63,11 @@ export function mount(root) {
   _confirmRevoke.addEventListener("click", handleConfirmRevoke);
   _showInactiveToggle.addEventListener("change", () => load());
   _tenantUnsub = TenantContext.onChange(() => load());
+  TenantContext.mountSelect(root.querySelector("#tenant-select"));
+  _searchInput = root.querySelector("#keys-search");
+  _emailFilter = root.querySelector("#keys-email-filter");
+  _searchInput.addEventListener("input", applyFilters);
+  _emailFilter.addEventListener("input", applyFilters);
 
   load();
 }
@@ -70,6 +77,8 @@ export function unmount(root) {
     _tenantUnsub();
     _tenantUnsub = null;
   }
+  const tenantSelect = root.querySelector("#tenant-select");
+  if (tenantSelect) TenantContext.unmountSelect(tenantSelect);
   _tableView.unbind();
   root.replaceChildren();
 }
@@ -107,17 +116,12 @@ async function handleConfirmRevoke() {
 function openCreateModal() {
   openModal(_createModal);
   const tenantSelect = _root.querySelector("#key-tenant");
-  const globalSelect = document.querySelector("#global-tenant-select");
   tenantSelect.innerHTML = '<option value="">\u2014 Select tenant \u2014</option>';
-  if (globalSelect) {
-    for (const opt of globalSelect.options) {
-      if (opt.value) {
-        const newOpt = document.createElement("option");
-        newOpt.value = opt.value;
-        newOpt.textContent = opt.textContent;
-        tenantSelect.appendChild(newOpt);
-      }
-    }
+  for (const { value, label } of TenantContext.getOptions()) {
+    const opt = document.createElement("option");
+    opt.value = value;
+    opt.textContent = label;
+    tenantSelect.appendChild(opt);
   }
   _root.querySelector("#api-key-name").value = "";
   _root.querySelector("#client-environment").value = "dev";
@@ -187,8 +191,27 @@ export async function load() {
     const tenantId = TenantContext.getTenantId();
     const data = await KeysService.list({ includeInactive, tenantId });
     _allKeys = data.keys || [];
-    _tableView.setRows(_allKeys);
+    applyFilters();
   } catch (e) {
     _tableView.showError(e.message);
   }
+}
+
+function applyFilters() {
+  const q = _searchInput?.value.trim().toLowerCase();
+  const email = _emailFilter?.value.trim().toLowerCase();
+  let filtered = _allKeys;
+  if (q) {
+    filtered = filtered.filter(
+      (k) =>
+        k.tenantId?.toLowerCase().includes(q) ||
+        k.apiKeyName?.toLowerCase().includes(q) ||
+        k.environment?.toLowerCase().includes(q) ||
+        k.keyPrefix?.toLowerCase().includes(q),
+    );
+  }
+  if (email) {
+    filtered = filtered.filter((k) => k.emailAddress?.toLowerCase().includes(email));
+  }
+  _tableView.setRows(filtered);
 }

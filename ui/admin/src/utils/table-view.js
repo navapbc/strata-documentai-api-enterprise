@@ -58,6 +58,9 @@ export class TableView {
     this._tbody.innerHTML = "";
     if (sorted.length === 0) {
       this._table.classList.add("hidden");
+      if (this._emptyEl.textContent === "Loading\u2026") {
+        this._emptyEl.textContent = "No results found.";
+      }
       this._emptyEl.classList.remove("hidden");
       return;
     }

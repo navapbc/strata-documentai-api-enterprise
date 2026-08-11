@@ -25,6 +25,8 @@ describe("extraction-rules view", () => {
     vi.doMock("../../src/utils/tenant-context.js", () => ({
       getTenantId: vi.fn(() => TENANT_ID),
       onChange: vi.fn(() => () => {}),
+      mountSelect: vi.fn(),
+      unmountSelect: vi.fn(),
     }));
     vi.doMock("../../src/utils/helpers.js", () => ({
       esc: (s) => s,

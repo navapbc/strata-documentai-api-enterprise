@@ -23,6 +23,8 @@ describe("field-search pane", () => {
     vi.doMock("../../src/utils/tenant-context.js", () => ({
       getTenantId: mockGetTenantId,
       onChange: vi.fn(() => () => {}),
+      mountSelect: vi.fn(),
+      unmountSelect: vi.fn(),
     }));
     vi.doMock("../../src/utils/toast.js", () => ({
       show: vi.fn(),
@@ -125,6 +127,8 @@ describe("field-search clears on blueprint selection", () => {
     vi.doMock("../../src/utils/tenant-context.js", () => ({
       getTenantId: vi.fn(() => "acme"),
       onChange: vi.fn(() => () => {}),
+      mountSelect: vi.fn(),
+      unmountSelect: vi.fn(),
     }));
     vi.doMock("../../src/utils/toast.js", () => ({ show: vi.fn() }));
 
@@ -218,6 +222,8 @@ describe("field-search does not modify view-title", () => {
     vi.doMock("../../src/utils/tenant-context.js", () => ({
       getTenantId: vi.fn(() => "acme"),
       onChange: vi.fn(() => () => {}),
+      mountSelect: vi.fn(),
+      unmountSelect: vi.fn(),
     }));
     vi.doMock("../../src/utils/toast.js", () => ({ show: vi.fn() }));
 

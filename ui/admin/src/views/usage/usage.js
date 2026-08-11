@@ -43,6 +43,7 @@ export function mount(root) {
   _downloadBtn.addEventListener("click", downloadCsv);
 
   _tenantUnsub = TenantContext.onChange(() => load());
+  TenantContext.mountSelect(root.querySelector("#tenant-select"));
 
   load();
 }
@@ -52,6 +53,8 @@ export function unmount(_root) {
     _tenantUnsub();
     _tenantUnsub = null;
   }
+  const tenantSelect = _root?.querySelector("#tenant-select");
+  if (tenantSelect) TenantContext.unmountSelect(tenantSelect);
   _root = null;
   _currentData = [];
 }
