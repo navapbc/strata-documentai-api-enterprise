@@ -28,6 +28,7 @@ from documentai_api.app_extraction_rules import router as extraction_rules_route
 from documentai_api.app_me import router as me_router
 from documentai_api.app_metrics import router as metrics_router
 from documentai_api.app_presigned import router as presigned_router
+from documentai_api.app_search import router as search_router
 from documentai_api.app_tenants import router as tenants_router
 from documentai_api.app_users import router as users_router
 from documentai_api.config.constants import (
@@ -69,6 +70,7 @@ app.include_router(me_router)
 app.include_router(metrics_router)
 app.include_router(auth_events_router)
 app.include_router(evaluation_router)
+app.include_router(search_router)
 
 app.add_middleware(
     CORSMiddleware,

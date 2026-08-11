@@ -10,24 +10,10 @@ from fastapi.testclient import TestClient
 
 from documentai_api.app import app
 from documentai_api.utils.jwt_auth import verify_jwt
+from tests.helpers.fixtures.claims import SUPER_ADMIN_CLAIMS, TENANT_ADMIN_CLAIMS
 from tests.helpers.fixtures.cognito import create_cognito_user
 
 USERS_URL = "/v1/admin/users"
-
-SUPER_ADMIN_CLAIMS = {
-    "sub": "admin-000",
-    "email": "root@example.com",
-    "token_use": "access",
-    "cognito:groups": ["super-admin"],
-}
-
-TENANT_ADMIN_CLAIMS = {
-    "sub": "user-000",
-    "email": "tenantuser@example.com",
-    "token_use": "access",
-    "cognito:groups": ["tenant-admin"],
-    "custom:tenant_id": "acme",
-}
 
 
 def _override_jwt(claims: dict):

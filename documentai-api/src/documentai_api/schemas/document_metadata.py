@@ -2,6 +2,7 @@ class DocumentMetadata:
     # core fields
     FILE_NAME = "fileName"
     ORIGINAL_FILE_NAME = "originalFileName"
+    ORIGINAL_FILE_NAME_LOWER = "originalFileNameLower"
     USER_PROVIDED_DOCUMENT_CATEGORY = "userProvidedDocumentCategory"
     PROCESS_STATUS = "processStatus"
     DELETION_TYPE = "deletionType"  # "soft" | "hard" once a record is DELETED
