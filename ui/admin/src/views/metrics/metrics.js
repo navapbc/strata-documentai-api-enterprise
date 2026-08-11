@@ -16,6 +16,7 @@ import {
 import * as MetricsService from "../../services/metrics.js";
 import * as TenantContext from "../../utils/tenant-context.js";
 import * as Toast from "../../utils/toast.js";
+import * as DateRangePicker from "../../utils/date-range-picker.js";
 import { tpl } from "../../utils/tpl.js";
 import { h } from "../../utils/dom.js";
 import * as Icons from "../../utils/icons.js";
@@ -48,7 +49,7 @@ const tmpl = tpl(html);
 const _bodyFont = getComputedStyle(document.body).fontFamily;
 
 let _root;
-let _startInput, _endInput, _loadBtn, _timeframeSelect, _customRange;
+let _datePicker = null;
 let _tabVolume, _tabOutcomes, _tabTiming;
 let _emptyEl;
 let _tenantUnsub = null;
@@ -59,28 +60,17 @@ export function mount(root) {
   _root = root;
   root.replaceChildren(tmpl());
 
-  _startInput = root.querySelector("#metrics-start");
-  _endInput = root.querySelector("#metrics-end");
-  const today = new Date().toISOString().slice(0, 10);
-  _startInput.max = today;
-  _endInput.max = today;
-  _loadBtn = root.querySelector("#metrics-load-btn");
-  _timeframeSelect = root.querySelector("#metrics-timeframe");
-  _customRange = root.querySelector("#metrics-custom-range");
+  _datePicker = DateRangePicker.mount(root.querySelector("#metrics-date-range"), {
+    placeholder: "Select date range",
+    defaultPreset: "30",
+  });
+  _datePicker.onChange(() => load());
+
   _tabVolume = root.querySelector("#metrics-tab-volume");
 
   _tabOutcomes = root.querySelector("#metrics-tab-outcomes");
   _tabTiming = root.querySelector("#metrics-tab-timing");
   _emptyEl = root.querySelector("#metrics-empty");
-
-  _timeframeSelect.addEventListener("change", () => {
-    if (_timeframeSelect.value === "custom") {
-      _customRange.classList.remove("hidden");
-    } else {
-      _customRange.classList.add("hidden");
-      load();
-    }
-  });
 
   const validTabs = ["volume", "outcomes", "timing"];
   const hashTab = location.hash.replace("#", "").split("/")[1];
@@ -103,7 +93,6 @@ export function mount(root) {
     });
   });
 
-  _loadBtn.addEventListener("click", load);
   _tenantUnsub = TenantContext.onChange(() => load());
   TenantContext.mountSelect(root.querySelector("#tenant-select"));
 
@@ -120,29 +109,8 @@ export function unmount(_root) {
   _root = null;
 }
 
-function _fmt(d) {
-  return d.toISOString().slice(0, 10);
-}
-
-function _getDateRange() {
-  const val = _timeframeSelect.value;
-  if (val === "custom") {
-    return { startDate: _startInput.value, endDate: _endInput.value };
-  }
-  if (val === "1") {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const d = _fmt(yesterday);
-    return { startDate: d, endDate: d };
-  }
-  const end = new Date();
-  const start = new Date();
-  start.setDate(end.getDate() - parseInt(val));
-  return { startDate: _fmt(start), endDate: _fmt(end) };
-}
-
 async function load() {
-  const { startDate, endDate } = _getDateRange();
+  const { dateFrom: startDate, dateTo: endDate } = _datePicker.getRange();
   if (!startDate) return;
   if (endDate && startDate > endDate) {
     Toast.show("End date must be after start date.", "error");
