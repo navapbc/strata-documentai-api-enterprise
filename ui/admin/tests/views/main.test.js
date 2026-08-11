@@ -58,7 +58,6 @@ describe("main.js router", () => {
     vi.doMock("../../src/views/document-categories/document-categories.js", mockView);
     vi.doMock("../../src/views/audit-log/audit-log.js", mockView);
     vi.doMock("../../src/views/documents/documents.js", mockView);
-    vi.doMock("../../src/views/test-documents/test-documents.js", mockView);
     vi.doMock("../../src/views/login/login.js", () => ({
       mount: vi.fn(),
       unmount: vi.fn(),

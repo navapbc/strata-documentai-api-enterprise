@@ -37,7 +37,6 @@ import * as DocumentCategoriesView from "./views/document-categories/document-ca
 import * as AuditLogView from "./views/audit-log/audit-log.js";
 import * as DocumentsView from "./views/documents/documents.js";
 import * as DocumentSearchView from "./views/document-search/document-search.js";
-import * as TestDocumentsView from "./views/test-documents/test-documents.js";
 import * as UsageView from "./views/usage/usage.js";
 import * as MetricsView from "./views/metrics/metrics.js";
 import * as LoginView from "./views/login/login.js";
@@ -80,7 +79,6 @@ const VIEWS = {
   "audit-log": { module: AuditLogView },
   documents: { module: DocumentsView },
   "document-search": { module: DocumentSearchView },
-  "test-documents": { module: TestDocumentsView },
   usage: { module: UsageView },
   metrics: { module: MetricsView },
 };

@@ -1,5 +1,5 @@
 /**
- * Simple autocomplete — plain input that filters a dropdown list.
+ * Simple autocomplete - plain input that filters a dropdown list.
  * @param {HTMLElement} container
  * @param {{ placeholder?: string, onSelect: (value: string) => void }} options
  * @returns {{ setItems(items: string[]): void, setValue(value: string): void, destroy(): void }}

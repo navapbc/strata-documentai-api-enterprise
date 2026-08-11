@@ -232,7 +232,7 @@ async function loadDetail(jobId) {
       _resizeObserver = renderBboxOverlay(_previewPanel, _fieldGeometry);
       markFieldsWithGeometry(_detailContent, _fieldGeometry);
     } else {
-      // Some extraction methods (e.g. Textract AnalyzeID) don't return geometry —
+      // Some extraction methods (e.g. Textract AnalyzeID) don't return geometry -
       // this is expected, not a bug.
       const note = _detailContent.querySelector(".bbox-unavailable-note");
       if (!note) {
@@ -250,7 +250,7 @@ async function loadDetail(jobId) {
 async function loadPreview(jobId, contentType, processStatus) {
   if (processStatus === "password_protected") {
     _previewPanel.innerHTML =
-      '<p class="empty-state">Preview unavailable — document is password protected</p>';
+      '<p class="empty-state">Preview unavailable - document is password protected</p>';
     return;
   }
   if (!PREVIEWABLE_TYPES.includes(contentType)) {

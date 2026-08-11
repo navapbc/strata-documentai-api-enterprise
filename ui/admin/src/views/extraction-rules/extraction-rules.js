@@ -46,21 +46,12 @@ export function unmount(root) {
   root.replaceChildren();
 }
 
-export function mountTestView(root) {
-  // Test documents is a separate screen - import and mount it
-  import("../test-documents/test-documents.js").then((mod) => mod.mount(root));
-}
-
 export function hasUnsavedChanges() {
   return Store.get().dirty;
 }
 
 export function getActiveDocType() {
   return Store.get().activeDocType;
-}
-
-export function clearTestHistory() {
-  // No-op - test history lives in test-documents view
 }
 
 async function loadSchemas() {

@@ -196,7 +196,7 @@ describe("extraction-rule-editor saveRules", () => {
     });
   });
 
-  it("does not call put when no tenant", async () => {
+  it("does not render save controls when no tenant", () => {
     Store.set({
       schemasLoading: false,
       schemas: { W2: [{ name: "ssn", type: "string" }] },
@@ -207,10 +207,32 @@ describe("extraction-rule-editor saveRules", () => {
     });
     ExtractionRuleEditor.mount(root);
 
+    expect(root.querySelector(".btn-primary")).toBeNull();
+    expect(RulesService.put).not.toHaveBeenCalled();
+  });
+
+  // Regression: #bp-save-btn/#bp-discard-btn are shared with field-search.js,
+  // which owns them exclusively. The editor pane used to also bind click
+  // handlers to these same buttons, so saving from a field-search result
+  // silently re-saved whatever doc type the editor still had as
+  // activeDocType, using stale (often empty) rules for it.
+  it("does not react to clicks on the shared save/discard buttons", async () => {
+    Store.set({
+      schemasLoading: false,
+      schemas: { W2: [{ name: "ssn", type: "string" }] },
+      activeDocType: "W2",
+      tenantId: "acme",
+      rules: {},
+      dirty: false,
+    });
+    ExtractionRuleEditor.mount(root);
+
     document.querySelector("#bp-save-btn").click();
+    document.querySelector("#bp-discard-btn").click();
     await new Promise((r) => setTimeout(r, 10));
 
     expect(RulesService.put).not.toHaveBeenCalled();
+    expect(RulesService.get).not.toHaveBeenCalled();
   });
 });
 

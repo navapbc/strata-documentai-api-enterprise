@@ -1,5 +1,9 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import * as TenantContext from "../../src/utils/tenant-context.js";
+
+vi.mock("../../src/services/tenants.js", () => ({
+  list: vi.fn().mockResolvedValue({ tenants: [{ tenantId: "acme" }] }),
+}));
 
 describe("tenant-context", () => {
   let select;
@@ -66,5 +70,23 @@ describe("tenant-context mountSelect", () => {
 
     expect(select.options[0].textContent).toBe("All Tenants");
     expect(select.options[0].value).toBe("");
+  });
+});
+
+// Regression: onChange used to fire its callback immediately on registration
+// whenever a tenant was already selected. Every view calls its own load()
+// unconditionally right after registering onChange, so that eager-invoke
+// caused every tenant-scoped view to fetch its data twice on mount.
+describe("tenant-context onChange registration", () => {
+  it("does not fire immediately when registered after load() resolves with a tenant already selected", async () => {
+    document.body.innerHTML = '<select id="tc-eager"></select>';
+    TenantContext.mountSelect(document.querySelector("#tc-eager"));
+    TenantContext.setTenantId("acme");
+    await TenantContext.load();
+
+    const calls = [];
+    TenantContext.onChange((tid) => calls.push(tid));
+
+    expect(calls).toEqual([]);
   });
 });
