@@ -7,27 +7,10 @@ from documentai_api.app import app
 from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
 from documentai_api.utils.audit_log import log_event
 from documentai_api.utils.jwt_auth import verify_jwt
+from tests.helpers.fixtures.claims import SUPER_ADMIN_CLAIMS, TENANT_ADMIN_CLAIMS
 from tests.helpers.fixtures.cognito import create_cognito_user
 
 AUDIT_LOG_URL = "/v1/admin/audit-log"
-
-SUPER_ADMIN = "super-admin"
-TENANT_ADMIN = "tenant-admin"
-
-SUPER_ADMIN_CLAIMS = {
-    "sub": "admin-001",
-    "email": "admin@example.com",
-    "token_use": "access",
-    "cognito:groups": [SUPER_ADMIN],
-}
-
-TENANT_ADMIN_CLAIMS = {
-    "sub": "user-001",
-    "email": "user@example.com",
-    "token_use": "access",
-    "cognito:groups": [TENANT_ADMIN],
-    "custom:tenant_id": "test-tenant",
-}
 
 
 def _override_jwt(claims: dict):

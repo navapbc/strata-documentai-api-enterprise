@@ -499,6 +499,7 @@ def upsert_ddb(data: InitialDdbRecord) -> None:
 
         expr_fields: list[str] = [
             f"{DocumentMetadata.ORIGINAL_FILE_NAME} = :originalFileName",
+            f"{DocumentMetadata.ORIGINAL_FILE_NAME_LOWER} = :originalFileNameLower",
             f"{DocumentMetadata.PROCESS_STATUS} = :processStatus",
             f"{DocumentMetadata.CREATED_AT} = if_not_exists({DocumentMetadata.CREATED_AT}, :now)",
             f"{DocumentMetadata.UPDATED_AT} = :now",
@@ -512,6 +513,7 @@ def upsert_ddb(data: InitialDdbRecord) -> None:
         ]
         expr_values: dict[str, Any] = {
             ":originalFileName": data.original_file_name,
+            ":originalFileNameLower": data.original_file_name.lower(),
             ":processStatus": data.process_status,
             ":now": now,
             ":pwProt": bool(data.is_password_protected),

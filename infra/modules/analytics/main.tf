@@ -234,6 +234,10 @@ resource "aws_glue_catalog_table" "raw_metrics" {
       type = "string"
     }
     columns {
+      name = "original_file_name_lower"
+      type = "string"
+    }
+    columns {
       name = "matched_blueprint_name"
       type = "string"
     }
