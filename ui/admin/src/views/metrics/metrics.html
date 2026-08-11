@@ -8,24 +8,8 @@
         </select>
       </div>
       <div class="metrics-timeframe">
-        <select id="metrics-timeframe">
-          <option value="1">Yesterday</option>
-          <option value="7">Last 7 days</option>
-          <option value="30" selected>Last 30 days</option>
-          <option value="90">Last 90 days</option>
-          <option value="custom">Custom</option>
-        </select>
-        <div id="metrics-custom-range" class="metrics-custom-range hidden">
-          <div class="metrics-custom-field">
-            <label for="metrics-start">Start</label>
-            <input type="date" id="metrics-start" />
-          </div>
-          <div class="metrics-custom-field">
-            <label for="metrics-end">End</label>
-            <input type="date" id="metrics-end" />
-          </div>
-          <button id="metrics-load-btn" class="btn-primary">Load</button>
-        </div>
+        <label class="metrics-timeframe-label">Date Range</label>
+        <div id="metrics-date-range"></div>
       </div>
       <nav class="metrics-tabs">
         <button class="metrics-tab active" data-tab="volume">Volume</button>

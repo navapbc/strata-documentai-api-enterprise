@@ -65,17 +65,6 @@ async def search_documents(
             Attr(DocumentMetadata.ORIGINAL_FILE_NAME_LOWER).contains(filename.lower())
         )
 
-    if date_from:
-        filter_parts.append(Attr(DocumentMetadata.CREATED_AT).gte(date_from))
-
-    if date_to:
-        # Timestamps are stored as full ISO strings (e.g. "2026-08-11T12:00:00+00:00").
-        # A bare date like "2026-08-11" is lexicographically less than any timestamp on
-        # that day, so lte(date_to) would exclude the entire day. Append end-of-day to
-        # make the upper bound inclusive of all timestamps on date_to.
-        date_to_eod = date_to if "T" in date_to else f"{date_to}T23:59:59.999999+00:00"
-        filter_parts.append(Attr(DocumentMetadata.CREATED_AT).lte(date_to_eod))
-
     if user_provided_document_type:
         filter_parts.append(
             Attr(DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY).eq(user_provided_document_type)
@@ -96,6 +85,10 @@ async def search_documents(
         records, last_key = _table.query_by_tenant(
             tenant_id,
             filter_expression=filter_expr,
+            date_from=date_from,
+            date_to=date_to
+            if "T" in (date_to or "")
+            else (f"{date_to}T23:59:59.999999+00:00" if date_to else None),
             limit=limit,
             start_key=start_key,
         )
