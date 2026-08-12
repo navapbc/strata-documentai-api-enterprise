@@ -123,8 +123,11 @@ function showDashboard(session) {
     if (!hasActiveBadge) return;
     const header = section.querySelector(".nav-section-header");
     if (header && !header.querySelector(".nav-section-badge-dot")) {
+      const hasNew = [...section.querySelectorAll(".nav-item")].some(
+        (item) => getBadge(item.dataset.view)?.variant === "new",
+      );
       const dot = document.createElement("span");
-      dot.className = "nav-section-badge-dot";
+      dot.className = `nav-section-badge-dot${hasNew ? " nav-section-badge-dot--new" : ""}`;
       header.appendChild(dot);
     }
   });
@@ -187,10 +190,11 @@ function showDashboard(session) {
     app.querySelector("#mobile-menu-admin")?.classList.remove("hidden");
   }
 
-  // Restore view from hash (no default - sidebar starts collapsed)
+  // Restore view from hash, or default to documents on non-mobile
   const initialHash = location.hash.replace("#", "");
   const initialView = initialHash.split("/")[0];
   if (VIEWS[initialView]) activateNavItem(initialView);
+  else if (window.innerWidth <= 768) activateNavItem("documents");
 
   // Preload blueprint schemas so extraction-rules view renders instantly
   SchemasService.getAllFields()

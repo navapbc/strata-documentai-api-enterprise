@@ -335,6 +335,9 @@ form button[type="submit"]:not(.btn-primary):not(.btn-secondary):not(.btn-outlin
   position: relative;
   top: -1px;
 }
+.nav-section-badge-dot--new {
+  background: #22c55e;
+}
 
 #view-title .nav-badge-new,
 #view-title .nav-badge-updated {
@@ -1761,6 +1764,14 @@ td {
 }
 
 /* Documents View */
+/* #doc-viewer-pane is a plain mount div with no height of its own, so
+   .documents-two-panel's height:100% had nothing to resolve against and
+   grew to its content's full height instead - clipped by .filter-main's
+   overflow:hidden with no way to scroll to the rest. */
+#doc-viewer-pane {
+  height: 100%;
+}
+
 .documents-three-panel {
   display: grid;
   grid-template-columns: 240px 1fr 1fr;
@@ -1774,6 +1785,10 @@ td {
   grid-template-columns: 4fr 2fr;
   gap: 1rem;
   height: 100%;
+}
+
+.doc-viewer-back-btn {
+  display: none;
 }
 
 .documents-three-panel.detail-collapsed {
@@ -1899,7 +1914,13 @@ td {
 }
 
 .doc-list-heading {
-  padding: 0.5rem 0rem 0.25rem;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  /* Matches body's background (#f5f5f5) - .documents-compact-list and its
+     ancestors are transparent, so this is what actually shows behind it. */
+  background: #f5f5f5;
+  padding: 0.5rem 0.375rem 0.25rem;
   pointer-events: none;
   list-style: none;
   border-top: 1px solid var(--color-border, #e5e7eb);
@@ -1913,9 +1934,19 @@ td {
 }
 
 .doc-list-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
   padding: 0.5rem 0.375rem;
   border-radius: 4px;
   cursor: pointer;
+}
+
+.doc-list-item .badge {
+  flex-shrink: 0;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.65rem;
 }
 
 .doc-list-item:hover {
@@ -1935,24 +1966,14 @@ td {
 }
 
 .doc-list-name {
+  align-self: stretch;
+  min-width: 0;
   font-size: 0.8rem;
   font-weight: 500;
   color: #111827;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.doc-list-meta {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  margin-top: 0.2rem;
-}
-
-.doc-list-date {
-  font-size: 0.7rem;
-  color: #9ca3af;
 }
 
 .documents-preview-panel {
@@ -1989,7 +2010,8 @@ td {
 
 .documents-detail-panel {
   padding-left: 0.5rem;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   position: relative;
 }
 
@@ -2408,6 +2430,8 @@ td {
 .filter-sidebar {
   width: 200px;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
   border-right: 1px solid var(--color-border, #e5e7eb);
   padding-right: 16px;
   overflow-y: auto;
@@ -2416,8 +2440,14 @@ td {
 .filter-sidebar-fields {
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
   gap: 12px;
   min-height: 0;
+  margin-bottom: 1rem;
+}
+
+.filter-sidebar > #no-documents {
+  flex-shrink: 0;
 }
 
 .filter-sidebar .documents-compact-list {
@@ -3118,6 +3148,32 @@ td {
     height: auto;
   }
 
+  /* Documents / Search Documents: list and detail share one narrow column
+     here, so show one at a time instead of stacking both - the sticky list
+     sidebar is tall enough to fully cover the detail pane otherwise. */
+  .filter-layout--doc-viewer:not(.mobile-detail-active) .filter-main {
+    display: none;
+  }
+
+  .filter-layout--doc-viewer.mobile-detail-active .filter-sidebar {
+    display: none;
+  }
+
+  .filter-layout--doc-viewer.mobile-detail-active .doc-viewer-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-bottom: 0.75rem;
+    padding: 0.375rem 0.75rem;
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: 6px;
+    background: var(--color-bg, #ffffff);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #333;
+    cursor: pointer;
+  }
+
   #bp-main-area {
     overflow: visible;
     height: auto;
@@ -3129,17 +3185,35 @@ td {
 
   .filter-sidebar:not(.filter-sidebar--wide) {
     width: auto;
-    display: block;
     position: sticky;
     top: 5rem;
     z-index: 5;
     background: var(--color-bg, #ffffff);
-    overflow-y: visible;
+    overflow: hidden;
+    max-height: calc(100vh - 5rem);
     margin: -1rem -1rem 0 -1rem;
     padding: 0 1rem;
     border-right: none;
     border-bottom: 1px solid var(--color-border, #e5e7eb);
     min-height: 2.75rem;
+  }
+
+  /* This sidebar paints itself white (above) instead of leaving body's
+     #f5f5f5 showing through, so its sticky heading needs to match that. */
+  .filter-sidebar:not(.filter-sidebar--wide) .doc-list-heading {
+    background: var(--color-bg, #ffffff);
+  }
+
+  /* The sidebar is full-width here, so name + badge fit comfortably on one
+     row (stacked, as on desktop, wastes the extra space). */
+  .doc-list-item {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .doc-list-name {
+    flex: 1;
   }
 
   .filter-sidebar-fields {
@@ -3149,6 +3223,7 @@ td {
     align-items: center;
     gap: 12px;
     padding: 12px 2.5rem 12px 0;
+    margin-bottom: 0;
   }
 
   .filter-sidebar-collapsed .filter-sidebar-fields {
@@ -3157,6 +3232,20 @@ td {
     padding-bottom: 0;
     overflow: hidden;
     pointer-events: none;
+  }
+
+  /* Above .content-header (z-index: 10) so the collapsed bar isn't covered
+     when it sits flush against the fixed page title. */
+  .filter-sidebar-collapsed {
+    z-index: 20;
+  }
+
+  /* Documents view: once the fields collapse to 0 height, the results list
+     (flex: 1) would otherwise render straight under the absolutely-positioned
+     collapse chevron/label. Reserve the same strip .filter-sidebar's
+     min-height accounts for. */
+  .filter-sidebar-collapsed .documents-compact-list {
+    margin-top: 2.75rem;
   }
 
   .filter-collapse-label {
@@ -3202,14 +3291,18 @@ td {
     transform: rotate(-180deg);
   }
 
-  .metrics-timeframe {
+  /* Scoped to the collapsible row-flex bar: .filter-sidebar-fields lays its
+     fields out horizontally, where flex-basis sets width. Unscoped, this
+     rule also reaches .filter-sidebar--wide's fields, whose flex container
+     is a column - there flex-basis sets height, forcing a 160px-tall field. */
+  .filter-sidebar-fields .metrics-timeframe {
     width: auto;
     flex: 1 1 160px;
   }
 
-  .metrics-timeframe select,
-  .metrics-timeframe input[type="date"],
-  .metrics-timeframe input[type="search"] {
+  .filter-sidebar-fields .metrics-timeframe select,
+  .filter-sidebar-fields .metrics-timeframe input[type="date"],
+  .filter-sidebar-fields .metrics-timeframe input[type="search"] {
     width: auto;
   }
 
@@ -3285,9 +3378,10 @@ td {
   display: none;
 }
 
-/* Filter-bar collapse chevron: only meaningful where .filter-sidebar is sticky (<=1024px) */
+/* Filter-bar collapse chevron/label: only meaningful where .filter-sidebar is sticky (<=1024px) */
 @media (min-width: 1025px) {
-  .filter-collapse-chevron {
+  .filter-collapse-chevron,
+  .filter-collapse-label {
     display: none;
   }
 }
@@ -3452,6 +3546,7 @@ td {
 
   .filter-sidebar:not(.filter-sidebar--wide) {
     top: calc(3.25rem + 3.5rem);
+    max-height: calc(100vh - 3.25rem - 3.5rem);
   }
 
   .fields-list-header-row {
