@@ -180,11 +180,16 @@ function showDashboard(session) {
   // Mobile fullscreen overlay (More)
   const overlay = app.querySelector("#mobile-menu-overlay");
   const closeOverlay = () => overlay?.classList.remove("open");
-  app.querySelector("#mobile-more-btn")?.addEventListener("click", () => overlay?.classList.toggle("open"));
+  app
+    .querySelector("#mobile-more-btn")
+    ?.addEventListener("click", () => overlay?.classList.toggle("open"));
   app.querySelector("#mobile-menu-close")?.addEventListener("click", closeOverlay);
   app.querySelector("#logout-btn-mobile-menu")?.addEventListener("click", logout);
   app.querySelectorAll(".mobile-menu-item[data-view]").forEach((item) => {
-    item.addEventListener("click", () => { closeOverlay(); activateNavItem(item.dataset.view); });
+    item.addEventListener("click", () => {
+      closeOverlay();
+      activateNavItem(item.dataset.view);
+    });
   });
   if (Session.isSuperAdmin()) {
     app.querySelector("#mobile-menu-admin")?.classList.remove("hidden");

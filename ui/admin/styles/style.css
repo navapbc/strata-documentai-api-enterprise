@@ -1398,7 +1398,6 @@ td {
   width: 100%;
 }
 
-
 /* Blueprint Test Runner Modal */
 .modal-lg {
   max-width: 800px;
@@ -2070,7 +2069,9 @@ td {
 }
 
 .extracted-data-table col.ed-col-conf {
-  width: 7rem;
+  /* Values are always "##.#%" - 7rem was leaving almost nothing for
+     ed-col-value in the narrow detail panel. */
+  width: 4rem;
 }
 
 /* Field names and values are arbitrary length under fixed layout - wrap instead
@@ -2224,7 +2225,6 @@ td {
 .sidebar-close {
   display: none;
 }
-
 
 /* Styled file input */
 .file-input-wrapper {
@@ -2551,7 +2551,8 @@ td {
 .filter-main {
   flex: 1;
   min-width: 0;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .filter-main thead th,
