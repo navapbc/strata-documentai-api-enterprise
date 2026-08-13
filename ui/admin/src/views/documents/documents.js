@@ -8,9 +8,10 @@ import html from "./documents.html";
 const tmpl = tpl(html);
 
 const STORAGE_KEY_ACTIVE = "docai_documents_active_job";
+const STORAGE_KEY_LIMIT = "docai_documents_limit";
 
 let _listEl, _noDocuments;
-let _statusFilter;
+let _statusFilter, _limitFilter;
 let _unsubTenant = null;
 let _recentDocuments = [];
 let _pane = null;
@@ -23,13 +24,22 @@ export function mount(root) {
   _recentDocuments = [];
 
   _statusFilter = root.querySelector("#document-status-filter");
+  _limitFilter = root.querySelector("#document-limit-filter");
   _listEl = root.querySelector("#documents-list");
   _noDocuments = root.querySelector("#no-documents");
 
   _pane = mountViewerPane(root.querySelector("#doc-viewer-pane"));
   _pane.hide();
 
+  const savedLimit = sessionStorage.getItem(STORAGE_KEY_LIMIT);
+  if (savedLimit) _limitFilter.value = savedLimit;
+
   _statusFilter.addEventListener("change", () => load());
+  _limitFilter.addEventListener("change", () => {
+    sessionStorage.setItem(STORAGE_KEY_LIMIT, _limitFilter.value);
+    sessionStorage.removeItem(STORAGE_KEY_ACTIVE);
+    load();
+  });
 
   TenantContext.mountSelect(root.querySelector("#tenant-select"), { placeholder: "Select Tenant" });
   _unsubTenant = TenantContext.onChange(() => {
@@ -68,9 +78,10 @@ export async function load() {
   }
 
   const status = _statusFilter?.value || undefined;
+  const limit = parseInt(_limitFilter.value, 10);
 
   try {
-    const resp = await DocumentsService.list({ tenantId, status, limit: 25 });
+    const resp = await DocumentsService.list({ tenantId, status, limit });
     _recentDocuments = resp.documents || resp || [];
   } catch {
     _recentDocuments = [];
