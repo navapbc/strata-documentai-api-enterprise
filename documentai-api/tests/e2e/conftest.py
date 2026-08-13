@@ -152,7 +152,7 @@ def _wipe_e2e_tenant(tenant_id: str) -> None:
 
     logger.info(f"e2e wipe: deleted {deleted_docs} doc records, {deleted_objects} s3 objects")
 
-    # Extraction rules are seeded per-run (see payslip_extraction_rule in
+    # Extraction rules are seeded per-case (see payslip_extraction_rule in
     # test_app_documents_probes.py); sweep any left behind by a crashed run.
     if cfg.extraction_rules_table_name:
         from documentai_api.utils import extraction_rules

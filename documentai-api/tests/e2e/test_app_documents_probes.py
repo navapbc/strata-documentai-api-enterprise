@@ -21,8 +21,8 @@ shows every violation:
   for anomalies the tenant code table has no code for yet: never 000)
 - matchedDocumentClass
 - missingRequiredFieldListContains (KF-8a/8c: absent fields must be reported;
-  the payslip rule these cases depend on is seeded by the module-scoped
-  payslip_extraction_rule fixture below)
+  the payslip rule these cases depend on is seeded around exactly these cases
+  by the payslip_extraction_rule fixture below)
 - emptyFields (KF-8b: absent fields must not be hallucinated)
 - fieldEquals (KF-9: page-2-only values prove multi-page extraction)
 """
@@ -100,42 +100,46 @@ class ProbeCase:
         return f"responseCode NOT in {self.forbidden_response_codes}"
 
 
-# The KF-8 spec (synthetic-probe-payslip-missing-fields.jpeg) asserts the
-# missing-required-fields gate fires with these fields enumerated. The gate
-# reads per-tenant rules from the extraction-rules table, so the rule is a
-# test precondition, not tenant state we can assume exists.
 PAYSLIP_DOCUMENT_CLASS = "Payslip"
-PAYSLIP_REQUIRED_FIELDS = [
-    "PayPeriodStartDate",
-    "PayPeriodEndDate",
-    "YTDGrossPay",
-    "YTDNetPay",
-]
 
 
-@pytest.fixture(scope="module", autouse=True)
-def payslip_extraction_rule(api_key, e2e_tenant_id):
+@pytest.fixture(autouse=True)
+def payslip_extraction_rule(request, api_key, e2e_tenant_id):
     """Seed the payslip extraction rule the KF-8a/8c assertions depend on.
 
     Without a rule, apply_extraction_rules returns early and the 101 gate is
     unreachable - the KF-8 cases would stay red even after the API is fixed.
-    Every other blueprint field is listed as optional so the rule's field
-    filter passes the full payload through for the other payslip probes.
+    The gate reads per-tenant rules from the extraction-rules table, so the
+    rule is a test precondition, not tenant state we can assume exists.
+
+    Scoped to only the cases that assert missingRequiredFieldListContains:
+    the rule marks fields required for EVERY payslip this tenant uploads, so
+    a broader scope turns the green payslip controls (clean scan, mixed-pages
+    PDF, KF-17, the KF-5 declared-category guard) into 101s. Tests run
+    sequentially within an xdist worker and each worker has its own tenant,
+    so seeding before / deleting after this one case cannot leak elsewhere.
 
     Depends on api_key for its session-level env setup (EXTRACTION_RULES_
     TABLE_NAME et al. are restored there and the config cache is cleared).
     """
+    callspec = getattr(request.node, "callspec", None)
+    case = callspec.params.get("case") if callspec else None
+    required_fields = case.missing_required_contains if case else []
+    if not required_fields:
+        yield
+        return
+
     import documentai_api
     from documentai_api.utils import extraction_rules
 
     labels_path = Path(documentai_api.__file__).parent / "config" / "field_labels" / "payslip.json"
     all_fields = list(json.loads(labels_path.read_text()).keys())
-    optional_fields = [f for f in all_fields if f not in PAYSLIP_REQUIRED_FIELDS]
+    optional_fields = [f for f in all_fields if f not in required_fields]
 
     extraction_rules.upsert_rule(
         tenant_id=e2e_tenant_id,
         document_type=PAYSLIP_DOCUMENT_CLASS,
-        required_fields=PAYSLIP_REQUIRED_FIELDS,
+        required_fields=required_fields,
         optional_fields=optional_fields,
     )
     try:
@@ -202,9 +206,13 @@ def _upload_and_poll(
     http_status, body = 0, {}
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
+        # Without include_extracted_data the API serves the persisted v1
+        # response, whose field values are always "<redacted>" - fieldEquals
+        # (KF-9) and emptyFields (KF-8b) can only assert against real values.
         r = requests.get(
             f"{base_url}/v1/documents/{job_id}",
             headers={"API-Key": api_key},
+            params={"include_extracted_data": "true"},
             timeout=30,
         )
         http_status = r.status_code
