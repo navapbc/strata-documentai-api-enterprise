@@ -7,6 +7,7 @@
 import * as Session from "./utils/session.js";
 import * as Toast from "./utils/toast.js";
 import * as TenantContext from "./utils/tenant-context.js";
+import * as CollapsibleFilterBar from "./utils/collapsible-filter-bar.js";
 import * as HttpClient from "./services/http.js";
 import * as Auth from "./services/auth.js";
 import * as Audit from "./services/audit.js";
@@ -122,8 +123,11 @@ function showDashboard(session) {
     if (!hasActiveBadge) return;
     const header = section.querySelector(".nav-section-header");
     if (header && !header.querySelector(".nav-section-badge-dot")) {
+      const hasNew = [...section.querySelectorAll(".nav-item")].some(
+        (item) => getBadge(item.dataset.view)?.variant === "new",
+      );
       const dot = document.createElement("span");
-      dot.className = "nav-section-badge-dot";
+      dot.className = `nav-section-badge-dot${hasNew ? " nav-section-badge-dot--new" : ""}`;
       header.appendChild(dot);
     }
   });
@@ -168,31 +172,34 @@ function showDashboard(session) {
   // Logout
   app.querySelector("#logout-btn").addEventListener("click", logout);
 
-  // Sidebar toggle (mobile)
-  const sidebarToggle = app.querySelector("#sidebar-toggle");
-  const sidebarClose = app.querySelector("#sidebar-close");
-  const sidebar = app.querySelector(".sidebar");
-  if (sidebarToggle && sidebar) {
-    const closeSidebar = () => sidebar.classList.remove("sidebar-open");
+  // Mobile bottom nav direct items
+  app.querySelectorAll(".mobile-nav-item[data-view]").forEach((item) => {
+    item.addEventListener("click", () => activateNavItem(item.dataset.view));
+  });
 
-    sidebarToggle.addEventListener("click", () => {
-      sidebar.classList.add("sidebar-open");
+  // Mobile fullscreen overlay (More)
+  const overlay = app.querySelector("#mobile-menu-overlay");
+  const closeOverlay = () => overlay?.classList.remove("open");
+  app
+    .querySelector("#mobile-more-btn")
+    ?.addEventListener("click", () => overlay?.classList.toggle("open"));
+  app.querySelector("#mobile-menu-close")?.addEventListener("click", closeOverlay);
+  app.querySelector("#logout-btn-mobile-menu")?.addEventListener("click", logout);
+  app.querySelectorAll(".mobile-menu-item[data-view]").forEach((item) => {
+    item.addEventListener("click", () => {
+      closeOverlay();
+      activateNavItem(item.dataset.view);
     });
-    if (sidebarClose) {
-      sidebarClose.addEventListener("click", closeSidebar);
-    }
-    // Close sidebar when nav item clicked (mobile)
-    sidebar.addEventListener("click", (e) => {
-      if (e.target.classList.contains("nav-item")) closeSidebar();
-    });
-    // Close sidebar when clicking outside
-    _mainContent.addEventListener("click", closeSidebar);
+  });
+  if (Session.isSuperAdmin()) {
+    app.querySelector("#mobile-menu-admin")?.classList.remove("hidden");
   }
 
-  // Restore view from hash (no default - sidebar starts collapsed)
+  // Restore view from hash, or default to documents on non-mobile
   const initialHash = location.hash.replace("#", "");
   const initialView = initialHash.split("/")[0];
   if (VIEWS[initialView]) activateNavItem(initialView);
+  else if (window.innerWidth <= 768) activateNavItem("documents");
 
   // Preload blueprint schemas so extraction-rules view renders instantly
   SchemasService.getAllFields()
@@ -222,6 +229,7 @@ function navigateTo(viewName) {
   }
   entry.module.mount(_mainContent);
   _currentView = entry.module;
+  CollapsibleFilterBar.attach();
 }
 
 function activateNavItem(viewName) {
@@ -230,6 +238,12 @@ function activateNavItem(viewName) {
 
   app.querySelectorAll(".nav-item").forEach((i) => i.classList.remove("active"));
   navItem.classList.add("active");
+
+  // Sync mobile bottom nav active state
+  app.querySelectorAll(".mobile-nav-item").forEach((i) => i.classList.remove("active"));
+  app.querySelector(`.mobile-nav-item[data-view="${viewName}"]`)?.classList.add("active");
+  app.querySelectorAll(".mobile-menu-item").forEach((i) => i.classList.remove("active"));
+  app.querySelector(`.mobile-menu-item[data-view="${viewName}"]`)?.classList.add("active");
 
   // Expand parent section
   const sectionBody = navItem.closest(".nav-section-body");

@@ -1,25 +1,25 @@
 <div class="filter-layout">
   <div class="filter-sidebar">
-    <div class="metrics-timeframe">
-      <label class="metrics-timeframe-label">Tenant</label>
+    <div class="filter-field">
+      <label class="filter-field-label">Tenant</label>
       <select id="tenant-select">
         <option value="">All Tenants</option>
       </select>
     </div>
-    <div class="metrics-timeframe">
-      <label class="metrics-timeframe-label">Filter</label>
+    <div class="filter-field">
+      <label class="filter-field-label">Filter</label>
       <input type="search" id="categories-search" placeholder="Name, display name, description…" />
     </div>
-    <div class="metrics-timeframe">
-      <label class="metrics-timeframe-label">Source</label>
+    <div class="filter-field">
+      <label class="filter-field-label">Source</label>
       <select id="categories-source-filter">
         <option value="">All</option>
         <option value="system">System</option>
         <option value="manual">Manual</option>
       </select>
     </div>
-    <div class="metrics-timeframe">
-      <label class="metrics-timeframe-label">Sample Rate</label>
+    <div class="filter-field">
+      <label class="filter-field-label">Sample Rate</label>
       <select id="categories-rate-filter">
         <option value="">All</option>
         <option value="0">0%</option>
@@ -29,23 +29,25 @@
       </select>
     </div>
   </div>
-  <div class="filter-main">
-    <table id="categories-table" class="hidden">
-      <thead>
-        <tr>
-          <th data-col="tenantId">Tenant</th>
-          <th data-col="categoryName">Name</th>
-          <th data-col="displayName">Display Name</th>
-          <th data-col="description">Description</th>
-          <th data-col="processingPercentage">Sample Rate</th>
-          <th data-col="isAutoRegistered">Source</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="categories-tbody"></tbody>
-    </table>
-    <p id="no-categories" class="empty-state hidden">No categories found.</p>
+  <div class="filter-main filter-main--table">
+    <div class="table-scroll">
+      <p id="no-categories" class="empty-state hidden">No categories found.</p>
+      <table id="categories-table" class="hidden">
+        <thead>
+          <tr>
+            <th data-col="tenantId">Tenant</th>
+            <th data-col="categoryName">Name</th>
+            <th data-col="displayName">Display Name</th>
+            <th data-col="description">Description</th>
+            <th data-col="processingPercentage">Sample Rate</th>
+            <th data-col="isAutoRegistered">Source</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="categories-tbody"></tbody>
+      </table>
+    </div>
   </div>
 </div>
 

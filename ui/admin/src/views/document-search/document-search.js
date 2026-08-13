@@ -25,6 +25,7 @@ let _searchResults = [];
 let _nextCursor = null;
 let _pane = null;
 let _filterMain = null;
+let _savedState = null;
 
 export function mount(root) {
   _root = root;
@@ -76,6 +77,22 @@ export function mount(root) {
     resetResults();
   });
 
+  if (_savedState) {
+    const s = _savedState;
+    _filenameInput.value = s.filename;
+    _blueprintValue = s.blueprintValue;
+    _docTypeInput.value = s.docType;
+    _searchResults = s.results;
+    _nextCursor = s.nextCursor;
+    _resultsTab.textContent = `Results (${_searchResults.length}${_nextCursor ? "+" : ""})`;
+    _resultsTab.disabled = false;
+    _pane.show(_listEl, _searchResults, { autoSelect: false });
+    _loadMoreBtn.classList.toggle("hidden", !_nextCursor);
+    if (s.activeTab === "results") {
+      _resultsTab.click();
+    }
+  }
+
   _searchBtn.addEventListener("click", () => {
     if (!TenantContext.getTenantId()) {
       _tenantMsg.classList.remove("hidden");
@@ -114,6 +131,18 @@ export function mount(root) {
 }
 
 export function unmount(root) {
+  if (_searchResults.length) {
+    _savedState = {
+      results: _searchResults,
+      nextCursor: _nextCursor,
+      filename: _filenameInput?.value ?? "",
+      blueprintValue: _blueprintValue,
+      docType: _docTypeInput?.value ?? "",
+      activeTab: root.querySelector(".sidebar-tab.active")?.dataset.tab ?? "filters",
+    };
+  } else {
+    _savedState = null;
+  }
   if (_pane) {
     _pane.unmount();
     _pane = null;

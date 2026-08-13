@@ -32,12 +32,24 @@ export function mount(root) {
 
   const previewPanel = root.querySelector("#doc-pane-preview");
   const detailContent = root.querySelector("#doc-pane-detail-content");
+  const backBtn = root.querySelector("#doc-viewer-back");
 
   let activeJobId = null;
   let fieldGeometry = null;
   let resizeObserver = null;
 
   linkFieldHighlighting(detailContent, previewPanel);
+
+  // Mobile/tablet: the list and detail share one narrow column, so selecting
+  // a document switches to a full-width detail view instead of showing both
+  // at once. Desktop's wide layout ignores this class entirely.
+  function showMobileDetail() {
+    root.closest(".filter-layout--doc-viewer")?.classList.add("mobile-detail-active");
+  }
+
+  backBtn.addEventListener("click", () => {
+    root.closest(".filter-layout--doc-viewer")?.classList.remove("mobile-detail-active");
+  });
 
   function hide() {
     activeJobId = null;
@@ -107,18 +119,14 @@ export function mount(root) {
         "data-job-id": doc.jobId,
       },
       h("div", { className: "doc-list-name" }, doc.fileName || doc.jobId?.slice(0, 8) || "-"),
-      h(
-        "div",
-        { className: "doc-list-meta" },
-        ...(badge ? [badge] : []),
-        h("span", { className: "doc-list-date" }, Helpers.formatDate(doc.createdAt)),
-      ),
+      ...(badge ? [badge] : []),
     );
     li.addEventListener("click", () => {
       activeJobId = doc.jobId;
       listEl.querySelectorAll(".doc-list-item").forEach((el) => el.classList.remove("active"));
       li.classList.add("active");
       loadDetail(doc.jobId);
+      showMobileDetail();
     });
     return li;
   }
@@ -127,7 +135,7 @@ export function mount(root) {
     listEl.innerHTML = "";
     const groups = groupByDate(docs);
     for (const [label, group] of groups) {
-      listEl.appendChild(h("li", { className: "doc-list-heading metrics-timeframe-label" }, label));
+      listEl.appendChild(h("li", { className: "doc-list-heading filter-field-label" }, label));
       for (const doc of group) {
         listEl.appendChild(buildListItem(listEl, doc));
       }
@@ -147,9 +155,7 @@ export function mount(root) {
         (el) => el.textContent === label,
       );
       if (!existing) {
-        listEl.appendChild(
-          h("li", { className: "doc-list-heading metrics-timeframe-label" }, label),
-        );
+        listEl.appendChild(h("li", { className: "doc-list-heading filter-field-label" }, label));
       }
       for (const doc of group) {
         listEl.appendChild(buildListItem(listEl, doc));

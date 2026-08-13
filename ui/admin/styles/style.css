@@ -2,6 +2,7 @@
   --color-primary: #2563eb;
   --color-primary-light: #eff6ff;
   --color-bg: #fff;
+  --color-bg-page: #f5f5f5;
   --color-bg-hover: #f9fafb;
   --color-bg-secondary: #f3f4f6;
   --color-border: #e5e7eb;
@@ -9,6 +10,7 @@
   --color-text-secondary: #6b7280;
   --color-danger: #dc2626;
   --color-success: #059669;
+  --content-header-height: 3.5rem;
 }
 
 * {
@@ -25,9 +27,10 @@ body {
     "Segoe UI",
     Roboto,
     sans-serif;
-  background: #f5f5f5;
+  background: var(--color-bg-page);
   color: #333;
   min-height: 100vh;
+  overscroll-behavior-y: contain;
 }
 
 h1,
@@ -191,13 +194,14 @@ form button[type="submit"]:not(.btn-primary):not(.btn-secondary):not(.btn-outlin
 
 /* Layout */
 .layout {
+  --sidebar-width: 240px;
   display: flex;
   min-height: 100vh;
 }
 
 /* Sidebar */
 .sidebar {
-  width: 240px;
+  width: var(--sidebar-width);
   background: #1a1a2e;
   color: #ccc;
   display: flex;
@@ -334,6 +338,9 @@ form button[type="submit"]:not(.btn-primary):not(.btn-secondary):not(.btn-outlin
   position: relative;
   top: -1px;
 }
+.nav-section-badge-dot--new {
+  background: #22c55e;
+}
 
 #view-title .nav-badge-new,
 #view-title .nav-badge-updated {
@@ -353,60 +360,6 @@ form button[type="submit"]:not(.btn-primary):not(.btn-secondary):not(.btn-outlin
 }
 
 /* Nav Search - dark sidebar variant */
-.sidebar .nav-search {
-  padding: 0.25rem 1rem 0.5rem 1.5rem;
-}
-
-.sidebar .nav-search input {
-  width: 100%;
-  padding: 0.375rem 0.5rem;
-  background: #2a2a4a;
-  border: 1px solid #3a3a5a;
-  border-radius: 4px;
-  color: white;
-  font-size: 0.75rem;
-  margin-bottom: 0;
-}
-
-.sidebar .nav-search input::placeholder {
-  color: #666;
-}
-
-.sidebar .nav-search input:focus {
-  border-color: #5ba3f5;
-  box-shadow: none;
-}
-
-/* Nav Search - light variant (filter sidebar) */
-.filter-sidebar .nav-search {
-  flex-shrink: 0;
-  padding: 0 0 0.5rem;
-}
-
-.filter-sidebar .nav-search input {
-  width: 100%;
-  padding: 0.375rem 0.75rem;
-  background: white;
-  border: 1px solid var(--border, #dfe1e2);
-  border-radius: 10px;
-  color: var(--color-text);
-  font-size: 0.8125rem;
-  font-family: inherit;
-  height: 2rem;
-  margin-bottom: 0;
-  box-sizing: border-box;
-}
-
-.filter-sidebar .nav-search input::placeholder {
-  color: #9ca3af;
-}
-
-.filter-sidebar .nav-search input:focus {
-  outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
-}
-
 /* Combobox */
 .combobox-input {
   flex: 1;
@@ -491,7 +444,7 @@ form button[type="submit"]:not(.btn-primary):not(.btn-secondary):not(.btn-outlin
   padding: 2rem;
   padding-top: 6rem;
   min-width: 0;
-  margin-left: 240px;
+  margin-left: var(--sidebar-width);
   position: relative;
 }
 
@@ -506,7 +459,7 @@ form button[type="submit"]:not(.btn-primary):not(.btn-secondary):not(.btn-outlin
   position: fixed;
   top: 0;
   right: 0;
-  left: 240px;
+  left: var(--sidebar-width);
   height: 5rem;
   padding: 0 2rem;
   z-index: 10;
@@ -581,7 +534,7 @@ form button[type="submit"]:not(.btn-primary):not(.btn-secondary):not(.btn-outlin
 }
 
 .badge-neutral {
-  background: #f5f5f5;
+  background: var(--color-bg-page);
   color: #757575;
 }
 
@@ -862,7 +815,7 @@ td {
 .field-type {
   font-size: 0.7rem;
   color: #999;
-  background: #f5f5f5;
+  background: var(--color-bg-page);
   padding: 0.125rem 0.375rem;
   border-radius: 3px;
 }
@@ -906,7 +859,7 @@ td {
 }
 
 .toggle-label input:checked + .toggle-excluded {
-  background: #f5f5f5;
+  background: var(--color-bg-page);
   border-color: #999;
   color: #666;
 }
@@ -978,7 +931,7 @@ td {
   gap: 0.5rem;
   margin: 1rem 0;
   padding: 0.75rem;
-  background: #f5f5f5;
+  background: var(--color-bg-page);
   border-radius: 4px;
   overflow-x: auto;
 }
@@ -1394,23 +1347,6 @@ td {
   width: 100%;
 }
 
-/* Responsive - stack on mobile */
-@media (max-width: 880px) {
-  .login-layout {
-    grid-template-columns: 1fr;
-    gap: 2rem;
-    padding: 2rem 1.5rem;
-  }
-
-  .login-panel-left {
-    justify-content: center;
-  }
-
-  .login-marketing {
-    margin: 0 auto;
-  }
-}
-
 /* Blueprint Test Runner Modal */
 .modal-lg {
   max-width: 800px;
@@ -1668,7 +1604,7 @@ td {
   gap: 0.15rem;
 }
 .test-history-item:hover {
-  background: var(--hover-bg, #f5f5f5);
+  background: var(--hover-bg, var(--color-bg-page));
 }
 .test-history-item.active {
   background: var(--active-bg, #e3f2fd);
@@ -1776,6 +1712,14 @@ td {
 }
 
 /* Documents View */
+/* #doc-viewer-pane is a plain mount div with no height of its own, so
+   .documents-two-panel's height:100% had nothing to resolve against and
+   grew to its content's full height instead - clipped by .filter-main's
+   overflow:hidden with no way to scroll to the rest. */
+#doc-viewer-pane {
+  height: 100%;
+}
+
 .documents-three-panel {
   display: grid;
   grid-template-columns: 240px 1fr 1fr;
@@ -1789,6 +1733,10 @@ td {
   grid-template-columns: 4fr 2fr;
   gap: 1rem;
   height: 100%;
+}
+
+.doc-viewer-back-btn {
+  display: none;
 }
 
 .documents-three-panel.detail-collapsed {
@@ -1908,29 +1856,38 @@ td {
   list-style: none;
   padding: 0;
   margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
 }
 
 .doc-list-heading {
-  padding: 0.5rem 0rem 0.25rem;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  /* Matches body's background (#f5f5f5) - .documents-compact-list and its
+     ancestors are transparent, so this is what actually shows behind it. */
+  background: var(--color-bg-page);
+  padding: 0.25rem 0.375rem;
   pointer-events: none;
   list-style: none;
-  border-top: 1px solid var(--color-border, #e5e7eb);
-  margin-top: 0.25rem;
-}
-
-.doc-list-heading:first-child {
-  border-top: none;
-  margin-top: 0;
-  padding-top: 0;
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+  margin-bottom: 0.25rem;
+  margin-top: 0.5rem;
 }
 
 .doc-list-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
   padding: 0.5rem 0.375rem;
   border-radius: 4px;
   cursor: pointer;
+  margin-bottom: 0.125rem;
+}
+
+.doc-list-item .badge {
+  flex-shrink: 0;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.65rem;
 }
 
 .doc-list-item:hover {
@@ -1950,24 +1907,14 @@ td {
 }
 
 .doc-list-name {
+  align-self: stretch;
+  min-width: 0;
   font-size: 0.8rem;
   font-weight: 500;
   color: #111827;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.doc-list-meta {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  margin-top: 0.2rem;
-}
-
-.doc-list-date {
-  font-size: 0.7rem;
-  color: #9ca3af;
 }
 
 .documents-preview-panel {
@@ -2004,7 +1951,8 @@ td {
 
 .documents-detail-panel {
   padding-left: 0.5rem;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   position: relative;
 }
 
@@ -2063,7 +2011,9 @@ td {
 }
 
 .extracted-data-table col.ed-col-conf {
-  width: 7rem;
+  /* Values are always "##.#%" - 7rem was leaving almost nothing for
+     ed-col-value in the narrow detail panel. */
+  width: 4rem;
 }
 
 /* Field names and values are arbitrary length under fixed layout - wrap instead
@@ -2130,6 +2080,7 @@ td {
 /* Blueprints Screen */
 #bp-main-area {
   overflow-y: auto;
+  height: 100%;
 }
 
 #bp-search-results:empty {
@@ -2215,79 +2166,6 @@ td {
 
 .sidebar-close {
   display: none;
-}
-
-/*Responsive - tablet / small laptop */
-@media (max-width: 1024px) {
-  .sidebar {
-    width: 200px;
-  }
-
-  .main-content {
-    margin-left: 200px;
-  }
-
-  .content-header {
-    left: 200px;
-  }
-}
-
-/*Responsive - narrow tablet */
-@media (max-width: 768px) {
-  .sidebar {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    z-index: 100;
-    width: 240px;
-    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
-  }
-
-  .sidebar.sidebar-open {
-    display: flex;
-  }
-
-  .sidebar-toggle {
-    display: block;
-    position: fixed;
-    top: 0.75rem;
-    left: 0.75rem;
-    z-index: 50;
-    background: var(--color-bg, #fff);
-    border: 1px solid var(--color-border);
-    border-radius: 4px;
-    padding: 0.5rem 0.75rem;
-    font-size: 1.25rem;
-    cursor: pointer;
-    line-height: 1;
-  }
-
-  .sidebar-close {
-    display: block;
-    position: absolute;
-    top: -2px;
-    right: -5px;
-    background: none;
-    border: none;
-    font-size: 1.25rem;
-    cursor: pointer;
-    color: var(--color-text-secondary, #6b7280);
-    line-height: 1;
-  }
-
-  .main-content {
-    margin-left: 0;
-    padding: 1rem;
-    padding-top: 6rem;
-  }
-
-  .content-header {
-    left: 0;
-    padding: 0 1rem;
-    padding-left: 3.5rem;
-  }
 }
 
 /* Styled file input */
@@ -2481,6 +2359,16 @@ td {
   height: calc(100vh - 8rem);
 }
 
+.filter-layout--fixed {
+  height: calc(100vh - 8rem);
+}
+
+.filter-layout--fixed .filter-main {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
 .filter-sidebar {
   width: 200px;
   flex-shrink: 0;
@@ -2489,7 +2377,24 @@ td {
   gap: 12px;
   border-right: 1px solid var(--color-border, #e5e7eb);
   padding-right: 16px;
-  overflow: hidden;
+  overflow-y: auto;
+}
+
+.filter-sidebar .documents-compact-list {
+  margin-top: 0.25rem;
+}
+
+.filter-sidebar-fields {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 12px;
+  min-height: 0;
+  margin-bottom: 1rem;
+}
+
+.filter-sidebar > #no-documents {
+  flex-shrink: 0;
 }
 
 .filter-sidebar .documents-compact-list {
@@ -2500,9 +2405,11 @@ td {
 
 .filter-sidebar--wide {
   width: 240px;
+  flex: 0 0 240px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 .filter-sidebar--wide .documents-compact-list {
@@ -2511,7 +2418,13 @@ td {
   min-height: 0;
 }
 
-.filter-sidebar--wide .metrics-tab-panel {
+.doc-search-results-scroll {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding-bottom: 0.5rem;
+}
+.filter-sidebar--wide .filter-tab-panel {
   gap: 8px;
 }
 
@@ -2521,13 +2434,14 @@ td {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .sidebar-tab-bar {
   display: flex;
+  align-items: stretch;
+  flex-shrink: 0;
   border-bottom: 1px solid var(--color-border, #e5e7eb);
-  margin-bottom: 0.75rem;
 }
 
 .sidebar-tab {
@@ -2570,29 +2484,66 @@ td {
   width: 100%;
   text-align: left;
   padding: 0.5rem 0.75rem;
+  background: none;
   border: none;
-  border-radius: 6px;
-  background: transparent;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
   font-size: 0.8125rem;
   font-family: inherit;
-  color: var(--color-text);
+  color: var(--color-text-muted, #6b7280);
   cursor: pointer;
 }
 
 .metrics-tab:hover {
-  background: #f0f5fb;
+  color: var(--color-text, #111827);
 }
 
 .metrics-tab.active {
-  background: #e8f0fe;
-  color: var(--color-primary);
+  color: var(--color-primary, #2563eb);
+  border-bottom-color: var(--color-primary, #2563eb);
   font-weight: 500;
 }
 
 .filter-main {
   flex: 1;
   min-width: 0;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Data tables (Keys, Users, Categories, Audit Log, Tenants) can have more
+   columns than a narrow viewport fits. .filter-main clips horizontal
+   overflow, so wrap the table itself in its own scroll box instead of
+   losing columns off the right edge. */
+.table-scroll {
+  overflow-x: auto;
+}
+
+/* .table-scroll's overflow-x:auto forces its own overflow-y to auto too
+   (per spec, when only one axis is non-visible), which would otherwise make
+   IT the nearest scroll container instead of .filter-main - breaking the
+   thead's sticky positioning. Make it the real (bounded, vertically
+   scrolling) container instead, scoped to just the views that need it. */
+.filter-main--table {
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-main--table .table-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.filter-main--table > .pagination-controls {
+  flex-shrink: 0;
+}
+
+/* Tenants has no .filter-main - .table-scroll sits directly in
+   .main-content, which already has a definite height. */
+.main-content > .table-scroll {
+  height: 100%;
+  overflow-y: auto;
 }
 
 .filter-main thead th,
@@ -2603,20 +2554,20 @@ td {
   z-index: 1;
 }
 
-.metrics-tab-panel {
+.filter-tab-panel {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.metrics-timeframe {
+.filter-field {
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 0.5rem;
 }
 
-.metrics-timeframe-label {
+.filter-field-label {
   font-size: 0.75rem;
   font-weight: 500;
   color: var(--color-text-muted, #6b7280);
@@ -2634,9 +2585,10 @@ td {
   min-height: 2rem;
 }
 
-.metrics-timeframe select,
-.metrics-timeframe input[type="date"],
-.metrics-timeframe input[type="search"] {
+.filter-field select,
+.filter-field input[type="date"],
+.filter-field input[type="search"],
+.filter-field input[type="text"] {
   width: 100%;
   padding: 0.375rem 0.75rem;
   border: 1px solid var(--border, #dfe1e2);
@@ -2649,23 +2601,23 @@ td {
   box-sizing: border-box;
 }
 
-.metrics-custom-range {
+.filter-custom-range {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.metrics-custom-range .btn-primary {
+.filter-custom-range .btn-primary {
   margin-top: 4px;
 }
 
-.metrics-custom-field {
+.filter-custom-field {
   display: flex;
   align-items: center;
   gap: 0.375rem;
 }
 
-.metrics-custom-field label {
+.filter-custom-field label {
   font-size: 0.75rem;
   font-family: inherit;
   color: #71767a;
@@ -2673,7 +2625,7 @@ td {
   flex-shrink: 0;
 }
 
-.metrics-custom-field input[type="date"],
+.filter-custom-field input[type="date"],
 .metrics-controls input[type="date"] {
   width: 100%;
   margin: 0;
@@ -3171,48 +3123,545 @@ td {
   color: #9ca3af;
 }
 
-/* Responsive - stack the metrics tab/timeframe menu above content instead of
-   beside it - the 200px fixed sidebar otherwise eats ~half a phone screen.
-   Matches the app's existing tablet breakpoint (1024px), not just the phone
-   one (768px): iPad portrait sits in the 769-1024px range and is just as
-   squeezed by the persistent inner sidebar as a phone is. */
+/* --- Laptop View (1024px and down) --- */
 @media (max-width: 1024px) {
-  .filter-layout {
+  .layout {
+    --sidebar-width: 200px;
+  }
+
+  .main-content {
+    margin-left: var(--sidebar-width);
+    padding: 1rem;
+    padding-top: 6rem;
+    overflow-y: visible;
+  }
+
+  .filter-layout:not(.filter-layout--fixed) {
     flex-direction: column;
     height: auto;
   }
 
-  .filter-sidebar {
-    width: 100%;
+  /* Documents / Search Documents: list and detail share one narrow column
+     here, so show one at a time instead of stacking both - the sticky list
+     sidebar is tall enough to fully cover the detail pane otherwise. */
+  .filter-layout--doc-viewer:not(.mobile-detail-active) .filter-main {
+    display: none;
+  }
+
+  .filter-layout--doc-viewer.mobile-detail-active .filter-sidebar {
+    display: none;
+  }
+
+  .filter-layout--doc-viewer.mobile-detail-active .doc-viewer-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-bottom: 0.75rem;
+    padding: 0.375rem 0.75rem;
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: 6px;
+    background: var(--color-bg, #ffffff);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #333;
+    cursor: pointer;
+  }
+
+  #bp-main-area {
+    overflow: visible;
+    height: auto;
+  }
+
+  .fields-list-header-row {
+    top: var(--fields-header-top, 11rem);
+  }
+
+  .filter-sidebar:not(.filter-sidebar--wide) {
+    width: auto;
+    position: sticky;
+    top: 5rem;
+    z-index: 5;
+    background: var(--color-bg, #ffffff);
+    overflow: hidden;
+    max-height: calc(100vh - 5rem);
+    margin: -1rem -1rem 0 -1rem;
+    padding: 0 1rem;
+    border-right: none;
+    border-bottom: 1px solid var(--color-border, #e5e7eb);
+    min-height: 2.75rem;
+  }
+
+  /* This sidebar paints itself white (above) instead of leaving body's
+     #f5f5f5 showing through, so its sticky heading needs to match that. */
+  .filter-sidebar:not(.filter-sidebar--wide) .doc-list-heading {
+    background: var(--color-bg, #ffffff);
+  }
+
+  /* The sidebar is full-width here, so name + badge fit comfortably on one
+     row (stacked, as on desktop, wastes the extra space). */
+  .doc-list-item {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .doc-list-name {
+    flex: 1;
+  }
+
+  .filter-sidebar-fields {
+    display: flex;
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
     gap: 12px;
-    border-right: none;
-    border-bottom: 1px solid var(--color-border, #e5e7eb);
-    padding-right: 0;
-    padding-bottom: 12px;
+    padding: 12px 2.5rem 12px 0;
+    margin-bottom: 0;
   }
 
-  .metrics-timeframe {
-    width: auto;
-    flex: 0 0 auto;
+  .filter-sidebar-collapsed .filter-sidebar-fields {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    overflow: hidden;
+    pointer-events: none;
   }
 
-  .metrics-timeframe select,
-  .metrics-timeframe input[type="date"],
-  .metrics-timeframe input[type="search"] {
+  /* Above .content-header (z-index: 10) so the collapsed bar isn't covered
+     when it sits flush against the fixed page title. */
+  .filter-sidebar-collapsed {
+    z-index: 20;
+  }
+
+  /* Documents view: once the fields collapse to 0 height, the results list
+     (flex: 1) would otherwise render straight under the absolutely-positioned
+     collapse chevron/label. Reserve the same strip .filter-sidebar's
+     min-height accounts for. */
+  .filter-sidebar-collapsed .documents-compact-list {
+    margin-top: 2.75rem;
+  }
+
+  .filter-collapse-label {
+    display: none;
+    position: absolute;
+    top: 0.65rem;
+    left: 1rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  .filter-sidebar-collapsed .filter-collapse-label {
+    display: inline;
+  }
+
+  .filter-collapse-chevron {
+    position: absolute;
+    top: 0.5rem;
+    right: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: var(--color-text-muted, #6b7280);
+    cursor: pointer;
+  }
+
+  .filter-collapse-chevron:hover {
+    background: var(--color-bg-hover, #f3f4f6);
+  }
+
+  .filter-collapse-chevron svg {
+    transition: transform 0.15s ease;
+  }
+
+  .filter-collapse-chevron[aria-expanded="false"] svg {
+    transform: rotate(-180deg);
+  }
+
+  /* Scoped to the collapsible row-flex bar: .filter-sidebar-fields lays its
+     fields out horizontally, where flex-basis sets width. Unscoped, this
+     rule also reaches .filter-sidebar--wide's fields, whose flex container
+     is a column - there flex-basis sets height, forcing a 160px-tall field. */
+  .filter-sidebar-fields .filter-field {
     width: auto;
+    flex: 1 1 160px;
+  }
+
+  .filter-sidebar-fields .filter-field select,
+  .filter-sidebar-fields .filter-field input[type="date"],
+  .filter-sidebar-fields .filter-field input[type="search"],
+  .filter-sidebar-fields .filter-field input[type="text"] {
+    width: auto;
+  }
+
+  .filter-sidebar--wide .filter-field select,
+  .filter-sidebar--wide .filter-field input[type="date"],
+  .filter-sidebar--wide .filter-field input[type="search"],
+  .filter-sidebar--wide .filter-field input[type="text"] {
+    width: 100%;
   }
 
   .metrics-tabs {
     flex-direction: row;
-    flex: 1;
+    flex: 1 0 100%;
     overflow-x: auto;
   }
 
   .metrics-tab {
     width: auto;
+    flex: 1;
+    text-align: center;
     white-space: nowrap;
+  }
+
+  /* Metrics grids: single column on tablet */
+  .metrics-top-grid,
+  .metrics-panels {
+    grid-template-columns: 1fr;
+  }
+
+  .metrics-classification-col {
+    padding-top: 0;
+  }
+
+  /* Document search: wide sidebar stacks vertically, natural height */
+  .filter-sidebar--wide {
+    width: 100%;
+    overflow: visible;
+    flex: none;
+    min-height: 0;
+  }
+
+  .filter-sidebar--wide #doc-search-tab-results,
+  .filter-sidebar--wide #documents-tab-documents {
+    flex: none;
+    overflow: visible;
+  }
+
+  .filter-sidebar--wide .doc-search-results-scroll {
+    flex: none;
+    overflow: visible;
+    height: auto;
+  }
+
+  .filter-sidebar--wide .documents-compact-list {
+    overflow: visible;
+  }
+
+  .filter-sidebar--wide .sidebar-tab-bar {
+    position: sticky;
+    top: calc(3.25rem + var(--content-header-height));
+    background: var(--color-bg-page);
+    z-index: 2;
+    padding-bottom: 0.75rem;
+  }
+}
+
+/* --- Tablet View (880px and down) --- */
+
+@media (max-width: 880px) {
+  .login-layout {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding: 2rem 1.5rem;
+  }
+
+  .login-panel-left {
+    justify-content: center;
+  }
+
+  .login-panel-right {
+    display: none;
+  }
+}
+
+/* --- Mobile View (768px and down) --- */
+/* Mobile header + bottom nav: hidden on desktop */
+.mobile-header {
+  display: none;
+}
+
+.mobile-bottom-nav {
+  display: none;
+}
+
+.mobile-menu-overlay {
+  display: none;
+}
+
+/* Filter-bar collapse chevron/label: only meaningful where .filter-sidebar is sticky (<=1024px) */
+@media (min-width: 1025px) {
+  .filter-collapse-chevron,
+  .filter-collapse-label {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Hide desktop sidebar entirely on mobile */
+  .sidebar {
+    display: none !important;
+  }
+
+  /* Fullscreen overlay menu */
+  .mobile-menu-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #1a1a2e;
+    z-index: 300;
+    flex-direction: column;
+  }
+
+  .mobile-menu-overlay.open {
+    display: flex;
+  }
+
+  .mobile-menu-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1rem;
+    height: 3.25rem;
+    border-bottom: 1px solid #2a2a4a;
+    flex-shrink: 0;
+  }
+
+  .mobile-menu-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #fff;
+  }
+
+  .mobile-menu-close {
+    background: none;
+    border: none;
+    color: #aaa;
+    font-size: 1.25rem;
+    line-height: 1;
+    padding: 0.25rem;
+  }
+
+  .mobile-menu-nav {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem 0;
+  }
+
+  .mobile-menu-item {
+    display: block;
+    padding: 0.875rem 1.5rem;
+    font-size: 1rem;
+    color: #ccc;
+    cursor: pointer;
+    border-bottom: 1px solid #2a2a4a;
+  }
+
+  .mobile-menu-item.active {
+    color: #5ba3f5;
+  }
+
+  .mobile-menu-logout {
+    margin: 1rem;
+    padding: 0.75rem;
+    background: none;
+    border: 1px solid #3a3a5a;
+    border-radius: 6px;
+    color: #ccc;
+    font-size: 0.9rem;
+    width: calc(100% - 2rem);
+    flex-shrink: 0;
+  }
+
+  /* Mobile top bar */
+  .mobile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3.25rem;
+    background: #1a1a2e;
+    padding: 0 1rem;
+    z-index: 200;
+  }
+
+  .mobile-header-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #fff;
+  }
+
+  .mobile-header-logout {
+    background: none;
+    border: 1px solid #3a3a5a;
+    color: #ccc;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.625rem;
+    border-radius: 4px;
+  }
+
+  /* Mobile bottom nav */
+  .mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: var(--content-header-height);
+    background: #1a1a2e;
+    border-top: 1px solid #2a2a4a;
+    z-index: 200;
+  }
+
+  .mobile-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    color: #888;
+    cursor: pointer;
+    font-size: 0.6rem;
+    font-weight: 500;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mobile-nav-item.active {
+    color: #5ba3f5;
+  }
+
+  .mobile-nav-item svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  /* Main content: space for top bar + bottom nav */
+  .main-content {
+    margin-left: 0;
+    padding: 1rem;
+    padding-top: calc(3.25rem + var(--content-header-height) + 1rem);
+    padding-bottom: calc(var(--content-header-height) + 1rem);
+  }
+
+  .content-header {
+    left: 0;
+    top: 3.25rem;
+    height: auto;
+    min-height: var(--content-header-height);
+    padding: 0.5rem 1rem;
+    flex-wrap: wrap;
+    row-gap: 0.375rem;
+  }
+
+  :root {
+    --content-header-height: 5rem;
+  }
+
+  .content-header h2 {
+    font-size: 1.125rem;
+  }
+
+  .pagination-controls {
+    justify-content: center;
+  }
+
+  .filter-sidebar:not(.filter-sidebar--wide) {
+    top: calc(3.25rem + var(--content-header-height));
+    max-height: calc(100vh - 3.25rem - var(--content-header-height));
+  }
+
+  .fields-list-header-row {
+    top: var(--fields-header-top, 17.5rem);
+  }
+
+  /* Toast: above bottom nav */
+  .toast {
+    left: 50%;
+    top: auto;
+    bottom: calc(var(--content-header-height) + 0.75rem);
+    transform: translateX(-50%) translateY(10px);
+  }
+
+  .toast-visible {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Document panels: stack vertically */
+  .documents-two-panel {
+    grid-template-columns: 1fr;
+    grid-template-rows: 50vh auto;
+  }
+
+  .documents-three-panel {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 50vh auto;
+    height: auto;
+  }
+
+  .documents-three-panel.detail-collapsed {
+    grid-template-columns: 1fr;
+  }
+
+  .documents-list-panel {
+    border-right: none;
+    border-bottom: 1px solid var(--color-border, #e5e7eb);
+    padding-right: 0;
+    padding-bottom: 1rem;
+    max-height: 240px;
+  }
+
+  .documents-preview-panel {
+    border-right: none;
+    border-bottom: 1px solid var(--color-border, #e5e7eb);
+  }
+
+  .documents-detail-panel {
+    padding-left: 0;
+    overflow: visible;
+  }
+
+  .content-actions {
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+
+  /* Extraction rules: drop toggles to their own row instead of overflowing */
+  .field-row {
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+  }
+
+  .field-info {
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+
+  .field-name {
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+
+  .field-toggles {
+    flex: 1 1 100%;
+  }
+
+  .field-toggles .toggle-label {
+    flex: 1;
+  }
+
+  .field-toggles .toggle-badge {
+    display: block;
+    text-align: center;
   }
 }

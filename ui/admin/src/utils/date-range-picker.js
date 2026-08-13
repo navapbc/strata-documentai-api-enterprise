@@ -24,12 +24,12 @@ export function mount(root, { placeholder = "Any date", defaultPreset = "" } = {
   <option value="custom">Custom</option>
 </select>
 <div class="drp-custom hidden" style="margin-top:0.5rem">
-  <div class="metrics-timeframe">
-    <label class="metrics-timeframe-label">From</label>
+  <div class="filter-field">
+    <label class="filter-field-label">From</label>
     <input type="date" class="drp-from" />
   </div>
-  <div class="metrics-timeframe" style="margin-top:0.5rem">
-    <label class="metrics-timeframe-label">To</label>
+  <div class="filter-field" style="margin-top:0.5rem">
+    <label class="filter-field-label">To</label>
     <input type="date" class="drp-to" />
   </div>
 </div>

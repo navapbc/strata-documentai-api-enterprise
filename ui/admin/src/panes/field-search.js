@@ -19,11 +19,7 @@ let _dirty = false;
 
 export function mount(root) {
   _root = root;
-  root.innerHTML = `
-    <div class="nav-search">
-      <input type="text" id="bp-field-search" placeholder="Search fields...">
-    </div>
-  `;
+  root.innerHTML = `<input type="text" id="bp-field-search" placeholder="Search fields...">`;
 
   _input = root.querySelector("#bp-field-search");
   _results = document.querySelector("#bp-search-results");

@@ -15,6 +15,7 @@ import html from "./extraction-rules.html";
 const tmpl = tpl(html);
 
 let _unsubs = [];
+let _resizeObserver = null;
 
 export function mount(root) {
   root.replaceChildren(tmpl());
@@ -35,6 +36,24 @@ export function mount(root) {
   if (hashParts[1]) {
     Store.set({ activeDocType: decodeURIComponent(hashParts[1]) });
   }
+
+  // Keep the sticky doc-type section header pinned right below the filter
+  // bar. The filter bar's height varies as its fields wrap at different
+  // viewport widths, so this is measured rather than hardcoded per breakpoint.
+  const filterSidebar = root.querySelector(".filter-sidebar");
+  const updateStickyOffset = () => {
+    const contentHeader = document.querySelector(".content-header");
+    if (!filterSidebar || !contentHeader) return;
+    const top = contentHeader.getBoundingClientRect().bottom + filterSidebar.offsetHeight;
+    document.documentElement.style.setProperty("--fields-header-top", `${top}px`);
+  };
+  updateStickyOffset();
+  window.addEventListener("resize", updateStickyOffset);
+  _unsubs.push(() => window.removeEventListener("resize", updateStickyOffset));
+  if (filterSidebar && "ResizeObserver" in window) {
+    _resizeObserver = new ResizeObserver(updateStickyOffset);
+    _resizeObserver.observe(filterSidebar);
+  }
 }
 
 export function unmount(root) {
@@ -42,6 +61,10 @@ export function unmount(root) {
   if (tenantSelect) TenantContext.unmountSelect(tenantSelect);
   _unsubs.forEach((u) => u && u());
   _unsubs = [];
+  if (_resizeObserver) {
+    _resizeObserver.disconnect();
+    _resizeObserver = null;
+  }
   Store.reset();
   root.replaceChildren();
 }
