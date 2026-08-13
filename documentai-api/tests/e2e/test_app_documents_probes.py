@@ -1,4 +1,4 @@
-"""Synthetic document testing
+"""Synthetic document testing.
 
 Each case uploads a committed synthetic document (see
 tests/helpers/fixtures/probe-documents/README.md for the KF issue table -
