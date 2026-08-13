@@ -1,0 +1,73 @@
+name: E2E probe suite
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  probes:
+    name: Probe documents (dev)
+    runs-on: ubuntu-latest
+    environment: dev
+    # Only one run at a time - parallel runs would sweep each other's api keys
+    concurrency:
+      group: e2e-probes-dev
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: "~1.10.0"
+          terraform_wrapper: false
+
+      - name: Terraform init
+        working-directory: infra/environments/dev
+        run: terraform init -input=false -reconfigure
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Generate .env.e2e from terraform outputs
+        working-directory: documentai-api
+        run: make .env.e2e
+
+      # The probe suite documents tenant spec expectations; cases tagged with a
+      # KF issue id are EXPECTED to fail until their gate is implemented, so
+      # this step is informational rather than a merge gate. Read the log to
+      # distinguish known failures from drift (each failure message echoes the
+      # observed 2026-07 behavior).
+      - name: Run probe suite
+        id: probes
+        continue-on-error: true
+        working-directory: documentai-api
+        shell: bash  # explicit `shell: bash` enables pipefail, so tee can't mask pytest's exit code
+        run: |
+          set -a && . ./.env.e2e && set +a
+          uv run --frozen pytest tests/e2e/test_app_documents_probes.py -m e2e -n 4 \
+            | tee probe-run.log
+
+      - name: Upload probe log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: probe-run-log
+          path: documentai-api/probe-run.log
+          if-no-files-found: ignore
