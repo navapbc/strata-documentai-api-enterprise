@@ -20,9 +20,11 @@ shows every violation:
 - allowedResponseCodes / forbiddenResponseCodes (forbidden is the spec floor
   for anomalies the tenant code table has no code for yet: never 000)
 - matchedDocumentClass
-- missingRequiredFieldListContains (KF-8a/8c: absent fields must be reported;
-  the payslip rule these cases depend on is seeded around exactly these cases
-  by the payslip_extraction_rule fixture below)
+- requiredFields (not an assertion: seeds a payslip extraction rule with these
+  requiredFields around exactly this case via the payslip_extraction_rule
+  fixture below - KF-8a pairs it with missingRequiredFieldListContains, KF-7
+  uses it so faint-but-present required fields are exercised against the gate)
+- missingRequiredFieldListContains (KF-8a/8c: absent fields must be reported)
 - emptyFields (KF-8b: absent fields must not be hallucinated)
 - fieldEquals (KF-9: page-2-only values prove multi-page extraction)
 """
@@ -41,7 +43,7 @@ EXPECTED = PROBE_DOCS_DIR / "expected.json"
 # Degraded inputs take BDA noticeably longer than the clean test-documents set.
 # Individual cases can override via "timeoutSeconds" in expected.json (e.g. the
 # password PDF, where the known failure mode is an indefinite hang).
-POLL_TIMEOUT = 180
+POLL_TIMEOUT = 300
 POLL_INTERVAL = 3
 
 # Statuses that terminate a job without necessarily writing a responseCode.
@@ -88,6 +90,7 @@ class ProbeCase:
     allowed_response_codes: list[str] | None
     forbidden_response_codes: list[str] | None
     matched_document_class: object = _UNSET
+    required_fields: list[str] = field(default_factory=list)
     missing_required_contains: list[str] = field(default_factory=list)
     empty_fields: list[str] = field(default_factory=list)
     field_equals: dict = field(default_factory=dict)
@@ -105,26 +108,28 @@ PAYSLIP_DOCUMENT_CLASS = "Payslip"
 
 @pytest.fixture(autouse=True)
 def payslip_extraction_rule(request, api_key, e2e_tenant_id):
-    """Seed the payslip extraction rule the KF-8a/8c assertions depend on.
+    """Seed the payslip extraction rule for cases that declare requiredFields.
 
     Without a rule, apply_extraction_rules returns early and the 101 gate is
     unreachable - the KF-8 cases would stay red even after the API is fixed.
     The gate reads per-tenant rules from the extraction-rules table, so the
     rule is a test precondition, not tenant state we can assume exists.
 
-    Scoped to only the cases that assert missingRequiredFieldListContains:
-    the rule marks fields required for EVERY payslip this tenant uploads, so
-    a broader scope turns the green payslip controls (clean scan, mixed-pages
-    PDF, KF-17, the KF-5 declared-category guard) into 101s. Tests run
-    sequentially within an xdist worker and each worker has its own tenant,
-    so seeding before / deleting after this one case cannot leak elsewhere.
+    Seeding is opt-in via the case's requiredFields key (KF-8a asserts those
+    fields come back as missing; KF-7 has them present-but-faint and asserts
+    they do NOT trip 101). A rule marks fields required for EVERY payslip the
+    tenant uploads, so an always-on rule turns the green payslip controls
+    (clean scan, mixed-pages PDF, KF-17, the KF-5 declared-category guard)
+    into 101s. Tests run sequentially within an xdist worker and each worker
+    has its own tenant, so seeding before / deleting after one case cannot
+    leak elsewhere.
 
     Depends on api_key for its session-level env setup (EXTRACTION_RULES_
     TABLE_NAME et al. are restored there and the config cache is cleared).
     """
     callspec = getattr(request.node, "callspec", None)
     case = callspec.params.get("case") if callspec else None
-    required_fields = case.missing_required_contains if case else []
+    required_fields = case.required_fields if case else []
     if not required_fields:
         yield
         return
@@ -165,6 +170,7 @@ def load_probe_cases() -> list:
                     allowed_response_codes=expected.get("allowedResponseCodes"),
                     forbidden_response_codes=expected.get("forbiddenResponseCodes"),
                     matched_document_class=expected.get("matchedDocumentClass", _UNSET),
+                    required_fields=expected.get("requiredFields", []),
                     missing_required_contains=expected.get("missingRequiredFieldListContains", []),
                     empty_fields=expected.get("emptyFields", []),
                     field_equals=expected.get("fieldEquals", {}),

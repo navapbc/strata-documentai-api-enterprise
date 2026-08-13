@@ -166,6 +166,7 @@
     "e2e_enabled": true,
     "category": "income",
     "content_type": "image/jpeg",
+    "requiredFields": ["PayPeriodStartDate", "PayPeriodEndDate", "YTDGrossPay", "YTDNetPay"],
     "allowedResponseCodes": ["101"],
     "missingRequiredFieldListContains": [
       "YTDGrossPay",
@@ -244,12 +245,19 @@
       "smudged fields: individual fields populated at 0.06-0.41 confidence while",
       "the average stays above the tenant floor. Spec: 105",
       "LOW_EXTRACTION_CONFIDENCE - a document relying on sub-floor field reads",
-      "must not validate clean."
+      "must not validate clean. requiredFields seeds a tenant rule so the",
+      "faint fields are exercised as required ones - they are present on the",
+      "document, so they must NOT surface as 101 missing; the correct outcome",
+      "for a sub-floor read of a required field is 105. The inferred-type",
+      "pay-period dates are deliberately left out of requiredFields: they never",
+      "carry geometry, so the missing-geo heuristic would flag them 101 on any",
+      "document and mask the per-field confidence result this case is probing."
     ],
     "issue": "KF-7",
     "e2e_enabled": true,
     "category": "income",
     "content_type": "image/jpeg",
+    "requiredFields": ["YTDGrossPay", "YTDNetPay"],
     "allowedResponseCodes": ["105"],
     "observed": "000 / Payslip with e.g. EmployeeAddress.Line2 at 0.06, CompanyAddress.Line1 at 0.15 confidence - only the average of non-empty fields is checked (2026-07-06, jobId 1d344370)"
   },
