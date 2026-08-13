@@ -9,9 +9,13 @@ tagged with an issue id are EXPECTED TO FAIL (plain red) until the
 corresponding gate is implemented; untagged cases are green controls. Cases the
 tenant has ruled out of scope are e2e_enabled=false in expected.json and are not
 collected - the fixture and spec stay committed for the record. A case whose
-fix is scheduled but not yet prioritized may set "xfail": "<reason>" in
-expected.json to report as expected-to-fail instead of red (currently only
-KF-11).
+fix is scheduled but not yet prioritized may set "xfail": "<reason>" plus
+"xfailWhenHungInStatus": "<jobStatus>" in expected.json (currently only KF-11):
+the case reports expected-to-fail ONLY when the outcome matches that known hang
+signature (no terminal state, jobStatus equal to the given value). Any other
+failure - a wrong terminal code, an HTTP 5xx, a failed upload - stays plain red
+so new drift cannot hide behind the xfail, and when the fix lands the case
+simply passes.
 
 Every case also records the observed 2026-07 behavior in expected.json; it is
 echoed into the assertion message so a red test distinguishes "still failing
@@ -98,6 +102,8 @@ class ProbeCase:
     field_equals: dict = field(default_factory=dict)
     observed: str | None = None
     timeout: int = POLL_TIMEOUT
+    xfail: str | None = None  # xfail reason, honored ONLY on the known hang signature
+    xfail_hung_status: str | None = None  # the jobStatus the known hang sits in
 
     def spec_summary(self) -> str:
         if self.allowed_response_codes is not None:
@@ -164,9 +170,11 @@ def load_probe_cases() -> list:
         issue = expected.get("issue")
         # xfail is reserved for known failures whose fix is scheduled but not
         # prioritized (currently only KF-11); unscheduled gaps stay plain red.
-        # strict stays False so the case XPASSes (instead of erroring) when
-        # the fix lands - flip e2e_enabled/xfail in expected.json then.
-        marks = [pytest.mark.xfail(reason=expected["xfail"])] if expected.get("xfail") else []
+        # It is applied imperatively inside the test (pytest.xfail) and only
+        # when the outcome matches the recorded hang signature, so a NEW
+        # failure mode - wrong terminal code, 5xx, broken upload - stays red
+        # instead of being swallowed. When the fix lands the case passes;
+        # drop the xfail keys from expected.json then.
         params.append(
             pytest.param(
                 ProbeCase(
@@ -183,9 +191,10 @@ def load_probe_cases() -> list:
                     field_equals=expected.get("fieldEquals", {}),
                     observed=expected.get("observed"),
                     timeout=expected.get("timeoutSeconds", POLL_TIMEOUT),
+                    xfail=expected.get("xfail"),
+                    xfail_hung_status=expected.get("xfailWhenHungInStatus"),
                 ),
                 id=f"{issue or 'CTRL'}:{filename}",
-                marks=marks,
             )
         )
     return params
@@ -328,6 +337,18 @@ def test_probe_document(case, base_url, api_key):
         base_url, api_key, case.file_path, case.content_type, case.category, timeout=case.timeout
     )
     if not outcome.completed:
+        # Honor the case's xfail ONLY when the outcome matches the recorded
+        # hang signature: a healthy 200 poll that never reaches a terminal
+        # state, sitting in the expected jobStatus. Anything else (a poll
+        # 5xx, an unexpected jobStatus) falls through to plain red - it is
+        # new drift, not the known failure.
+        if (
+            case.xfail
+            and case.xfail_hung_status
+            and outcome.http_status == 200
+            and (outcome.body.get("jobStatus") or "").lower() == case.xfail_hung_status.lower()
+        ):
+            pytest.xfail(f"{case.xfail}; known hang reproduced: {outcome.describe()}")
         pytest.fail(
             _fail_message(
                 case,
