@@ -44,11 +44,7 @@ def test_setup_installs_provider_when_enabled(monkeypatch: pytest.MonkeyPatch) -
 
     with (
         patch("opentelemetry.instrumentation.fastapi.FastAPIInstrumentor.instrument"),
-        patch("opentelemetry.instrumentation.boto3sqs.Boto3SQSInstrumentor.instrument"),
-        patch(
-            "opentelemetry.exporter.otlp.proto.grpc.trace_exporter.OTLPSpanExporter.__init__",
-            return_value=None,
-        ),
+        patch("opentelemetry.exporter.otlp.proto.grpc.trace_exporter.OTLPSpanExporter"),
     ):
         from documentai_api.telemetry import setup
 

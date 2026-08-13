@@ -3,12 +3,19 @@
 import json
 from typing import Any
 
+from opentelemetry import trace
+from opentelemetry.propagate import extract
+
 from documentai_api.config.env import get_aws_config
 from documentai_api.jobs.metrics_processor.main import write_to_s3
 from documentai_api.logging import get_logger
+from documentai_api.telemetry import setup as setup_otel
 from documentai_api.utils.lambda_error_handler import handle_lambda_errors
 
 logger = get_logger(__name__)
+tracer = trace.get_tracer(__name__)
+
+setup_otel()
 
 
 @handle_lambda_errors
@@ -31,9 +38,18 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     processed = 0
     for record in records:
         try:
-            body = json.loads(record["body"])
-            write_to_s3(bucket_name, body)
-            processed += 1
+            # Extract traceparent from MessageAttributes to stitch this span
+            # into the originating document trace.
+            attrs = record.get("messageAttributes") or {}
+            carrier = {
+                k: v["stringValue"] for k, v in attrs.items() if "stringValue" in v
+            }
+            ctx = extract(carrier)
+
+            with tracer.start_as_current_span("metrics.process", context=ctx):
+                body = json.loads(record["body"])
+                write_to_s3(bucket_name, body)
+                processed += 1
         except Exception as e:
             logger.error(f"Failed to process record: {e}")
 

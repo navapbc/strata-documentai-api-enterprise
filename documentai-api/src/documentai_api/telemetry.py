@@ -50,10 +50,6 @@ def setup() -> None:
 
     FastAPIInstrumentor().instrument()
 
-    from opentelemetry.instrumentation.boto3sqs import Boto3SQSInstrumentor
-
-    Boto3SQSInstrumentor().instrument()
-
     logger.info(
         "OpenTelemetry enabled: service=%s endpoint=%s",
         config.service_name,

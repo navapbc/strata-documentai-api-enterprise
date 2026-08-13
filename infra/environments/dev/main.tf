@@ -540,6 +540,9 @@ locals {
     OTEL_SDK_DISABLED                                         = tostring(!var.otel_enabled)
     OTEL_SERVICE_NAME                                         = var.otel_service_name
     OTEL_EXPORTER_OTLP_ENDPOINT                               = var.otel_exporter_otlp_endpoint
+    OTEL_AWS_APPLICATION_SIGNALS_ENABLED                      = tostring(var.otel_enabled)
+    OTEL_METRICS_EXPORTER                                     = "awsemf"
+    OTEL_EXPORTER_OTLP_LOGS_HEADERS                           = "x-aws-metric-namespace=${var.otel_service_name}"
   }
 
   # API Lambda env: the shared worker map, minus the Athena/Glue vars that only
