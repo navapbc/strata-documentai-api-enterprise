@@ -150,6 +150,7 @@ test-e2e: ## Run e2e tests
 	  "AWS_REGION=" + .region.value,\
 	  "API_KEYS_TABLE_NAME=" + .api_keys_table.value,\
 	  "TENANTS_TABLE_NAME=" + .tenants_table.value,\
+	  "EXTRACTION_RULES_TABLE_NAME=" + (.api_keys_table.value | sub("-api-keys$$"; "-extraction-rules")),\
 	  "DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME=" + .document_metadata_table.value,\
 	  "DOCUMENTAI_DOCUMENT_METADATA_JOB_ID_INDEX_NAME=" + .document_metadata_job_id_index_name.value,\
 	  "DOCUMENTAI_DOCUMENT_METADATA_TENANT_INDEX_NAME=" + .document_metadata_tenant_index_name.value,\

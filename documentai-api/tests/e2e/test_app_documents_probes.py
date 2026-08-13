@@ -20,7 +20,9 @@ shows every violation:
 - allowedResponseCodes / forbiddenResponseCodes (forbidden is the spec floor
   for anomalies the tenant code table has no code for yet: never 000)
 - matchedDocumentClass
-- missingRequiredFieldListContains (KF-8a/8c: absent fields must be reported)
+- missingRequiredFieldListContains (KF-8a/8c: absent fields must be reported;
+  the payslip rule these cases depend on is seeded by the module-scoped
+  payslip_extraction_rule fixture below)
 - emptyFields (KF-8b: absent fields must not be hallucinated)
 - fieldEquals (KF-9: page-2-only values prove multi-page extraction)
 """
@@ -96,6 +98,50 @@ class ProbeCase:
         if self.allowed_response_codes is not None:
             return f"responseCode in {self.allowed_response_codes}"
         return f"responseCode NOT in {self.forbidden_response_codes}"
+
+
+# The KF-8 spec (synthetic-probe-payslip-missing-fields.jpeg) asserts the
+# missing-required-fields gate fires with these fields enumerated. The gate
+# reads per-tenant rules from the extraction-rules table, so the rule is a
+# test precondition, not tenant state we can assume exists.
+PAYSLIP_DOCUMENT_CLASS = "Payslip"
+PAYSLIP_REQUIRED_FIELDS = [
+    "PayPeriodStartDate",
+    "PayPeriodEndDate",
+    "YTDGrossPay",
+    "YTDNetPay",
+]
+
+
+@pytest.fixture(scope="module", autouse=True)
+def payslip_extraction_rule(api_key, e2e_tenant_id):
+    """Seed the payslip extraction rule the KF-8a/8c assertions depend on.
+
+    Without a rule, apply_extraction_rules returns early and the 101 gate is
+    unreachable - the KF-8 cases would stay red even after the API is fixed.
+    Every other blueprint field is listed as optional so the rule's field
+    filter passes the full payload through for the other payslip probes.
+
+    Depends on api_key for its session-level env setup (EXTRACTION_RULES_
+    TABLE_NAME et al. are restored there and the config cache is cleared).
+    """
+    import documentai_api
+    from documentai_api.utils import extraction_rules
+
+    labels_path = Path(documentai_api.__file__).parent / "config" / "field_labels" / "payslip.json"
+    all_fields = list(json.loads(labels_path.read_text()).keys())
+    optional_fields = [f for f in all_fields if f not in PAYSLIP_REQUIRED_FIELDS]
+
+    extraction_rules.upsert_rule(
+        tenant_id=e2e_tenant_id,
+        document_type=PAYSLIP_DOCUMENT_CLASS,
+        required_fields=PAYSLIP_REQUIRED_FIELDS,
+        optional_fields=optional_fields,
+    )
+    try:
+        yield
+    finally:
+        extraction_rules.delete_rule(e2e_tenant_id, PAYSLIP_DOCUMENT_CLASS)
 
 
 def load_probe_cases() -> list:
