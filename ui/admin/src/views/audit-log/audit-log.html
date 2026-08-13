@@ -1,13 +1,13 @@
 <div class="filter-layout">
   <div class="filter-sidebar">
-    <div class="metrics-timeframe">
-      <label class="metrics-timeframe-label">Tenant</label>
+    <div class="filter-field">
+      <label class="filter-field-label">Tenant</label>
       <select id="tenant-select">
         <option value="">All Tenants</option>
       </select>
     </div>
-    <div class="metrics-timeframe">
-      <label class="metrics-timeframe-label">Date Range</label>
+    <div class="filter-field">
+      <label class="filter-field-label">Date Range</label>
       <select id="audit-timeframe">
         <option value="1">Yesterday</option>
         <option value="7">Last 7 days</option>
@@ -15,44 +15,46 @@
         <option value="90">Last 90 days</option>
         <option value="custom">Custom</option>
       </select>
-      <div id="audit-custom-range" class="metrics-custom-range hidden">
-        <div class="metrics-custom-field">
+      <div id="audit-custom-range" class="filter-custom-range hidden">
+        <div class="filter-custom-field">
           <label for="audit-start-date">Start</label>
           <input type="date" id="audit-start-date" />
         </div>
-        <div class="metrics-custom-field">
+        <div class="filter-custom-field">
           <label for="audit-end-date">End</label>
           <input type="date" id="audit-end-date" />
         </div>
         <button id="audit-load-btn" class="btn-primary">Load</button>
       </div>
     </div>
-    <div class="metrics-timeframe">
-      <label class="metrics-timeframe-label">Action</label>
+    <div class="filter-field">
+      <label class="filter-field-label">Action</label>
       <select class="tenant-select" id="audit-action-filter">
         <option value="">All actions</option>
       </select>
     </div>
-    <div class="metrics-timeframe">
-      <label class="metrics-timeframe-label">Actor</label>
+    <div class="filter-field">
+      <label class="filter-field-label">Actor</label>
       <select class="tenant-select" id="audit-actor-filter">
         <option value="">All actors</option>
       </select>
     </div>
   </div>
-  <div class="filter-main">
-    <table id="audit-table" class="hidden">
-      <thead>
-        <tr>
-          <th style="width: 2.5rem">#</th>
-          <th class="th-sort-disabled" title="Sorting requires server-side support">Timestamp</th>
-          <th class="th-sort-disabled" title="Sorting requires server-side support">Actor</th>
-          <th class="th-sort-disabled" title="Sorting requires server-side support">Action</th>
-        </tr>
-      </thead>
-      <tbody id="audit-tbody"></tbody>
-    </table>
-    <p id="no-audit-events" class="empty-state hidden">No audit events found.</p>
+  <div class="filter-main filter-main--table">
+    <div class="table-scroll">
+      <p id="no-audit-events" class="empty-state hidden">No audit events found.</p>
+      <table id="audit-table" class="hidden">
+        <thead>
+          <tr>
+            <th style="width: 2.5rem">#</th>
+            <th class="th-sort-disabled" title="Sorting requires server-side support">Timestamp</th>
+            <th class="th-sort-disabled" title="Sorting requires server-side support">Actor</th>
+            <th class="th-sort-disabled" title="Sorting requires server-side support">Action</th>
+          </tr>
+        </thead>
+        <tbody id="audit-tbody"></tbody>
+      </table>
+    </div>
     <div
       id="audit-pagination"
       class="pagination-controls hidden"

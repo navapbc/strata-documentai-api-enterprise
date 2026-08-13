@@ -135,7 +135,7 @@ export function mount(root) {
     listEl.innerHTML = "";
     const groups = groupByDate(docs);
     for (const [label, group] of groups) {
-      listEl.appendChild(h("li", { className: "doc-list-heading metrics-timeframe-label" }, label));
+      listEl.appendChild(h("li", { className: "doc-list-heading filter-field-label" }, label));
       for (const doc of group) {
         listEl.appendChild(buildListItem(listEl, doc));
       }
@@ -155,9 +155,7 @@ export function mount(root) {
         (el) => el.textContent === label,
       );
       if (!existing) {
-        listEl.appendChild(
-          h("li", { className: "doc-list-heading metrics-timeframe-label" }, label),
-        );
+        listEl.appendChild(h("li", { className: "doc-list-heading filter-field-label" }, label));
       }
       for (const doc of group) {
         listEl.appendChild(buildListItem(listEl, doc));

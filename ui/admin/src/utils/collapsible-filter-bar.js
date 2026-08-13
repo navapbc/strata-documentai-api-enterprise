@@ -21,9 +21,7 @@ export function attach() {
 
   // Only the filter controls collapse. Some views (e.g. Documents) also keep
   // a results list as a direct child of .filter-sidebar - that must stay put.
-  const fieldEls = filterSidebar.querySelectorAll(
-    ":scope > .metrics-timeframe, :scope > .metrics-tabs",
-  );
+  const fieldEls = filterSidebar.querySelectorAll(":scope > .filter-field, :scope > .metrics-tabs");
   if (fieldEls.length === 0) return;
 
   const fieldsWrap = document.createElement("div");

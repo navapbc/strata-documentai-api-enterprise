@@ -79,7 +79,7 @@ export function mount(root) {
     if (btn.dataset.tab === _activeTab) btn.classList.add("active");
     else btn.classList.remove("active");
   });
-  root.querySelectorAll(".metrics-tab-panel").forEach((p) => p.classList.add("hidden"));
+  root.querySelectorAll(".filter-tab-panel").forEach((p) => p.classList.add("hidden"));
   root.querySelector(`#metrics-tab-${_activeTab}`)?.classList.remove("hidden");
 
   root.querySelectorAll(".metrics-tab").forEach((btn) => {
@@ -88,7 +88,7 @@ export function mount(root) {
       location.hash = `metrics/${_activeTab}`;
       root.querySelectorAll(".metrics-tab").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
-      root.querySelectorAll(".metrics-tab-panel").forEach((p) => p.classList.add("hidden"));
+      root.querySelectorAll(".filter-tab-panel").forEach((p) => p.classList.add("hidden"));
       root.querySelector(`#metrics-tab-${_activeTab}`).classList.remove("hidden");
     });
   });

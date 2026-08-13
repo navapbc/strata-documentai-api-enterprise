@@ -2,6 +2,7 @@
   --color-primary: #2563eb;
   --color-primary-light: #eff6ff;
   --color-bg: #fff;
+  --color-bg-page: #f5f5f5;
   --color-bg-hover: #f9fafb;
   --color-bg-secondary: #f3f4f6;
   --color-border: #e5e7eb;
@@ -9,6 +10,7 @@
   --color-text-secondary: #6b7280;
   --color-danger: #dc2626;
   --color-success: #059669;
+  --content-header-height: 3.5rem;
 }
 
 * {
@@ -25,7 +27,7 @@ body {
     "Segoe UI",
     Roboto,
     sans-serif;
-  background: #f5f5f5;
+  background: var(--color-bg-page);
   color: #333;
   min-height: 100vh;
   overscroll-behavior-y: contain;
@@ -192,13 +194,14 @@ form button[type="submit"]:not(.btn-primary):not(.btn-secondary):not(.btn-outlin
 
 /* Layout */
 .layout {
+  --sidebar-width: 240px;
   display: flex;
   min-height: 100vh;
 }
 
 /* Sidebar */
 .sidebar {
-  width: 240px;
+  width: var(--sidebar-width);
   background: #1a1a2e;
   color: #ccc;
   display: flex;
@@ -357,60 +360,6 @@ form button[type="submit"]:not(.btn-primary):not(.btn-secondary):not(.btn-outlin
 }
 
 /* Nav Search - dark sidebar variant */
-.sidebar .nav-search {
-  padding: 0.25rem 1rem 0.5rem 1.5rem;
-}
-
-.sidebar .nav-search input {
-  width: 100%;
-  padding: 0.375rem 0.5rem;
-  background: #2a2a4a;
-  border: 1px solid #3a3a5a;
-  border-radius: 4px;
-  color: white;
-  font-size: 0.75rem;
-  margin-bottom: 0;
-}
-
-.sidebar .nav-search input::placeholder {
-  color: #666;
-}
-
-.sidebar .nav-search input:focus {
-  border-color: #5ba3f5;
-  box-shadow: none;
-}
-
-/* Nav Search - light variant (filter sidebar) */
-.filter-sidebar .nav-search {
-  flex-shrink: 0;
-  padding: 0 0 0.5rem;
-}
-
-.filter-sidebar .nav-search input {
-  width: 100%;
-  padding: 0.375rem 0.75rem;
-  background: white;
-  border: 1px solid var(--border, #dfe1e2);
-  border-radius: 10px;
-  color: var(--color-text);
-  font-size: 0.8125rem;
-  font-family: inherit;
-  height: 2rem;
-  margin-bottom: 0;
-  box-sizing: border-box;
-}
-
-.filter-sidebar .nav-search input::placeholder {
-  color: #9ca3af;
-}
-
-.filter-sidebar .nav-search input:focus {
-  outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
-}
-
 /* Combobox */
 .combobox-input {
   flex: 1;
@@ -495,7 +444,7 @@ form button[type="submit"]:not(.btn-primary):not(.btn-secondary):not(.btn-outlin
   padding: 2rem;
   padding-top: 6rem;
   min-width: 0;
-  margin-left: 240px;
+  margin-left: var(--sidebar-width);
   position: relative;
 }
 
@@ -510,7 +459,7 @@ form button[type="submit"]:not(.btn-primary):not(.btn-secondary):not(.btn-outlin
   position: fixed;
   top: 0;
   right: 0;
-  left: 240px;
+  left: var(--sidebar-width);
   height: 5rem;
   padding: 0 2rem;
   z-index: 10;
@@ -585,7 +534,7 @@ form button[type="submit"]:not(.btn-primary):not(.btn-secondary):not(.btn-outlin
 }
 
 .badge-neutral {
-  background: #f5f5f5;
+  background: var(--color-bg-page);
   color: #757575;
 }
 
@@ -866,7 +815,7 @@ td {
 .field-type {
   font-size: 0.7rem;
   color: #999;
-  background: #f5f5f5;
+  background: var(--color-bg-page);
   padding: 0.125rem 0.375rem;
   border-radius: 3px;
 }
@@ -910,7 +859,7 @@ td {
 }
 
 .toggle-label input:checked + .toggle-excluded {
-  background: #f5f5f5;
+  background: var(--color-bg-page);
   border-color: #999;
   color: #666;
 }
@@ -982,7 +931,7 @@ td {
   gap: 0.5rem;
   margin: 1rem 0;
   padding: 0.75rem;
-  background: #f5f5f5;
+  background: var(--color-bg-page);
   border-radius: 4px;
   overflow-x: auto;
 }
@@ -1655,7 +1604,7 @@ td {
   gap: 0.15rem;
 }
 .test-history-item:hover {
-  background: var(--hover-bg, #f5f5f5);
+  background: var(--hover-bg, var(--color-bg-page));
 }
 .test-history-item.active {
   background: var(--active-bg, #e3f2fd);
@@ -1907,9 +1856,6 @@ td {
   list-style: none;
   padding: 0;
   margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
 }
 
 .doc-list-heading {
@@ -1918,18 +1864,13 @@ td {
   z-index: 1;
   /* Matches body's background (#f5f5f5) - .documents-compact-list and its
      ancestors are transparent, so this is what actually shows behind it. */
-  background: #f5f5f5;
-  padding: 0.5rem 0.375rem 0.25rem;
+  background: var(--color-bg-page);
+  padding: 0.25rem 0.375rem;
   pointer-events: none;
   list-style: none;
-  border-top: 1px solid var(--color-border, #e5e7eb);
-  margin-top: 0.25rem;
-}
-
-.doc-list-heading:first-child {
-  border-top: none;
-  margin-top: 0;
-  padding-top: 0;
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+  margin-bottom: 0.25rem;
+  margin-top: 0.5rem;
 }
 
 .doc-list-item {
@@ -1940,6 +1881,7 @@ td {
   padding: 0.5rem 0.375rem;
   border-radius: 4px;
   cursor: pointer;
+  margin-bottom: 0.125rem;
 }
 
 .doc-list-item .badge {
@@ -2432,9 +2374,14 @@ td {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
+  gap: 12px;
   border-right: 1px solid var(--color-border, #e5e7eb);
   padding-right: 16px;
   overflow-y: auto;
+}
+
+.filter-sidebar .documents-compact-list {
+  margin-top: 0.25rem;
 }
 
 .filter-sidebar-fields {
@@ -2458,9 +2405,11 @@ td {
 
 .filter-sidebar--wide {
   width: 240px;
+  flex: 0 0 240px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 .filter-sidebar--wide .documents-compact-list {
@@ -2469,7 +2418,13 @@ td {
   min-height: 0;
 }
 
-.filter-sidebar--wide .metrics-tab-panel {
+.doc-search-results-scroll {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding-bottom: 0.5rem;
+}
+.filter-sidebar--wide .filter-tab-panel {
   gap: 8px;
 }
 
@@ -2479,13 +2434,14 @@ td {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .sidebar-tab-bar {
   display: flex;
+  align-items: stretch;
+  flex-shrink: 0;
   border-bottom: 1px solid var(--color-border, #e5e7eb);
-  margin-bottom: 0.75rem;
 }
 
 .sidebar-tab {
@@ -2555,6 +2511,41 @@ td {
   overflow-x: hidden;
 }
 
+/* Data tables (Keys, Users, Categories, Audit Log, Tenants) can have more
+   columns than a narrow viewport fits. .filter-main clips horizontal
+   overflow, so wrap the table itself in its own scroll box instead of
+   losing columns off the right edge. */
+.table-scroll {
+  overflow-x: auto;
+}
+
+/* .table-scroll's overflow-x:auto forces its own overflow-y to auto too
+   (per spec, when only one axis is non-visible), which would otherwise make
+   IT the nearest scroll container instead of .filter-main - breaking the
+   thead's sticky positioning. Make it the real (bounded, vertically
+   scrolling) container instead, scoped to just the views that need it. */
+.filter-main--table {
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-main--table .table-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.filter-main--table > .pagination-controls {
+  flex-shrink: 0;
+}
+
+/* Tenants has no .filter-main - .table-scroll sits directly in
+   .main-content, which already has a definite height. */
+.main-content > .table-scroll {
+  height: 100%;
+  overflow-y: auto;
+}
+
 .filter-main thead th,
 .main-content thead th {
   position: sticky;
@@ -2563,20 +2554,20 @@ td {
   z-index: 1;
 }
 
-.metrics-tab-panel {
+.filter-tab-panel {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.metrics-timeframe {
+.filter-field {
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 0.5rem;
 }
 
-.metrics-timeframe-label {
+.filter-field-label {
   font-size: 0.75rem;
   font-weight: 500;
   color: var(--color-text-muted, #6b7280);
@@ -2594,9 +2585,10 @@ td {
   min-height: 2rem;
 }
 
-.metrics-timeframe select,
-.metrics-timeframe input[type="date"],
-.metrics-timeframe input[type="search"] {
+.filter-field select,
+.filter-field input[type="date"],
+.filter-field input[type="search"],
+.filter-field input[type="text"] {
   width: 100%;
   padding: 0.375rem 0.75rem;
   border: 1px solid var(--border, #dfe1e2);
@@ -2609,23 +2601,23 @@ td {
   box-sizing: border-box;
 }
 
-.metrics-custom-range {
+.filter-custom-range {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.metrics-custom-range .btn-primary {
+.filter-custom-range .btn-primary {
   margin-top: 4px;
 }
 
-.metrics-custom-field {
+.filter-custom-field {
   display: flex;
   align-items: center;
   gap: 0.375rem;
 }
 
-.metrics-custom-field label {
+.filter-custom-field label {
   font-size: 0.75rem;
   font-family: inherit;
   color: #71767a;
@@ -2633,7 +2625,7 @@ td {
   flex-shrink: 0;
 }
 
-.metrics-custom-field input[type="date"],
+.filter-custom-field input[type="date"],
 .metrics-controls input[type="date"] {
   width: 100%;
   margin: 0;
@@ -3133,12 +3125,12 @@ td {
 
 /* --- Laptop View (1024px and down) --- */
 @media (max-width: 1024px) {
-  .sidebar {
-    width: 200px;
+  .layout {
+    --sidebar-width: 200px;
   }
 
   .main-content {
-    margin-left: 200px;
+    margin-left: var(--sidebar-width);
     padding: 1rem;
     padding-top: 6rem;
     overflow-y: visible;
@@ -3296,20 +3288,22 @@ td {
      fields out horizontally, where flex-basis sets width. Unscoped, this
      rule also reaches .filter-sidebar--wide's fields, whose flex container
      is a column - there flex-basis sets height, forcing a 160px-tall field. */
-  .filter-sidebar-fields .metrics-timeframe {
+  .filter-sidebar-fields .filter-field {
     width: auto;
     flex: 1 1 160px;
   }
 
-  .filter-sidebar-fields .metrics-timeframe select,
-  .filter-sidebar-fields .metrics-timeframe input[type="date"],
-  .filter-sidebar-fields .metrics-timeframe input[type="search"] {
+  .filter-sidebar-fields .filter-field select,
+  .filter-sidebar-fields .filter-field input[type="date"],
+  .filter-sidebar-fields .filter-field input[type="search"],
+  .filter-sidebar-fields .filter-field input[type="text"] {
     width: auto;
   }
 
-  .filter-sidebar--wide .metrics-timeframe select,
-  .filter-sidebar--wide .metrics-timeframe input[type="date"],
-  .filter-sidebar--wide .metrics-timeframe input[type="search"] {
+  .filter-sidebar--wide .filter-field select,
+  .filter-sidebar--wide .filter-field input[type="date"],
+  .filter-sidebar--wide .filter-field input[type="search"],
+  .filter-sidebar--wide .filter-field input[type="text"] {
     width: 100%;
   }
 
@@ -3336,14 +3330,36 @@ td {
     padding-top: 0;
   }
 
-  /* Document search: wide sidebar stacks vertically */
+  /* Document search: wide sidebar stacks vertically, natural height */
   .filter-sidebar--wide {
     width: 100%;
     overflow: visible;
+    flex: none;
+    min-height: 0;
+  }
+
+  .filter-sidebar--wide #doc-search-tab-results,
+  .filter-sidebar--wide #documents-tab-documents {
+    flex: none;
+    overflow: visible;
+  }
+
+  .filter-sidebar--wide .doc-search-results-scroll {
+    flex: none;
+    overflow: visible;
+    height: auto;
   }
 
   .filter-sidebar--wide .documents-compact-list {
-    max-height: 240px;
+    overflow: visible;
+  }
+
+  .filter-sidebar--wide .sidebar-tab-bar {
+    position: sticky;
+    top: calc(3.25rem + var(--content-header-height));
+    background: var(--color-bg-page);
+    z-index: 2;
+    padding-bottom: 0.75rem;
   }
 }
 
@@ -3500,7 +3516,7 @@ td {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 3.5rem;
+    height: var(--content-header-height);
     background: #1a1a2e;
     border-top: 1px solid #2a2a4a;
     z-index: 200;
@@ -3534,20 +3550,35 @@ td {
   .main-content {
     margin-left: 0;
     padding: 1rem;
-    padding-top: calc(3.25rem + 3.5rem + 1rem);
-    padding-bottom: calc(3.5rem + 1rem);
+    padding-top: calc(3.25rem + var(--content-header-height) + 1rem);
+    padding-bottom: calc(var(--content-header-height) + 1rem);
   }
 
   .content-header {
     left: 0;
     top: 3.25rem;
-    height: 3.5rem;
-    padding: 0.5rem 1rem 0;
+    height: auto;
+    min-height: var(--content-header-height);
+    padding: 0.5rem 1rem;
+    flex-wrap: wrap;
+    row-gap: 0.375rem;
+  }
+
+  :root {
+    --content-header-height: 5rem;
+  }
+
+  .content-header h2 {
+    font-size: 1.125rem;
+  }
+
+  .pagination-controls {
+    justify-content: center;
   }
 
   .filter-sidebar:not(.filter-sidebar--wide) {
-    top: calc(3.25rem + 3.5rem);
-    max-height: calc(100vh - 3.25rem - 3.5rem);
+    top: calc(3.25rem + var(--content-header-height));
+    max-height: calc(100vh - 3.25rem - var(--content-header-height));
   }
 
   .fields-list-header-row {
@@ -3558,7 +3589,7 @@ td {
   .toast {
     left: 50%;
     top: auto;
-    bottom: calc(3.5rem + 0.75rem);
+    bottom: calc(var(--content-header-height) + 0.75rem);
     transform: translateX(-50%) translateY(10px);
   }
 

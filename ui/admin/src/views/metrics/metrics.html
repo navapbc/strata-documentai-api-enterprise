@@ -1,14 +1,14 @@
 <div class="metrics-view">
   <div class="filter-layout">
     <div class="filter-sidebar">
-      <div class="metrics-timeframe">
-        <label class="metrics-timeframe-label">Tenant</label>
+      <div class="filter-field">
+        <label class="filter-field-label">Tenant</label>
         <select id="tenant-select">
           <option value="">All Tenants</option>
         </select>
       </div>
-      <div class="metrics-timeframe">
-        <label class="metrics-timeframe-label">Date Range</label>
+      <div class="filter-field">
+        <label class="filter-field-label">Date Range</label>
         <div id="metrics-date-range"></div>
       </div>
       <nav class="metrics-tabs">
@@ -18,9 +18,9 @@
       </nav>
     </div>
     <div class="filter-main">
-      <div id="metrics-tab-volume" class="metrics-tab-panel"></div>
-      <div id="metrics-tab-outcomes" class="metrics-tab-panel hidden"></div>
-      <div id="metrics-tab-timing" class="metrics-tab-panel hidden"></div>
+      <div id="metrics-tab-volume" class="filter-tab-panel"></div>
+      <div id="metrics-tab-outcomes" class="filter-tab-panel hidden"></div>
+      <div id="metrics-tab-timing" class="filter-tab-panel hidden"></div>
       <p id="metrics-empty" class="empty-state hidden"></p>
     </div>
   </div>
