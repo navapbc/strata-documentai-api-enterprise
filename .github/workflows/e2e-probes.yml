@@ -49,14 +49,14 @@ jobs:
         working-directory: documentai-api
         run: make .env.e2e
 
-      # The probe suite documents tenant spec expectations; cases tagged with a
-      # KF issue id are EXPECTED to fail until their gate is implemented, so
-      # this step is informational rather than a merge gate. Read the log to
-      # distinguish known failures from drift (each failure message echoes the
-      # observed 2026-07 behavior).
+      # Merge gate: a failing probe blocks the PR. Plain-red spec cases (KF
+      # issue ids whose gate is not yet implemented) count as failures by
+      # design - resolve them by implementing the gate, or by marking the case
+      # "xfail" (fix scheduled) / "e2e_enabled": false (out of scope) in
+      # expected.json. Each failure message echoes the observed 2026-07
+      # behavior to distinguish a known failure from drift.
       - name: Run probe suite
         id: probes
-        continue-on-error: true
         working-directory: documentai-api
         shell: bash  # explicit `shell: bash` enables pipefail, so tee can't mask pytest's exit code
         run: |

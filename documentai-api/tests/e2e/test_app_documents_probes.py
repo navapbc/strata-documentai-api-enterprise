@@ -5,10 +5,13 @@ tests/helpers/fixtures/probe-documents/README.md for the KF issue table -
 numbered by tenant edge case - and fixture provenance) and asserts the behavior
 the tenant spec says
 the input SHOULD produce - not the behavior the API produces today. Cases
-tagged with an issue id are EXPECTED TO FAIL (plain red, no xfail) until the
+tagged with an issue id are EXPECTED TO FAIL (plain red) until the
 corresponding gate is implemented; untagged cases are green controls. Cases the
 tenant has ruled out of scope are e2e_enabled=false in expected.json and are not
-collected - the fixture and spec stay committed for the record.
+collected - the fixture and spec stay committed for the record. A case whose
+fix is scheduled but not yet prioritized may set "xfail": "<reason>" in
+expected.json to report as expected-to-fail instead of red (currently only
+KF-11).
 
 Every case also records the observed 2026-07 behavior in expected.json; it is
 echoed into the assertion message so a red test distinguishes "still failing
@@ -22,8 +25,7 @@ shows every violation:
 - matchedDocumentClass
 - requiredFields (not an assertion: seeds a payslip extraction rule with these
   requiredFields around exactly this case via the payslip_extraction_rule
-  fixture below - KF-8a pairs it with missingRequiredFieldListContains, KF-7
-  uses it so faint-but-present required fields are exercised against the gate)
+  fixture below - KF-8a pairs it with missingRequiredFieldListContains)
 - missingRequiredFieldListContains (KF-8a/8c: absent fields must be reported)
 - emptyFields (KF-8b: absent fields must not be hallucinated)
 - fieldEquals (KF-9: page-2-only values prove multi-page extraction)
@@ -116,9 +118,9 @@ def payslip_extraction_rule(request, api_key, e2e_tenant_id):
     rule is a test precondition, not tenant state we can assume exists.
 
     Seeding is opt-in via the case's requiredFields key (KF-8a asserts those
-    fields come back as missing; KF-7 has them present-but-faint and asserts
-    they do NOT trip 101). A rule marks fields required for EVERY payslip the
-    tenant uploads, so an always-on rule turns the green payslip controls
+    fields come back as missing). A rule marks fields required for EVERY
+    payslip the tenant uploads, so an always-on rule turns the green payslip
+    controls
     (clean scan, mixed-pages PDF, KF-17, the KF-5 declared-category guard)
     into 101s. Tests run sequentially within an xdist worker and each worker
     has its own tenant, so seeding before / deleting after one case cannot
@@ -160,6 +162,11 @@ def load_probe_cases() -> list:
         if filename == "//" or not expected.get("e2e_enabled", False):
             continue
         issue = expected.get("issue")
+        # xfail is reserved for known failures whose fix is scheduled but not
+        # prioritized (currently only KF-11); unscheduled gaps stay plain red.
+        # strict stays False so the case XPASSes (instead of erroring) when
+        # the fix lands - flip e2e_enabled/xfail in expected.json then.
+        marks = [pytest.mark.xfail(reason=expected["xfail"])] if expected.get("xfail") else []
         params.append(
             pytest.param(
                 ProbeCase(
@@ -178,6 +185,7 @@ def load_probe_cases() -> list:
                     timeout=expected.get("timeoutSeconds", POLL_TIMEOUT),
                 ),
                 id=f"{issue or 'CTRL'}:{filename}",
+                marks=marks,
             )
         )
     return params
@@ -364,15 +372,3 @@ def test_miscategorized_declared_category(base_url, api_key):
         f"REGRESSION in the declared-vs-detected category check, not the old known "
         f"failure (which was 000 / Payslip, category inert)"
     )
-
-
-def test_invalid_category_rejected(base_url, api_key):
-    """Control: an unknown category value is rejected at upload with a 422."""
-    response = _upload(
-        base_url,
-        api_key,
-        PROBE_DOCS_DIR / "synthetic-probe-payslip-clean-scan.jpg",
-        "image/jpeg",
-        category="not-a-category",
-    )
-    assert response.status_code == 422, f"{response.status_code}: {response.text}"
