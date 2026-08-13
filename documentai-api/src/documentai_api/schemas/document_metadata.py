@@ -124,6 +124,9 @@ class DocumentMetadata:
     # extraction method
     EXTRACT_METHOD = "extractionMethod"
 
+    # otel trace propagation
+    TRACEPARENT = "traceparent"
+
     # used to determine if a document should be processed or excluded from
     # processing based on the tenant's configuration
     PROCESSING_PERCENTAGE = "processingPercentage"

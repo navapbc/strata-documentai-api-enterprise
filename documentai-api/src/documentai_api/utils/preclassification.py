@@ -5,6 +5,7 @@ import time
 from decimal import Decimal
 from typing import Any
 
+from opentelemetry import trace
 from pydantic import BaseModel, ConfigDict, ValidationError
 
 from documentai_api.config.constants import (
@@ -21,6 +22,7 @@ from documentai_api.services.bedrock import invoke_model
 from documentai_api.utils.ssm import get_parameter_value
 
 logger = get_logger(__name__)
+tracer = trace.get_tracer(__name__)
 
 SUPPORTED_CLASSIFICATION_TYPES = PreClassificationDefaults.SUPPORTED_CONTENT_TYPES
 
@@ -108,7 +110,10 @@ def preclassify_document(
     try:
         model_id = _get_model_id()
         start = time.time()
-        response = invoke_model(messages=messages, model_id=model_id)
+        with tracer.start_as_current_span("bedrock.preclassify") as span:
+            span.set_attribute("bedrock.model_id", model_id)
+            span.set_attribute("document.content_type", content_type)
+            response = invoke_model(messages=messages, model_id=model_id)
         elapsed = round(time.time() - start, 2)
 
         usage = response.get("usage", {})
@@ -231,7 +236,11 @@ def find_matching_blueprint(
     try:
         model_id = _get_model_id()
         start = time.time()
-        response = invoke_model(messages=messages, model_id=model_id, temperature=0.0)
+        with tracer.start_as_current_span("bedrock.blueprint_match") as span:
+            span.set_attribute("bedrock.model_id", model_id)
+            span.set_attribute("document.content_type", content_type)
+            span.set_attribute("blueprint.schema_count", len(schemas))
+            response = invoke_model(messages=messages, model_id=model_id, temperature=0.0)
         elapsed = round(time.time() - start, 2)
 
         usage = response.get("usage", {})

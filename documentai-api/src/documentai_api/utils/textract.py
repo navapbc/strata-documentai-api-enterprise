@@ -4,6 +4,8 @@ import json
 from datetime import UTC, datetime
 from typing import Any
 
+from opentelemetry import trace
+
 from documentai_api.config.constants import ExtractMethod, TextractConfig
 from documentai_api.config.env import EnvVars, get_required_env
 from documentai_api.logging import get_logger
@@ -12,6 +14,7 @@ from documentai_api.utils.dates import strip_time
 from documentai_api.utils.response_codes import ResponseCodes
 
 logger = get_logger(__name__)
+tracer = trace.get_tracer(__name__)
 
 NOVA_MICRO_MODEL_ID = "us.amazon.nova-micro-v1:0"
 
@@ -453,7 +456,10 @@ def try_textract_identity(
         from documentai_api.utils.extraction_timing import get_elapsed_time_seconds
 
         extract_started_at = datetime.now(UTC)
-        textract_response = analyze_id(file_bytes)
+        with tracer.start_as_current_span("textract.analyze_id") as span:
+            span.set_attribute("document.content_type", content_type)
+            span.set_attribute("document.key", ddb_key)
+            textract_response = analyze_id(file_bytes)
         extract_completed_at = datetime.now(UTC)
 
         id_type = get_id_type(textract_response)
@@ -482,9 +488,11 @@ def try_textract_identity(
             for doc in textract_response.get("IdentityDocuments", []):
                 all_blocks.extend(doc.get("Blocks", []))
             if all_blocks:
-                supplemental = extract_supplemental_fields_via_nova(
-                    all_blocks, *supplemental_config
-                )
+                with tracer.start_as_current_span("bedrock.supplemental_extraction") as span:
+                    span.set_attribute("document.key", ddb_key)
+                    supplemental = extract_supplemental_fields_via_nova(
+                        all_blocks, *supplemental_config
+                    )
                 fields.update(supplemental)
 
         # Textract succeeded - commit extract method + start time

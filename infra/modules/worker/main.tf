@@ -28,6 +28,11 @@ resource "aws_iam_role_policy_attachment" "vpc_access" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 
+resource "aws_iam_role_policy_attachment" "xray" {
+  role       = aws_iam_role.this.name
+  policy_arn = "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess"
+}
+
 resource "aws_iam_role_policy_attachment" "extra" {
   for_each   = var.policy_arns
   role       = aws_iam_role.this.name
@@ -70,6 +75,10 @@ resource "aws_lambda_function" "this" {
 
   environment {
     variables = var.environment_variables
+  }
+
+  tracing_config {
+    mode = "Active"
   }
 
   dynamic "vpc_config" {

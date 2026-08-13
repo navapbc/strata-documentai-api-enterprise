@@ -506,19 +506,23 @@ locals {
     DDB_RAW_DATA_TABLE_NAME                                   = module.analytics.raw_metrics_table_name
     GLUE_DATABASE_NAME                                        = module.analytics.database_name
     ATHENA_WORKGROUP_NAME                                     = module.analytics.workgroup_name
-    BDA_PROJECT_ARN_TAX_DOCUMENTS                             = module.bedrock_data_automation["tax_documents"].project_arn
-    BDA_PROJECT_ARN_EMPLOYMENT_WAGES                          = module.bedrock_data_automation["employment_wages"].project_arn
-    BDA_PROJECT_ARN_INDEPENDENT_EARNINGS                      = module.bedrock_data_automation["independent_earnings"].project_arn
-    BDA_PROJECT_ARN_GOVERNMENT_BENEFITS                       = module.bedrock_data_automation["government_benefits"].project_arn
-    BDA_PROJECT_ARN_PRIVATE_BENEFITS_AND_SETTLEMENTS          = module.bedrock_data_automation["private_benefits_and_settlements"].project_arn
-    BDA_PROJECT_ARN_COURT_ORDERED_BENEFITS                    = module.bedrock_data_automation["court_ordered_benefits"].project_arn
-    BDA_PROJECT_ARN_FINANCIAL_ASSETS                          = module.bedrock_data_automation["financial_assets"].project_arn
-    BDA_PROJECT_ARN_RECEIPTS_AND_INVOICES                     = module.bedrock_data_automation["receipts_and_invoices"].project_arn
-    BDA_PROJECT_ARN_RECURRING_BILLS                           = module.bedrock_data_automation["recurring_bills"].project_arn
-    BDA_PROJECT_ARN_HOUSING_EXPENSES                          = module.bedrock_data_automation["housing_expenses"].project_arn
-    BDA_PROJECT_ARN_DEBT_OBLIGATIONS                          = module.bedrock_data_automation["debt_obligations"].project_arn
-    BDA_PROJECT_ARN_IDENTITY_VERIFICATION                     = module.bedrock_data_automation["identity_verification"].project_arn
-    BDA_PROJECT_ARN_RIGHT_TO_WORK                             = module.bedrock_data_automation["right_to_work"].project_arn
+    # disable bda-specific projects in favor of a single "all" project, pre-classification-based routing not currently developed
+    # keeping for future use as example of how to configure multiple BDA projects in a single API Lambda env
+    # also reduces the size of the env vars to keep under the 4KB Lambda limit (the "all" project is the only one that needs to be in the env)
+    # before enabling, create a singular env var prefix  and build the list of project ARNs in the application code
+    # BDA_PROJECT_ARN_TAX_DOCUMENTS                             = module.bedrock_data_automation["tax_documents"].project_arn
+    # BDA_PROJECT_ARN_EMPLOYMENT_WAGES                          = module.bedrock_data_automation["employment_wages"].project_arn
+    # BDA_PROJECT_ARN_INDEPENDENT_EARNINGS                      = module.bedrock_data_automation["independent_earnings"].project_arn
+    # BDA_PROJECT_ARN_GOVERNMENT_BENEFITS                       = module.bedrock_data_automation["government_benefits"].project_arn
+    # BDA_PROJECT_ARN_PRIVATE_BENEFITS_AND_SETTLEMENTS          = module.bedrock_data_automation["private_benefits_and_settlements"].project_arn
+    # BDA_PROJECT_ARN_COURT_ORDERED_BENEFITS                    = module.bedrock_data_automation["court_ordered_benefits"].project_arn
+    # BDA_PROJECT_ARN_FINANCIAL_ASSETS                          = module.bedrock_data_automation["financial_assets"].project_arn
+    # BDA_PROJECT_ARN_RECEIPTS_AND_INVOICES                     = module.bedrock_data_automation["receipts_and_invoices"].project_arn
+    # BDA_PROJECT_ARN_RECURRING_BILLS                           = module.bedrock_data_automation["recurring_bills"].project_arn
+    # BDA_PROJECT_ARN_HOUSING_EXPENSES                          = module.bedrock_data_automation["housing_expenses"].project_arn
+    # BDA_PROJECT_ARN_DEBT_OBLIGATIONS                          = module.bedrock_data_automation["debt_obligations"].project_arn
+    # BDA_PROJECT_ARN_IDENTITY_VERIFICATION                     = module.bedrock_data_automation["identity_verification"].project_arn
+    # BDA_PROJECT_ARN_RIGHT_TO_WORK                             = module.bedrock_data_automation["right_to_work"].project_arn
     BDA_PROJECT_ARN_ALL                                       = module.bedrock_data_automation["all"].project_arn
     BDA_PROFILE_ARN                                           = module.bedrock_data_automation["all"].profile_arn
     BDA_REGION                                                = var.bda_region
@@ -533,6 +537,9 @@ locals {
     API_AUTH_INSECURE_SHARED_KEY_PARAM                        = "/${var.project_name}/${var.environment}/api-auth-insecure-shared-key"
     COGNITO_USER_POOL_ID                                      = module.identity_provider.user_pool_id
     COGNITO_CLIENT_ID                                         = module.identity_provider.client_id
+    OTEL_SDK_DISABLED                                         = tostring(!var.otel_enabled)
+    OTEL_SERVICE_NAME                                         = var.otel_service_name
+    OTEL_EXPORTER_OTLP_ENDPOINT                               = var.otel_exporter_otlp_endpoint
   }
 
   # API Lambda env: the shared worker map, minus the Athena/Glue vars that only

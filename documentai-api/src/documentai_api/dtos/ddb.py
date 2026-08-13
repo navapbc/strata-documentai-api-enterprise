@@ -255,6 +255,10 @@ class InitialDdbRecord(BaseModel):
         default=None,
         json_schema_extra=_ddb_metadata_map("blurDetectionDurationSeconds", ":blurDetDs"),
     )
+    traceparent: str | None = Field(
+        default=None,
+        json_schema_extra=_ddb_metadata_map("traceparent", ":traceparent"),
+    )
     image_opt_crop_block_duration_seconds: Decimal | None = Field(
         default=None,
         json_schema_extra=_ddb_metadata_map(
