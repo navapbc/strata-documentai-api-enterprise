@@ -2,14 +2,14 @@ import os
 from datetime import UTC, datetime
 from typing import Any
 
-from documentai_api.config.constants import ConfigDefaults, DocumentCategory
+from documentai_api.config.constants import ConfigDefaults
 from documentai_api.config.env import EnvVars
 from documentai_api.dtos.processing import PageMetadata
 from documentai_api.schemas.document_builds import DocumentBuilds
 from documentai_api.services import ddb as ddb_service
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils import s3 as s3_utils
-from documentai_api.utils.ttl import ttl_epoch_in_days
+from documentai_api.utils.dates import get_ttl_epoch_in_days
 
 # Sentinel page number reserved for the per-build metadata record (not a real page).
 _METADATA_PAGE_NUMBER = 0
@@ -62,7 +62,7 @@ async def upsert_document_build_page(
     page_number: int,
     s3_path: str,
     original_file_name: str | None = None,
-    category: DocumentCategory | None = None,
+    category: str | None = None,
     overwrite: bool = True,
 ) -> None:
     """Upsert multipage session page record.
@@ -77,14 +77,14 @@ async def upsert_document_build_page(
         DocumentBuilds.PAGE_NUMBER: page_number,
         DocumentBuilds.S3_PATH: s3_path,
         DocumentBuilds.CREATED_AT: datetime.now(UTC).isoformat(),
-        DocumentBuilds.TIME_TO_LIVE: ttl_epoch_in_days(ConfigDefaults.DOCUMENT_BUILDS_TTL_DAYS),
+        DocumentBuilds.TIME_TO_LIVE: get_ttl_epoch_in_days(ConfigDefaults.DOCUMENT_BUILDS_TTL_DAYS),
     }
 
     if original_file_name:
         item[DocumentBuilds.ORIGINAL_FILE_NAME] = original_file_name
 
     if category:
-        item[DocumentBuilds.CATEGORY] = category.value
+        item[DocumentBuilds.CATEGORY] = category
 
     if not overwrite:
         from documentai_api.utils.aws_client_factory import AWSClientFactory
@@ -223,12 +223,13 @@ def delete_document_build_page(build_id: str, page_number: int) -> bool:
 
 def create_document_build(
     build_id: str,
-    category: DocumentCategory | None = None,
+    category: str | None = None,
     external_document_id: str | None = None,
     external_system_id: str | None = None,
     ai_consent_flag: bool | None = None,
     tenant_id: str | None = None,
     api_key_name: str | None = None,
+    upload_source: str | None = None,
 ) -> str:
     """Create a new document build."""
     item: dict[str, Any] = {
@@ -236,11 +237,11 @@ def create_document_build(
         DocumentBuilds.PAGE_NUMBER: _METADATA_PAGE_NUMBER,
         DocumentBuilds.CREATED_AT: datetime.now(UTC).isoformat(),
         DocumentBuilds.IS_BUILD_METADATA: True,
-        DocumentBuilds.TIME_TO_LIVE: ttl_epoch_in_days(ConfigDefaults.DOCUMENT_BUILDS_TTL_DAYS),
+        DocumentBuilds.TIME_TO_LIVE: get_ttl_epoch_in_days(ConfigDefaults.DOCUMENT_BUILDS_TTL_DAYS),
     }
 
     if category:
-        item[DocumentBuilds.CATEGORY] = category.value
+        item[DocumentBuilds.CATEGORY] = category
     if external_document_id is not None:
         item[DocumentBuilds.EXTERNAL_DOCUMENT_ID] = external_document_id
     if external_system_id is not None:
@@ -251,6 +252,8 @@ def create_document_build(
         item[DocumentBuilds.TENANT_ID] = tenant_id
     if api_key_name is not None:
         item[DocumentBuilds.API_KEY_NAME] = api_key_name
+    if upload_source is not None:
+        item[DocumentBuilds.UPLOAD_SOURCE] = upload_source
 
     ddb_service.put_item(get_document_build_table(), item)
     return build_id

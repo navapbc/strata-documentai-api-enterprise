@@ -36,9 +36,9 @@ The default `make test` run excludes `integration` and `e2e` (and `audit`) via `
 
 ### End-to-End Tests
 
-E2E tests (`tests/e2e/`) run against a **real, deployed** environment — real DynamoDB/S3 and a live API at `BASE_URL`. They require `.env.e2e`, which `make test-e2e` regenerates from terraform outputs.
+E2E tests (`tests/e2e/`) run against a **real, deployed** environment - real DynamoDB/S3 and a live API at `BASE_URL`. They require `.env.e2e`, which `make test-e2e` regenerates from terraform outputs.
 
-- You do **not** decorate e2e tests with `@pytest.mark.e2e` individually — a `pytest_collection_modifyitems` hook in `tests/e2e/conftest.py` applies the marker to everything in that directory automatically.
+- You do **not** decorate e2e tests with `@pytest.mark.e2e` individually - a `pytest_collection_modifyitems` hook in `tests/e2e/conftest.py` applies the marker to everything in that directory automatically.
 - Tests run under a **per-worker** tenant (`e2e-test-tenant-<worker_id>`, where `worker_id` is `master` serially or `gw0`/`gw1`/… under `-n`). This keeps parallel xdist workers from wiping each other's data, since each worker creates and cleans up only its own tenant.
 - Cleanup of the documents they create is **opt-in**: set `E2E_WIPE_TENANT=1` to delete them from DynamoDB/S3 at session end; otherwise the data is left in place for inspection.
 
@@ -111,7 +111,7 @@ def test_document_processing(sample_pdf_bytes):
 
 ## Running Tests
 
-- `make test` - Run the default (unit) suite — excludes `integration`, `e2e`, and `audit`
+- `make test` - Run the default (unit) suite - excludes `integration`, `e2e`, and `audit`
 - `make test args="-m integration"` - Run integration (moto) tests
 - `make test-e2e` - Run end-to-end tests against real deployed AWS (regenerates `.env.e2e`)
 - `make test-coverage` - Run tests with coverage report

@@ -19,10 +19,11 @@ from fastapi import (
 from documentai_api.annotations import (
     AiConsentFlag,
     AuthUser,
-    CategoryField,
+    DocumentCategoryField,
     ExternalDocumentId,
     ExternalSystemId,
     TraceId,
+    UploadSourceField,
 )
 from documentai_api.config.constants import (
     MAX_SEARCH_JOB_IDS,
@@ -43,10 +44,8 @@ from documentai_api.models.api_responses import (
 from documentai_api.models.document_record import DocumentRecord
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.auth import get_user_context_from_api_key
-from documentai_api.utils.document_lifecycle import (
-    classify_as_ai_consent_declined,
-    insert_minimal_ddb_record,
-)
+from documentai_api.utils.document_classification import classify_as_ai_consent_declined
+from documentai_api.utils.document_lifecycle import insert_minimal_ddb_record
 from documentai_api.utils.jobs import JobStatus, get_job_status, poll_for_completion
 from documentai_api.utils.response_builder import build_v1_api_response
 from documentai_api.utils.tenant_access import validate_document_tenant_access
@@ -56,6 +55,7 @@ from documentai_api.utils.uploads import (
     generate_unique_filename,
     validate_upload,
 )
+from documentai_api.utils.write_limit import increment_and_check
 
 logger = get_logger(__name__)
 
@@ -84,12 +84,13 @@ async def upload_document(
     response: Response,
     file: UploadFile,
     auth: AuthUser,
-    category: CategoryField = None,
+    category: DocumentCategoryField = None,
     trace_id: TraceId = None,
     external_document_id: ExternalDocumentId = None,
     external_system_id: ExternalSystemId = None,
     ai_consent_flag: AiConsentFlag = True,
     is_demo: bool = False,
+    upload_source: UploadSourceField = None,
 ) -> _UploadResult:
     """Shared upload logic. Returns an _UploadResult with job_id, status, and message."""
     if not trace_id:
@@ -100,11 +101,13 @@ async def upload_document(
     actual_content_type = await validate_upload(file)
     filename: str = file.filename  # type: ignore[assignment]
 
+    await asyncio.to_thread(increment_and_check, auth.tenant_id)
+
     logger.info(
         "Processing document",
         extra={
             "upload_filename": filename,
-            "category": category.value if category else None,
+            "category": category,
             "content_type": actual_content_type,
             "is_demo": is_demo,
         },
@@ -132,6 +135,7 @@ async def upload_document(
             external_system_id=external_system_id,
             ai_consent_flag=ai_consent_flag,
             upload_method=UploadMethod.DIRECT,
+            upload_source=upload_source,
             tenant_id=auth.tenant_id,
             api_key_name=auth.api_key_name,
             is_demo=is_demo,
@@ -185,11 +189,12 @@ async def create_document(
     response: Response,
     file: UploadFile,
     auth: AuthUser,
-    category: CategoryField = None,
+    category: DocumentCategoryField = None,
     trace_id: TraceId = None,
     external_document_id: ExternalDocumentId = None,
     external_system_id: ExternalSystemId = None,
     ai_consent_flag: AiConsentFlag = True,
+    upload_source: UploadSourceField = None,
 ) -> UploadAsyncResponse:
     """Upload a document for processing (fire-and-forget)."""
     result = await upload_document(
@@ -201,6 +206,7 @@ async def create_document(
         external_document_id,
         external_system_id,
         ai_consent_flag,
+        upload_source=upload_source,
     )
     return UploadAsyncResponse(
         job_id=result.job_id,
@@ -218,7 +224,7 @@ async def create_document_wait(
     response: Response,
     file: UploadFile,
     auth: AuthUser,
-    category: CategoryField = None,
+    category: DocumentCategoryField = None,
     trace_id: TraceId = None,
     external_document_id: ExternalDocumentId = None,
     external_system_id: ExternalSystemId = None,
@@ -227,6 +233,7 @@ async def create_document_wait(
     include_bounding_box: bool = False,
     timeout: Annotated[int, Query(ge=1)] = ConfigDefaults.MAX_WAIT_SECONDS
     - ConfigDefaults.ALB_TIMEOUT_BUFFER_SECONDS,
+    upload_source: UploadSourceField = None,
 ) -> JobStatusResponse:
     """Upload a document and poll until processing completes or timeout.
 
@@ -245,6 +252,7 @@ async def create_document_wait(
         external_document_id,
         external_system_id,
         ai_consent_flag,
+        upload_source=upload_source,
     )
     # Terminal states (consent declined, conversion failed) - return immediately.
     if ProcessStatus.is_classified(result.job_status):
@@ -295,10 +303,12 @@ async def get_document_results(
             raise HTTPException(status_code=404, detail=f"Job ID {job_id} not found")
 
         if not job_status.v1_response_json:
+            current_status = job_status.process_status or ProcessStatus.NOT_STARTED.value
+
             return JobStatusResponse(
                 job_id=str(job_id),
-                job_status=job_status.process_status or ProcessStatus.NOT_STARTED.value,
-                message="Processing in progress",
+                job_status=current_status,
+                message=ProcessStatus.pending_message(current_status),
             )
 
         if job_status.process_status and ProcessStatus.is_classified(job_status.process_status):
@@ -432,11 +442,13 @@ async def search_documents(body: DocumentSearchRequest, auth: AuthUser) -> Docum
                     )
                 )
             elif not job_status.v1_response_json:
+                current_status = job_status.process_status or ProcessStatus.NOT_STARTED.value
+
                 results.append(
                     JobStatusResponse(
                         job_id=job_id,
-                        job_status=job_status.process_status or ProcessStatus.NOT_STARTED.value,
-                        message="Processing in progress",
+                        job_status=current_status,
+                        message=ProcessStatus.pending_message(current_status),
                     )
                 )
             elif body.include_extracted_data:

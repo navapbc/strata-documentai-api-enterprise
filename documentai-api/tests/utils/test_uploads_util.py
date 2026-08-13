@@ -1,11 +1,15 @@
 """Tests for utils/uploads.py helper functions."""
 
 import io
+from pathlib import Path
 
 import pytest
 from fastapi import HTTPException, UploadFile
 
 from documentai_api.utils.uploads import generate_unique_filename
+from tests.helpers.documents import generate_ooxml_with_deep_entry
+
+FIXTURES_DIR = Path(__file__).parent.parent / "helpers" / "fixtures" / "test-documents"
 
 
 def test_generate_unique_filename_simple():
@@ -51,6 +55,86 @@ async def test_validate_file_type_unsupported(runtime_required_env, empty_zip_by
         await validate_file_type(file)
     assert exc_info.value.status_code == 400
     assert "Invalid file type" in exc_info.value.detail
+
+
+@pytest.mark.asyncio
+async def test_validate_file_type_docx_accepted(runtime_required_env, blank_docx_bytes):
+    from documentai_api.utils.uploads import validate_file_type
+
+    file = UploadFile(filename="test.docx", file=io.BytesIO(blank_docx_bytes))
+    content_type = await validate_file_type(file)
+    assert content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+
+@pytest.mark.asyncio
+async def test_validate_file_type_docx_deep_entry_accepted(runtime_required_env):
+    """A docx whose word/ entry is past the header window is still detected (not zip)."""
+    from documentai_api.utils.uploads import validate_file_type
+
+    file = UploadFile(
+        filename="deep.docx", file=io.BytesIO(generate_ooxml_with_deep_entry("word/document.xml"))
+    )
+    content_type = await validate_file_type(file)
+    assert content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("member", "detected_subtype"),
+    [
+        ("xl/workbook.xml", "spreadsheetml.sheet"),
+        ("ppt/presentation.xml", "presentationml.presentation"),
+    ],
+)
+async def test_validate_file_type_xlsx_pptx_rejected_not_misdetected_as_docx(
+    runtime_required_env, member, detected_subtype
+):
+    """xlsx/pptx resolve to their own subtype and are rejected - never treated as docx."""
+    from documentai_api.utils.uploads import validate_file_type
+
+    file = UploadFile(filename="deep.bin", file=io.BytesIO(generate_ooxml_with_deep_entry(member)))
+    with pytest.raises(HTTPException) as exc_info:
+        await validate_file_type(file)
+    assert exc_info.value.status_code == 400
+    # The *detected* type (quoted in the message) is the correct subtype, not docx.
+    assert f"detected 'application/vnd.openxmlformats-officedocument.{detected_subtype}'" in (
+        exc_info.value.detail
+    )
+
+
+@pytest.mark.asyncio
+async def test_validate_file_type_password_protected_docx_accepted(runtime_required_env):
+    """Encrypted (OLE2-wrapped) docx passes type validation instead of 400-ing as ms-excel.
+
+    Acceptance is required so the async classifier can mark it PASSWORD_PROTECTED.
+    """
+    from documentai_api.utils.uploads import validate_file_type
+
+    data = (FIXTURES_DIR / "synthetic-password-protected.docx").read_bytes()
+    file = UploadFile(filename="pw.docx", file=io.BytesIO(data))
+    content_type = await validate_file_type(file)
+    assert content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+
+@pytest.mark.asyncio
+async def test_validate_file_type_odt_rejected_with_hint(runtime_required_env, blank_odt_bytes):
+    from documentai_api.utils.uploads import validate_file_type
+
+    file = UploadFile(filename="test.odt", file=io.BytesIO(blank_odt_bytes))
+    with pytest.raises(HTTPException) as exc_info:
+        await validate_file_type(file)
+    assert exc_info.value.status_code == 400
+    assert "aren't currently supported" in exc_info.value.detail
+    assert ".docx" in exc_info.value.detail
+
+
+@pytest.mark.asyncio
+async def test_validate_file_type_doc_accepted(runtime_required_env, blank_doc_bytes):
+    from documentai_api.utils.uploads import validate_file_type
+
+    file = UploadFile(filename="test.doc", file=io.BytesIO(blank_doc_bytes))
+    content_type = await validate_file_type(file)
+    assert content_type == "application/msword"
 
 
 @pytest.mark.asyncio
@@ -104,7 +188,7 @@ async def test_dispatch_upload_http_exception_classifies_and_reraises(mocker):
         "documentai_api.utils.uploads.upload_document_for_processing",
         side_effect=HTTPException(status_code=500, detail="S3 error"),
     )
-    mock_classify = mocker.patch("documentai_api.utils.document_lifecycle.classify_as_failed")
+    mock_classify = mocker.patch("documentai_api.utils.document_classification.classify_as_failed")
 
     with pytest.raises(HTTPException) as exc_info:
         await dispatch_upload(
@@ -130,7 +214,7 @@ async def test_dispatch_upload_generic_exception_classifies_and_raises_500(mocke
         "documentai_api.utils.uploads.upload_document_for_processing",
         side_effect=RuntimeError("boom"),
     )
-    mock_classify = mocker.patch("documentai_api.utils.document_lifecycle.classify_as_failed")
+    mock_classify = mocker.patch("documentai_api.utils.document_classification.classify_as_failed")
 
     with pytest.raises(HTTPException) as exc_info:
         await dispatch_upload(
@@ -157,7 +241,7 @@ async def test_dispatch_upload_conversion_error_classifies_and_reraises(mocker):
         side_effect=ImageConversionError("bad image"),
     )
     mock_classify = mocker.patch(
-        "documentai_api.utils.document_lifecycle.classify_as_conversion_failed"
+        "documentai_api.utils.document_classification.classify_as_conversion_failed"
     )
 
     with pytest.raises(ImageConversionError):

@@ -27,8 +27,12 @@ def test_get_blueprint(mock_bda_client):
     mock_bda_client.get_blueprint.assert_called_once_with(blueprintArn=blueprint_arn)
 
 
-def test_get_bda_result_json_success(s3_bucket):
+def test_get_bda_result_json_success(s3_bucket, monkeypatch):
     """Read BDA result JSON from S3."""
+    from documentai_api.config.env import get_aws_config
+
+    monkeypatch.setenv("DOCUMENTAI_OUTPUT_LOCATION", f"s3://{s3_bucket.name}/output")
+    get_aws_config.cache_clear()
     s3_bucket.put_object(Key="path/to/result.json", Body=b'{"result": "success"}')
 
     result = bda_service.get_bda_result_json(f"s3://{s3_bucket.name}/path/to/result.json")

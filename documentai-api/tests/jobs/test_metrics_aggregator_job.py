@@ -56,6 +56,7 @@ def create_daily_stats(s3_client, date, total_records=5, tenant_id=None):
         "date": date,
         "total_records": total_records,
         "total_bda_invocations": total_records - 2,
+        "total_extraction_invocations": total_records - 2,
         "by_status": {"success": total_records - 1, "failed": 1},
         "by_classification": {"W2": total_records},
         "by_response_code": {"200": total_records},
@@ -96,6 +97,7 @@ def create_aggregated_stats(date="2026-02-20", total_records=10):
         "date": date,
         "total_records": total_records,
         "total_bda_invocations": total_records - 2,
+        "total_extraction_invocations": total_records - 2,
         "by_status": {"success": total_records - 2, "failed": 2},
         "by_classification": {"W2": total_records},
         "by_response_code": {"000": total_records},
@@ -389,6 +391,7 @@ def test_aggregate_monthly_success(s3_client, s3_bucket):
     assert monthly_stats["month"] == "2026-02"
     assert monthly_stats["total_records"] == 37  # 10 + 15 + 12
     assert monthly_stats["total_bda_invocations"] == 31  # (10-2) + (15-2) + (12-2)
+    assert monthly_stats["total_extraction_invocations"] == 31
 
 
 def test_aggregate_monthly_multi_tenant(s3_client, s3_bucket):
@@ -517,6 +520,9 @@ def test_process_record_logs_warning_for_invalid_timing(caplog):
         "by_status": {},
         "by_classification": {},
         "by_response_code": {},
+        "by_file_type": {},
+        "by_user_category": {},
+        "by_upload_method": {},
         "by_hour": {},
         "timing_stats": {
             "total_processing_time_sum": 0,
@@ -681,6 +687,34 @@ def test_main_first_day_of_month(s3_client, s3_bucket, mock_metrics_aggregator_e
     months = [agg["month"] for agg in result["monthlyAggregations"]]
     assert "2026-02" in months
     assert "2026-01" in months
+
+
+def test_aggregate_records_counts_textract_in_extraction_invocations():
+    """Textract records increment total_extraction_invocations but not total_bda_invocations."""
+    from documentai_api.jobs.metrics_aggregator.main import _initialize_stats, _process_record
+
+    stats = _initialize_stats("2026-02-20")
+    records = [
+        {
+            "file_name": "a.pdf",
+            "process_status": "success",
+            "created_at": "2026-02-20T10:00:00Z",
+            "bda_invocation_arn": "arn:aws:bedrock:us-east-1:123:invocation/abc",
+        },
+        {
+            "file_name": "b.pdf",
+            "process_status": "success",
+            "created_at": "2026-02-20T10:00:00Z",
+            "extraction_method": "textract",
+        },
+        {"file_name": "c.pdf", "process_status": "failed", "created_at": "2026-02-20T10:00:00Z"},
+    ]
+    for record in records:
+        _process_record(record, stats)
+
+    assert stats["total_bda_invocations"] == 1
+    assert stats["total_textract_extractions"] == 1
+    assert stats["total_extraction_invocations"] == 2
 
 
 def test_process_record_usage_stats():

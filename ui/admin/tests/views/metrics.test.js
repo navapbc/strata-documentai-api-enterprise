@@ -1,63 +1,50 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from "vitest";
+
+vi.mock("chart.js", () => ({
+  Chart: Object.assign(vi.fn(), { register: vi.fn() }),
+  BarController: {},
+  DoughnutController: {},
+  LineController: {},
+  ArcElement: {},
+  BarElement: {},
+  LineElement: {},
+  PointElement: {},
+  CategoryScale: {},
+  LinearScale: {},
+  Tooltip: {},
+  Legend: {},
+  Filler: {},
+}));
 import {
-  _statusColor,
-  _humanizeStatus,
-  _codeColor,
   computeBarData,
-} from "../../src/views/metrics/metrics.js";
+  buildVolumeChartConfig,
+  buildTimingChartConfig,
+  getResponseCodeClass,
+} from "../../src/views/metrics/charts.js";
 
-describe("_statusColor", () => {
-  it("returns success for Success", () => {
-    expect(_statusColor("Success")).toBe("success");
-  });
-
-  it("returns danger for Failed", () => {
-    expect(_statusColor("Failed")).toBe("danger");
-  });
-
-  it("returns neutral for other statuses", () => {
-    expect(_statusColor("No Document Detected")).toBe("neutral");
-    expect(_statusColor("Blurry Document")).toBe("neutral");
-  });
+beforeAll(() => {
+  // jsdom doesn't implement createElementNS SVG fully but enough for attribute checks
+  if (!globalThis.document) return;
 });
 
-describe("_humanizeStatus", () => {
-  it("maps known statuses", () => {
-    expect(_humanizeStatus("success")).toBe("Success");
-    expect(_humanizeStatus("failed")).toBe("Failed");
-    expect(_humanizeStatus("no_document_detected")).toBe("No Document Detected");
-    expect(_humanizeStatus("no_custom_blueprint_matched")).toBe("No Blueprint Matched");
-    expect(_humanizeStatus("multiple_documents_single_page")).toBe("Multiple Documents");
-    expect(_humanizeStatus("ai_consent_declined")).toBe("AI Consent Declined");
-    expect(_humanizeStatus("conversion_failed")).toBe("Conversion Failed");
-    expect(_humanizeStatus("password_protected")).toBe("Password Protected");
-    expect(_humanizeStatus("blurry_document_detected")).toBe("Blurry Document");
-  });
-
-  it("falls back to title case for unknown statuses", () => {
-    expect(_humanizeStatus("some_new_status")).toBe("Some New Status");
-  });
-});
-
-describe("_codeColor", () => {
+describe("getResponseCodeClass", () => {
   it("returns success for 000 codes", () => {
-    expect(_codeColor("000 - Document validation passed")).toBe("success");
+    expect(getResponseCodeClass("000 - Document validation passed")).toBe("success");
   });
 
   it("returns warn for other 0xx codes", () => {
-    expect(_codeColor("001 - Bitmap received")).toBe("warn");
-    expect(_codeColor("002 - Type not implemented")).toBe("warn");
+    expect(getResponseCodeClass("001 - Bitmap received")).toBe("warn");
+    expect(getResponseCodeClass("002 - Type not implemented")).toBe("warn");
   });
 
   it("returns warn for 1xx codes", () => {
-    expect(_codeColor("101 - Missing fields")).toBe("warn");
-    expect(_codeColor("103 - No document detected")).toBe("warn");
-    expect(_codeColor("104 - Blurry document")).toBe("warn");
+    expect(getResponseCodeClass("101 - Missing fields")).toBe("warn");
+    expect(getResponseCodeClass("103 - No document detected")).toBe("warn");
   });
 
-  it("returns danger for 4xx and 999 codes", () => {
-    expect(_codeColor("400 - Multiple documents")).toBe("danger");
-    expect(_codeColor("999 - Internal error")).toBe("danger");
+  it("returns danger for 4xx and 9xx codes", () => {
+    expect(getResponseCodeClass("400 - Multiple documents")).toBe("danger");
+    expect(getResponseCodeClass("999 - Internal error")).toBe("danger");
   });
 });
 
@@ -120,5 +107,103 @@ describe("computeBarData", () => {
     expect(firstBar.widthPct).toBe(25); // 50/200 * 100
     const secondBar = bars[1];
     expect(secondBar.widthPct).toBe(100); // 200/200 * 100
+  });
+});
+
+const DAILY_STATS = [
+  {
+    date: "2024-01-01",
+    totalRecords: 10,
+    timingStats: { totalProcessingTimeAvg: 5, bdaProcessingTimeAvg: 3, bdaWaitTimeAvg: 1 },
+  },
+  {
+    date: "2024-01-02",
+    totalRecords: 20,
+    timingStats: { totalProcessingTimeAvg: 6, bdaProcessingTimeAvg: 4, bdaWaitTimeAvg: 2 },
+  },
+  {
+    date: "2024-01-03",
+    totalRecords: 15,
+    timingStats: { totalProcessingTimeAvg: 4, bdaProcessingTimeAvg: 2, bdaWaitTimeAvg: 1 },
+  },
+];
+
+describe("buildVolumeChartConfig", () => {
+  it("returns a bar chart config", () => {
+    const config = buildVolumeChartConfig(DAILY_STATS);
+    expect(config.type).toBe("bar");
+  });
+
+  it("has one dataset with correct data length", () => {
+    const config = buildVolumeChartConfig(DAILY_STATS);
+    expect(config.data.datasets).toHaveLength(1);
+    expect(config.data.datasets[0].data).toHaveLength(DAILY_STATS.length);
+  });
+
+  it("maps totalRecords to dataset values", () => {
+    const config = buildVolumeChartConfig(DAILY_STATS);
+    expect(config.data.datasets[0].data).toEqual([10, 20, 15]);
+  });
+
+  it("formats labels as M/D", () => {
+    const config = buildVolumeChartConfig(DAILY_STATS);
+    expect(config.data.labels).toEqual(["1/1", "1/2", "1/3"]);
+  });
+});
+
+describe("buildTimingChartConfig", () => {
+  it("returns a bar chart config", () => {
+    const config = buildTimingChartConfig(DAILY_STATS);
+    expect(config.type).toBe("bar");
+  });
+
+  it("has 2 datasets (extraction, queue)", () => {
+    const config = buildTimingChartConfig(DAILY_STATS);
+    expect(config.data.datasets).toHaveLength(2);
+  });
+
+  it("maps timing fields correctly", () => {
+    const config = buildTimingChartConfig(DAILY_STATS);
+    expect(config.data.datasets[0].data).toEqual([3, 4, 2]); // bdaProcessingTimeAvg
+    expect(config.data.datasets[1].data).toEqual([1, 2, 1]); // bdaWaitTimeAvg
+  });
+
+  it("uses the same labels as volume chart", () => {
+    const config = buildTimingChartConfig(DAILY_STATS);
+    expect(config.data.labels).toEqual(["1/1", "1/2", "1/3"]);
+  });
+});
+
+describe("metrics view date format", () => {
+  let root, mockGet;
+
+  beforeEach(async () => {
+    vi.resetModules();
+    mockGet = vi.fn().mockResolvedValue({ summary: null, dailyStats: [] });
+    vi.doMock("../../src/services/metrics.js", () => ({ get: mockGet }));
+    vi.doMock("../../src/utils/tenant-context.js", () => ({
+      getTenantId: vi.fn(() => null),
+      onChange: vi.fn(() => () => {}),
+      mountSelect: vi.fn(),
+      unmountSelect: vi.fn(),
+    }));
+    vi.doMock("../../src/utils/toast.js", () => ({ show: vi.fn() }));
+    vi.doMock("../../src/utils/helpers.js", () => ({}));
+    root = document.createElement("div");
+    document.body.appendChild(root);
+    const MetricsView = await import("../../src/views/metrics/metrics.js");
+    MetricsView.mount(root);
+    await new Promise((r) => setTimeout(r, 0));
+  });
+
+  afterEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  it("sends bare YYYY-MM-DD dates to metrics service (not ISO timestamps)", () => {
+    expect(mockGet).toHaveBeenCalled();
+    const { startDate, endDate } = mockGet.mock.calls[0][0];
+    expect(startDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(endDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 });

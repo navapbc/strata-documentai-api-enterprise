@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel
 
-from documentai_api.config.constants import DocumentCategory, ProcessStatus
+from documentai_api.config.constants import ProcessStatus
 
 
 class DocumentRecord(BaseModel):
@@ -16,10 +16,11 @@ class DocumentRecord(BaseModel):
     original_file_name: str
     job_id: str
     upload_method: str
+    upload_source: str | None = None
     tenant_id: str
     api_key_name: str
     process_status: ProcessStatus = ProcessStatus.NOT_STARTED
-    category: DocumentCategory | None = None
+    category: str | None = None
     trace_id: str | None = None
     batch_id: str | None = None
     content_type: str | None = None

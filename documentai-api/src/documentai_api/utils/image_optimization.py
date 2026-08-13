@@ -6,6 +6,7 @@ best-effort: a failure leaves the original object untouched so BDA still runs.
 """
 
 import io
+import time
 from decimal import Decimal
 
 from PIL import Image
@@ -14,8 +15,11 @@ from documentai_api.config.constants import ConfigDefaults, FileValidation
 from documentai_api.dtos.processing import CropResult, OptimizationResult
 from documentai_api.logging import get_logger
 from documentai_api.services import s3 as s3_service
-from documentai_api.utils.bedrock import detect_document_bbox
+from documentai_api.utils.bbox_detection import detect_document_bbox
 from documentai_api.utils.ssm import is_document_crop_enabled
+
+# Limit maximum image pixels to prevent pixel-flood DoS.
+Image.MAX_IMAGE_PIXELS = ConfigDefaults.MAX_IMAGE_PIXELS
 
 logger = get_logger(__name__)
 
@@ -129,6 +133,8 @@ def optimize_s3_image(
     object_key: str,
     *,
     apply_grayscale: bool = False,
+    file_bytes: bytes | None = None,
+    content_type: str | None = None,
 ) -> OptimizationResult:
     """Crop and/or grayscale-convert an S3 image in a single download/upload pass.
 
@@ -140,22 +146,29 @@ def optimize_s3_image(
         bucket_name: S3 bucket containing the image.
         object_key: S3 object key.
         apply_grayscale: Whether to apply grayscale conversion.
+        file_bytes: Pre-fetched file bytes. If provided, skips the internal GET.
+        content_type: Content type corresponding to file_bytes. Required when
+            file_bytes is provided.
 
     Returns:
         OptimizationResult with crop metadata, grayscale flag, and final size.
     """
     result = OptimizationResult(crop_result=CropResult())
 
-    try:
-        response = s3_service.get_object(bucket_name, object_key)
-        file_bytes = response["Body"].read()
-        content_type = response.get("ContentType", "application/octet-stream")
-    except Exception as e:
-        logger.error(f"Failed to download {object_key}: {e}")
-        result.failed = True
-        return result
+    if file_bytes is not None:
+        content_type = content_type or "application/octet-stream"
+    else:
+        try:
+            response = s3_service.get_object(bucket_name, object_key)
+            file_bytes = response["Body"].read()
+            content_type = response.get("ContentType", "application/octet-stream")
+        except Exception as e:
+            logger.error(f"Failed to download {object_key}: {e}")
+            result.failed = True
+            return result
 
     modified = False
+    t1 = time.monotonic()
 
     # --- Crop (best-effort: any failure leaves bytes untouched) ---
     if is_document_crop_enabled() and content_type.startswith("image/"):
@@ -190,9 +203,13 @@ def optimize_s3_image(
             result.grayscale_applied = True
             modified = True
 
+    result.crop_block_duration_seconds = Decimal(str(round(time.monotonic() - t1, 3)))
+
     # --- Single write ---
     if modified:
+        t2 = time.monotonic()
         s3_service.put_object(bucket_name, object_key, file_bytes, content_type)
+        result.write_duration_seconds = Decimal(str(round(time.monotonic() - t2, 3)))
 
     result.file_size_bytes = len(file_bytes)
     result.too_large = is_file_too_large_for_bda(content_type, len(file_bytes))

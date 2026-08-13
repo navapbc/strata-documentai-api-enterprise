@@ -10,6 +10,11 @@ def _disable_auth(disable_auth):
     pass
 
 
+@pytest.fixture(autouse=True)
+def _mock_quota(mocker):
+    mocker.patch("documentai_api.app_presigned.increment_and_check")
+
+
 def test_create_presigned_url_success(api_client, mocker):
     """Test successful presigned POST generation."""
     mock_insert = mocker.patch("documentai_api.app_presigned.insert_minimal_ddb_record")
@@ -392,3 +397,24 @@ def test_tenant_id_propagated_to_ddb(api_client, mocker):
     record = mock_insert.call_args[0][0]
     assert record.tenant_id == "test-tenant"
     assert record.api_key_name == "test-client"
+
+
+@pytest.mark.parametrize("upload_source", ["desktop", "mobile", None])
+def test_create_presigned_url_passes_upload_source(api_client, mocker, upload_source):
+    """upload_source is forwarded to the DocumentRecord."""
+    mock_insert = mocker.patch("documentai_api.app_presigned.insert_minimal_ddb_record")
+    mocker.patch(
+        "documentai_api.services.s3.generate_presigned_post",
+        return_value={
+            "url": "https://s3.amazonaws.com/test-bucket",
+            "fields": {"key": "input/test.pdf", "Content-Type": "application/pdf"},
+        },
+    )
+
+    data = {"filename": "test.pdf", "content_type": "application/pdf"}
+    if upload_source:
+        data["upload_source"] = upload_source
+    api_client.post("/v1/documents/presigned-url", data=data)
+
+    record = mock_insert.call_args[0][0]
+    assert record.upload_source == upload_source

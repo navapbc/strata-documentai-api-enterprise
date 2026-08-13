@@ -1,36 +1,60 @@
-<div class="documents-three-panel detail-collapsed">
-  <div class="documents-list-panel">
-    <div class="documents-filter-bar">
-      <div class="documents-search-row">
-        <input
-          type="text"
-          id="document-search-input"
-          placeholder="Search by file name or Job ID…"
-        />
-        <button type="button" id="document-search-btn" class="btn-icon" title="Search">🔍</button>
+<div class="filter-layout filter-layout--doc-viewer">
+  <div class="filter-sidebar filter-sidebar--wide">
+    <nav class="sidebar-tab-bar">
+      <button class="sidebar-tab active" data-tab="filters">Filters</button>
+      <button class="sidebar-tab" data-tab="results" disabled>Results</button>
+    </nav>
+
+    <div id="doc-search-tab-filters" class="filter-tab-panel">
+      <div class="filter-field">
+        <label class="filter-field-label">Tenant <span class="required-star">*</span></label>
+        <select id="tenant-select"></select>
       </div>
-      <select id="document-status-filter">
-        <option value="">All statuses</option>
-        <option value="success">Success</option>
-        <option value="no_custom_blueprint_matched">No Blueprint Matched</option>
-        <option value="failed">Failed</option>
-        <option value="conversion_failed">Conversion Failed</option>
-        <option value="blurry_document_detected">Blurry Document</option>
-        <option value="no_document_detected">No Document Detected</option>
-        <option value="password_protected">Password Protected</option>
-        <option value="started">Processing</option>
-        <option value="not_started">Pending</option>
-        <option value="deleted">Deleted</option>
-      </select>
+      <p id="doc-search-tenant-msg" class="field-error hidden">Select a tenant to search.</p>
+      <div class="filter-field">
+        <label class="filter-field-label">Filename</label>
+        <input type="text" id="doc-search-filename" placeholder="contains…" />
+      </div>
+      <div class="filter-field">
+        <label class="filter-field-label">Date Range</label>
+        <div id="doc-search-date-range"></div>
+      </div>
+      <div class="filter-field">
+        <label class="filter-field-label">Tenant-Provided Category</label>
+        <select id="doc-search-doc-type">
+          <option value="">Any</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label class="filter-field-label">Document Type</label>
+        <div id="doc-search-blueprint"></div>
+      </div>
+      <button id="doc-search-btn" class="btn-primary" style="width: 100%; margin-top: 0.5rem">
+        Search
+      </button>
+      <button
+        id="doc-search-clear-btn"
+        class="btn-secondary"
+        style="width: 100%; margin-top: 0.5rem"
+      >
+        Clear
+      </button>
     </div>
-    <p id="no-documents" class="empty-state">Search for documents by file name or Job ID</p>
-    <ul id="documents-list" class="documents-compact-list"></ul>
+
+    <div id="doc-search-tab-results" class="filter-tab-panel hidden">
+      <p id="no-documents" class="empty-state hidden"></p>
+      <ul id="documents-list" class="documents-compact-list"></ul>
+      <button
+        id="doc-search-load-more"
+        class="btn-secondary hidden"
+        style="width: 100%; margin-top: 0.5rem"
+      >
+        Load more
+      </button>
+    </div>
   </div>
-  <div class="documents-preview-panel" id="document-preview-panel">
-    <p class="empty-state">Select a document to preview</p>
-  </div>
-  <div class="documents-detail-panel collapsed" id="document-detail-panel">
-    <button id="detail-collapse-btn" class="detail-collapse-btn" title="Expand details">❮</button>
-    <div id="detail-content"></div>
+
+  <div class="filter-main">
+    <div id="doc-viewer-pane"></div>
   </div>
 </div>

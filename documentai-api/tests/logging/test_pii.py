@@ -26,3 +26,29 @@ import documentai_api.logging.pii as pii
 )
 def test_mask_pii(input, expected):
     assert pii._mask_pii(input) == expected
+
+
+@pytest.mark.parametrize("status_word", ["FAILED", "PROCESSING", "COMPLETED", "SUCCESS"])
+def test_status_words_not_masked(status_word):
+    assert pii._mask_pii(status_word) == status_word
+
+
+def test_status_word_in_log_line_not_masked():
+    assert pii._mask_pii("status=COMPLETED") == "status=COMPLETED"
+
+
+@pytest.mark.parametrize("passport", ["A12345678", "AB1234567"])
+def test_passport_number_masked(passport):
+    assert pii._mask_pii(passport) == "*********"
+
+
+@pytest.mark.parametrize(
+    "key",
+    ["first_name", "last_name", "ssn", "license_number", "passport_number", "date_of_birth"],
+)
+def test_deny_list_field_masked(key):
+    assert pii._mask_pii_for_key(key, "any value") == "*********"
+
+
+def test_allow_no_mask_field_returned_as_is():
+    assert pii._mask_pii_for_key("hostname", "my-host") == "my-host"

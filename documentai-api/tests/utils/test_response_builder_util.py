@@ -10,6 +10,16 @@ from documentai_api.utils import response_builder as response_builder_util
 from documentai_api.utils.response_codes import ResponseCodes
 
 
+@pytest.fixture(autouse=True)
+def _pin_output_location(mocker):
+    # get_bda_result_json validates that the result URI bucket matches
+    # documentai_output_location to prevent SSRF. pin config
+    # to test-bucket so tests that call through to S3 pass the check.
+    mocker.patch(
+        "documentai_api.services.bda.get_aws_config"
+    ).return_value.documentai_output_location = "s3://test-bucket/output"
+
+
 @pytest.mark.parametrize(
     ("response_code", "matched_document_class"),
     [
@@ -76,9 +86,9 @@ def test_get_internal_api_response(response_code, matched_document_class, ddb_do
             None,
             False,
             "completed",
-            "Document processed but no matching template found",
+            "No matching blueprint found",
             None,
-            ResponseCodes.DOCUMENT_TYPE_NOT_IMPLEMENTED,
+            ResponseCodes.NO_BLUEPRINT_MATCHED,
         ),
         (
             ProcessStatus.FAILED.value,
@@ -95,27 +105,47 @@ def test_get_internal_api_response(response_code, matched_document_class, ddb_do
             None,
             "No content",
             False,
-            "not_supported",
+            "completed",
             "Unable to extract meaningful document content",
             None,
             ResponseCodes.NO_DOCUMENT_DETECTED,
+        ),
+        (
+            ProcessStatus.BLURRY_DOCUMENT_DETECTED.value,
+            None,
+            None,
+            False,
+            "completed",
+            "Document is blurry",
+            None,
+            ResponseCodes.BLURRY_DOCUMENT_DETECTED,
         ),
         (
             ProcessStatus.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE.value,
             None,
             "Unsupported type",
             False,
-            "not_supported",
+            "completed",
             "Document type not supported",
             None,
             ResponseCodes.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
+        ),
+        (
+            ProcessStatus.MULTIPLE_DOCUMENTS_IN_MULTIPAGE.value,
+            None,
+            None,
+            False,
+            "completed",
+            "Document type not supported",
+            None,
+            ResponseCodes.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
         ),
         (
             ProcessStatus.PASSWORD_PROTECTED.value,
             None,
             "Unsupported type",
             False,
-            "not_supported",
+            "completed",
             "Document type not supported",
             None,
             ResponseCodes.PASSWORD_PROTECTED,
@@ -129,6 +159,16 @@ def test_get_internal_api_response(response_code, matched_document_class, ddb_do
             "Document processing in progress",
             None,
             None,
+        ),
+        (
+            ProcessStatus.PROCESSING_EXCLUDED.value,
+            None,
+            None,
+            False,
+            "completed",
+            "Document not chosen for extraction",
+            None,
+            ResponseCodes.PROCESSING_EXCLUDED,
         ),
     ],
 )
@@ -224,6 +264,36 @@ def test_build_v1_api_response(
         expected_response["responseMessage"] = ResponseCodes.get_message(expected_response_code)
 
     assert response == expected_response
+
+
+def test_build_v1_api_response_no_custom_blueprint_matched_but_miscategorized(
+    ddb_doc_metadata_table,
+):
+    """A preclassification category mismatch should surface as 102  when no blueprint match."""
+    year = datetime.now().year
+    created_at = datetime(year, 1, 1, 12, 0, 0, tzinfo=UTC)
+
+    ddb_record = {
+        DocumentMetadata.FILE_NAME: "test-key",
+        DocumentMetadata.JOB_ID: "test-job-id",
+        DocumentMetadata.CREATED_AT: created_at.isoformat(),
+        DocumentMetadata.PRECLASSIFICATION_CATEGORY_MATCH: False,
+    }
+    ddb_doc_metadata_table.put_item(Item=ddb_record)
+
+    response = response_builder_util.build_v1_api_response(
+        "test-key",
+        ProcessStatus.NO_CUSTOM_BLUEPRINT_MATCHED.value,
+        data=None,
+        error_message=None,
+        include_extracted_data=False,
+    )
+
+    assert response["responseCode"] == ResponseCodes.MISCATEGORIZED
+    assert response["responseMessage"] == ResponseCodes.get_message(ResponseCodes.MISCATEGORIZED)
+    # message/jobStatus stay as the terminal default - only the response code changes
+    assert response["message"] == "No matching blueprint found"
+    assert response["jobStatus"] == "completed"
 
 
 def test_build_v1_api_response_no_record(
@@ -502,3 +572,255 @@ def test_nest_fields_preserves_legacy_camelcase_keys():
     # camelCase segments are preserved verbatim (not lowercased) and still nest
     assert nested["tenantName"] == {"confidence": 0.93, "value": "Jane"}
     assert nested["paymentDetails"]["baseRent"]["value"] == "1200"
+
+
+def test_build_v1_api_response_missing_geometry_and_empty_fields_trigger_101(
+    s3_bucket,
+    ddb_doc_metadata_table,
+    extraction_rules_table,
+    monkeypatch,
+):
+    """DDB missing-geometry + empty lists union into missing_fields -> 101."""
+    import json
+
+    from documentai_api.config.constants import BdaResponseFields
+
+    bda_results = {
+        BdaResponseFields.EXPLAINABILITY_INFO: [
+            {
+                "GrossPay": {"confidence": 0.95, "value": "5000"},
+                "PayPeriodStartDate": {"confidence": 0.12, "value": "2025-01-01"},
+                "YTDGrossPay": {"confidence": 0.94, "value": ""},
+            }
+        ]
+    }
+    bda_obj = s3_bucket.put_object(Key="missing-geo.json", Body=json.dumps(bda_results))
+
+    ddb_record = {
+        DocumentMetadata.FILE_NAME: "missing-geo-key",
+        DocumentMetadata.JOB_ID: "missing-geo-job",
+        DocumentMetadata.BDA_OUTPUT_S3_URI: f"s3://{bda_obj.bucket_name}/{bda_obj.key}",
+        DocumentMetadata.BDA_MATCHED_DOCUMENT_CLASS: "Payslip",
+        DocumentMetadata.CREATED_AT: "2026-01-01T00:00:00+00:00",
+        DocumentMetadata.FIELD_CONFIDENCE_SCORES: (
+            '[{"GrossPay": 0.95}, {"PayPeriodStartDate": 0.12}, {"YTDGrossPay": 0.94}]'
+        ),
+        DocumentMetadata.BDA_MATCHED_BLUEPRINT_FIELD_MISSING_GEOMETRY_LIST: json.dumps(
+            ["PayPeriodStartDate"]
+        ),
+        DocumentMetadata.BDA_MATCHED_BLUEPRINT_FIELD_EMPTY_LIST: json.dumps(["YTDGrossPay"]),
+        "tenantId": "t1",
+    }
+    ddb_doc_metadata_table.put_item(Item=ddb_record)
+
+    extraction_rules_table.put_item(
+        Item={
+            "tenantId": "t1",
+            "documentType": "Payslip",
+            "requiredFields": ["GrossPay", "PayPeriodStartDate", "YTDGrossPay"],
+            "optionalFields": [],
+            "createdAt": "2026-01-01",
+            "updatedAt": "2026-01-01",
+        }
+    )
+
+    monkeypatch.setattr(
+        "documentai_api.utils.ssm.is_missing_geo_included_with_missing_fields",
+        lambda: True,
+    )
+
+    response = response_builder_util.build_v1_api_response(
+        "missing-geo-key", ProcessStatus.SUCCESS.value, include_extracted_data=True
+    )
+
+    assert response["responseCode"] == ResponseCodes.MISSING_FIELDS
+    assert sorted(response["missingRequiredFieldList"]) == ["PayPeriodStartDate", "YTDGrossPay"]
+    assert "GrossPay" in response["fields"]
+
+
+# =============================================================================
+# Response code precedence: 101 > 102 > 105 > 100
+# =============================================================================
+
+
+@pytest.mark.parametrize(
+    ("below_floor", "category_match", "expected_code"),
+    [
+        (False, True, ResponseCodes.SUCCESS),
+        (False, None, ResponseCodes.SUCCESS),
+        (True, True, ResponseCodes.LOW_EXTRACTION_CONFIDENCE),
+        (False, False, ResponseCodes.MISCATEGORIZED),
+        (True, False, ResponseCodes.MISCATEGORIZED),  # 102 beats 105
+    ],
+)
+def test_build_v1_api_response_success_response_code_precedence(
+    s3_bucket, ddb_doc_metadata_table, below_floor, category_match, expected_code
+):
+    """_resolve_response_code precedence: 102 beats 105, both lose to 101."""
+    import json
+
+    bda_results = {
+        BdaResponseFields.EXPLAINABILITY_INFO: [{"wages": {"confidence": 0.9, "value": "50000"}}]
+    }
+    bda_obj = s3_bucket.put_object(Key="prec-test.json", Body=json.dumps(bda_results))
+
+    ddb_record = {
+        DocumentMetadata.FILE_NAME: "test-file-name",
+        DocumentMetadata.JOB_ID: "test-job-id",
+        DocumentMetadata.BDA_OUTPUT_S3_URI: f"s3://{bda_obj.bucket_name}/{bda_obj.key}",
+        DocumentMetadata.BDA_MATCHED_DOCUMENT_CLASS: "paystub",
+        DocumentMetadata.CREATED_AT: "2026-01-01T00:00:00+00:00",
+        DocumentMetadata.FIELD_CONFIDENCE_SCORES: '[{"wages": 0.9}]',
+        DocumentMetadata.BELOW_EXTRACTION_CONFIDENCE_FLOOR: below_floor,
+    }
+    if category_match is not None:
+        ddb_record[DocumentMetadata.PRECLASSIFICATION_CATEGORY_MATCH] = category_match
+    ddb_doc_metadata_table.put_item(Item=ddb_record)
+
+    response = response_builder_util.build_v1_api_response(
+        "test-file-name", ProcessStatus.SUCCESS.value
+    )
+
+    assert response["responseCode"] == expected_code
+    assert (
+        response["belowExtractionConfidenceFloor"] is True
+        if below_floor
+        else "belowExtractionConfidenceFloor" not in response
+    )
+
+
+def test_build_v1_api_response_101_beats_102_and_105(
+    s3_bucket, ddb_doc_metadata_table, extraction_rules_table
+):
+    """101 (missing required fields) takes priority over both 102 and 105."""
+    import json
+
+    bda_results = {
+        BdaResponseFields.EXPLAINABILITY_INFO: [{"wages": {"confidence": 0.9, "value": "50000"}}]
+    }
+    bda_obj = s3_bucket.put_object(Key="prec-101.json", Body=json.dumps(bda_results))
+
+    ddb_record = {
+        DocumentMetadata.FILE_NAME: "test-file-name",
+        DocumentMetadata.JOB_ID: "test-job-id",
+        DocumentMetadata.BDA_OUTPUT_S3_URI: f"s3://{bda_obj.bucket_name}/{bda_obj.key}",
+        DocumentMetadata.BDA_MATCHED_DOCUMENT_CLASS: "paystub",
+        DocumentMetadata.CREATED_AT: "2026-01-01T00:00:00+00:00",
+        DocumentMetadata.FIELD_CONFIDENCE_SCORES: '[{"wages": 0.9}]',
+        DocumentMetadata.BELOW_EXTRACTION_CONFIDENCE_FLOOR: True,
+        DocumentMetadata.PRECLASSIFICATION_CATEGORY_MATCH: False,
+        "tenantId": "t1",
+    }
+    ddb_doc_metadata_table.put_item(Item=ddb_record)
+
+    extraction_rules_table.put_item(
+        Item={
+            "tenantId": "t1",
+            "documentType": "paystub",
+            "requiredFields": ["missing_field"],
+            "optionalFields": [],
+            "createdAt": "2026-01-01",
+            "updatedAt": "2026-01-01",
+        }
+    )
+
+    response = response_builder_util.build_v1_api_response(
+        "test-file-name", ProcessStatus.SUCCESS.value
+    )
+
+    assert response["responseCode"] == ResponseCodes.MISSING_FIELDS
+    assert response["belowExtractionConfidenceFloor"] is True
+    assert "missing_field" in response["missingRequiredFieldList"]
+
+
+# =============================================================================
+# userProvidedDocumentCategory echo + inferredDocumentType on 102
+# =============================================================================
+
+
+def _minimal_success_record(s3_bucket: object, file_name: str) -> dict:
+    """Put a minimal BDA result in S3 and return a DDB record dict ready for put_item."""
+    import json
+
+    bda_results = {
+        BdaResponseFields.EXPLAINABILITY_INFO: [{"wages": {"confidence": 0.9, "value": "50000"}}]
+    }
+    bda_obj = s3_bucket.put_object(Key=f"{file_name}.json", Body=json.dumps(bda_results))  # type: ignore[union-attr]
+    return {
+        DocumentMetadata.FILE_NAME: file_name,
+        DocumentMetadata.JOB_ID: f"{file_name}-job",
+        DocumentMetadata.BDA_OUTPUT_S3_URI: f"s3://{bda_obj.bucket_name}/{bda_obj.key}",
+        DocumentMetadata.BDA_MATCHED_DOCUMENT_CLASS: "paystub",
+        DocumentMetadata.CREATED_AT: "2026-01-01T00:00:00+00:00",
+        DocumentMetadata.FIELD_CONFIDENCE_SCORES: '[{"wages": 0.9}]',
+    }
+
+
+def test_user_category_echoed_when_present(s3_bucket, ddb_doc_metadata_table):
+    """UserProvidedDocumentCategory appears in the response when set on the DDB record."""
+    record = _minimal_success_record(s3_bucket, "user-cat")
+    record[DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY] = "income"
+    ddb_doc_metadata_table.put_item(Item=record)
+
+    response = response_builder_util.build_v1_api_response("user-cat", ProcessStatus.SUCCESS.value)
+
+    assert response["userProvidedDocumentCategory"] == "income"
+
+
+def test_user_category_absent_when_not_set(s3_bucket, ddb_doc_metadata_table):
+    """UserProvidedDocumentCategory is omitted when not present on the DDB record."""
+    ddb_doc_metadata_table.put_item(Item=_minimal_success_record(s3_bucket, "no-user-cat"))
+
+    response = response_builder_util.build_v1_api_response(
+        "no-user-cat", ProcessStatus.SUCCESS.value
+    )
+
+    assert "userProvidedDocumentCategory" not in response
+
+
+def test_102_includes_inferred_document_type(s3_bucket, ddb_doc_metadata_table):
+    """On a 102 response, inferredDocumentType is populated from preclassificationCategory."""
+    record = _minimal_success_record(s3_bucket, "102-suggested")
+    record[DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY] = "income"
+    record[DocumentMetadata.PRECLASSIFICATION_CATEGORY_MATCH] = False
+    record[DocumentMetadata.PRECLASSIFICATION_CATEGORY] = "pay stub"
+    ddb_doc_metadata_table.put_item(Item=record)
+
+    response = response_builder_util.build_v1_api_response(
+        "102-suggested", ProcessStatus.SUCCESS.value
+    )
+
+    assert response["responseCode"] == ResponseCodes.MISCATEGORIZED
+    assert response["userProvidedDocumentCategory"] == "income"
+    assert response["inferredDocumentType"] == "pay stub"
+
+
+def test_inferred_document_type_present_on_non_102(s3_bucket, ddb_doc_metadata_table):
+    """InferredDocumentType is surfaced on any success response, not just 102."""
+    record = _minimal_success_record(s3_bucket, "100-detected")
+    record[DocumentMetadata.PRECLASSIFICATION_CATEGORY] = "pay stub"
+    ddb_doc_metadata_table.put_item(Item=record)
+
+    response = response_builder_util.build_v1_api_response(
+        "100-detected", ProcessStatus.SUCCESS.value
+    )
+
+    assert response["responseCode"] == ResponseCodes.SUCCESS
+    assert response["inferredDocumentType"] == "pay stub"
+
+
+def test_inferred_document_type_absent_from_dict_when_not_preclassified(
+    s3_bucket, ddb_doc_metadata_table
+):
+    """With no preclassification category, inferredDocumentType is absent from the response dict.
+
+    None values are stripped by build_v1_api_response.
+    """
+    ddb_doc_metadata_table.put_item(Item=_minimal_success_record(s3_bucket, "100-no-detect"))
+
+    response = response_builder_util.build_v1_api_response(
+        "100-no-detect", ProcessStatus.SUCCESS.value
+    )
+
+    assert response["responseCode"] == ResponseCodes.SUCCESS
+    assert "inferredDocumentType" not in response

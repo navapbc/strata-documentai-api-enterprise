@@ -2,6 +2,7 @@ class DocumentMetadata:
     # core fields
     FILE_NAME = "fileName"
     ORIGINAL_FILE_NAME = "originalFileName"
+    ORIGINAL_FILE_NAME_LOWER = "originalFileNameLower"
     USER_PROVIDED_DOCUMENT_CATEGORY = "userProvidedDocumentCategory"
     PROCESS_STATUS = "processStatus"
     DELETION_TYPE = "deletionType"  # "soft" | "hard" once a record is DELETED
@@ -21,6 +22,7 @@ class DocumentMetadata:
     EXTERNAL_SYSTEM_ID = "externalSystemId"
     AI_CONSENT_FLAG = "aiConsentFlag"
     UPLOAD_METHOD = "uploadMethod"
+    UPLOAD_SOURCE = "uploadSource"
     TENANT_ID = "tenantId"
     API_KEY_NAME = "apiKeyName"
     IS_DEMO = "isDemo"
@@ -31,6 +33,7 @@ class DocumentMetadata:
 
     # preclassification fields
     PRECLASSIFICATION_CATEGORY = "preclassificationCategory"
+    PRECLASSIFICATION_CATEGORY_MATCH = "preclassificationCategoryMatch"
     PRECLASSIFICATION_CONFIDENCE = "preclassificationConfidence"
     PRECLASSIFICATION_INPUT_TOKENS = "preclassificationInputTokens"
     PRECLASSIFICATION_OUTPUT_TOKENS = "preclassificationOutputTokens"
@@ -43,6 +46,7 @@ class DocumentMetadata:
     PRECLASSIFICATION_BLUEPRINT_MATCH_DURATION_SECONDS = (
         "preclassificationBlueprintMatchDurationSeconds"
     )
+    PRECLASSIFICATION_MAX_DOCUMENT_COUNT_ON_PAGE = "preclassificationMaxDocumentCountOnPage"
 
     # image optimization fields
     CROP_BOUNDING_BOX = "cropBoundingBox"
@@ -68,6 +72,12 @@ class DocumentMetadata:
     BDA_WAIT_TIME_SECONDS = "bdaWaitTimeSeconds"  # time between s3 write and bda invocation
     IS_DOCUMENT_PROCESSOR_COLD_START = "isDocumentProcessorColdStart"
     PAGES_SENT_TO_BDA = "pagesSentToBda"
+    S3_FETCH_DURATION_SECONDS = "s3FetchDurationSeconds"
+    BDA_INVOKE_DURATION_SECONDS = "bdaInvokeDurationSeconds"
+    BDA_INVOKE_RETRY_COUNT = "bdaInvokeRetryCount"
+    BLUR_DETECTION_DURATION_SECONDS = "blurDetectionDurationSeconds"
+    IMAGE_OPT_CROP_BLOCK_DURATION_SECONDS = "imageOptCropBlockDurationSeconds"
+    IMAGE_OPT_WRITE_DURATION_SECONDS = "imageOptWriteDurationSeconds"
 
     # file metadata
     FILE_SIZE_BYTES = "fileSizeBytes"
@@ -78,7 +88,9 @@ class DocumentMetadata:
     BLUR_ANALYSIS_FAILED = "blurAnalysisFailed"
     OCR_AVG_WORD_CONFIDENCE = "ocrAvgWordConfidence"
     DOCUMENT_WORD_COUNT = "documentWordCount"
-    BLUR_LLM_CHECKED = "blurLlmChecked"
+    BLUR_LLM_CHECKED = "wasBlurLlmInvoked"
+    IS_DOCUMENT_BLURRY_REASON = "isDocumentBlurryReason"
+    DOCUMENT_WORD_QUADRANT_STATS = "documentWordQuadrantStats"
     DOCUMENT_METRICS_RAW = "documentMetricsRaw"
     DOCUMENT_METRICS_NORMALIZED = "documentMetricsNormalized"
 
@@ -95,6 +107,7 @@ class DocumentMetadata:
 
     # list of blueprint fields that were expected but did not have any data extracted
     BDA_MATCHED_BLUEPRINT_FIELD_EMPTY_LIST = "matchedBlueprintFieldEmptyList"
+    BDA_MATCHED_BLUEPRINT_FIELD_MISSING_GEOMETRY_LIST = "matchedBlueprintFieldMissingGeometryList"
     BDA_MATCHED_BLUEPRINT_FIELD_BELOW_THRESHOLD_LIST = "matchedBlueprintFieldBelowThresholdList"
     BDA_MATCHED_BLUEPRINT_FIELD_COUNT = "matchedBlueprintFieldCount"
     BDA_MATCHED_BLUEPRINT_FIELD_COUNT_NOT_EMPTY = "matchedBlueprintFieldCountNotEmpty"
@@ -102,6 +115,16 @@ class DocumentMetadata:
         "matchedBlueprintFieldNotEmptyAvgConfidence"
     )
     BELOW_EXTRACTION_CONFIDENCE_FLOOR = "belowExtractionConfidenceFloor"
+    EXTRACTION_RULES_CONFIGURED = "extractionRulesConfigured"
+    MISSING_REQUIRED_FIELD_LIST = "missingRequiredFieldList"
+    REQUIRED_FIELD_LIST = "requiredFieldList"
+    EXTRACTION_CONFIDENCE_THRESHOLD = "extractionConfidenceThreshold"
+    USED_DEFAULT_EXTRACTION_CONFIDENCE_THRESHOLD = "usedDefaultExtractionConfidenceThreshold"
 
     # extraction method
     EXTRACT_METHOD = "extractionMethod"
+
+    # used to determine if a document should be processed or excluded from
+    # processing based on the tenant's configuration
+    PROCESSING_PERCENTAGE = "processingPercentage"
+    PROCESSING_ASSIGNED_VALUE = "processingAssignedValue"

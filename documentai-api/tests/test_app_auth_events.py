@@ -54,10 +54,10 @@ def test_report_login_event(mock_log_event):
 
     assert response.status_code == 204
     mock_log_event.assert_called_once_with(
-        claims={"sub": "admin@co.com", "email": "admin@co.com"},
+        claims={"sub": "test-client", "email": "test-client"},
         action=AuditAction.AUTH_LOGIN,
         target_type=AuditTargetType.SESSION,
-        target_id="admin@co.com",
+        target_id="test-client",
         tenant_id="test-tenant",
         metadata=None,
     )
@@ -70,10 +70,10 @@ def test_report_logout_event(mock_log_event):
 
     assert response.status_code == 204
     mock_log_event.assert_called_once_with(
-        claims={"sub": "admin@co.com", "email": "admin@co.com"},
+        claims={"sub": "test-client", "email": "test-client"},
         action=AuditAction.AUTH_LOGOUT,
         target_type=AuditTargetType.SESSION,
-        target_id="admin@co.com",
+        target_id="test-client",
         tenant_id="test-tenant",
         metadata=None,
     )
@@ -320,7 +320,7 @@ def test_audit_logging_failure_does_not_break_request(mocker):
     """log_event already catches exceptions internally - verify endpoint still succeeds."""
     # Mock the DDB table to raise, but log_event catches it
     mocker.patch(
-        "documentai_api.utils.audit.AWSClientFactory.get_ddb_table",
+        "documentai_api.utils.audit_log.AWSClientFactory.get_ddb_table",
         side_effect=RuntimeError("DDB unavailable"),
     )
 
@@ -344,7 +344,7 @@ def test_category_audit_failure_does_not_break_create(mocker):
         },
     )
     mocker.patch(
-        "documentai_api.utils.audit.AWSClientFactory.get_ddb_table",
+        "documentai_api.utils.audit_log.AWSClientFactory.get_ddb_table",
         side_effect=RuntimeError("DDB unavailable"),
     )
 

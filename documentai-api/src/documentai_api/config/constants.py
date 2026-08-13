@@ -1,6 +1,9 @@
 import re
+from collections.abc import Iterable
 from enum import StrEnum
 from typing import ClassVar
+
+import filetype  # type: ignore[import-untyped]
 
 # === API ===
 API_VERSION = "v1"
@@ -115,13 +118,13 @@ class ConfigDefaults:
     POLL_INTERVAL_SECONDS = 5
     MAX_WAIT_SECONDS = 120
     ALB_TIMEOUT_BUFFER_SECONDS = 15
-    USER_DOCUMENT_TYPE_NOT_PROVIDED = "Not specified"
     BDA_REGION_NOT_AVAILABLE = "N/A"
     LOG_RETENTION_DAYS = 30
     DOCUMENT_BATCHES_TTL_DAYS = 30
     DOCUMENT_BUILDS_TTL_DAYS = 30
     DOCUMENT_METADATA_TTL_DAYS = 180
     DEMO_DOCUMENT_TTL_DAYS = 7
+    TENANT_REQUEST_COUNTS_TTL_DAYS = 365 * 5
     BDA_DOCUMENT_DETECTION_MIN_CHAR_LENGTH = 50
     BLURRY_DOCUMENT_THRESHOLD = 25
 
@@ -136,7 +139,13 @@ class ConfigDefaults:
         20  # total words needed to consider empty quadrants suspicious (LLM fallback gate)
     )
     BLUR_QUADRANT_MODEL_ID = "us.amazon.nova-pro-v1:0"  # model for empty-quadrant blur check (Pro needed for spatial reasoning)
+    MISSING_GEOMETRY_CONFIDENCE_THRESHOLD = 0.25
     BDA_MAX_IMAGE_SIZE_BYTES = 5_242_880
+
+    # PIL pixel limit for DecompressionBomb protection. 60 MP covers high-res phone
+    # photos of ID documents (typical range 8-48 MP) while still bounding memory use.
+    MAX_IMAGE_PIXELS = 60_000_000
+
     BDA_MAX_DOCUMENT_FILE_SIZE_BYTES = 524_288_000
     # Bedrock Converse per-image limits (used by the vision bbox-detection call).
     # The real API ceiling is 3.75MB / 8000px per image - stricter than the 5MB BDA
@@ -147,20 +156,68 @@ class ConfigDefaults:
     MAX_PAGES_PER_DOCUMENT = 5
     PRESIGNED_URL_SIGNATURE_VERSION = "s3v4"
     PRESIGNED_PREVIEW_EXPIRY_SECONDS = 300
-
-
-# Document categories - must match the BDA project keys in infra/environments/*/main.tf
-class DocumentCategory(StrEnum):
-    INCOME = "income"
-    EXPENSES = "expenses"
-    IDENTITY = "identity"
-    EMPLOYMENT = "employment"
-    TRAINING = "training"
+    PROCESSING_PERCENTAGE_CACHE_TTL_MINUTES = 5
 
 
 class FileValidation:
+    # === Office document MIME types ===
+    PDF_MIME = "application/pdf"
+    DOC_MIME = "application/msword"
+    DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    PPTX_MIME = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+
+    # === Office container detection ===
+    # ZIP local-file-header magic (all OOXML: docx/xlsx/pptx). OLE2/Compound File
+    # magic covers legacy .doc/.xls AND ECMA-376-encrypted OOXML.
+    ZIP_MAGIC = b"PK\x03\x04"
+    OLE2_MAGIC = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"
+
+    # OOXML archive member prefix -> MIME. filetype only scans the first ~6KB of
+    # the archive for this entry, so it misses it in newer Office layouts;
+    # detect_ooxml_mime inspects the full member list instead.
+    OOXML_MEMBER_MIME: ClassVar[tuple[tuple[str, str], ...]] = (
+        ("word/", DOCX_MIME),
+        ("xl/", XLSX_MIME),
+        ("ppt/", PPTX_MIME),
+    )
+
+    # OLE2 stores stream names as UTF-16LE. An ECMA-376-encrypted OOXML package
+    # carries these two streams; presence identifies a password-protected doc.
+    OOXML_ENCRYPTION_MARKERS: ClassVar[tuple[bytes, ...]] = (
+        "EncryptionInfo".encode("utf-16-le"),
+        "EncryptedPackage".encode("utf-16-le"),
+    )
+
+    @staticmethod
+    def is_office_container_magic(data: bytes) -> bool:
+        """True if bytes start with a ZIP or OLE2 signature.
+
+        These container formats (OOXML, and legacy/encrypted Office docs) can't be
+        identified from a header alone - the caller must read the full file for
+        detect_ooxml_mime / has_ooxml_encryption_markers to work. Everything else
+        is a simple magic-number format that a header probe resolves.
+        """
+        return data.startswith((FileValidation.ZIP_MAGIC, FileValidation.OLE2_MAGIC))
+
+    @staticmethod
+    def detect_ooxml_mime(member_names: Iterable[str]) -> str | None:
+        """Map an OOXML archive's member names to its MIME type, or None if not OOXML."""
+        names = list(member_names)
+        for prefix, mime in FileValidation.OOXML_MEMBER_MIME:
+            if any(name.startswith(prefix) for name in names):
+                return mime
+        return None
+
+    @staticmethod
+    def has_ooxml_encryption_markers(data: bytes) -> bool:
+        """True if bytes carry the OLE2 streams of an ECMA-376-encrypted OOXML package."""
+        return all(marker in data for marker in FileValidation.OOXML_ENCRYPTION_MARKERS)
+
     NO_CONVERSION_NEEDED = (
-        "application/pdf",
+        PDF_MIME,
+        DOC_MIME,
+        DOCX_MIME,
         "image/jpeg",
         "image/png",
     )
@@ -187,6 +244,21 @@ class FileValidation:
         "image/png",
     )
 
+    ODT_CONTENT_TYPES = ("application/vnd.oasis.opendocument.text",)
+
+    @staticmethod
+    def is_pdf(data: bytes) -> bool:
+        return data[:4] == b"%PDF"
+
+    @staticmethod
+    def is_image(data: bytes) -> bool:
+        mime = filetype.guess_mime(data)
+        return (
+            mime is not None
+            and mime in FileValidation.SUPPORTED_CONTENT_TYPES
+            and mime.startswith("image/")
+        )
+
     @staticmethod
     def is_supported(content_type: str) -> bool:
         return content_type in FileValidation.SUPPORTED_CONTENT_TYPES
@@ -195,8 +267,14 @@ class FileValidation:
     def needs_conversion(content_type: str) -> bool:
         return content_type in FileValidation.REQUIRES_CONVERSION
 
+    @staticmethod
+    def is_odt(content_type: str) -> bool:
+        return content_type in FileValidation.ODT_CONTENT_TYPES
+
     CONTENT_TYPE_TO_EXT: ClassVar[dict[str, str]] = {
-        "application/pdf": "pdf",
+        PDF_MIME: "pdf",
+        DOC_MIME: "doc",
+        DOCX_MIME: "docx",
         "image/jpeg": "jpg",
         "image/jpg": "jpg",
         "image/png": "png",
@@ -209,15 +287,13 @@ class FileValidation:
     }
 
     @staticmethod
-    def get_extension(content_type: str) -> str:
-        return FileValidation.CONTENT_TYPE_TO_EXT.get(content_type, "bin")
+    def get_extension(content_type: str, unknown: str = "bin") -> str:
+        ct = content_type.lower().split(";")[0].strip()
+        return FileValidation.CONTENT_TYPE_TO_EXT.get(ct, unknown)
 
 
 class TextractConfig:
     """Textract AnalyzeID configuration."""
-
-    # Preclassification categories eligible for Textract identity extraction
-    IDENTITY_PRECLASSIFICATION_CATEGORIES = ("identity_verification",)
 
     # Content types supported by Textract AnalyzeID (inline bytes)
     SUPPORTED_CONTENT_TYPES = (
@@ -239,7 +315,9 @@ class ProcessStatus(StrEnum):
     BLURRY_DOCUMENT_DETECTED = "blurry_document_detected"
     CONVERSION_FAILED = "conversion_failed"
     DELETED = "deleted"
+    EXCLUDED_PER_PRECLASSIFICATION = "excluded_per_preclassification"
     FAILED = "failed"
+    MULTIPLE_DOCUMENTS_IN_MULTIPAGE = "multiple_documents_in_multipage"
     MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE = "multiple_documents_single_page"
     NO_CUSTOM_BLUEPRINT_MATCHED = "no_custom_blueprint_matched"
     NO_DOCUMENT_DETECTED = "no_document_detected"
@@ -248,6 +326,7 @@ class ProcessStatus(StrEnum):
     PASSWORD_PROTECTED = "password_protected"
     PENDING_IMAGE_OPTIMIZATION = "pending_image_optimization"
     PENDING_UPLOAD = "pending_upload"
+    PROCESSING_EXCLUDED = "processing_excluded"
     STARTED = "started"
     SUCCESS = "success"
 
@@ -256,6 +335,7 @@ class ProcessStatus(StrEnum):
         return value in [
             cls.AI_CONSENT_DECLINED,
             cls.CONVERSION_FAILED,
+            cls.PROCESSING_EXCLUDED,
             cls.SUCCESS,
             cls.FAILED,
             cls.NO_DOCUMENT_DETECTED,
@@ -270,17 +350,24 @@ class ProcessStatus(StrEnum):
             cls.CONVERSION_FAILED,
             cls.DELETED,
             cls.FAILED,
+            cls.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
             cls.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
             cls.NO_CUSTOM_BLUEPRINT_MATCHED,
             cls.NO_DOCUMENT_DETECTED,
             cls.NOT_IMPLEMENTED,
+            cls.EXCLUDED_PER_PRECLASSIFICATION,
             cls.PASSWORD_PROTECTED,
+            cls.PROCESSING_EXCLUDED,
             cls.SUCCESS,
         ]
 
     @classmethod
     def is_not_supported(cls, value: str) -> bool:
-        return value in [cls.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE, cls.PASSWORD_PROTECTED]
+        return value in [
+            cls.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
+            cls.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
+            cls.PASSWORD_PROTECTED,
+        ]
 
     @classmethod
     def is_pending_extraction(cls, value: str) -> bool:
@@ -291,11 +378,24 @@ class ProcessStatus(StrEnum):
         return value in [cls.NOT_STARTED, cls.PENDING_UPLOAD]
 
     @classmethod
+    def pending_message(cls, value: str) -> str:
+        """Human-readable message for a document with no final result yet.
+
+        Distinguishes a document still awaiting pickup by the processor from one
+        that is actively being processed, so a stalled or never-claimed document
+        does not misreport as "Processing in progress".
+        """
+        if cls.is_awaiting_processing(value):
+            return "Awaiting processing"
+        return "Processing in progress"
+
+    @classmethod
     def is_successful(cls, value: str) -> bool:
         return value in [
             cls.SUCCESS,
             cls.NO_CUSTOM_BLUEPRINT_MATCHED,
             cls.NOT_IMPLEMENTED,
+            cls.EXCLUDED_PER_PRECLASSIFICATION,
         ]
 
 
@@ -324,6 +424,11 @@ class UploadMethod(StrEnum):
     BUILD = "build"
 
 
+class UploadSource(StrEnum):
+    DESKTOP = "desktop"
+    MOBILE = "mobile"
+
+
 class DocumentBuildStatus(StrEnum):
     SUBMITTED = "submitted"
     NOT_SUBMITTED = "not_submitted"
@@ -344,11 +449,10 @@ class PreclassificationCategory(StrEnum):
     DEBT_OBLIGATIONS = "debt_obligations"
     IDENTITY_VERIFICATION = "identity_verification"
     RIGHT_TO_WORK = "right_to_work"
-    SYSTEM_REJECT = "system_reject"
 
 
 class PreClassificationDefaults:
-    MODEL_ID = "us.amazon.nova-lite-v1:0"
+    MODEL_ID = "us.amazon.nova-pro-v1:0"
     # Converse API supports more document types (csv, html, txt, md, docx, xlsx)
     # but those are rejected at the upload layer before reaching preclassification.
     SUPPORTED_CONTENT_TYPES = (
@@ -360,29 +464,26 @@ class PreClassificationDefaults:
     )
     PROMPT = "\n".join(
         [
-            "Classify this document into one of the categories below. Respond in JSON only:",
-            '{"document_type": "string", "confidence": float 0-1, "document_count": int}',
+            'Analyze the provided document against the target category: "{user_category}".',
             "",
-            "Categories and their document types:",
-            "- tax_documents: W-2, 1040, 1099-INT, 1099-MISC, 1099-G",
-            "- employment_wages: Paystubs, payslips, earnings statements",
-            "- independent_earnings: Gig platform summaries (Uber, DoorDash, Etsy), freelance 1099-NEC",
-            "- government_benefits: Social Security letters (SSI/SSDI), unemployment award letters",
-            "- private_benefits_and_settlements: Pension statements, life insurance payouts, annuities",
-            "- court_ordered_benefits: Child support orders, alimony decrees, divorce agreements",
-            "- financial_assets: Bank statements, 401(k) summaries, brokerage statements",
-            "- receipts_and_invoices: Point-of-sale receipts, vendor invoices",
-            "- recurring_bills: Electric, water, gas, phone, internet, insurance bills",
-            "- housing_expenses: Rental leases, landlord payment ledgers, HOA letters",
-            "- debt_obligations: Mortgage statements, auto loan bills, student loans, credit card statements",
-            "- identity_verification: Driver's license, passport, state ID, Global Entry card",
-            "- right_to_work: Form I-9, work permits, EAD cards, visa stamps",
-            "- system_reject: Blurry photos, blank pages, corrupted files, non-document images",
+            "First, perform this evaluation step-by-step:",
+            "1. Examine the visual layout of the page. Look for distinct borders, separate rectangles, multiple photos, or independent snippets (e.g., multiple receipts or cards placed on a single scanner bed).",
+            "2. For each page, count how many individual, separate documents or items are visually present. max_document_count_on_page is the highest per-page count across the document, not a sum across pages.",
+            "3. Evaluate multi-page consistency: pages belong together only if they are clearly continuation pages of the exact same document instance for the exact same individual (e.g. page 2 of the same W2, the same bank statement continued).",
+            '4. Check if the document is directly and primarily a "{user_category}" document.',
+            '   - Set category_match to false if: the document type does not match "{user_category}", max_document_count_on_page > 1, or has_multipage_inconsistency is true.',
             "",
-            "ONLY use one of the exact category names listed above for document_type.",
-            "Do not create new categories. If unsure, use 'other_document'.",
-            "Use 'system_reject' for blank, corrupted, or non-document images.",
-            "document_count: how many separate documents are visible?",
+            "Then, output your final answer strictly as a raw JSON object with no markdown formatting or backticks:",
+            "{",
+            '  "document_type": "<short description>",',
+            '  "confidence": <float between 0.0 and 1.0>,',
+            '  "max_document_count_on_page": <integer, maximum number of distinct visual document items found on any single page>,',
+            '  "max_document_count_on_page_reason": "<brief explanation of what was counted on each page>",',
+            '  "has_multipage_inconsistency": <false only if all pages are continuations of the exact same document instance for the exact same individual, otherwise true>,',
+            '  "has_multipage_inconsistency_reason": "<brief explanation of why pages are consistent or inconsistent>",',
+            '  "category_match": <true or false based on step 4>,',
+            '  "is_identity_document": <true if passport or driver\'s license, else false>',
+            "}",
         ]
     )
 
@@ -441,6 +542,15 @@ class MetricsAggregatorTargetDate:
     YESTERDAY = "yesterday"
 
 
+class MetricsDisplayValues:
+    NOT_SPECIFIED = "not specified"
+    _LEGACY_UNSET = ("unknown", "not specified", "null", "")
+
+    @staticmethod
+    def is_legacy_unset(value: str) -> bool:
+        return value.strip().lower() in MetricsDisplayValues._LEGACY_UNSET
+
+
 class TimingMetrics:
     TOTAL_PROCESSING_TIME = "total_processing_time"
     BDA_PROCESSING_TIME = "bda_processing_time"
@@ -496,6 +606,18 @@ class ExtractMethod(StrEnum):
 
     BDA = "bda"
     TEXTRACT = "textract"
+
+
+class FeatureFlags:
+    DOCUMENT_CROP = "document-crop"
+    ENABLE_BLUR_DETECTION = "enable-blur-detection"
+    ENFORCE_BLUR_REJECTION = "enforce-blur-rejection"
+    TEXTRACT_IDENTITY_ENABLED = "textract-identity-enabled"
+    INCLUDE_MISSING_GEO_WITH_MISSING_FIELDS = "include-missing-geo-with-missing-fields"
+    PRECLASSIFICATION_BASED_ROUTING = "preclassification-based-routing"
+    SKIP_BDA_IF_UNCLASSIFIED = "skip-bda-if-unclassified"
+    ENABLE_PRECLASSIFICATION_BLUEPRINT_MATCHING = "enable-preclassification-blueprint-matching"
+    FLAG_MULTIPLE_DOCUMENTS_IN_MULTIPAGE = "flag-multiple-documents-in-multipage"
 
 
 ATHENA_QUERY_TIMEOUT_SECONDS = 300

@@ -426,23 +426,19 @@ def extract_field_values_from_textract_results(
 
 
 def try_textract_identity(
-    preclassification_category: str,
     content_type: str,
     file_bytes: bytes,
     ddb_key: str,
 ) -> dict[str, Any] | None:
-    """Attempt Textract AnalyzeID if the document is an eligible identity type.
+    """Attempt Textract AnalyzeID extraction.
 
     Returns a result dict on success, or None if Textract should not be used
-    (flag off, wrong category, unsupported content type, or Textract failure).
+    (flag off, unsupported content type, or Textract failure).
     On failure, logs a warning and returns None so the caller falls through to BDA.
     """
     from documentai_api.utils.ssm import is_textract_identity_enabled
 
     if not is_textract_identity_enabled():
-        return None
-
-    if preclassification_category not in TextractConfig.IDENTITY_PRECLASSIFICATION_CATEGORIES:
         return None
 
     if content_type not in TextractConfig.SUPPORTED_CONTENT_TYPES:
@@ -546,28 +542,43 @@ def finalize_textract_result(
     from documentai_api.dtos.classification import ClassificationData
     from documentai_api.utils.bda import calculate_average_non_empty_confidence
     from documentai_api.utils.ddb import get_ddb_record
-    from documentai_api.utils.document_lifecycle import classify_as_success
-    from documentai_api.utils.tenants import get_extraction_confidence_floor
+    from documentai_api.utils.document_classification import classify_as_success
+    from documentai_api.utils.extraction_rules import get_missing_required_fields
+    from documentai_api.utils.tenants import (
+        get_extraction_confidence_floor,
+        tenant_has_confidence_floor,
+    )
 
     field_empty_list = textract_result.get("field_empty_list", [])
+    matched_document_class = textract_result["matched_document_class"]
 
     data = ClassificationData(
-        matched_document_class=textract_result["matched_document_class"],
+        matched_document_class=matched_document_class,
         field_confidence_scores=textract_result["field_confidence_scores"],
         field_empty_list=field_empty_list,
         bda_output_s3_uri=textract_result["textract_s3_uri"],
     )
 
-    # Evaluate confidence floor (same as BDA path in bda_output_processor)
     tenant_id = (get_ddb_record(ddb_key) or {}).get(DocumentMetadata.TENANT_ID)
     avg = calculate_average_non_empty_confidence(
         data.field_confidence_scores or [], data.field_empty_list
     )
-    below_floor = avg is not None and avg < get_extraction_confidence_floor(tenant_id)
+    confidence_floor = get_extraction_confidence_floor(tenant_id)
+    used_default_floor = not tenant_has_confidence_floor(tenant_id)
+    below_floor = avg is not None and avg < confidence_floor
+    rule_fields = get_missing_required_fields(
+        tenant_id, matched_document_class, field_empty_list, []
+    )
+    missing_required_field_list, required_field_list = rule_fields or (None, None)
 
     classify_as_success(
         object_key=ddb_key,
         response_code=ResponseCodes.SUCCESS,
         data=data,
         below_extraction_confidence_floor=below_floor,
+        extraction_rules_configured=rule_fields is not None,
+        missing_required_field_list=missing_required_field_list,
+        required_field_list=required_field_list,
+        applied_extraction_confidence_floor=confidence_floor,
+        used_default_confidence_floor=used_default_floor,
     )

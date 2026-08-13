@@ -398,7 +398,7 @@ export function renderPreview(
 ) {
   if (contentType === "application/pdf") {
     // eslint-disable-next-line no-unsanitized/property -- URL escaped with esc()
-    container.innerHTML = `<object data="${esc(url)}" type="application/pdf" class="document-preview-frame"><p>Unable to display PDF preview.</p></object>`;
+    container.innerHTML = `<object data="${esc(url)}" type="application/pdf" class="document-preview-frame"><p class=\"empty-state\">Preview unavailable</p></object>`;
   } else {
     // eslint-disable-next-line no-unsanitized/property -- URL escaped with esc()
     container.innerHTML = `<img src="${esc(url)}" class="document-preview-img" alt="Document preview" draggable="false" oncontextmenu="return false" onerror="this.parentElement.innerHTML='<p class=empty-state>Preview unavailable</p>'" />`;

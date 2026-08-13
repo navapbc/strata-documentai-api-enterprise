@@ -56,6 +56,66 @@ def test_hash_key_different_inputs_produce_different_hashes():
 
 
 ##############################################################################
+# pepper / HMAC migration
+##############################################################################
+
+
+def test_compute_key_hash_no_pepper_returns_sha256(mocker):
+    mocker.patch.object(auth_util, "_get_pepper", return_value=None)
+    assert auth_util._compute_key_hash("docai_testkey") == auth_util._hash_key("docai_testkey")
+
+
+def test_compute_key_hash_with_pepper_returns_hmac(mocker):
+    mocker.patch.object(auth_util, "_get_pepper", return_value="test-pepper")
+    result = auth_util._compute_key_hash("docai_testkey")
+    expected = auth_util._hash_key_with_pepper("docai_testkey", "test-pepper")
+    assert result == expected
+    assert result != auth_util._hash_key("docai_testkey")
+
+
+def test_lookup_and_maybe_migrate_pepper_hit(api_keys_table, mocker):
+    raw_key = "docai_" + "a" * 32
+    pepper = "test-pepper"
+    mocker.patch.object(auth_util, "_get_pepper", return_value=pepper)
+    hmac_hash = auth_util._hash_key_with_pepper(raw_key, pepper)
+    api_keys_table.put_item(Item={ApiKeyRecord.KEY_HASH: hmac_hash, ApiKeyRecord.IS_ACTIVE: True})
+
+    record = auth_util._lookup_and_maybe_migrate(raw_key)
+
+    assert record is not None
+    assert record[ApiKeyRecord.KEY_HASH] == hmac_hash
+
+
+def test_lookup_and_maybe_migrate_legacy_migrates(api_keys_table, mocker):
+    raw_key = "docai_" + "b" * 32
+    pepper = "test-pepper"
+    mocker.patch.object(auth_util, "_get_pepper", return_value=pepper)
+    legacy_hash = auth_util._hash_key(raw_key)
+    api_keys_table.put_item(Item={ApiKeyRecord.KEY_HASH: legacy_hash, ApiKeyRecord.IS_ACTIVE: True})
+
+    record = auth_util._lookup_and_maybe_migrate(raw_key)
+
+    assert record is not None
+    # old hash removed, new HMAC hash present
+    new_hash = auth_util._hash_key_with_pepper(raw_key, pepper)
+    assert api_keys_table.get_item(Key={ApiKeyRecord.KEY_HASH: legacy_hash}).get("Item") is None
+    assert api_keys_table.get_item(Key={ApiKeyRecord.KEY_HASH: new_hash})["Item"] is not None
+
+
+def test_lookup_and_maybe_migrate_no_pepper_uses_sha256(api_keys_table, mocker):
+    raw_key = "docai_" + "c" * 32
+    mocker.patch.object(auth_util, "_get_pepper", return_value=None)
+    legacy_hash = auth_util._hash_key(raw_key)
+    api_keys_table.put_item(Item={ApiKeyRecord.KEY_HASH: legacy_hash, ApiKeyRecord.IS_ACTIVE: True})
+
+    record = auth_util._lookup_and_maybe_migrate(raw_key)
+
+    assert record is not None
+    # no migration - legacy hash still present
+    assert api_keys_table.get_item(Key={ApiKeyRecord.KEY_HASH: legacy_hash})["Item"] is not None
+
+
+##############################################################################
 # _get_cache_ttl
 ##############################################################################
 
@@ -161,10 +221,15 @@ def test_validate_key_record_invalid_expires_at():
 ##############################################################################
 
 
-def test_insecure_key_missing_env_raises_500(monkeypatch):
-    monkeypatch.delenv(EnvVars.API_AUTH_INSECURE_SHARED_KEY, raising=False)
-    with pytest.raises(HTTPException) as exc_info:
-        auth_util._verify_with_insecure_shared_key("any-key")
+def test_insecure_key_missing_env_raises_500():
+    # Patch the resolved value rather than just the OS env var: the key can also
+    # come from the .env file or an SSM param, so deleting the env var alone
+    # doesn't reliably exercise the "not configured" path (a local .env would
+    # still supply it).
+    with patch("documentai_api.utils.auth.get_app_env_config") as mock_config:
+        mock_config.return_value.resolve_insecure_shared_key.return_value = ""
+        with pytest.raises(HTTPException) as exc_info:
+            auth_util._verify_with_insecure_shared_key("any-key")
     assert exc_info.value.status_code == 500
 
 

@@ -1166,7 +1166,7 @@
             "in": "query",
             "required": false,
             "schema": {
-              "$ref": "#/components/schemas/DictionaryFormatType",
+              "$ref": "#/components/schemas/OutputFormatType",
               "default": "json"
             }
           }
@@ -1220,7 +1220,7 @@
             "in": "query",
             "required": false,
             "schema": {
-              "$ref": "#/components/schemas/DictionaryFormatType",
+              "$ref": "#/components/schemas/OutputFormatType",
               "default": "json"
             }
           }
@@ -1306,7 +1306,7 @@
             "in": "query",
             "required": false,
             "schema": {
-              "$ref": "#/components/schemas/DictionaryFormatType",
+              "$ref": "#/components/schemas/OutputFormatType",
               "default": "json"
             }
           }
@@ -1360,7 +1360,7 @@
             "in": "query",
             "required": false,
             "schema": {
-              "$ref": "#/components/schemas/DictionaryFormatType",
+              "$ref": "#/components/schemas/OutputFormatType",
               "default": "json"
             }
           }
@@ -1414,7 +1414,7 @@
             "in": "query",
             "required": false,
             "schema": {
-              "$ref": "#/components/schemas/DictionaryFormatType",
+              "$ref": "#/components/schemas/OutputFormatType",
               "default": "json"
             }
           }
@@ -1953,7 +1953,7 @@
           "Admin:Tenants"
         ],
         "summary": "Update Tenant",
-        "description": "Update a tenant's metadata.",
+        "description": "Update a tenant's metadata. Pass `null` for `extractionConfidenceFloor`, `maxWritesPerDay`, or `maxWritesPerMonth` to clear the override back to the platform default. `isActive`, `extractionConfidenceFloor`, `maxWritesPerDay`, and `maxWritesPerMonth` are super-admin only.",
         "operationId": "update_tenant_v1_admin_tenants__tenant_id__patch",
         "security": [
           {
@@ -2051,6 +2051,71 @@
         }
       }
     },
+    "/v1/admin/tenants/{tenant_id}/request-counts": {
+      "get": {
+        "tags": [
+          "Admin:Tenants"
+        ],
+        "summary": "Get Tenant Request Counts",
+        "description": "Get daily request counts for a tenant in a given month (defaults to current month).",
+        "operationId": "get_tenant_request_counts_v1_admin_tenants__tenant_id__request_counts_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Month"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantRequestCountsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/admin/users": {
       "get": {
         "tags": [
@@ -2065,9 +2130,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
-                  "type": "object",
-                  "title": "Response List Users V1 Admin Users Get"
+                  "$ref": "#/components/schemas/ListUsersResponse"
                 }
               }
             }
@@ -2146,7 +2209,7 @@
           "Admin:Users"
         ],
         "summary": "Change Role",
-        "description": "Change a user's role, or pass ``role: null`` to revoke.",
+        "description": "Change a user's role, or pass ``role: null`` to revoke.\n\nKeeps the tenant scope attribute consistent with the role: super-admin\nand revoked users are cleared to no scope, tenant-admin requires and\nkeeps exactly one tenant. Without this, a role change alone could leave\na tenant-admin with no tenant (locked out) or a super-admin still\ncarrying a stale tenant scope.",
         "operationId": "change_role_v1_admin_users__username__role_post",
         "security": [
           {
@@ -2310,6 +2373,61 @@
         }
       }
     },
+    "/v1/admin/audit-log/actors": {
+      "get": {
+        "tags": [
+          "Admin:Audit Log"
+        ],
+        "summary": "Get Audit Actors",
+        "description": "Return distinct actor emails visible to the caller.\n\nSuper-admins can optionally scope to a tenant; tenant-admins are always\nscoped to their own partition. Sourced from Cognito only (see\ndocs/decisions/api/2026-07-24-audit-log-actor-dropdown-source.md) - this\nis a filter, not a guarantee: a user with no audit events for the scoped\ntenant may still appear, and a super-admin who acted on a tenant's\nresources but isn't a Cognito member of it will not.",
+        "operationId": "get_audit_actors_v1_admin_audit_log_actors_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditActorsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/admin/audit-log/actions": {
       "get": {
         "tags": [
@@ -2343,7 +2461,7 @@
           "Admin:Audit Log"
         ],
         "summary": "Get Audit Log",
-        "description": "Query audit events.\n\nSuper-admins can query any tenant or by action (via GSI).\nTenant-admins can only query their own tenant's events.",
+        "description": "Query audit events.\n\nSuper-admins can query any tenant or by action/actor (via GSI).\nTenant-admins can only query their own tenant's events.",
         "operationId": "get_audit_log_v1_admin_audit_log_get",
         "security": [
           {
@@ -2381,6 +2499,22 @@
                 }
               ],
               "title": "Action"
+            }
+          },
+          {
+            "name": "actor_email",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Actor Email"
             }
           },
           {
@@ -2685,6 +2819,90 @@
                 "schema": {
                   "$ref": "#/components/schemas/DocumentPreviewResponse"
                 }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/usage": {
+      "get": {
+        "summary": "Get Usage",
+        "description": "Get usage report for a given month.\n\ngranularity=monthly: per-tenant totals for the month.\ngranularity=daily: per-day breakdown for a specific tenant or global.\n\nSuper-admins see all tenants (or filter with ?tenant_id=X).\nTenant-admins see only their own.\nDefaults to the current month if not specified.",
+        "operationId": "get_usage_v1_admin_usage_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Month"
+            }
+          },
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "granularity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/MetricsGranularity",
+              "default": "monthly"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/OutputFormatType",
+              "default": "json"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           },
@@ -3506,6 +3724,218 @@
         ]
       }
     },
+    "/v1/documents/{job_id}/evaluation": {
+      "get": {
+        "tags": [
+          "Documents:Query"
+        ],
+        "summary": "Get Document Evaluation",
+        "description": "Return a per-check evaluation breakdown for a processed document.",
+        "operationId": "get_document_evaluation_v1_documents__job_id__evaluation_get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvaluationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/search/documents": {
+      "get": {
+        "tags": [
+          "Admin:Documents"
+        ],
+        "summary": "Search Documents",
+        "description": "Search documents by filename, date range, or document type.\n\nSuper-admins can search any tenant. Tenant-admins are locked to their own.\nAll filters are ANDed together.",
+        "operationId": "search_documents_v1_admin_search_documents_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "filename",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Filename"
+            }
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "name": "user_provided_document_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "User Provided Document Type"
+            }
+          },
+          {
+            "name": "matched_blueprint_name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Matched Blueprint Name"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/": {
       "get": {
         "summary": "Root",
@@ -3730,6 +4160,22 @@
           "actions"
         ],
         "title": "AuditActionsResponse"
+      },
+      "AuditActorsResponse": {
+        "properties": {
+          "actors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Actors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "actors"
+        ],
+        "title": "AuditActorsResponse"
       },
       "AuditEventItem": {
         "properties": {
@@ -4134,12 +4580,16 @@
           "category": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/DocumentCategory"
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1,
+                "pattern": "^[a-z0-9 _-]+$"
               },
               {
                 "type": "null"
               }
             ],
+            "title": "Category",
             "description": "Type of document being uploaded"
           },
           "external_document_id": {
@@ -4177,6 +4627,17 @@
             ],
             "title": "Ai Consent Flag",
             "description": "AI consent flag"
+          },
+          "upload_source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UploadSource"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Source device type of the upload (desktop or mobile)"
           }
         },
         "type": "object",
@@ -4206,12 +4667,16 @@
           "category": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/DocumentCategory"
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1,
+                "pattern": "^[a-z0-9 _-]+$"
               },
               {
                 "type": "null"
               }
             ],
+            "title": "Category",
             "description": "Type of document being uploaded"
           },
           "external_document_id": {
@@ -4247,6 +4712,17 @@
             "title": "Ai Consent Flag",
             "description": "Explicit AI processing consent. True = consent granted, processing proceeds normally. False = consent denied, document is stored but not processed.",
             "default": true
+          },
+          "upload_source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UploadSource"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Source device type of the upload (desktop or mobile)"
           }
         },
         "type": "object",
@@ -4265,12 +4741,16 @@
           "category": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/DocumentCategory"
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1,
+                "pattern": "^[a-z0-9 _-]+$"
               },
               {
                 "type": "null"
               }
             ],
+            "title": "Category",
             "description": "Type of document being uploaded"
           },
           "external_document_id": {
@@ -4306,6 +4786,17 @@
             "title": "Ai Consent Flag",
             "description": "Explicit AI processing consent. True = consent granted, processing proceeds normally. False = consent denied, document is stored but not processed.",
             "default": true
+          },
+          "upload_source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UploadSource"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Source device type of the upload (desktop or mobile)"
           }
         },
         "type": "object",
@@ -4330,12 +4821,16 @@
           "category": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/DocumentCategory"
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1,
+                "pattern": "^[a-z0-9 _-]+$"
               },
               {
                 "type": "null"
               }
             ],
+            "title": "Category",
             "description": "Type of document being uploaded"
           },
           "external_document_id": {
@@ -4365,6 +4860,17 @@
             ],
             "title": "External System Id",
             "description": "External system identifier"
+          },
+          "upload_source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UploadSource"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Source device type of the upload (desktop or mobile)"
           }
         },
         "type": "object",
@@ -4429,12 +4935,17 @@
           "category": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/DocumentCategory"
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1,
+                "pattern": "^[a-z0-9 _-]+$"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Category",
+            "description": "Type of document being uploaded"
           },
           "external_document_id": {
             "anyOf": [
@@ -4502,12 +5013,16 @@
           "category": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/DocumentCategory"
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1,
+                "pattern": "^[a-z0-9 _-]+$"
               },
               {
                 "type": "null"
               }
             ],
+            "title": "Category",
             "description": "Type of document being uploaded"
           }
         },
@@ -4530,12 +5045,16 @@
           "category": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/DocumentCategory"
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1,
+                "pattern": "^[a-z0-9 _-]+$"
               },
               {
                 "type": "null"
               }
             ],
+            "title": "Category",
             "description": "Type of document being uploaded"
           }
         },
@@ -4556,12 +5075,17 @@
           "category": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/DocumentCategory"
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1,
+                "pattern": "^[a-z0-9 _-]+$"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Category",
+            "description": "Type of document being uploaded"
           },
           "external_document_id": {
             "anyOf": [
@@ -4834,6 +5358,18 @@
             ],
             "title": "Role",
             "description": "New role, or null to revoke (return user to pending)."
+          },
+          "tenant_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tenant Id",
+            "description": "Required when role is tenant-admin; ignored otherwise."
           }
         },
         "type": "object",
@@ -4856,6 +5392,88 @@
         },
         "type": "object",
         "title": "ChangeTenantRequest"
+      },
+      "CognitoUserItem": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "emailVerified": {
+            "type": "boolean",
+            "title": "Emailverified",
+            "default": false
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "default": true
+          },
+          "createdAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Createdat"
+          },
+          "tenantId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tenantid"
+          },
+          "groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Groups",
+            "description": "Role group memberships, or null if not fetched (see list_users(include_groups=))."
+          }
+        },
+        "type": "object",
+        "required": [
+          "username"
+        ],
+        "title": "CognitoUserItem"
       },
       "ConfigResponse": {
         "properties": {
@@ -5039,6 +5657,13 @@
               }
             ],
             "title": "Description"
+          },
+          "processingPercentage": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Processingpercentage",
+            "default": 1.0
           }
         },
         "type": "object",
@@ -5087,6 +5712,32 @@
               }
             ],
             "title": "Extractionconfidencefloor"
+          },
+          "maxWritesPerDay": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0,
+                "description": "Maximum number of write requests allowed."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxwritesperday"
+          },
+          "maxWritesPerMonth": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0,
+                "description": "Maximum number of write requests allowed."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxwritespermonth"
           }
         },
         "type": "object",
@@ -5142,14 +5793,6 @@
         ],
         "title": "DictionaryBlueprintField"
       },
-      "DictionaryFormatType": {
-        "type": "string",
-        "enum": [
-          "json",
-          "csv"
-        ],
-        "title": "DictionaryFormatType"
-      },
       "DictionarySchemaListResponse": {
         "properties": {
           "schemas": {
@@ -5165,17 +5808,6 @@
           "schemas"
         ],
         "title": "DictionarySchemaListResponse"
-      },
-      "DocumentCategory": {
-        "type": "string",
-        "enum": [
-          "income",
-          "expenses",
-          "identity",
-          "employment",
-          "training"
-        ],
-        "title": "DocumentCategory"
       },
       "DocumentCategoryItem": {
         "properties": {
@@ -5200,6 +5832,16 @@
             "type": "boolean",
             "title": "Isactive",
             "default": true
+          },
+          "isAutoRegistered": {
+            "type": "boolean",
+            "title": "Isautoregistered",
+            "default": false
+          },
+          "processingPercentage": {
+            "type": "number",
+            "title": "Processingpercentage",
+            "default": 1.0
           },
           "createdAt": {
             "anyOf": [
@@ -5557,6 +6199,87 @@
         ],
         "title": "DocumentSearchResponse"
       },
+      "EvaluationEntry": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "EvaluationEntry"
+      },
+      "EvaluationResponse": {
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "title": "Jobid"
+          },
+          "createdAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Createdat"
+          },
+          "responseCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsecode"
+          },
+          "responseCodeDescription": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsecodedescription"
+          },
+          "evaluations": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/EvaluationEntry"
+            },
+            "type": "object",
+            "title": "Evaluations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "jobId",
+          "createdAt",
+          "responseCode",
+          "responseCodeDescription",
+          "evaluations"
+        ],
+        "title": "EvaluationResponse"
+      },
       "ExtractionRuleDeleteResponse": {
         "properties": {
           "message": {
@@ -5852,6 +6575,28 @@
               }
             ],
             "title": "Belowextractionconfidencefloor"
+          },
+          "userProvidedDocumentCategory": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Userprovideddocumentcategory"
+          },
+          "inferredDocumentType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inferreddocumenttype"
           }
         },
         "type": "object",
@@ -5924,6 +6669,27 @@
           "count"
         ],
         "title": "ListTenantsResponse"
+      },
+      "ListUsersResponse": {
+        "properties": {
+          "users": {
+            "items": {
+              "$ref": "#/components/schemas/CognitoUserItem"
+            },
+            "type": "array",
+            "title": "Users"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "users",
+          "count"
+        ],
+        "title": "ListUsersResponse"
       },
       "MeResponse": {
         "properties": {
@@ -6027,6 +6793,21 @@
             "title": "Totalbdainvocations",
             "default": 0
           },
+          "totalTextractExtractions": {
+            "type": "integer",
+            "title": "Totaltextractextractions",
+            "default": 0
+          },
+          "totalExtractionInvocations": {
+            "type": "integer",
+            "title": "Totalextractioninvocations",
+            "default": 0
+          },
+          "totalDocumentsRecognized": {
+            "type": "integer",
+            "title": "Totaldocumentsrecognized",
+            "default": 0
+          },
           "byStatus": {
             "additionalProperties": {
               "type": "integer"
@@ -6048,6 +6829,34 @@
             "type": "object",
             "title": "Byresponsecode"
           },
+          "byFileType": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Byfiletype"
+          },
+          "byUserCategory": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Byusercategory"
+          },
+          "byUploadMethod": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Byuploadmethod"
+          },
+          "byHour": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Byhour"
+          },
           "timingStats": {
             "$ref": "#/components/schemas/TimingStats",
             "default": {
@@ -6067,6 +6876,7 @@
             "default": {
               "totalFileSizeBytes": 0,
               "totalPages": 0,
+              "totalBdaPages": 0,
               "totalBedrockInputTokens": 0,
               "totalBedrockOutputTokens": 0
             }
@@ -6074,6 +6884,14 @@
         },
         "type": "object",
         "title": "MetricsSummary"
+      },
+      "OutputFormatType": {
+        "type": "string",
+        "enum": [
+          "json",
+          "csv"
+        ],
+        "title": "OutputFormatType"
       },
       "PeriodStats": {
         "properties": {
@@ -6109,6 +6927,21 @@
             "title": "Totalbdainvocations",
             "default": 0
           },
+          "totalTextractExtractions": {
+            "type": "integer",
+            "title": "Totaltextractextractions",
+            "default": 0
+          },
+          "totalExtractionInvocations": {
+            "type": "integer",
+            "title": "Totalextractioninvocations",
+            "default": 0
+          },
+          "totalDocumentsRecognized": {
+            "type": "integer",
+            "title": "Totaldocumentsrecognized",
+            "default": 0
+          },
           "byStatus": {
             "additionalProperties": {
               "type": "integer"
@@ -6130,6 +6963,34 @@
             "type": "object",
             "title": "Byresponsecode"
           },
+          "byFileType": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Byfiletype"
+          },
+          "byUserCategory": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Byusercategory"
+          },
+          "byUploadMethod": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Byuploadmethod"
+          },
+          "byHour": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Byhour"
+          },
           "timingStats": {
             "$ref": "#/components/schemas/TimingStats",
             "default": {
@@ -6149,6 +7010,7 @@
             "default": {
               "totalFileSizeBytes": 0,
               "totalPages": 0,
+              "totalBdaPages": 0,
               "totalBedrockInputTokens": 0,
               "totalBedrockOutputTokens": 0
             }
@@ -6236,6 +7098,28 @@
             "title": "Extractionconfidencefloor",
             "description": "Tenant override for the extraction confidence floor (0.0-1.0). Null means no override is set and the platform default applies."
           },
+          "maxWritesPerDay": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxwritesperday"
+          },
+          "maxWritesPerMonth": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxwritespermonth"
+          },
           "createdAt": {
             "anyOf": [
               {
@@ -6265,6 +7149,55 @@
           "displayName"
         ],
         "title": "TenantItem"
+      },
+      "TenantRequestCountItem": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "count"
+        ],
+        "title": "TenantRequestCountItem"
+      },
+      "TenantRequestCountsResponse": {
+        "properties": {
+          "tenantId": {
+            "type": "string",
+            "title": "Tenantid"
+          },
+          "month": {
+            "type": "string",
+            "title": "Month"
+          },
+          "monthlyTotal": {
+            "type": "integer",
+            "title": "Monthlytotal"
+          },
+          "daily": {
+            "items": {
+              "$ref": "#/components/schemas/TenantRequestCountItem"
+            },
+            "type": "array",
+            "title": "Daily"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenantId",
+          "month",
+          "monthlyTotal",
+          "daily"
+        ],
+        "title": "TenantRequestCountsResponse"
       },
       "TimingStats": {
         "properties": {
@@ -6353,6 +7286,19 @@
               }
             ],
             "title": "Isactive"
+          },
+          "processingPercentage": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Processingpercentage"
           }
         },
         "type": "object",
@@ -6408,6 +7354,32 @@
               }
             ],
             "title": "Extractionconfidencefloor"
+          },
+          "maxWritesPerDay": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0,
+                "description": "Maximum number of write requests allowed."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxwritesperday"
+          },
+          "maxWritesPerMonth": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0,
+                "description": "Maximum number of write requests allowed."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxwritespermonth"
           }
         },
         "type": "object",
@@ -6436,6 +7408,14 @@
         ],
         "title": "UploadAsyncResponse"
       },
+      "UploadSource": {
+        "type": "string",
+        "enum": [
+          "desktop",
+          "mobile"
+        ],
+        "title": "UploadSource"
+      },
       "UsageStats": {
         "properties": {
           "totalFileSizeBytes": {
@@ -6446,6 +7426,11 @@
           "totalPages": {
             "type": "integer",
             "title": "Totalpages",
+            "default": 0
+          },
+          "totalBdaPages": {
+            "type": "integer",
+            "title": "Totalbdapages",
             "default": 0
           },
           "totalBedrockInputTokens": {

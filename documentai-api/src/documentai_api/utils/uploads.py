@@ -2,6 +2,7 @@
 
 import asyncio
 import os
+import zipfile
 from io import BytesIO
 from typing import BinaryIO
 
@@ -10,26 +11,68 @@ from fastapi import HTTPException, UploadFile
 
 from documentai_api.config.constants import (
     MAX_UPLOAD_SIZE_BYTES,
-    DocumentCategory,
     FileValidation,
     S3MetadataKeys,
 )
 from documentai_api.config.env import EnvVars
 from documentai_api.logging import get_logger
 from documentai_api.services import s3 as s3_service
-from documentai_api.utils.image_conversion import convert_to_png
+from documentai_api.utils.document_categories import auto_register_category
+from documentai_api.utils.file_conversion import convert_file
 from documentai_api.utils.s3 import get_bucket_and_key, parse_s3_uri
 
 logger = get_logger(__name__)
 
-# filetype requires ~261 bytes for detection; 2048 provides margin without
-# reading the full object.
-HEADER_READ_BYTES = 2048
+# Simple magic-number formats (PDF, images, legacy Office) are identifiable from
+# a small header; filetype needs only ~261 bytes and 4096 gives ample margin.
+HEADER_PROBE_BYTES = 4096
+
+# Office containers (OOXML / encrypted Office) can't be identified from a header
+# (see FileValidation.is_office_container_magic), so they need the full file. Cap
+# the read at one byte past the upload limit: enough to inspect any acceptable
+# file, while an oversized file is truncated here and rejected by the size gate.
+MAX_DETECT_BYTES = MAX_UPLOAD_SIZE_BYTES + 1
 
 
-def _detect_mime(header_bytes: bytes) -> str:
-    """Guess a MIME type from a file's leading bytes, defaulting to octet-stream."""
-    return filetype.guess_mime(header_bytes) or "application/octet-stream"
+def _detect_ooxml_from_zip(data: bytes) -> str | None:
+    """Identify an OOXML document by inspecting the real ZIP members.
+
+    ``filetype`` only scans the first ~6KB of the archive for the word/, xl/ or
+    ppt/ entry, so it mislabels documents whose identifying entry sits deeper as
+    ``application/zip`` (common in newer Office builds with a larger
+    ``[Content_Types].xml`` and more leading parts). Reading the central
+    directory - which ``zipfile`` locates at the file tail - is independent of
+    entry order and size. Returns None for a non-OOXML ZIP.
+    """
+    try:
+        names = zipfile.ZipFile(BytesIO(data)).namelist()
+    except zipfile.BadZipFile:
+        return None
+    return FileValidation.detect_ooxml_mime(names)
+
+
+def _detect_mime(data: bytes) -> str:
+    """Guess a MIME type from file bytes, defaulting to octet-stream.
+
+    Office documents are containers rather than simple magic-number formats, so
+    they are handled explicitly before falling back to ``filetype``:
+      - ZIP-magic input is resolved to its OOXML subtype via the ZIP central
+        directory (``filetype`` misses deep entries).
+      - OLE2-magic input that is an encrypted OOXML package is reported as docx
+        (the only supported OOXML subtype; the true subtype is unknowable
+        without the password). Such files are short-circuited to
+        PASSWORD_PROTECTED before any format-specific processing, so the guess
+        is never acted on beyond passing type validation.
+    """
+    if data.startswith(FileValidation.ZIP_MAGIC):
+        ooxml = _detect_ooxml_from_zip(data)
+        if ooxml:
+            return ooxml
+    elif data.startswith(FileValidation.OLE2_MAGIC) and FileValidation.has_ooxml_encryption_markers(
+        data
+    ):
+        return FileValidation.DOCX_MIME
+    return filetype.guess_mime(data) or "application/octet-stream"
 
 
 class ImageConversionError(Exception):
@@ -111,9 +154,19 @@ async def validate_file_type(file: UploadFile) -> str:
     Raises:
         HTTPException 400: if the type isn't in FileValidation.SUPPORTED_CONTENT_TYPES.
     """
-    header_bytes = await file.read(HEADER_READ_BYTES)
-    actual_content_type = _detect_mime(header_bytes)
+    data = await file.read(HEADER_PROBE_BYTES)
+    if FileValidation.is_office_container_magic(data):
+        # Container format: read the rest so OOXML / encryption detection can work.
+        data += await file.read(MAX_DETECT_BYTES - len(data))
+    actual_content_type = _detect_mime(data)
     await file.seek(0)
+
+    if FileValidation.is_odt(actual_content_type):
+        raise HTTPException(
+            status_code=400,
+            detail="OpenDocument Text (.odt) files aren't currently supported. "
+            "Please save the document as PDF or Microsoft Word (.docx) and try again.",
+        )
 
     if not FileValidation.is_supported(actual_content_type):
         raise HTTPException(
@@ -129,20 +182,29 @@ async def validate_file_type(file: UploadFile) -> str:
 
 
 def validate_s3_object_is_bda_native(bucket: str, object_key: str) -> str:
-    """Detect MIME type from an S3 object's leading bytes and reject non-BDA-native types.
+    """Detect an S3 object's MIME type and reject non-BDA-native types.
+
+    Probes the object header first; only Office containers (which OOXML detection
+    must read in full - see _detect_mime) trigger a full-object fetch.
 
     Returns the detected content type.
 
     Raises:
         ValueError: if the detected type is not in FileValidation.NO_CONVERSION_NEEDED.
     """
-    header_bytes = s3_service.get_object_header_bytes(bucket, object_key, HEADER_READ_BYTES)
-    detected = _detect_mime(header_bytes)
+    data = s3_service.get_object_header_bytes(bucket, object_key, HEADER_PROBE_BYTES)
+
+    if FileValidation.is_office_container_magic(data):
+        data = s3_service.get_file_bytes(bucket, object_key)
+
+    detected = _detect_mime(data)
+
     if detected not in FileValidation.NO_CONVERSION_NEEDED:
         raise ValueError(
             f"Uploaded content is not a supported document type: detected '{detected}'. "
             f"Must be one of {', '.join(FileValidation.NO_CONVERSION_NEEDED)}."
         )
+
     return detected
 
 
@@ -214,7 +276,7 @@ async def dispatch_upload(
     dest_path: str,
     original_file_name: str,
     content_type: str,
-    category: DocumentCategory | None,
+    category: str | None,
     job_id: str,
     trace_id: str,
     ddb_key: str,
@@ -222,7 +284,7 @@ async def dispatch_upload(
 ) -> None:
     """Upload file to S3. Classifies DDB record on failure."""
     from documentai_api.dtos.classification import ClassificationData
-    from documentai_api.utils.document_lifecycle import (
+    from documentai_api.utils.document_classification import (
         classify_as_conversion_failed,
         classify_as_failed,
     )
@@ -267,7 +329,7 @@ async def upload_document_for_processing(
     dest_path: str,
     original_file_name: str,
     content_type: str,
-    user_provided_document_category: DocumentCategory | None = None,
+    user_provided_document_category: str | None = None,
     job_id: str | None = None,
     trace_id: str | None = None,
     batch_id: str | None = None,
@@ -288,6 +350,16 @@ async def upload_document_for_processing(
         file_bytes, os.path.basename(object_key), content_type, tenant_id=tenant_id
     )
 
+    if user_provided_document_category and tenant_id:
+        try:
+            await asyncio.to_thread(
+                auto_register_category, tenant_id, user_provided_document_category
+            )
+        except Exception as e:
+            logger.warning(
+                f"Failed to auto-register category '{user_provided_document_category}' for tenant '{tenant_id}': {e}"
+            )
+
     # handle format conversion for mobile/unsupported-by-BDA formats
     if FileValidation.needs_conversion(content_type):
         logger.info(
@@ -296,25 +368,21 @@ async def upload_document_for_processing(
         )
 
         try:
-            converted_bytes = await asyncio.to_thread(convert_to_png, file_bytes, content_type)
+            converted_bytes, content_type = await asyncio.to_thread(
+                convert_file, file_bytes, content_type
+            )
         except ValueError as e:
             raise ImageConversionError(str(e)) from e
 
         src_file = BytesIO(converted_bytes)
-        content_type = "image/png"
     else:
         src_file = BytesIO(file_bytes)
 
     try:
         metadata = {}
         if user_provided_document_category:
-            if not isinstance(user_provided_document_category, DocumentCategory):
-                raise ValueError(
-                    f"Expected DocumentCategory, got {type(user_provided_document_category)}"
-                )
-
             metadata[S3MetadataKeys.USER_PROVIDED_DOCUMENT_CATEGORY] = (
-                user_provided_document_category.value
+                user_provided_document_category
             )
 
         metadata[S3MetadataKeys.ORIGINAL_FILE_NAME] = original_file_name

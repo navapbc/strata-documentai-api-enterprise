@@ -16,7 +16,7 @@ from documentai_api.models.api_key import (
 )
 from documentai_api.schemas.api_key import ApiKeyRecord
 from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
-from documentai_api.utils.audit import log_event
+from documentai_api.utils.audit_log import log_event
 from documentai_api.utils.auth import (
     deactivate_api_key,
     find_api_key_by_prefix,
@@ -201,9 +201,10 @@ async def delete_api_key(
 
             table_name = get_aws_config().api_keys_table_name
             if not table_name:
+                logger.error("Required table not configured: api_keys_table_name")
                 raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="API_KEYS_TABLE_NAME not configured",
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="Storage not configured",
                 )
             record = ddb_service.get_item(table_name, {ApiKeyRecord.KEY_HASH: full_hash})
             if not record or record.get(ApiKeyRecord.TENANT_ID) != caller_tenant:

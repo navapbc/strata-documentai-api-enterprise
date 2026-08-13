@@ -18,13 +18,12 @@ from fastapi import (
     status,
 )
 
-from documentai_api.annotations import AuthUser
+from documentai_api.annotations import AuthUser, DocumentCategoryField, UploadSourceField
 from documentai_api.config.constants import (
     MAX_PAGES_PER_BUILD,
     ApiVisualizationTag,
     ConfigDefaults,
     DocumentBuildStatus,
-    DocumentCategory,
     FileValidation,
     ProcessStatus,
     UploadMethod,
@@ -55,10 +54,8 @@ from documentai_api.utils.document_build import (
     mark_document_build_submitted,
     upsert_document_build_page,
 )
-from documentai_api.utils.document_lifecycle import (
-    classify_as_ai_consent_declined,
-    insert_minimal_ddb_record,
-)
+from documentai_api.utils.document_classification import classify_as_ai_consent_declined
+from documentai_api.utils.document_lifecycle import insert_minimal_ddb_record
 from documentai_api.utils.pdf import merge_pages_to_pdf
 from documentai_api.utils.s3 import parse_s3_uri
 from documentai_api.utils.tenant_access import validate_build_tenant_access
@@ -81,7 +78,7 @@ async def add_page_to_build(
     page_number: int,
     content_type: str,
     tenant_id: str,
-    category: DocumentCategory | None = None,
+    category: str | None = None,
     trace_id: str | None = None,
     overwrite: bool = True,
 ) -> BuildPageBatchItem:
@@ -133,9 +130,7 @@ async def add_page_to_build(
 async def create_build(
     response: Response,
     auth: Annotated[UserContext, Depends(get_user_context_from_api_key)],
-    category: Annotated[
-        DocumentCategory | None, Form(description="Type of document being uploaded")
-    ] = None,
+    category: DocumentCategoryField = None,
     trace_id: Annotated[str | None, Header(alias="X-Trace-ID")] = None,
     external_document_id: Annotated[
         str | None, Form(description="External document identifier")
@@ -144,6 +139,7 @@ async def create_build(
         str | None, Form(description="External system identifier")
     ] = None,
     ai_consent_flag: Annotated[bool | None, Form(description="AI consent flag")] = None,
+    upload_source: UploadSourceField = None,
 ) -> BuildCreatedResponse:
     """Create a new document build for multi-page upload."""
     if not trace_id:
@@ -158,6 +154,7 @@ async def create_build(
         ai_consent_flag=ai_consent_flag,
         tenant_id=auth.tenant_id,
         api_key_name=auth.api_key_name,
+        upload_source=upload_source,
     )
 
     response.headers["X-Trace-ID"] = trace_id
@@ -179,9 +176,7 @@ async def upload_document_build_page(
     auth: AuthUser,
     page_number: Annotated[int | None, Form(description="Page number (1-indexed)", ge=1)] = None,
     overwrite: Annotated[bool, Form(description="Allow overwriting existing page")] = False,
-    category: Annotated[
-        DocumentCategory | None, Form(description="Type of document being uploaded")
-    ] = None,
+    category: DocumentCategoryField = None,
     trace_id: Annotated[str | None, Header(alias="X-Trace-ID")] = None,
 ) -> BuildPageUploadResponse:
     """Upload a single page for multi-page document processing."""
@@ -247,9 +242,7 @@ async def upload_document_build_pages_batch(
     files: list[UploadFile],
     build_id: str,
     auth: AuthUser,
-    category: Annotated[
-        DocumentCategory | None, Form(description="Type of document being uploaded")
-    ] = None,
+    category: DocumentCategoryField = None,
     trace_id: Annotated[str | None, Header(alias="X-Trace-ID")] = None,
 ) -> BuildPagesBatchResponse:
     """Upload multiple pages to a document build in one request."""
@@ -358,8 +351,7 @@ async def _submit_build(
     if build_metadata and build_metadata.get(DocumentBuilds.AI_CONSENT_FLAG) is False:
         job_id = str(uuid.uuid4())
         ddb_key = f"document-build-{build_id}-{job_id}.pdf"
-        category_str = build_metadata.get(DocumentBuilds.CATEGORY)
-        category = DocumentCategory(category_str) if category_str else None
+        category = build_metadata.get(DocumentBuilds.CATEGORY)
 
         record = DocumentRecord(
             ddb_key=ddb_key,
@@ -372,6 +364,7 @@ async def _submit_build(
             external_system_id=build_metadata.get(DocumentBuilds.EXTERNAL_SYSTEM_ID),
             ai_consent_flag=False,
             upload_method=UploadMethod.BUILD,
+            upload_source=build_metadata.get(DocumentBuilds.UPLOAD_SOURCE),
             tenant_id=build_metadata[DocumentBuilds.TENANT_ID],
             api_key_name=build_metadata[DocumentBuilds.API_KEY_NAME],
         )
@@ -416,8 +409,7 @@ async def _submit_build(
 
         job_id = str(uuid.uuid4())
         unique_file_name = f"document-build-{build_id}-{uuid.uuid4()}.pdf"
-        category_str = next((p.category for p in pages if p.category), None)
-        category = DocumentCategory(category_str) if category_str else None
+        category = next((p.category for p in pages if p.category), None)
 
         # Pre-insert a tenant-stamped job record before upload. The doc-processor's
         # upsert_initial_ddb_record (keyed by basename, with no tenant) updates this
@@ -433,6 +425,9 @@ async def _submit_build(
                 trace_id=trace_id,
                 content_type="application/pdf",
                 upload_method=UploadMethod.BUILD,
+                upload_source=build_metadata.get(DocumentBuilds.UPLOAD_SOURCE)
+                if build_metadata
+                else None,
                 tenant_id=tenant_id,
                 api_key_name=api_key_name,
             ),

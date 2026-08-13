@@ -148,6 +148,26 @@ def set_ddb_doc_metadata_table_env_vars(ddb_doc_metadata_table_resource, monkeyp
 
 
 @pytest.fixture
+def document_categories_table(aws_credentials, monkeypatch):
+    with mock_aws():
+        dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+        table = dynamodb.create_table(
+            TableName="document-categories",
+            KeySchema=[
+                {"AttributeName": "tenantId", "KeyType": "HASH"},
+                {"AttributeName": "categoryName", "KeyType": "RANGE"},
+            ],
+            AttributeDefinitions=[
+                {"AttributeName": "tenantId", "AttributeType": "S"},
+                {"AttributeName": "categoryName", "AttributeType": "S"},
+            ],
+            BillingMode="PAY_PER_REQUEST",
+        )
+        monkeypatch.setenv(EnvVars.DOCUMENT_CATEGORIES_TABLE_NAME, table.name)
+        yield table
+
+
+@pytest.fixture
 def tenants_table(aws_credentials, monkeypatch):
     with mock_aws():
         dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
@@ -158,6 +178,26 @@ def tenants_table(aws_credentials, monkeypatch):
             BillingMode="PAY_PER_REQUEST",
         )
         monkeypatch.setenv(EnvVars.TENANTS_TABLE_NAME, table.name)
+        yield table
+
+
+@pytest.fixture
+def tenant_request_counts_table(aws_credentials, monkeypatch):
+    with mock_aws():
+        dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+        table = dynamodb.create_table(
+            TableName="tenant-request-counts",
+            KeySchema=[
+                {"AttributeName": "tenantId", "KeyType": "HASH"},
+                {"AttributeName": "date", "KeyType": "RANGE"},
+            ],
+            AttributeDefinitions=[
+                {"AttributeName": "tenantId", "AttributeType": "S"},
+                {"AttributeName": "date", "AttributeType": "S"},
+            ],
+            BillingMode="PAY_PER_REQUEST",
+        )
+        monkeypatch.setenv(EnvVars.TENANT_REQUEST_COUNTS_TABLE_NAME, table.name)
         yield table
 
 
@@ -175,6 +215,7 @@ def audit_events_table(aws_credentials, monkeypatch):
                 {"AttributeName": "tenantId", "AttributeType": "S"},
                 {"AttributeName": "timestamp#eventId", "AttributeType": "S"},
                 {"AttributeName": "action", "AttributeType": "S"},
+                {"AttributeName": "actorEmail", "AttributeType": "S"},
             ],
             GlobalSecondaryIndexes=[
                 {
@@ -184,7 +225,15 @@ def audit_events_table(aws_credentials, monkeypatch):
                         {"AttributeName": "timestamp#eventId", "KeyType": "RANGE"},
                     ],
                     "Projection": {"ProjectionType": "ALL"},
-                }
+                },
+                {
+                    "IndexName": "actor-email-timestamp-index",
+                    "KeySchema": [
+                        {"AttributeName": "actorEmail", "KeyType": "HASH"},
+                        {"AttributeName": "timestamp#eventId", "KeyType": "RANGE"},
+                    ],
+                    "Projection": {"ProjectionType": "ALL"},
+                },
             ],
             BillingMode="PAY_PER_REQUEST",
         )

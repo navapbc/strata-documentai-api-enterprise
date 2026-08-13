@@ -4,7 +4,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = ">= 5.81.0, < 6.52.1"
+      version = ">= 5.81.0, < 6.55.1"
     }
     awscc = {
       source  = "hashicorp/awscc"
@@ -170,6 +170,14 @@ module "tenants" {
   hash_key   = "tenantId"
 }
 
+module "tenant_request_counts" {
+  source        = "../../modules/nosql"
+  table_name    = "${local.service_name}-tenant-request-counts"
+  hash_key      = "tenantId"
+  sort_key      = "date"
+  ttl_attribute = "ttl"
+}
+
 module "audit_events" {
   source        = "../../modules/nosql"
   table_name    = "${local.service_name}-audit-events"
@@ -184,7 +192,14 @@ module "audit_events" {
       hash_key_type = "S"
       sort_key      = "timestamp#eventId"
       sort_key_type = "S"
-    }
+    },
+    {
+      name          = "actor-email-timestamp-index"
+      hash_key      = "actorEmail"
+      hash_key_type = "S"
+      sort_key      = "timestamp#eventId"
+      sort_key_type = "S"
+    },
   ]
 }
 module "extraction_rules" {
@@ -296,28 +311,38 @@ module "config" {
   prefix = local.ssm_prefix
 
   parameters = {
-    "feature-flags/preclassification-based-routing" = "false"
-    "feature-flags/skip-bda-if-unclassified" = "false"
+    "feature-flags/preclassification-based-routing"             = "false"
+    "feature-flags/skip-bda-if-unclassified"                    = "false"
     "feature-flags/enable-preclassification-blueprint-matching" = "true"
-    "feature-flags/document-crop"                   = "true"
-    "feature-flags/textract-identity-enabled"       = "true"
-    "feature-flags/enable-blur-detection"            = "true"
-    "feature-flags/enforce-blur-rejection"           = "true"
+    "feature-flags/document-crop"                               = "true"
+    "feature-flags/textract-identity-enabled"                   = "true"
+    "feature-flags/enable-blur-detection"                       = "true"
+    "feature-flags/enforce-blur-rejection"                      = "true"
+    "feature-flags/include-missing-geo-with-missing-fields"     = "true"
+    "feature-flags/flag-multiple-documents-in-multipage"        = "true"
+    # Thresholds
     # Vision model ids - swappable at runtime via SSM (no redeploy). Kept as
     # separate params so preclassification and bbox detection can be tuned apart.
-    "models/classification-model-id"    = "us.amazon.nova-lite-v1:0"
-    "models/bounding-box-model-id"      = "us.amazon.nova-lite-v1:0"
+    #   Lite  - vision tasks (preclassification, blueprint match: model sees the image)
+    #   Pro   - blur empty-quadrant check (spatial reasoning over image crops)
+    #   Micro - supplemental extraction: text-only field matching over Textract WORD
+    #           blocks (no image sent), cheapest/fastest for basic text-in/text-out
+    "models/classification-model-id"          = "us.amazon.nova-pro-v1:0"
+    "models/bounding-box-model-id"            = "us.amazon.nova-lite-v1:0"
+    "models/blur-quadrant-model-id"           = "us.amazon.nova-pro-v1:0"
     "models/supplemental-extraction-model-id" = "us.amazon.nova-micro-v1:0"
   }
 
   allowed_patterns = {
-    "feature-flags/preclassification-based-routing" = "^(true|false)$"
-    "feature-flags/skip-bda-if-unclassified" = "^(true|false)$"
+    "feature-flags/preclassification-based-routing"             = "^(true|false)$"
+    "feature-flags/skip-bda-if-unclassified"                    = "^(true|false)$"
     "feature-flags/enable-preclassification-blueprint-matching" = "^(true|false)$"
-    "feature-flags/document-crop"                   = "^(true|false)$"
-    "feature-flags/textract-identity-enabled"       = "^(true|false)$"
-    "feature-flags/enable-blur-detection"            = "^(true|false)$"
-    "feature-flags/enforce-blur-rejection"           = "^(true|false)$"
+    "feature-flags/document-crop"                               = "^(true|false)$"
+    "feature-flags/textract-identity-enabled"                   = "^(true|false)$"
+    "feature-flags/enable-blur-detection"                       = "^(true|false)$"
+    "feature-flags/enforce-blur-rejection"                      = "^(true|false)$"
+    "feature-flags/include-missing-geo-with-missing-fields"     = "^(true|false)$"
+    "feature-flags/flag-multiple-documents-in-multipage"        = "^(true|false)$"
   }
 }
 
@@ -433,7 +458,7 @@ module "api_gateway" {
   timeout       = 30
   memory_size   = 1024
 
-  environment_variables = local.lambda_env_vars
+  environment_variables = local.api_lambda_env_vars
 
   policy_arns = local.lambda_policy_arns
 }
@@ -442,6 +467,20 @@ module "api_gateway" {
 
 locals {
   lambda_image_uri = "${module.ecr.repository_url}:${var.image_tag}"
+
+  # CORS origins are derived from the managed admin/demo CloudFront
+  # distributions so they can never drift to a wildcard or a stale value.
+  # extra_cors_allowed_origins is the plan/apply injection point for anything
+  # not managed here (e.g. http://localhost:3000 during UI development).
+  #
+  # Enforced by the FastAPI app (Starlette CORSMiddleware), not the gateway:
+  # the single $default route forwards OPTIONS preflight to Lambda, so the app
+  # is the only layer that can answer it. Passed only to the API Lambda via
+  # api_lambda_env_vars below.
+  cors_allowed_origins = concat(
+    [module.admin_ui.url, module.demo_ui.url],
+    var.extra_cors_allowed_origins,
+  )
 
   lambda_env_vars = {
     ENVIRONMENT                                               = var.environment
@@ -452,6 +491,7 @@ locals {
     DOCUMENTAI_DOCUMENT_METADATA_TENANT_INDEX_NAME            = local.gsi_tenant_id
     API_KEYS_TABLE_NAME                                       = module.api_keys.table_name
     TENANTS_TABLE_NAME                                        = module.tenants.table_name
+    TENANT_REQUEST_COUNTS_TABLE_NAME                          = module.tenant_request_counts.table_name
     AUDIT_EVENTS_TABLE_NAME                                   = module.audit_events.table_name
     EXTRACTION_RULES_TABLE_NAME                               = module.extraction_rules.table_name
     DOCUMENT_CATEGORIES_TABLE_NAME                            = module.document_categories.table_name
@@ -484,6 +524,7 @@ locals {
     BDA_REGION                                                = var.bda_region
     BEDROCK_CLASSIFICATION_MODEL_ID_PARAM                     = "${local.ssm_prefix}/models/classification-model-id"
     BEDROCK_BOUNDING_BOX_MODEL_ID_PARAM                       = "${local.ssm_prefix}/models/bounding-box-model-id"
+    BEDROCK_BLUR_QUADRANT_MODEL_ID_PARAM                      = "${local.ssm_prefix}/models/blur-quadrant-model-id"
     BEDROCK_SUPPLEMENTAL_EXTRACTION_MODEL_ID_PARAM            = "${local.ssm_prefix}/models/supplemental-extraction-model-id"
     SSM_PREFIX                                                = local.ssm_prefix
     MAX_BDA_INVOKE_RETRY_ATTEMPTS                             = local.max_bda_invoke_retry_attempts
@@ -493,6 +534,20 @@ locals {
     COGNITO_USER_POOL_ID                                      = module.identity_provider.user_pool_id
     COGNITO_CLIENT_ID                                         = module.identity_provider.client_id
   }
+
+  # API Lambda env: the shared worker map, minus the Athena/Glue vars that only
+  # the metrics-aggregator/usage-report workers read, plus CORS_ALLOWED_ORIGINS.
+  # Dropping the worker-only vars keeps the API function under the 4KB Lambda
+  # env limit once CORS is added. (Workers keep lambda_env_vars unchanged.)
+  api_lambda_env_vars = merge(
+    {
+      for k, v in local.lambda_env_vars : k => v
+      if !contains(["ATHENA_WORKGROUP_NAME", "GLUE_DATABASE_NAME", "DDB_RAW_DATA_TABLE_NAME"], k)
+    },
+    {
+      CORS_ALLOWED_ORIGINS = jsonencode(local.cors_allowed_origins)
+    },
+  )
 
   lambda_policy_arns = {
     data_access         = aws_iam_policy.data_access.arn
@@ -566,6 +621,8 @@ data "aws_iam_policy_document" "data_access" {
       "${module.api_keys.table_arn}/index/*",
       "${module.tenants.table_arn}",
       "${module.tenants.table_arn}/index/*",
+      "${module.tenant_request_counts.table_arn}",
+      "${module.tenant_request_counts.table_arn}/index/*",
       "${module.extraction_rules.table_arn}",
       "${module.extraction_rules.table_arn}/index/*",
       "${module.document_categories.table_arn}",
@@ -592,7 +649,7 @@ data "aws_iam_policy_document" "data_access" {
     resources = concat(
       [for m in [
         module.document_metadata, module.api_keys, module.tenants,
-        module.extraction_rules, module.document_categories,
+        module.tenant_request_counts, module.extraction_rules, module.document_categories,
         module.document_batches, module.document_builds, module.audit_events,
       ] : m.kms_key_arn],
       [
@@ -724,6 +781,7 @@ data "aws_iam_policy_document" "supporting_services" {
       "cognito-idp:AdminSetUserPassword",
       "cognito-idp:ListUsers",
       # User-management endpoints (super-admin only):
+      "cognito-idp:ListUsersInGroup",
       "cognito-idp:AdminListGroupsForUser",
       "cognito-idp:AdminAddUserToGroup",
       "cognito-idp:AdminRemoveUserFromGroup",

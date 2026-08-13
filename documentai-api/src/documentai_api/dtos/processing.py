@@ -3,15 +3,13 @@
 from dataclasses import dataclass
 from decimal import Decimal
 
-from documentai_api.config.constants import DocumentCategory
-
 
 @dataclass
 class InternalApiResponse:
     """Shared API response model."""
 
     validation_passed: bool
-    document_category: DocumentCategory | None
+    document_category: str | None
     matched_document_class: str | None
     response_code: str
     response_message: str
@@ -56,6 +54,8 @@ class OptimizationResult:
     file_size_bytes: int | None = None
     too_large: bool = False
     failed: bool = False
+    crop_block_duration_seconds: Decimal | None = None
+    write_duration_seconds: Decimal | None = None
 
 
 @dataclass

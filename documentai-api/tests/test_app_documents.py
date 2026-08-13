@@ -17,6 +17,11 @@ def _disable_auth(disable_auth):
     pass
 
 
+@pytest.fixture(autouse=True)
+def _bypass_write_limit(mocker):
+    mocker.patch("documentai_api.app_documents.increment_and_check")
+
+
 def test_document_upload_no_file(api_client):
     response = api_client.post("/v1/documents")
     assert response.status_code == 422
@@ -74,6 +79,25 @@ def test_get_document_results_in_progress(api_client, mocker):
     assert "in progress" in data["message"].lower()
 
 
+def test_get_document_results_not_started_reports_awaiting(api_client, mocker):
+    """A not-yet-picked-up job reports 'awaiting', not the misleading 'in progress'."""
+    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status.return_value = JobStatus(
+        ddb_record={"fileName": "test.pdf", "tenantId": "test-tenant"},
+        object_key="test.pdf",
+        process_status="not_started",
+        v1_response_json=None,
+    )
+
+    response = api_client.get(f"/v1/documents/{TEST_JOB_ID}")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["jobStatus"] == "not_started"
+    assert "awaiting" in data["message"].lower()
+    assert "in progress" not in data["message"].lower()
+
+
 def test_create_document_invalid_file_type(api_client, empty_zip_bytes):
     """Test document upload with invalid file type."""
     files = {"file": ("test.zip", empty_zip_bytes, "application/zip")}
@@ -126,6 +150,20 @@ def test_create_document_with_external_fields(api_client, blank_pdf_bytes, mocke
     assert record.external_document_id == "test-ext-doc-id"
     assert record.external_system_id == "test-ext-sys-id"
     assert record.ai_consent_flag is True
+
+
+@pytest.mark.parametrize("upload_source", ["desktop", "mobile", None])
+def test_create_document_passes_upload_source(api_client, blank_pdf_bytes, mocker, upload_source):
+    """upload_source is forwarded to the DocumentRecord."""
+    mock_insert = mocker.patch("documentai_api.app_documents.insert_minimal_ddb_record")
+
+    files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
+    data = {"upload_source": upload_source} if upload_source else {}
+    response = api_client.post("/v1/documents", files=files, data=data)
+
+    assert response.status_code == 202
+    record = mock_insert.call_args[0][0]
+    assert record.upload_source == upload_source
 
 
 def test_create_document_ai_consent_declined(api_client, blank_pdf_bytes, mocker):
@@ -210,7 +248,7 @@ def test_create_document_custom_trace_id(api_client, blank_pdf_bytes):
 def test_create_document_upload_failure_classifies_record(api_client, blank_pdf_bytes, mocker):
     """Test unexpected upload failure marks DDB record as failed."""
     mocker.patch("documentai_api.app_documents.insert_minimal_ddb_record")
-    mock_classify = mocker.patch("documentai_api.utils.document_lifecycle.classify_as_failed")
+    mock_classify = mocker.patch("documentai_api.utils.document_classification.classify_as_failed")
     mocker.patch(
         "documentai_api.utils.uploads.upload_document_for_processing",
         side_effect=RuntimeError("S3 exploded"),
@@ -229,7 +267,7 @@ def test_create_document_conversion_failure(api_client, blank_pdf_bytes, mocker)
     from documentai_api.utils.uploads import ImageConversionError
 
     mocker.patch("documentai_api.app_documents.insert_minimal_ddb_record")
-    mocker.patch("documentai_api.utils.document_lifecycle.classify_as_conversion_failed")
+    mocker.patch("documentai_api.utils.document_classification.classify_as_conversion_failed")
     mocker.patch(
         "documentai_api.utils.uploads.upload_document_for_processing",
         side_effect=ImageConversionError("Cannot convert"),
@@ -292,6 +330,25 @@ def test_search_documents_in_progress(api_client, mocker):
     results = response.json()["results"]
     assert results[0]["jobStatus"] == "started"
     assert "in progress" in results[0]["message"].lower()
+
+
+def test_search_documents_not_started_reports_awaiting(api_client, mocker):
+    """Search reports 'awaiting' for a not-yet-picked-up job, not 'in progress'."""
+    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status.return_value = JobStatus(
+        ddb_record={"fileName": "test.pdf", "tenantId": "test-tenant"},
+        object_key="test.pdf",
+        process_status="not_started",
+        v1_response_json=None,
+    )
+
+    response = api_client.post("/v1/documents/search", json={"jobIds": ["job-1"]})
+
+    assert response.status_code == 200
+    results = response.json()["results"]
+    assert results[0]["jobStatus"] == "not_started"
+    assert "awaiting" in results[0]["message"].lower()
+    assert "in progress" not in results[0]["message"].lower()
 
 
 def test_search_documents_empty_list(api_client):
@@ -904,7 +961,7 @@ def test_documents_wait_conversion_failed_skips_poll(api_client, blank_pdf_bytes
     from documentai_api.utils.uploads import ImageConversionError
 
     mocker.patch("documentai_api.app_documents.insert_minimal_ddb_record")
-    mocker.patch("documentai_api.utils.document_lifecycle.classify_as_conversion_failed")
+    mocker.patch("documentai_api.utils.document_classification.classify_as_conversion_failed")
     mocker.patch(
         "documentai_api.utils.uploads.upload_document_for_processing",
         side_effect=ImageConversionError("Cannot convert"),

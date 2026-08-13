@@ -7,7 +7,7 @@ from documentai_api.config.constants import ApiVisualizationTag
 from documentai_api.logging import get_logger
 from documentai_api.models.auth_event import AuthEventRequest
 from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
-from documentai_api.utils.audit import log_event
+from documentai_api.utils.audit_log import log_event
 from documentai_api.utils.auth import get_user_context_with_fallback
 
 logger = get_logger(__name__)
@@ -34,10 +34,13 @@ async def report_auth_event(
     if not audit_action:
         return  # Silently ignore unknown actions
 
-    # Build a claims-like dict for log_event
+    # Use the verified identity from the auth context, not the caller-supplied
+    # body.email, to prevent actor identity spoofing in audit records.
+    verified_actor = auth.api_key_name
+
     claims = {
-        "sub": body.email or auth.api_key_name,
-        "email": body.email or auth.api_key_name,
+        "sub": verified_actor,
+        "email": verified_actor,
     }
 
     try:
@@ -45,7 +48,7 @@ async def report_auth_event(
             claims=claims,
             action=audit_action,
             target_type=AuditTargetType.SESSION,
-            target_id=body.email or auth.api_key_name,
+            target_id=verified_actor,
             tenant_id=auth.tenant_id,
             metadata=body.metadata,
         )

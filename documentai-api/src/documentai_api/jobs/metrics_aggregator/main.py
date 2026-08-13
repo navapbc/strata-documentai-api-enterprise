@@ -17,12 +17,16 @@ from documentai_api.config.constants import (
     METRICS_AGG_DDB_DAILY_S3_PREFIX,
     METRICS_AGG_DDB_MONTHLY_S3_PREFIX,
     AthenaQueryStatus,
+    ExtractMethod,
+    FileValidation,
+    MetricsDisplayValues,
     TimingMetrics,
 )
 from documentai_api.config.env import get_aws_config
 from documentai_api.logging import get_logger
 from documentai_api.utils.aws_client_factory import AWSClientFactory
 from documentai_api.utils.dates import validate_yyyymmdd_format
+from documentai_api.utils.response_codes import ResponseCodes
 
 logger = get_logger(__name__)
 
@@ -163,9 +167,15 @@ def _initialize_stats(target_date: str) -> dict[str, Any]:
         "date": target_date,
         "total_records": 0,
         "total_bda_invocations": 0,
+        "total_textract_extractions": 0,
+        "total_extraction_invocations": 0,
+        "total_documents_recognized": 0,
         "by_status": {},
         "by_classification": {},
         "by_response_code": {},
+        "by_file_type": {},
+        "by_user_category": {},
+        "by_upload_method": {},
         "by_hour": {},
         "timing_stats": {
             "total_processing_time_avg": 0,
@@ -206,9 +216,38 @@ def _process_record(record: dict[str, Any], stats: dict[str, Any]) -> None:
     response_code = record.get("response_code") or "null"
     stats["by_response_code"][response_code] = stats["by_response_code"].get(response_code, 0) + 1
 
+    # count by file type (derived from content_type)
+    content_type = record.get("content_type") or ""
+    file_type = FileValidation.get_extension(content_type, unknown="unknown")
+    stats["by_file_type"][file_type] = stats["by_file_type"].get(file_type, 0) + 1
+
+    # count by user-provided category
+    user_category = record.get("user_provided_document_category") or ""
+    if MetricsDisplayValues.is_legacy_unset(user_category):
+        user_category = MetricsDisplayValues.NOT_SPECIFIED
+    stats["by_user_category"][user_category] = stats["by_user_category"].get(user_category, 0) + 1
+
+    # count by upload method
+    upload_method = record.get("upload_method") or "unknown"
+    stats["by_upload_method"][upload_method] = stats["by_upload_method"].get(upload_method, 0) + 1
+
     # count BDA invocations
     if record.get("bda_invocation_arn"):
         stats["total_bda_invocations"] += 1
+
+    # count all extraction invocations (BDA or Textract)
+    if (
+        record.get("bda_invocation_arn")
+        or record.get("extraction_method") == ExtractMethod.TEXTRACT
+    ):
+        stats["total_extraction_invocations"] += 1
+
+    if record.get("extraction_method") == ExtractMethod.TEXTRACT:
+        stats["total_textract_extractions"] += 1
+
+    # count docs that reached validation (blueprint matched or Textract)
+    if ResponseCodes.is_document_type_identified(response_code):
+        stats["total_documents_recognized"] += 1
 
     # count by hour
     created_at = record.get("created_at")

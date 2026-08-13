@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from documentai_api.logging import get_logger
@@ -11,6 +11,7 @@ logger = get_logger(__name__)
 class ExtractionRuleResult:
     fields: dict[str, Any]
     missing_required_field_list: list[str]
+    required_field_list: list[str] = field(default_factory=list)
 
 
 _table = ExtractionRulesTable()
@@ -49,7 +50,10 @@ def delete_rule(tenant_id: str, document_type: str) -> bool:
 
 
 def apply_extraction_rules(
-    tenant_id: str, document_type: str, fields: dict[str, Any]
+    tenant_id: str,
+    document_type: str,
+    fields: dict[str, Any],
+    missing_fields: list[str] | None = None,
 ) -> ExtractionRuleResult:
     rules = get_rules(tenant_id, document_type)
 
@@ -61,7 +65,33 @@ def apply_extraction_rules(
     optional = set(rule.get("optionalFields", []))
     allowed = required | optional
 
-    filtered = {k: v for k, v in fields.items() if k in allowed}
+    absent = set(missing_fields or []) & required
+    filtered = {k: v for k, v in fields.items() if k in allowed and k not in absent}
     missing = sorted(required - set(filtered.keys()))
 
-    return ExtractionRuleResult(fields=filtered, missing_required_field_list=missing)
+    return ExtractionRuleResult(
+        fields=filtered, missing_required_field_list=missing, required_field_list=sorted(required)
+    )
+
+
+def get_missing_required_fields(
+    tenant_id: str | None,
+    document_type: str | None,
+    empty_fields: list[str],
+    fields_missing_geometry: list[str],
+) -> tuple[list[str], list[str]] | None:
+    """Return (missing_required, all_required) per extraction rules at processing time.
+
+    Returns None if no rules are configured.
+    """
+    if not tenant_id or not document_type:
+        return None
+
+    rules = get_rules(tenant_id, document_type)
+
+    if not rules:
+        return None
+    rule = rules[0]
+    required = set(rule.get("requiredFields", []))
+    missing = sorted((set(empty_fields) | set(fields_missing_geometry)) & required)
+    return missing, sorted(required)

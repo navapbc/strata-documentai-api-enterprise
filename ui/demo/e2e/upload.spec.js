@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { authenticator } from "otplib";
+import { generateSync } from "otplib";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -30,7 +30,7 @@ test.describe("demo upload (real BDA)", () => {
 
     // --- MFA (TOTP) challenge: compute the same code the authenticator app would ---
     await expect(page.locator("#mfa-card")).toBeVisible();
-    await page.fill("#mfa-code", authenticator.generate(DEMO_E2E_TOTP_SECRET));
+    await page.fill("#mfa-code", generateSync({ secret: DEMO_E2E_TOTP_SECRET }));
     await page.click('#mfa-form button[type="submit"]');
 
     // --- Upload view ---

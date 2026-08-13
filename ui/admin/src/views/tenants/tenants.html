@@ -1,16 +1,19 @@
-<table id="tenants-table">
-  <thead>
-    <tr>
-      <th data-col="tenantId">Tenant ID</th>
-      <th data-col="displayName">Display name</th>
-      <th data-col="primaryContact">Primary contact</th>
-      <th>Status</th>
-      <th data-col="createdAt">Created</th>
-      <th style="width: 1px; white-space: nowrap">Actions</th>
-    </tr>
-  </thead>
-  <tbody id="tenants-tbody"></tbody>
-</table>
+<div class="table-scroll">
+  <table id="tenants-table" class="hidden">
+    <thead>
+      <tr>
+        <th data-col="tenantId">Tenant ID</th>
+        <th data-col="displayName">Display name</th>
+        <th data-col="extractionConfidenceFloor">Min. Confidence</th>
+        <th data-col="maxWritesPerDay">Day limit</th>
+        <th data-col="maxWritesPerMonth">Month limit</th>
+        <th>Status</th>
+        <th style="width: 1px; white-space: nowrap">Actions</th>
+      </tr>
+    </thead>
+    <tbody id="tenants-tbody"></tbody>
+  </table>
+</div>
 <p id="no-tenants" class="empty-state hidden">No tenants found.</p>
 
 <!-- Tenant Create/Edit Modal -->
@@ -35,6 +38,45 @@
 
       <label for="tenant-contact">Primary contact (optional)</label>
       <input type="email" id="tenant-contact" placeholder="ops@acme.com" />
+
+      <label for="tenant-max-writes-per-day">Max uploads per day (optional)</label>
+      <input
+        type="number"
+        id="tenant-max-writes-per-day"
+        min="1"
+        placeholder="e.g. 1000"
+        autocomplete="off"
+        data-1p-ignore
+        data-lpignore="true"
+      />
+
+      <label for="tenant-max-writes-per-month">Max uploads per month (optional)</label>
+      <input
+        type="number"
+        id="tenant-max-writes-per-month"
+        min="1"
+        placeholder="e.g. 20000"
+        autocomplete="off"
+        data-1p-ignore
+        data-lpignore="true"
+      />
+
+      <label for="tenant-confidence-floor">Min. confidence %</label>
+      <p class="field-hint">
+        Minimum average field confidence (0–100%). Extractions below this are flagged. Leave blank
+        to use the platform default.
+      </p>
+      <input
+        type="number"
+        id="tenant-confidence-floor"
+        min="0"
+        max="100"
+        step="1"
+        placeholder="e.g. 65"
+        autocomplete="off"
+        data-1p-ignore
+        data-lpignore="true"
+      />
 
       <p id="tenant-form-error" class="error hidden"></p>
 

@@ -2,7 +2,7 @@
 # api_responses_documents.py) once it grows further. Keeping in one file for now
 # for discoverability.
 
-from typing import Any
+from typing import Any, Self
 
 from pydantic import AwareDatetime
 
@@ -30,9 +30,11 @@ class JobStatusResponse(BaseApiResponse):
     response_message: str | None = None
     missing_required_field_list: list[str] | None = None
     below_extraction_confidence_floor: bool | None = None
+    user_provided_document_category: str | None = None
+    inferred_document_type: str | None = None
 
     @classmethod
-    def from_v1(cls, v1_response: dict[str, Any]) -> "JobStatusResponse":
+    def from_v1(cls, v1_response: dict[str, Any]) -> Self:
         """Construct from a stored/built v1 response dict, applying presentation nesting."""
         from documentai_api.utils.response_builder import present_v1_response
 

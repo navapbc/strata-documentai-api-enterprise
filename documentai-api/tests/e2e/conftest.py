@@ -7,6 +7,7 @@ import pytest
 
 from documentai_api.logging import get_logger
 from documentai_api.utils.auth import _hash_key, deactivate_api_key, generate_api_key
+from documentai_api.utils.aws_client_factory import AWSClientFactory
 
 E2E_TENANT_BASE = "e2e-test-tenant"
 logger = get_logger(__name__)
@@ -29,12 +30,14 @@ def pytest_collection_modifyitems(items):
     """Mark tests under tests/e2e/ as e2e so the default suite skips them.
 
     Also applies flaky(reruns=1) to retry environmental failures (cold starts,
-    BDA latency spikes, network blips).
+    BDA latency spikes, network blips). Skipped if the test already has a flaky
+    marker (e.g. per-case reruns_override in expected.json).
     """
     for item in items:
         if _E2E_DIR in Path(item.fspath).parents:
             item.add_marker(pytest.mark.e2e)
-            item.add_marker(pytest.mark.flaky(reruns=1))
+            if not item.get_closest_marker("flaky"):
+                item.add_marker(pytest.mark.flaky(reruns=1))
 
 
 @pytest.fixture(scope="session")
@@ -185,6 +188,46 @@ def cleanup_e2e_tenant(api_key, e2e_tenant_id):
     """
     yield
     _wipe_e2e_tenant(e2e_tenant_id)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _ensure_multipage_flagging_enabled(monkeypatch_session):
+    """Force FLAG_MULTIPLE_DOCUMENTS_IN_MULTIPAGE to true for the e2e session.
+
+    Restores the original value (or deletes the parameter if it didn't exist)
+    after the session. Ensures the 401 multipage test is not sensitive to
+    whatever the flag is set to in the target environment.
+    """
+    from documentai_api.config.constants import FeatureFlags
+    from documentai_api.config.env import get_aws_config
+    from documentai_api.services import ssm as ssm_service
+    from documentai_api.utils.cache import get_cache
+
+    config = get_aws_config()
+
+    if not config.ssm_prefix:
+        yield
+        return
+
+    param = f"{config.ssm_prefix}/feature-flags/{FeatureFlags.FLAG_MULTIPLE_DOCUMENTS_IN_MULTIPAGE}"
+
+    try:
+        original = ssm_service.get_parameter(param)
+    except Exception:
+        original = None
+
+    ssm_service.put_parameter(param, "true")
+    get_cache().delete(f"ssm:{param}")
+
+    try:
+        yield
+    finally:
+        if original is not None:
+            ssm_service.put_parameter(param, original)
+        else:
+            AWSClientFactory.get_ssm_client().delete_parameter(Name=param)
+
+        get_cache().delete(f"ssm:{param}")
 
 
 @pytest.fixture(scope="session", autouse=True)

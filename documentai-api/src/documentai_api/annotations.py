@@ -7,11 +7,11 @@ Import and use directly as parameter type hints.
 from typing import Annotated, Any, Literal
 
 from fastapi import Depends, Form, Header, Query
-from pydantic import StringConstraints
+from pydantic import Field, StringConstraints
 
 from documentai_api.config.constants import (
-    DocumentCategory,
     OutputFormatType,
+    UploadSource,
 )
 from documentai_api.utils.auth import (
     UserContext,
@@ -57,8 +57,24 @@ AuthUserWithFallback = Annotated[UserContext, Depends(get_user_context_with_fall
 TraceId = Annotated[str | None, Header(alias="X-Trace-ID")]
 
 # Common form fields
-CategoryField = Annotated[
-    DocumentCategory | None, Form(description="Type of document being uploaded")
+# Tenants submit free-form categories (auto-registered per tenant in the
+# document_categories table). Validate for hygiene only - not against a fixed
+# allowlist: strip + lowercase, then enforce a safe charset and length so the
+# value is safe as a DDB sort key, cache-key segment, and preclassification
+# prompt input.
+DocumentCategoryField = Annotated[
+    str | None,
+    Form(description="Type of document being uploaded"),
+    StringConstraints(
+        strip_whitespace=True,
+        to_lower=True,
+        min_length=1,
+        max_length=64,
+        pattern=r"^[a-z0-9 _-]+$",
+    ),
+]
+UploadSourceField = Annotated[
+    UploadSource | None, Form(description="Source device type of the upload (desktop or mobile)")
 ]
 ExternalDocumentId = Annotated[
     str | None,
@@ -86,8 +102,10 @@ AiConsentFlag = Annotated[
 OutputFormat = Annotated[OutputFormatType, Query(alias="format")]
 PageLimit = Annotated[int, Query(ge=1, le=200)]
 IsoDateParam = Annotated[str | None, Query(pattern=r"^\d{4}-\d{2}-\d{2}")]
+MonthParam = Annotated[str | None, Query(pattern=r"^\d{4}-\d{2}$")]
 
 # Validated string types
 ApiKeyNameStr = Annotated[
     str, StringConstraints(pattern=r"^[a-z0-9-]+$", min_length=1, max_length=64)
 ]
+WriteLimit = Annotated[int, Field(gt=0, description="Maximum number of write requests allowed.")]

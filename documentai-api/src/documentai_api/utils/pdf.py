@@ -5,9 +5,13 @@ import io
 from PIL import Image
 from pypdf import PdfReader, PdfWriter
 
+from documentai_api.config.constants import ConfigDefaults, FileValidation
 from documentai_api.dtos.processing import PageMetadata
 from documentai_api.logging import get_logger
 from documentai_api.services import s3 as s3_service
+
+# Limit maximum image pixels to prevent pixel-flood DoS.
+Image.MAX_IMAGE_PIXELS = ConfigDefaults.MAX_IMAGE_PIXELS
 
 logger = get_logger(__name__)
 
@@ -36,15 +40,13 @@ def merge_pages_to_pdf(pages: list[PageMetadata]) -> io.BytesIO:
         # download file from S3
         file_bytes = s3_service.get_file_bytes(page.s3_bucket_name, s3_key)
 
-        # determine file type from extension
-        file_ext = s3_key.split(".")[-1].lower()
-
-        if file_ext == "pdf":
+        # determine file type from content, not extension
+        if FileValidation.is_pdf(file_bytes):
             _add_pdf_pages(writer, file_bytes)
-        elif file_ext in ["jpg", "jpeg", "png", "tiff", "tif"]:
+        elif FileValidation.is_image(file_bytes):
             _add_image_as_pdf_page(writer, file_bytes)
         else:
-            raise ValueError(f"Unsupported file type: {file_ext}")
+            raise ValueError(f"Unsupported file content for page {page.page_number}")
 
     output = io.BytesIO()
     writer.write(output)

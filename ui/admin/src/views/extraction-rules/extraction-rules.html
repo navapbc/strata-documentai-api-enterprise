@@ -1,10 +1,26 @@
-<div class="blueprints-layout">
-  <aside class="blueprints-sidebar">
-    <div id="bp-search-pane"></div>
-    <ul id="bp-list-pane" class="blueprint-list"></ul>
-  </aside>
-  <div id="bp-main-area">
+<div class="filter-layout">
+  <div class="filter-sidebar">
+    <div class="filter-field">
+      <label class="filter-field-label">Tenant</label>
+      <select id="tenant-select">
+        <option value="">All Tenants</option>
+      </select>
+    </div>
+    <div class="filter-field">
+      <label class="filter-field-label">Document Type</label>
+      <div id="bp-list-pane"></div>
+    </div>
+    <div class="filter-field">
+      <label class="filter-field-label">Field Search</label>
+      <div id="bp-search-pane"></div>
+    </div>
+  </div>
+  <div class="filter-main" id="bp-main-area">
     <div id="bp-search-results"></div>
+    <div id="bp-search-actions" style="display: none; gap: 0.5rem; margin-bottom: 0.5rem">
+      <button id="bp-save-btn" class="btn-primary btn-sm">Save Changes</button>
+      <button id="bp-discard-btn" class="btn-secondary btn-sm">Discard</button>
+    </div>
     <div id="extraction-rule-editor-pane" class="blueprints-main"></div>
   </div>
 </div>

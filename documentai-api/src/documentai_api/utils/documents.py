@@ -2,7 +2,7 @@
 
 import io
 
-from documentai_api.config.constants import ConfigDefaults
+from documentai_api.config.constants import ConfigDefaults, FileValidation
 from documentai_api.logging import get_logger
 
 logger = get_logger(__name__)
@@ -58,9 +58,15 @@ def detect_file_type(file_bytes: bytes) -> str:
 
 
 def is_password_protected(file_bytes: bytes) -> bool:
-    """Detect if PDF is password protected."""
+    """Detect whether a PDF or Office document is password protected.
+
+    A password-protected OOXML (docx/xlsx/pptx) is wrapped in an OLE2 container
+    carrying ECMA-376 encryption streams; see FileValidation for the markers.
+    """
     if detect_file_type(file_bytes) == "PDF":
         return b"/Encrypt" in file_bytes[:4096]
+    if file_bytes.startswith(FileValidation.OLE2_MAGIC):
+        return FileValidation.has_ooxml_encryption_markers(file_bytes)
     return False
 
 

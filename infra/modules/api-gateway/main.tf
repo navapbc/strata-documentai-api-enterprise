@@ -71,13 +71,10 @@ resource "aws_apigatewayv2_api" "this" {
   name          = var.function_name
   protocol_type = "HTTP"
 
-  cors_configuration {
-    allow_origins  = ["*"]
-    allow_methods  = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
-    allow_headers  = ["Content-Type", "Authorization", "API-Key", "X-Trace-ID"]
-    expose_headers = ["X-Trace-ID"]
-    max_age        = 3600
-  }
+  # CORS is handled by the FastAPI app (Starlette CORSMiddleware), not here.
+  # The single $default route forwards OPTIONS preflight to the Lambda, so the
+  # gateway can't answer preflight anyway; configuring cors here would only add
+  # a duplicate Access-Control-Allow-Origin header alongside the app's.
 }
 
 resource "aws_apigatewayv2_stage" "default" {

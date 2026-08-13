@@ -7,9 +7,19 @@
 import * as Session from "./utils/session.js";
 import * as Toast from "./utils/toast.js";
 import * as TenantContext from "./utils/tenant-context.js";
+import * as CollapsibleFilterBar from "./utils/collapsible-filter-bar.js";
 import * as HttpClient from "./services/http.js";
 import * as Auth from "./services/auth.js";
 import * as Audit from "./services/audit.js";
+
+import BADGES from "./badges.json";
+
+const _now = new Date();
+function getBadge(view) {
+  const cfg = BADGES[view];
+  if (!cfg || _now >= new Date(cfg.expiry)) return null;
+  return cfg;
+}
 
 import pendingHtml from "./views/pending/pending.html";
 import dashboardHtml from "./views/sidebar/sidebar.html";
@@ -28,7 +38,6 @@ import * as DocumentCategoriesView from "./views/document-categories/document-ca
 import * as AuditLogView from "./views/audit-log/audit-log.js";
 import * as DocumentsView from "./views/documents/documents.js";
 import * as DocumentSearchView from "./views/document-search/document-search.js";
-import * as TestDocumentsView from "./views/test-documents/test-documents.js";
 import * as UsageView from "./views/usage/usage.js";
 import * as MetricsView from "./views/metrics/metrics.js";
 import * as LoginView from "./views/login/login.js";
@@ -61,17 +70,16 @@ const app = document.getElementById("app");
 let _currentView = null;
 let _mainContent = null;
 
-// View registry: name → { module, lazyLoad }
+// View registry: name -> { module, lazyLoad }
 const VIEWS = {
   keys: { module: KeysView },
   users: { module: UsersView },
-  tenants: { module: TenantsView, hideTenantBar: true },
+  tenants: { module: TenantsView },
   "extraction-rules": { module: ExtractionRulesView },
   "doc-categories": { module: DocumentCategoriesView },
   "audit-log": { module: AuditLogView },
   documents: { module: DocumentsView },
   "document-search": { module: DocumentSearchView },
-  "test-documents": { module: TestDocumentsView },
   usage: { module: UsageView },
   metrics: { module: MetricsView },
 };
@@ -97,12 +105,37 @@ function showDashboard(session) {
   HttpClient.configure({ baseUrl: CONFIG.apiUrl, jwt: session.idToken, apiKey: "" });
   app.replaceChildren(dashboardTmpl());
   _mainContent = app.querySelector("#main-content");
+  app.querySelectorAll("[id$='-nav-badge']").forEach((b) => {
+    const view = b.id.replace("-nav-badge", "");
+    const cfg = getBadge(view);
+    if (!cfg) {
+      b.remove();
+      return;
+    }
+    b.textContent = cfg.label;
+    b.className = `nav-badge-${cfg.variant}`;
+  });
+
+  app.querySelectorAll(".nav-section").forEach((section) => {
+    const hasActiveBadge = [...section.querySelectorAll(".nav-item")].some((item) =>
+      getBadge(item.dataset.view),
+    );
+    if (!hasActiveBadge) return;
+    const header = section.querySelector(".nav-section-header");
+    if (header && !header.querySelector(".nav-section-badge-dot")) {
+      const hasNew = [...section.querySelectorAll(".nav-item")].some(
+        (item) => getBadge(item.dataset.view)?.variant === "new",
+      );
+      const dot = document.createElement("span");
+      dot.className = `nav-section-badge-dot${hasNew ? " nav-section-badge-dot--new" : ""}`;
+      header.appendChild(dot);
+    }
+  });
 
   // Connected info
   app.querySelector("#connected-url").textContent = session.email;
 
-  // Tenant context
-  TenantContext.init(app.querySelector("#global-tenant-select"));
+  // Kick off tenant list fetch so it's cached before views mount
   TenantContext.load();
 
   // Super-admin nav visibility
@@ -139,31 +172,34 @@ function showDashboard(session) {
   // Logout
   app.querySelector("#logout-btn").addEventListener("click", logout);
 
-  // Sidebar toggle (mobile)
-  const sidebarToggle = app.querySelector("#sidebar-toggle");
-  const sidebarClose = app.querySelector("#sidebar-close");
-  const sidebar = app.querySelector(".sidebar");
-  if (sidebarToggle && sidebar) {
-    const closeSidebar = () => sidebar.classList.remove("sidebar-open");
+  // Mobile bottom nav direct items
+  app.querySelectorAll(".mobile-nav-item[data-view]").forEach((item) => {
+    item.addEventListener("click", () => activateNavItem(item.dataset.view));
+  });
 
-    sidebarToggle.addEventListener("click", () => {
-      sidebar.classList.add("sidebar-open");
+  // Mobile fullscreen overlay (More)
+  const overlay = app.querySelector("#mobile-menu-overlay");
+  const closeOverlay = () => overlay?.classList.remove("open");
+  app
+    .querySelector("#mobile-more-btn")
+    ?.addEventListener("click", () => overlay?.classList.toggle("open"));
+  app.querySelector("#mobile-menu-close")?.addEventListener("click", closeOverlay);
+  app.querySelector("#logout-btn-mobile-menu")?.addEventListener("click", logout);
+  app.querySelectorAll(".mobile-menu-item[data-view]").forEach((item) => {
+    item.addEventListener("click", () => {
+      closeOverlay();
+      activateNavItem(item.dataset.view);
     });
-    if (sidebarClose) {
-      sidebarClose.addEventListener("click", closeSidebar);
-    }
-    // Close sidebar when nav item clicked (mobile)
-    sidebar.addEventListener("click", (e) => {
-      if (e.target.classList.contains("nav-item")) closeSidebar();
-    });
-    // Close sidebar when clicking outside
-    _mainContent.addEventListener("click", closeSidebar);
+  });
+  if (Session.isSuperAdmin()) {
+    app.querySelector("#mobile-menu-admin")?.classList.remove("hidden");
   }
 
-  // Restore view from hash or default to keys
-  const initialHash = location.hash.replace("#", "") || "keys";
+  // Restore view from hash, or default to documents on non-mobile
+  const initialHash = location.hash.replace("#", "");
   const initialView = initialHash.split("/")[0];
-  activateNavItem(VIEWS[initialView] ? initialView : "keys");
+  if (VIEWS[initialView]) activateNavItem(initialView);
+  else if (window.innerWidth <= 768) activateNavItem("documents");
 
   // Preload blueprint schemas so extraction-rules view renders instantly
   SchemasService.getAllFields()
@@ -182,10 +218,7 @@ function navigateTo(viewName) {
   const viewActions = document.querySelector("#view-actions");
   if (viewActions) viewActions.replaceChildren();
 
-  // Hide tenant filter bar on views that don't need it
   const entry = VIEWS[viewName];
-  const filterBar = document.querySelector(".tenant-filter-bar");
-  if (filterBar) filterBar.classList.toggle("hidden", !!entry?.hideTenantBar);
 
   if (!entry) return;
 
@@ -196,6 +229,7 @@ function navigateTo(viewName) {
   }
   entry.module.mount(_mainContent);
   _currentView = entry.module;
+  CollapsibleFilterBar.attach();
 }
 
 function activateNavItem(viewName) {
@@ -204,6 +238,12 @@ function activateNavItem(viewName) {
 
   app.querySelectorAll(".nav-item").forEach((i) => i.classList.remove("active"));
   navItem.classList.add("active");
+
+  // Sync mobile bottom nav active state
+  app.querySelectorAll(".mobile-nav-item").forEach((i) => i.classList.remove("active"));
+  app.querySelector(`.mobile-nav-item[data-view="${viewName}"]`)?.classList.add("active");
+  app.querySelectorAll(".mobile-menu-item").forEach((i) => i.classList.remove("active"));
+  app.querySelector(`.mobile-menu-item[data-view="${viewName}"]`)?.classList.add("active");
 
   // Expand parent section
   const sectionBody = navItem.closest(".nav-section-body");
@@ -218,13 +258,23 @@ function activateNavItem(viewName) {
   }
 
   const title = app.querySelector("#view-title");
-  if (title) title.textContent = navItem.textContent.trim();
+  if (title) {
+    title.textContent = (navItem.dataset.title || navItem.textContent).trim();
+    const badgeCfg = getBadge(viewName);
+    if (badgeCfg) {
+      const badge = document.createElement("span");
+      badge.className = `nav-badge-${badgeCfg.variant}`;
+      badge.textContent = badgeCfg.label;
+      title.appendChild(badge);
+    }
+  }
   navigateTo(viewName);
 }
 
 window.addEventListener("hashchange", () => {
   const viewName = location.hash.replace("#", "").split("/")[0];
-  if (VIEWS[viewName] && _mainContent) activateNavItem(viewName);
+  if (VIEWS[viewName] && _mainContent && _currentView !== VIEWS[viewName].module)
+    activateNavItem(viewName);
 });
 
 // --- Auth flow ---

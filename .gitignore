@@ -21,3 +21,6 @@ credentials
 *.tfvars.local
 crash.log
 crash.*.log
+
+# VHS tape recording artifact - cloned by api-setup-demo.tape, cleaned up in teardown
+strata-documentai-api-enterprise/

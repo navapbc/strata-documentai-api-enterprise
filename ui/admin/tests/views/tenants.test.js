@@ -7,10 +7,21 @@ function flush() {
   return new Promise((r) => setTimeout(r, 0));
 }
 
-function submitTenantForm(root, id, name, contact = "") {
+function submitTenantForm(
+  root,
+  id,
+  name,
+  contact = "",
+  confidenceFloorPct = "",
+  maxPerDay = "",
+  maxPerMonth = "",
+) {
   if (id !== undefined) root.querySelector("#tenant-id").value = id;
   root.querySelector("#tenant-name").value = name;
   root.querySelector("#tenant-contact").value = contact;
+  root.querySelector("#tenant-confidence-floor").value = confidenceFloorPct;
+  root.querySelector("#tenant-max-writes-per-day").value = maxPerDay;
+  root.querySelector("#tenant-max-writes-per-month").value = maxPerMonth;
   root.querySelector("#tenant-form").dispatchEvent(new Event("submit", { cancelable: true }));
 }
 
@@ -36,6 +47,8 @@ describe("tenants view", () => {
       getTenantId: vi.fn(() => null),
       onChange: vi.fn(() => () => {}),
       load: vi.fn(),
+      mountSelect: vi.fn(),
+      unmountSelect: vi.fn(),
     }));
     vi.doMock("../../src/utils/helpers.js", () => ({
       esc: (s) => s,
@@ -82,10 +95,17 @@ describe("tenants view", () => {
     TenantsView.mount(root);
     await flush();
 
-    submitTenantForm(root, "new-co", "New Company", "ops@new.co");
+    submitTenantForm(root, "new-co", "New Company", "ops@new.co", "65");
     await flush();
 
-    expect(mockCreate).toHaveBeenCalledWith("new-co", "New Company", "ops@new.co");
+    expect(mockCreate).toHaveBeenCalledWith(
+      "new-co",
+      "New Company",
+      "ops@new.co",
+      null,
+      null,
+      0.65,
+    );
     expect(mockToast.show).toHaveBeenCalledWith("Tenant created");
     expect(root.querySelector("#tenant-modal").classList.contains("hidden")).toBe(true);
     expect(mockList).toHaveBeenCalledTimes(2);
@@ -112,7 +132,7 @@ describe("tenants view", () => {
     TenantsView.mount(root);
     await flush();
 
-    root.querySelector(".btn-secondary").click();
+    root.querySelector(".btn-icon").click();
     expect(root.querySelector("#tenant-modal").classList.contains("hidden")).toBe(false);
     expect(root.querySelector("#tenant-id").value).toBe(tenant.tenantId);
     expect(root.querySelector("#tenant-id").disabled).toBe(true);
@@ -125,18 +145,67 @@ describe("tenants view", () => {
     TenantsView.mount(root);
     await flush();
 
-    root.querySelector(".btn-secondary").click();
-    submitTenantForm(root, undefined, "Updated Name", "new@co.com");
+    root.querySelector(".btn-icon").click();
+    submitTenantForm(root, undefined, "Updated Name", "new@co.com", "65");
     await flush();
 
     expect(mockUpdate).toHaveBeenCalledWith(tenant.tenantId, {
       displayName: "Updated Name",
       primaryContact: "new@co.com",
+      maxWritesPerDay: null,
+      maxWritesPerMonth: null,
+      extractionConfidenceFloor: 0.65,
     });
     expect(mockToast.show).toHaveBeenCalledWith("Tenant updated");
   });
 
-  // --- Deactivate ---
+  it("create form passes rate limits to service", async () => {
+    TenantsView.mount(root);
+    await flush();
+
+    submitTenantForm(root, "new-co", "New Company", "ops@new.co", "65", "500", "10000");
+    await flush();
+
+    expect(mockCreate).toHaveBeenCalledWith(
+      "new-co",
+      "New Company",
+      "ops@new.co",
+      500,
+      10000,
+      0.65,
+    );
+  });
+
+  it("edit modal prefills rate limits", async () => {
+    const tenant = buildTenant({ maxWritesPerDay: 100, maxWritesPerMonth: 3000 });
+    mockList.mockResolvedValue({ tenants: [tenant] });
+    TenantsView.mount(root);
+    await flush();
+
+    root.querySelector(".btn-icon").click();
+    expect(root.querySelector("#tenant-max-writes-per-day").value).toBe("100");
+    expect(root.querySelector("#tenant-max-writes-per-month").value).toBe("3000");
+    expect(root.querySelector("#tenant-confidence-floor").value).toBe("65");
+  });
+
+  it("edit form passes rate limits to service", async () => {
+    const tenant = buildTenant();
+    mockList.mockResolvedValue({ tenants: [tenant] });
+    TenantsView.mount(root);
+    await flush();
+
+    root.querySelector(".btn-icon").click();
+    submitTenantForm(root, undefined, "Updated Name", "new@co.com", "65", "200", "5000");
+    await flush();
+
+    expect(mockUpdate).toHaveBeenCalledWith(tenant.tenantId, {
+      displayName: "Updated Name",
+      primaryContact: "new@co.com",
+      maxWritesPerDay: 200,
+      maxWritesPerMonth: 5000,
+      extractionConfidenceFloor: 0.65,
+    });
+  });
 
   it("deactivate button opens delete modal", async () => {
     const tenant = buildTenant();
@@ -144,7 +213,7 @@ describe("tenants view", () => {
     TenantsView.mount(root);
     await flush();
 
-    root.querySelector(".btn-outline-danger").click();
+    root.querySelector(".btn-icon-danger").click();
     expect(root.querySelector("#tenant-delete-modal").classList.contains("hidden")).toBe(false);
     expect(root.querySelector("#tenant-delete-name").textContent).toBe(tenant.displayName);
   });
@@ -155,7 +224,7 @@ describe("tenants view", () => {
     TenantsView.mount(root);
     await flush();
 
-    root.querySelector(".btn-outline-danger").click();
+    root.querySelector(".btn-icon-danger").click();
     root.querySelector("#tenant-delete-confirm").click();
     await flush();
 
@@ -168,7 +237,7 @@ describe("tenants view", () => {
     TenantsView.mount(root);
     await flush();
 
-    root.querySelector(".btn-outline-danger").click();
+    root.querySelector(".btn-icon-danger").click();
     root.querySelector("#tenant-delete-cancel").click();
     expect(root.querySelector("#tenant-delete-modal").classList.contains("hidden")).toBe(true);
     expect(mockRemove).not.toHaveBeenCalled();

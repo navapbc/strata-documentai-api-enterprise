@@ -424,18 +424,55 @@ def test_users_approve_tenant_admin_requires_tenant_id(client):
 
 def test_users_change_role(client):
     _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
-    with patch("documentai_api.services.cognito.replace_role") as mock_role:
+    with (
+        patch("documentai_api.services.cognito.replace_role") as mock_role,
+        patch("documentai_api.services.cognito.set_tenant") as mock_tenant,
+    ):
         response = client.post(f"{USERS_URL}/some-user/role", json={"role": "super-admin"})
     assert response.status_code == 200
     mock_role.assert_called_once_with("some-user", "super-admin")
+    # Promoting to super-admin must clear any prior tenant scope.
+    mock_tenant.assert_called_once_with("some-user", None)
 
 
 def test_users_change_role_revoke(client):
     _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
-    with patch("documentai_api.services.cognito.replace_role") as mock_role:
+    with (
+        patch("documentai_api.services.cognito.replace_role") as mock_role,
+        patch("documentai_api.services.cognito.set_tenant") as mock_tenant,
+    ):
         response = client.post(f"{USERS_URL}/some-user/role", json={"role": None})
     assert response.status_code == 200
     mock_role.assert_called_once_with("some-user", None)
+    mock_tenant.assert_called_once_with("some-user", None)
+
+
+def test_users_change_role_to_tenant_admin_sets_tenant(client, tenants_table):
+    _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
+    tenants_table.put_item(Item={"tenantId": "new-tenant"})
+    with (
+        patch("documentai_api.services.cognito.replace_role") as mock_role,
+        patch("documentai_api.services.cognito.set_tenant") as mock_tenant,
+    ):
+        response = client.post(
+            f"{USERS_URL}/some-user/role",
+            json={"role": "tenant-admin", "tenant_id": "new-tenant"},
+        )
+    assert response.status_code == 200
+    mock_role.assert_called_once_with("some-user", "tenant-admin")
+    mock_tenant.assert_called_once_with("some-user", "new-tenant")
+
+
+def test_users_change_role_to_tenant_admin_requires_tenant(client):
+    _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
+    with (
+        patch("documentai_api.services.cognito.replace_role") as mock_role,
+        patch("documentai_api.services.cognito.set_tenant") as mock_tenant,
+    ):
+        response = client.post(f"{USERS_URL}/some-user/role", json={"role": "tenant-admin"})
+    assert response.status_code == 400
+    mock_role.assert_not_called()
+    mock_tenant.assert_not_called()
 
 
 def test_users_change_tenant(client, tenants_table):

@@ -6,7 +6,7 @@ from freezegun import freeze_time
 
 from documentai_api.config.constants import ProcessStatus
 from documentai_api.dtos.classification import ClassificationData
-from documentai_api.dtos.ddb import PreClassificationDdbFields, UpsertDdbData
+from documentai_api.dtos.ddb import InitialDdbRecord, PreClassificationDdbFields, UpdateDdbRecord
 from documentai_api.dtos.processing import InternalApiResponse
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils import ddb as ddb_util
@@ -230,26 +230,23 @@ def test_get_user_provided_document_category(
     assert category == user_provided_document_category
 
 
-@pytest.mark.parametrize(
-    "stored_value",
-    [
-        "Not specified",  # the default written by upsert_ddb when category is None
-        "unknown",  # legacy fallback from older code paths
-        "",  # empty string
-        "totally_made_up",  # anything that isn't a real enum member
-    ],
-)
-def test_get_user_provided_document_category_returns_none_for_invalid(
-    ddb_doc_metadata_table, stored_value
-):
-    """Values not matching a DocumentCategory enum member should return None, not raise."""
-    item = {
-        DocumentMetadata.FILE_NAME: "test-file",
-        DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY: stored_value,
-    }
+def test_get_user_provided_document_category_returns_none_when_absent(ddb_doc_metadata_table):
+    """A record without the category attribute yields None (no sentinel written)."""
+    item = {DocumentMetadata.FILE_NAME: "test-file"}
     ddb_doc_metadata_table.put_item(Item=item)
 
     assert ddb_util.get_user_provided_document_category("test-file") is None
+
+
+def test_get_user_provided_document_category_returns_free_form_value(ddb_doc_metadata_table):
+    """Tenant-defined free-form categories are returned as-is (no allowlist)."""
+    item = {
+        DocumentMetadata.FILE_NAME: "test-file",
+        DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY: "free-form-category",
+    }
+    ddb_doc_metadata_table.put_item(Item=item)
+
+    assert ddb_util.get_user_provided_document_category("test-file") == "free-form-category"
 
 
 def test_get_ddb_record(ddb_doc_metadata_table):
@@ -308,7 +305,11 @@ def test_update_ddb(status, has_timing, ddb_doc_metadata_table, mocker):
 
     object_key = "test-file"
 
-    ddb_util.update_ddb(object_key, status, internal_response, data)
+    ddb_util.update_ddb(
+        UpdateDdbRecord(
+            object_key=object_key, status=status, internal_api_response=internal_response, data=data
+        )
+    )
 
     item = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"]
     assert item[DocumentMetadata.PROCESS_STATUS] == status
@@ -328,10 +329,12 @@ def test_update_ddb_writes_pages_sent_and_result_processor_started_at(
     object_key = "update-ddb-new-fields"
 
     ddb_util.update_ddb(
-        object_key,
-        ProcessStatus.STARTED,
-        pages_sent_to_bda=3,
-        result_processor_started_at="2026-01-01T12:00:05+00:00",
+        UpdateDdbRecord(
+            object_key=object_key,
+            status=ProcessStatus.STARTED,
+            pages_sent_to_bda=3,
+            result_processor_started_at="2026-01-01T12:00:05+00:00",
+        )
     )
 
     item = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"]
@@ -357,7 +360,7 @@ def test_upsert_ddb(ddb_doc_metadata_table, mocker):
     object_key = "test-file"
 
     ddb_util.upsert_ddb(
-        UpsertDdbData(
+        InitialDdbRecord(
             object_key=object_key,
             original_file_name="original-test.pdf",
             user_provided_document_category="income",
@@ -419,14 +422,14 @@ def test_upsert_ddb_ttl_fixed_from_creation(ddb_doc_metadata_table):
     """TTL is stamped once at create and preserved on later upserts (not extended)."""
     object_key = "ttl-fixed-file"
 
-    ddb_util.upsert_ddb(UpsertDdbData(object_key=object_key, original_file_name="f.pdf"))
+    ddb_util.upsert_ddb(InitialDdbRecord(object_key=object_key, original_file_name="f.pdf"))
     created_ttl = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"][
         DocumentMetadata.TIME_TO_LIVE
     ]
 
     # a later upsert (simulated 5 days on) must not move the ttl
     with freeze_time("2026-01-06 12:00:00+00:00"):
-        ddb_util.upsert_ddb(UpsertDdbData(object_key=object_key, original_file_name="f.pdf"))
+        ddb_util.upsert_ddb(InitialDdbRecord(object_key=object_key, original_file_name="f.pdf"))
 
     later_ttl = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"][
         DocumentMetadata.TIME_TO_LIVE
@@ -444,7 +447,7 @@ def test_upsert_ddb_consent_set_once_not_overwritten(ddb_doc_metadata_table):
 
     # initial insert opts out
     ddb_util.upsert_ddb(
-        UpsertDdbData(object_key=object_key, original_file_name="f.pdf", ai_consent_flag=False)
+        InitialDdbRecord(object_key=object_key, original_file_name="f.pdf", ai_consent_flag=False)
     )
     assert (
         ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"][
@@ -454,7 +457,7 @@ def test_upsert_ddb_consent_set_once_not_overwritten(ddb_doc_metadata_table):
     )
 
     # a later upsert that omits consent (defaults True) must not overwrite it
-    ddb_util.upsert_ddb(UpsertDdbData(object_key=object_key, original_file_name="f.pdf"))
+    ddb_util.upsert_ddb(InitialDdbRecord(object_key=object_key, original_file_name="f.pdf"))
     assert (
         ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"][
             DocumentMetadata.AI_CONSENT_FLAG
@@ -467,7 +470,7 @@ def test_upsert_ddb_consent_defaults_true(ddb_doc_metadata_table):
     """AiConsentFlag defaults to True when the caller omits it."""
     object_key = "consent-default-file"
 
-    ddb_util.upsert_ddb(UpsertDdbData(object_key=object_key, original_file_name="f.pdf"))
+    ddb_util.upsert_ddb(InitialDdbRecord(object_key=object_key, original_file_name="f.pdf"))
 
     assert (
         ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"][
@@ -485,7 +488,7 @@ def test_upsert_ddb_required_bools_always_written(ddb_doc_metadata_table):
     """
     object_key = "required-bools-file"
 
-    ddb_util.upsert_ddb(UpsertDdbData(object_key=object_key, original_file_name="f.pdf"))
+    ddb_util.upsert_ddb(InitialDdbRecord(object_key=object_key, original_file_name="f.pdf"))
 
     item = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"]
     assert item[DocumentMetadata.IS_PASSWORD_PROTECTED] is False
@@ -501,7 +504,7 @@ def test_upsert_ddb_cold_start_false_persists(ddb_doc_metadata_table):
     object_key = "cold-start-false"
 
     ddb_util.upsert_ddb(
-        UpsertDdbData(
+        InitialDdbRecord(
             object_key=object_key,
             original_file_name="f.pdf",
             is_document_processor_cold_start=False,
@@ -519,7 +522,7 @@ def test_upsert_ddb_cold_start_true_persists(ddb_doc_metadata_table):
     object_key = "cold-start-true"
 
     ddb_util.upsert_ddb(
-        UpsertDdbData(
+        InitialDdbRecord(
             object_key=object_key,
             original_file_name="f.pdf",
             is_document_processor_cold_start=True,
@@ -573,7 +576,7 @@ def test_update_ddb_metrics_enqueue_policy(
     mocker.patch("documentai_api.utils.ddb.build_v1_api_response", return_value={})
     mock_sqs = mocker.patch("documentai_api.services.sqs.send_message")
 
-    ddb_util.update_ddb("metrics-policy-test", status)
+    ddb_util.update_ddb(UpdateDdbRecord(object_key="metrics-policy-test", status=status))
 
     if should_enqueue:
         mock_sqs.assert_called_once()
@@ -594,7 +597,7 @@ def test_upsert_ddb_metrics_enqueue_policy(
     mock_sqs = mocker.patch("documentai_api.services.sqs.send_message")
 
     ddb_util.upsert_ddb(
-        UpsertDdbData(
+        InitialDdbRecord(
             object_key="metrics-upsert-test",
             original_file_name="test.pdf",
             process_status=status.value,
@@ -631,9 +634,33 @@ def test_metrics_enqueue_contract(
     mocker.patch("documentai_api.utils.ddb.build_v1_api_response", return_value={})
     mock_sqs = mocker.patch("documentai_api.services.sqs.send_message")
 
-    ddb_util.update_ddb("metrics-contract-test", status)
+    ddb_util.update_ddb(UpdateDdbRecord(object_key="metrics-contract-test", status=status))
 
     if should_enqueue:
         mock_sqs.assert_called_once()
     else:
         mock_sqs.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("upload_source", "expected"),
+    [
+        ("mobile", "mobile"),
+        ("desktop", "desktop"),
+        (None, None),
+    ],
+)
+def test_upsert_ddb_upload_source_persists(ddb_doc_metadata_table, upload_source, expected):
+    """upload_source is written to DDB when set; absent when None."""
+    object_key = f"upload-source-{upload_source}"
+    ddb_util.upsert_ddb(
+        InitialDdbRecord(
+            object_key=object_key, original_file_name="f.pdf", upload_source=upload_source
+        )
+    )
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"]
+    if expected is None:
+        assert DocumentMetadata.UPLOAD_SOURCE not in item
+    else:
+        assert item[DocumentMetadata.UPLOAD_SOURCE] == expected

@@ -17,6 +17,11 @@ def _disable_auth(disable_auth):
     pass
 
 
+@pytest.fixture(autouse=True)
+def _mock_quota(mocker):
+    mocker.patch("documentai_api.app_batch.increment_and_check")
+
+
 @pytest.fixture
 def pdf_file():
     """Factory for a test PDF file tuple suitable for httpx files={...}."""
@@ -730,15 +735,12 @@ def test_batch_upload_category_propagation(api_client, pdf_file):
 
     assert response.status_code == 200
     # create_batch receives category
-    from documentai_api.config.constants import DocumentCategory
 
     create_kwargs = mock_create.call_args.kwargs
-    assert create_kwargs.get("category") == DocumentCategory.INCOME or (
-        mock_create.call_args[0][2] == DocumentCategory.INCOME
-    )
+    assert create_kwargs.get("category") == "income" or (mock_create.call_args[0][2] == "income")
     # insert_minimal_ddb_record receives category
     record = mock_insert.call_args[0][0]
-    assert record.category == DocumentCategory.INCOME
+    assert record.category == "income"
 
 
 # =============================================================================

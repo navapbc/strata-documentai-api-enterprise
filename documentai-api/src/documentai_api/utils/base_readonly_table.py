@@ -13,6 +13,8 @@ Subclass and declare table config to get standard read operations:
 
 from typing import Any
 
+from fastapi import HTTPException, status
+
 from documentai_api.config.env import get_aws_config
 from documentai_api.logging import get_logger
 from documentai_api.services import ddb as ddb_service
@@ -31,7 +33,13 @@ class ReadOnlyTable:
     def _get_table_name(self) -> str:
         table_name: str | None = getattr(get_aws_config(), self.table_name_env.lower(), None)
         if not table_name:
-            raise ValueError(f"{self.table_name_env} not configured")
+            # Log the specific config name for operators; keep it out of the
+            # client-facing response so we don't leak internal table names.
+            logger.error("Required table not configured: %s", self.table_name_env)
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Storage not configured",
+            )
         return table_name
 
     def _build_key(self, pk_value: str, sk_value: str | None = None) -> dict[str, str]:
@@ -84,6 +92,31 @@ class ReadOnlyTable:
             kwargs["Limit"] = limit
         if start_key:
             kwargs["ExclusiveStartKey"] = start_key
+
+        # When a FilterExpression is present, DynamoDB applies Limit *before*
+        # filtering, so a single page may return fewer items than requested.
+        # Paginate internally until we have enough results or the index is exhausted.
+        # Return all collected items (never truncate) enabling the cursor to always
+        # point past every item we return; truncating would silently drop the
+        # surplus matches as the cursor already skips past them.
+        if filter_expression is not None and limit:
+            collected: list[dict[str, Any]] = []
+            last_key = start_key
+
+            while len(collected) < limit:
+                page_kwargs = {**kwargs, "Limit": limit}
+                if last_key:
+                    page_kwargs["ExclusiveStartKey"] = last_key
+                elif "ExclusiveStartKey" in page_kwargs:
+                    del page_kwargs["ExclusiveStartKey"]
+
+                resp = table.query(**page_kwargs)
+                collected.extend(resp.get("Items", []))
+                last_key = resp.get("LastEvaluatedKey")
+                if not last_key:
+                    break
+
+            return collected, last_key
 
         response = table.query(**kwargs)
         return response.get("Items", []), response.get("LastEvaluatedKey")

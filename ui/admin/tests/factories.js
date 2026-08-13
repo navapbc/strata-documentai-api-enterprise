@@ -30,6 +30,7 @@ export function buildTenant(overrides = {}) {
     tenantId: "test-tenant-id",
     displayName: "Test Tenant",
     primaryContact: "admin@test-tenant.com",
+    extractionConfidenceFloor: 0.65,
     isActive: true,
     createdAt: "2026-01-01T00:00:00Z",
     ...overrides,

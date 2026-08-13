@@ -3,5 +3,6 @@ dist/
 config.json
 test-results/
 playwright-report/
+video-output/
 e2e/fixtures/*
 !e2e/fixtures/README.md

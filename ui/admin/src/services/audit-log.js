@@ -4,15 +4,25 @@ import { adminClient } from "./http.js";
  * @param {Object} [opts]
  * @param {string} [opts.tenantId]
  * @param {string} [opts.action]
+ * @param {string} [opts.actorEmail]
  * @param {string} [opts.startDate]
  * @param {string} [opts.endDate]
  * @param {number} [opts.limit]
  * @param {string} [opts.cursor]
  */
-export async function list({ tenantId, action, startDate, endDate, limit, cursor } = {}) {
+export async function list({
+  tenantId,
+  action,
+  actorEmail,
+  startDate,
+  endDate,
+  limit,
+  cursor,
+} = {}) {
   const params = new URLSearchParams();
   if (tenantId) params.set("tenant_id", tenantId);
   if (action) params.set("action", action);
+  if (actorEmail) params.set("actor_email", actorEmail);
   if (startDate) params.set("start_date", startDate);
   if (endDate) params.set("end_date", endDate);
   if (limit) params.set("limit", String(limit));
@@ -23,4 +33,9 @@ export async function list({ tenantId, action, startDate, endDate, limit, cursor
 
 export async function listActions() {
   return adminClient.request("GET", "/v1/admin/audit-log/actions");
+}
+
+export async function listActors({ tenantId } = {}) {
+  const qs = tenantId ? `?tenant_id=${encodeURIComponent(tenantId)}` : "";
+  return adminClient.request("GET", `/v1/admin/audit-log/actors${qs}`);
 }

@@ -23,10 +23,12 @@ from documentai_api.app_demo import router as demo_router
 from documentai_api.app_dictionary import router as dictionary_router
 from documentai_api.app_document_categories import router as document_categories_router
 from documentai_api.app_documents import router as documents_router
+from documentai_api.app_evaluation import router as evaluation_router
 from documentai_api.app_extraction_rules import router as extraction_rules_router
 from documentai_api.app_me import router as me_router
 from documentai_api.app_metrics import router as metrics_router
 from documentai_api.app_presigned import router as presigned_router
+from documentai_api.app_search import router as search_router
 from documentai_api.app_tenants import router as tenants_router
 from documentai_api.app_users import router as users_router
 from documentai_api.config.constants import (
@@ -67,12 +69,14 @@ app.include_router(demo_router)
 app.include_router(me_router)
 app.include_router(metrics_router)
 app.include_router(auth_events_router)
+app.include_router(evaluation_router)
+app.include_router(search_router)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=get_app_env_config().get_cors_origins(),
     allow_credentials=False,
-    allow_methods=["GET", "PUT", "POST", "DELETE", "OPTIONS"],
+    allow_methods=["GET", "PUT", "POST", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "x-api-key", "API-Key", "Authorization", "X-Trace-ID"],
     expose_headers=["X-Trace-ID"],
 )

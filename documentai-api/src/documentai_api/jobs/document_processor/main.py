@@ -2,15 +2,16 @@
 """Process uploaded documents: insert to DDB, convert if needed, invoke BDA."""
 
 import os
+import time
 from datetime import UTC, datetime
+from decimal import Decimal
 from typing import Any
 
 import typer
-from botocore.exceptions import ClientError
 from tenacity import (
     RetryError,
     Retrying,
-    retry_if_exception_type,
+    retry_if_exception,
     stop_after_attempt,
     wait_exponential_jitter,
 )
@@ -22,22 +23,26 @@ from documentai_api.config.constants import (
 )
 from documentai_api.config.env import EnvVars, get_aws_config, get_required_env
 from documentai_api.dtos.classification import ClassificationData
-from documentai_api.dtos.processing import CropResult
+from documentai_api.dtos.processing import CropResult, OptimizationResult
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils.bda_invoker import (
     invoke_bedrock_data_automation,
     skip_bda_if_unclassified,
 )
+from documentai_api.utils.dates import strip_time
 from documentai_api.utils.ddb import get_ddb_record
-from documentai_api.utils.document_lifecycle import (
+from documentai_api.utils.document_classification import (
+    classify_as_extraction_not_configured,
     classify_as_failed,
-    classify_as_no_custom_blueprint_matched,
     classify_as_not_implemented,
+)
+from documentai_api.utils.document_lifecycle import (
     set_bda_processing_status_started,
     set_processing_status_started,
     upsert_initial_ddb_record,
 )
+from documentai_api.utils.exceptions import is_retryable
 from documentai_api.utils.image_optimization import optimize_s3_image
 from documentai_api.utils.s3 import parse_s3_uri
 from documentai_api.utils.uploads import validate_s3_object_is_bda_native
@@ -64,6 +69,7 @@ def _persist_optimization_metrics(
     crop_result: CropResult,
     grayscale_applied: bool,
     processed_file_size_bytes: int | None,
+    opt_result: OptimizationResult | None = None,
 ) -> None:
     """Write image optimization metrics to the DDB record."""
     from documentai_api.config.env import EnvVars, get_required_env
@@ -80,6 +86,12 @@ def _persist_optimization_metrics(
         DocumentMetadata.CROP_MODEL_ID: crop_result.model_id,
         DocumentMetadata.GRAYSCALE_CONVERSION: grayscale_applied,
         DocumentMetadata.PROCESSED_FILE_SIZE_BYTES: processed_file_size_bytes,
+        DocumentMetadata.IMAGE_OPT_CROP_BLOCK_DURATION_SECONDS: opt_result.crop_block_duration_seconds
+        if opt_result
+        else None,
+        DocumentMetadata.IMAGE_OPT_WRITE_DURATION_SECONDS: opt_result.write_duration_seconds
+        if opt_result
+        else None,
     }
 
     updates = []
@@ -102,22 +114,29 @@ def _invoke_bda(
 ) -> dict[str, Any]:
     """Invoke BDA for a file that's ready for processing."""
     result: dict[str, Any] = {}
+    retry_count = 0
 
     for attempt in Retrying(
         stop=stop_after_attempt(get_aws_config().max_bda_invoke_retry_attempts),
         wait=wait_exponential_jitter(initial=10, max=120),
-        retry=retry_if_exception_type(ClientError),
+        retry=retry_if_exception(is_retryable),
     ):
         with attempt:
+            if attempt.retry_state.attempt_number > 1:
+                retry_count += 1
+            invoke_start = time.monotonic()
             invocation_arn, project_arn, pages_sent = invoke_bedrock_data_automation(
                 bucket_name, object_key, preclassification_category
             )
+            invoke_duration = Decimal(str(round(time.monotonic() - invoke_start, 3)))
 
             set_bda_processing_status_started(
                 object_key=ddb_key,
                 bda_invocation_arn=invocation_arn,
                 bda_project_arn_used=project_arn,
                 pages_sent_to_bda=pages_sent,
+                bda_invoke_duration_seconds=invoke_duration,
+                bda_invoke_retry_count=retry_count,
             )
 
             logger.info(f"BDA job started for {ddb_key}, ARN: {invocation_arn}")
@@ -175,8 +194,17 @@ def main(
 
     logger.info(f"Processing document: s3://{bucket_name}/{object_key}")
 
-    response = s3_service.head_object(bucket_name, object_key)
-    metadata = response.get("Metadata", {})
+    # Single get_object call - response contains Metadata, ContentType, ContentLength,
+    # and Body, eliminating the separate head_object + get_content_type + get_file_size_bytes
+    # head calls that previously added 3 extra round trips.
+    s3_fetch_start = time.monotonic()
+    s3_response = s3_service.get_object(bucket_name, object_key)
+    metadata = s3_response.get("Metadata", {})
+    s3_content_type: str = str(s3_response.get("ContentType", "application/octet-stream"))
+    s3_file_size_bytes: int = int(s3_response.get("ContentLength", 0))
+    s3_file_bytes: bytes = bytes(s3_response["Body"].read())
+    s3_fetch_duration = Decimal(str(round(time.monotonic() - s3_fetch_start, 3)))
+
     original_file_name = metadata.get(S3MetadataKeys.ORIGINAL_FILE_NAME)
     if not original_file_name:
         logger.warning("Original file name not present in S3 metadata")
@@ -217,12 +245,20 @@ def main(
             source_object_key=object_key,
             ddb_key=ddb_key,
             original_file_name=original_file_name,
+            tenant_id=existing_record.get(DocumentMetadata.TENANT_ID) if existing_record else None,
+            upload_date=strip_time(existing_record[DocumentMetadata.CREATED_AT])
+            if existing_record and DocumentMetadata.CREATED_AT in existing_record
+            else None,
             user_provided_document_category=user_provided_document_category,
             job_id=job_id,
             trace_id=trace_id,
             batch_id=batch_id,
             document_processor_started_at=processor_started_at.isoformat(),
             is_document_processor_cold_start=is_cold_start,
+            file_bytes=s3_file_bytes,
+            content_type=s3_content_type,
+            file_size_bytes=s3_file_size_bytes,
+            s3_fetch_duration_seconds=s3_fetch_duration,
         )
         existing_record = get_ddb_record(ddb_key)
 
@@ -268,24 +304,26 @@ def main(
             bucket_name,
             object_key,
             apply_grayscale=True,
+            file_bytes=s3_file_bytes,
+            content_type=s3_content_type,
         )
         if not opt.too_large and not opt.failed:
             _persist_optimization_metrics(
-                ddb_key, opt.crop_result, opt.grayscale_applied, opt.file_size_bytes
+                ddb_key, opt.crop_result, opt.grayscale_applied, opt.file_size_bytes, opt_result=opt
             )
             if _should_invoke_bda(preclassification_category):
                 invoke_bda(bucket_name, object_key, ddb_key, preclassification_category)
                 logger.info(f"Optimized {ddb_key} and invoked BDA")
             else:
                 logger.info(f"{ddb_key} preclassified as other_document; skipping BDA (flag on)")
-                classify_as_no_custom_blueprint_matched(
+                classify_as_extraction_not_configured(
                     object_key=ddb_key,
                     data=ClassificationData(
                         additional_info="Preclassified as other_document; BDA skipped per feature flag"
                     ),
                 )
         else:
-            _persist_optimization_metrics(ddb_key, opt.crop_result, False, None)
+            _persist_optimization_metrics(ddb_key, opt.crop_result, False, None, opt_result=opt)
             classify_as_not_implemented(
                 object_key=ddb_key,
                 data=ClassificationData(
@@ -309,13 +347,17 @@ def main(
             bucket_name,
             object_key,
             apply_grayscale=False,
+            file_bytes=s3_file_bytes,
+            content_type=s3_content_type,
         )
-        _persist_optimization_metrics(ddb_key, opt.crop_result, False, opt.file_size_bytes)
+        _persist_optimization_metrics(
+            ddb_key, opt.crop_result, False, opt.file_size_bytes, opt_result=opt
+        )
         if _should_invoke_bda(preclassification_category):
             invoke_bda(bucket_name, object_key, ddb_key, preclassification_category)
         else:
             logger.info(f"{ddb_key} preclassified as other_document; skipping BDA (flag on)")
-            classify_as_no_custom_blueprint_matched(
+            classify_as_extraction_not_configured(
                 object_key=ddb_key,
                 data=ClassificationData(
                     additional_info="Preclassified as other_document; BDA skipped per feature flag"

@@ -16,7 +16,7 @@ from documentai_api.models.document_category import (
 from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
 from documentai_api.schemas.document_category import DocumentCategoryRecord
 from documentai_api.utils import document_categories as categories_util
-from documentai_api.utils.audit import log_event
+from documentai_api.utils.audit_log import log_event
 from documentai_api.utils.jwt_auth import resolve_tenant, tenant_scope
 
 logger = get_logger(__name__)
@@ -54,6 +54,8 @@ def _to_item(record: dict[str, Any]) -> DocumentCategoryItem:
         display_name=record.get(DocumentCategoryRecord.DISPLAY_NAME, ""),
         description=record.get(DocumentCategoryRecord.DESCRIPTION, ""),
         is_active=record.get(DocumentCategoryRecord.IS_ACTIVE, True),
+        is_auto_registered=record.get(DocumentCategoryRecord.IS_AUTO_REGISTERED, False),
+        processing_percentage=record.get(DocumentCategoryRecord.PROCESSING_PERCENTAGE, 1.0),
         created_at=record.get(DocumentCategoryRecord.CREATED_AT),
         updated_at=record.get(DocumentCategoryRecord.UPDATED_AT),
     )
@@ -103,6 +105,7 @@ async def create_document_category(
             category_name=body.category_name,
             display_name=body.display_name,
             description=body.description,
+            processing_percentage=body.processing_percentage,
         )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
@@ -146,6 +149,7 @@ async def update_document_category(
             display_name=body.display_name,
             description=body.description,
             is_active=body.is_active,
+            processing_percentage=body.processing_percentage,
         )
     except ValueError as e:
         msg = str(e)

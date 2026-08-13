@@ -15,6 +15,7 @@ class ClassificationData:
     field_confidence_scores: list[dict[str, float]] | None = None
     field_below_threshold_list: list[str] | None = None
     field_empty_list: list[str] | None = None
+    field_missing_geometry_list: list[str] | None = None
     additional_info: str | None = None
 
 
@@ -22,8 +23,12 @@ class ClassificationData:
 class BedrockClassificationResult:
     document_type: str
     confidence: float
-    document_count: int
-    is_document: bool
+    max_document_count_on_page: int
+    max_document_count_on_page_reason: str = ""
+    has_multipage_inconsistency: bool = False
+    has_multipage_inconsistency_reason: str = ""
+    category_match: bool | None = None
+    is_identity_document: bool = False
     input_tokens: int | None = None
     output_tokens: int | None = None
     duration_seconds: Decimal | None = None

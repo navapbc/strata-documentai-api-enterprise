@@ -1,20 +1,27 @@
 <div class="metrics-view">
-  <div class="metrics-controls">
-    <div class="usage-field">
-      <label for="metrics-start">Start</label>
-      <input type="date" id="metrics-start" />
+  <div class="filter-layout">
+    <div class="filter-sidebar">
+      <div class="filter-field">
+        <label class="filter-field-label">Tenant</label>
+        <select id="tenant-select">
+          <option value="">All Tenants</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label class="filter-field-label">Date Range</label>
+        <div id="metrics-date-range"></div>
+      </div>
+      <nav class="metrics-tabs">
+        <button class="metrics-tab active" data-tab="volume">Volume</button>
+        <button class="metrics-tab" data-tab="outcomes">Outcomes</button>
+        <button class="metrics-tab" data-tab="timing">Timing</button>
+      </nav>
     </div>
-    <div class="usage-field">
-      <label for="metrics-end">End</label>
-      <input type="date" id="metrics-end" />
+    <div class="filter-main">
+      <div id="metrics-tab-volume" class="filter-tab-panel"></div>
+      <div id="metrics-tab-outcomes" class="filter-tab-panel hidden"></div>
+      <div id="metrics-tab-timing" class="filter-tab-panel hidden"></div>
+      <p id="metrics-empty" class="empty-state hidden"></p>
     </div>
-    <button id="metrics-load-btn" class="btn-primary">Load</button>
   </div>
-  <div id="metrics-cards" class="metrics-cards"></div>
-  <div class="metrics-panels">
-    <div id="metrics-status" class="metrics-panel"></div>
-    <div id="metrics-codes" class="metrics-panel"></div>
-  </div>
-  <div id="metrics-classification" class="metrics-panel"></div>
-  <p id="metrics-empty" class="empty-state hidden"></p>
 </div>

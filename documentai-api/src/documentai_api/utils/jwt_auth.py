@@ -57,16 +57,24 @@ def _decode_and_verify(token: str) -> dict[str, Any]:
     if token_use not in ("access", "id"):
         raise jwt.InvalidTokenError("Not an access or id token")
 
-    # Cognito access tokens don't carry an aud claim, but id tokens do -
-    # validate audience for id tokens to prevent cross-client token reuse.
-    if token_use == "id":
-        config = get_aws_config()
-        expected_aud = config.cognito_client_id
-        token_aud = payload.get("aud")
-        if expected_aud and token_aud != expected_aud:
-            raise jwt.InvalidTokenError(
-                f"Invalid audience: expected {expected_aud}, got {token_aud}"
-            )
+    # Validate client_id/audience for both token types to prevent cross-client reuse.
+    # Access tokens carry client_id; id tokens carry aud.
+    config = get_aws_config()
+    expected_client_id = config.cognito_client_id
+
+    if expected_client_id:
+        if token_use == "id":
+            token_aud = payload.get("aud")
+            if token_aud != expected_client_id:
+                raise jwt.InvalidTokenError(
+                    f"Invalid audience: expected {expected_client_id}, got {token_aud}"
+                )
+        else:  # access token
+            token_client_id = payload.get("client_id")
+            if token_client_id != expected_client_id:
+                raise jwt.InvalidTokenError(
+                    f"Invalid client_id: expected {expected_client_id}, got {token_client_id}"
+                )
 
     return payload
 
@@ -103,7 +111,8 @@ async def verify_jwt(
 
 # --- Role + tenant helpers ---------------------------------------------------
 
-SUPER_ADMIN = "super-admin"
+SUPER_ADMIN = "__admin__"  # tenant_id sentinel value for super-admins
+SUPER_ADMIN_GROUP = "super-admin"  # Cognito group name
 TENANT_ADMIN = "tenant-admin"
 
 
@@ -116,12 +125,16 @@ def get_roles(claims: dict[str, Any]) -> list[str]:
 
 
 def get_tenant_id(claims: dict[str, Any]) -> str | None:
-    """Return the tenant the caller belongs to, if any."""
+    """Return the tenant this caller is scoped to administer, if any.
+
+    This is an authorization scope, not membership - super-admins always
+    have none (they aren't scoped to any single tenant).
+    """
     return claims.get("custom:tenant_id")
 
 
 def is_super_admin(claims: dict[str, Any]) -> bool:
-    return SUPER_ADMIN in get_roles(claims)
+    return SUPER_ADMIN_GROUP in get_roles(claims)
 
 
 def is_tenant_admin(claims: dict[str, Any]) -> bool:

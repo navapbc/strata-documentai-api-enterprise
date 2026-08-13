@@ -5,11 +5,22 @@
 	deploy-admin-ui \
 	deploy-demo-ui \
 	deploy-ui \
+	record-admin-ui \
+	record-rules-ui \
+	record-viewer-ui \
+	record-demo-ui \
+	record-ui \
+	record-api-setup \
+	playwright-install \
+	postman \
 	format \
 	lint \
 	test \
+	test-api \
+	test-ui \
 	secret-scan \
 	install-hooks \
+	adr-log \
 	help
 
 .DEFAULT_GOAL := help
@@ -18,6 +29,7 @@ ENVIRONMENT ?= dev
 AWS_PROFILE ?= nava-sandbox
 AWS_ARGS := --profile $(AWS_PROFILE)
 TF_DIR := infra/environments/$(ENVIRONMENT)
+MEDIA_DIR := docs/documentai-api/media
 
 deploy: ## Deploy everything (infra + UIs)
 deploy: deploy-infra deploy-ui
@@ -38,17 +50,12 @@ deploy-admin-ui: ## Build admin UI and sync to S3 + invalidate CloudFront
 	DIST_ID=$$(terraform -chdir="$(TF_DIR)" output -raw admin_ui_distribution_id) && \
 	echo "Syncing to s3://$$BUCKET..." && \
 	aws s3 sync ui/admin/ s3://$$BUCKET \
-		--exclude "node_modules/*" \
-		--exclude "package*.json" \
-		--exclude ".gitignore" \
-		--exclude "src/*" \
-		--exclude "tests/*" \
-		--exclude "e2e/*" \
-		--exclude "test-results/*" \
-		--exclude "LICENSE" \
-		--exclude "README.md" \
-		--exclude "config.example.json" \
-		--exclude "docs/*" \
+		--exclude "*" \
+		--include "index.html" \
+		--include "config.json" \
+		--include "favicon.svg" \
+		--include "dist/*" \
+		--include "styles/*" \
 		$(AWS_ARGS) \
 		--delete && \
 	echo "Invalidating CloudFront cache..." && \
@@ -66,14 +73,12 @@ deploy-demo-ui: ## Build demo UI and sync to S3 + invalidate CloudFront
 	DIST_ID=$$(terraform -chdir="$(TF_DIR)" output -raw demo_ui_distribution_id) && \
 	echo "Syncing to s3://$$BUCKET..." && \
 	aws s3 sync ui/demo/ s3://$$BUCKET \
-		--exclude "node_modules/*" \
-		--exclude "package*.json" \
-		--exclude ".gitignore" \
-		--exclude "src/*" \
-		--exclude "tests/*" \
-		--exclude "LICENSE" \
-		--exclude "README.md" \
-		--exclude "config.example.json" \
+		--exclude "*" \
+		--include "index.html" \
+		--include "config.json" \
+		--include "favicon.svg" \
+		--include "dist/*" \
+		--include "styles/*" \
 		$(AWS_ARGS) \
 		--delete && \
 	echo "Invalidating CloudFront cache..." && \
@@ -83,6 +88,53 @@ deploy-demo-ui: ## Build demo UI and sync to S3 + invalidate CloudFront
 		$(AWS_ARGS) \
 		--no-cli-pager && \
 	echo "Demo UI deployed."
+
+record-ui: ## Regenerate demo videos for both UIs (webm + gif)
+record-ui: record-admin-ui record-rules-ui record-viewer-ui record-demo-ui
+
+playwright-install: ## Install Playwright Chromium browser for both UIs
+	cd ui/admin && npx playwright install chromium
+	cd ui/demo && npx playwright install chromium
+
+record-admin-ui: ## Record admin console walkthrough video -> $(MEDIA_DIR)/admin-walkthrough.gif
+record-admin-ui: playwright-install
+	@which ffmpeg > /dev/null 2>&1 || (echo "Error: ffmpeg not found. Install with: brew install ffmpeg" && exit 1)
+	cd ui/admin && npm run record -- --grep "admin console"
+	ui/shared/scripts/webm-to-gif.sh ui/admin/video-output/*/video.webm $(MEDIA_DIR)/admin-walkthrough.gif
+
+record-rules-ui: ## Record extraction rules walkthrough video -> $(MEDIA_DIR)/admin-extraction-rules-walkthrough.gif
+record-rules-ui: playwright-install
+	@which ffmpeg > /dev/null 2>&1 || (echo "Error: ffmpeg not found. Install with: brew install ffmpeg" && exit 1)
+	cd ui/admin && npm run record -- --grep "extraction rules"
+	ui/shared/scripts/webm-to-gif.sh ui/admin/video-output/*/video.webm $(MEDIA_DIR)/admin-extraction-rules-walkthrough.gif
+
+record-viewer-ui: ## Record document viewer walkthrough video -> $(MEDIA_DIR)/document-viewer-walkthrough.gif
+record-viewer-ui: playwright-install
+	@which ffmpeg > /dev/null 2>&1 || (echo "Error: ffmpeg not found. Install with: brew install ffmpeg" && exit 1)
+	cd ui/admin && npm run record -- --grep "document viewer"
+	ui/shared/scripts/webm-to-gif.sh ui/admin/video-output/*/video.webm $(MEDIA_DIR)/document-viewer-walkthrough.gif
+
+record-demo-ui: ## Record demo UI walkthrough video -> $(MEDIA_DIR)/demo-walkthrough.gif
+record-demo-ui: playwright-install
+	@which ffmpeg > /dev/null 2>&1 || (echo "Error: ffmpeg not found. Install with: brew install ffmpeg" && exit 1)
+	cd ui/demo && npx playwright test --config=playwright.video.config.js
+	ui/shared/scripts/webm-to-gif.sh ui/demo/video-output/*/video.webm $(MEDIA_DIR)/demo-walkthrough.gif
+
+record-api-setup: ## Record local API setup demo -> $(MEDIA_DIR)/api-setup-demo.gif
+	@which vhs > /dev/null 2>&1 || (echo "Error: vhs not found. Install with: brew install vhs" && exit 1)
+	@which ffmpeg > /dev/null 2>&1 || (echo "Error: ffmpeg not found. Install with: brew install ffmpeg" && exit 1)
+	vhs docs/documentai-api/api-setup-demo.tape
+	ffmpeg -y -i api-setup-demo.mp4 \
+		-filter_complex "[0:v]setpts=PTS/1.0,fps=12,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=bayer" \
+		$(MEDIA_DIR)/api-setup-demo.gif
+	rm -f api-setup-demo.mp4
+
+postman: ## Regenerate the Postman collection from docs/documentai-api/openapi.json
+	$(MAKE) -C documentai-api postman
+
+adr-log: ## Regenerate the ADR index (docs/decisions/index.md)
+	@which adr-log > /dev/null 2>&1 || (echo "Error: adr-log not found. Install with: npm install -g adr-log" && exit 1)
+	cd docs/decisions && adr-log -i -e template.md
 
 help: ## Show help
 	@grep -Eh '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -99,8 +151,12 @@ lint: ## Run all linters
 	cd ui/admin && npm run lint
 	cd ui/demo && npm run lint
 
-test: ## Run all tests
+test: test-api test-ui  ## Run all tests
+
+test-api:  ## Run API tests only
 	$(MAKE) -C documentai-api test
+
+test-ui:  ## Run UI tests only
 	cd ui/admin && npm test
 	cd ui/demo && npm test
 

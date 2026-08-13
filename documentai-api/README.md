@@ -60,10 +60,13 @@ The diagram source lives in [`request-lifecycle.mmd`](../docs/documentai-api/dia
 ## Quick Start
 
 ```bash
-cp local.env.example .env    # First time only
-make init                    # Build Docker containers
-make start                   # Start API at localhost:8000
+cp local.env.example .env  # First time only
+make env-from-aws          # Required for document upload; optional otherwise - see below
+make init                 # Build Docker containers
+make start                # Start API at localhost:8000
 ```
+
+`POST /v1/documents` requires deployed AWS resources. The `documentai-*-local` placeholders in `.env` do not point at anything real. `make env-from-aws` (requires an AWS profile with dev account access) wires in the real dev bucket, table, and BDA project. See [document-processing.md](../docs/documentai-api/document-processing.md#local-development) for details.
 
 Or without Docker:
 
@@ -80,6 +83,7 @@ make start-local
 | Command | Description |
 |---------|-------------|
 | `make init` | Build Docker containers |
+| `make env-from-aws` | Point local `.env` at real dev AWS resources (needs an AWS profile with dev access) |
 | `make start` | Start services (detached) |
 | `make run-logs` | Start with log output |
 | `make check` | Run all checks (format, lint, test, test-audit) |
@@ -88,6 +92,7 @@ make start-local
 | `make test-parallel` | Tests in parallel |
 | `make lint` | Ruff linter |
 | `make format` | Ruff formatter |
+| `make postman` | Regenerate Postman collection from OpenAPI spec |
 
 ### Using tasks.py (cross-platform, Windows/macOS/Linux)
 
@@ -148,7 +153,11 @@ Set by infrastructure on deploy:
 
 Full API documentation is available at `/docs` (Swagger UI) and `/openapi.json` when the server is running. A snapshot is committed at [docs/documentai-api/openapi.json](../docs/documentai-api/openapi.json) - regenerate with `uv run export-openapi`.
 
+A [Postman collection](../docs/documentai-api/postman/DocumentAI.postman_collection.json) is committed with local-dev defaults pre-configured (baseUrl `localhost:8000`, `API-Key: local-dev-key`). Import it directly or regenerate with `make postman`.
+
 See the [API route map](../docs/documentai-api/diagrams/api-routes.mmd) for a visual overview grouped by auth scheme.
+
+Runtime behavior can be toggled without redeploying via [feature flags](../docs/documentai-api/feature-flags.md) stored in SSM Parameter Store. Response codes are documented in [response-codes.md](../docs/documentai-api/response-codes.md).
 
 ### Document Processing (API-Key auth)
 
@@ -208,6 +217,21 @@ API keys can be created via:
 
 Additional CLI commands: `api-keys list`, `api-keys deactivate`.
 
+### Aggregating Metrics
+
+The metrics aggregator runs on a daily schedule in Lambda. To run it on demand against a deployed environment:
+
+```bash
+make metrics-agg DATE=2025-01-15                        # Single date
+make metrics-agg DATE=2025-01-01 END=2025-01-31         # Date range
+make metrics-agg-last-n-days DAYS=7                     # Last N days from today
+make metrics-agg DATE=2025-01-15 OVERWRITE=1            # Force overwrite existing
+```
+
+Requires AWS access and `DDB_EXPORT_BUCKET_NAME` set in the environment.
+
+> **Note:** `metrics-agg-last-n-days` uses macOS `date -v` syntax. On Linux use `date -d "N days ago"` directly or run via the CLI: `uv run --frozen metrics_aggregator backfill <start> <end>`.
+
 ### Generating Usage Reports
 
 A per-tenant monthly usage report (pages, bytes, Bedrock tokens) is produced by a
@@ -232,9 +256,9 @@ Most tests use pytest with moto for AWS service mocking - no real AWS infrastruc
 
 - **unit** (default): fast, moto-backed or pure-logic tests.
 - **integration** (`-m integration`): also moto-backed; run separately from the default suite.
-- **e2e** (`-m e2e`): run against **real deployed AWS** and a live API. These need `.env.e2e` (generated from terraform outputs) and are excluded from the default run.
+- **e2e** (`-m e2e`): run against **real deployed AWS** and a live API. Requires `.env.e2e` (generated from Lambda env vars) and are excluded from the default run.
 
-> ⚠️ Never commit .env.e2e. It's generated from live terraform outputs and contains real dev AWS account, API Gateway, bucket, and table identifiers. It's gitignored (both root and `documentai-api/.gitignore`) and must stay that way - treat it as local-only.
+> ⚠️ .env.e2e is generated from live Lambda env vars and contains real dev AWS account, API Gateway, bucket, and table identifiers. It's gitignored (both root and `documentai-api/.gitignore`) and _must not be committed_.
 
 ```bash
 make test                                    # Unit suite (excludes integration + e2e)

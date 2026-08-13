@@ -159,7 +159,7 @@ async def get_blueprint_test_result(
         bda_runtime = AWSClientFactory.get_bda_runtime_client()
         response = bda_runtime.get_data_automation_status(invocationArn=invocation_arn)
         job_response = dict(response)
-        logger.info(f"Blueprint test {test_id}: raw BDA response={job_response}")
+        logger.info(f"Blueprint test {test_id}: BDA status check completed")
     except Exception as e:
         logger.error(f"Blueprint test {test_id}: get_data_automation_status failed: {e}")
 
@@ -174,9 +174,12 @@ async def get_blueprint_test_result(
         return BlueprintTestResult(test_id=test_id, status="PROCESSING")
 
     if BdaJobStatus.is_failed(job_status):
-        error = job_response.get("error", {}).get("message", "Unknown error")
+        logger.warning(
+            f"Blueprint test {test_id}: BDA job failed",
+            extra={"bda_error": job_response.get("error", {}).get("message", "Unknown error")},
+        )
         _cleanup_test(test_id, input_bucket, test_key)
-        return BlueprintTestResult(test_id=test_id, status="FAILED", error=error)
+        return BlueprintTestResult(test_id=test_id, status="FAILED", error="BDA processing failed")
 
     if BdaJobStatus.is_completed(job_status):
         # Extract results
@@ -246,9 +249,17 @@ _TEST_TABLE_TTL_SECONDS = 3600  # 1 hour
 
 
 def _get_test_table_name() -> str:
-    table_name = get_aws_config().audit_events_table_name
+    # Use a dedicated table for blueprint test metadata to avoid co-mingling
+    # test runs with production audit events.
+    import os
+
+    from documentai_api.config.env import EnvVars
+
+    table_name = os.environ.get("BLUEPRINT_TEST_TABLE_NAME") or os.environ.get(
+        EnvVars.AUDIT_EVENTS_TABLE_NAME
+    )
     if not table_name:
-        raise ValueError("AUDIT_EVENTS_TABLE_NAME not configured")
+        raise ValueError("BLUEPRINT_TEST_TABLE_NAME (or AUDIT_EVENTS_TABLE_NAME) not configured")
     return table_name
 
 
@@ -268,7 +279,7 @@ def _store_test_metadata(
         # Reuse audit table with a special partition for test runs
         table.put_item(
             Item={
-                "tenantId": f"__test__{test_id}",
+                "tenantId": f"__blueprint_test__{test_id}",
                 "timestamp#eventId": test_id,
                 "invocationArn": invocation_arn,
                 "tenantId_actual": tenant_id or "",
@@ -287,7 +298,7 @@ def _get_test_metadata(test_id: str) -> dict[str, Any] | None:
     try:
         table = AWSClientFactory.get_ddb_table(_get_test_table_name())
         response = table.get_item(
-            Key={"tenantId": f"__test__{test_id}", "timestamp#eventId": test_id}
+            Key={"tenantId": f"__blueprint_test__{test_id}", "timestamp#eventId": test_id}
         )
         item = response.get("Item")
         if item:
@@ -303,7 +314,9 @@ def _cleanup_test(test_id: str, input_bucket: str, test_key: str) -> None:
     _cleanup_s3(AWSClientFactory.get_s3_client(), input_bucket, test_key)
     try:
         table = AWSClientFactory.get_ddb_table(_get_test_table_name())
-        table.delete_item(Key={"tenantId": f"__test__{test_id}", "timestamp#eventId": test_id})
+        table.delete_item(
+            Key={"tenantId": f"__blueprint_test__{test_id}", "timestamp#eventId": test_id}
+        )
     except Exception:
         pass
 
