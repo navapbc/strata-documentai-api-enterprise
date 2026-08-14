@@ -1,4 +1,4 @@
-"""OpenTelemetry initialisation.
+"""OpenTelemetry initialization.
 
 Call ``setup()`` once at process startup before the FastAPI app is created.
 When OTEL_SDK_DISABLED=true (the default) this is a no-op so nothing changes
@@ -28,7 +28,7 @@ class OtelConfig(PydanticBaseEnvConfig):
 def setup() -> None:
     """Initialise the OTEL TracerProvider and instrument FastAPI.
 
-    Safe to call unconditionally — exits immediately when OTEL_SDK_DISABLED=true.
+    Safe to call unconditionally - exits immediately when OTEL_SDK_DISABLED=true.
     """
     config = OtelConfig()
     if config.sdk_disabled:

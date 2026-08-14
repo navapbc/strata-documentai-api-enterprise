@@ -523,26 +523,26 @@ locals {
     # BDA_PROJECT_ARN_DEBT_OBLIGATIONS                          = module.bedrock_data_automation["debt_obligations"].project_arn
     # BDA_PROJECT_ARN_IDENTITY_VERIFICATION                     = module.bedrock_data_automation["identity_verification"].project_arn
     # BDA_PROJECT_ARN_RIGHT_TO_WORK                             = module.bedrock_data_automation["right_to_work"].project_arn
-    BDA_PROJECT_ARN_ALL                                       = module.bedrock_data_automation["all"].project_arn
-    BDA_PROFILE_ARN                                           = module.bedrock_data_automation["all"].profile_arn
-    BDA_REGION                                                = var.bda_region
-    BEDROCK_CLASSIFICATION_MODEL_ID_PARAM                     = "${local.ssm_prefix}/models/classification-model-id"
-    BEDROCK_BOUNDING_BOX_MODEL_ID_PARAM                       = "${local.ssm_prefix}/models/bounding-box-model-id"
-    BEDROCK_BLUR_QUADRANT_MODEL_ID_PARAM                      = "${local.ssm_prefix}/models/blur-quadrant-model-id"
-    BEDROCK_SUPPLEMENTAL_EXTRACTION_MODEL_ID_PARAM            = "${local.ssm_prefix}/models/supplemental-extraction-model-id"
-    SSM_PREFIX                                                = local.ssm_prefix
-    MAX_BDA_INVOKE_RETRY_ATTEMPTS                             = local.max_bda_invoke_retry_attempts
-    API_AUTH_ENABLED                                          = local.api_auth_enabled
-    API_AUTH_CACHE_TTL                                        = local.api_auth_cache_ttl
-    API_AUTH_INSECURE_SHARED_KEY_PARAM                        = "/${var.project_name}/${var.environment}/api-auth-insecure-shared-key"
-    COGNITO_USER_POOL_ID                                      = module.identity_provider.user_pool_id
-    COGNITO_CLIENT_ID                                         = module.identity_provider.client_id
-    OTEL_SDK_DISABLED                                         = tostring(!var.otel_enabled)
-    OTEL_SERVICE_NAME                                         = var.otel_service_name
-    OTEL_EXPORTER_OTLP_ENDPOINT                               = var.otel_exporter_otlp_endpoint
-    OTEL_AWS_APPLICATION_SIGNALS_ENABLED                      = tostring(var.otel_enabled)
-    OTEL_METRICS_EXPORTER                                     = "awsemf"
-    OTEL_EXPORTER_OTLP_LOGS_HEADERS                           = "x-aws-metric-namespace=${var.otel_service_name}"
+    BDA_PROJECT_ARN_ALL                            = module.bedrock_data_automation["all"].project_arn
+    BDA_PROFILE_ARN                                = module.bedrock_data_automation["all"].profile_arn
+    BDA_REGION                                     = var.bda_region
+    BEDROCK_CLASSIFICATION_MODEL_ID_PARAM          = "${local.ssm_prefix}/models/classification-model-id"
+    BEDROCK_BOUNDING_BOX_MODEL_ID_PARAM            = "${local.ssm_prefix}/models/bounding-box-model-id"
+    BEDROCK_BLUR_QUADRANT_MODEL_ID_PARAM           = "${local.ssm_prefix}/models/blur-quadrant-model-id"
+    BEDROCK_SUPPLEMENTAL_EXTRACTION_MODEL_ID_PARAM = "${local.ssm_prefix}/models/supplemental-extraction-model-id"
+    SSM_PREFIX                                     = local.ssm_prefix
+    MAX_BDA_INVOKE_RETRY_ATTEMPTS                  = local.max_bda_invoke_retry_attempts
+    API_AUTH_ENABLED                               = local.api_auth_enabled
+    API_AUTH_CACHE_TTL                             = local.api_auth_cache_ttl
+    API_AUTH_INSECURE_SHARED_KEY_PARAM             = "/${var.project_name}/${var.environment}/api-auth-insecure-shared-key"
+    COGNITO_USER_POOL_ID                           = module.identity_provider.user_pool_id
+    COGNITO_CLIENT_ID                              = module.identity_provider.client_id
+    OTEL_SDK_DISABLED                              = tostring(!var.otel_enabled)
+    OTEL_SERVICE_NAME                              = var.otel_service_name
+    OTEL_EXPORTER_OTLP_ENDPOINT                    = var.otel_exporter_otlp_endpoint
+    OTEL_AWS_APPLICATION_SIGNALS_ENABLED           = tostring(var.otel_enabled)
+    OTEL_METRICS_EXPORTER                          = "awsemf"
+    OTEL_EXPORTER_OTLP_LOGS_HEADERS                = "x-aws-metric-namespace=${var.otel_service_name}"
   }
 
   # API Lambda env: the shared worker map, minus the Athena/Glue vars that only
@@ -572,8 +572,10 @@ locals {
 module "monitoring" {
   source = "../../modules/monitoring"
 
-  name_prefix = local.service_name
-  region      = var.region
+  name_prefix  = local.service_name
+  project_name = var.project_name
+  environment  = var.environment
+  region       = var.region
 
   # Dashboard in every env; alarms only in prd.
   create_dashboard = true

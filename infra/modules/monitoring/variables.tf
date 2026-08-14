@@ -1,6 +1,16 @@
 variable "name_prefix" {
   type        = string
-  description = "Prefix for dashboard/topic/alarm names, e.g. docai-prd-<account>"
+  description = "Prefix for topic/alarm names, e.g. docai-prd-<account>"
+}
+
+variable "project_name" {
+  type        = string
+  description = "Project name used in the dashboard name (no account ID)."
+}
+
+variable "environment" {
+  type        = string
+  description = "Environment name used in the dashboard name (e.g. dev, prd)."
 }
 
 variable "region" {

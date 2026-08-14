@@ -195,6 +195,6 @@ locals {
 
 resource "aws_cloudwatch_dashboard" "this" {
   count          = var.create_dashboard ? 1 : 0
-  dashboard_name = "${var.name_prefix}-dashboard"
+  dashboard_name = "${var.project_name}-${var.environment}-dashboard"
   dashboard_body = local.dashboard_body
 }

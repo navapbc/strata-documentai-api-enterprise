@@ -60,6 +60,10 @@ resource "aws_lambda_function" "this" {
     variables = var.environment_variables
   }
 
+  # Required for OTEL traces to reach X-Ray, not optional: the aws-otel-python-instrumentation
+  # layer falls back to Lambda's native X-Ray daemon (UDP, 127.0.0.1:2000) whenever no explicit
+  # traces OTLP endpoint is set. That daemon only runs when Active Tracing is on - without it,
+  # spans are generated normally but every export silently vanishes. See docs/documentai-api/observability.md.
   tracing_config {
     mode = "Active"
   }
