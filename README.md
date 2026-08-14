@@ -22,7 +22,7 @@ A serverless document processing platform - upload documents, extract structured
 
 For Strata template applications, see [`navapbc/strata`](https://github.com/navapbc/strata).
 
-> ⚠️ **Public Preview / Active Development (June 2026)**
+> ⚠️ **Public Preview / Active Development (August 2026)**
 > This project is under active development, but is being designed for out-of-the-box use. APIs, configuration, and features may change.
 
 ## See it in action

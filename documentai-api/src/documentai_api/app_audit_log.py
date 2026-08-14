@@ -39,7 +39,7 @@ async def get_audit_actors(
 
     Super-admins can optionally scope to a tenant; tenant-admins are always
     scoped to their own partition. Sourced from Cognito only (see
-    docs/decisions/api/2026-07-24-audit-log-actor-dropdown-source.md) - this
+    docs/decisions/2026-08-06-audit-log-actor-dropdown-source.md) - this
     is a filter, not a guarantee: a user with no audit events for the scoped
     tenant may still appear, and a super-admin who acted on a tenant's
     resources but isn't a Cognito member of it will not.

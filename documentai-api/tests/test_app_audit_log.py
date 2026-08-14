@@ -277,7 +277,7 @@ def test_actors_tenant_scope_excludes_history_only_actors_by_design(
 ):
     """Accepted tradeoff from the ADR: actors is Cognito-only, not derived from audit history.
 
-    See docs/decisions/api/2026-07-24-audit-log-actor-dropdown-source.md. A
+    See docs/decisions/2026-08-06-audit-log-actor-dropdown-source.md. A
     super-admin who acted on a tenant's resources has no tenant_id in
     Cognito, so they won't appear here even though their email is visible in
     that tenant's audit rows - this is intentional, not a bug.

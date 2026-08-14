@@ -2379,7 +2379,7 @@
           "Admin:Audit Log"
         ],
         "summary": "Get Audit Actors",
-        "description": "Return distinct actor emails visible to the caller.\n\nSuper-admins can optionally scope to a tenant; tenant-admins are always\nscoped to their own partition. Sourced from Cognito only (see\ndocs/decisions/api/2026-07-24-audit-log-actor-dropdown-source.md) - this\nis a filter, not a guarantee: a user with no audit events for the scoped\ntenant may still appear, and a super-admin who acted on a tenant's\nresources but isn't a Cognito member of it will not.",
+        "description": "Return distinct actor emails visible to the caller.\n\nSuper-admins can optionally scope to a tenant; tenant-admins are always\nscoped to their own partition. Sourced from Cognito only (see\ndocs/decisions/2026-08-06-audit-log-actor-dropdown-source.md) - this\nis a filter, not a guarantee: a user with no audit events for the scoped\ntenant may still appear, and a super-admin who acted on a tenant's\nresources but isn't a Cognito member of it will not.",
         "operationId": "get_audit_actors_v1_admin_audit_log_actors_get",
         "security": [
           {
