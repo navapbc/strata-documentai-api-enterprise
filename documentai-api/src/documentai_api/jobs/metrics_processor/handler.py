@@ -41,9 +41,7 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
             # Extract traceparent from MessageAttributes to stitch this span
             # into the originating document trace.
             attrs = record.get("messageAttributes") or {}
-            carrier = {
-                k: v["stringValue"] for k, v in attrs.items() if "stringValue" in v
-            }
+            carrier = {k: v["stringValue"] for k, v in attrs.items() if "stringValue" in v}
             ctx = extract(carrier)
 
             with tracer.start_as_current_span("metrics.process", context=ctx):
