@@ -120,14 +120,10 @@ record-demo-ui: playwright-install
 	cd ui/demo && npx playwright test --config=playwright.video.config.js
 	ui/shared/scripts/webm-to-gif.sh ui/demo/video-output/*/video.webm $(MEDIA_DIR)/demo-walkthrough.gif
 
-record-api-setup: ## Record local API setup demo -> $(MEDIA_DIR)/api-setup-demo.gif
+record-api-setup: ## Record local API setup demo -> $(MEDIA_DIR)/api-setup-demo.mp4
 	@which vhs > /dev/null 2>&1 || (echo "Error: vhs not found. Install with: brew install vhs" && exit 1)
-	@which ffmpeg > /dev/null 2>&1 || (echo "Error: ffmpeg not found. Install with: brew install ffmpeg" && exit 1)
 	vhs docs/documentai-api/api-setup-demo.tape
-	ffmpeg -y -i api-setup-demo.mp4 \
-		-filter_complex "[0:v]setpts=PTS/1.0,fps=12,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=bayer" \
-		$(MEDIA_DIR)/api-setup-demo.gif
-	rm -f api-setup-demo.mp4
+	mv api-setup-demo.mp4 $(MEDIA_DIR)/api-setup-demo.mp4
 
 postman: ## Regenerate the Postman collection from docs/documentai-api/openapi.json
 	$(MAKE) -C documentai-api postman

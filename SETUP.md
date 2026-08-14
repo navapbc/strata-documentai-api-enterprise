@@ -67,7 +67,11 @@ Only the `dev` environment exists today. To add another, copy `infra/environment
 
 ## Local development
 
-### API
+### API Setup Walkthrough
+
+<video src="docs/documentai-api/media/api-setup-demo.mp4" controls width="100%"></video>
+
+### API Setup Steps
 
 ```bash
 cd documentai-api

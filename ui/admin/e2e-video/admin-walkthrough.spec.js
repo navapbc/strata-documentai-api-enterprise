@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { JOB_ID, COMPLETED_DOC, previewDataUrl } from "../../shared/e2e/fixtures/recording/w2-document.js";
 import { loginWithMfa } from "../../shared/e2e/helpers/login.js";
-import { hoverFields, expectBboxOverlay } from "../../shared/e2e/helpers/document-viewer.js";
+import { hoverFields, expectBboxOverlay, SELECTORS } from "../../shared/e2e/helpers/document-viewer.js";
 
 // ---------------------------------------------------------------------------
 // Scripted, re-generatable DEMO VIDEO of the DocumentAI Admin Console.
@@ -102,37 +102,37 @@ test("admin console walkthrough: login -> MFA -> keys -> tenants -> users -> doc
   await expect(page.locator("#view-title")).toHaveText("");
   await page.locator('[data-section="tenants"]').click();
   await expect(page.locator("#section-tenants")).not.toHaveClass(/hidden/);
-  await page.locator('[data-view="tenants"]').click();
-  await expect(page.locator("#view-title")).toHaveText("Manage Tenants");
+  await page.locator('a.nav-item[data-view="tenants"]').click();
+  await expect(page.locator("#view-title")).toHaveText(/^Manage Tenants/);
   await expect(page.locator("#tenants-table")).toBeVisible();
   await page.waitForTimeout(1200);
 
   // === 4. Navigate to Users ================================================
   await page.locator('[data-section="users"]').click();
   await expect(page.locator("#section-users")).not.toHaveClass(/hidden/);
-  await page.locator('[data-view="users"]').click();
-  await expect(page.locator("#view-title")).toHaveText("Manage Users");
+  await page.locator('a.nav-item[data-view="users"]').click();
+  await expect(page.locator("#view-title")).toHaveText(/^Manage Users/);
   await expect(page.locator("#users-table")).toBeVisible();
   await page.waitForTimeout(1200);
 
   // === 5. Navigate to API Keys =============================================
   await page.locator('[data-section="keys"]').click();
   await expect(page.locator("#section-keys")).not.toHaveClass(/hidden/);
-  await page.locator('[data-view="keys"]').click();
-  await expect(page.locator("#view-title")).toHaveText("Manage API Keys");
+  await page.locator('a.nav-item[data-view="keys"]').click();
+  await expect(page.locator("#view-title")).toHaveText(/^Manage API Keys/);
   await expect(page.locator("#keys-table")).toBeVisible();
   await page.waitForTimeout(1200);
 
   // === 6. Navigate to Documents ============================================
   await page.locator('[data-section="docs"]').click();
   await expect(page.locator("#section-docs")).not.toHaveClass(/hidden/);
-  await page.locator('[data-view="documents"]').click();
-  await expect(page.locator("#view-title")).toHaveText("Recently Processed");
+  await page.locator('a.nav-item[data-view="documents"]').click();
+  await expect(page.locator("#view-title")).toHaveText(/^Recently Processed/);
   await expect(page.locator("#document-status-filter")).toBeVisible();
   await page.waitForTimeout(600);
 
   // Select a tenant so the document list loads
-  await page.locator("#global-tenant-select").selectOption("acme-corp");
+  await page.locator(SELECTORS.tenantSelect).selectOption("acme-corp");
   await expect(page.locator("#documents-list .doc-list-item").first()).toBeVisible();
   await page.waitForTimeout(900);
 
@@ -144,12 +144,12 @@ test("admin console walkthrough: login -> MFA -> keys -> tenants -> users -> doc
 
   // Click the W-2 to show detail panel + bounding box overlay
   await page.locator(`[data-job-id="${JOB_ID}"]`).click();
-  await expect(page.locator("#document-detail-panel")).not.toHaveClass(/collapsed/);
-  await expectBboxOverlay(page, expect, "#document-preview-panel .bbox-overlay rect");
+  await expect(page.locator(SELECTORS.detailPane)).toBeVisible();
+  await expectBboxOverlay(page, expect, SELECTORS.bboxOverlay);
   await page.waitForTimeout(1000);
 
   // Hover field rows to show bbox highlight
-  await hoverFields(page, ["wages", "federalIncomeTaxWithheld", "employerName"], "#document-detail-panel tr[data-field]");
+  await hoverFields(page, ["wages", "federalIncomeTaxWithheld", "employerName"], SELECTORS.fieldRows);
 
   // Show the status filter dropdown
   await page.locator("#document-status-filter").click();
