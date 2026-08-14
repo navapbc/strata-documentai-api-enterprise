@@ -301,7 +301,19 @@ def _send_record_to_metrics_queue(object_key: str) -> None:
             # prevent process from completing successfully
             return
 
-        sqs_service.send_message(queue_url, json.dumps(ddb_record, default=str))
+        # Inject traceparent into SQS MessageAttributes so metrics-processor can
+        # attach its spans as children of the originating document trace.
+        from opentelemetry.propagate import inject
+
+        carrier: dict[str, str] = {}
+        inject(carrier)
+        message_attributes = {
+            k: {"DataType": "String", "StringValue": v} for k, v in carrier.items()
+        }
+
+        sqs_service.send_message(
+            queue_url, json.dumps(ddb_record, default=str), message_attributes or None
+        )
         logger.info(f"Successfully sent {object_key} to SQS queue")
 
     except Exception as e:

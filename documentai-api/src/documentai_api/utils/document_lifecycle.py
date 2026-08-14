@@ -7,6 +7,8 @@ from decimal import Decimal
 from typing import Any
 
 from botocore.exceptions import ClientError
+from opentelemetry import trace
+from opentelemetry.propagate import inject
 
 import documentai_api.utils.documents as document_utils
 from documentai_api.config.constants import (
@@ -34,6 +36,7 @@ from documentai_api.utils.ssm import (
 from documentai_api.utils.textract import finalize_textract_result, try_textract_identity
 
 logger = get_logger(__name__)
+tracer = trace.get_tracer(__name__)
 
 
 @dataclass
@@ -234,13 +237,16 @@ def _run_preclassification(
     documents that preclassify flags as multi-doc or multipage-inconsistent
     (where the result would be discarded).
     """
-    with ThreadPoolExecutor(max_workers=2) as executor:
-        blueprint_future: Future[PreclassificationMatchResult] = executor.submit(
-            find_matching_blueprint, file_bytes, content_type
-        )
-        preclassification = preclassify_document(
-            file_bytes, content_type, user_provided_document_category or None
-        )
+    with tracer.start_as_current_span("document.preclassification") as span:
+        span.set_attribute("document.content_type", content_type)
+        span.set_attribute("document.key", ddb_key)
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            blueprint_future: Future[PreclassificationMatchResult] = executor.submit(
+                find_matching_blueprint, file_bytes, content_type
+            )
+            preclassification = preclassify_document(
+                file_bytes, content_type, user_provided_document_category or None
+            )
 
     if preclassification.max_document_count_on_page > 1:
         return _PreclassificationOutcome(
@@ -324,121 +330,137 @@ def upsert_initial_ddb_record(
     caller already has them (e.g. from a get_object response), avoiding
     redundant S3 round trips.
     """
-    if not user_provided_document_category:
-        logger.warning(f"Warning: user_provided_document_category is None/empty for {ddb_key}")
+    with tracer.start_as_current_span("document.process") as span:
+        span.set_attribute("document.key", ddb_key)
+        span.set_attribute("document.tenant_id", tenant_id or "")
 
-    if content_type is None:
-        content_type = s3_service.get_content_type(source_bucket_name, source_object_key)
+        # Inject traceparent so downstream Lambda workers (bda-result-processor)
+        # can extract it from DDB and attach their spans as children of this trace.
+        carrier: dict[str, str] = {}
+        inject(carrier)
+        traceparent = carrier.get("traceparent")
 
-    if file_size_bytes is None:
-        file_size_bytes = s3_service.get_file_size_bytes(source_bucket_name, source_object_key)
+        if not user_provided_document_category:
+            logger.warning(f"Warning: user_provided_document_category is None/empty for {ddb_key}")
 
-    if file_bytes is None:
-        file_bytes = s3_service.get_file_bytes(source_bucket_name, source_object_key)
+        if content_type is None:
+            content_type = s3_service.get_content_type(source_bucket_name, source_object_key)
 
-    response_code = ResponseCodes.SUCCESS
-    internal_api_response: InternalApiResponse | None = None
-    process_status = ProcessStatus.PENDING_IMAGE_OPTIMIZATION
-    pages_detected = document_utils.get_page_count(file_bytes)
-    is_password_protected = document_utils.is_password_protected(file_bytes)
-    blur_result: BlurResult | None = None
-    processing_percentage: float | None = None
-    processing_assigned_value: float | None = None
-    pre_classification: PreClassificationDdbFields | None = None
-    textract_result = None
+        if file_size_bytes is None:
+            file_size_bytes = s3_service.get_file_size_bytes(source_bucket_name, source_object_key)
 
-    # assume document will be processed, but check if it should be excluded by sampling
-    is_processing_selected = True
+        if file_bytes is None:
+            file_bytes = s3_service.get_file_bytes(source_bucket_name, source_object_key)
 
-    if not is_password_protected:
-        is_processing_selected, processing_percentage, processing_assigned_value = (
-            is_selected_for_processing(tenant_id, user_provided_document_category)
-        )
-
-    # purposefully not using elif here so that password-protected docs are not subject to sampling
-    if is_password_protected:
-        process_status = ProcessStatus.PASSWORD_PROTECTED
-        response_code = ResponseCodes.PASSWORD_PROTECTED
+        response_code = ResponseCodes.SUCCESS
+        internal_api_response: InternalApiResponse | None = None
+        process_status = ProcessStatus.PENDING_IMAGE_OPTIMIZATION
+        pages_detected = document_utils.get_page_count(file_bytes)
+        is_password_protected = document_utils.is_password_protected(file_bytes)
+        blur_result: BlurResult | None = None
+        processing_percentage: float | None = None
+        processing_assigned_value: float | None = None
+        pre_classification: PreClassificationDdbFields | None = None
         textract_result = None
 
-    elif not is_processing_selected:
-        logger.info(
-            f"{ddb_key} excluded by sampling for category {user_provided_document_category}"
-        )
-        # TODO: add a CloudWatch metric filter on this log line (dimensioned by category)
-        # to make sampling rates observable without a custom metric
-        if tenant_id and upload_date:
-            from documentai_api.utils.write_limit import decrement
+        # assume document will be processed, but check if it should be excluded by sampling
+        is_processing_selected = True
 
-            decrement(tenant_id, upload_date)
-        process_status = ProcessStatus.PROCESSING_EXCLUDED
-        response_code = ResponseCodes.PROCESSING_EXCLUDED
-        textract_result = None
-
-    else:
-        blur_outcome = _get_blur_outcome(file_bytes, content_type)
-        blur_result = blur_outcome.blur_result
-
-        if blur_outcome.process_status is not None:
-            process_status = blur_outcome.process_status
-            response_code = blur_outcome.response_code or ResponseCodes.SUCCESS
-        else:
-            preclassification = _run_preclassification(
-                file_bytes, content_type, user_provided_document_category, pages_detected, ddb_key
+        if not is_password_protected:
+            is_processing_selected, processing_percentage, processing_assigned_value = (
+                is_selected_for_processing(tenant_id, user_provided_document_category)
             )
-            process_status = preclassification.process_status
-            response_code = preclassification.response_code
-            pre_classification = preclassification.pre_classification
-            textract_result = preclassification.textract_result
 
-    # initial status does not qualify for bda processing
-    # create the json response signaling the process is complete
-    # (skip for Textract -- finalize_textract_result handles its own response)
-    if not ProcessStatus.is_pending_extraction(process_status) and textract_result is None:
-        internal_api_response = get_internal_api_response(
-            object_key=ddb_key,
-            response_code=response_code,
-            matched_document_class=None,
-            user_provided_document_category=user_provided_document_category,
+        # purposefully not using elif here so that password-protected docs are not subject to sampling
+        if is_password_protected:
+            process_status = ProcessStatus.PASSWORD_PROTECTED
+            response_code = ResponseCodes.PASSWORD_PROTECTED
+            textract_result = None
+
+        elif not is_processing_selected:
+            logger.info(
+                f"{ddb_key} excluded by sampling for category {user_provided_document_category}"
+            )
+            # TODO: add a CloudWatch metric filter on this log line (dimensioned by category)
+            # to make sampling rates observable without a custom metric
+            if tenant_id and upload_date:
+                from documentai_api.utils.write_limit import decrement
+
+                decrement(tenant_id, upload_date)
+            process_status = ProcessStatus.PROCESSING_EXCLUDED
+            response_code = ResponseCodes.PROCESSING_EXCLUDED
+            textract_result = None
+
+        else:
+            blur_outcome = _get_blur_outcome(file_bytes, content_type)
+            blur_result = blur_outcome.blur_result
+
+            if blur_outcome.process_status is not None:
+                process_status = blur_outcome.process_status
+                response_code = blur_outcome.response_code or ResponseCodes.SUCCESS
+            else:
+                preclassification = _run_preclassification(
+                    file_bytes,
+                    content_type,
+                    user_provided_document_category,
+                    pages_detected,
+                    ddb_key,
+                )
+                process_status = preclassification.process_status
+                response_code = preclassification.response_code
+                pre_classification = preclassification.pre_classification
+                textract_result = preclassification.textract_result
+
+        # initial status does not qualify for bda processing
+        # create the json response signaling the process is complete
+        # (skip for Textract -- finalize_textract_result handles its own response)
+        if not ProcessStatus.is_pending_extraction(process_status) and textract_result is None:
+            internal_api_response = get_internal_api_response(
+                object_key=ddb_key,
+                response_code=response_code,
+                matched_document_class=None,
+                user_provided_document_category=user_provided_document_category,
+            )
+
+        upsert_ddb(
+            InitialDdbRecord(
+                object_key=ddb_key,
+                original_file_name=original_file_name,
+                user_provided_document_category=user_provided_document_category,
+                process_status=process_status,
+                internal_api_response=internal_api_response,
+                file_size_bytes=file_size_bytes,
+                content_type=content_type,
+                pages_detected=pages_detected,
+                job_id=job_id,
+                trace_id=trace_id,
+                batch_id=batch_id,
+                is_document_blurry=blur_result.is_blurry if blur_result else False,
+                blur_analysis_failed=blur_result.analysis_failed if blur_result else False,
+                ocr_avg_word_confidence=blur_result.avg_confidence if blur_result else None,
+                document_word_count=blur_result.word_count if blur_result else None,
+                blur_llm_checked=blur_result.llm_checked if blur_result else False,
+                blur_quadrant_stats=blur_result.quadrant_stats if blur_result else None,
+                blur_reason_text=blur_result.blur_reason_text
+                if blur_result
+                else BlurSkipReason.from_status(process_status),
+                blur_detection_duration_seconds=blur_result.duration_seconds
+                if blur_result
+                else None,
+                is_password_protected=is_password_protected,
+                pre_classification=pre_classification,
+                document_processor_started_at=document_processor_started_at,
+                is_document_processor_cold_start=is_document_processor_cold_start,
+                processing_percentage=processing_percentage,
+                processing_assigned_value=processing_assigned_value,
+                s3_fetch_duration_seconds=s3_fetch_duration_seconds,
+                traceparent=traceparent,
+            )
         )
 
-    upsert_ddb(
-        InitialDdbRecord(
-            object_key=ddb_key,
-            original_file_name=original_file_name,
-            user_provided_document_category=user_provided_document_category,
-            process_status=process_status,
-            internal_api_response=internal_api_response,
-            file_size_bytes=file_size_bytes,
-            content_type=content_type,
-            pages_detected=pages_detected,
-            job_id=job_id,
-            trace_id=trace_id,
-            batch_id=batch_id,
-            is_document_blurry=blur_result.is_blurry if blur_result else False,
-            blur_analysis_failed=blur_result.analysis_failed if blur_result else False,
-            ocr_avg_word_confidence=blur_result.avg_confidence if blur_result else None,
-            document_word_count=blur_result.word_count if blur_result else None,
-            blur_llm_checked=blur_result.llm_checked if blur_result else False,
-            blur_quadrant_stats=blur_result.quadrant_stats if blur_result else None,
-            blur_reason_text=blur_result.blur_reason_text
-            if blur_result
-            else BlurSkipReason.from_status(process_status),
-            blur_detection_duration_seconds=blur_result.duration_seconds if blur_result else None,
-            is_password_protected=is_password_protected,
-            pre_classification=pre_classification,
-            document_processor_started_at=document_processor_started_at,
-            is_document_processor_cold_start=is_document_processor_cold_start,
-            processing_percentage=processing_percentage,
-            processing_assigned_value=processing_assigned_value,
-            s3_fetch_duration_seconds=s3_fetch_duration_seconds,
-        )
-    )
+        # explicitly remove file reference to free memory for the lambda
+        del file_bytes
 
-    # explicitly remove file reference to free memory for the lambda
-    del file_bytes
-
-    # Textract completed inline -- finalize the record with extraction results
-    if textract_result is not None:
-        finalize_textract_result(ddb_key, textract_result, user_provided_document_category)
-        return
+        # Textract completed inline -- finalize the record with extraction results
+        if textract_result is not None:
+            finalize_textract_result(ddb_key, textract_result, user_provided_document_category)

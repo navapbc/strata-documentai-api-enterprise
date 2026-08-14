@@ -59,6 +59,7 @@ A client uploads a document via the API. It's stored in S3 and queued for proces
 - **[Admin console](ui/admin/README.md)** - manage tenants, users, API keys, extraction rules, and review processed documents
 - **[Demo environment](ui/demo/README.md)** - upload documents and view extraction results without tenant configuration
 - **[Metrics pipeline](docs/documentai-api/metrics-pipeline.md)** - SQS -> Glue -> S3 (Parquet), queryable per tenant
+- **[Observability](docs/documentai-api/observability.md)** - distributed tracing via OpenTelemetry and X-Ray, CloudWatch Application Signals for per-service Latency/Error/Fault metrics, CloudWatch dashboard
 - **[Serverless Terraform infrastructure](infra/README.md)** - Lambda containers, API Gateway, CloudFront, DynamoDB, S3
 
 

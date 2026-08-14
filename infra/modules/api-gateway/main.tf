@@ -26,6 +26,16 @@ resource "aws_iam_role_policy_attachment" "vpc_access" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 
+resource "aws_iam_role_policy_attachment" "xray" {
+  role       = aws_iam_role.this.name
+  policy_arn = "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess"
+}
+
+resource "aws_iam_role_policy_attachment" "application_signals" {
+  role       = aws_iam_role.this.name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchLambdaApplicationSignalsExecutionRolePolicy"
+}
+
 resource "aws_iam_role_policy_attachment" "extra" {
   for_each   = var.policy_arns
   role       = aws_iam_role.this.name
@@ -48,6 +58,14 @@ resource "aws_lambda_function" "this" {
 
   environment {
     variables = var.environment_variables
+  }
+
+  # Required for OTEL traces to reach X-Ray, not optional: the aws-otel-python-instrumentation
+  # layer falls back to Lambda's native X-Ray daemon (UDP, 127.0.0.1:2000) whenever no explicit
+  # traces OTLP endpoint is set. That daemon only runs when Active Tracing is on - without it,
+  # spans are generated normally but every export silently vanishes. See docs/documentai-api/observability.md.
+  tracing_config {
+    mode = "Active"
   }
 
   dynamic "vpc_config" {

@@ -1,6 +1,9 @@
 from dataclasses import dataclass, field
 from typing import Any
 
+from opentelemetry import trace
+from opentelemetry.propagate import extract
+
 from documentai_api.config.constants import BdaResponseFields, ConfigDefaults
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.logging import get_logger
@@ -26,6 +29,7 @@ from documentai_api.utils.tenants import (
 )
 
 logger = get_logger(__name__)
+tracer = trace.get_tracer(__name__)
 
 
 @dataclass
@@ -93,6 +97,22 @@ def process_bda_output(
     ddb_record = get_ddb_record_from_bda_output(bda_output_bucket_name, bda_output_object_key)
     if not ddb_record:
         raise ValueError(f"No DDB record found for BDA output: {bda_output_s3_uri}")
+
+    # Extract traceparent written by document-processor to restore the parent
+    # trace context across the async S3-triggered Lambda boundary.
+    carrier = {"traceparent": ddb_record.get(DocumentMetadata.TRACEPARENT, "")}
+    ctx = extract(carrier)
+
+    with tracer.start_as_current_span("bda.result_process", context=ctx) as span:
+        span.set_attribute("document.key", ddb_record.get(DocumentMetadata.FILE_NAME, ""))
+        return _process_bda_output_inner(bda_output_s3_uri, ddb_record, result_processor_started_at)
+
+
+def _process_bda_output_inner(
+    bda_output_s3_uri: str,
+    ddb_record: dict[str, Any],
+    result_processor_started_at: str | None,
+) -> dict[str, Any]:
 
     file_name: str = ddb_record[DocumentMetadata.FILE_NAME]
 
