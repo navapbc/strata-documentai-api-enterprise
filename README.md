@@ -27,19 +27,7 @@ For Strata template applications, see [`navapbc/strata`](https://github.com/nava
 
 ## See it in action
 
-**Local API setup** - clone, configure, wire in real dev AWS resources, and watch a document get processed end to end from a local container.
-
-![Local API setup](docs/documentai-api/media/api-setup-demo.gif)
-
-**Admin console** - tenant and user management, API keys, document review.
-
-![Admin console walkthrough](docs/documentai-api/media/admin-walkthrough.gif)
-
-**Extraction rules** - configure per-tenant, per-document-type field rules.
-
-![Extraction rules walkthrough](docs/documentai-api/media/admin-extraction-rules-walkthrough.gif)
-
-**Demo UI** - upload a document and view extraction results with bounding box overlay.
+Upload a document and view extraction results with bounding box overlay.
 
 ![Demo UI walkthrough](docs/documentai-api/media/demo-walkthrough.gif)
 

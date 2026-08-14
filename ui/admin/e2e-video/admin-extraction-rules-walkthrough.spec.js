@@ -86,20 +86,23 @@ test("extraction rules walkthrough", async ({ page }) => {
   // === 3. Navigate to Extraction Rules =====================================
   await page.locator('[data-section="docs"]').click();
   await expect(page.locator("#section-docs")).not.toHaveClass(/hidden/);
-  await page.locator('[data-view="extraction-rules"]').click();
-  await expect(page.locator("#view-title")).toHaveText("Manage Extraction Rules");
+  await page.locator('a.nav-item[data-view="extraction-rules"]').click();
+  await expect(page.locator("#view-title")).toHaveText(/^Manage Extraction Rules/);
   await page.waitForTimeout(800);
 
   // === 4. Select tenant =====================================================
-  await page.locator("#global-tenant-select").selectOption(TENANT_ID);
+  await page.locator("#tenant-select").selectOption(TENANT_ID);
   await page.waitForTimeout(600);
 
   // === 5. Blueprint list should be populated ================================
-  await expect(page.locator("#bp-list-pane .nav-item").first()).toBeVisible({ timeout: 15000 });
+  await page.locator("#bp-list-pane .combobox-input").clear();
+  await page.locator("#bp-list-pane .combobox-input").click();
+  await expect(page.locator("#bp-list-pane .combobox-option").first()).toBeVisible({ timeout: 15000 });
 
   // === 6. Click W-2 blueprint ===============================================
-  await page.locator('#bp-list-pane .nav-item', { hasText: "US Tax Form W-2" }).click();
+  await page.locator("#bp-list-pane .combobox-option", { hasText: "US Tax Form W-2" }).click();
   await expect(page.locator("#bp-fields-list h3")).toHaveText("US Tax Form W-2");
+  await page.waitForTimeout(500);
   await expect(page.locator(".field-row").first()).toBeVisible();
   await page.waitForTimeout(1000);
 
@@ -118,11 +121,13 @@ test("extraction rules walkthrough", async ({ page }) => {
   await page.waitForTimeout(700);
 
   // === 10. Save =============================================================
-  await page.locator("#bp-save-btn").click();
+  await page.locator("#bp-fields-list button.btn-primary").click();
   await page.waitForTimeout(800);
 
   // === 11. Switch to Invoice blueprint ======================================
-  await page.locator('#bp-list-pane .nav-item', { hasText: "Invoice" }).click();
+  await page.locator("#bp-list-pane .combobox-input").clear();
+  await page.locator("#bp-list-pane .combobox-input").click();
+  await page.locator("#bp-list-pane .combobox-option", { hasText: "Invoice" }).click();
   await expect(page.locator("#bp-fields-list h3")).toHaveText("Invoice");
   await page.waitForTimeout(1000);
 
@@ -135,6 +140,6 @@ test("extraction rules walkthrough", async ({ page }) => {
   await page.waitForTimeout(800);
 
   // === 13. Save Invoice rules ===============================================
-  await page.locator("#bp-save-btn").click();
+  await page.locator("#bp-fields-list button.btn-primary").click();
   await page.waitForTimeout(1200);
 });

@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { JOB_ID, COMPLETED_DOC, FIELDS, previewDataUrl } from "../../shared/e2e/fixtures/recording/w2-document.js";
 import { loginWithMfa } from "../../shared/e2e/helpers/login.js";
-import { hoverFields, expectBboxOverlay } from "../../shared/e2e/helpers/document-viewer.js";
+import { hoverFields, expectBboxOverlay, SELECTORS } from "../../shared/e2e/helpers/document-viewer.js";
 
 // ---------------------------------------------------------------------------
 // Scripted demo video: Document viewer with bounding box overlay.
@@ -61,29 +61,29 @@ test("document viewer walkthrough: bbox overlay and field highlighting", async (
   // === 2. Navigate to Documents ============================================
   await page.locator('[data-section="docs"]').click();
   await expect(page.locator("#section-docs")).not.toHaveClass(/hidden/);
-  await page.locator('[data-view="documents"]').click();
-  await expect(page.locator("#view-title")).toHaveText("Recently Processed");
+  await page.locator('a.nav-item[data-view="documents"]').click();
+  await expect(page.locator("#view-title")).toHaveText(/^Recently Processed/);
   await page.waitForTimeout(600);
 
   // === 3. Select tenant =====================================================
-  await page.locator("#global-tenant-select").selectOption(TENANT_ID);
+  await page.locator(SELECTORS.tenantSelect).selectOption(TENANT_ID);
   await expect(page.locator("#documents-list .doc-list-item").first()).toBeVisible();
   await page.waitForTimeout(900);
 
   // === 4. Open the W-2 document ============================================
   await page.locator(`[data-job-id="${JOB_ID}"]`).click();
-  await expect(page.locator("#document-detail-panel")).not.toHaveClass(/collapsed/);
+  await expect(page.locator(SELECTORS.detailPane)).toBeVisible();
   await page.waitForTimeout(800);
 
   // === 5. Bbox overlay =====================================================
-  await expectBboxOverlay(page, expect, "#document-preview-panel .bbox-overlay rect");
+  await expectBboxOverlay(page, expect, SELECTORS.bboxOverlay);
   await page.waitForTimeout(1000);
 
   // === 6. Hover each field to show highlight linking =======================
   await hoverFields(
     page,
     FIELDS.map((f) => f.name),
-    "#document-detail-panel tr[data-field]",
+    SELECTORS.fieldRows,
     900,
   );
 

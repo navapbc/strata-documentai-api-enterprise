@@ -1,3 +1,11 @@
+export const SELECTORS = {
+  tenantSelect: "#tenant-select",
+  detailPane: "#doc-pane-detail",
+  previewPane: "#doc-pane-preview",
+  bboxOverlay: "#doc-pane-preview .bbox-overlay rect",
+  fieldRows: "#doc-pane-detail tr[data-field]",
+};
+
 /**
  * Hover each field row in sequence to demonstrate the bbox highlight linking.
  *
