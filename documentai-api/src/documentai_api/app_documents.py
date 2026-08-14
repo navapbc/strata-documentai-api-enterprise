@@ -121,6 +121,7 @@ async def upload_document(
         input_location = get_aws_config().documentai_demo_input_location
     else:
         input_location = get_aws_config().documentai_input_location
+
     dest_path = f"{input_location}/{auth.tenant_id}/{unique_file_name}"
 
     try:
@@ -128,6 +129,7 @@ async def upload_document(
             ddb_key=ddb_key,
             original_file_name=filename,
             job_id=job_id,
+            system_document_id=job_id,
             category=category,
             trace_id=trace_id,
             content_type=actual_content_type,

@@ -397,6 +397,7 @@ def test_tenant_id_propagated_to_ddb(api_client, mocker):
     record = mock_insert.call_args[0][0]
     assert record.tenant_id == "test-tenant"
     assert record.api_key_name == "test-client"
+    assert record.system_document_id == record.job_id
 
 
 @pytest.mark.parametrize("upload_source", ["desktop", "mobile", None])

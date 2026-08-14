@@ -150,6 +150,7 @@ def test_create_document_with_external_fields(api_client, blank_pdf_bytes, mocke
     assert record.external_document_id == "test-ext-doc-id"
     assert record.external_system_id == "test-ext-sys-id"
     assert record.ai_consent_flag is True
+    assert record.system_document_id == record.job_id
 
 
 @pytest.mark.parametrize("upload_source", ["desktop", "mobile", None])

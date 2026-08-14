@@ -340,6 +340,7 @@ def test_submit_document_build_stamps_tenant_on_job_record(
     # ddb_key must equal the uploaded object's basename so the doc-processor's
     # basename-keyed upsert updates this row in place.
     assert record.job_id == response.json()["jobId"]
+    assert record.system_document_id == record.job_id
 
     # merged PDF is also written under the tenant prefix
     dest_path = mock_document_build_submit["upload"].call_args.kwargs["dest_path"]
@@ -1049,6 +1050,7 @@ def test_submit_build_ai_consent_declined(document_build_ddb_table):
     assert record.tenant_id == "test-tenant"
     assert record.api_key_name == "test-client"
     assert record.external_document_id == "ext-doc"
+    assert record.system_document_id == record.job_id
     assert record.external_system_id == "ext-sys"
     assert record.job_id == result["jobId"]
     assert record.ddb_key.endswith(".pdf")

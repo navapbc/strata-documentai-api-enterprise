@@ -115,6 +115,7 @@ async def _process_batch_files(
                 ddb_key=ddb_key,
                 original_file_name=file.filename,
                 job_id=job_id,
+                system_document_id=job_id,
                 category=category,
                 trace_id=trace_id,
                 batch_id=batch_id,
