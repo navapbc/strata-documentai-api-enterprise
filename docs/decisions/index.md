@@ -8,6 +8,7 @@ This log lists the architectural decisions for DocumentAI API.
 * [ADR-2026-07-22](2026-07-22-odt-upload-rejection.md) - Reject ODT Uploads with a Friendly Error Instead of Converting
 * [ADR-2026-07-23](2026-07-23-per-category-processing-sampling.md) - Per-Category Document Processing Sampling
 * [ADR-2026-08-06](2026-08-06-audit-log-actor-dropdown-source.md) - Audit Log Actor Dropdown: Use Cognito as the Sole Source
+* [ADR-2026-08-14](2026-08-14-document-identity-model.md) - Defer the Document/Job Identity Split; Start Collecting `systemDocumentId` Now
 
 <!-- adrlogstop -->
 

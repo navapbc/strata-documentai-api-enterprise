@@ -16,6 +16,7 @@ class DocumentMetadata:
     RESPONSE_CODE = "responseCode"
     PROCESSED_DATE = "processedDate"
     JOB_ID = "jobId"
+    SYSTEM_DOCUMENT_ID = "systemDocumentId"
     TRACE_ID = "traceId"
     BATCH_ID = "batchId"
     EXTERNAL_DOCUMENT_ID = "externalDocumentId"

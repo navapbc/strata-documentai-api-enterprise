@@ -15,6 +15,9 @@ class DocumentRecord(BaseModel):
     ddb_key: str
     original_file_name: str
     job_id: str
+    # system_document_id is a stable identifier for the document, currently
+    # identical to job_id. will diverge once reprocessing is supported.
+    system_document_id: str
     upload_method: str
     upload_source: str | None = None
     tenant_id: str

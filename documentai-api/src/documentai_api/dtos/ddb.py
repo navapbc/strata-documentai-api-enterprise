@@ -182,6 +182,9 @@ class InitialDdbRecord(BaseModel):
         default=None, json_schema_extra=_ddb_metadata_map("pagesDetected", ":pages")
     )
     job_id: str | None = Field(default=None, json_schema_extra=_ddb_metadata_map("jobId", ":jobId"))
+    system_document_id: str | None = Field(
+        default=None, json_schema_extra=_ddb_metadata_map("systemDocumentId", ":systemDocumentId")
+    )
     trace_id: str | None = Field(
         default=None, json_schema_extra=_ddb_metadata_map("traceId", ":traceId")
     )

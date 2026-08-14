@@ -118,6 +118,7 @@ def test_batch_upload_with_external_fields(api_client, pdf_file):
     record = mock_insert.call_args[0][0]
     assert record.external_document_id == "test-ext-doc-id"
     assert record.external_system_id == "test-ext-sys-id"
+    assert record.system_document_id == record.job_id
     assert record.ai_consent_flag is True
 
 

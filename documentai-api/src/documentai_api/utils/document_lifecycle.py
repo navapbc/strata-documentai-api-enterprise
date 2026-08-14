@@ -160,6 +160,7 @@ def insert_minimal_ddb_record(record: DocumentRecord) -> None:
             file_size_bytes=record.file_size_bytes,
             content_type=record.content_type,
             job_id=record.job_id,
+            system_document_id=record.system_document_id,
             trace_id=record.trace_id,
             batch_id=record.batch_id,
             external_document_id=record.external_document_id,

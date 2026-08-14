@@ -45,7 +45,11 @@ def load_test_cases() -> list[Case]:
                     content_type=expected.get("content_type"),
                 ),
             ),
-            marks=[pytest.mark.flaky(reruns=expected.get("reruns_override", 0))],
+            marks=(
+                [pytest.mark.flaky(reruns=expected["reruns_override"])]
+                if "reruns_override" in expected
+                else []
+            ),
             id=filename,
         )
         for filename, expected in cases.items()
