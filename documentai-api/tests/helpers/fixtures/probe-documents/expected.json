@@ -254,15 +254,11 @@
   },
   "synthetic-probe-payslip-faint-fields.jpg": {
     "//": [
-      "KF-7: per-field confidence is not gated. Payslip with localized faint /",
-      "smudged fields: individual fields populated at 0.06-0.41 confidence while",
-      "the average stays above the tenant floor. Spec: 105",
-      "LOW_EXTRACTION_CONFIDENCE - a document relying on sub-floor field reads",
-      "must not validate clean. Disabled 2026-08-13: no seedable tenant-rule",
-      "shape satisfies the spec - the missing-geo heuristic flags geometry-less",
-      "fields as 101-missing regardless of presence, masking the per-field",
-      "confidence (105) outcome this case probes. Fixture and spec stay",
-      "committed for the record; re-enable when the 105 gate is separable."
+      "KF-7: average field confidence does not protect against individual fields",
+      "with extremely low confidence. Payslip with localized faint / smudged",
+      "fields: individual fields populated at 0.06-0.41 confidence while",
+      "the average stays above the tenant floor. Disabled 2026-08-14: decided",
+      "out of scope for now, may revisit in the future for case management purposes."
     ],
     "issue": "KF-7",
     "e2e_enabled": false,
