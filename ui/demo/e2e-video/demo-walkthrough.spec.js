@@ -50,11 +50,13 @@ test("demo walkthrough: login -> upload -> extraction with bounding boxes", asyn
 
   // --- API: history, upload, poll (started -> success), preview -------------
   let getCalls = 0;
+  let uploaded = false;
   await page.route("**/v1/demo/documents**", async (route) => {
     const req = route.request();
     const url = req.url();
 
     if (req.method() === "POST") {
+      uploaded = true;
       return route.fulfill(json({ jobId: JOB_ID }));
     }
     if (url.includes("/preview")) {
@@ -68,8 +70,12 @@ test("demo walkthrough: login -> upload -> extraction with bounding boxes", asyn
       }
       return route.fulfill(json(COMPLETED_DOC));
     }
-    // GET /v1/demo/documents -> history list
-    return route.fulfill(json(HISTORY));
+    // GET /v1/demo/documents -> history list (include uploaded doc once it exists)
+    const docs = uploaded
+      ? [{ jobId: JOB_ID, fileName: "employee-w2-2025.png", processStatus: "success",
+          matchedBlueprint: "W-2", createdAt: new Date().toISOString() }, ...HISTORY.documents]
+      : HISTORY.documents;
+    return route.fulfill(json({ ...HISTORY, documents: docs }));
   });
 
   // === 1. Login + MFA ======================================================
@@ -97,6 +103,7 @@ test("demo walkthrough: login -> upload -> extraction with bounding boxes", asyn
 
   // === 4. Run extraction ===================================================
   await page.click("#demo-run-btn");
+  await page.mouse.move(0, 0);
   await expect(page.locator("#demo-elapsed")).toBeVisible();
 
   // === 5. Results + bounding-box overlay ===================================

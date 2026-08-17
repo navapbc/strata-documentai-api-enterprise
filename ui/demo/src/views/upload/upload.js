@@ -191,7 +191,7 @@ function clearFile() {
   _runBtn.disabled = true;
 }
 
-async function loadHistory() {
+async function loadHistory(activeJobId = null) {
   if (!_historyList) return;
   _historyList.replaceChildren(h("li", { className: "empty-state" }, "Loading documents…"));
   try {
@@ -215,9 +215,14 @@ async function loadHistory() {
         ),
       );
       li.addEventListener("click", () => {
+        _historyList
+          .querySelectorAll(".demo-history-item")
+          .forEach((el) => el.classList.remove("active"));
+        li.classList.add("active");
         loadDocument(doc.jobId);
         switchTab("results");
       });
+      if (activeJobId && doc.jobId === activeJobId) li.classList.add("active");
       _historyList.appendChild(li);
     }
   } catch {
@@ -243,7 +248,8 @@ async function runExtraction() {
     const result = await pollForCompletion(jobId);
     renderResults(result);
     loadPreview(result);
-    loadHistory();
+    clearFile();
+    await loadHistory(jobId);
     switchTab("results");
   } catch (e) {
     if (e.name !== "AbortError") {
