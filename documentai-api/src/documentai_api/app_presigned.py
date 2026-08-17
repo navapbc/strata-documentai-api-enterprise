@@ -137,6 +137,7 @@ async def create_presigned_upload_url(
             ddb_key=ddb_key,
             original_file_name=filename,
             job_id=job_id,
+            system_document_id=job_id,
             process_status=ProcessStatus.PENDING_UPLOAD,
             category=category,
             trace_id=trace_id,

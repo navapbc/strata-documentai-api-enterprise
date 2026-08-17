@@ -4,40 +4,37 @@ import * as Helpers from "../../utils/helpers.js";
 import * as TenantContext from "../../utils/tenant-context.js";
 import { openModal, closeModal } from "../../utils/modal.js";
 import * as Toast from "../../utils/toast.js";
-import { h } from "../../utils/dom.js";
+import { h, iconBtn } from "../../utils/dom.js";
 import { tpl } from "../../utils/tpl.js";
+import { TableView } from "../../utils/table-view.js";
 import html from "./users.html";
 
 const tmpl = tpl(html);
 
-let _root, _tbody, _noUsers, _refreshBtn, _showPendingOnly;
+let _root, _tableView;
+let _emailFilter, _roleFilter, _statusFilter;
 let _assignModal, _assignForm, _assignRoleSelect, _assignTenantSelect;
 let _assignRoleEmail, _assignRoleError, _assignRoleCancel, _assignRoleTitle;
 let _deleteModal, _deleteEmail, _deleteError, _deleteCancel, _deleteConfirm;
 let _pendingUsername = null;
 let _allUsers = [];
 let _tenantUnsub = null;
-let _sortUnsub = null;
-let _sortCol = null;
-let _sortDir = "asc";
 
 export function mount(root) {
   _root = root;
   root.replaceChildren(tmpl());
 
-  // Inject actions into shared header
-  _showPendingOnly = h("input", { type: "checkbox", id: "show-pending-only" });
-  _refreshBtn = h("button", { className: "btn-secondary" }, "Refresh");
-  const label = h(
-    "label",
-    { className: "inline-checkbox" },
-    _showPendingOnly,
-    document.createTextNode(" Pending only"),
-  );
-  Helpers.setViewActions(label, _refreshBtn);
+  Helpers.setViewActions();
+  _emailFilter = root.querySelector("#users-email-filter");
+  _roleFilter = root.querySelector("#users-role-filter");
+  _statusFilter = root.querySelector("#users-status-filter");
 
-  _tbody = root.querySelector("#users-tbody");
-  _noUsers = root.querySelector("#no-users");
+  _tableView = new TableView(
+    root.querySelector("#users-table"),
+    root.querySelector("#users-tbody"),
+    root.querySelector("#no-users"),
+    renderRow,
+  ).bindSortHeaders(root.querySelector("thead"));
 
   _assignModal = root.querySelector("#assign-role-modal");
   _assignForm = root.querySelector("#assign-role-form");
@@ -54,20 +51,17 @@ export function mount(root) {
   _deleteCancel = root.querySelector("#delete-user-cancel");
   _deleteConfirm = root.querySelector("#delete-user-confirm");
 
-  _refreshBtn.addEventListener("click", () => load());
-  _showPendingOnly.addEventListener("change", () => renderTable(_allUsers));
+  _emailFilter.addEventListener("input", applyFilters);
+  _roleFilter.addEventListener("change", applyFilters);
+  _statusFilter.addEventListener("change", applyFilters);
   _assignRoleCancel.addEventListener("click", closeAssignModal);
   _assignForm.addEventListener("submit", handleAssignRole);
   _assignRoleSelect.addEventListener("change", toggleTenantRow);
   _deleteCancel.addEventListener("click", closeDeleteModal);
   _deleteConfirm.addEventListener("click", handleDeleteUser);
 
-  _tenantUnsub = TenantContext.onChange(() => renderTable(_allUsers));
-  _sortUnsub = Helpers.bindSortHeaders(root.querySelector("thead"), (col, dir) => {
-    _sortCol = col;
-    _sortDir = dir;
-    renderTable(_allUsers);
-  });
+  _tenantUnsub = TenantContext.onChange(applyFilters);
+  TenantContext.mountSelect(root.querySelector("#tenant-select"));
 
   load();
 }
@@ -77,67 +71,65 @@ export function unmount(root) {
     _tenantUnsub();
     _tenantUnsub = null;
   }
-  if (_sortUnsub) {
-    _sortUnsub();
-    _sortUnsub = null;
-  }
+  const tenantSelect = root.querySelector("#tenant-select");
+  if (tenantSelect) TenantContext.unmountSelect(tenantSelect);
+  _tableView.unbind();
   root.replaceChildren();
 }
 
 export async function load() {
-  Helpers.showLoading(_tbody, _noUsers);
+  _tableView.showLoading();
   try {
     const data = await UsersService.list();
     _allUsers = data.users || [];
-    renderTable(_allUsers);
+    applyFilters();
   } catch (e) {
-    _tbody.innerHTML = "";
-    _noUsers.textContent = e.message;
-    _noUsers.classList.remove("hidden");
+    _tableView.showError(e.message);
   }
 }
 
-function renderTable(users) {
-  const pendingOnly = _showPendingOnly?.checked;
+function applyFilters() {
   const tenantId = TenantContext.getTenantId();
+  const emailQ = _emailFilter?.value.trim().toLowerCase();
+  const roleQ = _roleFilter?.value;
+  const statusQ = _statusFilter?.value;
 
-  let filtered = tenantId ? users.filter((u) => u.tenantId === tenantId) : users;
-  if (pendingOnly) filtered = filtered.filter((u) => !u.groups || u.groups.length === 0);
-  filtered = Helpers.sortRows(filtered, _sortCol, _sortDir);
+  let filtered = tenantId ? _allUsers.filter((u) => u.tenantId === tenantId) : _allUsers;
+  if (emailQ) filtered = filtered.filter((u) => u.email?.toLowerCase().includes(emailQ));
+  if (roleQ === "pending") filtered = filtered.filter((u) => !u.groups || u.groups.length === 0);
+  else if (roleQ) filtered = filtered.filter((u) => u.groups?.includes(roleQ));
+  if (statusQ === "active") filtered = filtered.filter((u) => u.enabled !== false);
+  else if (statusQ === "inactive") filtered = filtered.filter((u) => u.enabled === false);
 
-  _tbody.innerHTML = "";
-  if (filtered.length === 0) {
-    _noUsers.textContent = pendingOnly ? "No pending users." : "No users found.";
-    _noUsers.classList.remove("hidden");
-    return;
-  }
-  _noUsers.classList.add("hidden");
+  filtered = filtered.map((u) => ({ ...u, role: u.groups?.[0] || "pending" }));
 
-  for (const user of filtered) {
-    const groups = user.groups || [];
-    const role = groups[0] || "pending";
-    const statusEl =
-      groups.length > 0
-        ? h("span", { className: "badge badge-success" }, "Active")
-        : h("span", { className: "badge badge-neutral" }, "Pending");
-    const roleBtn = h("button", { className: "btn-sm btn-secondary" }, "Assign Role");
-    const deleteBtn = h("button", { className: "btn-sm btn-outline-danger" }, "Delete");
+  const noUsersEl = _root.querySelector("#no-users");
+  noUsersEl.textContent = roleQ === "pending" ? "No pending users." : "No users found.";
+  _tableView.setRows(filtered);
+}
 
-    const tr = h(
-      "tr",
-      null,
-      h("td", null, user.email || "-"),
-      h("td", null, statusEl),
-      h("td", null, role),
-      h("td", null, user.tenantId || "-"),
-      h("td", null, Helpers.formatDate(user.createdAt)),
-      h("td", null, h("div", { className: "row-actions" }, roleBtn, deleteBtn)),
-    );
-
-    roleBtn.addEventListener("click", () => openAssignModal(user));
-    deleteBtn.addEventListener("click", () => openDeleteModal(user));
-    _tbody.appendChild(tr);
-  }
+function renderRow(user) {
+  const groups = user.groups || [];
+  const role = user.role ?? groups[0] ?? "pending";
+  const statusEl =
+    groups.length > 0
+      ? h("span", { className: "badge badge-success" }, "Active")
+      : h("span", { className: "badge badge-neutral" }, "Pending");
+  const roleBtn = iconBtn("edit", "Assign Role");
+  const deleteBtn = iconBtn("discard", "Delete", "btn-icon-danger");
+  const tr = h(
+    "tr",
+    null,
+    h("td", null, user.email || "-"),
+    h("td", null, statusEl),
+    h("td", null, role),
+    h("td", null, user.tenantId || "-"),
+    h("td", null, Helpers.formatDate(user.createdAt)),
+    h("td", null, h("div", { className: "row-actions" }, roleBtn, deleteBtn)),
+  );
+  roleBtn.addEventListener("click", () => openAssignModal(user));
+  deleteBtn.addEventListener("click", () => openDeleteModal(user));
+  return tr;
 }
 
 async function openAssignModal(user) {
@@ -146,7 +138,6 @@ async function openAssignModal(user) {
   _assignRoleError.classList.add("hidden");
   _assignRoleTitle.textContent = user.groups?.length > 0 ? "Change role" : "Approve user";
 
-  // Load tenants for dropdown
   try {
     const data = await TenantsService.list();
     _assignTenantSelect.innerHTML = '<option value="">- Select a tenant -</option>';

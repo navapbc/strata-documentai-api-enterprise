@@ -1,5 +1,7 @@
 """Evaluation statuses, keys, pipeline order, and skip reasons for the /evaluation endpoint."""
 
+from documentai_api.config.constants import ProcessStatus
+
 
 class EvaluationStatus:
     PASS = "pass"
@@ -12,6 +14,7 @@ class EvaluationKey:
     DOCUMENT_DETECTED = "documentDetected"
     BLUR = "blurDetection"
     MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE = "multipleDocumentsOnSinglePage"
+    MULTIPLE_DOCUMENTS_IN_MULTIPAGE = "multipleDocumentsInMultipage"
     MISCATEGORIZATION = "miscategorization"
     MISSING_FIELDS = "missingFields"
     EXTRACTION_CONFIDENCE = "extractionConfidence"
@@ -22,6 +25,7 @@ EVALUATION_PIPELINE: list[str] = [
     EvaluationKey.DOCUMENT_DETECTED,
     EvaluationKey.BLUR,
     EvaluationKey.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
+    EvaluationKey.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
     EvaluationKey.MISCATEGORIZATION,
     EvaluationKey.MISSING_FIELDS,
     EvaluationKey.EXTRACTION_CONFIDENCE,
@@ -31,8 +35,18 @@ EVALUATION_PIPELINE: list[str] = [
 class BlurSkipReason:
     PASSWORD_PROTECTED = "Blur check was not performed - document is password protected."
     PROCESSING_EXCLUDED = "Blur check was not performed - document was excluded from processing."
-    DETECTION_DISABLED = "Blur detection is not enabled."
-    NOT_A_DOCUMENT = "Blur check was skipped - insufficient text detected to evaluate."
+    DETECTION_DISABLED = (
+        "Blur detection is not enabled."  # config state, no process status equivalent
+    )
+    NOT_A_DOCUMENT = "Blur check was skipped - insufficient text detected to evaluate."  # set directly on blur_result
+
+    @classmethod
+    def from_status(cls, process_status: str) -> str | None:
+        """Map a terminal process status to its blur skip reason."""
+        return {
+            ProcessStatus.PASSWORD_PROTECTED.value: cls.PASSWORD_PROTECTED,
+            ProcessStatus.PROCESSING_EXCLUDED.value: cls.PROCESSING_EXCLUDED,
+        }.get(process_status)
 
 
 class NotEvaluatedReason:
@@ -53,6 +67,7 @@ class NotEvaluatedReason:
     STOPPED_MULTIPLE_DOCUMENTS = (
         "Not reached - processing stopped after multiple documents were detected."
     )
+    STOPPED_MULTIPLE_DOCUMENTS_IN_MULTIPAGE = "Not reached - processing stopped because pages are not continuations of a single document instance."
     EXTRACTION_NOT_EXECUTED = "Not reached - extraction did not run."
     BLUR_NOT_APPLICABLE = "Not evaluated - blur detection does not apply to this document type."
     LEGACY_DOCUMENT = (

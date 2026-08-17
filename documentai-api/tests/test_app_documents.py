@@ -150,6 +150,7 @@ def test_create_document_with_external_fields(api_client, blank_pdf_bytes, mocke
     assert record.external_document_id == "test-ext-doc-id"
     assert record.external_system_id == "test-ext-sys-id"
     assert record.ai_consent_flag is True
+    assert record.system_document_id == record.job_id
 
 
 @pytest.mark.parametrize("upload_source", ["desktop", "mobile", None])
@@ -248,7 +249,7 @@ def test_create_document_custom_trace_id(api_client, blank_pdf_bytes):
 def test_create_document_upload_failure_classifies_record(api_client, blank_pdf_bytes, mocker):
     """Test unexpected upload failure marks DDB record as failed."""
     mocker.patch("documentai_api.app_documents.insert_minimal_ddb_record")
-    mock_classify = mocker.patch("documentai_api.utils.document_lifecycle.classify_as_failed")
+    mock_classify = mocker.patch("documentai_api.utils.document_classification.classify_as_failed")
     mocker.patch(
         "documentai_api.utils.uploads.upload_document_for_processing",
         side_effect=RuntimeError("S3 exploded"),
@@ -267,7 +268,7 @@ def test_create_document_conversion_failure(api_client, blank_pdf_bytes, mocker)
     from documentai_api.utils.uploads import ImageConversionError
 
     mocker.patch("documentai_api.app_documents.insert_minimal_ddb_record")
-    mocker.patch("documentai_api.utils.document_lifecycle.classify_as_conversion_failed")
+    mocker.patch("documentai_api.utils.document_classification.classify_as_conversion_failed")
     mocker.patch(
         "documentai_api.utils.uploads.upload_document_for_processing",
         side_effect=ImageConversionError("Cannot convert"),
@@ -961,7 +962,7 @@ def test_documents_wait_conversion_failed_skips_poll(api_client, blank_pdf_bytes
     from documentai_api.utils.uploads import ImageConversionError
 
     mocker.patch("documentai_api.app_documents.insert_minimal_ddb_record")
-    mocker.patch("documentai_api.utils.document_lifecycle.classify_as_conversion_failed")
+    mocker.patch("documentai_api.utils.document_classification.classify_as_conversion_failed")
     mocker.patch(
         "documentai_api.utils.uploads.upload_document_for_processing",
         side_effect=ImageConversionError("Cannot convert"),

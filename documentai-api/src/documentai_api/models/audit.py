@@ -23,6 +23,10 @@ class AuditActionsResponse(BaseApiResponse):
     actions: list[str]
 
 
+class AuditActorsResponse(BaseApiResponse):
+    actors: list[str]
+
+
 class AuditLogResponse(BaseApiResponse):
     events: list[AuditEventItem]
     count: int

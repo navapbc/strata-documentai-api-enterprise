@@ -6,7 +6,7 @@
   "permissions": {
     "licenses": [
       {
-        "name": "MIT",
+        "name": "Apache-2.0",
         "URL": "https://github.com/navapbc/strata-documentai-api-enterprise/blob/main/LICENSE"
       }
     ],

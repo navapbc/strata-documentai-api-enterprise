@@ -43,6 +43,7 @@ export function mount(root) {
   _downloadBtn.addEventListener("click", downloadCsv);
 
   _tenantUnsub = TenantContext.onChange(() => load());
+  TenantContext.mountSelect(root.querySelector("#tenant-select"));
 
   load();
 }
@@ -52,6 +53,8 @@ export function unmount(_root) {
     _tenantUnsub();
     _tenantUnsub = null;
   }
+  const tenantSelect = _root?.querySelector("#tenant-select");
+  if (tenantSelect) TenantContext.unmountSelect(tenantSelect);
   _root = null;
   _currentData = [];
 }
@@ -64,6 +67,8 @@ async function load() {
 
   _empty.textContent = "Loading...";
   _empty.classList.remove("hidden");
+  _downloadBtn.disabled = true;
+  _downloadBtn.classList.add("hidden");
   _tableContainer.querySelectorAll("table").forEach((t) => t.remove());
 
   try {
@@ -90,10 +95,13 @@ function renderTable() {
   if (!_currentData.length) {
     _empty.textContent = "No data available for this period.";
     _empty.classList.remove("hidden");
+    _downloadBtn.disabled = true;
     return;
   }
 
   _empty.classList.add("hidden");
+  _downloadBtn.disabled = false;
+  _downloadBtn.classList.remove("hidden");
 
   const columns =
     _currentGranularity === "daily"

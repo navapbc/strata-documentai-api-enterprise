@@ -19,11 +19,7 @@ let _dirty = false;
 
 export function mount(root) {
   _root = root;
-  root.innerHTML = `
-    <div class="nav-search">
-      <input type="text" id="bp-field-search" placeholder="Search fields...">
-    </div>
-  `;
+  root.innerHTML = `<input type="text" id="bp-field-search" placeholder="Search fields...">`;
 
   _input = root.querySelector("#bp-field-search");
   _results = document.querySelector("#bp-search-results");
@@ -55,18 +51,13 @@ function unmount() {
   if (_root) _root.replaceChildren();
 }
 
-async function loadRulesForDocType(tenantId, docType) {
-  if (!tenantId) return {};
-  try {
-    const data = await RulesService.get(tenantId, docType);
-    const rule = data.rules?.[0] || {};
-    const rules = {};
-    for (const f of rule.requiredFields || []) rules[f] = "required";
-    for (const f of rule.optionalFields || []) rules[f] = "optional";
-    return rules;
-  } catch {
-    return {};
-  }
+function rulesForDocType(docType) {
+  const { allRules = [] } = Store.get();
+  const docRule = allRules.find((r) => (r.documentType || r.document_type) === docType);
+  const rules = {};
+  for (const f of docRule?.requiredFields || docRule?.required_fields || []) rules[f] = "required";
+  for (const f of docRule?.optionalFields || docRule?.optional_fields || []) rules[f] = "optional";
+  return rules;
 }
 
 function search(query) {
@@ -75,14 +66,20 @@ function search(query) {
     _results.innerHTML = "";
     _dirty = false;
     _searchRules = {};
+    const actionsEl = document.querySelector("#bp-search-actions");
+    if (actionsEl) actionsEl.style.display = "none";
     if (editor) editor.classList.remove("hidden");
     return;
   }
 
-  const { schemas } = Store.get();
+  const { schemas, activeDocType } = Store.get();
   const matches = [];
 
-  for (const [docType, fields] of Object.entries(schemas)) {
+  const searchScope = activeDocType
+    ? Object.entries(schemas).filter(([dt]) => dt === activeDocType)
+    : Object.entries(schemas);
+
+  for (const [docType, fields] of searchScope) {
     for (const field of fields) {
       if (field.name.toLowerCase().includes(query.toLowerCase())) {
         matches.push({ docType, field });
@@ -91,7 +88,6 @@ function search(query) {
   }
 
   if (editor) editor.classList.add("hidden");
-  Store.set({ activeDocType: null });
 
   if (matches.length === 0) {
     _results.replaceChildren(h("p", { className: "empty-state" }, "No fields found."));
@@ -108,49 +104,47 @@ function search(query) {
   renderResults(grouped);
 }
 
-async function renderResults(grouped) {
+function renderResults(grouped) {
   const tenantId = TenantContext.getTenantId();
   _searchRules = {};
   _dirty = false;
 
-  // Load rules for each doc type
   for (const docType of Object.keys(grouped)) {
-    _searchRules[docType] = await loadRulesForDocType(tenantId, docType);
+    _searchRules[docType] = rulesForDocType(docType);
   }
 
   _results.replaceChildren();
 
   // Use screen-level Save/Discard buttons
+  const actionsEl = document.querySelector("#bp-search-actions");
   const saveBtn = document.querySelector("#bp-save-btn");
   const discardBtn = document.querySelector("#bp-discard-btn");
 
   if (saveBtn) {
-    saveBtn.classList.add("hidden");
     saveBtn.disabled = true;
     saveBtn.textContent = "Save Changes";
     saveBtn.onclick = async () => {
       await saveAllRules();
       saveBtn.disabled = true;
-      if (discardBtn) discardBtn.classList.add("hidden");
+      if (actionsEl) actionsEl.style.display = "none";
       _dirty = false;
       Toast.show("Rules saved");
     };
   }
 
   if (discardBtn) {
-    discardBtn.classList.add("hidden");
     discardBtn.onclick = () => {
       search(_input.value.trim());
       Toast.show("Changes discarded");
     };
   }
 
+  if (actionsEl) actionsEl.style.display = "none";
+
   function markDirty() {
     _dirty = true;
-    if (saveBtn) {
-      saveBtn.classList.remove("hidden");
-      saveBtn.disabled = false;
-    }
+    if (actionsEl) actionsEl.style.display = "flex";
+    if (saveBtn) saveBtn.disabled = false;
     if (discardBtn) discardBtn.classList.remove("hidden");
   }
 
@@ -162,7 +156,7 @@ async function renderResults(grouped) {
     );
 
     for (const field of fields) {
-      const fieldState = (_searchRules[docType] || {})[field.name] || "excluded";
+      const fieldState = (_searchRules[docType] || {})[field.name] || "optional";
       const radioName = `search-${docType}-${field.name}`;
       const editable = !!tenantId;
 

@@ -1,12 +1,68 @@
+<nav id="demo-tabs" class="demo-tabs" aria-label="Demo navigation">
+  <button class="demo-tab active" data-tab="upload">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.5"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"
+      />
+    </svg>
+    <span>Upload</span>
+  </button>
+  <button class="demo-tab" data-tab="results">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.5"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+      />
+    </svg>
+    <span>Extraction Results</span>
+  </button>
+  <button class="demo-tab" data-tab="documents">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.5"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+      />
+    </svg>
+    <span>History</span>
+  </button>
+</nav>
 <header class="demo-header">
   <div class="demo-header-inner">
-    <strong>DocumentAI Demo</strong>
+    <strong class="demo-header-title">DocumentAI Demo</strong>
     <span class="demo-user" id="demo-user-email"></span>
     <button type="button" id="demo-logout-btn" class="btn-sm btn-secondary">Sign out</button>
   </div>
 </header>
 <div class="demo-three-panel">
-  <div class="demo-list-panel">
+  <div class="demo-list-panel" data-tab-panel="upload">
     <div class="demo-dropzone" id="demo-dropzone">
       <input type="file" id="demo-file-input" accept=".pdf,.png,.jpg,.jpeg,.tiff,.tif" />
       <div id="demo-dropzone-idle">
@@ -21,17 +77,34 @@
         <button type="button" class="demo-dropzone-clear" id="demo-file-clear">✕ Clear</button>
       </div>
     </div>
-    <button type="button" id="demo-run-btn" class="btn-primary btn-block" disabled>Extract</button>
-    <p id="demo-elapsed" class="demo-elapsed hidden"></p>
+    <div class="demo-upload-tab">
+      <div id="demo-mobile-preview" class="demo-mobile-preview">
+        <button type="button" id="demo-mobile-clear" class="demo-mobile-clear hidden">
+          &times;
+        </button>
+        <p class="demo-mobile-preview-hint">Pick a file to extract</p>
+      </div>
+      <div class="demo-upload-actions">
+        <button type="button" id="demo-choose-btn" class="btn-secondary demo-choose-btn">
+          Choose file
+        </button>
+        <button type="button" id="demo-run-btn" class="btn-primary demo-run-btn" disabled>
+          Extract
+        </button>
+      </div>
+      <p id="demo-elapsed" class="demo-elapsed hidden"></p>
+    </div>
+  </div>
+  <div class="demo-list-panel demo-documents-panel" data-tab-panel="documents">
     <p class="demo-history-label">Recent</p>
     <ul id="demo-history-list" class="demo-history-list">
       <li class="empty-state">No documents yet</li>
     </ul>
   </div>
-  <div class="demo-preview-panel" id="demo-preview-panel">
+  <div class="demo-preview-panel" id="demo-preview-panel" data-tab-panel="results">
     <p class="empty-state">Upload a document to see results</p>
   </div>
-  <div class="demo-detail-panel" id="demo-detail-panel">
+  <div class="demo-detail-panel" id="demo-detail-panel" data-tab-panel="results">
     <div id="demo-results" class="demo-results hidden"></div>
   </div>
 </div>

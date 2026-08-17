@@ -2,44 +2,46 @@ import * as Helpers from "../../utils/helpers.js";
 import * as KeysService from "../../services/keys.js";
 import * as TenantContext from "../../utils/tenant-context.js";
 import { openModal, closeModal } from "../../utils/modal.js";
-import { h } from "../../utils/dom.js";
+import { h, iconBtn } from "../../utils/dom.js";
 import { tpl } from "../../utils/tpl.js";
 import * as Toast from "../../utils/toast.js";
+import { TableView } from "../../utils/table-view.js";
 import html from "./keys.html";
 
 const tmpl = tpl(html);
 
-let _root, _tbody, _noKeys, _createKeyBtn;
-let _createModal, _createForm, _cancelCreate;
+let _root, _tableView, _createKeyBtn;
 let _keyCreatedModal, _newKeyValue, _copyKeyBtn, _closeCreated;
-let _refreshKeysBtn;
+let _createModal, _createForm, _cancelCreate;
 let _revokeModal, _revokeKeyPrefix, _cancelRevoke, _confirmRevoke;
 let _pendingRevokeKey = null;
 let _showInactiveToggle;
 let _tenantUnsub = null;
-let _sortUnsub = null;
 let _allKeys = [];
-let _sortCol = null;
-let _sortDir = "asc";
+let _searchInput = null;
+let _emailFilter = null;
 
 export function mount(root) {
   _root = root;
   root.replaceChildren(tmpl());
 
-  // Inject actions into shared header
   _showInactiveToggle = h("input", { type: "checkbox", id: "show-inactive-keys" });
   _createKeyBtn = h("button", { className: "btn-primary" }, "Create Key");
-  _refreshKeysBtn = h("button", { className: "btn-secondary" }, "Refresh");
   const label = h(
     "label",
     { className: "inline-checkbox" },
     _showInactiveToggle,
     document.createTextNode(" Show revoked"),
   );
-  Helpers.setViewActions(label, _createKeyBtn, _refreshKeysBtn);
+  Helpers.setViewActions(label, _createKeyBtn);
 
-  _tbody = root.querySelector("#keys-tbody");
-  _noKeys = root.querySelector("#no-keys");
+  _tableView = new TableView(
+    root.querySelector("#keys-table"),
+    root.querySelector("#keys-tbody"),
+    root.querySelector("#no-keys"),
+    renderRow,
+  ).bindSortHeaders(root.querySelector("thead"));
+
   _createModal = root.querySelector("#create-modal");
   _createForm = root.querySelector("#create-form");
   _cancelCreate = root.querySelector("#cancel-create");
@@ -57,20 +59,16 @@ export function mount(root) {
   _createForm.addEventListener("submit", handleCreate);
   _copyKeyBtn.addEventListener("click", copyKey);
   _closeCreated.addEventListener("click", () => closeModal(_keyCreatedModal));
-  _refreshKeysBtn.addEventListener("click", () => load());
   _cancelRevoke.addEventListener("click", closeRevokeModal);
   _confirmRevoke.addEventListener("click", handleConfirmRevoke);
-
-  if (_showInactiveToggle) {
-    _showInactiveToggle.addEventListener("change", () => load());
-  }
-
+  _showInactiveToggle.addEventListener("change", () => load());
   _tenantUnsub = TenantContext.onChange(() => load());
-  _sortUnsub = Helpers.bindSortHeaders(root.querySelector("thead"), (col, dir) => {
-    _sortCol = col;
-    _sortDir = dir;
-    renderTable(_allKeys);
-  });
+  TenantContext.mountSelect(root.querySelector("#tenant-select"));
+  _searchInput = root.querySelector("#keys-search");
+  _emailFilter = root.querySelector("#keys-email-filter");
+  _searchInput.addEventListener("input", applyFilters);
+  _emailFilter.addEventListener("input", applyFilters);
+
   load();
 }
 
@@ -79,10 +77,9 @@ export function unmount(root) {
     _tenantUnsub();
     _tenantUnsub = null;
   }
-  if (_sortUnsub) {
-    _sortUnsub();
-    _sortUnsub = null;
-  }
+  const tenantSelect = root.querySelector("#tenant-select");
+  if (tenantSelect) TenantContext.unmountSelect(tenantSelect);
+  _tableView.unbind();
   root.replaceChildren();
 }
 
@@ -119,18 +116,12 @@ async function handleConfirmRevoke() {
 function openCreateModal() {
   openModal(_createModal);
   const tenantSelect = _root.querySelector("#key-tenant");
-  /** @type {HTMLSelectElement} */
-  const globalSelect = document.querySelector("#global-tenant-select");
   tenantSelect.innerHTML = '<option value="">\u2014 Select tenant \u2014</option>';
-  if (globalSelect) {
-    for (const opt of globalSelect.options) {
-      if (opt.value) {
-        const newOpt = document.createElement("option");
-        newOpt.value = opt.value;
-        newOpt.textContent = opt.textContent;
-        tenantSelect.appendChild(newOpt);
-      }
-    }
+  for (const { value, label } of TenantContext.getOptions()) {
+    const opt = document.createElement("option");
+    opt.value = value;
+    opt.textContent = label;
+    tenantSelect.appendChild(opt);
   }
   _root.querySelector("#api-key-name").value = "";
   _root.querySelector("#client-environment").value = "dev";
@@ -167,57 +158,60 @@ function copyKey() {
   setTimeout(() => (_copyKeyBtn.textContent = "Copy"), 2000);
 }
 
-export function render(keys) {
-  return renderTable(keys);
-}
-
-function renderTable(keys) {
-  const sorted = Helpers.sortRows(keys, _sortCol, _sortDir);
-  _tbody.innerHTML = "";
-  if (sorted.length === 0) {
-    _noKeys.textContent = "No API keys found.";
-    _noKeys.classList.remove("hidden");
-    return;
+function renderRow(key) {
+  const isActive = key.isActive !== false;
+  const actionEl = isActive
+    ? iconBtn("discard", "Revoke", "btn-icon-danger")
+    : h("span", { className: "badge badge-revoked" }, "Revoked");
+  const tr = h(
+    "tr",
+    isActive ? null : { className: "row-inactive" },
+    h("td", null, key.tenantId || "-"),
+    h("td", null, key.apiKeyName || "-"),
+    h("td", null, key.emailAddress || "-"),
+    h("td", null, key.environment || "-"),
+    h("td", null, h("span", null, key.keyPrefix ? key.keyPrefix + "…" : "-")),
+    h(
+      "td",
+      { title: key.lastUsed ? Helpers.formatDateTime(key.lastUsed) : "" },
+      key.lastUsed ? Helpers.relativeTime(key.lastUsed) : "-",
+    ),
+    h("td", null, actionEl),
+  );
+  if (isActive) {
+    actionEl.addEventListener("click", () => openRevokeModal(key));
   }
-  _noKeys.classList.add("hidden");
-  for (const key of sorted) {
-    const isActive = key.isActive !== false;
-    const actionEl = isActive
-      ? h("button", { className: "btn-outline-danger btn-sm" }, "Revoke")
-      : h("span", { className: "badge badge-revoked" }, "Revoked");
-    const tr = h(
-      "tr",
-      isActive ? null : { className: "row-inactive" },
-      h("td", null, key.tenantId || "-"),
-      h("td", null, key.apiKeyName || "-"),
-      h("td", null, key.emailAddress || "-"),
-      h("td", null, key.environment || "-"),
-      h("td", null, h("code", null, key.keyPrefix ? key.keyPrefix + "…" : "-")),
-      h(
-        "td",
-        { title: key.lastUsed ? Helpers.formatDateTime(key.lastUsed) : "" },
-        key.lastUsed ? Helpers.relativeTime(key.lastUsed) : "-",
-      ),
-      h("td", null, actionEl),
-    );
-    if (isActive) {
-      actionEl.addEventListener("click", () => openRevokeModal(key));
-    }
-    _tbody.appendChild(tr);
-  }
+  return tr;
 }
 
 export async function load() {
-  Helpers.showLoading(_tbody, _noKeys);
+  _tableView.showLoading();
   try {
     const includeInactive = _showInactiveToggle?.checked || false;
     const tenantId = TenantContext.getTenantId();
     const data = await KeysService.list({ includeInactive, tenantId });
     _allKeys = data.keys || [];
-    renderTable(_allKeys);
+    applyFilters();
   } catch (e) {
-    _tbody.innerHTML = "";
-    _noKeys.textContent = e.message;
-    _noKeys.classList.remove("hidden");
+    _tableView.showError(e.message);
   }
+}
+
+function applyFilters() {
+  const q = _searchInput?.value.trim().toLowerCase();
+  const email = _emailFilter?.value.trim().toLowerCase();
+  let filtered = _allKeys;
+  if (q) {
+    filtered = filtered.filter(
+      (k) =>
+        k.tenantId?.toLowerCase().includes(q) ||
+        k.apiKeyName?.toLowerCase().includes(q) ||
+        k.environment?.toLowerCase().includes(q) ||
+        k.keyPrefix?.toLowerCase().includes(q),
+    );
+  }
+  if (email) {
+    filtered = filtered.filter((k) => k.emailAddress?.toLowerCase().includes(email));
+  }
+  _tableView.setRows(filtered);
 }

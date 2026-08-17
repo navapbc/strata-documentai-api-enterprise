@@ -54,10 +54,8 @@ from documentai_api.utils.document_build import (
     mark_document_build_submitted,
     upsert_document_build_page,
 )
-from documentai_api.utils.document_lifecycle import (
-    classify_as_ai_consent_declined,
-    insert_minimal_ddb_record,
-)
+from documentai_api.utils.document_classification import classify_as_ai_consent_declined
+from documentai_api.utils.document_lifecycle import insert_minimal_ddb_record
 from documentai_api.utils.pdf import merge_pages_to_pdf
 from documentai_api.utils.s3 import parse_s3_uri
 from documentai_api.utils.tenant_access import validate_build_tenant_access
@@ -359,6 +357,7 @@ async def _submit_build(
             ddb_key=ddb_key,
             original_file_name=f"build-{build_id}.pdf",
             job_id=job_id,
+            system_document_id=job_id,
             category=category,
             trace_id=trace_id,
             content_type="application/pdf",
@@ -423,6 +422,7 @@ async def _submit_build(
                 ddb_key=unique_file_name,
                 original_file_name=unique_file_name,
                 job_id=job_id,
+                system_document_id=job_id,
                 category=category,
                 trace_id=trace_id,
                 content_type="application/pdf",

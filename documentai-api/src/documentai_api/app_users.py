@@ -1,7 +1,11 @@
 """User management router - super-admin only.
 
 Endpoints for listing Cognito users, approving pending sign-ups, and changing
-role / tenant assignments. All gated by ``require_super_admin``.
+a user's role and which tenant they're scoped to administer. Users don't
+"belong to" a tenant in any membership sense - custom:tenant_id is purely an
+authorization scope (which tenant this admin may act on), held by exactly one
+tenant-admin assignment at a time and cleared entirely for super-admins.
+All gated by ``require_super_admin``.
 """
 
 from typing import Any, Literal
@@ -12,10 +16,11 @@ from pydantic import BaseModel, Field
 from documentai_api.annotations import SuperAdminClaims, verify_jwt_with_super_admin
 from documentai_api.config.constants import ApiVisualizationTag
 from documentai_api.logging import get_logger
+from documentai_api.models.user import ListUsersResponse
 from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
 from documentai_api.services import cognito as cognito_service
 from documentai_api.utils import tenants as tenants_util
-from documentai_api.utils.audit import log_event
+from documentai_api.utils.audit_log import log_event
 from documentai_api.utils.jwt_auth import SUPER_ADMIN, TENANT_ADMIN
 
 logger = get_logger(__name__)
@@ -43,6 +48,10 @@ class ChangeRoleRequest(BaseModel):
         default=None,
         description="New role, or null to revoke (return user to pending).",
     )
+    tenant_id: str | None = Field(
+        default=None,
+        description="Required when role is tenant-admin; ignored otherwise.",
+    )
 
 
 class ChangeTenantRequest(BaseModel):
@@ -53,7 +62,7 @@ class ChangeTenantRequest(BaseModel):
 
 
 @router.get("")
-async def list_users(claims: SuperAdminClaims) -> dict[str, Any]:
+async def list_users(claims: SuperAdminClaims) -> ListUsersResponse:
     """List every user in the pool with their group + tenant assignment."""
     try:
         users = cognito_service.list_users()
@@ -63,10 +72,10 @@ async def list_users(claims: SuperAdminClaims) -> dict[str, Any]:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to list users",
         ) from e
-    return {"users": users, "count": len(users)}
+    return ListUsersResponse(users=users, count=len(users))
 
 
-def _validate_tenant_for_role(role: Role, tenant_id: str | None) -> None:
+def _validate_tenant_for_role(role: Role | None, tenant_id: str | None) -> None:
     if role == TENANT_ADMIN and not tenant_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -119,9 +128,24 @@ async def change_role(
     body: ChangeRoleRequest,
     claims: SuperAdminClaims,
 ) -> dict[str, Any]:
-    """Change a user's role, or pass ``role: null`` to revoke."""
+    """Change a user's role, or pass ``role: null`` to revoke.
+
+    Keeps the tenant scope attribute consistent with the role: super-admin
+    and revoked users are cleared to no scope, tenant-admin requires and
+    keeps exactly one tenant. Without this, a role change alone could leave
+    a tenant-admin with no tenant (locked out) or a super-admin still
+    carrying a stale tenant scope.
+    """
+    _validate_tenant_for_role(body.role, body.tenant_id)
+    if body.tenant_id and not tenants_util.get_tenant(body.tenant_id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Tenant '{body.tenant_id}' does not exist.",
+        )
+    tenant_id = body.tenant_id if body.role == TENANT_ADMIN else None
     try:
         cognito_service.replace_role(username, body.role)
+        cognito_service.set_tenant(username, tenant_id)
     except Exception as e:
         logger.error(f"Failed to change role for {username}: {e}")
         raise HTTPException(
@@ -133,9 +157,10 @@ async def change_role(
         action=AuditAction.USER_ROLE_CHANGE,
         target_type=AuditTargetType.USER,
         target_id=username,
-        metadata={"new_role": body.role},
+        tenant_id=tenant_id,
+        metadata={"new_role": body.role, "tenant_id": tenant_id},
     )
-    return {"username": username, "role": body.role}
+    return {"username": username, "role": body.role, "tenant_id": tenant_id}
 
 
 @router.post("/{username}/tenant")

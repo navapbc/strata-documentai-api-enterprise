@@ -2,6 +2,7 @@ class DocumentMetadata:
     # core fields
     FILE_NAME = "fileName"
     ORIGINAL_FILE_NAME = "originalFileName"
+    ORIGINAL_FILE_NAME_LOWER = "originalFileNameLower"
     USER_PROVIDED_DOCUMENT_CATEGORY = "userProvidedDocumentCategory"
     PROCESS_STATUS = "processStatus"
     DELETION_TYPE = "deletionType"  # "soft" | "hard" once a record is DELETED
@@ -15,6 +16,7 @@ class DocumentMetadata:
     RESPONSE_CODE = "responseCode"
     PROCESSED_DATE = "processedDate"
     JOB_ID = "jobId"
+    SYSTEM_DOCUMENT_ID = "systemDocumentId"
     TRACE_ID = "traceId"
     BATCH_ID = "batchId"
     EXTERNAL_DOCUMENT_ID = "externalDocumentId"
@@ -45,6 +47,7 @@ class DocumentMetadata:
     PRECLASSIFICATION_BLUEPRINT_MATCH_DURATION_SECONDS = (
         "preclassificationBlueprintMatchDurationSeconds"
     )
+    PRECLASSIFICATION_MAX_DOCUMENT_COUNT_ON_PAGE = "preclassificationMaxDocumentCountOnPage"
 
     # image optimization fields
     CROP_BOUNDING_BOX = "cropBoundingBox"
@@ -70,6 +73,12 @@ class DocumentMetadata:
     BDA_WAIT_TIME_SECONDS = "bdaWaitTimeSeconds"  # time between s3 write and bda invocation
     IS_DOCUMENT_PROCESSOR_COLD_START = "isDocumentProcessorColdStart"
     PAGES_SENT_TO_BDA = "pagesSentToBda"
+    S3_FETCH_DURATION_SECONDS = "s3FetchDurationSeconds"
+    BDA_INVOKE_DURATION_SECONDS = "bdaInvokeDurationSeconds"
+    BDA_INVOKE_RETRY_COUNT = "bdaInvokeRetryCount"
+    BLUR_DETECTION_DURATION_SECONDS = "blurDetectionDurationSeconds"
+    IMAGE_OPT_CROP_BLOCK_DURATION_SECONDS = "imageOptCropBlockDurationSeconds"
+    IMAGE_OPT_WRITE_DURATION_SECONDS = "imageOptWriteDurationSeconds"
 
     # file metadata
     FILE_SIZE_BYTES = "fileSizeBytes"
@@ -115,6 +124,9 @@ class DocumentMetadata:
 
     # extraction method
     EXTRACT_METHOD = "extractionMethod"
+
+    # otel trace propagation
+    TRACEPARENT = "traceparent"
 
     # used to determine if a document should be processed or excluded from
     # processing based on the tenant's configuration

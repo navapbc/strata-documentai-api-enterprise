@@ -3,13 +3,14 @@ import * as TenantContext from "../../utils/tenant-context.js";
 import * as Helpers from "../../utils/helpers.js";
 import * as Toast from "../../utils/toast.js";
 import { openModal, closeModal } from "../../utils/modal.js";
-import { h } from "../../utils/dom.js";
+import { h, iconBtn } from "../../utils/dom.js";
 import { tpl } from "../../utils/tpl.js";
+import { TableView } from "../../utils/table-view.js";
 import html from "./document-categories.html";
 
 const tmpl = tpl(html);
 
-let _root, _tbody, _noCategories, _createBtn, _refreshBtn;
+let _root, _tableView, _createBtn, _refreshBtn, _searchInput, _sourceFilter, _rateFilter;
 let _modal,
   _form,
   _tenantSelect,
@@ -27,22 +28,23 @@ let _editingTenantId = null;
 let _pendingDeactivate = null;
 let _pendingDeactivateTenantId = null;
 let _tenantUnsub = null;
-let _sortUnsub = null;
 let _allCategories = [];
-let _sortCol = null;
-let _sortDir = "asc";
 
 export function mount(root) {
   _root = root;
   root.replaceChildren(tmpl());
 
-  // Inject actions into shared header
   _createBtn = h("button", { className: "btn-primary" }, "Create Category");
   _refreshBtn = h("button", { className: "btn-secondary" }, "Refresh");
   Helpers.setViewActions(_createBtn, _refreshBtn);
 
-  _tbody = root.querySelector("#categories-tbody");
-  _noCategories = root.querySelector("#no-categories");
+  _tableView = new TableView(
+    root.querySelector("#categories-table"),
+    root.querySelector("#categories-tbody"),
+    root.querySelector("#no-categories"),
+    renderRow,
+  ).bindSortHeaders(root.querySelector("thead"));
+
   _modal = root.querySelector("#category-modal");
   _form = root.querySelector("#category-form");
   _tenantSelect = root.querySelector("#category-tenant");
@@ -57,25 +59,24 @@ export function mount(root) {
   _createdAtEl = root.querySelector("#category-created-at");
   _updatedAtEl = root.querySelector("#category-updated-at");
 
-  _tenantUnsub = TenantContext.onChange(() => {
-    loadCategories();
-  });
-  _sortUnsub = Helpers.bindSortHeaders(root.querySelector("thead"), (col, dir) => {
-    _sortCol = col;
-    _sortDir = dir;
-    renderTable(_allCategories);
-  });
-
-  _createBtn.addEventListener("click", openCreateModal);
-  _refreshBtn.addEventListener("click", () => loadCategories());
-  _cancelBtn.addEventListener("click", closeEditModal);
-  _form.addEventListener("submit", handleSubmit);
-
   _deactivateModal = root.querySelector("#category-deactivate-modal");
   _deactivateName = root.querySelector("#deactivate-category-name");
   _deactivateError = root.querySelector("#category-deactivate-error");
   _deactivateCancel = root.querySelector("#category-deactivate-cancel");
   _deactivateConfirm = root.querySelector("#category-deactivate-confirm");
+
+  _tenantUnsub = TenantContext.onChange(() => loadCategories());
+  TenantContext.mountSelect(root.querySelector("#tenant-select"));
+  _searchInput = root.querySelector("#categories-search");
+  _sourceFilter = root.querySelector("#categories-source-filter");
+  _rateFilter = root.querySelector("#categories-rate-filter");
+  _searchInput.addEventListener("input", applyFilters);
+  _sourceFilter.addEventListener("change", applyFilters);
+  _rateFilter.addEventListener("change", applyFilters);
+  _createBtn.addEventListener("click", openCreateModal);
+  _refreshBtn.addEventListener("click", () => loadCategories());
+  _cancelBtn.addEventListener("click", closeEditModal);
+  _form.addEventListener("submit", handleSubmit);
   _deactivateCancel.addEventListener("click", closeDeactivateModal);
   _deactivateConfirm.addEventListener("click", handleDeactivate);
 
@@ -87,10 +88,9 @@ export function unmount(root) {
     _tenantUnsub();
     _tenantUnsub = null;
   }
-  if (_sortUnsub) {
-    _sortUnsub();
-    _sortUnsub = null;
-  }
+  const tenantSelect = root.querySelector("#tenant-select");
+  if (tenantSelect) TenantContext.unmountSelect(tenantSelect);
+  _tableView.unbind();
   root.replaceChildren();
 }
 
@@ -99,74 +99,91 @@ export async function load() {
 }
 
 async function loadCategories() {
+  _tableView.showLoading();
   try {
     const resp = await CategoriesService.list(TenantContext.getTenantId());
     _allCategories = resp.categories || [];
-    renderTable(_allCategories);
+    applyFilters();
   } catch (e) {
-    Toast.show(`Failed to load categories: ${e.message}`);
+    _tableView.showError(e.message);
   }
 }
 
-function renderTable(categories) {
-  const sorted = Helpers.sortRows(categories, _sortCol, _sortDir);
-  if (sorted.length === 0) {
-    _tbody.innerHTML = "";
-    _noCategories.classList.remove("hidden");
-    return;
-  }
-  _noCategories.classList.add("hidden");
-  _tbody.innerHTML = "";
-  for (const cat of sorted) {
-    const statusEl = cat.isActive
-      ? h("span", { className: "badge badge-success" }, "Active")
-      : h("span", { className: "badge badge-neutral" }, "Inactive");
-    const editBtn = h("button", { className: "btn-sm btn-secondary" }, "Edit");
-    const actionsWrapper = h("div", { className: "row-actions" }, editBtn);
-    if (cat.isActive) {
-      const delBtn = h("button", { className: "btn-sm btn-outline-danger" }, "Deactivate");
-      delBtn.addEventListener("click", () => deactivate(cat));
-      actionsWrapper.appendChild(delBtn);
-    }
-    const actionsCell = h("td", null, actionsWrapper);
+function applyFilters() {
+  const q = _searchInput?.value.trim().toLowerCase();
+  const source = _sourceFilter?.value;
+  const rate = _rateFilter?.value;
 
-    const tr = h(
-      "tr",
-      null,
-      h("td", null, cat.tenantId || "-"),
-      h("td", null, cat.categoryName),
-      h("td", null, cat.displayName),
-      h("td", null, cat.description || "-"),
-      h("td", null, String(Math.round((cat.processingPercentage ?? 1) * 100)) + "%"),
-      h(
-        "td",
-        null,
-        cat.isAutoRegistered
-          ? h("span", { className: "badge badge-info" }, "System")
-          : h("span", { className: "badge badge-warning" }, "Manual"),
-      ),
-      h("td", null, statusEl),
-      actionsCell,
+  let filtered = _allCategories;
+
+  if (q) {
+    filtered = filtered.filter(
+      (c) =>
+        c.categoryName?.toLowerCase().includes(q) ||
+        c.displayName?.toLowerCase().includes(q) ||
+        c.description?.toLowerCase().includes(q) ||
+        c.tenantId?.toLowerCase().includes(q),
     );
-
-    editBtn.addEventListener("click", () => openEditModal(cat));
-    _tbody.appendChild(tr);
   }
+
+  if (source === "system") filtered = filtered.filter((c) => c.isAutoRegistered);
+  else if (source === "manual") filtered = filtered.filter((c) => !c.isAutoRegistered);
+
+  if (rate) {
+    filtered = filtered.filter((c) => {
+      const pct = Math.round((c.processingPercentage ?? 1) * 100);
+      if (rate === "0") return pct === 0;
+      if (rate === "100") return pct === 100;
+      if (rate === "1-50") return pct >= 1 && pct <= 50;
+      if (rate === "51-99") return pct >= 51 && pct <= 99;
+      return true;
+    });
+  }
+
+  _tableView.setRows(filtered);
+}
+
+function renderRow(cat) {
+  const statusEl = cat.isActive
+    ? h("span", { className: "badge badge-success" }, "Active")
+    : h("span", { className: "badge badge-neutral" }, "Inactive");
+  const editBtn = iconBtn("edit", "Edit");
+  const actionsWrapper = h("div", { className: "row-actions" }, editBtn);
+  if (cat.isActive) {
+    const delBtn = iconBtn("discard", "Deactivate", "btn-icon-danger");
+    delBtn.addEventListener("click", () => deactivate(cat));
+    actionsWrapper.appendChild(delBtn);
+  }
+  const tr = h(
+    "tr",
+    null,
+    h("td", null, cat.tenantId || "-"),
+    h("td", null, cat.categoryName),
+    h("td", null, cat.displayName),
+    h("td", null, cat.description || "-"),
+    h("td", null, String(Math.round((cat.processingPercentage ?? 1) * 100)) + "%"),
+    h(
+      "td",
+      null,
+      cat.isAutoRegistered
+        ? h("span", { className: "badge badge-info" }, "System")
+        : h("span", { className: "badge badge-warning" }, "Manual"),
+    ),
+    h("td", null, statusEl),
+    h("td", null, actionsWrapper),
+  );
+  editBtn.addEventListener("click", () => openEditModal(cat));
+  return tr;
 }
 
 function populateTenantSelect(selectedTenantId, disabled) {
-  const globalSelect = document.querySelector("#global-tenant-select");
   _tenantSelect.innerHTML = '<option value="">- Select tenant -</option>';
-  if (globalSelect) {
-    for (const opt of globalSelect.options) {
-      if (opt.value) {
-        const newOpt = document.createElement("option");
-        newOpt.value = opt.value;
-        newOpt.textContent = opt.textContent;
-        if (opt.value === selectedTenantId) newOpt.selected = true;
-        _tenantSelect.appendChild(newOpt);
-      }
-    }
+  for (const { value, label } of TenantContext.getOptions()) {
+    const opt = document.createElement("option");
+    opt.value = value;
+    opt.textContent = label;
+    if (value === selectedTenantId) opt.selected = true;
+    _tenantSelect.appendChild(opt);
   }
   _tenantSelect.disabled = disabled;
 }

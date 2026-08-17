@@ -287,8 +287,9 @@ class FileValidation:
     }
 
     @staticmethod
-    def get_extension(content_type: str) -> str:
-        return FileValidation.CONTENT_TYPE_TO_EXT.get(content_type, "bin")
+    def get_extension(content_type: str, unknown: str = "bin") -> str:
+        ct = content_type.lower().split(";")[0].strip()
+        return FileValidation.CONTENT_TYPE_TO_EXT.get(ct, unknown)
 
 
 class TextractConfig:
@@ -316,6 +317,7 @@ class ProcessStatus(StrEnum):
     DELETED = "deleted"
     EXCLUDED_PER_PRECLASSIFICATION = "excluded_per_preclassification"
     FAILED = "failed"
+    MULTIPLE_DOCUMENTS_IN_MULTIPAGE = "multiple_documents_in_multipage"
     MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE = "multiple_documents_single_page"
     NO_CUSTOM_BLUEPRINT_MATCHED = "no_custom_blueprint_matched"
     NO_DOCUMENT_DETECTED = "no_document_detected"
@@ -348,6 +350,7 @@ class ProcessStatus(StrEnum):
             cls.CONVERSION_FAILED,
             cls.DELETED,
             cls.FAILED,
+            cls.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
             cls.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
             cls.NO_CUSTOM_BLUEPRINT_MATCHED,
             cls.NO_DOCUMENT_DETECTED,
@@ -360,7 +363,11 @@ class ProcessStatus(StrEnum):
 
     @classmethod
     def is_not_supported(cls, value: str) -> bool:
-        return value in [cls.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE, cls.PASSWORD_PROTECTED]
+        return value in [
+            cls.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
+            cls.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
+            cls.PASSWORD_PROTECTED,
+        ]
 
     @classmethod
     def is_pending_extraction(cls, value: str) -> bool:
@@ -445,7 +452,7 @@ class PreclassificationCategory(StrEnum):
 
 
 class PreClassificationDefaults:
-    MODEL_ID = "us.amazon.nova-lite-v1:0"
+    MODEL_ID = "us.amazon.nova-pro-v1:0"
     # Converse API supports more document types (csv, html, txt, md, docx, xlsx)
     # but those are rejected at the upload layer before reaching preclassification.
     SUPPORTED_CONTENT_TYPES = (
@@ -461,16 +468,20 @@ class PreClassificationDefaults:
             "",
             "First, perform this evaluation step-by-step:",
             "1. Examine the visual layout of the page. Look for distinct borders, separate rectangles, multiple photos, or independent snippets (e.g., multiple receipts or cards placed on a single scanner bed).",
-            "2. Count how many individual, separate documents or items are visually present on this single page/file.",
-            '3. Check if the document is directly and primarily a "{user_category}" document.',
-            '   - Note: If it merely mentions or relates to "{user_category}" in a secondary way, set category_match to false.',
+            "2. For each page, count how many individual, separate documents or items are visually present. max_document_count_on_page is the highest per-page count across the document, not a sum across pages.",
+            "3. Evaluate multi-page consistency: pages belong together only if they are clearly continuation pages of the exact same document instance for the exact same individual (e.g. page 2 of the same W2, the same bank statement continued).",
+            '4. Check if the document is directly and primarily a "{user_category}" document.',
+            '   - Set category_match to false if: the document type does not match "{user_category}", max_document_count_on_page > 1, or has_multipage_inconsistency is true.',
             "",
             "Then, output your final answer strictly as a raw JSON object with no markdown formatting or backticks:",
             "{",
             '  "document_type": "<short description>",',
             '  "confidence": <float between 0.0 and 1.0>,',
-            '  "document_count": <integer count of distinct visual document items found on the page>,',
-            '  "category_match": <true or false based on step 3>,',
+            '  "max_document_count_on_page": <integer, maximum number of distinct visual document items found on any single page>,',
+            '  "max_document_count_on_page_reason": "<brief explanation of what was counted on each page>",',
+            '  "has_multipage_inconsistency": <false only if all pages are continuations of the exact same document instance for the exact same individual, otherwise true>,',
+            '  "has_multipage_inconsistency_reason": "<brief explanation of why pages are consistent or inconsistent>",',
+            '  "category_match": <true or false based on step 4>,',
             '  "is_identity_document": <true if passport or driver\'s license, else false>',
             "}",
         ]
@@ -529,6 +540,15 @@ class MetricsGranularity(StrEnum):
 class MetricsAggregatorTargetDate:
     TODAY = "today"
     YESTERDAY = "yesterday"
+
+
+class MetricsDisplayValues:
+    NOT_SPECIFIED = "not specified"
+    _LEGACY_UNSET = ("unknown", "not specified", "null", "")
+
+    @staticmethod
+    def is_legacy_unset(value: str) -> bool:
+        return value.strip().lower() in MetricsDisplayValues._LEGACY_UNSET
 
 
 class TimingMetrics:
@@ -597,6 +617,7 @@ class FeatureFlags:
     PRECLASSIFICATION_BASED_ROUTING = "preclassification-based-routing"
     SKIP_BDA_IF_UNCLASSIFIED = "skip-bda-if-unclassified"
     ENABLE_PRECLASSIFICATION_BLUEPRINT_MATCHING = "enable-preclassification-blueprint-matching"
+    FLAG_MULTIPLE_DOCUMENTS_IN_MULTIPAGE = "flag-multiple-documents-in-multipage"
 
 
 ATHENA_QUERY_TIMEOUT_SECONDS = 300

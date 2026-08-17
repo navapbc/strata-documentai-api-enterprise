@@ -1,17 +1,19 @@
-<table id="tenants-table">
-  <thead>
-    <tr>
-      <th data-col="tenantId">Tenant ID</th>
-      <th data-col="displayName">Display name</th>
-      <th data-col="extractionConfidenceFloor">Min. Confidence</th>
-      <th data-col="maxWritesPerDay">Day limit</th>
-      <th data-col="maxWritesPerMonth">Month limit</th>
-      <th>Status</th>
-      <th style="width: 1px; white-space: nowrap">Actions</th>
-    </tr>
-  </thead>
-  <tbody id="tenants-tbody"></tbody>
-</table>
+<div class="table-scroll">
+  <table id="tenants-table" class="hidden">
+    <thead>
+      <tr>
+        <th data-col="tenantId">Tenant ID</th>
+        <th data-col="displayName">Display name</th>
+        <th data-col="extractionConfidenceFloor">Min. Confidence</th>
+        <th data-col="maxWritesPerDay">Day limit</th>
+        <th data-col="maxWritesPerMonth">Month limit</th>
+        <th>Status</th>
+        <th style="width: 1px; white-space: nowrap">Actions</th>
+      </tr>
+    </thead>
+    <tbody id="tenants-tbody"></tbody>
+  </table>
+</div>
 <p id="no-tenants" class="empty-state hidden">No tenants found.</p>
 
 <!-- Tenant Create/Edit Modal -->

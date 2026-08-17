@@ -22,24 +22,12 @@ A serverless document processing platform - upload documents, extract structured
 
 For Strata template applications, see [`navapbc/strata`](https://github.com/navapbc/strata).
 
-> ⚠️ **Public Preview / Active Development (June 2026)**
+> ⚠️ **Public Preview / Active Development (August 2026)**
 > This project is under active development, but is being designed for out-of-the-box use. APIs, configuration, and features may change.
 
 ## See it in action
 
-**Local API setup** - clone, configure, and run the API locally with no AWS needed.
-
-![Local API setup](docs/documentai-api/media/api-setup-demo.gif)
-
-**Admin console** - tenant and user management, API keys, document review.
-
-![Admin console walkthrough](docs/documentai-api/media/admin-walkthrough.gif)
-
-**Extraction rules** - configure per-tenant, per-document-type field rules.
-
-![Extraction rules walkthrough](docs/documentai-api/media/admin-extraction-rules-walkthrough.gif)
-
-**Demo UI** - upload a document and view extraction results with bounding box overlay.
+Upload a document and view extraction results with bounding box overlay.
 
 ![Demo UI walkthrough](docs/documentai-api/media/demo-walkthrough.gif)
 
@@ -59,6 +47,7 @@ A client uploads a document via the API. It's stored in S3 and queued for proces
 - **[Admin console](ui/admin/README.md)** - manage tenants, users, API keys, extraction rules, and review processed documents
 - **[Demo environment](ui/demo/README.md)** - upload documents and view extraction results without tenant configuration
 - **[Metrics pipeline](docs/documentai-api/metrics-pipeline.md)** - SQS -> Glue -> S3 (Parquet), queryable per tenant
+- **[Observability](docs/documentai-api/observability.md)** - distributed tracing via OpenTelemetry and X-Ray, CloudWatch Application Signals for per-service Latency/Error/Fault metrics, CloudWatch dashboard
 - **[Serverless Terraform infrastructure](infra/README.md)** - Lambda containers, API Gateway, CloudFront, DynamoDB, S3
 
 

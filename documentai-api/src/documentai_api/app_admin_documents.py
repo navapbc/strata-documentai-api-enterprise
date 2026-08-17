@@ -19,7 +19,7 @@ from documentai_api.models.admin_document import (
 from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import s3 as s3_service
-from documentai_api.utils.audit import log_event
+from documentai_api.utils.audit_log import log_event
 from documentai_api.utils.document_metadata_table import DocumentMetadataTable
 from documentai_api.utils.jwt_auth import tenant_scope
 from documentai_api.utils.pagination import decode_cursor, encode_cursor

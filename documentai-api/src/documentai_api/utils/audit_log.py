@@ -19,12 +19,17 @@ import time
 from datetime import UTC, datetime
 from typing import Any
 
+from boto3.dynamodb.conditions import Attr, ConditionBase, Key
 from ulid import ULID
 
 from documentai_api.config.env import get_aws_config
 from documentai_api.logging import get_logger
-from documentai_api.schemas.audit_event import GLOBAL_TENANT, AuditEventRecord
+from documentai_api.models.audit import AuditEventItem
+from documentai_api.schemas.audit_event import GLOBAL_TENANT, AuditEventRecord, AuditEventsTable
 from documentai_api.utils.aws_client_factory import AWSClientFactory
+
+_table = AuditEventsTable()
+
 
 logger = get_logger(__name__)
 
@@ -101,3 +106,106 @@ def log_event(
             f"Failed to write audit event: {action} on {target_type}/{target_id}",
             exc_info=True,
         )
+
+
+def record_to_item(record: dict[str, Any]) -> AuditEventItem:
+    sort_key = record.get(AuditEventRecord.TIMESTAMP_EVENT_ID, "")
+    timestamp = sort_key.split("#")[0] if "#" in sort_key else sort_key
+    return AuditEventItem(
+        event_id=record.get(AuditEventRecord.EVENT_ID, ""),
+        tenant_id=record.get(AuditEventRecord.TENANT_ID, ""),
+        actor_sub=record.get(AuditEventRecord.ACTOR_SUB, ""),
+        actor_email=record.get(AuditEventRecord.ACTOR_EMAIL, ""),
+        action=record.get(AuditEventRecord.ACTION, ""),
+        target_type=record.get(AuditEventRecord.TARGET_TYPE, ""),
+        target_id=record.get(AuditEventRecord.TARGET_ID, ""),
+        metadata=record.get(AuditEventRecord.METADATA, {}),
+        timestamp=timestamp,
+    )
+
+
+def build_sk_condition(start_date: str | None, end_date: str | None) -> ConditionBase | None:
+    sk = Key(AuditEventRecord.TIMESTAMP_EVENT_ID)
+    if start_date and end_date:
+        return sk.between(start_date, end_date + "~")
+    elif start_date:
+        return sk.gte(start_date)
+    elif end_date:
+        return sk.lte(end_date + "~")
+    return None
+
+
+def query_by_tenant(
+    tenant_id: str,
+    action: str | None,
+    actor_email: str | None,
+    start_date: str | None,
+    end_date: str | None,
+    limit: int,
+    exclusive_start_key: dict[str, Any] | None,
+) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+    key_condition: ConditionBase = Key(AuditEventRecord.TENANT_ID).eq(tenant_id)
+    sk_condition = build_sk_condition(start_date, end_date)
+    if sk_condition:
+        key_condition = key_condition & sk_condition
+
+    filter_expr = None
+    if action:
+        filter_expr = Attr(AuditEventRecord.ACTION).eq(action)
+    if actor_email:
+        actor_filter = Attr(AuditEventRecord.ACTOR_EMAIL).eq(actor_email)
+        filter_expr = filter_expr & actor_filter if filter_expr else actor_filter
+
+    return _table.query(
+        key_condition=key_condition,
+        filter_expression=filter_expr,
+        limit=limit,
+        scan_forward=False,
+        start_key=exclusive_start_key,
+    )
+
+
+def query_by_actor(
+    actor_email: str,
+    action: str | None,
+    start_date: str | None,
+    end_date: str | None,
+    limit: int,
+    exclusive_start_key: dict[str, Any] | None,
+) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+    key_condition: ConditionBase = Key(AuditEventRecord.ACTOR_EMAIL).eq(actor_email)
+    sk_condition = build_sk_condition(start_date, end_date)
+    if sk_condition:
+        key_condition = key_condition & sk_condition
+
+    filter_expr = Attr(AuditEventRecord.ACTION).eq(action) if action else None
+
+    return _table.query(
+        key_condition=key_condition,
+        index_name="actor-email-timestamp-index",
+        filter_expression=filter_expr,
+        limit=limit,
+        scan_forward=False,
+        start_key=exclusive_start_key,
+    )
+
+
+def query_by_action(
+    action: str,
+    start_date: str | None,
+    end_date: str | None,
+    limit: int,
+    exclusive_start_key: dict[str, Any] | None,
+) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+    key_condition: ConditionBase = Key(AuditEventRecord.ACTION).eq(action)
+    sk_condition = build_sk_condition(start_date, end_date)
+    if sk_condition:
+        key_condition = key_condition & sk_condition
+
+    return _table.query(
+        key_condition=key_condition,
+        index_name="action-timestamp-index",
+        limit=limit,
+        scan_forward=False,
+        start_key=exclusive_start_key,
+    )

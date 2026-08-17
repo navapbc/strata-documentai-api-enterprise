@@ -1,4 +1,10 @@
-export { formatDate, formatDateTime, relativeTime } from "../../../shared/utils/dates.js";
+export {
+  formatDate,
+  formatDateTime,
+  relativeTime,
+  localDateToUtcStart,
+  localDateToUtcEnd,
+} from "../../../shared/utils/dates.js";
 export {
   esc,
   showLoading,

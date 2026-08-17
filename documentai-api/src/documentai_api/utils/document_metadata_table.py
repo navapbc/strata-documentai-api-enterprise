@@ -34,12 +34,21 @@ class DocumentMetadataTable(ReadOnlyTable):
         tenant_id: str,
         *,
         filter_expression: Any | None = None,
+        date_from: str | None = None,
+        date_to: str | None = None,
         limit: int = 50,
         scan_forward: bool = False,
         start_key: dict[str, Any] | None = None,
     ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+        key_condition = Key(DocumentMetadata.TENANT_ID).eq(tenant_id)
+        if date_from and date_to:
+            key_condition &= Key(DocumentMetadata.CREATED_AT).between(date_from, date_to)
+        elif date_from:
+            key_condition &= Key(DocumentMetadata.CREATED_AT).gte(date_from)
+        elif date_to:
+            key_condition &= Key(DocumentMetadata.CREATED_AT).lte(date_to)
         return self.query(
-            key_condition=Key(DocumentMetadata.TENANT_ID).eq(tenant_id),
+            key_condition=key_condition,
             filter_expression=filter_expression,
             index_name=self._get_index("documentai_document_metadata_tenant_index_name"),
             limit=limit,

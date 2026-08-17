@@ -23,7 +23,10 @@ class ClassificationData:
 class BedrockClassificationResult:
     document_type: str
     confidence: float
-    document_count: int
+    max_document_count_on_page: int
+    max_document_count_on_page_reason: str = ""
+    has_multipage_inconsistency: bool = False
+    has_multipage_inconsistency_reason: str = ""
     category_match: bool | None = None
     is_identity_document: bool = False
     input_tokens: int | None = None

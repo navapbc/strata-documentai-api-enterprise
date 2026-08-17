@@ -56,6 +56,8 @@ describe("documents view", () => {
       getTenantId: mockGetTenantId,
       onChange: mockOnChange,
       load: vi.fn(),
+      mountSelect: vi.fn(),
+      unmountSelect: vi.fn(),
     }));
     vi.doMock("../../src/utils/helpers.js", () => ({
       esc: (s) => s,
@@ -166,7 +168,7 @@ describe("documents view", () => {
       includeExtractedData: true,
       includeBoundingBox: true,
     });
-    expect(root.querySelector("#detail-content").innerHTML).toContain("test.pdf");
+    expect(root.querySelector("#doc-pane-detail-content").innerHTML).toContain("test.pdf");
   });
 
   it("clicking a row loads preview", async () => {
@@ -180,7 +182,7 @@ describe("documents view", () => {
     await flush();
 
     expect(mockGetPreviewUrl).toHaveBeenCalledWith("j-1");
-    const preview = root.querySelector("#document-preview-panel");
+    const preview = root.querySelector("#doc-pane-preview");
     expect(preview.querySelector("object")).not.toBeNull();
   });
 
@@ -203,11 +205,8 @@ describe("documents view", () => {
     await flush();
 
     expect(sessionStorage.getItem(STORAGE_KEY_ACTIVE)).toBeNull();
-    expect(root.querySelector("#detail-content").innerHTML).toBe("");
-    expect(root.querySelector("#document-preview-panel").innerHTML).toContain(
-      "Select a document to preview",
-    );
-    expect(root.querySelector("#document-detail-panel").classList.contains("collapsed")).toBe(true);
+    // pane is hidden on tenant change
+    expect(root.querySelector("#doc-viewer-pane").style.display).toBe("none");
   });
 
   it("unmount clears root and unsubscribes from tenant changes", () => {
@@ -227,7 +226,7 @@ describe("documents view", () => {
     root.querySelector(".doc-list-item").click();
     await flush();
 
-    const preview = root.querySelector("#document-preview-panel");
+    const preview = root.querySelector("#doc-pane-preview");
     expect(preview.innerHTML).toContain("Preview unavailable");
   });
 

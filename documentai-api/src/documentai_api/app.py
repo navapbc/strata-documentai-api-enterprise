@@ -14,8 +14,6 @@ from documentai_api.app_admin_usage import router as admin_usage_router
 from documentai_api.app_api_keys import router as api_keys_router
 from documentai_api.app_audit_log import router as audit_log_router
 from documentai_api.app_auth_events import router as auth_events_router
-
-# Routers
 from documentai_api.app_batch import router as batch_router
 from documentai_api.app_blueprint_test import router as blueprint_test_router
 from documentai_api.app_build import router as build_router
@@ -28,6 +26,7 @@ from documentai_api.app_extraction_rules import router as extraction_rules_route
 from documentai_api.app_me import router as me_router
 from documentai_api.app_metrics import router as metrics_router
 from documentai_api.app_presigned import router as presigned_router
+from documentai_api.app_search import router as search_router
 from documentai_api.app_tenants import router as tenants_router
 from documentai_api.app_users import router as users_router
 from documentai_api.config.constants import (
@@ -41,7 +40,10 @@ from documentai_api.models.api_responses import (
     ConfigResponse,
     HealthResponse,
 )
+from documentai_api.telemetry import setup as setup_otel
 from documentai_api.utils.auth import verify_api_key
+
+setup_otel()  # no-op unless OTEL_SDK_DISABLED=false; must run before app is created
 
 logger = get_logger(__name__)
 
@@ -69,6 +71,7 @@ app.include_router(me_router)
 app.include_router(metrics_router)
 app.include_router(auth_events_router)
 app.include_router(evaluation_router)
+app.include_router(search_router)
 
 app.add_middleware(
     CORSMiddleware,

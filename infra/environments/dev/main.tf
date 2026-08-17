@@ -192,7 +192,14 @@ module "audit_events" {
       hash_key_type = "S"
       sort_key      = "timestamp#eventId"
       sort_key_type = "S"
-    }
+    },
+    {
+      name          = "actor-email-timestamp-index"
+      hash_key      = "actorEmail"
+      hash_key_type = "S"
+      sort_key      = "timestamp#eventId"
+      sort_key_type = "S"
+    },
   ]
 }
 module "extraction_rules" {
@@ -312,6 +319,7 @@ module "config" {
     "feature-flags/enable-blur-detection"                       = "true"
     "feature-flags/enforce-blur-rejection"                      = "true"
     "feature-flags/include-missing-geo-with-missing-fields"     = "true"
+    "feature-flags/flag-multiple-documents-in-multipage"        = "true"
     # Thresholds
     # Vision model ids - swappable at runtime via SSM (no redeploy). Kept as
     # separate params so preclassification and bbox detection can be tuned apart.
@@ -319,7 +327,7 @@ module "config" {
     #   Pro   - blur empty-quadrant check (spatial reasoning over image crops)
     #   Micro - supplemental extraction: text-only field matching over Textract WORD
     #           blocks (no image sent), cheapest/fastest for basic text-in/text-out
-    "models/classification-model-id"          = "us.amazon.nova-lite-v1:0"
+    "models/classification-model-id"          = "us.amazon.nova-pro-v1:0"
     "models/bounding-box-model-id"            = "us.amazon.nova-lite-v1:0"
     "models/blur-quadrant-model-id"           = "us.amazon.nova-pro-v1:0"
     "models/supplemental-extraction-model-id" = "us.amazon.nova-micro-v1:0"
@@ -334,6 +342,7 @@ module "config" {
     "feature-flags/enable-blur-detection"                       = "^(true|false)$"
     "feature-flags/enforce-blur-rejection"                      = "^(true|false)$"
     "feature-flags/include-missing-geo-with-missing-fields"     = "^(true|false)$"
+    "feature-flags/flag-multiple-documents-in-multipage"        = "^(true|false)$"
   }
 }
 
@@ -497,33 +506,43 @@ locals {
     DDB_RAW_DATA_TABLE_NAME                                   = module.analytics.raw_metrics_table_name
     GLUE_DATABASE_NAME                                        = module.analytics.database_name
     ATHENA_WORKGROUP_NAME                                     = module.analytics.workgroup_name
-    BDA_PROJECT_ARN_TAX_DOCUMENTS                             = module.bedrock_data_automation["tax_documents"].project_arn
-    BDA_PROJECT_ARN_EMPLOYMENT_WAGES                          = module.bedrock_data_automation["employment_wages"].project_arn
-    BDA_PROJECT_ARN_INDEPENDENT_EARNINGS                      = module.bedrock_data_automation["independent_earnings"].project_arn
-    BDA_PROJECT_ARN_GOVERNMENT_BENEFITS                       = module.bedrock_data_automation["government_benefits"].project_arn
-    BDA_PROJECT_ARN_PRIVATE_BENEFITS_AND_SETTLEMENTS          = module.bedrock_data_automation["private_benefits_and_settlements"].project_arn
-    BDA_PROJECT_ARN_COURT_ORDERED_BENEFITS                    = module.bedrock_data_automation["court_ordered_benefits"].project_arn
-    BDA_PROJECT_ARN_FINANCIAL_ASSETS                          = module.bedrock_data_automation["financial_assets"].project_arn
-    BDA_PROJECT_ARN_RECEIPTS_AND_INVOICES                     = module.bedrock_data_automation["receipts_and_invoices"].project_arn
-    BDA_PROJECT_ARN_RECURRING_BILLS                           = module.bedrock_data_automation["recurring_bills"].project_arn
-    BDA_PROJECT_ARN_HOUSING_EXPENSES                          = module.bedrock_data_automation["housing_expenses"].project_arn
-    BDA_PROJECT_ARN_DEBT_OBLIGATIONS                          = module.bedrock_data_automation["debt_obligations"].project_arn
-    BDA_PROJECT_ARN_IDENTITY_VERIFICATION                     = module.bedrock_data_automation["identity_verification"].project_arn
-    BDA_PROJECT_ARN_RIGHT_TO_WORK                             = module.bedrock_data_automation["right_to_work"].project_arn
-    BDA_PROJECT_ARN_ALL                                       = module.bedrock_data_automation["all"].project_arn
-    BDA_PROFILE_ARN                                           = module.bedrock_data_automation["all"].profile_arn
-    BDA_REGION                                                = var.bda_region
-    BEDROCK_CLASSIFICATION_MODEL_ID_PARAM                     = "${local.ssm_prefix}/models/classification-model-id"
-    BEDROCK_BOUNDING_BOX_MODEL_ID_PARAM                       = "${local.ssm_prefix}/models/bounding-box-model-id"
-    BEDROCK_BLUR_QUADRANT_MODEL_ID_PARAM                      = "${local.ssm_prefix}/models/blur-quadrant-model-id"
-    BEDROCK_SUPPLEMENTAL_EXTRACTION_MODEL_ID_PARAM            = "${local.ssm_prefix}/models/supplemental-extraction-model-id"
-    SSM_PREFIX                                                = local.ssm_prefix
-    MAX_BDA_INVOKE_RETRY_ATTEMPTS                             = local.max_bda_invoke_retry_attempts
-    API_AUTH_ENABLED                                          = local.api_auth_enabled
-    API_AUTH_CACHE_TTL                                        = local.api_auth_cache_ttl
-    API_AUTH_INSECURE_SHARED_KEY_PARAM                        = "/${var.project_name}/${var.environment}/api-auth-insecure-shared-key"
-    COGNITO_USER_POOL_ID                                      = module.identity_provider.user_pool_id
-    COGNITO_CLIENT_ID                                         = module.identity_provider.client_id
+    # disable bda-specific projects in favor of a single "all" project, pre-classification-based routing not currently developed
+    # keeping for future use as example of how to configure multiple BDA projects in a single API Lambda env
+    # also reduces the size of the env vars to keep under the 4KB Lambda limit (the "all" project is the only one that needs to be in the env)
+    # before enabling, create a singular env var prefix  and build the list of project ARNs in the application code
+    # BDA_PROJECT_ARN_TAX_DOCUMENTS                             = module.bedrock_data_automation["tax_documents"].project_arn
+    # BDA_PROJECT_ARN_EMPLOYMENT_WAGES                          = module.bedrock_data_automation["employment_wages"].project_arn
+    # BDA_PROJECT_ARN_INDEPENDENT_EARNINGS                      = module.bedrock_data_automation["independent_earnings"].project_arn
+    # BDA_PROJECT_ARN_GOVERNMENT_BENEFITS                       = module.bedrock_data_automation["government_benefits"].project_arn
+    # BDA_PROJECT_ARN_PRIVATE_BENEFITS_AND_SETTLEMENTS          = module.bedrock_data_automation["private_benefits_and_settlements"].project_arn
+    # BDA_PROJECT_ARN_COURT_ORDERED_BENEFITS                    = module.bedrock_data_automation["court_ordered_benefits"].project_arn
+    # BDA_PROJECT_ARN_FINANCIAL_ASSETS                          = module.bedrock_data_automation["financial_assets"].project_arn
+    # BDA_PROJECT_ARN_RECEIPTS_AND_INVOICES                     = module.bedrock_data_automation["receipts_and_invoices"].project_arn
+    # BDA_PROJECT_ARN_RECURRING_BILLS                           = module.bedrock_data_automation["recurring_bills"].project_arn
+    # BDA_PROJECT_ARN_HOUSING_EXPENSES                          = module.bedrock_data_automation["housing_expenses"].project_arn
+    # BDA_PROJECT_ARN_DEBT_OBLIGATIONS                          = module.bedrock_data_automation["debt_obligations"].project_arn
+    # BDA_PROJECT_ARN_IDENTITY_VERIFICATION                     = module.bedrock_data_automation["identity_verification"].project_arn
+    # BDA_PROJECT_ARN_RIGHT_TO_WORK                             = module.bedrock_data_automation["right_to_work"].project_arn
+    BDA_PROJECT_ARN_ALL                            = module.bedrock_data_automation["all"].project_arn
+    BDA_PROFILE_ARN                                = module.bedrock_data_automation["all"].profile_arn
+    BDA_REGION                                     = var.bda_region
+    BEDROCK_CLASSIFICATION_MODEL_ID_PARAM          = "${local.ssm_prefix}/models/classification-model-id"
+    BEDROCK_BOUNDING_BOX_MODEL_ID_PARAM            = "${local.ssm_prefix}/models/bounding-box-model-id"
+    BEDROCK_BLUR_QUADRANT_MODEL_ID_PARAM           = "${local.ssm_prefix}/models/blur-quadrant-model-id"
+    BEDROCK_SUPPLEMENTAL_EXTRACTION_MODEL_ID_PARAM = "${local.ssm_prefix}/models/supplemental-extraction-model-id"
+    SSM_PREFIX                                     = local.ssm_prefix
+    MAX_BDA_INVOKE_RETRY_ATTEMPTS                  = local.max_bda_invoke_retry_attempts
+    API_AUTH_ENABLED                               = local.api_auth_enabled
+    API_AUTH_CACHE_TTL                             = local.api_auth_cache_ttl
+    API_AUTH_INSECURE_SHARED_KEY_PARAM             = "/${var.project_name}/${var.environment}/api-auth-insecure-shared-key"
+    COGNITO_USER_POOL_ID                           = module.identity_provider.user_pool_id
+    COGNITO_CLIENT_ID                              = module.identity_provider.client_id
+    OTEL_SDK_DISABLED                              = tostring(!var.otel_enabled)
+    OTEL_SERVICE_NAME                              = var.otel_service_name
+    OTEL_EXPORTER_OTLP_ENDPOINT                    = var.otel_exporter_otlp_endpoint
+    OTEL_AWS_APPLICATION_SIGNALS_ENABLED           = tostring(var.otel_enabled)
+    OTEL_METRICS_EXPORTER                          = "awsemf"
+    OTEL_EXPORTER_OTLP_LOGS_HEADERS                = "x-aws-metric-namespace=${var.otel_service_name}"
   }
 
   # API Lambda env: the shared worker map, minus the Athena/Glue vars that only
@@ -553,8 +572,10 @@ locals {
 module "monitoring" {
   source = "../../modules/monitoring"
 
-  name_prefix = local.service_name
-  region      = var.region
+  name_prefix  = local.service_name
+  project_name = var.project_name
+  environment  = var.environment
+  region       = var.region
 
   # Dashboard in every env; alarms only in prd.
   create_dashboard = true
@@ -772,6 +793,7 @@ data "aws_iam_policy_document" "supporting_services" {
       "cognito-idp:AdminSetUserPassword",
       "cognito-idp:ListUsers",
       # User-management endpoints (super-admin only):
+      "cognito-idp:ListUsersInGroup",
       "cognito-idp:AdminListGroupsForUser",
       "cognito-idp:AdminAddUserToGroup",
       "cognito-idp:AdminRemoveUserFromGroup",

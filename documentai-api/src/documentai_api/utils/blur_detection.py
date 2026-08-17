@@ -15,12 +15,15 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any
 
+from opentelemetry import trace
+
 from documentai_api.config.constants import ConfigDefaults
 from documentai_api.config.env import get_aws_config
 from documentai_api.logging import get_logger
 from documentai_api.utils.ssm import get_parameter_value
 
 logger = get_logger(__name__)
+tracer = trace.get_tracer(__name__)
 
 
 @dataclass
@@ -274,8 +277,10 @@ def detect_blur(image_bytes: bytes, content_type: str | None = None) -> BlurResu
 
     try:
         start = time.time()
-        textract = AWSClientFactory.get_textract_client()
-        response = textract.detect_document_text(Document={"Bytes": image_bytes})
+        with tracer.start_as_current_span("textract.detect_document_text") as span:
+            span.set_attribute("document.content_type", content_type)
+            textract = AWSClientFactory.get_textract_client()
+            response = textract.detect_document_text(Document={"Bytes": image_bytes})
         elapsed = round(time.time() - start, 2)
 
         words = [b for b in response["Blocks"] if b["BlockType"] == "WORD"]

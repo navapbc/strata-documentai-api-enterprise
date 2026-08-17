@@ -2,6 +2,10 @@
 
 When a document is processed, the platform stores both the original image and the extracted fields. The document viewer shows them together - the source image on one side, the extracted fields on the other, with each field linked to the region of the image it came from.
 
+## See it in action
+
+![Document viewer walkthrough](media/document-viewer-walkthrough.gif)
+
 ## Bounding box overlay
 
 Every extracted field has coordinates from the model - the bounding box of the text region it was read from. The viewer draws those boxes as an overlay on the document image. Hovering over a field in the results panel highlights its bounding box on the image. Hovering over a box on the image highlights the corresponding field in the panel.

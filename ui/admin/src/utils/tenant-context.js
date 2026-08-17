@@ -1,64 +1,77 @@
 /**
  * Global tenant selector state.
- * Views read the current tenant from here instead of managing their own selectors.
+ * Views render their own <select> and call mountSelect(el) on mount / unmountSelect(el) on unmount.
  */
 
 import * as TenantsService from "../services/tenants.js";
 
-let _select = null;
 let _currentTenantId = null;
+let _options = []; // [{ value, label }] cached after first load
+let _loading = false;
+let _loaded = false;
 const _listeners = [];
+const _selects = new Set();
 
 const STORAGE_KEY = "docai_selected_tenant";
 
-export function init(selectEl) {
-  _select = selectEl;
-  _select.innerHTML = '<option value="">Loading tenants...</option>';
-  _select.disabled = true;
-  _select.addEventListener("change", () => {
-    _currentTenantId = _select.value || null;
-    if (_currentTenantId) {
-      sessionStorage.setItem(STORAGE_KEY, _currentTenantId);
-    } else {
-      sessionStorage.removeItem(STORAGE_KEY);
-    }
-    _listeners.forEach((fn) => fn(_currentTenantId));
-  });
-}
-
-let _loading = false;
-
 export async function load() {
-  if (!_select || _loading) return;
+  if (_loaded || _loading) return;
   _loading = true;
-  const current = _select.value;
-  _select.innerHTML = '<option value="">All Tenants</option>';
-  _select.disabled = false;
   try {
     const resp = await TenantsService.list();
-    for (const tenant of resp.tenants || []) {
-      const opt = document.createElement("option");
-      opt.value = tenant.tenantId;
-      opt.textContent = tenant.tenantId;
-      _select.appendChild(opt);
-    }
+    _options = (resp.tenants || []).map((t) => ({ value: t.tenantId, label: t.tenantId }));
   } catch {
     // Tenant list unavailable (tenant-admin)
   }
-  // Restore from sessionStorage if no value set yet
+  _loaded = true;
+  _loading = false;
+
   const saved = sessionStorage.getItem(STORAGE_KEY);
-  if (current) {
-    _select.value = current;
-  } else if (saved && _select.querySelector(`option[value="${saved}"]`)) {
-    _select.value = saved;
+  if (saved && _options.some((o) => o.value === saved)) {
     _currentTenantId = saved;
     _listeners.forEach((fn) => fn(_currentTenantId));
   }
-  _loading = false;
+
+  _selects.forEach(_populateSelect);
+}
+
+function _populateSelect(el) {
+  el.replaceChildren();
+  const defaultOpt = document.createElement("option");
+  defaultOpt.value = "";
+  defaultOpt.textContent = el.dataset.placeholder || "All Tenants";
+  el.appendChild(defaultOpt);
+  for (const { value, label } of _options) {
+    const opt = document.createElement("option");
+    opt.value = value;
+    opt.textContent = label;
+    el.appendChild(opt);
+  }
+  el.value = _currentTenantId || "";
+}
+
+export function mountSelect(el, { placeholder } = {}) {
+  if (placeholder) el.dataset.placeholder = placeholder;
+  _populateSelect(el);
+  _selects.add(el);
+  el.addEventListener("change", _onSelectChange);
+}
+
+export function unmountSelect(el) {
+  _selects.delete(el);
+  el.removeEventListener("change", _onSelectChange);
+}
+
+function _onSelectChange(e) {
+  setTenantId(e.target.value || null);
 }
 
 export function getTenantId() {
   return _currentTenantId;
+}
+
+export function getOptions() {
+  return _options;
 }
 
 export function onChange(fn) {
@@ -70,7 +83,14 @@ export function onChange(fn) {
 }
 
 export function setTenantId(tenantId) {
-  _currentTenantId = tenantId;
-  if (_select) _select.value = tenantId || "";
+  _currentTenantId = tenantId || null;
+  if (_currentTenantId) {
+    sessionStorage.setItem(STORAGE_KEY, _currentTenantId);
+  } else {
+    sessionStorage.removeItem(STORAGE_KEY);
+  }
+  _selects.forEach((el) => {
+    el.value = _currentTenantId || "";
+  });
   _listeners.forEach((fn) => fn(_currentTenantId));
 }

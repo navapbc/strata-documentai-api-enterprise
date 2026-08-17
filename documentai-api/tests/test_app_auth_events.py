@@ -320,7 +320,7 @@ def test_audit_logging_failure_does_not_break_request(mocker):
     """log_event already catches exceptions internally - verify endpoint still succeeds."""
     # Mock the DDB table to raise, but log_event catches it
     mocker.patch(
-        "documentai_api.utils.audit.AWSClientFactory.get_ddb_table",
+        "documentai_api.utils.audit_log.AWSClientFactory.get_ddb_table",
         side_effect=RuntimeError("DDB unavailable"),
     )
 
@@ -344,7 +344,7 @@ def test_category_audit_failure_does_not_break_create(mocker):
         },
     )
     mocker.patch(
-        "documentai_api.utils.audit.AWSClientFactory.get_ddb_table",
+        "documentai_api.utils.audit_log.AWSClientFactory.get_ddb_table",
         side_effect=RuntimeError("DDB unavailable"),
     )
 

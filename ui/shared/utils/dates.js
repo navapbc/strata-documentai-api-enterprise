@@ -1,3 +1,11 @@
+export function localDateToUtcStart(date) {
+  return new Date(date + "T00:00:00").toISOString();
+}
+
+export function localDateToUtcEnd(date) {
+  return new Date(date + "T23:59:59.999").toISOString();
+}
+
 export function relativeTime(iso) {
   if (!iso) return "-";
   const diff = Date.now() - new Date(iso).getTime();

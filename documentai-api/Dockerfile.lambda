@@ -14,14 +14,30 @@ COPY src/documentai_api/__init__.py ./src/documentai_api/__init__.py
 RUN --mount=type=cache,target=/root/.cache/uv \
    uv export --frozen --no-dev --no-emit-project | uv pip install --system --only-binary=:all: -r -
 
-# install lambda insights in lambda container
+# install lambda insights + ADOT collector extensions
 # https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Lambda-Insights-Getting-Started-docker.html
-RUN dnf install -y curl-minimal && \
+# https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Application-Signals-Enable-LambdaMain.html#containerized-lambda
+# Container images don't support Lambda Layers, so the layer contents are
+# extracted straight into /opt at build time instead. aws-otel-lambda (the repo
+# this Dockerfile used to pull from) publishes layers only via regional ARNs,
+# not GitHub releases - aws-otel-python-instrumentation is the repo that ships
+# the equivalent layer.zip asset the container-image path expects.
+RUN dnf install -y curl-minimal unzip && \
    curl -O https://lambda-insights-extension.s3-ap-northeast-1.amazonaws.com/amazon_linux/lambda-insights-extension.rpm && \
    rpm -U lambda-insights-extension.rpm && \
    rm -f lambda-insights-extension.rpm && \
+   curl -Lo /tmp/adot-extension.zip https://github.com/aws-observability/aws-otel-python-instrumentation/releases/download/v0.19.0/layer.zip && \
+   unzip /tmp/adot-extension.zip -d /opt && \
+   chmod -R 755 /opt && \
+   rm /tmp/adot-extension.zip && \
    dnf clean all && \
    rm -rf /var/cache/dnf
+
+# Enable ADOT zero-code auto-instrumentation wrapper.
+# OTEL_SDK_DISABLED is set by Terraform from var.otel_enabled; when "true" the
+# opentelemetry-instrument entrypoint skips all auto-instrumentation and span
+# export, making this a genuine kill switch at the wrapper layer.
+ENV AWS_LAMBDA_EXEC_WRAPPER=/opt/otel-instrument
 
 COPY src/documentai_api/ ./src/documentai_api/
 ENV PYTHONPATH=${LAMBDA_TASK_ROOT}/src

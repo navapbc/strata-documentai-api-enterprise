@@ -75,6 +75,11 @@ class EnvVars(StrEnum):
     PORT = "PORT"
     AWS_LAMBDA_FUNCTION_NAME = "AWS_LAMBDA_FUNCTION_NAME"  # set automatically by the Lambda runtime
 
+    # === OpenTelemetry ===
+    OTEL_SDK_DISABLED = "OTEL_SDK_DISABLED"
+    OTEL_SERVICE_NAME = "OTEL_SERVICE_NAME"
+    OTEL_EXPORTER_OTLP_ENDPOINT = "OTEL_EXPORTER_OTLP_ENDPOINT"
+
 
 class PydanticBaseEnvConfig(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

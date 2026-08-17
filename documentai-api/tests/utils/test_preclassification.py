@@ -32,9 +32,6 @@ def _patch_invoke(monkeypatch, response):
     monkeypatch.setattr(
         "documentai_api.utils.preclassification.invoke_model", lambda **kwargs: response
     )
-    monkeypatch.setattr(
-        "documentai_api.utils.preclassification._get_classification_prompt", lambda: "test prompt"
-    )
 
 
 # =============================================================================
@@ -47,7 +44,7 @@ def test_classifies_image_successfully(monkeypatch):
         {
             "document_type": "tax_documents",
             "confidence": 0.95,
-            "document_count": 1,
+            "max_document_count_on_page": 1,
         }
     )
     _patch_invoke(monkeypatch, response)
@@ -56,7 +53,7 @@ def test_classifies_image_successfully(monkeypatch):
 
     assert result.document_type == "tax_documents"
     assert result.confidence == 0.95
-    assert result.document_count == 1
+    assert result.max_document_count_on_page == 1
 
 
 def test_skips_unsupported_content_type():
@@ -64,7 +61,7 @@ def test_skips_unsupported_content_type():
 
     assert result.document_type == "other_document"
     assert result.confidence == 0.0
-    assert result.document_count == 1
+    assert result.max_document_count_on_page == 1
 
 
 def test_skips_oversized_image():
@@ -83,7 +80,7 @@ def test_pdf_not_subject_to_image_size_limit(monkeypatch):
         {
             "document_type": "tax_documents",
             "confidence": 0.9,
-            "document_count": 1,
+            "max_document_count_on_page": 1,
         }
     )
     _patch_invoke(monkeypatch, response)
@@ -100,7 +97,7 @@ def test_free_form_document_types_pass_through(monkeypatch, document_type):
         {
             "document_type": document_type,
             "confidence": 0.9,
-            "document_count": 1,
+            "max_document_count_on_page": 1,
             "category_match": True,
         }
     )
@@ -116,7 +113,7 @@ def test_other_document_is_valid_type(monkeypatch):
         {
             "document_type": "other_document",
             "confidence": 0.6,
-            "document_count": 1,
+            "max_document_count_on_page": 1,
         }
     )
     _patch_invoke(monkeypatch, response)
@@ -132,7 +129,7 @@ def test_unrecognized_type_passes_through(monkeypatch):
         {
             "document_type": "system_reject",
             "confidence": 0.9,
-            "document_count": 0,
+            "max_document_count_on_page": 0,
         }
     )
     _patch_invoke(monkeypatch, response)
@@ -147,9 +144,6 @@ def test_invocation_failure_returns_default(monkeypatch):
         "documentai_api.utils.preclassification.invoke_model",
         lambda **kwargs: (_ for _ in ()).throw(RuntimeError("Bedrock timeout")),
     )
-    monkeypatch.setattr(
-        "documentai_api.utils.preclassification._get_classification_prompt", lambda: "test prompt"
-    )
 
     result = preclassify_document(SAMPLE_IMAGE, "image/png")
 
@@ -161,9 +155,6 @@ def test_invalid_json_response_returns_default(monkeypatch):
     monkeypatch.setattr(
         "documentai_api.utils.preclassification.invoke_model",
         lambda **kwargs: {"content": [{"text": "not valid json"}]},
-    )
-    monkeypatch.setattr(
-        "documentai_api.utils.preclassification._get_classification_prompt", lambda: "test prompt"
     )
 
     result = preclassify_document(SAMPLE_IMAGE, "image/png")
@@ -181,9 +172,6 @@ def test_non_object_json_response_returns_default(monkeypatch):
             "usage": {"inputTokens": 1, "outputTokens": 1},
         },
     )
-    monkeypatch.setattr(
-        "documentai_api.utils.preclassification._get_classification_prompt", lambda: "test prompt"
-    )
 
     result = preclassify_document(SAMPLE_IMAGE, "image/png")
 
@@ -200,7 +188,7 @@ def test_parse_defaults_when_fields_missing(monkeypatch):
 
     assert result.document_type == "tax_documents"
     assert result.confidence == 0.0
-    assert result.document_count == 1
+    assert result.max_document_count_on_page == 1
 
 
 def test_empty_document_bytes(monkeypatch):
@@ -209,7 +197,7 @@ def test_empty_document_bytes(monkeypatch):
         {
             "document_type": "system_reject",
             "confidence": 0.9,
-            "document_count": 0,
+            "max_document_count_on_page": 0,
         }
     )
     _patch_invoke(monkeypatch, response)
@@ -245,14 +233,11 @@ def test_image_content_type_format_extraction(monkeypatch, content_type, expecte
             {
                 "document_type": "tax_documents",
                 "confidence": 0.9,
-                "document_count": 1,
+                "max_document_count_on_page": 1,
             }
         )
 
     monkeypatch.setattr("documentai_api.utils.preclassification.invoke_model", capture_invoke)
-    monkeypatch.setattr(
-        "documentai_api.utils.preclassification._get_classification_prompt", lambda: "test prompt"
-    )
 
     preclassify_document(SAMPLE_IMAGE, content_type)
 
@@ -268,14 +253,11 @@ def test_pdf_uses_document_block(monkeypatch):
             {
                 "document_type": "tax_documents",
                 "confidence": 0.9,
-                "document_count": 1,
+                "max_document_count_on_page": 1,
             }
         )
 
     monkeypatch.setattr("documentai_api.utils.preclassification.invoke_model", capture_invoke)
-    monkeypatch.setattr(
-        "documentai_api.utils.preclassification._get_classification_prompt", lambda: "test prompt"
-    )
 
     pdf_bytes = b"%PDF-1.4 fake"
     preclassify_document(pdf_bytes, "application/pdf")
@@ -297,14 +279,11 @@ def test_message_structure(monkeypatch):
             {
                 "document_type": "tax_documents",
                 "confidence": 0.9,
-                "document_count": 1,
+                "max_document_count_on_page": 1,
             }
         )
 
     monkeypatch.setattr("documentai_api.utils.preclassification.invoke_model", capture_invoke)
-    monkeypatch.setattr(
-        "documentai_api.utils.preclassification._get_classification_prompt", lambda: "test prompt"
-    )
 
     preclassify_document(SAMPLE_IMAGE, "image/png")
 
@@ -321,7 +300,7 @@ def test_confidence_clamped_to_0_1(monkeypatch):
         {
             "document_type": "tax_documents",
             "confidence": 1.5,
-            "document_count": 1,
+            "max_document_count_on_page": 1,
         }
     )
     _patch_invoke(monkeypatch, response)
@@ -332,7 +311,7 @@ def test_confidence_clamped_to_0_1(monkeypatch):
         {
             "document_type": "tax_documents",
             "confidence": -0.5,
-            "document_count": 1,
+            "max_document_count_on_page": 1,
         }
     )
     _patch_invoke(monkeypatch, response)
@@ -341,17 +320,42 @@ def test_confidence_clamped_to_0_1(monkeypatch):
 
 
 def test_document_count_clamped_to_non_negative(monkeypatch):
-    """Negative document_count is clamped to 0."""
+    """Negative max_document_count_on_page is clamped to 0."""
     response = _mock_invoke_response(
         {
             "document_type": "tax_documents",
             "confidence": 0.9,
-            "document_count": -1,
+            "max_document_count_on_page": -1,
         }
     )
     _patch_invoke(monkeypatch, response)
     result = preclassify_document(SAMPLE_IMAGE, "image/png")
-    assert result.document_count == 0
+    assert result.max_document_count_on_page == 0
+
+
+def test_has_multipage_inconsistency_parsed_from_response(monkeypatch):
+    """has_multipage_inconsistency is parsed and passed through from the LLM response."""
+    response = _mock_invoke_response(
+        {
+            "document_type": "multipage",
+            "confidence": 0.9,
+            "max_document_count_on_page": 1,
+            "has_multipage_inconsistency": True,
+        }
+    )
+    _patch_invoke(monkeypatch, response)
+    result = preclassify_document(SAMPLE_IMAGE, "image/png")
+    assert result.has_multipage_inconsistency is True
+
+
+def test_has_multipage_inconsistency_defaults_to_false(monkeypatch):
+    """When has_multipage_inconsistency is absent from the response, defaults to False."""
+    response = _mock_invoke_response(
+        {"document_type": "W2", "confidence": 0.9, "max_document_count_on_page": 1}
+    )
+    _patch_invoke(monkeypatch, response)
+    result = preclassify_document(SAMPLE_IMAGE, "image/png")
+    assert result.has_multipage_inconsistency is False
 
 
 def test_get_model_id_uses_default(monkeypatch):
@@ -396,15 +400,12 @@ def test_invoke_uses_max_tokens(monkeypatch):
         return {
             "content": [
                 {
-                    "text": '{"document_type": "tax_documents", "confidence": 0.9, "document_count": 1}'
+                    "text": '{"document_type": "tax_documents", "confidence": 0.9, "max_document_count_on_page": 1}'
                 }
             ]
         }
 
     monkeypatch.setattr("documentai_api.utils.preclassification.invoke_model", mock_invoke_model)
-    monkeypatch.setattr(
-        "documentai_api.utils.preclassification._get_classification_prompt", lambda: "test prompt"
-    )
     monkeypatch.setattr(
         "documentai_api.utils.preclassification._get_model_id", lambda: "test-model"
     )
@@ -616,7 +617,7 @@ def test_preclassify_real_document(filename, expected_category, monkeypatch, rea
         f"(confidence={result.confidence})"
     )
     assert result.confidence >= 0.5, f"{filename}: confidence too low: {result.confidence}"
-    assert result.document_count >= 1
+    assert result.max_document_count_on_page >= 1
 
 
 # =============================================================================

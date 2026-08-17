@@ -331,6 +331,50 @@ def test_optimize_crop_and_grayscale_single_write(s3_bucket, mocker):
     assert put_spy.call_count == 1
 
 
+def test_optimize_timing_fields_set_when_modified(s3_bucket, mocker):
+    """crop_block and write_duration_seconds are positive Decimals when a write occurs."""
+    mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=False)
+    original = _sized_image(100, 100, fmt="JPEG")
+    s3_bucket.put_object(Key="a.jpg", Body=original, ContentType="image/jpeg")
+
+    result = optimize_s3_image(s3_bucket.name, "a.jpg", apply_grayscale=True)
+
+    assert result.crop_block_duration_seconds is not None
+    assert result.crop_block_duration_seconds >= 0
+    assert result.write_duration_seconds is not None
+    assert result.write_duration_seconds >= 0
+
+
+def test_optimize_timing_write_duration_none_when_no_modification(s3_bucket, mocker):
+    """write_duration_seconds is None when no crop or grayscale was applied."""
+    mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=False)
+    s3_bucket.put_object(Key="a.pdf", Body=b"%PDF-1.4", ContentType="application/pdf")
+
+    result = optimize_s3_image(s3_bucket.name, "a.pdf", apply_grayscale=False)
+
+    assert result.crop_block_duration_seconds is not None
+    assert result.crop_block_duration_seconds >= 0
+    assert result.write_duration_seconds is None
+
+
+def test_optimize_fetch_skipped_when_bytes_provided(s3_bucket, mocker):
+    """get_object is never called when file_bytes are passed in directly."""
+    mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=False)
+    get_spy = mocker.spy(s3_service, "get_object")
+    original = _sized_image(100, 100, fmt="JPEG")
+    s3_bucket.put_object(Key="a.jpg", Body=original, ContentType="image/jpeg")
+
+    optimize_s3_image(
+        s3_bucket.name,
+        "a.jpg",
+        apply_grayscale=True,
+        file_bytes=original,
+        content_type="image/jpeg",
+    )
+
+    get_spy.assert_not_called()
+
+
 def test_optimize_too_large_after_conversion(s3_bucket, mocker):
     """File still over BDA limit after grayscale: too_large=True."""
     mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=False)

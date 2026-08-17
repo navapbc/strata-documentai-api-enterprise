@@ -13,7 +13,7 @@ from documentai_api.config.constants import (
 )
 from documentai_api.config.env import EnvVars, get_aws_config, get_required_env
 from documentai_api.dtos.classification import ClassificationData
-from documentai_api.dtos.ddb import UpsertDdbData
+from documentai_api.dtos.ddb import InitialDdbRecord, UpdateDdbRecord
 from documentai_api.dtos.processing import InternalApiResponse, ProcessingTimes
 from documentai_api.logging import get_logger
 from documentai_api.schemas.document_metadata import DocumentMetadata
@@ -301,7 +301,19 @@ def _send_record_to_metrics_queue(object_key: str) -> None:
             # prevent process from completing successfully
             return
 
-        sqs_service.send_message(queue_url, json.dumps(ddb_record, default=str))
+        # Inject traceparent into SQS MessageAttributes so metrics-processor can
+        # attach its spans as children of the originating document trace.
+        from opentelemetry.propagate import inject
+
+        carrier: dict[str, str] = {}
+        inject(carrier)
+        message_attributes = {
+            k: {"DataType": "String", "StringValue": v} for k, v in carrier.items()
+        }
+
+        sqs_service.send_message(
+            queue_url, json.dumps(ddb_record, default=str), message_attributes or None
+        )
         logger.info(f"Successfully sent {object_key} to SQS queue")
 
     except Exception as e:
@@ -341,66 +353,55 @@ def get_ddb_by_job_id(job_id: str) -> dict[str, Any] | None:
     return items[0] if items else None
 
 
-def update_ddb(
-    object_key: str,
-    status: str,
-    internal_api_response: InternalApiResponse | None = None,
-    data: ClassificationData | None = None,
-    bda_invocation_arn: str | None = None,
-    bda_project_arn_used: str | None = None,
-    error_message: str | None = None,
-    below_extraction_confidence_floor: bool = False,
-    extraction_rules_configured: bool | None = None,
-    missing_required_field_list: list[str] | None = None,
-    required_field_list: list[str] | None = None,
-    applied_extraction_confidence_floor: float | None = None,
-    used_default_confidence_floor: bool | None = None,
-    pages_sent_to_bda: int | None = None,
-    result_processor_started_at: str | None = None,
-) -> None:
+def update_ddb(data: UpdateDdbRecord) -> None:
     """Update DynamoDB processing status for a file."""
     try:
-        # build base update expression (without v1_response)
         update_expr, expr_values = _build_update_expression(
-            status=status,
-            data=data,
-            internal_api_response=internal_api_response,
-            v1_api_response=None,  # built after ddb update
-            bda_invocation_arn=bda_invocation_arn,
-            bda_project_arn_used=bda_project_arn_used,
-            error_message=error_message,
-            below_extraction_confidence_floor=below_extraction_confidence_floor,
-            extraction_rules_configured=extraction_rules_configured,
-            missing_required_field_list=missing_required_field_list,
-            required_field_list=required_field_list,
-            applied_extraction_confidence_floor=applied_extraction_confidence_floor,
-            used_default_confidence_floor=used_default_confidence_floor,
+            status=data.status,
+            data=data.data,
+            internal_api_response=data.internal_api_response,
+            v1_api_response=None,
+            bda_invocation_arn=data.bda_invocation_arn,
+            bda_project_arn_used=data.bda_project_arn_used,
+            error_message=data.error_message,
+            below_extraction_confidence_floor=data.below_extraction_confidence_floor,
+            extraction_rules_configured=data.extraction_rules_configured,
+            missing_required_field_list=data.missing_required_field_list,
+            required_field_list=data.required_field_list,
+            applied_extraction_confidence_floor=data.applied_extraction_confidence_floor,
+            used_default_confidence_floor=data.used_default_confidence_floor,
         )
 
-        if pages_sent_to_bda is not None:
+        if data.pages_sent_to_bda is not None:
             update_expr += f", {DocumentMetadata.PAGES_SENT_TO_BDA} = :pagesSentToBda"
-            expr_values[":pagesSentToBda"] = pages_sent_to_bda
+            expr_values[":pagesSentToBda"] = data.pages_sent_to_bda
 
-        if result_processor_started_at is not None:
+        if data.bda_invoke_duration_seconds is not None:
+            update_expr += f", {DocumentMetadata.BDA_INVOKE_DURATION_SECONDS} = :bdaInvokeDs"
+            expr_values[":bdaInvokeDs"] = data.bda_invoke_duration_seconds
+
+        if data.bda_invoke_retry_count is not None:
+            update_expr += f", {DocumentMetadata.BDA_INVOKE_RETRY_COUNT} = :bdaRetryCount"
+            expr_values[":bdaRetryCount"] = data.bda_invoke_retry_count
+
+        if data.result_processor_started_at is not None:
             update_expr += f", {DocumentMetadata.RESULT_PROCESSOR_STARTED_AT} = :rpStartedAt"
-            expr_values[":rpStartedAt"] = result_processor_started_at
+            expr_values[":rpStartedAt"] = data.result_processor_started_at
 
-        # add timing updates
         timing_updates, timing_values = _build_timing_updates(
-            object_key, status, bda_output_s3_uri=data.bda_output_s3_uri if data else None
+            data.object_key,
+            data.status,
+            bda_output_s3_uri=data.data.bda_output_s3_uri if data.data else None,
         )
         if timing_updates:
             update_expr += f", {timing_updates}"
             expr_values.update(timing_values)
 
-        _execute_ddb_update(object_key, update_expr, expr_values)
+        _execute_ddb_update(data.object_key, update_expr, expr_values)
+        _finalize_v1_response(data.object_key, data.status, data.data, data.error_message)
 
-        # finalize: build v1 response, sync responseCode
-        _finalize_v1_response(object_key, status, data, error_message)
-
-        # metrics: enqueue for any terminal (classified) status
-        if ProcessStatus.is_classified(status):
-            _send_record_to_metrics_queue(object_key)
+        if ProcessStatus.is_classified(data.status):
+            _send_record_to_metrics_queue(data.object_key)
 
     except Exception as e:
         logger.error(f"Failed to update DDB status: {e}")
@@ -498,7 +499,7 @@ def _finalize_v1_response(
     _execute_ddb_update(object_key, update_expr, expr_values)
 
 
-def upsert_ddb(data: UpsertDdbData) -> None:
+def upsert_ddb(data: InitialDdbRecord) -> None:
     """Upsert a document-metadata DDB row by file name.
 
     Creates the row if missing, updates it in place if present. `createdAt` is
@@ -510,6 +511,7 @@ def upsert_ddb(data: UpsertDdbData) -> None:
 
         expr_fields: list[str] = [
             f"{DocumentMetadata.ORIGINAL_FILE_NAME} = :originalFileName",
+            f"{DocumentMetadata.ORIGINAL_FILE_NAME_LOWER} = :originalFileNameLower",
             f"{DocumentMetadata.PROCESS_STATUS} = :processStatus",
             f"{DocumentMetadata.CREATED_AT} = if_not_exists({DocumentMetadata.CREATED_AT}, :now)",
             f"{DocumentMetadata.UPDATED_AT} = :now",
@@ -523,6 +525,7 @@ def upsert_ddb(data: UpsertDdbData) -> None:
         ]
         expr_values: dict[str, Any] = {
             ":originalFileName": data.original_file_name,
+            ":originalFileNameLower": data.original_file_name.lower(),
             ":processStatus": data.process_status,
             ":now": now,
             ":pwProt": bool(data.is_password_protected),

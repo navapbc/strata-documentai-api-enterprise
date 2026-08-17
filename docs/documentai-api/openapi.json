@@ -2130,9 +2130,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
-                  "type": "object",
-                  "title": "Response List Users V1 Admin Users Get"
+                  "$ref": "#/components/schemas/ListUsersResponse"
                 }
               }
             }
@@ -2211,7 +2209,7 @@
           "Admin:Users"
         ],
         "summary": "Change Role",
-        "description": "Change a user's role, or pass ``role: null`` to revoke.",
+        "description": "Change a user's role, or pass ``role: null`` to revoke.\n\nKeeps the tenant scope attribute consistent with the role: super-admin\nand revoked users are cleared to no scope, tenant-admin requires and\nkeeps exactly one tenant. Without this, a role change alone could leave\na tenant-admin with no tenant (locked out) or a super-admin still\ncarrying a stale tenant scope.",
         "operationId": "change_role_v1_admin_users__username__role_post",
         "security": [
           {
@@ -2375,6 +2373,61 @@
         }
       }
     },
+    "/v1/admin/audit-log/actors": {
+      "get": {
+        "tags": [
+          "Admin:Audit Log"
+        ],
+        "summary": "Get Audit Actors",
+        "description": "Return distinct actor emails visible to the caller.\n\nSuper-admins can optionally scope to a tenant; tenant-admins are always\nscoped to their own partition. Sourced from Cognito only (see\ndocs/decisions/2026-08-06-audit-log-actor-dropdown-source.md) - this\nis a filter, not a guarantee: a user with no audit events for the scoped\ntenant may still appear, and a super-admin who acted on a tenant's\nresources but isn't a Cognito member of it will not.",
+        "operationId": "get_audit_actors_v1_admin_audit_log_actors_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditActorsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/admin/audit-log/actions": {
       "get": {
         "tags": [
@@ -2408,7 +2461,7 @@
           "Admin:Audit Log"
         ],
         "summary": "Get Audit Log",
-        "description": "Query audit events.\n\nSuper-admins can query any tenant or by action (via GSI).\nTenant-admins can only query their own tenant's events.",
+        "description": "Query audit events.\n\nSuper-admins can query any tenant or by action/actor (via GSI).\nTenant-admins can only query their own tenant's events.",
         "operationId": "get_audit_log_v1_admin_audit_log_get",
         "security": [
           {
@@ -2446,6 +2499,22 @@
                 }
               ],
               "title": "Action"
+            }
+          },
+          {
+            "name": "actor_email",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Actor Email"
             }
           },
           {
@@ -3704,6 +3773,169 @@
         }
       }
     },
+    "/v1/admin/search/documents": {
+      "get": {
+        "tags": [
+          "Admin:Documents"
+        ],
+        "summary": "Search Documents",
+        "description": "Search documents by filename, date range, or document type.\n\nSuper-admins can search any tenant. Tenant-admins are locked to their own.\nAll filters are ANDed together.",
+        "operationId": "search_documents_v1_admin_search_documents_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tenant Id"
+            }
+          },
+          {
+            "name": "filename",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Filename"
+            }
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "name": "user_provided_document_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "User Provided Document Type"
+            }
+          },
+          {
+            "name": "matched_blueprint_name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Matched Blueprint Name"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/": {
       "get": {
         "summary": "Root",
@@ -3928,6 +4160,22 @@
           "actions"
         ],
         "title": "AuditActionsResponse"
+      },
+      "AuditActorsResponse": {
+        "properties": {
+          "actors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Actors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "actors"
+        ],
+        "title": "AuditActorsResponse"
       },
       "AuditEventItem": {
         "properties": {
@@ -5110,6 +5358,18 @@
             ],
             "title": "Role",
             "description": "New role, or null to revoke (return user to pending)."
+          },
+          "tenant_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tenant Id",
+            "description": "Required when role is tenant-admin; ignored otherwise."
           }
         },
         "type": "object",
@@ -5132,6 +5392,88 @@
         },
         "type": "object",
         "title": "ChangeTenantRequest"
+      },
+      "CognitoUserItem": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "emailVerified": {
+            "type": "boolean",
+            "title": "Emailverified",
+            "default": false
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "default": true
+          },
+          "createdAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Createdat"
+          },
+          "tenantId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tenantid"
+          },
+          "groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Groups",
+            "description": "Role group memberships, or null if not fetched (see list_users(include_groups=))."
+          }
+        },
+        "type": "object",
+        "required": [
+          "username"
+        ],
+        "title": "CognitoUserItem"
       },
       "ConfigResponse": {
         "properties": {
@@ -6328,6 +6670,27 @@
         ],
         "title": "ListTenantsResponse"
       },
+      "ListUsersResponse": {
+        "properties": {
+          "users": {
+            "items": {
+              "$ref": "#/components/schemas/CognitoUserItem"
+            },
+            "type": "array",
+            "title": "Users"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "users",
+          "count"
+        ],
+        "title": "ListUsersResponse"
+      },
       "MeResponse": {
         "properties": {
           "tenantId": {
@@ -6466,6 +6829,34 @@
             "type": "object",
             "title": "Byresponsecode"
           },
+          "byFileType": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Byfiletype"
+          },
+          "byUserCategory": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Byusercategory"
+          },
+          "byUploadMethod": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Byuploadmethod"
+          },
+          "byHour": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Byhour"
+          },
           "timingStats": {
             "$ref": "#/components/schemas/TimingStats",
             "default": {
@@ -6571,6 +6962,34 @@
             },
             "type": "object",
             "title": "Byresponsecode"
+          },
+          "byFileType": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Byfiletype"
+          },
+          "byUserCategory": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Byusercategory"
+          },
+          "byUploadMethod": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Byuploadmethod"
+          },
+          "byHour": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Byhour"
           },
           "timingStats": {
             "$ref": "#/components/schemas/TimingStats",

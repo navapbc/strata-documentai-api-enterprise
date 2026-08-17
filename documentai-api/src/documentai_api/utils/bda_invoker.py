@@ -1,5 +1,7 @@
 import os
 
+from opentelemetry import trace
+
 import documentai_api.utils.documents as document_utils
 from documentai_api.config.constants import ConfigDefaults, PreclassificationCategory
 from documentai_api.config.env import EnvVars, get_aws_config, get_required_env
@@ -7,6 +9,7 @@ from documentai_api.logging import get_logger
 from documentai_api.utils.aws_client_factory import AWSClientFactory
 
 logger = get_logger(__name__)
+tracer = trace.get_tracer(__name__)
 
 _project_arns_cache: dict[str, str] | None = None
 
@@ -106,14 +109,18 @@ def invoke_bedrock_data_automation(
             )
 
         # TODO: refactor to call services/bda.py instead of calling runtime client directly
-        response = bedrock.invoke_data_automation_async(
-            dataAutomationProfileArn=bda_profile_arn,
-            dataAutomationConfiguration={"dataAutomationProjectArn": bda_project_arn},
-            inputConfiguration={"s3Uri": f"s3://{source_bucket_name}/{source_object_name}"},
-            outputConfiguration={
-                "s3Uri": f"s3://{documentai_output_location}/{source_object_name}"
-            },
-        )
+        with tracer.start_as_current_span("bda.invoke_data_automation_async") as span:
+            span.set_attribute("bda.project_arn", bda_project_arn)
+            span.set_attribute("bda.pages_sent", pages_sent)
+            span.set_attribute("bda.object_key", source_object_name)
+            response = bedrock.invoke_data_automation_async(
+                dataAutomationProfileArn=bda_profile_arn,
+                dataAutomationConfiguration={"dataAutomationProjectArn": bda_project_arn},
+                inputConfiguration={"s3Uri": f"s3://{source_bucket_name}/{source_object_name}"},
+                outputConfiguration={
+                    "s3Uri": f"s3://{documentai_output_location}/{source_object_name}"
+                },
+            )
         logger.info(f"BDA response: {response}")
         return str(response.get("invocationArn")), bda_project_arn, pages_sent
     except Exception as e:

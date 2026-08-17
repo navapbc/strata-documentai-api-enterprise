@@ -2,6 +2,16 @@
 
 Admin console for managing API keys, tenants, users, extraction rules, and document processing.
 
+## See it in action
+
+**Admin console** - tenant and user management, API keys, document review.
+
+![Admin console walkthrough](../../docs/documentai-api/media/admin-walkthrough.gif)
+
+**Extraction rules** - configure per-tenant, per-document-type field rules.
+
+![Extraction rules walkthrough](../../docs/documentai-api/media/admin-extraction-rules-walkthrough.gif)
+
 ## Prerequisites
 
 - Node.js 20.19+ (required by Vitest 4 / Rolldown; Node 18 fails at test startup)

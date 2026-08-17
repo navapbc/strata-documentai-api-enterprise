@@ -4,6 +4,7 @@ from types import SimpleNamespace
 
 from documentai_api.utils.ssm import (
     is_document_crop_enabled,
+    is_multipage_document_flagging_enabled,
     is_preclassification_blueprint_matching_enabled,
     is_preclassification_routing_enabled,
     is_skip_bda_if_unclassified,
@@ -141,3 +142,30 @@ def test_is_preclassification_blueprint_matching_enabled_reads_false(mocker):
     )
     mocker.patch("documentai_api.utils.ssm.get_parameter_value", return_value="false")
     assert is_preclassification_blueprint_matching_enabled() is False
+
+
+def test_is_multipage_document_flagging_enabled_defaults_on_when_unconfigured(mocker):
+    """No ssm_prefix configured -> multipage flagging defaults on."""
+    mocker.patch(
+        "documentai_api.config.env.get_aws_config",
+        return_value=SimpleNamespace(ssm_prefix=None),
+    )
+    assert is_multipage_document_flagging_enabled() is True
+
+
+def test_is_multipage_document_flagging_enabled_reads_true(mocker):
+    mocker.patch(
+        "documentai_api.config.env.get_aws_config",
+        return_value=SimpleNamespace(ssm_prefix="/docai/dev"),
+    )
+    mocker.patch("documentai_api.utils.ssm.get_parameter_value", return_value="true")
+    assert is_multipage_document_flagging_enabled() is True
+
+
+def test_is_multipage_document_flagging_enabled_reads_false(mocker):
+    mocker.patch(
+        "documentai_api.config.env.get_aws_config",
+        return_value=SimpleNamespace(ssm_prefix="/docai/dev"),
+    )
+    mocker.patch("documentai_api.utils.ssm.get_parameter_value", return_value="false")
+    assert is_multipage_document_flagging_enabled() is False

@@ -25,7 +25,7 @@ from documentai_api.models.tenant import (
 from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
 from documentai_api.schemas.tenants import TenantRecord
 from documentai_api.utils import tenants as tenants_util
-from documentai_api.utils.audit import log_event
+from documentai_api.utils.audit_log import log_event
 from documentai_api.utils.dates import get_month_prefix, get_today_iso
 from documentai_api.utils.jwt_auth import is_super_admin, tenant_scope
 from documentai_api.utils.strings import camel_to_snake

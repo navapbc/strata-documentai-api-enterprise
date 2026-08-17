@@ -21,6 +21,9 @@ describe("document-categories view", () => {
     vi.doMock("../../src/utils/tenant-context.js", () => ({
       getTenantId: vi.fn(() => "acme"),
       onChange: vi.fn(() => () => {}),
+      getOptions: vi.fn(() => []),
+      mountSelect: vi.fn(),
+      unmountSelect: vi.fn(),
     }));
     vi.doMock("../../src/utils/helpers.js", () => ({
       esc: (s) => s,
@@ -144,7 +147,7 @@ describe("document-categories view", () => {
     DocCategoriesView.mount(root);
     await new Promise((r) => setTimeout(r, 0));
 
-    root.querySelector(".btn-secondary.btn-sm").click();
+    root.querySelector(".btn-icon").click();
 
     const datesEl = root.querySelector("#category-dates");
     expect(datesEl.classList.contains("hidden")).toBe(false);
@@ -161,7 +164,7 @@ describe("document-categories view", () => {
     DocCategoriesView.mount(root);
     await new Promise((r) => setTimeout(r, 0));
 
-    const deactivateBtn = root.querySelector(".btn-outline-danger");
+    const deactivateBtn = root.querySelector(".btn-icon-danger");
     expect(deactivateBtn).not.toBeNull();
     deactivateBtn.click();
 
@@ -184,7 +187,7 @@ describe("document-categories view", () => {
     DocCategoriesView.mount(root);
     await new Promise((r) => setTimeout(r, 0));
 
-    root.querySelector(".btn-outline-danger").click();
+    root.querySelector(".btn-icon-danger").click();
     const modal = root.querySelector("#category-deactivate-modal");
     expect(modal.classList.contains("hidden")).toBe(false);
 

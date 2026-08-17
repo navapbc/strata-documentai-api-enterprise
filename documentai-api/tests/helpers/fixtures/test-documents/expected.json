@@ -75,12 +75,18 @@
     "responseCode": "000"
   },
   "synthetic-snap-income-proof-employment-wage-verification-letter-rendered.png": {
+    "//": [
+      "BDA blueprint match is occasionally nondeterministic on this document,",
+      "intermittently returning no match instead of Employment-Verification-Letter.",
+      "reruns=2 gives 3 attempts."
+    ],
     "bdaMatchedDocumentClass": "Employment-Verification-Letter",
     "content_type": "image/png",
     "e2e_enabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
+    "reruns_override": 2,
     "responseCode": "000"
   },
   "synthetic-snap-income-proof-self-employment-ledger-photo.png": {
@@ -128,7 +134,11 @@
     "//": [
       "Previously misclassified as Proof-of-Loss-of-Health-Coverage. ",
       "Adding fields to blueprints resolved the false match - BDA now correctly ",
-      "returns no blueprint match for this pregnancy verification clinic note."
+      "returns no blueprint match for this pregnancy verification clinic note. ",
+      "BDA blueprint match is occasionally nondeterministic on this document, ",
+      "intermittently matching again instead of returning null; confirmed via ",
+      "rerun that it's wobble, not the false-match regression recurring. ",
+      "reruns=2 gives 3 attempts."
     ],
     "bdaMatchedDocumentClass": null,
     "content_type": "image/jpeg",
@@ -136,6 +146,7 @@
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
+    "reruns_override": 2,
     "responseCode": "002"
   },
   "blur/synthetic-disk-defocus.jpeg": {
@@ -164,6 +175,38 @@
     "isPasswordProtected": false,
     "preclassificationCategory": null,
     "responseCode": "104"
+  },
+  "synthetic-multipage-mixed-paystub-photo.pdf": {
+    "//": [
+      "Multipage PDF combining two different pay stubs (different employees).",
+      "Same-type/different-individual detection is best-effort (~78% reliable at temp=0).",
+      "reruns=2 gives 3 attempts, reducing CI flake rate to ~1%."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "application/pdf",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "reruns_override": 2,
+    "responseCode": "401"
+  },
+  "synthetic-multipage-mixed-state-id-paystub.pdf": {
+    "//": [
+      "Multipage PDF combining a state photo ID and a pay stub - two distinct document types.",
+      "Preclassification consistently returns has_multipage_inconsistency: true.",
+      "Requires FLAG_MULTIPLE_DOCUMENTS_IN_MULTIPAGE, which defaults to true.",
+      "Same-type/different-individual detection is best-effort at temp=0.",
+      "reruns=2 gives 3 attempts, matching synthetic-multipage-mixed-paystub-photo.pdf."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "application/pdf",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "reruns_override": 2,
+    "responseCode": "401"
   },
   "synthetic-password-protected.pdf": {
     "//": [
