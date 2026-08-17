@@ -52,7 +52,33 @@ const POLL_TIMEOUT_MS = 120000;
 
 let _root = null;
 let _fileInput, _runBtn, _dropzone, _dropzoneIdle, _dropzoneSelected;
-let _fileName, _fileClear, _elapsed, _results, _previewPanel, _detailPanel, _historyList;
+let _fileName,
+  _fileClear,
+  _elapsed,
+  _results,
+  _previewPanel,
+  _detailPanel,
+  _historyList,
+  _mobilePreview,
+  _mobileClear;
+let _tabs = null;
+
+function initTabs(root) {
+  _tabs = root.querySelectorAll(".demo-tab");
+  _tabs.forEach((btn) => btn.addEventListener("click", () => switchTab(btn.dataset.tab)));
+  switchTab("upload");
+}
+
+function switchTab(name) {
+  if (!_tabs) return;
+  _tabs.forEach((btn) => btn.classList.toggle("active", btn.dataset.tab === name));
+  _root.querySelectorAll("[data-tab-panel]").forEach((el) => {
+    el.classList.toggle("tab-active", el.dataset.tabPanel === name);
+  });
+  // Results is the only tab backed by two panels (preview + detail) that need
+  // to be laid out together instead of filling the single active-panel cell.
+  _root.querySelector(".demo-three-panel")?.classList.toggle("tab-results", name === "results");
+}
 let _selectedFile = null;
 let _abortController = null;
 let _startTime = null;
@@ -85,7 +111,13 @@ export function mount(root) {
   _detailPanel = root.querySelector("#demo-detail-panel");
   _historyList = root.querySelector("#demo-history-list");
 
+  _mobilePreview = root.querySelector("#demo-mobile-preview");
+  _mobileClear = root.querySelector("#demo-mobile-clear");
+  _mobileClear.addEventListener("click", clearFile);
+  root.querySelector("#demo-choose-btn").addEventListener("click", () => _fileInput.click());
+
   // Hover a field row -> highlight its bounding box in the preview.
+  initTabs(root);
   linkFieldHighlighting(_results, _previewPanel);
 
   _dropzone.addEventListener("click", (e) => {
@@ -130,6 +162,21 @@ function setFile(file) {
   _fileName.textContent = file.name;
   _dropzoneIdle.classList.add("hidden");
   _dropzoneSelected.classList.remove("hidden");
+  _mobileClear.classList.remove("hidden");
+  if (file.type.startsWith("image/")) {
+    const img = document.createElement("img");
+    img.src = URL.createObjectURL(file);
+    img.onload = () => URL.revokeObjectURL(img.src);
+    _mobilePreview.querySelector("img,p:not(.demo-mobile-preview-hint)")?.remove();
+    _mobilePreview.querySelector(".demo-mobile-preview-hint").before(img);
+  } else {
+    const p = document.createElement("p");
+    p.className = "demo-mobile-pdf-name";
+    p.textContent = file.name;
+    _mobilePreview.querySelector("img,p:not(.demo-mobile-preview-hint)")?.remove();
+    _mobilePreview.querySelector(".demo-mobile-preview-hint").before(p);
+  }
+  _mobilePreview.querySelector(".demo-mobile-preview-hint").classList.add("hidden");
   _runBtn.disabled = false;
 }
 
@@ -138,10 +185,13 @@ function clearFile() {
   _fileInput.value = "";
   _dropzoneIdle.classList.remove("hidden");
   _dropzoneSelected.classList.add("hidden");
+  _mobileClear.classList.add("hidden");
+  _mobilePreview.querySelector("img,p:not(.demo-mobile-preview-hint)")?.remove();
+  _mobilePreview.querySelector(".demo-mobile-preview-hint").classList.remove("hidden");
   _runBtn.disabled = true;
 }
 
-async function loadHistory() {
+async function loadHistory(activeJobId = null) {
   if (!_historyList) return;
   _historyList.replaceChildren(h("li", { className: "empty-state" }, "Loading documents…"));
   try {
@@ -164,7 +214,15 @@ async function loadHistory() {
           `${formatStatus(doc)} · ${formatRelativeDate(doc.createdAt)}`,
         ),
       );
-      li.addEventListener("click", () => loadDocument(doc.jobId));
+      li.addEventListener("click", () => {
+        _historyList
+          .querySelectorAll(".demo-history-item")
+          .forEach((el) => el.classList.remove("active"));
+        li.classList.add("active");
+        loadDocument(doc.jobId);
+        switchTab("results");
+      });
+      if (activeJobId && doc.jobId === activeJobId) li.classList.add("active");
       _historyList.appendChild(li);
     }
   } catch {
@@ -190,7 +248,9 @@ async function runExtraction() {
     const result = await pollForCompletion(jobId);
     renderResults(result);
     loadPreview(result);
-    loadHistory();
+    clearFile();
+    await loadHistory(jobId);
+    switchTab("results");
   } catch (e) {
     if (e.name !== "AbortError") {
       Toast.show(`Extraction failed: ${e.message}`);

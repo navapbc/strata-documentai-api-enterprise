@@ -17,6 +17,16 @@
   box-sizing: border-box;
 }
 
+html {
+  /* Chrome on Android "boosts" (inflates) font sizes in narrow text blocks
+     using a heuristic tied to physical screen size/density, not just CSS px -
+     this is why the same page can render text at different sizes on
+     different Android phones (e.g. Galaxy S8+ vs S20) even at identical
+     viewport widths. Disable it so font-size is fully CSS-controlled. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   font-family:
     "Plus Jakarta Sans",
@@ -219,6 +229,9 @@ td {
   font-weight: 600;
   color: #fff;
   letter-spacing: 0.01em;
+}
+.login-header-inner strong {
+  font-weight: 600;
 }
 .login-layout {
   display: grid;
@@ -429,6 +442,11 @@ td {
   /* Fixed layout so revealing values (••••• -> real text) doesn't reflow columns. */
   table-layout: fixed;
   width: 100%;
+  /* The global `table` rule sets overflow:hidden for rounded corners, but that
+     makes the table itself a scroll-container ancestor, which breaks the
+     thead's position:sticky below whenever the table scrolls inside a taller
+     panel rather than being the scrolling element itself. Sticky headers win. */
+  overflow: visible;
 }
 
 /* Keep the Field / Value / Confidence header visible while the table scrolls

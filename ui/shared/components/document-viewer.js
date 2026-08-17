@@ -404,7 +404,21 @@ export function renderPreview(
     container.innerHTML = `<img src="${esc(url)}" class="document-preview-img" alt="Document preview" draggable="false" oncontextmenu="return false" onerror="this.parentElement.innerHTML='<p class=empty-state>Preview unavailable</p>'" />`;
     container.classList.add("watermark-block");
     const img = container.querySelector("img");
-    if (img) addImageZoom(container, img);
+    if (img) {
+      addImageZoom(container, img);
+      // Lets responsive layouts split preview + extracted-data side by side
+      // for a wide/landscape document but stack them for a tall/portrait one
+      // (a portrait page squeezed into a half-width column reads worse than
+      // one given the full page width instead).
+      const markOrientation = () => {
+        container.classList.toggle(
+          "preview-landscape",
+          img.naturalWidth > img.naturalHeight,
+        );
+      };
+      if (img.complete && img.naturalWidth) markOrientation();
+      else img.addEventListener("load", markOrientation, { once: true });
+    }
   }
   container.style.setProperty(
     "--watermark-bg",

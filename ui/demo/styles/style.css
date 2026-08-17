@@ -1,9 +1,15 @@
 @import "../../shared/styles/base.css";
 
+:root {
+  /* Measured height of the fixed tab bar, used to reserve space below the
+     content below 1024px without guessing at calc(100vh - Nrem) math. */
+  --demo-tabbar-h: 3.625rem;
+}
+
 /* Demo-specific layout */
 .demo-header {
   background: #1b1b1b;
-  padding: 0.75rem 0;
+  padding: 1rem 0;
   position: sticky;
   top: 0;
   z-index: 10;
@@ -14,8 +20,15 @@
   align-items: center;
   gap: 1rem;
   padding: 0 2rem;
-  font-size: 1rem;
   color: #fff;
+}
+
+/* Matches .login-header-inner exactly so the two header "types" in this app
+   read as the same product instead of two subtly different treatments. */
+.demo-header-title {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
 .demo-user {
@@ -24,10 +37,79 @@
   color: #9ca3af;
 }
 
-/* Three-panel layout */
+#demo-logout-btn {
+  padding: 0.5rem 0.875rem;
+  font-size: 0.8125rem;
+}
+
+/* Drag-and-drop is a desktop/mouse pattern - dragging a file out of a file
+   manager window into the browser. Phones can't do that at all, and while
+   iPadOS technically supports inter-app drag-and-drop, it's a power-user
+   gesture almost nobody uses, and tapping the dropzone already opens the
+   native file picker anyway - so it adds a "Drop a document here" affordance
+   implying an interaction most tablet users will never make. Touch/narrow
+   widths (<=1024px, tablet included) get the tap-first choose button +
+   preview instead; only real desktop widths keep the drag target.
+   Both default to hidden here (rather than hiding them from a wider-viewport
+   media query) so a later, unscoped .demo-choose-btn/.demo-mobile-preview
+   rule elsewhere in this file can't out-cascade the hide by sheer source
+   order - show-on-touch is the one override, not hide-on-larger. */
+.demo-choose-btn,
+.demo-mobile-preview {
+  display: none;
+}
+@media (max-width: 1024px) {
+  .demo-dropzone {
+    display: none;
+  }
+  .demo-choose-btn {
+    display: block;
+  }
+  .demo-mobile-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+@media (max-width: 768px) {
+  .demo-header {
+    padding: 0.625rem 0;
+  }
+  .demo-header-inner {
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0 1rem;
+  }
+  .demo-header-title {
+    font-size: 0.9375rem;
+  }
+  .demo-user {
+    display: block;
+    width: 100%;
+    order: 3;
+    font-size: 0.75rem;
+    padding-bottom: 0.125rem;
+    margin-left: 0;
+  }
+  #demo-logout-btn {
+    padding: 0.375rem 0.625rem;
+    font-size: 0.75rem;
+  }
+}
+.demo-tabs {
+  display: none;
+}
+
+/* Three-panel layout. There are 4 grid children (upload / documents / preview /
+   detail - upload and documents are split for the tab bar below 1024px), but
+   only 3 columns: upload sits above documents in column 1 via explicit rows,
+   while preview and detail each span both rows to keep their original
+   full-height columns. */
 .demo-three-panel {
   display: grid;
   grid-template-columns: 260px 3fr 2fr;
+  grid-template-rows: auto 1fr;
   gap: 1rem;
   padding: 1.5rem;
   height: calc(100vh - 3.5rem);
@@ -37,12 +119,23 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  grid-column: 1;
+  grid-row: 1;
+  border-right: 1px solid var(--color-border);
+  padding-right: 1rem;
+}
+
+.demo-documents-panel {
+  grid-column: 1;
+  grid-row: 2;
   border-right: 1px solid var(--color-border);
   padding-right: 1rem;
   overflow-y: auto;
 }
 
 .demo-preview-panel {
+  grid-column: 2;
+  grid-row: 1 / 3;
   overflow: auto;
   display: flex;
   align-items: flex-start;
@@ -54,6 +147,7 @@
   border: 1px solid var(--color-border);
   padding: 1rem;
   position: relative;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 .demo-preview-panel img {
@@ -62,7 +156,25 @@
   display: block;
 }
 
+.demo-preview-panel.watermarked::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: var(--watermark-bg);
+  background-repeat: repeat;
+  opacity: 0.15;
+  z-index: 1;
+}
+
+.demo-preview-panel.watermark-block::after {
+  pointer-events: auto;
+  cursor: default;
+}
+
 .demo-detail-panel {
+  grid-column: 3;
+  grid-row: 1 / 3;
   overflow-y: auto;
   padding-left: 1rem;
   border-left: 1px solid var(--color-border);
@@ -137,10 +249,100 @@
   color: #dc2626;
 }
 
+.demo-mobile-clear {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.demo-mobile-clear:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.demo-mobile-preview img {
+  max-width: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.demo-mobile-preview .demo-mobile-pdf-name {
+  padding: 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  word-break: break-all;
+  text-align: center;
+}
+
+.demo-upload-tab {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.demo-mobile-preview {
+  flex: 1;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f9fafb;
+  position: relative;
+  min-height: 200px;
+}
+
+.demo-mobile-preview-hint {
+  font-size: 0.875rem;
+  color: #9ca3af;
+  margin: 0;
+}
+
+.demo-upload-actions {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem 0 0.5rem;
+}
+
+.demo-choose-btn,
+.demo-run-btn {
+  flex: 1;
+  min-height: 3.25rem;
+  padding: 1rem 1.25rem;
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+
+.demo-run-btn {
+  background: #005ea2;
+}
+
+.demo-run-btn:hover:not(:disabled) {
+  background: #1a4480;
+}
+
+.demo-run-btn:disabled {
+  background: #cbd5e1;
+  color: #64748b;
+}
+
 .demo-elapsed {
   font-size: 0.85rem;
   color: #6b7280;
   font-variant-numeric: tabular-nums;
+  text-align: center;
+  padding: 0.25rem 0;
 }
 
 .demo-matched {
@@ -152,24 +354,6 @@
 
 .demo-results {
   padding: 0;
-}
-
-.demo-results .detail-table {
-  font-size: 0.8125rem;
-}
-
-/* Preview panel with bbox overlay */
-.demo-preview-panel {
-  overflow: auto;
-  display: flex;
-  align-items: flex-start;
-  /* safe center: centers when the image fits, but aligns to the start edge when
-     zoomed past the panel width so the left/top edges stay scrollable. */
-  justify-content: safe center;
-  background: #f9fafb;
-  border-radius: 8px;
-  border: 1px solid var(--color-border);
-  padding: 1rem;
 }
 
 .preview-zoom-controls {
@@ -267,20 +451,188 @@
   background: rgba(255, 214, 0, 0.22);
 }
 
-@media (max-width: 768px) {
+/* Tab bar (Upload / Documents / Results) takes over from the 3-column grid
+   below 1024px. The <nav> sits before <header> in the DOM but is
+   position:fixed, so its source order doesn't affect layout. */
+@media (max-width: 1024px) {
+  /* height (not min-height) + overflow hidden gives .demo-three-panel a
+     definite height to flex into, so its grid rows can size correctly and
+     the active tab panel scrolls internally instead of the whole page
+     growing past the viewport underneath the fixed tab bar. */
+  #app:has(.demo-tabs) {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+  /* Tab bar is fixed to the bottom at every width below 1024px (tablet
+     included) rather than moving to an inline top bar on larger touch
+     screens - a consistent position reads less like a bug than one that
+     flips between breakpoints. */
+  .demo-tabs {
+    display: flex;
+    background: #1b1b1b;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .demo-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 0.625rem 0.5rem;
+    border: none;
+    background: none;
+    font-size: 0.6875rem;
+    font-family: inherit;
+    color: #888;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .demo-tab svg {
+    width: 22px;
+    height: 22px;
+  }
+  .demo-tab.active {
+    color: #5ba3f5;
+  }
+  /* Larger touch targets for finger input. */
+  .demo-history-item {
+    padding: 0.75rem 0.5rem;
+  }
+  .demo-history-name {
+    font-size: 0.875rem;
+  }
+  .demo-history-meta {
+    font-size: 0.75rem;
+  }
+  /* Stay CSS Grid (not flex) at every width so the tablet override below can
+     put preview + detail side by side in a single row; only the column count
+     and per-item placement change per breakpoint. */
   .demo-three-panel {
+    flex: 1;
+    min-height: 0;
+    display: grid;
     grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr);
     height: auto;
+    padding: 1rem;
+    padding-bottom: calc(1rem + var(--demo-tabbar-h, 3rem) + env(safe-area-inset-bottom));
+    gap: 1rem;
   }
-  .demo-list-panel {
-    border-right: none;
-    border-bottom: 1px solid var(--color-border);
-    padding-right: 0;
-    padding-bottom: 1rem;
-  }
+  .demo-list-panel,
+  .demo-documents-panel,
+  .demo-preview-panel,
   .demo-detail-panel {
-    border-left: none;
+    grid-column: 1;
+    grid-row: 1;
+    border: none;
+    padding: 0;
+  }
+  /* Hide every tab panel by default; JS toggles .tab-active on the pair that
+     matches the selected tab (Results = preview + detail together). */
+  [data-tab-panel] {
+    display: none;
+  }
+  [data-tab-panel].tab-active {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: auto;
+  }
+  /* The desktop rule's align-items: flex-start controls vertical alignment
+     in its row layout; in this column layout that axis flips to horizontal,
+     so it needs to be re-centered here rather than sitting flush left. */
+  .demo-preview-panel.tab-active {
+    align-items: center;
+  }
+}
+
+/* Tablet: Results shows preview + detail side by side since there's room for
+   both (mobile stacks them instead - see below). Until there's an actual
+   result, the detail panel is empty (#demo-results stays .hidden until
+   renderResults() runs) - reserving it a whole column/row anyway just reads
+   as broken blank space, so it collapses away and preview takes the full
+   area until there's something to put next to it. */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .demo-three-panel {
+    grid-template-columns: 3fr 2fr;
+    padding: 1.5rem;
+    padding-bottom: calc(1.5rem + var(--demo-tabbar-h, 3rem) + env(safe-area-inset-bottom));
+  }
+  .demo-list-panel,
+  .demo-documents-panel {
+    grid-column: 1 / -1;
+  }
+  .demo-three-panel.tab-results .demo-preview-panel {
+    grid-column: 1 / -1;
+  }
+  .demo-three-panel.tab-results .demo-detail-panel {
+    display: none;
+  }
+  .demo-three-panel.tab-results:has(#demo-results:not(.hidden)) .demo-preview-panel {
+    grid-column: 1;
+  }
+  .demo-three-panel.tab-results:has(#demo-results:not(.hidden)) .demo-detail-panel {
+    display: flex;
+    grid-column: 2;
+    padding-left: 1rem;
+    border-left: 1px solid var(--color-border);
+  }
+  /* A wide/landscape document squeezed into a half-width column reads worse
+     than one given the full page width - stack it above the data instead of
+     beside it (see the .preview-landscape orientation check in
+     document-viewer.js's renderPreview). Portrait/unknown (e.g. PDFs) keep
+     the side-by-side split above. */
+  .demo-three-panel.tab-results:has(#demo-results:not(.hidden)):has(
+      .demo-preview-panel.preview-landscape
+    ) {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .demo-three-panel.tab-results:has(#demo-results:not(.hidden)):has(
+      .demo-preview-panel.preview-landscape
+    )
+    .demo-preview-panel {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+  .demo-three-panel.tab-results:has(#demo-results:not(.hidden)):has(
+      .demo-preview-panel.preview-landscape
+    )
+    .demo-detail-panel {
+    grid-column: 1 / -1;
+    grid-row: 2;
     padding-left: 0;
+    border-left: none;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border);
+  }
+}
+
+@media (max-width: 768px) {
+  /* Same idea as tablet above, stacked instead of side by side: preview
+     fills the whole area until there's a result to show below it. */
+  .demo-three-panel.tab-results {
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .demo-three-panel.tab-results .demo-detail-panel {
+    display: none;
+  }
+  .demo-three-panel.tab-results:has(#demo-results:not(.hidden)) {
+    grid-template-rows: minmax(220px, 40vh) minmax(0, 1fr);
+  }
+  .demo-three-panel.tab-results:has(#demo-results:not(.hidden)) .demo-preview-panel {
+    grid-row: 1;
+  }
+  .demo-three-panel.tab-results:has(#demo-results:not(.hidden)) .demo-detail-panel {
+    display: flex;
+    grid-row: 2;
   }
 }
 
@@ -314,7 +666,14 @@
 }
 
 .demo-history-item:hover {
-  background: #f3f4f6;
+  background: var(--color-bg-hover, #f3f4f6);
+}
+
+.demo-history-item.active {
+  background: #eff6ff;
+  border-left: 3px solid #005ea2;
+  padding-left: calc(0.375rem - 3px);
+  border-radius: 0;
 }
 
 .demo-history-name {
