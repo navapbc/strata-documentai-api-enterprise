@@ -64,7 +64,7 @@ def test_put_extraction_rule():
         patch("documentai_api.utils.extraction_rules.upsert_rule", return_value=rule),
         patch(
             "documentai_api.app_extraction_rules.get_valid_fields",
-            return_value={"ssn", "wages", "employer_name"},
+            return_value={"ssn": "ssn", "wages": "wages", "employer_name": "employer_name"},
         ),
     ):
         response = client.put(
@@ -144,7 +144,9 @@ def test_put_extraction_rule_uses_auth_tenant(mocker):
         "createdAt": "2026-01-01",
         "updatedAt": "2026-01-01",
     }
-    mocker.patch("documentai_api.app_extraction_rules.get_valid_fields", return_value={"ssn"})
+    mocker.patch(
+        "documentai_api.app_extraction_rules.get_valid_fields", return_value={"ssn": "ssn"}
+    )
 
     response = client.put(
         "/v1/config/extraction-rules",
@@ -184,7 +186,7 @@ def mock_valid_fields(mocker):
     """Patch get_valid_fields to return a known set of fields for 'w2'."""
     return mocker.patch(
         "documentai_api.app_extraction_rules.get_valid_fields",
-        return_value={"ssn", "wages", "employer_name"},
+        return_value={"ssn": "ssn", "wages": "wages", "employer_name": "employer_name"},
     )
 
 
@@ -205,7 +207,20 @@ def test_validator_deduplicates_case_insensitive_within_list(mock_valid_fields):
         document_type="w2", required_fields=["SSN", "ssn", "wages"], optional_fields=[]
     )
 
+    # Duplicate dropped, both normalized to blueprint casing from label file
     assert req.required_fields == ["ssn", "wages"]
+
+
+def test_validator_preserves_mixed_case_field_names(mock_valid_fields):
+    from documentai_api.app_extraction_rules import ExtractionRuleRequest
+
+    req = ExtractionRuleRequest(
+        document_type="w2", required_fields=["SSN", "wages"], optional_fields=["employer_name"]
+    )
+
+    # Normalized to blueprint casing from the label file
+    assert req.required_fields == ["ssn", "wages"]
+    assert req.optional_fields == ["employer_name"]
 
 
 def test_validator_deduplicates_optional_fields(mock_valid_fields):
@@ -267,7 +282,7 @@ def test_put_deduplicates_fields():
         patch("documentai_api.utils.extraction_rules.upsert_rule", return_value=rule),
         patch(
             "documentai_api.app_extraction_rules.get_valid_fields",
-            return_value={"ssn", "wages"},
+            return_value={"ssn": "ssn", "wages": "wages"},
         ),
     ):
         response = client.put(
@@ -293,7 +308,7 @@ def test_put_unknown_document_type_returns_422():
 
 
 def test_put_invalid_field_names_returns_422():
-    with patch("documentai_api.app_extraction_rules.get_valid_fields", return_value={"ssn"}):
+    with patch("documentai_api.app_extraction_rules.get_valid_fields", return_value={"ssn": "ssn"}):
         response = client.put(
             "/v1/config/extraction-rules",
             json={"document_type": "w2", "required_fields": ["not_a_field"], "optional_fields": []},
@@ -303,7 +318,7 @@ def test_put_invalid_field_names_returns_422():
 
 
 def test_put_overlapping_fields_returns_422():
-    with patch("documentai_api.app_extraction_rules.get_valid_fields", return_value={"ssn"}):
+    with patch("documentai_api.app_extraction_rules.get_valid_fields", return_value={"ssn": "ssn"}):
         response = client.put(
             "/v1/config/extraction-rules",
             json={"document_type": "w2", "required_fields": ["ssn"], "optional_fields": ["ssn"]},
@@ -334,13 +349,81 @@ def test_put_string_required_fields_returns_422():
 
 def test_put_case_insensitive_overlap_returns_422():
     """SSN in required and ssn in optional should be caught as overlap."""
-    with patch("documentai_api.app_extraction_rules.get_valid_fields", return_value={"ssn"}):
+    with patch("documentai_api.app_extraction_rules.get_valid_fields", return_value={"ssn": "ssn"}):
         response = client.put(
             "/v1/config/extraction-rules",
             json={"document_type": "w2", "required_fields": ["SSN"], "optional_fields": ["ssn"]},
         )
 
     assert response.status_code == 422
+
+
+def test_put_normalizes_fields_before_persisting(mocker):
+    """Mixed-case input is rewritten to blueprint casing before upsert_rule is called."""
+    mock_upsert = mocker.patch("documentai_api.utils.extraction_rules.upsert_rule")
+    mock_upsert.return_value = {
+        "tenantId": "test-tenant",
+        "documentType": "payslip",
+        "requiredFields": ["EmployeeName.FirstName", "CurrentGrossPay"],
+        "optionalFields": ["PayDate"],
+        "createdAt": "2026-01-01",
+        "updatedAt": "2026-01-01",
+    }
+    mocker.patch(
+        "documentai_api.app_extraction_rules.get_valid_fields",
+        return_value={
+            "employeename.firstname": "EmployeeName.FirstName",
+            "currentgrosspay": "CurrentGrossPay",
+            "paydate": "PayDate",
+        },
+    )
+
+    client.put(
+        "/v1/config/extraction-rules",
+        json={
+            "document_type": "payslip",
+            "required_fields": ["EMPLOYEENAME.FIRSTNAME", "currentgrosspay"],
+            "optional_fields": ["PAYDATE"],
+        },
+    )
+
+    mock_upsert.assert_called_once()
+    _, _, required, optional = mock_upsert.call_args[0]
+    assert required == ["EmployeeName.FirstName", "CurrentGrossPay"]
+    assert optional == ["PayDate"]
+
+
+def test_put_normalizes_fields_via_real_labels_dir(tmp_path, monkeypatch, mocker):
+    """Contract test: incorrect-case input is normalized to blueprint casing using the real get_valid_fields path."""
+    import json
+
+    labels = {"EmployeeName.FirstName": "Employee First Name", "GrossPay": "Gross Pay"}
+    (tmp_path / "payslip.json").write_text(json.dumps(labels))
+    monkeypatch.setattr("documentai_api.utils.field_labels.LABELS_DIR", tmp_path)
+
+    mock_upsert = mocker.patch("documentai_api.utils.extraction_rules.upsert_rule")
+    mock_upsert.return_value = {
+        "tenantId": "test-tenant",
+        "documentType": "payslip",
+        "requiredFields": ["EmployeeName.FirstName"],
+        "optionalFields": ["GrossPay"],
+        "createdAt": "2026-01-01",
+        "updatedAt": "2026-01-01",
+    }
+
+    response = client.put(
+        "/v1/config/extraction-rules",
+        json={
+            "document_type": "payslip",
+            "required_fields": ["employeename.firstname"],
+            "optional_fields": ["GROSSPAY"],
+        },
+    )
+
+    assert response.status_code == 200
+    _, _, required, optional = mock_upsert.call_args[0]
+    assert required == ["EmployeeName.FirstName"]
+    assert optional == ["GrossPay"]
 
 
 # ==============================================================================
@@ -356,7 +439,9 @@ def test_put_super_admin_missing_tenant_id_returns_400():
     admin_context = UserContext(tenant_id="__admin__", api_key_name="admin-user")
     app.dependency_overrides[get_user_context_with_fallback] = lambda: admin_context
     try:
-        with patch("documentai_api.app_extraction_rules.get_valid_fields", return_value={"ssn"}):
+        with patch(
+            "documentai_api.app_extraction_rules.get_valid_fields", return_value={"ssn": "ssn"}
+        ):
             response = client.put(
                 "/v1/config/extraction-rules",
                 json={"document_type": "W2", "required_fields": ["ssn"], "optional_fields": []},
@@ -393,7 +478,9 @@ def test_put_tenant_admin_body_tenant_id_ignored(mocker):
         "createdAt": "2026-01-01",
         "updatedAt": "2026-01-01",
     }
-    mocker.patch("documentai_api.app_extraction_rules.get_valid_fields", return_value={"ssn"})
+    mocker.patch(
+        "documentai_api.app_extraction_rules.get_valid_fields", return_value={"ssn": "ssn"}
+    )
 
     # Body says "other-tenant" but auth is "test-tenant" - auth wins
     response = client.put(

@@ -167,6 +167,10 @@ def test_delete_category_logs_audit(mock_log_event_categories, mocker):
 
 def test_put_extraction_rule_logs_audit(mock_log_event_rules, mocker):
     mocker.patch(
+        "documentai_api.app_extraction_rules.get_valid_fields",
+        return_value={"ssn": "ssn"},
+    )
+    mocker.patch(
         "documentai_api.utils.extraction_rules.upsert_rule",
         return_value={
             "tenant_id": "test-tenant",

@@ -150,6 +150,74 @@ def test_apply_extraction_rules_no_rules(extraction_rules_table):
     assert result.missing_required_field_list == []
 
 
+def test_apply_extraction_rules_mixed_case_fields(extraction_rules_table):
+    """Stored mixed-case field names match BDA output keys case-insensitively."""
+    extraction_rules_table.put_item(
+        Item={
+            "tenantId": "t1",
+            "documentType": "Payslip",
+            "requiredFields": ["EmployeeName.FirstName", "CurrentGrossPay"],
+            "optionalFields": ["PayDate"],
+            "createdAt": "2026-01-01",
+            "updatedAt": "2026-01-01",
+        }
+    )
+
+    # BDA output preserves original casing
+    fields = {
+        "EmployeeName.FirstName": "Jane",
+        "CurrentGrossPay": "5000",
+        "PayDate": "2025-01-15",
+        "extra_field": "ignored",
+    }
+    result = apply_extraction_rules("t1", "Payslip", fields)
+
+    assert "EmployeeName.FirstName" in result.fields
+    assert "CurrentGrossPay" in result.fields
+    assert "PayDate" in result.fields
+    assert "extra_field" not in result.fields
+    assert result.missing_required_field_list == []
+
+
+def test_apply_extraction_rules_case_mismatch_between_rule_and_bda_output(extraction_rules_table):
+    """A rule configured with different casing than the BDA output still matches."""
+    extraction_rules_table.put_item(
+        Item={
+            "tenantId": "t1",
+            "documentType": "Payslip",
+            "requiredFields": ["employeename.firstname"],
+            "optionalFields": [],
+            "createdAt": "2026-01-01",
+            "updatedAt": "2026-01-01",
+        }
+    )
+
+    fields = {"EmployeeName.FirstName": "Jane"}
+    result = apply_extraction_rules("t1", "Payslip", fields)
+
+    assert result.fields == {"EmployeeName.FirstName": "Jane"}
+    assert result.missing_required_field_list == []
+
+
+def test_get_missing_required_fields_case_mismatch(extraction_rules_table):
+    """Empty-field names from BDA output are matched case-insensitively against the rule."""
+    extraction_rules_table.put_item(
+        Item={
+            "tenantId": "t1",
+            "documentType": "Payslip",
+            "requiredFields": ["EmployeeName.FirstName"],
+            "optionalFields": [],
+            "createdAt": "2026-01-01",
+            "updatedAt": "2026-01-01",
+        }
+    )
+
+    missing, required = get_missing_required_fields("t1", "Payslip", ["employeename.firstname"], [])
+
+    assert missing == ["EmployeeName.FirstName"]
+    assert required == ["EmployeeName.FirstName"]
+
+
 @pytest.mark.parametrize(
     ("missing_fields", "expected_missing_required", "excluded_from_result"),
     [

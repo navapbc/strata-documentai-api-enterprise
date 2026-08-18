@@ -79,14 +79,15 @@ def _load_labels(document_type: str) -> dict[str, str]:
     return {}
 
 
-def get_valid_fields(document_type: str) -> set[str] | None:
-    """Return the set of valid field names for a document type, or None if unknown."""
+def get_valid_fields(document_type: str) -> dict[str, str] | None:
+    """Return a lowercase -> blueprint-key mapping of valid field names, or None if unknown."""
     label_file = LABELS_DIR / f"{document_type.lower()}.json"
 
     if not label_file.exists():
         return None
 
-    return set(_load_labels(document_type))
+    raw: dict[str, str] = json.loads(label_file.read_text())
+    return {k.lower(): k for k in raw}
 
 
 def get_field_label(document_type: str | None, field_name: str) -> str:

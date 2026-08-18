@@ -42,7 +42,7 @@ class ExtractionRuleRequest(BaseModel):
 
     @field_validator("document_type", mode="before")
     @classmethod
-    def normalize_document_type(cls, v: object) -> str:
+    def validate_document_type(cls, v: object) -> str:
         """Validate document type is a string."""
         if not isinstance(v, str):
             raise ValueError("document_type must be a string")
@@ -56,11 +56,18 @@ class ExtractionRuleRequest(BaseModel):
         if not isinstance(v, list):
             raise ValueError("must be a list of strings")
 
-        return list(dict.fromkeys(f.lower() if isinstance(f, str) else f for f in v))
+        seen: set[str] = set()
+        result = []
+        for f in v:
+            key = f.lower() if isinstance(f, str) else f
+            if key not in seen:
+                seen.add(key)
+                result.append(f)
+        return result
 
     @model_validator(mode="after")
     def validate_fields(self) -> Self:
-        """Validate document type and field names against label files."""
+        """Validate and normalize field names to match exact names from label files."""
         valid_fields = get_valid_fields(self.document_type)
 
         if valid_fields is None:
@@ -68,15 +75,17 @@ class ExtractionRuleRequest(BaseModel):
                 f"Unknown document type '{self.document_type}'. Run pull-blueprint-fields first."
             )
 
-        all_fields = self.required_fields + self.optional_fields
-        invalid = [f for f in all_fields if f.lower() not in valid_fields]
+        invalid = [
+            f for f in self.required_fields + self.optional_fields if f.lower() not in valid_fields
+        ]
 
         if invalid:
             raise ValueError(f"Unknown fields for '{self.document_type}': {invalid}")
 
-        overlap = {f.lower() for f in self.required_fields} & {
-            f.lower() for f in self.optional_fields
-        }
+        self.required_fields = [valid_fields[f.lower()] for f in self.required_fields]
+        self.optional_fields = [valid_fields[f.lower()] for f in self.optional_fields]
+
+        overlap = set(self.required_fields) & set(self.optional_fields)
 
         if overlap:
             raise ValueError(f"Fields cannot be both required and optional: {sorted(overlap)}")
