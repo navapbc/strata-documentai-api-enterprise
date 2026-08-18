@@ -1,0 +1,3 @@
+[
+  { "name": "receipt", "arn": "arn:aws:bedrock:us-east-1:aws:blueprint/bedrock-data-automation-public-receipt" }
+]

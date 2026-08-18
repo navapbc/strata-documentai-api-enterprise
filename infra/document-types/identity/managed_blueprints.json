@@ -1,0 +1,5 @@
+[
+  { "name": "us-driver-license", "arn": "arn:aws:bedrock:us-east-1:aws:blueprint/bedrock-data-automation-public-us-driver-license" },
+  { "name": "us-passport", "arn": "arn:aws:bedrock:us-east-1:aws:blueprint/bedrock-data-automation-public-us-passport" },
+  { "name": "birth-certificate", "arn": "arn:aws:bedrock:us-east-1:aws:blueprint/bedrock-data-automation-public-birth-certificate" }
+]

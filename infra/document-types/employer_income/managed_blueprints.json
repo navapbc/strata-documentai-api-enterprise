@@ -1,0 +1,8 @@
+[
+  { "name": "w2-form", "arn": "arn:aws:bedrock:us-east-1:aws:blueprint/bedrock-data-automation-public-w2-form" },
+  { "name": "form-1040", "arn": "arn:aws:bedrock:us-east-1:aws:blueprint/bedrock-data-automation-public-form-1040" },
+  { "name": "form-1099-int", "arn": "arn:aws:bedrock:us-east-1:aws:blueprint/bedrock-data-automation-public-form-1099-int" },
+  { "name": "form-1099-misc", "arn": "arn:aws:bedrock:us-east-1:aws:blueprint/bedrock-data-automation-public-form-1099-misc" },
+  { "name": "payslip", "arn": "arn:aws:bedrock:us-east-1:aws:blueprint/bedrock-data-automation-public-payslip" },
+  { "name": "form-1040-schedule-c", "arn": "arn:aws:bedrock:us-east-1:aws:blueprint/bedrock-data-automation-public-form-1040-schedule-c" }
+]
