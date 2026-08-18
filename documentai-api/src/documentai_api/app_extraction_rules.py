@@ -1,9 +1,9 @@
 """Extraction rule configuration endpoints."""
 
-from typing import Any
+from typing import Any, Self
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from documentai_api.annotations import AuthUserWithFallback
 from documentai_api.config.constants import ApiVisualizationTag
@@ -16,6 +16,7 @@ from documentai_api.models.extraction_rule import (
 from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
 from documentai_api.utils.audit_log import log_event
 from documentai_api.utils.auth import get_user_context_with_fallback
+from documentai_api.utils.field_labels import get_valid_fields
 
 logger = get_logger(__name__)
 
@@ -39,6 +40,58 @@ class ExtractionRuleRequest(BaseModel):
         description="BDA blueprint ARN for stable reference across renames.",
     )
 
+    @field_validator("document_type", mode="before")
+    @classmethod
+    def validate_document_type(cls, v: object) -> str:
+        """Validate document type is a string."""
+        if not isinstance(v, str):
+            raise ValueError("document_type must be a string")
+
+        return v
+
+    @field_validator("required_fields", "optional_fields", mode="before")
+    @classmethod
+    def deduplicate_fields(cls, v: object) -> list[str]:
+        """Remove duplicate field names preserving order."""
+        if not isinstance(v, list):
+            raise ValueError("must be a list of strings")
+
+        seen: set[str] = set()
+        result = []
+        for f in v:
+            key = f.lower() if isinstance(f, str) else f
+            if key not in seen:
+                seen.add(key)
+                result.append(f)
+        return result
+
+    @model_validator(mode="after")
+    def validate_fields(self) -> Self:
+        """Validate and normalize field names to match exact names from label files."""
+        valid_fields = get_valid_fields(self.document_type)
+
+        if valid_fields is None:
+            raise ValueError(
+                f"Unknown document type '{self.document_type}'. Run pull-blueprint-fields first."
+            )
+
+        invalid = [
+            f for f in self.required_fields + self.optional_fields if f.lower() not in valid_fields
+        ]
+
+        if invalid:
+            raise ValueError(f"Unknown fields for '{self.document_type}': {invalid}")
+
+        self.required_fields = [valid_fields[f.lower()] for f in self.required_fields]
+        self.optional_fields = [valid_fields[f.lower()] for f in self.optional_fields]
+
+        overlap = set(self.required_fields) & set(self.optional_fields)
+
+        if overlap:
+            raise ValueError(f"Fields cannot be both required and optional: {sorted(overlap)}")
+
+        return self
+
 
 def _resolve_tenant(auth_tenant_id: str, body_tenant_id: str | None) -> str:
     """Determine the effective tenant for the operation.
@@ -49,11 +102,13 @@ def _resolve_tenant(auth_tenant_id: str, body_tenant_id: str | None) -> str:
     """
     if auth_tenant_id != "__admin__":
         return auth_tenant_id
+
     if not body_tenant_id:
         raise HTTPException(
             status_code=400,
             detail="tenant_id is required for super-admin operations.",
         )
+
     return body_tenant_id
 
 
@@ -76,6 +131,7 @@ async def get_extraction_rules(
     if not rules:
         if document_type:
             raise HTTPException(status_code=404, detail="No rules found")
+
         return ExtractionRulesListResponse(rules=[])
     return ExtractionRulesListResponse(rules=[ExtractionRuleItem(**r) for r in rules])
 
@@ -107,6 +163,7 @@ async def put_extraction_rule(
         target_id=body.document_type,
         tenant_id=effective_tenant,
     )
+
     return ExtractionRuleItem(**rule)
 
 
@@ -125,8 +182,10 @@ async def delete_extraction_rule(
 
     effective_tenant = _resolve_tenant(auth.tenant_id, tenant_id)
     deleted = delete_rule(effective_tenant, document_type)
+
     if not deleted:
         raise HTTPException(status_code=404, detail="Rule not found")
+
     log_event(
         claims={"sub": auth.api_key_name, "email": auth.api_key_name},
         action=AuditAction.EXTRACTION_RULE_DELETE,
@@ -134,4 +193,5 @@ async def delete_extraction_rule(
         target_id=document_type,
         tenant_id=effective_tenant,
     )
+
     return ExtractionRuleDeleteResponse(message="Rule deleted")

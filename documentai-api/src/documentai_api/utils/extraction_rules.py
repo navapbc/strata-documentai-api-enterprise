@@ -63,11 +63,17 @@ def apply_extraction_rules(
     rule = rules[0]
     required = set(rule.get("requiredFields", []))
     optional = set(rule.get("optionalFields", []))
-    allowed = required | optional
+    allowed_lower = {f.lower() for f in required | optional}
+    required_lower = {f.lower() for f in required}
 
-    absent = set(missing_fields or []) & required
-    filtered = {k: v for k, v in fields.items() if k in allowed and k not in absent}
-    missing = sorted(required - set(filtered.keys()))
+    absent_lower = {f.lower() for f in (missing_fields or [])} & required_lower
+    filtered = {
+        k: v
+        for k, v in fields.items()
+        if k.lower() in allowed_lower and k.lower() not in absent_lower
+    }
+    present_lower = {k.lower() for k in filtered}
+    missing = sorted(f for f in required if f.lower() not in present_lower)
 
     return ExtractionRuleResult(
         fields=filtered, missing_required_field_list=missing, required_field_list=sorted(required)
@@ -93,5 +99,6 @@ def get_missing_required_fields(
         return None
     rule = rules[0]
     required = set(rule.get("requiredFields", []))
-    missing = sorted((set(empty_fields) | set(fields_missing_geometry)) & required)
+    empty_lower = {f.lower() for f in (set(empty_fields) | set(fields_missing_geometry))}
+    missing = sorted(f for f in required if f.lower() in empty_lower)
     return missing, sorted(required)

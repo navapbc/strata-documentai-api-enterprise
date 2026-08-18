@@ -217,7 +217,7 @@ def test_build_v1_api_response(
     }
     ddb_doc_metadata_table.put_item(Item=ddb_record)
 
-    # build_v1_api_response stores the flat, verbatim canonical form; camelCase +
+    # build_v1_api_response stores the flat, verbatim normalized form; camelCase +
     # nesting is applied later at the presentation boundary (present_v1_response).
     expected_fields_value = {
         "field_name_1": {

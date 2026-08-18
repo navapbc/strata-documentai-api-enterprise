@@ -4,7 +4,12 @@ import json
 
 import pytest
 
-from documentai_api.utils.field_labels import _load_labels, _to_human_label, get_field_label
+from documentai_api.utils.field_labels import (
+    _load_labels,
+    _to_human_label,
+    get_field_label,
+    get_valid_fields,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -73,3 +78,33 @@ def test_get_field_label_case_insensitive_file_lookup(tmp_path, monkeypatch):
     assert get_field_label("W2", "wages") == "Total Wages"
     _load_labels.cache_clear()
     assert get_field_label("w2", "wages") == "Total Wages"
+
+
+def test_get_valid_fields_returns_lowercase_to_normalized_dict(tmp_path, monkeypatch):
+    labels = {"EmployeeName.FirstName": "Employee First Name", "GrossPay": "Gross Pay"}
+    (tmp_path / "payslip.json").write_text(json.dumps(labels))
+    monkeypatch.setattr("documentai_api.utils.field_labels.LABELS_DIR", tmp_path)
+
+    result = get_valid_fields("payslip")
+
+    assert result == {"employeename.firstname": "EmployeeName.FirstName", "grosspay": "GrossPay"}
+
+
+def test_get_valid_fields_returns_none_for_unknown_type(tmp_path, monkeypatch):
+    monkeypatch.setattr("documentai_api.utils.field_labels.LABELS_DIR", tmp_path)
+
+    assert get_valid_fields("unknown-type") is None
+
+
+def test_get_valid_fields_last_wins_on_case_collision(tmp_path, monkeypatch):
+    """If two keys differ only by case, the last one in JSON iteration order wins."""
+    import json
+
+    # dict preserves insertion order in Python 3.7+
+    labels = {"SSN": "SSN Label", "ssn": "ssn label"}
+    (tmp_path / "w2.json").write_text(json.dumps(labels))
+    monkeypatch.setattr("documentai_api.utils.field_labels.LABELS_DIR", tmp_path)
+
+    result = get_valid_fields("w2")
+
+    assert result == {"ssn": "ssn"}
