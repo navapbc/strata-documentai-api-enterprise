@@ -15,6 +15,7 @@ class EnvVars(StrEnum):
 
     # === AWS / BDA ===
     BDA_PROJECT_ARN_ALL = "BDA_PROJECT_ARN_ALL"
+    BDA_PROJECT_ARNS = "BDA_PROJECT_ARNS"
     BDA_PROFILE_ARN = "BDA_PROFILE_ARN"
     BDA_REGION = "BDA_REGION"
     MAX_BDA_INVOKE_RETRY_ATTEMPTS = "MAX_BDA_INVOKE_RETRY_ATTEMPTS"
@@ -60,6 +61,10 @@ class EnvVars(StrEnum):
     # === Extraction rules ===
     EXTRACTION_RULES_TABLE_NAME = "EXTRACTION_RULES_TABLE_NAME"
     DOCUMENT_CATEGORIES_TABLE_NAME = "DOCUMENT_CATEGORIES_TABLE_NAME"
+
+    # === Blueprints ===
+    BLUEPRINTS_TABLE_NAME = "BLUEPRINTS_TABLE_NAME"
+    TENANT_LIVE_BLUEPRINTS_TABLE_NAME = "TENANT_LIVE_BLUEPRINTS_TABLE_NAME"
 
     # === Metrics pipeline ===
     ATHENA_WORKGROUP_NAME = "ATHENA_WORKGROUP_NAME"
@@ -139,12 +144,23 @@ class AWSEnvConfig(PydanticBaseEnvConfig):
     extraction_rules_table_name: str | None = None
     document_categories_table_name: str | None = None
 
+    # Blueprints
+    blueprints_table_name: str | None = None
+    blueprints_document_type_index_name: str | None = None
+    tenant_live_blueprints_table_name: str | None = None
+
     # Metrics pipeline
     athena_workgroup_name: str | None = None
     ddb_export_bucket_name: str | None = None
     ddb_metrics_input_queue_url: str | None = None
     ddb_raw_data_table_name: str | None = None
     glue_database_name: str | None = None
+
+    def get_input_bucket_name(self) -> str:
+        if not self.documentai_input_location:
+            raise ValueError("DOCUMENTAI_INPUT_LOCATION not configured")
+
+        return self.documentai_input_location.replace("s3://", "").split("/")[0]
 
 
 class AppEnvConfig(PydanticBaseEnvConfig):

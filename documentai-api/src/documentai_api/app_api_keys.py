@@ -22,7 +22,7 @@ from documentai_api.utils.auth import (
     find_api_key_by_prefix,
     generate_api_key,
 )
-from documentai_api.utils.jwt_auth import resolve_tenant, tenant_scope, verify_jwt
+from documentai_api.utils.jwt_auth import require_tenant, resolve_tenant, tenant_scope, verify_jwt
 
 logger = get_logger(__name__)
 
@@ -52,13 +52,7 @@ async def create_api_key(
     if email_address is None and claims.get("email"):
         email_address = claims["email"]
 
-    # Resolve tenant - required for key creation
-    effective_tenant = resolve_tenant(claims, body.tenant_id)
-    if not effective_tenant:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="tenant_id is required when creating keys as super-admin.",
-        )
+    effective_tenant = require_tenant(claims, body.tenant_id)
 
     # Validate tenant exists
     from documentai_api.utils.tenants import get_tenant

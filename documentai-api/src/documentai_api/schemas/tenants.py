@@ -15,6 +15,7 @@ class TenantRecord:
     MAX_WRITES_PER_MONTH = "maxWritesPerMonth"
     CREATED_AT = "createdAt"
     UPDATED_AT = "updatedAt"
+    OVERRIDE_BDA_PROJECT_ARN = "overrideBdaProjectArn"
 
 
 class TenantsTable(BaseCrudTable):
@@ -29,6 +30,7 @@ class TenantsTable(BaseCrudTable):
             TenantRecord.EXTRACTION_CONFIDENCE_FLOOR,
             TenantRecord.MAX_WRITES_PER_DAY,
             TenantRecord.MAX_WRITES_PER_MONTH,
+            TenantRecord.OVERRIDE_BDA_PROJECT_ARN,
         }
     )
     super_admin_protected_fields: frozenset[str] = frozenset(

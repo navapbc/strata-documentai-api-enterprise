@@ -47,9 +47,25 @@ def skip_bda_if_unclassified() -> bool:
     return is_skip_bda_if_unclassified()
 
 
-def resolve_project_arn(category: str | None) -> str:
-    """Resolve BDA project ARN for a preclassification category."""
+def resolve_project_arn(
+    category: str | None, tenant_id: str | None = None, document_type: str | None = None
+) -> str:
+    """Resolve BDA project ARN for a preclassification category.
+
+    If the tenant has a live custom blueprint for the document_type, route to
+    their custom project. Otherwise fall back to shared category/all project.
+    """
     from documentai_api.utils.ssm import is_preclassification_routing_enabled
+
+    if tenant_id and document_type:
+        from documentai_api.utils.blueprints import get_live_blueprint_arn
+
+        custom_project_arn = get_live_blueprint_arn(tenant_id, document_type)
+        if custom_project_arn:
+            logger.info(
+                f"Routing to tenant custom project for tenant={tenant_id} document_type={document_type}"
+            )
+            return str(custom_project_arn)
 
     arns = _get_project_arns()
 
@@ -61,10 +77,14 @@ def resolve_project_arn(category: str | None) -> str:
 
 
 def invoke_bedrock_data_automation(
-    source_bucket_name: str, source_object_name: str, category: str | None = None
+    source_bucket_name: str,
+    source_object_name: str,
+    category: str | None = None,
+    tenant_id: str | None = None,
+    document_type: str | None = None,
 ) -> tuple[str, str, int]:
     """Invoke BDA and return (invocation_arn, project_arn, pages_sent_to_bda)."""
-    bda_project_arn = resolve_project_arn(category)
+    bda_project_arn = resolve_project_arn(category, tenant_id, document_type)
     bda_profile_arn = get_required_env(EnvVars.BDA_PROFILE_ARN)
     documentai_output_location = get_required_env(EnvVars.DOCUMENTAI_OUTPUT_LOCATION).replace(
         "s3://", ""

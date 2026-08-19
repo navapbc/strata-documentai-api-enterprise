@@ -17,7 +17,7 @@ from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
 from documentai_api.schemas.document_category import DocumentCategoryRecord
 from documentai_api.utils import document_categories as categories_util
 from documentai_api.utils.audit_log import log_event
-from documentai_api.utils.jwt_auth import resolve_tenant, tenant_scope
+from documentai_api.utils.jwt_auth import is_tenant_admin, require_tenant, resolve_tenant
 
 logger = get_logger(__name__)
 
@@ -26,25 +26,6 @@ router = APIRouter(
     tags=[ApiVisualizationTag.ADMIN_CATEGORIES],
     dependencies=[Depends(verify_jwt_with_role)],
 )
-
-
-def _get_effective_tenant(claims: dict[str, Any], tenant_id: str | None = None) -> str:
-    """Resolve tenant - required for all category operations."""
-    scope = tenant_scope(claims)
-    if scope is not None:
-        if tenant_id and tenant_id != scope:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied to this tenant.",
-            )
-        return scope
-    effective = resolve_tenant(claims, tenant_id)
-    if not effective:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="tenant_id is required for super-admin operations.",
-        )
-    return effective
 
 
 def _to_item(record: dict[str, Any]) -> DocumentCategoryItem:
@@ -72,14 +53,13 @@ async def list_document_categories(
     Super-admins can omit tenant_id to list all categories across tenants.
     Tenant-admins are locked to their own tenant.
     """
-    scope = tenant_scope(claims)
-    if scope is not None:
-        if tenant_id and tenant_id != scope:
+    if is_tenant_admin(claims):
+        effective = resolve_tenant(claims)
+        if tenant_id and tenant_id != effective:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied to this tenant.",
+                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this tenant."
             )
-        tenant_id = scope
+        tenant_id = effective
 
     if tenant_id:
         records = categories_util.list_categories(tenant_id, active_only=active_only)
@@ -98,7 +78,7 @@ async def create_document_category(
     tenant_id: str | None = None,
 ) -> DocumentCategoryItem:
     """Create a new document category for a tenant."""
-    effective_tenant = _get_effective_tenant(claims, tenant_id)
+    effective_tenant = require_tenant(claims, tenant_id)
     try:
         record = categories_util.create_category(
             tenant_id=effective_tenant,
@@ -126,7 +106,7 @@ async def get_document_category(
     tenant_id: str | None = None,
 ) -> DocumentCategoryItem:
     """Get a single document category."""
-    effective_tenant = _get_effective_tenant(claims, tenant_id)
+    effective_tenant = require_tenant(claims, tenant_id)
     record = categories_util.get_category(effective_tenant, category_name)
     if not record:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
@@ -141,7 +121,7 @@ async def update_document_category(
     tenant_id: str | None = None,
 ) -> DocumentCategoryItem:
     """Update a document category."""
-    effective_tenant = _get_effective_tenant(claims, tenant_id)
+    effective_tenant = require_tenant(claims, tenant_id)
     try:
         updated = categories_util.update_category(
             effective_tenant,
@@ -173,7 +153,7 @@ async def delete_document_category(
     tenant_id: str | None = None,
 ) -> None:
     """Deactivate a document category (soft delete)."""
-    effective_tenant = _get_effective_tenant(claims, tenant_id)
+    effective_tenant = require_tenant(claims, tenant_id)
     if not categories_util.delete_category(effective_tenant, category_name):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
     log_event(
