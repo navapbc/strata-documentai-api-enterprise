@@ -158,6 +158,10 @@ test-e2e: .env.e2e
 test-e2e: ## Run e2e tests
 	@set -a && . ./.env.e2e && set +a && uv run --frozen pytest tests/e2e -m e2e -n 4 $(args)
 
+test-blueprint-integration: .env.e2e
+test-blueprint-integration: ## Run blueprint integration tests
+	@set -a && . ./.env.e2e && set +a && uv run --frozen pytest tests/utils/test_blueprints_util.py -m integration $(args)
+
 .env.e2e: _require-jq ## Generate .env.e2e from deployed Lambda env vars + API Gateway endpoint
 # BASE_URL/AWS_REGION aren't in the Lambda's own env (that's API Gateway infra
 # metadata, and the Lambda uses BDA_REGION, not AWS_REGION) - e2e tests need

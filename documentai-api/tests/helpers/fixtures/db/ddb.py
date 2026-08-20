@@ -202,6 +202,42 @@ def tenant_request_counts_table(aws_credentials, monkeypatch):
 
 
 @pytest.fixture
+def blueprints_table(aws_credentials, monkeypatch):
+    from documentai_api.schemas.blueprints import BlueprintRecord
+    from documentai_api.utils import blueprints as blueprints_util
+
+    with mock_aws():
+        dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+        table = dynamodb.create_table(
+            TableName="blueprints",
+            KeySchema=[
+                {"AttributeName": BlueprintRecord.TENANT_ID, "KeyType": "HASH"},
+                {"AttributeName": BlueprintRecord.BLUEPRINT_ID, "KeyType": "RANGE"},
+            ],
+            AttributeDefinitions=[
+                {"AttributeName": BlueprintRecord.TENANT_ID, "AttributeType": "S"},
+                {"AttributeName": BlueprintRecord.BLUEPRINT_ID, "AttributeType": "S"},
+                {"AttributeName": BlueprintRecord.DOCUMENT_TYPE, "AttributeType": "S"},
+            ],
+            GlobalSecondaryIndexes=[
+                {
+                    "IndexName": "document-type-index",
+                    "KeySchema": [
+                        {"AttributeName": BlueprintRecord.TENANT_ID, "KeyType": "HASH"},
+                        {"AttributeName": BlueprintRecord.DOCUMENT_TYPE, "KeyType": "RANGE"},
+                    ],
+                    "Projection": {"ProjectionType": "ALL"},
+                }
+            ],
+            BillingMode="PAY_PER_REQUEST",
+        )
+        monkeypatch.setenv("TENANT_AUTHORED_BLUEPRINTS_TABLE_NAME", table.name)
+        monkeypatch.setenv("BLUEPRINTS_DOCUMENT_TYPE_INDEX_NAME", "document-type-index")
+        blueprints_util._blueprints_table = blueprints_util.AuthoredBlueprintsTable()
+        yield table
+
+
+@pytest.fixture
 def audit_events_table(aws_credentials, monkeypatch):
     with mock_aws():
         dynamodb = boto3.resource("dynamodb", region_name="us-east-1")

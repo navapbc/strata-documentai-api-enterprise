@@ -9,7 +9,7 @@ logger = get_logger(__name__)
 
 
 @dataclass
-class TestMetadata:
+class BlueprintTestMetadata:
     invocation_arn: str
     tenant_id: str
     document_type: str | None
@@ -42,13 +42,13 @@ def store_test_metadata(
     )
 
 
-def get_test_metadata(test_id: str) -> TestMetadata | None:
+def get_test_metadata(test_id: str) -> BlueprintTestMetadata | None:
     try:
         response = s3_service.get_object(
             get_aws_config().get_input_bucket_name(), metadata_key(test_id)
         )
         data = json.loads(response["Body"].read())
-        return TestMetadata(
+        return BlueprintTestMetadata(
             invocation_arn=data["invocationArn"],
             tenant_id=data["tenantId"],
             document_type=data.get("documentType") or None,
@@ -59,7 +59,7 @@ def get_test_metadata(test_id: str) -> TestMetadata | None:
 
 
 def cleanup_test(test_id: str, test_key: str) -> None:
-    """Clean up test file from S3 — metadata cleaned up by S3 lifecycle rule."""
+    """Clean up test file from S3 - metadata cleaned up by S3 lifecycle rule."""
     bucket = get_aws_config().get_input_bucket_name()
     try:
         s3_service.delete_object(bucket, test_key)

@@ -1,4 +1,4 @@
-"""Blueprint management endpoints — create, test, publish, and go live."""
+"""Blueprint management endpoints - create, test, publish, and go live."""
 
 import uuid
 from typing import Annotated, Any
@@ -19,7 +19,14 @@ from documentai_api.models.blueprint import (
     BlueprintUpdateRequest,
 )
 from documentai_api.schemas.blueprints import BlueprintRecord
+from documentai_api.services import s3 as s3_service
+from documentai_api.services.bda import (
+    extract_bda_output_s3_uri,
+    get_bda_job_response,
+    get_bda_result_json,
+)
 from documentai_api.utils.aws_client_factory import AWSClientFactory
+from documentai_api.utils.blueprint_test import cleanup_test, get_test_metadata, store_test_metadata
 from documentai_api.utils.blueprints import (
     create_blueprint_draft,
     delete_blueprint,
@@ -45,7 +52,6 @@ def _to_blueprint_item(record: dict[str, Any]) -> BlueprintItem:
     return BlueprintItem(
         blueprint_id=record[BlueprintRecord.BLUEPRINT_ID],
         tenant_id=record[BlueprintRecord.TENANT_ID],
-        name=record[BlueprintRecord.NAME],
         description=record[BlueprintRecord.DESCRIPTION],
         document_type=record[BlueprintRecord.DOCUMENT_TYPE],
         fields=record.get(BlueprintRecord.FIELDS, []),
@@ -84,10 +90,9 @@ async def create_blueprint(
     try:
         record = create_blueprint_draft(
             tenant_id=effective_tenant,
-            name=body.name,
             description=body.description,
             document_type=body.document_type,
-            fields=[f.model_dump() for f in body.fields],
+            fields=[f.model_dump(exclude_none=True) for f in body.fields],
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
@@ -118,8 +123,6 @@ async def update_blueprint(
     """Update a draft or published blueprint. Live blueprints must be taken offline first."""
     effective_tenant = require_tenant(claims, tenant_id)
     updates: dict[str, Any] = {}
-    if body.name is not None:
-        updates[BlueprintRecord.NAME] = body.name
 
     if body.description is not None:
         updates[BlueprintRecord.DESCRIPTION] = body.description
@@ -128,7 +131,7 @@ async def update_blueprint(
         updates[BlueprintRecord.DOCUMENT_TYPE] = body.document_type
 
     if body.fields is not None:
-        updates[BlueprintRecord.FIELDS] = [f.model_dump() for f in body.fields]
+        updates[BlueprintRecord.FIELDS] = [f.model_dump(exclude_none=True) for f in body.fields]
 
     if not updates:
         raise HTTPException(status_code=400, detail="No fields to update")
@@ -174,6 +177,7 @@ async def publish_blueprint_endpoint(
 ) -> BlueprintPublishResponse:
     """Register blueprint with BDA. Auto-creates tenant project if needed."""
     effective_tenant = require_tenant(claims, tenant_id)
+
     try:
         record = publish_blueprint(effective_tenant, blueprint_id)
     except ValueError as e:
@@ -201,7 +205,7 @@ async def test_blueprint(
     claims: AdminClaims,
     file: Annotated[UploadFile, File(...)],
     document_category: Annotated[str, Form(...)],
-    tenant_id: Annotated[str | None, Form(default=None)],
+    tenant_id: Annotated[str | None, Form()] = None,  # noqa: PT028
 ) -> dict[str, Any]:
     """Upload a sample document and run it through BDA using this blueprint's project.
 
@@ -218,29 +222,19 @@ async def test_blueprint(
 
     project_arn = record[BlueprintRecord.PROJECT_ARN]
     test_id = str(uuid.uuid4())
-
-    input_location = get_aws_config().documentai_input_location
-
-    if not input_location:
-        raise HTTPException(status_code=500, detail="Input location not configured")
-
-    input_bucket = input_location.replace("s3://", "").split("/")[0]
+    input_bucket = get_aws_config().get_input_bucket_name()
     test_key = f"blueprint-test/{effective_tenant}/{blueprint_id}/{test_id}/{file.filename}"
 
     try:
-        s3 = AWSClientFactory.get_s3_client()
-        file_bytes = await file.read()
-        s3.put_object(Bucket=input_bucket, Key=test_key, Body=file_bytes)
+        s3_service.put_object(input_bucket, test_key, await file.read())
     except Exception as e:
         logger.error(f"Blueprint test {test_id}: upload failed: {e}")
         raise HTTPException(status_code=500, detail="Failed to upload test file") from e
 
     try:
-        bda_runtime = AWSClientFactory.get_bda_runtime_client()
         output_location = get_required_env(EnvVars.DOCUMENTAI_OUTPUT_LOCATION).replace("s3://", "")
         bda_profile_arn = get_required_env(EnvVars.BDA_PROFILE_ARN)
-
-        response = bda_runtime.invoke_data_automation_async(
+        response = AWSClientFactory.get_bda_runtime_client().invoke_data_automation_async(
             dataAutomationProfileArn=bda_profile_arn,
             dataAutomationConfiguration={"dataAutomationProjectArn": project_arn},
             inputConfiguration={"s3Uri": f"s3://{input_bucket}/{test_key}"},
@@ -251,10 +245,7 @@ async def test_blueprint(
         logger.error(f"Blueprint test {test_id}: BDA invocation failed: {e}")
         raise HTTPException(status_code=500, detail="Failed to invoke BDA") from e
 
-    _store_blueprint_test(
-        test_id, invocation_arn, effective_tenant, blueprint_id, input_bucket, test_key
-    )
-
+    store_test_metadata(test_id, invocation_arn, effective_tenant, document_category, test_key)
     return {"test_id": test_id, "status": "PROCESSING"}
 
 
@@ -266,32 +257,27 @@ async def get_blueprint_test_result(
     tenant_id: str | None = None,
 ) -> dict[str, Any]:
     """Poll for blueprint test results."""
-    from documentai_api.services.bda import extract_bda_output_s3_uri, get_bda_result_json
     from documentai_api.utils.bda import extract_field_values_from_bda_results
     from documentai_api.utils.bda_output_processor import get_matched_blueprint
 
     effective_tenant = require_tenant(claims, tenant_id)
-    metadata = _get_blueprint_test(test_id, effective_tenant, blueprint_id)
+    metadata = get_test_metadata(test_id)
 
-    if not metadata:
+    if not metadata or metadata.tenant_id != effective_tenant:
         raise HTTPException(status_code=404, detail="Test not found")
 
-    try:
-        bda_runtime = AWSClientFactory.get_bda_runtime_client()
-        job_response: dict[str, Any] = dict(
-            bda_runtime.get_data_automation_status(invocationArn=metadata["invocationArn"])
-        )
-    except Exception as e:
-        logger.error(f"Blueprint test {test_id}: status check failed: {e}")
+    job_response = get_bda_job_response(metadata.invocation_arn)
+
+    if not job_response:
         return {"test_id": test_id, "status": "PROCESSING"}
 
     job_status = job_response.get("status", "")
 
-    if BdaJobStatus.is_running(job_status):
+    if not job_status or BdaJobStatus.is_running(job_status):
         return {"test_id": test_id, "status": "PROCESSING"}
 
     if BdaJobStatus.is_failed(job_status):
-        _cleanup_blueprint_test(test_id, metadata["inputBucket"], metadata["testKey"])
+        cleanup_test(test_id, metadata.test_key)
         return {"test_id": test_id, "status": "FAILED", "error": "BDA processing failed"}
 
     if BdaJobStatus.is_completed(job_status):
@@ -300,15 +286,13 @@ async def get_blueprint_test_result(
         output_key = "/".join(output_s3_uri.replace("s3://", "").split("/")[1:])
 
         bda_output_s3_uri = extract_bda_output_s3_uri(output_bucket, output_key)
-
         if not bda_output_s3_uri:
-            _cleanup_blueprint_test(test_id, metadata["inputBucket"], metadata["testKey"])
+            cleanup_test(test_id, metadata.test_key)
             return {"test_id": test_id, "status": "FAILED", "error": "No BDA output found"}
 
         bda_result_json = get_bda_result_json(bda_output_s3_uri)
-
         if not bda_result_json:
-            _cleanup_blueprint_test(test_id, metadata["inputBucket"], metadata["testKey"])
+            cleanup_test(test_id, metadata.test_key)
             return {"test_id": test_id, "status": "FAILED", "error": "Could not read BDA result"}
 
         matched = get_matched_blueprint(bda_result_json)
@@ -316,8 +300,7 @@ async def get_blueprint_test_result(
         field_confidences = {
             k: v for m in field_data.field_confidence_map_list for k, v in m.items()
         }
-
-        _cleanup_blueprint_test(test_id, metadata["inputBucket"], metadata["testKey"])
+        cleanup_test(test_id, metadata.test_key)
         return {
             "test_id": test_id,
             "status": "COMPLETED",
@@ -342,7 +325,7 @@ async def go_live(
     claims: AdminClaims,
     tenant_id: str | None = None,
 ) -> BlueprintLiveResponse:
-    """Make a published blueprint live — it will be used in document routing."""
+    """Make a published blueprint live - it will be used in document routing."""
     effective_tenant = require_tenant(claims, tenant_id)
     try:
         return enable_blueprint(effective_tenant, blueprint_id)
@@ -356,73 +339,10 @@ async def take_offline(
     claims: AdminClaims,
     tenant_id: str | None = None,
 ) -> BlueprintLiveResponse:
-    """Take a live blueprint offline — routing falls back to shared projects."""
+    """Take a live blueprint offline - routing falls back to shared projects."""
     effective_tenant = require_tenant(claims, tenant_id)
 
     try:
         return disable_blueprint(effective_tenant, blueprint_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
-
-
-# =============================================================================
-# Test metadata helpers
-# =============================================================================
-
-_TEST_TTL_SECONDS = 3600
-
-
-def _test_table_name() -> str:
-    import os
-
-    return os.environ.get("BLUEPRINT_TEST_TABLE_NAME") or get_required_env(
-        EnvVars.AUDIT_EVENTS_TABLE_NAME
-    )
-
-
-def _store_blueprint_test(
-    test_id: str,
-    invocation_arn: str,
-    tenant_id: str,
-    blueprint_id: str,
-    input_bucket: str,
-    test_key: str,
-) -> None:
-    import time
-
-    try:
-        table = AWSClientFactory.get_ddb_table(_test_table_name())
-        table.put_item(
-            Item={
-                "tenantId": f"__bp_test__{tenant_id}__{blueprint_id}",
-                "timestamp#eventId": test_id,
-                "invocationArn": invocation_arn,
-                "inputBucket": input_bucket,
-                "testKey": test_key,
-                "ttl": int(time.time()) + _TEST_TTL_SECONDS,
-            }
-        )
-    except Exception as e:
-        logger.error(f"Failed to store blueprint test metadata: {e}")
-
-
-def _get_blueprint_test(test_id: str, tenant_id: str, blueprint_id: str) -> dict[str, Any] | None:
-    try:
-        table = AWSClientFactory.get_ddb_table(_test_table_name())
-        response = table.get_item(
-            Key={
-                "tenantId": f"__bp_test__{tenant_id}__{blueprint_id}",
-                "timestamp#eventId": test_id,
-            }
-        )
-        return response.get("Item")
-    except Exception as e:
-        logger.error(f"Failed to get blueprint test metadata: {e}")
-        return None
-
-
-def _cleanup_blueprint_test(test_id: str, input_bucket: str, test_key: str) -> None:
-    try:
-        AWSClientFactory.get_s3_client().delete_object(Bucket=input_bucket, Key=test_key)
-    except Exception:
-        logger.warning(f"Failed to cleanup test file s3://{input_bucket}/{test_key}")

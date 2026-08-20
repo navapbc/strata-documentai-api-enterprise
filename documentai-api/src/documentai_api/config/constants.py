@@ -324,10 +324,10 @@ class BdaProjectConfig:
 
     STANDARD_OUTPUT_CONFIGURATION: ClassVar[dict[str, Any]] = {
         "document": {
-            "extraction": {"granularity": {"types": []}, "boundingBox": {"state": "DISABLED"}},
+            "extraction": {"granularity": {"types": ["PAGE"]}, "boundingBox": {"state": "ENABLED"}},
             "generativeField": {"state": "DISABLED"},
             "outputFormat": {
-                "textFormat": {"types": []},
+                "textFormat": {"types": ["PLAIN_TEXT"]},
                 "additionalFileFormat": {"state": "DISABLED"},
             },
         }

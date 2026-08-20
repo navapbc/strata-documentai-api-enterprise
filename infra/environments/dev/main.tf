@@ -217,7 +217,7 @@ module "extraction_rules" {
 
 module "blueprints" {
   source     = "../../modules/nosql"
-  table_name = "${local.service_name}-blueprints"
+  table_name = "${local.service_name}-tenant-authored-blueprints"
   hash_key   = "tenantId"
   sort_key   = "blueprintId"
 
@@ -230,13 +230,6 @@ module "blueprints" {
       sort_key_type = "S"
     }
   ]
-}
-
-module "tenant_live_blueprints" {
-  source     = "../../modules/nosql"
-  table_name = "${local.service_name}-tenant-live-blueprints"
-  hash_key   = "tenantId"
-  sort_key   = "documentType"
 }
 
 module "document_categories" {
@@ -525,9 +518,8 @@ locals {
     AUDIT_EVENTS_TABLE_NAME                                   = module.audit_events.table_name
     EXTRACTION_RULES_TABLE_NAME                               = module.extraction_rules.table_name
     DOCUMENT_CATEGORIES_TABLE_NAME                            = module.document_categories.table_name
-    BLUEPRINTS_TABLE_NAME                                     = module.blueprints.table_name
+    TENANT_AUTHORED_BLUEPRINTS_TABLE_NAME                    = module.blueprints.table_name
     BLUEPRINTS_DOCUMENT_TYPE_INDEX_NAME                       = local.gsi_blueprint_doc_type
-    TENANT_LIVE_BLUEPRINTS_TABLE_NAME                         = module.tenant_live_blueprints.table_name
     DOCUMENTAI_BATCH_TABLE_NAME                               = module.document_batches.table_name
     DOCUMENTAI_DOCUMENT_BUILD_TABLE_NAME                      = module.document_builds.table_name
     DOCUMENTAI_INPUT_LOCATION                                 = "s3://${module.input_bucket.bucket_name}/${local.input_prefix}"
@@ -680,8 +672,6 @@ data "aws_iam_policy_document" "data_access" {
       "${module.audit_events.table_arn}/index/*",
       "${module.blueprints.table_arn}",
       "${module.blueprints.table_arn}/index/*",
-      "${module.tenant_live_blueprints.table_arn}",
-      "${module.tenant_live_blueprints.table_arn}/index/*",
     ]
   }
 
@@ -700,7 +690,7 @@ data "aws_iam_policy_document" "data_access" {
         module.document_metadata, module.api_keys, module.tenants,
         module.tenant_request_counts, module.extraction_rules, module.document_categories,
         module.document_batches, module.document_builds, module.audit_events,
-        module.blueprints, module.tenant_live_blueprints,
+        module.blueprints,
       ] : m.kms_key_arn],
       [
         data.aws_kms_alias.s3.target_key_arn,

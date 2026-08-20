@@ -57,10 +57,10 @@ def resolve_project_arn(
     """
     from documentai_api.utils.ssm import is_preclassification_routing_enabled
 
-    if tenant_id and document_type:
-        from documentai_api.utils.blueprints import get_live_blueprint_arn
+    if tenant_id and document_type and get_aws_config().blueprints_document_type_index_name:
+        from documentai_api.utils.blueprints import get_live_blueprint_project_arn
 
-        custom_project_arn = get_live_blueprint_arn(tenant_id, document_type)
+        custom_project_arn = get_live_blueprint_project_arn(tenant_id, document_type)
         if custom_project_arn:
             logger.info(
                 f"Routing to tenant custom project for tenant={tenant_id} document_type={document_type}"

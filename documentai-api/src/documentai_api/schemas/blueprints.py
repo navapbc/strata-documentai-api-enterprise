@@ -9,10 +9,9 @@ class BlueprintRecord:
 
     TENANT_ID = "tenantId"
     BLUEPRINT_ID = "blueprintId"
-    NAME = "name"
     DESCRIPTION = "description"
     DOCUMENT_TYPE = "documentType"
-    FIELDS = "fields"
+    FIELDS = "blueprintFields"
     STATUS = "blueprintStatus"  # BlueprintStatus enum
     IS_ACTIVE = "isActive"
     BLUEPRINT_ARN = "blueprintArn"
@@ -21,7 +20,7 @@ class BlueprintRecord:
     UPDATED_AT = "updatedAt"
 
 
-class BlueprintsTable(BaseCrudTable):
+class AuthoredBlueprintsTable(BaseCrudTable):
     table_name_env = "blueprints_table_name"
     pk_field = BlueprintRecord.TENANT_ID
     sk_field = BlueprintRecord.BLUEPRINT_ID

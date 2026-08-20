@@ -3,6 +3,7 @@ from enum import StrEnum
 from functools import lru_cache
 
 import boto3
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -63,8 +64,7 @@ class EnvVars(StrEnum):
     DOCUMENT_CATEGORIES_TABLE_NAME = "DOCUMENT_CATEGORIES_TABLE_NAME"
 
     # === Blueprints ===
-    BLUEPRINTS_TABLE_NAME = "BLUEPRINTS_TABLE_NAME"
-    TENANT_LIVE_BLUEPRINTS_TABLE_NAME = "TENANT_LIVE_BLUEPRINTS_TABLE_NAME"
+    BLUEPRINTS_TABLE_NAME = "TENANT_AUTHORED_BLUEPRINTS_TABLE_NAME"
 
     # === Metrics pipeline ===
     ATHENA_WORKGROUP_NAME = "ATHENA_WORKGROUP_NAME"
@@ -145,9 +145,10 @@ class AWSEnvConfig(PydanticBaseEnvConfig):
     document_categories_table_name: str | None = None
 
     # Blueprints
-    blueprints_table_name: str | None = None
+    blueprints_table_name: str | None = Field(
+        None, validation_alias="TENANT_AUTHORED_BLUEPRINTS_TABLE_NAME"
+    )
     blueprints_document_type_index_name: str | None = None
-    tenant_live_blueprints_table_name: str | None = None
 
     # Metrics pipeline
     athena_workgroup_name: str | None = None

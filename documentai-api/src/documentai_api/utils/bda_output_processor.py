@@ -56,7 +56,7 @@ class BdaProcessingResults:
 
 @dataclass
 class BdaExtractionResult:
-    """Parsed BDA output — blueprint match, field values, and applied rules."""
+    """Parsed BDA output - blueprint match, field values, and applied rules."""
 
     matched_blueprint: MatchedBlueprintInfo
     document_type: str | None

@@ -10,14 +10,14 @@ from documentai_api.models.base import BaseApiResponse
 
 class BlueprintField(BaseApiResponse):
     name: str
-    field_type: str
-    description: str
+    type: str
+    inference_type: str | None = None
+    instruction: str | None = None
 
 
 class BlueprintItem(BaseApiResponse):
     blueprint_id: str
     tenant_id: str
-    name: str
     description: str
     document_type: str
     fields: list[BlueprintField]
@@ -33,14 +33,12 @@ class BlueprintListResponse(BaseApiResponse):
 
 
 class BlueprintCreateRequest(BaseApiResponse):
-    name: str
     description: str
     document_type: str
     fields: list[BlueprintField]
 
 
 class BlueprintUpdateRequest(BaseApiResponse):
-    name: str | None = None
     description: str | None = None
     document_type: str | None = None
     fields: list[BlueprintField] | None = None

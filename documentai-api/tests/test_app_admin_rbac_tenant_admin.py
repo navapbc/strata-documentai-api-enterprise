@@ -149,8 +149,10 @@ def test_keys_tenant_admin_no_tenant_in_jwt_create_returns_403(client, api_keys_
     assert response.status_code == 403
 
 
-def test_keys_tenant_admin_body_tenant_id_ignored(client, api_keys_table, tenants_table):
-    """Tenant-admin's body tenant_id is ignored - key is scoped to their JWT tenant."""
+def test_keys_tenant_admin_mismatched_body_tenant_id_returns_403(
+    client, api_keys_table, tenants_table
+):
+    """Tenant-admin's body tenant_id must match their JWT tenant - a mismatch is rejected, not silently overridden."""
     _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
     client.post(TENANTS_URL, json={"tenant_id": TENANT_ID, "display_name": "Test"})
     client.post(TENANTS_URL, json={"tenant_id": OTHER_TENANT_ID, "display_name": "Other"})
@@ -160,7 +162,26 @@ def test_keys_tenant_admin_body_tenant_id_ignored(client, api_keys_table, tenant
         KEYS_URL,
         json={"api_key_name": "spoofed", "environment": "dev", "tenant_id": OTHER_TENANT_ID},
     )
+    assert response.status_code == 403
+
+    list_resp = client.get(KEYS_URL)
+    assert list_resp.json()["count"] == 0
+
+
+def test_keys_tenant_admin_matching_body_tenant_id_returns_200(
+    client, api_keys_table, tenants_table
+):
+    """Tenant-admin's body tenant_id is accepted when it matches their JWT tenant."""
+    _override_jwt(_make_claims(groups=[SUPER_ADMIN]))
+    client.post(TENANTS_URL, json={"tenant_id": TENANT_ID, "display_name": "Test"})
+
+    _override_jwt(_make_claims(groups=[TENANT_ADMIN], tenant_id=TENANT_ID))
+    response = client.post(
+        KEYS_URL,
+        json={"api_key_name": "matching", "environment": "dev", "tenant_id": TENANT_ID},
+    )
     assert response.status_code == 200
+
     list_resp = client.get(KEYS_URL)
     assert list_resp.json()["count"] == 1
 

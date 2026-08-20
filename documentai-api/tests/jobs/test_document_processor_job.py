@@ -184,7 +184,12 @@ def test_main_first_time_pdf(input_pdf, mocker, ddb_doc_metadata_table, mock_inv
     assert doc_meta_record[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.STARTED
 
     mock_invoke.assert_called_once_with(
-        input_pdf.bucket_name, input_pdf.key, expected_object_key, "tax_documents"
+        input_pdf.bucket_name,
+        input_pdf.key,
+        expected_object_key,
+        "tax_documents",
+        tenant_id=None,
+        document_type="tax_documents",
     )
 
 
@@ -218,7 +223,12 @@ def test_main_strips_tenant_prefix_for_ddb_key(s3_bucket, ddb_doc_metadata_table
 
     # S3 operations still receive the full tenant-prefixed key.
     mock_invoke.assert_called_once_with(
-        obj.bucket_name, tenant_key, expected_ddb_key, "tax_documents"
+        obj.bucket_name,
+        tenant_key,
+        expected_ddb_key,
+        "tax_documents",
+        tenant_id=None,
+        document_type="tax_documents",
     )
 
 
@@ -245,7 +255,12 @@ def test_main_first_time_image(input_image, mocker, ddb_doc_metadata_table, mock
         content_type="image/jpeg",
     )
     mock_invoke.assert_called_once_with(
-        input_image.bucket_name, input_image.key, expected_object_key, "tax_documents"
+        input_image.bucket_name,
+        input_image.key,
+        expected_object_key,
+        "tax_documents",
+        tenant_id=None,
+        document_type="tax_documents",
     )
 
 
@@ -323,7 +338,12 @@ def test_main_uses_env_bucket_when_not_provided(input_pdf, mocker, mock_invoke):
     main(input_pdf.key)
 
     mock_invoke.assert_called_once_with(
-        input_pdf.bucket_name, input_pdf.key, "test.pdf", "tax_documents"
+        input_pdf.bucket_name,
+        input_pdf.key,
+        "test.pdf",
+        "tax_documents",
+        tenant_id=None,
+        document_type="tax_documents",
     )
 
 
