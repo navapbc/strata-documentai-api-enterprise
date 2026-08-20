@@ -3333,6 +3333,647 @@
         }
       }
     },
+    "/v1/blueprints": {
+      "get": {
+        "tags": [
+          "Admin:Blueprints"
+        ],
+        "summary": "List Tenant Blueprints",
+        "description": "List all blueprints for a tenant.",
+        "operationId": "list_tenant_blueprints_v1_blueprints_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlueprintListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Admin:Blueprints"
+        ],
+        "summary": "Create Blueprint",
+        "description": "Create a new blueprint draft.",
+        "operationId": "create_blueprint_v1_blueprints_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BlueprintCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlueprintItem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/blueprints/{blueprint_id}": {
+      "get": {
+        "tags": [
+          "Admin:Blueprints"
+        ],
+        "summary": "Get Blueprint By Id",
+        "description": "Get a single blueprint.",
+        "operationId": "get_blueprint_by_id_v1_blueprints__blueprint_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "blueprint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Blueprint Id"
+            }
+          },
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlueprintItem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Admin:Blueprints"
+        ],
+        "summary": "Update Blueprint",
+        "description": "Update a draft or published blueprint. Live blueprints must be taken offline first.",
+        "operationId": "update_blueprint_v1_blueprints__blueprint_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "blueprint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Blueprint Id"
+            }
+          },
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BlueprintUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlueprintItem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Admin:Blueprints"
+        ],
+        "summary": "Delete Blueprint By Id",
+        "description": "Delete a draft or published blueprint. Live blueprints must be taken offline first.",
+        "operationId": "delete_blueprint_by_id_v1_blueprints__blueprint_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "blueprint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Blueprint Id"
+            }
+          },
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlueprintDeleteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/blueprints/{blueprint_id}/publish": {
+      "post": {
+        "tags": [
+          "Admin:Blueprints"
+        ],
+        "summary": "Publish Blueprint Endpoint",
+        "description": "Register blueprint with BDA. Auto-creates tenant project if needed.",
+        "operationId": "publish_blueprint_endpoint_v1_blueprints__blueprint_id__publish_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "blueprint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Blueprint Id"
+            }
+          },
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlueprintPublishResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/blueprints/{blueprint_id}/test": {
+      "post": {
+        "tags": [
+          "Admin:Blueprints"
+        ],
+        "summary": "Test Blueprint",
+        "description": "Upload a sample document and run it through BDA using this blueprint's project.\n\nBlueprint must be published (has a BDA blueprint ARN) before testing.\nReturns a test_id to poll via GET /{blueprint_id}/test/{test_id}.",
+        "operationId": "test_blueprint_v1_blueprints__blueprint_id__test_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "blueprint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Blueprint Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_test_blueprint_v1_blueprints__blueprint_id__test_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Test Blueprint V1 Blueprints  Blueprint Id  Test Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/blueprints/{blueprint_id}/test/{test_id}": {
+      "get": {
+        "tags": [
+          "Admin:Blueprints"
+        ],
+        "summary": "Get Blueprint Test Result",
+        "description": "Poll for blueprint test results.",
+        "operationId": "get_blueprint_test_result_v1_blueprints__blueprint_id__test__test_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "blueprint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Blueprint Id"
+            }
+          },
+          {
+            "name": "test_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Test Id"
+            }
+          },
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Blueprint Test Result V1 Blueprints  Blueprint Id  Test  Test Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/blueprints/{blueprint_id}/live": {
+      "post": {
+        "tags": [
+          "Admin:Blueprints"
+        ],
+        "summary": "Go Live",
+        "description": "Make a published blueprint live - it will be used in document routing.",
+        "operationId": "go_live_v1_blueprints__blueprint_id__live_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "blueprint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Blueprint Id"
+            }
+          },
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlueprintLiveResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Admin:Blueprints"
+        ],
+        "summary": "Take Offline",
+        "description": "Take a live blueprint offline - routing falls back to shared projects.",
+        "operationId": "take_offline_v1_blueprints__blueprint_id__live_delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "blueprint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Blueprint Id"
+            }
+          },
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlueprintLiveResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/demo/documents": {
       "post": {
         "summary": "Create Demo Document",
@@ -4466,6 +5107,233 @@
         ],
         "title": "BatchUploadResponse"
       },
+      "BlueprintCreateRequest": {
+        "properties": {
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "documentType": {
+            "type": "string",
+            "title": "Documenttype"
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/BlueprintField"
+            },
+            "type": "array",
+            "title": "Fields"
+          }
+        },
+        "type": "object",
+        "required": [
+          "description",
+          "documentType",
+          "fields"
+        ],
+        "title": "BlueprintCreateRequest"
+      },
+      "BlueprintDeleteResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "BlueprintDeleteResponse"
+      },
+      "BlueprintField": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "inferenceType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inferencetype"
+          },
+          "instruction": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instruction"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "type"
+        ],
+        "title": "BlueprintField"
+      },
+      "BlueprintItem": {
+        "properties": {
+          "blueprintId": {
+            "type": "string",
+            "title": "Blueprintid"
+          },
+          "tenantId": {
+            "type": "string",
+            "title": "Tenantid"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "documentType": {
+            "type": "string",
+            "title": "Documenttype"
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/BlueprintField"
+            },
+            "type": "array",
+            "title": "Fields"
+          },
+          "status": {
+            "$ref": "#/components/schemas/BlueprintStatus"
+          },
+          "blueprintArn": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Blueprintarn"
+          },
+          "projectArn": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Projectarn"
+          },
+          "createdAt": {
+            "type": "string",
+            "title": "Createdat"
+          },
+          "updatedAt": {
+            "type": "string",
+            "title": "Updatedat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "blueprintId",
+          "tenantId",
+          "description",
+          "documentType",
+          "fields",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ],
+        "title": "BlueprintItem"
+      },
+      "BlueprintListResponse": {
+        "properties": {
+          "blueprints": {
+            "items": {
+              "$ref": "#/components/schemas/BlueprintItem"
+            },
+            "type": "array",
+            "title": "Blueprints"
+          }
+        },
+        "type": "object",
+        "required": [
+          "blueprints"
+        ],
+        "title": "BlueprintListResponse"
+      },
+      "BlueprintLiveResponse": {
+        "properties": {
+          "blueprintId": {
+            "type": "string",
+            "title": "Blueprintid"
+          },
+          "documentType": {
+            "type": "string",
+            "title": "Documenttype"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "blueprintId",
+          "documentType",
+          "message"
+        ],
+        "title": "BlueprintLiveResponse"
+      },
+      "BlueprintPublishResponse": {
+        "properties": {
+          "blueprintId": {
+            "type": "string",
+            "title": "Blueprintid"
+          },
+          "blueprintArn": {
+            "type": "string",
+            "title": "Blueprintarn"
+          },
+          "projectArn": {
+            "type": "string",
+            "title": "Projectarn"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "blueprintId",
+          "blueprintArn",
+          "projectArn",
+          "message"
+        ],
+        "title": "BlueprintPublishResponse"
+      },
+      "BlueprintStatus": {
+        "type": "string",
+        "enum": [
+          "draft",
+          "published",
+          "live"
+        ],
+        "title": "BlueprintStatus"
+      },
       "BlueprintTestResult": {
         "properties": {
           "testId": {
@@ -4473,8 +5341,7 @@
             "title": "Testid"
           },
           "status": {
-            "type": "string",
-            "title": "Status"
+            "$ref": "#/components/schemas/BlueprintTestStatus"
           },
           "documentType": {
             "anyOf": [
@@ -4564,8 +5431,7 @@
             "title": "Testid"
           },
           "status": {
-            "type": "string",
-            "title": "Status",
+            "$ref": "#/components/schemas/BlueprintTestStatus",
             "default": "PROCESSING"
           }
         },
@@ -4574,6 +5440,57 @@
           "testId"
         ],
         "title": "BlueprintTestStartResponse"
+      },
+      "BlueprintTestStatus": {
+        "type": "string",
+        "enum": [
+          "PROCESSING",
+          "COMPLETED",
+          "FAILED"
+        ],
+        "title": "BlueprintTestStatus"
+      },
+      "BlueprintUpdateRequest": {
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "documentType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documenttype"
+          },
+          "fields": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/BlueprintField"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fields"
+          }
+        },
+        "type": "object",
+        "title": "BlueprintUpdateRequest"
       },
       "Body_create_build_v1_builds_post": {
         "properties": {
@@ -4920,6 +5837,36 @@
           "document_category"
         ],
         "title": "Body_start_blueprint_test_v1_admin_blueprints_test_post"
+      },
+      "Body_test_blueprint_v1_blueprints__blueprint_id__test_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          },
+          "document_category": {
+            "type": "string",
+            "title": "Document Category"
+          },
+          "tenant_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tenant Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file",
+          "document_category"
+        ],
+        "title": "Body_test_blueprint_v1_blueprints__blueprint_id__test_post"
       },
       "Body_upload_document_batch_v1_documents_batch_post": {
         "properties": {

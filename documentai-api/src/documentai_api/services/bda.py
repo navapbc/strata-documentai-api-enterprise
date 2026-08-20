@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import json
+import os
 from typing import TYPE_CHECKING, Any
 
-from documentai_api.config.env import get_aws_config
+from documentai_api.config.env import EnvVars, get_aws_config, get_required_env
 from documentai_api.logging import get_logger
 from documentai_api.utils.aws_client_factory import AWSClientFactory
 from documentai_api.utils.json_parsing import parse_json_object
@@ -20,6 +22,38 @@ if TYPE_CHECKING:
     )
 
 logger = get_logger(__name__)
+
+
+def get_project_arn_for_category(document_category: str) -> str:
+    """Resolve BDA project ARN for a document category.
+
+    Uses BDA_PROJECT_ARNS (JSON map) if set, falls back to BDA_PROJECT_ARN_ALL.
+    Raises ValueError if the category is not found in the map.
+    """
+    project_arns_json = os.environ.get(EnvVars.BDA_PROJECT_ARNS)
+    if project_arns_json:
+        project_arns = json.loads(project_arns_json)
+        project_arn = project_arns.get(document_category)
+
+        if not project_arn:
+            raise ValueError(f"Unknown document category: {document_category}")
+
+        return str(project_arn)
+
+    return get_required_env(EnvVars.BDA_PROJECT_ARN_ALL)
+
+
+def invoke_bda_async(input_s3_uri: str, output_s3_uri: str, document_category: str) -> str:
+    """Invoke BDA async job. Returns the invocationArn."""
+    project_arn = get_project_arn_for_category(document_category)
+    profile_arn = get_required_env(EnvVars.BDA_PROFILE_ARN)
+    response = AWSClientFactory.get_bda_runtime_client().invoke_data_automation_async(
+        dataAutomationProfileArn=profile_arn,
+        dataAutomationConfiguration={"dataAutomationProjectArn": project_arn},
+        inputConfiguration={"s3Uri": input_s3_uri},
+        outputConfiguration={"s3Uri": output_s3_uri},
+    )
+    return response["invocationArn"]
 
 
 def get_data_automation_project(project_arn: str) -> GetDataAutomationProjectResponseTypeDef:

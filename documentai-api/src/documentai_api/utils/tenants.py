@@ -15,6 +15,17 @@ def get_tenant(tenant_id: str) -> dict[str, Any] | None:
     return _table.get(tenant_id)
 
 
+def get_override_bda_project_arn(tenant_id: str) -> str | None:
+    """Return the tenant's override BDA project ARN, or None if not set."""
+    record = _table.get(tenant_id)
+    return record.get(TenantRecord.OVERRIDE_BDA_PROJECT_ARN) if record else None
+
+
+def set_override_bda_project_arn(tenant_id: str, project_arn: str) -> dict[str, Any]:
+    """Set the override BDA project ARN on the tenant record."""
+    return update_tenant(tenant_id, override_bda_project_arn=project_arn)
+
+
 def get_extraction_confidence_floor(tenant_id: str | None) -> float:
     """Get the extraction confidence floor for a tenant, falling back to global default."""
     from documentai_api.config.constants import ConfigDefaults

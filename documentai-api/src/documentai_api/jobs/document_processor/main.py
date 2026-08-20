@@ -110,7 +110,12 @@ def _persist_optimization_metrics(
 
 
 def _invoke_bda(
-    bucket_name: str, object_key: str, ddb_key: str, preclassification_category: str | None = None
+    bucket_name: str,
+    object_key: str,
+    ddb_key: str,
+    preclassification_category: str | None = None,
+    tenant_id: str | None = None,
+    document_type: str | None = None,
 ) -> dict[str, Any]:
     """Invoke BDA for a file that's ready for processing."""
     result: dict[str, Any] = {}
@@ -126,7 +131,7 @@ def _invoke_bda(
                 retry_count += 1
             invoke_start = time.monotonic()
             invocation_arn, project_arn, pages_sent = invoke_bedrock_data_automation(
-                bucket_name, object_key, preclassification_category
+                bucket_name, object_key, preclassification_category, tenant_id, document_type
             )
             invoke_duration = Decimal(str(round(time.monotonic() - invoke_start, 3)))
 
@@ -146,11 +151,18 @@ def _invoke_bda(
 
 
 def invoke_bda(
-    bucket_name: str, object_key: str, ddb_key: str, preclassification_category: str | None = None
+    bucket_name: str,
+    object_key: str,
+    ddb_key: str,
+    preclassification_category: str | None = None,
+    tenant_id: str | None = None,
+    document_type: str | None = None,
 ) -> dict[str, Any]:
     """Wrapper that handles retry failures."""
     try:
-        return _invoke_bda(bucket_name, object_key, ddb_key, preclassification_category)
+        return _invoke_bda(
+            bucket_name, object_key, ddb_key, preclassification_category, tenant_id, document_type
+        )
     except RetryError as e:
         retry_state = e.last_attempt
         attempt_number = retry_state.attempt_number
@@ -312,7 +324,14 @@ def main(
                 ddb_key, opt.crop_result, opt.grayscale_applied, opt.file_size_bytes, opt_result=opt
             )
             if _should_invoke_bda(preclassification_category):
-                invoke_bda(bucket_name, object_key, ddb_key, preclassification_category)
+                invoke_bda(
+                    bucket_name,
+                    object_key,
+                    ddb_key,
+                    preclassification_category,
+                    tenant_id=existing_record.get(DocumentMetadata.TENANT_ID),
+                    document_type=existing_record.get(DocumentMetadata.PRECLASSIFICATION_CATEGORY),
+                )
                 logger.info(f"Optimized {ddb_key} and invoked BDA")
             else:
                 logger.info(f"{ddb_key} preclassified as other_document; skipping BDA (flag on)")
@@ -354,7 +373,14 @@ def main(
             ddb_key, opt.crop_result, False, opt.file_size_bytes, opt_result=opt
         )
         if _should_invoke_bda(preclassification_category):
-            invoke_bda(bucket_name, object_key, ddb_key, preclassification_category)
+            invoke_bda(
+                bucket_name,
+                object_key,
+                ddb_key,
+                preclassification_category,
+                tenant_id=existing_record.get(DocumentMetadata.TENANT_ID),
+                document_type=existing_record.get(DocumentMetadata.PRECLASSIFICATION_CATEGORY),
+            )
         else:
             logger.info(f"{ddb_key} preclassified as other_document; skipping BDA (flag on)")
             classify_as_extraction_not_configured(

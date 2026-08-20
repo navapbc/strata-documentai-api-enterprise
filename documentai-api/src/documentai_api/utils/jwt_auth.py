@@ -109,7 +109,9 @@ async def verify_jwt(
         ) from e
 
 
-# --- Role + tenant helpers ---------------------------------------------------
+# =============================================================================
+# Role + tenant helpers
+# =============================================================================
 
 SUPER_ADMIN = "__admin__"  # tenant_id sentinel value for super-admins
 SUPER_ADMIN_GROUP = "super-admin"  # Cognito group name
@@ -121,6 +123,7 @@ def get_roles(claims: dict[str, Any]) -> list[str]:
     groups = claims.get("cognito:groups") or []
     if isinstance(groups, str):
         return [groups]
+
     return list(groups)
 
 
@@ -173,25 +176,49 @@ def tenant_scope(claims: dict[str, Any]) -> str | None:
     """
     if is_super_admin(claims):
         return None
+
     tenant = get_tenant_id(claims)
+
     if not tenant:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Account has no tenant assigned. Contact an administrator.",
         )
+
     return tenant
 
 
 def resolve_tenant(claims: dict[str, Any], requested_tenant_id: str | None = None) -> str | None:
     """Resolve the effective tenant for an operation.
 
-    Tenant-admins: always returns their own tenant (ignores requested).
-    Super-admins: returns requested_tenant_id (or None for "all").
-
-    Use when the endpoint allows None (e.g. list all). For endpoints that
-    require a tenant, check the return value and raise 400 if None.
+    Tenant-admins: always returns their own tenant. Raises 403 if
+    requested_tenant_id is provided but doesn't match.
+    Super-admins: returns requested_tenant_id as-is (may be None).
     """
     scope = tenant_scope(claims)
+
     if scope is not None:
+        if requested_tenant_id and requested_tenant_id != scope:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to this tenant.",
+            )
+
         return scope
+
     return requested_tenant_id
+
+
+def require_tenant(claims: dict[str, Any], requested_tenant_id: str | None = None) -> str:
+    """Resolve the effective tenant, raising 400 if none can be determined.
+
+    Use for endpoints where a specific tenant is always required.
+    """
+    tenant = resolve_tenant(claims, requested_tenant_id)
+
+    if not tenant:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="tenant_id is required."
+        )
+
+    return tenant

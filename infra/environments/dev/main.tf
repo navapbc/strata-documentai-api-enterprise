@@ -67,6 +67,7 @@ locals {
   gsi_tenant_batches       = "TenantIndex"
   gsi_tenant_builds        = "TenantIndex"
   gsi_external_ref_id      = "ExternalReferenceIdIndex"
+  gsi_blueprint_doc_type   = "DocumentTypeIndex"
 }
 
 # --- ECR ---
@@ -102,6 +103,11 @@ module "input_bucket" {
     {
       id              = "expire-test-runner"
       prefix          = "test-runner/"
+      expiration_days = 7
+    },
+    {
+      id              = "expire-blueprint-test"
+      prefix          = "blueprint-test/"
       expiration_days = 7
     },
   ]
@@ -207,6 +213,23 @@ module "extraction_rules" {
   table_name = "${local.service_name}-extraction-rules"
   hash_key   = "tenantId"
   sort_key   = "documentType"
+}
+
+module "blueprints" {
+  source     = "../../modules/nosql"
+  table_name = "${local.service_name}-tenant-authored-blueprints"
+  hash_key   = "tenantId"
+  sort_key   = "blueprintId"
+
+  global_secondary_indexes = [
+    {
+      name          = local.gsi_blueprint_doc_type
+      hash_key      = "tenantId"
+      hash_key_type = "S"
+      sort_key      = "documentType"
+      sort_key_type = "S"
+    }
+  ]
 }
 
 module "document_categories" {
@@ -495,6 +518,8 @@ locals {
     AUDIT_EVENTS_TABLE_NAME                                   = module.audit_events.table_name
     EXTRACTION_RULES_TABLE_NAME                               = module.extraction_rules.table_name
     DOCUMENT_CATEGORIES_TABLE_NAME                            = module.document_categories.table_name
+    TENANT_AUTHORED_BLUEPRINTS_TABLE_NAME                    = module.blueprints.table_name
+    BLUEPRINTS_DOCUMENT_TYPE_INDEX_NAME                       = local.gsi_blueprint_doc_type
     DOCUMENTAI_BATCH_TABLE_NAME                               = module.document_batches.table_name
     DOCUMENTAI_DOCUMENT_BUILD_TABLE_NAME                      = module.document_builds.table_name
     DOCUMENTAI_INPUT_LOCATION                                 = "s3://${module.input_bucket.bucket_name}/${local.input_prefix}"
@@ -645,6 +670,8 @@ data "aws_iam_policy_document" "data_access" {
       "${module.document_builds.table_arn}/index/*",
       "${module.audit_events.table_arn}",
       "${module.audit_events.table_arn}/index/*",
+      "${module.blueprints.table_arn}",
+      "${module.blueprints.table_arn}/index/*",
     ]
   }
 
@@ -663,6 +690,7 @@ data "aws_iam_policy_document" "data_access" {
         module.document_metadata, module.api_keys, module.tenants,
         module.tenant_request_counts, module.extraction_rules, module.document_categories,
         module.document_batches, module.document_builds, module.audit_events,
+        module.blueprints,
       ] : m.kms_key_arn],
       [
         data.aws_kms_alias.s3.target_key_arn,
@@ -715,6 +743,11 @@ data "aws_iam_policy_document" "bedrock_all" {
       "bedrock:StartDataAutomationJob",
       "bedrock:GetDataAutomationJob",
       "bedrock:ListDataAutomationJobs",
+      "bedrock:CreateBlueprint",
+      "bedrock:UpdateBlueprint",
+      "bedrock:DeleteBlueprint",
+      "bedrock:CreateDataAutomationProject",
+      "bedrock:UpdateDataAutomationProject",
     ]
     resources = [
       "arn:aws:bedrock:*:${local.account_id}:data-automation-project/*",
@@ -769,6 +802,7 @@ data "aws_iam_policy_document" "supporting_services" {
       "ssm:GetParameter",
       "ssm:GetParameters",
       "ssm:GetParametersByPath",
+      "ssm:PutParameter",
     ]
     resources = ["arn:aws:ssm:${var.region}:${local.account_id}:parameter${local.ssm_prefix}/*"]
   }

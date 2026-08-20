@@ -1,7 +1,7 @@
 import re
 from collections.abc import Iterable
 from enum import StrEnum
-from typing import ClassVar
+from typing import Any, ClassVar
 
 import filetype  # type: ignore[import-untyped]
 
@@ -93,6 +93,12 @@ class BdaJobStatus(StrEnum):
     @classmethod
     def is_failed(cls, status: str) -> bool:
         return status in (cls.SERVICE_ERROR, cls.CLIENT_ERROR)
+
+
+class BlueprintTestStatus(StrEnum):
+    PROCESSING = "PROCESSING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
 
 
 class BdaResponseFields:
@@ -301,6 +307,37 @@ class TextractConfig:
         "image/png",
         "application/pdf",
     )
+
+
+class BdaProjectStage(StrEnum):
+    LIVE = "LIVE"
+    DEVELOPMENT = "DEVELOPMENT"
+
+
+class BdaBlueprintStage(StrEnum):
+    LIVE = "LIVE"
+    DEVELOPMENT = "DEVELOPMENT"
+
+
+class BdaProjectConfig:
+    """Fixed configuration for tenant BDA projects."""
+
+    STANDARD_OUTPUT_CONFIGURATION: ClassVar[dict[str, Any]] = {
+        "document": {
+            "extraction": {"granularity": {"types": ["PAGE"]}, "boundingBox": {"state": "ENABLED"}},
+            "generativeField": {"state": "DISABLED"},
+            "outputFormat": {
+                "textFormat": {"types": ["PLAIN_TEXT"]},
+                "additionalFileFormat": {"state": "DISABLED"},
+            },
+        }
+    }
+
+
+class BlueprintStatus(StrEnum):
+    DRAFT = "draft"
+    PUBLISHED = "published"
+    LIVE = "live"
 
 
 class DeletionType(StrEnum):
