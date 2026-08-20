@@ -38,7 +38,7 @@ locals {
 
 resource "awscc_bedrock_data_automation_project" "this" {
   project_name                  = "${var.name}-project"
-  project_description           = "BDA project for ${var.name}"
+  project_description           = coalesce(var.description, "BDA project for ${var.name}")
   tags                          = local.bda_tags
   standard_output_configuration = var.standard_output_configuration
 

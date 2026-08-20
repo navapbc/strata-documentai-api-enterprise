@@ -3,6 +3,12 @@ variable "name" {
   description = "Base name for the Bedrock Data Automation project and its blueprints."
 }
 
+variable "description" {
+  type        = string
+  description = "Human-readable description for the BDA project."
+  default     = null
+}
+
 variable "blueprints" {
   type        = list(string)
   description = "List of blueprint file paths or ARNs to attach to the project."

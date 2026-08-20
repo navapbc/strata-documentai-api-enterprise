@@ -400,8 +400,14 @@ module "secrets" {
 
 # --- Bedrock Data Automation (one project per category) ---
 
+locals {
+  document_type_folders = toset([for f in fileset("${path.module}/../../document-types", "*/managed_blueprints.json") : dirname(f)])
+
+  all_managed_blueprint_arns = distinct(flatten([for folder in local.document_type_folders : [for bp in jsondecode(file("${path.module}/../../document-types/${folder}/managed_blueprints.json")) : bp.arn]]))
+}
+
 module "bedrock_data_automation" {
-  for_each = var.bda_projects
+  for_each = local.document_type_folders
   source   = "../../modules/document-data-extraction"
 
   providers = {
@@ -409,15 +415,13 @@ module "bedrock_data_automation" {
     awscc = awscc.bda
   }
 
-  name = "${local.service_name}-${each.key}"
+  name        = "${local.service_name}-${each.key}"
+  description = "BDA project for ${replace(each.key, "_", " ")} documents"
 
   blueprints = concat(
-    # Custom document type schemas - "all" project gets every custom blueprint
-    each.key == "all"
-    ? [for f in fileset("${path.module}/../../custom-document-types", "*/*.json") : "${path.module}/../../custom-document-types/${f}"]
-    : [for f in fileset("${path.module}/../../custom-document-types/${each.key}", "*.json") : "${path.module}/../../custom-document-types/${each.key}/${f}"],
-    # AWS managed blueprints for this category
-    each.value.managed_blueprint_arns,
+    [for f in fileset("${path.module}/../../document-types/${each.key}", "*.json") : "${path.module}/../../document-types/${each.key}/${f}"
+    if f != "managed_blueprints.json"],
+    [for bp in jsondecode(file("${path.module}/../../document-types/${each.key}/managed_blueprints.json")) : bp.arn],
   )
 
   standard_output_configuration = {
@@ -444,6 +448,48 @@ module "bedrock_data_automation" {
     project     = var.project_name
     environment = var.environment
     category    = each.key
+  }
+}
+
+module "bedrock_data_automation_all" {
+  source = "../../modules/document-data-extraction"
+
+  providers = {
+    aws   = aws.bda
+    awscc = awscc.bda
+  }
+
+  name        = "${local.service_name}-all"
+  description = "BDA project for all document types"
+  blueprints = concat(
+    flatten([for k, v in module.bedrock_data_automation : v.blueprint_arns]),
+    local.all_managed_blueprint_arns,
+  )
+
+  standard_output_configuration = {
+    document = {
+      extraction = {
+        granularity  = { types = ["PAGE"] }
+        bounding_box = { state = "ENABLED" }
+      }
+      output_format = {
+        additional_file_format = { state = "DISABLED" }
+        text_format            = { types = ["PLAIN_TEXT"] }
+      }
+    }
+    image = {
+      extraction = {
+        bounding_box = { state = "ENABLED" }
+        category     = { state = "ENABLED", types = ["TEXT_DETECTION", "LOGOS"] }
+      }
+      generative_field = { state = "ENABLED", types = ["IMAGE_SUMMARY"] }
+    }
+  }
+
+  tags = {
+    project     = var.project_name
+    environment = var.environment
+    category    = "all"
   }
 }
 
@@ -523,8 +569,8 @@ locals {
     # BDA_PROJECT_ARN_DEBT_OBLIGATIONS                          = module.bedrock_data_automation["debt_obligations"].project_arn
     # BDA_PROJECT_ARN_IDENTITY_VERIFICATION                     = module.bedrock_data_automation["identity_verification"].project_arn
     # BDA_PROJECT_ARN_RIGHT_TO_WORK                             = module.bedrock_data_automation["right_to_work"].project_arn
-    BDA_PROJECT_ARN_ALL                            = module.bedrock_data_automation["all"].project_arn
-    BDA_PROFILE_ARN                                = module.bedrock_data_automation["all"].profile_arn
+    BDA_PROJECT_ARN_ALL                            = module.bedrock_data_automation_all.project_arn
+    BDA_PROFILE_ARN                                = module.bedrock_data_automation_all.profile_arn
     BDA_REGION                                     = var.bda_region
     BEDROCK_CLASSIFICATION_MODEL_ID_PARAM          = "${local.ssm_prefix}/models/classification-model-id"
     BEDROCK_BOUNDING_BOX_MODEL_ID_PARAM            = "${local.ssm_prefix}/models/bounding-box-model-id"
