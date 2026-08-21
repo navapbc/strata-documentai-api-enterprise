@@ -79,6 +79,10 @@ class PreClassificationDdbFields(BaseModel):
             "preclassificationBlueprintMatchDurationSeconds", ":pcbmds"
         ),
     )
+    blueprint_match_category: str | None = Field(
+        default=None,
+        json_schema_extra=_ddb_metadata_map("preclassificationBlueprintMatchCategory", ":pcbmcat"),
+    )
     max_document_count_on_page: int | None = Field(
         default=None,
         json_schema_extra=_ddb_metadata_map("preclassificationMaxDocumentCountOnPage", ":pcmdcop"),
@@ -130,6 +134,7 @@ class PreClassificationDdbFields(BaseModel):
             blueprint_match_duration_seconds=blueprint_match.duration_seconds
             if blueprint_match
             else None,
+            blueprint_match_category=blueprint_match.category if blueprint_match else None,
         )
 
 

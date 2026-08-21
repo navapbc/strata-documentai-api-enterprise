@@ -6,6 +6,9 @@ from unittest.mock import ANY, Mock
 import pytest
 
 from documentai_api.config.constants import ProcessStatus
+from documentai_api.config.constants_preclassification_category_generated import (
+    PreclassificationCategory,
+)
 from documentai_api.dtos.processing import CropResult, OptimizationResult
 from documentai_api.jobs.document_processor.main import (
     _should_invoke_bda,
@@ -47,7 +50,11 @@ def mock_find_matching_blueprint(mocker):
 
     mocker.patch(
         "documentai_api.utils.document_lifecycle.find_matching_blueprint",
-        return_value=PreclassificationMatchResult(),
+        return_value=PreclassificationMatchResult(
+            matched_document_type="w2-form",
+            confidence=0.95,
+            category=PreclassificationCategory.EMPLOYER_INCOME,
+        ),
     )
 
 
@@ -179,12 +186,15 @@ def test_main_first_time_pdf(input_pdf, mocker, ddb_doc_metadata_table, mock_inv
 
     expected_object_key = "test.pdf"
 
-    doc_meta_record = ddb_doc_metadata_table.get_item(Key={"fileName": expected_object_key})["Item"]
+    ddb_record = ddb_doc_metadata_table.get_item(Key={"fileName": expected_object_key})["Item"]
     # The atomic claim transitions the status to STARTED before BDA is invoked.
-    assert doc_meta_record[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.STARTED
+    assert ddb_record[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.STARTED
 
     mock_invoke.assert_called_once_with(
-        input_pdf.bucket_name, input_pdf.key, expected_object_key, "tax_documents"
+        input_pdf.bucket_name,
+        input_pdf.key,
+        expected_object_key,
+        PreclassificationCategory.EMPLOYER_INCOME,
     )
 
 
@@ -218,7 +228,7 @@ def test_main_strips_tenant_prefix_for_ddb_key(s3_bucket, ddb_doc_metadata_table
 
     # S3 operations still receive the full tenant-prefixed key.
     mock_invoke.assert_called_once_with(
-        obj.bucket_name, tenant_key, expected_ddb_key, "tax_documents"
+        obj.bucket_name, tenant_key, expected_ddb_key, PreclassificationCategory.EMPLOYER_INCOME
     )
 
 
@@ -233,9 +243,9 @@ def test_main_first_time_image(input_image, mocker, ddb_doc_metadata_table, mock
 
     expected_object_key = "test.jpg"
 
-    doc_meta_record = ddb_doc_metadata_table.get_item(Key={"fileName": expected_object_key})["Item"]
+    ddb_record = ddb_doc_metadata_table.get_item(Key={"fileName": expected_object_key})["Item"]
     # The atomic claim transitions the status to STARTED before BDA is invoked.
-    assert doc_meta_record[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.STARTED
+    assert ddb_record[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.STARTED
 
     mock_optimize.assert_called_once_with(
         input_image.bucket_name,
@@ -245,7 +255,10 @@ def test_main_first_time_image(input_image, mocker, ddb_doc_metadata_table, mock
         content_type="image/jpeg",
     )
     mock_invoke.assert_called_once_with(
-        input_image.bucket_name, input_image.key, expected_object_key, "tax_documents"
+        input_image.bucket_name,
+        input_image.key,
+        expected_object_key,
+        PreclassificationCategory.EMPLOYER_INCOME,
     )
 
 
@@ -323,7 +336,7 @@ def test_main_uses_env_bucket_when_not_provided(input_pdf, mocker, mock_invoke):
     main(input_pdf.key)
 
     mock_invoke.assert_called_once_with(
-        input_pdf.bucket_name, input_pdf.key, "test.pdf", "tax_documents"
+        input_pdf.bucket_name, input_pdf.key, "test.pdf", PreclassificationCategory.EMPLOYER_INCOME
     )
 
 
@@ -591,7 +604,7 @@ def test_main_skips_bda_when_no_match_and_flag_on(input_pdf, mocker, mock_invoke
 
 
 def test_main_invokes_bda_when_match_found(input_pdf, mocker, mock_invoke):
-    """When a blueprint matched, BDA is always invoked."""
+    """When a blueprint matched, BDA is invoked with the routing category."""
     mocker.patch(
         "documentai_api.jobs.document_processor.main.skip_bda_if_unclassified",
         return_value=True,
@@ -602,7 +615,8 @@ def test_main_invokes_bda_when_match_found(input_pdf, mocker, mock_invoke):
         None,
         {
             DocumentMetadata.PROCESS_STATUS: ProcessStatus.NOT_STARTED.value,
-            DocumentMetadata.PRECLASSIFICATION_CATEGORY: "tax_documents",
+            DocumentMetadata.PRECLASSIFICATION_CATEGORY: "w2-form",
+            DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_CATEGORY: PreclassificationCategory.EMPLOYER_INCOME,
         },
     ]
     mocker.patch("documentai_api.jobs.document_processor.main.upsert_initial_ddb_record")
@@ -619,7 +633,9 @@ def test_main_invokes_bda_when_match_found(input_pdf, mocker, mock_invoke):
 
     main(input_pdf.key, input_pdf.bucket_name)
 
-    mock_invoke.assert_called_once()
+    mock_invoke.assert_called_once_with(
+        input_pdf.bucket_name, input_pdf.key, "test.pdf", PreclassificationCategory.EMPLOYER_INCOME
+    )
 
 
 def test_persist_optimization_metrics_writes_timing_fields(ddb_doc_metadata_table, mocker):

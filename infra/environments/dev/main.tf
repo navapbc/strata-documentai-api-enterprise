@@ -528,68 +528,59 @@ locals {
     var.extra_cors_allowed_origins,
   )
 
-  lambda_env_vars = {
-    ENVIRONMENT                                               = var.environment
-    DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME                   = module.document_metadata.table_name
-    DOCUMENTAI_DOCUMENT_METADATA_JOB_ID_INDEX_NAME            = local.gsi_job_id
-    DOCUMENTAI_DOCUMENT_METADATA_EXTERNAL_DOC_ID_INDEX_NAME   = local.gsi_external_document_id
-    DOCUMENTAI_DOCUMENT_METADATA_BDA_INVOCATION_ID_INDEX_NAME = local.gsi_bda_invocation_id
-    DOCUMENTAI_DOCUMENT_METADATA_TENANT_INDEX_NAME            = local.gsi_tenant_id
-    API_KEYS_TABLE_NAME                                       = module.api_keys.table_name
-    TENANTS_TABLE_NAME                                        = module.tenants.table_name
-    TENANT_REQUEST_COUNTS_TABLE_NAME                          = module.tenant_request_counts.table_name
-    AUDIT_EVENTS_TABLE_NAME                                   = module.audit_events.table_name
-    EXTRACTION_RULES_TABLE_NAME                               = module.extraction_rules.table_name
-    DOCUMENT_CATEGORIES_TABLE_NAME                            = module.document_categories.table_name
-    DOCUMENTAI_BATCH_TABLE_NAME                               = module.document_batches.table_name
-    DOCUMENTAI_DOCUMENT_BUILD_TABLE_NAME                      = module.document_builds.table_name
-    DOCUMENTAI_INPUT_LOCATION                                 = "s3://${module.input_bucket.bucket_name}/${local.input_prefix}"
-    DOCUMENTAI_DEMO_INPUT_LOCATION                            = "s3://${module.input_bucket.bucket_name}/${local.demo_input_prefix}"
-    DOCUMENTAI_PREPROCESSING_LOCATION                         = "s3://${module.input_bucket.bucket_name}/preprocessing"
-    DOCUMENTAI_OUTPUT_LOCATION                                = "s3://${module.output_bucket.bucket_name}/processed"
-    DDB_METRICS_INPUT_QUEUE_URL                               = module.metrics_queue.queue_url
-    DDB_EXPORT_BUCKET_NAME                                    = module.metrics_bucket.bucket_name
-    DDB_RAW_DATA_TABLE_NAME                                   = module.analytics.raw_metrics_table_name
-    GLUE_DATABASE_NAME                                        = module.analytics.database_name
-    ATHENA_WORKGROUP_NAME                                     = module.analytics.workgroup_name
-    # disable bda-specific projects in favor of a single "all" project, pre-classification-based routing not currently developed
-    # keeping for future use as example of how to configure multiple BDA projects in a single API Lambda env
-    # also reduces the size of the env vars to keep under the 4KB Lambda limit (the "all" project is the only one that needs to be in the env)
-    # before enabling, create a singular env var prefix  and build the list of project ARNs in the application code
-    # BDA_PROJECT_ARN_TAX_DOCUMENTS                             = module.bedrock_data_automation["tax_documents"].project_arn
-    # BDA_PROJECT_ARN_EMPLOYMENT_WAGES                          = module.bedrock_data_automation["employment_wages"].project_arn
-    # BDA_PROJECT_ARN_INDEPENDENT_EARNINGS                      = module.bedrock_data_automation["independent_earnings"].project_arn
-    # BDA_PROJECT_ARN_GOVERNMENT_BENEFITS                       = module.bedrock_data_automation["government_benefits"].project_arn
-    # BDA_PROJECT_ARN_PRIVATE_BENEFITS_AND_SETTLEMENTS          = module.bedrock_data_automation["private_benefits_and_settlements"].project_arn
-    # BDA_PROJECT_ARN_COURT_ORDERED_BENEFITS                    = module.bedrock_data_automation["court_ordered_benefits"].project_arn
-    # BDA_PROJECT_ARN_FINANCIAL_ASSETS                          = module.bedrock_data_automation["financial_assets"].project_arn
-    # BDA_PROJECT_ARN_RECEIPTS_AND_INVOICES                     = module.bedrock_data_automation["receipts_and_invoices"].project_arn
-    # BDA_PROJECT_ARN_RECURRING_BILLS                           = module.bedrock_data_automation["recurring_bills"].project_arn
-    # BDA_PROJECT_ARN_HOUSING_EXPENSES                          = module.bedrock_data_automation["housing_expenses"].project_arn
-    # BDA_PROJECT_ARN_DEBT_OBLIGATIONS                          = module.bedrock_data_automation["debt_obligations"].project_arn
-    # BDA_PROJECT_ARN_IDENTITY_VERIFICATION                     = module.bedrock_data_automation["identity_verification"].project_arn
-    # BDA_PROJECT_ARN_RIGHT_TO_WORK                             = module.bedrock_data_automation["right_to_work"].project_arn
-    BDA_PROJECT_ARN_ALL                            = module.bedrock_data_automation_all.project_arn
-    BDA_PROFILE_ARN                                = module.bedrock_data_automation_all.profile_arn
-    BDA_REGION                                     = var.bda_region
-    BEDROCK_CLASSIFICATION_MODEL_ID_PARAM          = "${local.ssm_prefix}/models/classification-model-id"
-    BEDROCK_BOUNDING_BOX_MODEL_ID_PARAM            = "${local.ssm_prefix}/models/bounding-box-model-id"
-    BEDROCK_BLUR_QUADRANT_MODEL_ID_PARAM           = "${local.ssm_prefix}/models/blur-quadrant-model-id"
-    BEDROCK_SUPPLEMENTAL_EXTRACTION_MODEL_ID_PARAM = "${local.ssm_prefix}/models/supplemental-extraction-model-id"
-    SSM_PREFIX                                     = local.ssm_prefix
-    MAX_BDA_INVOKE_RETRY_ATTEMPTS                  = local.max_bda_invoke_retry_attempts
-    API_AUTH_ENABLED                               = local.api_auth_enabled
-    API_AUTH_CACHE_TTL                             = local.api_auth_cache_ttl
-    API_AUTH_INSECURE_SHARED_KEY_PARAM             = "/${var.project_name}/${var.environment}/api-auth-insecure-shared-key"
-    COGNITO_USER_POOL_ID                           = module.identity_provider.user_pool_id
-    COGNITO_CLIENT_ID                              = module.identity_provider.client_id
-    OTEL_SDK_DISABLED                              = tostring(!var.otel_enabled)
-    OTEL_SERVICE_NAME                              = var.otel_service_name
-    OTEL_EXPORTER_OTLP_ENDPOINT                    = var.otel_exporter_otlp_endpoint
-    OTEL_AWS_APPLICATION_SIGNALS_ENABLED           = tostring(var.otel_enabled)
-    OTEL_METRICS_EXPORTER                          = "awsemf"
-    OTEL_EXPORTER_OTLP_LOGS_HEADERS                = "x-aws-metric-namespace=${var.otel_service_name}"
-  }
+  lambda_env_vars = merge(
+    {
+      # Per-category project IDs - prefix stripped to save env space. App reconstructs
+      # full ARN via BDA_PROJECT_ARN_PREFIX + BDA_PROJECT_ID_{CATEGORY}.
+      # Adding/removing a folder in infra/document-types automatically injects/removes its entry.
+      for k, v in module.bedrock_data_automation : "BDA_PROJECT_ID_${upper(k)}" => regex("^.*/(.+)$", v.project_arn)[0]
+    },
+    {
+      ENVIRONMENT                                               = var.environment
+      DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME                   = module.document_metadata.table_name
+      DOCUMENTAI_DOCUMENT_METADATA_JOB_ID_INDEX_NAME            = local.gsi_job_id
+      DOCUMENTAI_DOCUMENT_METADATA_EXTERNAL_DOC_ID_INDEX_NAME   = local.gsi_external_document_id
+      DOCUMENTAI_DOCUMENT_METADATA_BDA_INVOCATION_ID_INDEX_NAME = local.gsi_bda_invocation_id
+      DOCUMENTAI_DOCUMENT_METADATA_TENANT_INDEX_NAME            = local.gsi_tenant_id
+      API_KEYS_TABLE_NAME                                       = module.api_keys.table_name
+      TENANTS_TABLE_NAME                                        = module.tenants.table_name
+      TENANT_REQUEST_COUNTS_TABLE_NAME                          = module.tenant_request_counts.table_name
+      AUDIT_EVENTS_TABLE_NAME                                   = module.audit_events.table_name
+      EXTRACTION_RULES_TABLE_NAME                               = module.extraction_rules.table_name
+      DOCUMENT_CATEGORIES_TABLE_NAME                            = module.document_categories.table_name
+      DOCUMENTAI_BATCH_TABLE_NAME                               = module.document_batches.table_name
+      DOCUMENTAI_DOCUMENT_BUILD_TABLE_NAME                      = module.document_builds.table_name
+      DOCUMENTAI_INPUT_LOCATION                                 = "s3://${module.input_bucket.bucket_name}/${local.input_prefix}"
+      DOCUMENTAI_DEMO_INPUT_LOCATION                            = "s3://${module.input_bucket.bucket_name}/${local.demo_input_prefix}"
+      DOCUMENTAI_PREPROCESSING_LOCATION                         = "s3://${module.input_bucket.bucket_name}/preprocessing"
+      DOCUMENTAI_OUTPUT_LOCATION                                = "s3://${module.output_bucket.bucket_name}/processed"
+      DDB_METRICS_INPUT_QUEUE_URL                               = module.metrics_queue.queue_url
+      DDB_EXPORT_BUCKET_NAME                                    = module.metrics_bucket.bucket_name
+      DDB_RAW_DATA_TABLE_NAME                                   = module.analytics.raw_metrics_table_name
+      GLUE_DATABASE_NAME                                        = module.analytics.database_name
+      ATHENA_WORKGROUP_NAME                                     = module.analytics.workgroup_name
+      BDA_PROJECT_ARN_PREFIX                                    = regex("^(.*)/", module.bedrock_data_automation_all.project_arn)[0]
+      BDA_PROJECT_ARN_ALL                                       = module.bedrock_data_automation_all.project_arn
+      BDA_PROFILE_ARN                                           = module.bedrock_data_automation_all.profile_arn
+      BDA_REGION                                                = var.bda_region
+      BEDROCK_CLASSIFICATION_MODEL_ID_PARAM                     = "${local.ssm_prefix}/models/classification-model-id"
+      BEDROCK_BOUNDING_BOX_MODEL_ID_PARAM                       = "${local.ssm_prefix}/models/bounding-box-model-id"
+      BEDROCK_BLUR_QUADRANT_MODEL_ID_PARAM                      = "${local.ssm_prefix}/models/blur-quadrant-model-id"
+      BEDROCK_SUPPLEMENTAL_EXTRACTION_MODEL_ID_PARAM            = "${local.ssm_prefix}/models/supplemental-extraction-model-id"
+      SSM_PREFIX                                                = local.ssm_prefix
+      MAX_BDA_INVOKE_RETRY_ATTEMPTS                             = local.max_bda_invoke_retry_attempts
+      API_AUTH_ENABLED                                          = local.api_auth_enabled
+      API_AUTH_CACHE_TTL                                        = local.api_auth_cache_ttl
+      API_AUTH_INSECURE_SHARED_KEY_PARAM                        = "/${var.project_name}/${var.environment}/api-auth-insecure-shared-key"
+      COGNITO_USER_POOL_ID                                      = module.identity_provider.user_pool_id
+      COGNITO_CLIENT_ID                                         = module.identity_provider.client_id
+      OTEL_SDK_DISABLED                                         = tostring(!var.otel_enabled)
+      OTEL_SERVICE_NAME                                         = var.otel_service_name
+      OTEL_EXPORTER_OTLP_ENDPOINT                               = var.otel_exporter_otlp_endpoint
+      OTEL_AWS_APPLICATION_SIGNALS_ENABLED                      = tostring(var.otel_enabled)
+      OTEL_METRICS_EXPORTER                                     = "awsemf"
+      OTEL_EXPORTER_OTLP_LOGS_HEADERS                           = "x-aws-metric-namespace=${var.otel_service_name}"
+  })
 
   # API Lambda env: the shared worker map, minus the Athena/Glue vars that only
   # the metrics-aggregator/usage-report workers read, plus CORS_ALLOWED_ORIGINS.
@@ -599,6 +590,7 @@ locals {
     {
       for k, v in local.lambda_env_vars : k => v
       if !contains(["ATHENA_WORKGROUP_NAME", "GLUE_DATABASE_NAME", "DDB_RAW_DATA_TABLE_NAME"], k)
+      && !startswith(k, "BDA_PROJECT_ID_")
     },
     {
       CORS_ALLOWED_ORIGINS = jsonencode(local.cors_allowed_origins)

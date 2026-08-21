@@ -55,6 +55,7 @@ api-keys = "documentai_api.cli.api_keys:app"
 tenants = "documentai_api.cli.tenants:app"
 pull-blueprint-fields = "documentai_api.cli.pull_blueprint_fields:app"
 preclassify = "documentai_api.cli.preclassify:app"
+generate-categories = "documentai_api.cli.generate_categories:app"
 
 [tool.mypy]
 pretty = true

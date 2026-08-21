@@ -4,11 +4,12 @@ import json
 from typing import Any, cast
 
 from documentai_api.config.constants import (
+    BDA_PROJECT_KEY_ALL,
     Cache,
     DictionaryBlueprintField,
     DictionaryBlueprintSchema,
 )
-from documentai_api.config.env import EnvVars, get_required_env
+from documentai_api.config.env import get_aws_config
 from documentai_api.logging import get_logger
 from documentai_api.services.bda import get_blueprint, get_data_automation_project
 from documentai_api.utils.cache import get_cache
@@ -18,21 +19,17 @@ logger = get_logger(__name__)
 
 def _fetch_schemas_from_bda() -> dict[str, Any]:
     """Fetch schemas from all BDA projects."""
-    import os
-
     logger.info("Fetching schemas from BDA")
 
-    # Try multi-project map first, fall back to single project ARN
-    project_arns_json = os.getenv("BDA_PROJECT_ARNS")
-    if project_arns_json:
-        project_arns = json.loads(project_arns_json)
-    else:
-        project_arn = get_required_env(EnvVars.BDA_PROJECT_ARN_ALL)
-        project_arns = {"default": project_arn}
+    project_arns = get_aws_config().get_bda_project_arns()
 
     schemas: dict[str, Any] = {}
 
     for category, project_arn in project_arns.items():
+        if category == BDA_PROJECT_KEY_ALL:
+            # Skip the "all" project, as it is not a real category
+            continue  
+        
         try:
             project_response = get_data_automation_project(project_arn)
             blueprints = (

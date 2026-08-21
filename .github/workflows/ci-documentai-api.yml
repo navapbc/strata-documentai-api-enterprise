@@ -8,12 +8,14 @@ on:
       - documentai-api/**
       - docs/documentai-api/openapi.json
       - docs/documentai-api/postman/**
+      - infra/document-types/**
       - .github/workflows/ci-documentai-api.yml
   pull_request:
     paths:
       - documentai-api/**
       - docs/documentai-api/openapi.json
       - docs/documentai-api/postman/**
+      - infra/document-types/**
       - .github/workflows/ci-documentai-api.yml
 
 defaults:
@@ -74,3 +76,22 @@ jobs:
       - name: Verify the Postman collection matches the spec
         working-directory: ${{ github.workspace }}
         run: python3 docs/documentai-api/postman/check_collection.py
+
+  categories:
+    name: Preclassification categories drift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Runs natively (not in Docker) because the generator reads infra/document-types/,
+      # a sibling directory the app's Docker container doesn't mount.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Regenerate categories from infra/document-types/
+        run: make generate-categories
+
+      - name: Fail if categories drifted from infra/document-types/
+        run: |
+          git diff --exit-code src/documentai_api/config/constants_preclassification_category_generated.py \
+            || { echo "::error::constants_preclassification_category_generated.py is out of sync with infra/document-types/ - run 'make generate-categories' and commit."; exit 1; }

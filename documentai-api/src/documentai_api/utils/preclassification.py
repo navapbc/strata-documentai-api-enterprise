@@ -214,11 +214,13 @@ def find_matching_blueprint(
     from documentai_api.utils.schemas import get_all_schemas
 
     all_schemas = get_all_schemas()
+
     if category:
         filtered = {k: v for k, v in all_schemas.items() if v.get("category") == category}
         schemas = filtered or all_schemas
     else:
         schemas = all_schemas
+
     if not schemas:
         logger.warning("No blueprint schemas available for matching")
         return PreclassificationMatchResult()
@@ -236,13 +238,14 @@ def find_matching_blueprint(
     try:
         model_id = _get_model_id()
         start = time.time()
+
         with tracer.start_as_current_span("bedrock.blueprint_match") as span:
             span.set_attribute("bedrock.model_id", model_id)
             span.set_attribute("document.content_type", content_type)
             span.set_attribute("blueprint.schema_count", len(schemas))
             response = invoke_model(messages=messages, model_id=model_id, temperature=0.0)
-        elapsed = round(time.time() - start, 2)
 
+        elapsed = round(time.time() - start, 2)
         usage = response.get("usage", {})
         text = response["output"]["message"]["content"][0]["text"]
 
@@ -257,6 +260,7 @@ def find_matching_blueprint(
             )
 
         matched = parsed.matched_blueprint
+
         if matched and (matched == "OTHER" or matched not in schemas):
             matched = None
 
@@ -268,6 +272,7 @@ def find_matching_blueprint(
             matched = None
 
         matched_schema = schemas.get(matched, {}) if matched else {}
+
         return PreclassificationMatchResult(
             matched_document_type=matched,
             confidence=max(0.0, min(1.0, parsed.confidence)),

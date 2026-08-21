@@ -11,6 +11,7 @@ Usage:
 
 import subprocess
 import sys
+from pathlib import Path
 
 
 def _run(*cmd: str) -> int:
@@ -170,10 +171,13 @@ def dev() -> int:
 # =============================================================================
 
 
+def generate_categories() -> int:
+    """Regenerate constants_generated.py from infra/document-types folders."""
+    return _uv("generate-categories")
+
+
 def openapi_spec() -> int:
     """Export OpenAPI spec to docs directory."""
-    from pathlib import Path
-
     output = Path(__file__).parent.parent / "docs" / "documentai-api" / "openapi.json"
     output.parent.mkdir(parents=True, exist_ok=True)
     _echo(f"export-openapi > {output}")

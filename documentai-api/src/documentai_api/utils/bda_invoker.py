@@ -3,7 +3,7 @@ import os
 from opentelemetry import trace
 
 import documentai_api.utils.documents as document_utils
-from documentai_api.config.constants import ConfigDefaults, PreclassificationCategory
+from documentai_api.config.constants import ConfigDefaults
 from documentai_api.config.env import EnvVars, get_aws_config, get_required_env
 from documentai_api.logging import get_logger
 from documentai_api.utils.aws_client_factory import AWSClientFactory
@@ -15,25 +15,12 @@ _project_arns_cache: dict[str, str] | None = None
 
 
 def _get_project_arns() -> dict[str, str]:
-    """Load BDA project ARN map from AWSEnvConfig."""
+    """Load BDA project ARN map from environment variables."""
     global _project_arns_cache
     if _project_arns_cache is not None:
         return _project_arns_cache
 
-    config = get_aws_config()
-    arns = {}
-    for category in PreclassificationCategory:
-        value = getattr(config, f"bda_project_arn_{category.value}", None)
-        if value:
-            arns[category.value] = value
-
-    # "all" project as fallback
-    if config.bda_project_arn_all:
-        arns["all"] = config.bda_project_arn_all
-    elif config.bda_project_arn:
-        arns["all"] = config.bda_project_arn
-
-    _project_arns_cache = arns
+    _project_arns_cache = get_aws_config().get_bda_project_arns()
     return _project_arns_cache
 
 

@@ -212,8 +212,8 @@ def test_execute_ddb_update(ddb_doc_metadata_table):
 
     ddb_util._execute_ddb_update(object_key, update_expression, expression_values)
 
-    doc_meta_record = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"]
-    assert doc_meta_record["foo"] == "test"
+    ddb_record = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"]
+    assert ddb_record["foo"] == "test"
 
 
 @pytest.mark.parametrize("user_provided_document_category", ["income", None])

@@ -5,6 +5,7 @@
 	api-key-deactivate \
 	api-key-list \
 	diagrams \
+	generate-categories \
 	tenant \
 	tenant-deactivate \
 	tenant-list \
@@ -267,6 +268,9 @@ tenant-deactivate: ## Deactivate a tenant (TENANT=tenant-id).
 pull-blueprint-fields: ## Write blueprint field labels (ARN=project-arn required)
 	@:$(call check_defined, ARN, BDA project ARN, e.g. ARN=arn:aws:bedrock:us-east-1:123:data-automation-project/abc)
 	$(AWS_RUN_CMD) pull-blueprint-fields --project-arn "$(ARN)"
+
+generate-categories: ## Regenerate the PreclassificationCategory enum from infra/document-types/ folder names
+	$(AWS_RUN_CMD) generate-categories
 
 metrics-agg: ## Aggregate metrics for a date or range (DATE=YYYY-MM-DD [END=YYYY-MM-DD] [OVERWRITE=1])
 	@:$(call check_defined, DATE, target date, e.g. DATE=2025-01-15)

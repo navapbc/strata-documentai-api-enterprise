@@ -5,6 +5,8 @@ from functools import lru_cache
 import boto3
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from documentai_api.config.constants import BDA_PROJECT_KEY_ALL
+
 
 class EnvVars(StrEnum):
     """Canonical names of environment variables read by the application.
@@ -100,20 +102,28 @@ class AWSEnvConfig(PydanticBaseEnvConfig):
     bedrock_supplemental_extraction_model_id_param: str | None = None
 
     # BDA project ARNs (per preclassification category)
-    bda_project_arn_tax_documents: str | None = None
-    bda_project_arn_employment_wages: str | None = None
-    bda_project_arn_independent_earnings: str | None = None
-    bda_project_arn_government_benefits: str | None = None
-    bda_project_arn_private_benefits_and_settlements: str | None = None
-    bda_project_arn_court_ordered_benefits: str | None = None
-    bda_project_arn_financial_assets: str | None = None
-    bda_project_arn_receipts_and_invoices: str | None = None
-    bda_project_arn_recurring_bills: str | None = None
-    bda_project_arn_housing_expenses: str | None = None
-    bda_project_arn_debt_obligations: str | None = None
-    bda_project_arn_identity_verification: str | None = None
-    bda_project_arn_right_to_work: str | None = None
+    # Resolved dynamically from PreclassificationCategory rather than hand-maintained.
+    bda_project_arn_prefix: str | None = None
     bda_project_arn_all: str | None = None
+
+    def get_bda_project_arns(self) -> dict[str, str]:
+        """Return a mapping of category slug -> project ARN for all configured categories."""
+        from documentai_api.config.constants_preclassification_category_generated import (
+            PreclassificationCategory,
+        )
+
+        prefix = self.bda_project_arn_prefix or ""
+        arns: dict[str, str] = {}
+        for category in PreclassificationCategory:
+            project_id = os.getenv(f"BDA_PROJECT_ID_{category.upper()}")
+            if project_id:
+                arns[category.value] = f"{prefix}/{project_id}" if prefix else project_id
+        if self.bda_project_arn_all:
+            arns[BDA_PROJECT_KEY_ALL] = self.bda_project_arn_all
+        elif self.bda_project_arn:
+            arns[BDA_PROJECT_KEY_ALL] = self.bda_project_arn
+
+        return arns
 
     # Cognito
     cognito_user_pool_id: str | None = None
@@ -213,6 +223,8 @@ def get_app_env_config() -> AppEnvConfig:
 def get_required_env(name: EnvVars) -> str:
     """Read an env var, raising ValueError if not set."""
     value = os.getenv(name)
+
     if not value:
         raise ValueError(f"{name} environment variable not set")
+
     return value
