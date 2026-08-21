@@ -1,0 +1,39 @@
+name: CI infra
+
+on:
+  pull_request:
+    paths:
+      - infra/**
+      - .github/workflows/ci-infra.yml
+
+jobs:
+  validate:
+    name: Format & Validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: "~1.10.0"
+
+      - name: Terraform Format Check
+        working-directory: ./infra
+        run: terraform fmt -check -recursive
+
+      - name: Validate modules
+        working-directory: ./infra
+        run: |
+          for dir in modules/*/; do
+            echo "Validating $dir"
+            terraform -chdir="$dir" init -backend=false -input=false
+            terraform -chdir="$dir" validate
+          done
+
+      - name: Validate dev environment
+        working-directory: ./infra/environments/dev
+        run: |
+          terraform init -backend=false -input=false
+          terraform validate
