@@ -779,7 +779,7 @@ def test_upsert_initial_ddb_record_multipage_consistent_proceeds_to_bda(
 def test_upsert_initial_ddb_record_single_page_inconsistency_not_flagged(
     ddb_doc_metadata_table, s3_bucket, lifecycle_mocks
 ):
-    """pages_detected=1 gates the check — has_multipage_inconsistency is ignored on single-page docs."""
+    """pages_detected=1 gates the check - has_multipage_inconsistency is ignored on single-page docs."""
     lifecycle_mocks[_Mock.IS_BLUR_DETECTION_ENABLED].return_value = False
     lifecycle_mocks[_Mock.PRECLASSIFY_DOCUMENT].return_value = BedrockClassificationResult(
         document_type="W2",

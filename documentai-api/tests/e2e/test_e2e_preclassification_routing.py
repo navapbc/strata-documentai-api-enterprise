@@ -76,13 +76,13 @@ def _enable_preclassification_routing(reset_env, monkeypatch_session):
 
     config = get_aws_config()
     if not config.ssm_prefix:
-        pytest.skip("SSM prefix not configured — skipping routing e2e tests")
+        pytest.skip("SSM prefix not configured - skipping routing e2e tests")
 
     arns = config.get_bda_project_arns()
     per_category = {k: v for k, v in arns.items() if k != BDA_PROJECT_KEY_ALL}
 
     if not per_category:
-        pytest.skip("No per-category BDA project IDs configured — skipping routing e2e tests")
+        pytest.skip("No per-category BDA project IDs configured - skipping routing e2e tests")
 
     routing_param = (
         f"{config.ssm_prefix}/feature-flags/{FeatureFlags.PRECLASSIFICATION_BASED_ROUTING}"

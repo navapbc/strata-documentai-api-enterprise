@@ -100,7 +100,7 @@ def test_evaluation_response_shape(api_client, mocker):
 
 
 # =============================================================================
-# Unhandled / safe-default codes — all not_evaluated
+# Unhandled / safe-default codes - all not_evaluated
 # =============================================================================
 
 
@@ -126,7 +126,7 @@ def test_evaluation_safe_default_codes_all_not_evaluated(
 
 
 # =============================================================================
-# Success — signals read from DDB
+# Success - signals read from DDB
 # =============================================================================
 
 
@@ -173,7 +173,7 @@ def test_evaluation_success_blur_detected_not_enforced(api_client, mocker):
 
 def test_evaluation_success_blur_pass_reason_surfaced(api_client, mocker):
     """Blur skip reason (e.g. not a document) is surfaced on pass."""
-    skip_reason = "Blur check was skipped — insufficient text detected to evaluate."
+    skip_reason = "Blur check was skipped - insufficient text detected to evaluate."
     mocker.patch("documentai_api.app_evaluation.get_job_status").return_value = _job(
         ResponseCodes.SUCCESS,
         extra_ddb={
@@ -209,7 +209,7 @@ def test_evaluation_success_missing_fields_from_signal(api_client, mocker):
 
 
 def test_evaluation_legacy_document_missing_fields_and_confidence_not_evaluated(api_client, mocker):
-    """Docs processed before enrichment lack sentinel fields — both keys report not_evaluated."""
+    """Docs processed before enrichment lack sentinel fields - both keys report not_evaluated."""
     mocker.patch("documentai_api.app_evaluation.get_job_status").return_value = _job(
         ResponseCodes.SUCCESS,
         extra_ddb={},  # no EXTRACTION_RULES_CONFIGURED, no EXTRACTION_CONFIDENCE_THRESHOLD
@@ -255,7 +255,7 @@ def test_evaluation_success_password_protected_pass_reason(api_client, mocker):
 
 
 # =============================================================================
-# Stop codes — stop key is fail, tail is not_evaluated, reached keys use signals
+# Stop codes - stop key is fail, tail is not_evaluated, reached keys use signals
 # =============================================================================
 
 
@@ -318,7 +318,7 @@ def test_evaluation_stop_code_reached_keys_use_signals(api_client, mocker):
         },
     )
     evals = api_client.get(EVALUATION_URL).json()["evaluations"]
-    # blur is before multipleDocuments in the pipeline — it was reached
+    # blur is before multipleDocuments in the pipeline - it was reached
     assert evals[EvaluationKey.BLUR]["status"] == _FAIL
     assert evals[EvaluationKey.BLUR]["reason"] == "Low sharpness."
     # multipleDocumentsOnSinglePage is the stop key
@@ -326,12 +326,12 @@ def test_evaluation_stop_code_reached_keys_use_signals(api_client, mocker):
 
 
 # =============================================================================
-# Extraction trio (101/102/105) — co-evaluated from signals, not sequential gates
+# Extraction trio (101/102/105) - co-evaluated from signals, not sequential gates
 # =============================================================================
 
 
 def test_evaluation_extraction_trio_all_evaluated_independently(api_client, mocker):
-    """101/102/105 all route through signal path — all three keys are evaluated."""
+    """101/102/105 all route through signal path - all three keys are evaluated."""
     mocker.patch("documentai_api.app_evaluation.get_job_status").return_value = _job(
         ResponseCodes.MISSING_FIELDS,
         extra_ddb={
@@ -349,7 +349,7 @@ def test_evaluation_extraction_trio_all_evaluated_independently(api_client, mock
 
 
 def test_evaluation_extraction_trio_no_not_evaluated(api_client, mocker):
-    """For 101/102/105, extractionConfidence is never not_evaluated — it has a stored signal."""
+    """For 101/102/105, extractionConfidence is never not_evaluated - it has a stored signal."""
     mocker.patch("documentai_api.app_evaluation.get_job_status").return_value = _job(
         ResponseCodes.MISCATEGORIZED,
         extra_ddb={
@@ -362,7 +362,7 @@ def test_evaluation_extraction_trio_no_not_evaluated(api_client, mocker):
 
 
 # =============================================================================
-# Blurry — stop key is fail, reason from DDB
+# Blurry - stop key is fail, reason from DDB
 # =============================================================================
 
 
@@ -381,7 +381,7 @@ def test_evaluation_blurry_enforced_is_fail(api_client, mocker):
 
 
 # =============================================================================
-# NO_BLUEPRINT_MATCHED (002) — BDA ran / BDA not invoked
+# NO_BLUEPRINT_MATCHED (002) - BDA ran / BDA not invoked
 # =============================================================================
 
 

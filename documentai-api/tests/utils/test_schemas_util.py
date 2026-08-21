@@ -171,7 +171,7 @@ def test_fetch_schemas_skips_all_project(mock_bda_services):
         result = schemas._fetch_schemas_from_bda()
 
     assert result["W2"]["category"] == "employer_income"
-    # project was fetched exactly once — for employer_income, not for 'all'
+    # project was fetched exactly once - for employer_income, not for 'all'
     mock_bda_services["project"].assert_called_once_with(
         "arn:aws:bedrock:us-east-1:123:project/employer"
     )
