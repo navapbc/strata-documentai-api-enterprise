@@ -37,7 +37,7 @@ def test_invoke_bedrock_data_automation_single_page():
 
         result = bda_invoker_util.invoke_bedrock_data_automation("test-bucket", "test.pdf")
 
-        invocation_arn, project_arn, pages_sent = result
+        invocation_arn, project_arn, pages_sent, _ = result
         assert invocation_arn == bda_invocation_arn
         assert project_arn == "arn:aws:project"
         assert pages_sent == 3
@@ -78,7 +78,7 @@ def test_invoke_bedrock_data_automation_document_truncation():
 
         result = bda_invoker_util.invoke_bedrock_data_automation("test-bucket", "test.pdf")
 
-        invocation_arn, project_arn, pages_sent = result
+        invocation_arn, project_arn, pages_sent, _ = result
         assert invocation_arn == bda_invocation_arn
         assert project_arn == "arn:aws:project"
         assert pages_sent == int(ConfigDefaults.MAX_PAGES_PER_DOCUMENT)
@@ -191,7 +191,7 @@ def test_invoke_bedrock_data_automation_pages_sent_fallback(page_count_return, e
         mock_get_file_bytes.return_value = b"file_content"
         mock_get_page_count.return_value = page_count_return
 
-        _, _, pages_sent = bda_invoker_util.invoke_bedrock_data_automation(
+        _, _, pages_sent, _ = bda_invoker_util.invoke_bedrock_data_automation(
             "test-bucket", "test.pdf"
         )
 
@@ -269,11 +269,9 @@ def test_resolve_project_arn_returns_all_when_routing_disabled():
             "employer_income": f"{prefix}/emp-arn",
             "all": f"{prefix}/all-arn",
         }
-        result = bda_invoker_util.resolve_project_arn("employer_income")
+        result, used_category = bda_invoker_util.resolve_project_arn("employer_income")
         assert result == f"{prefix}/all-arn"
-
-
-def test_resolve_project_arn_routes_to_category_when_enabled():
+        assert used_category is False
     """Returns category-specific ARN when routing is enabled and category matches."""
     prefix = "arn:aws:bedrock:us-east-1:123:data-automation-project"
     with (
@@ -285,11 +283,9 @@ def test_resolve_project_arn_routes_to_category_when_enabled():
             "employer_income": f"{prefix}/emp-arn",
             "all": f"{prefix}/all-arn",
         }
-        result = bda_invoker_util.resolve_project_arn("employer_income")
+        result, used_category = bda_invoker_util.resolve_project_arn("employer_income")
         assert result == f"{prefix}/emp-arn"
-
-
-def test_resolve_project_arn_falls_back_when_category_not_in_arns():
+        assert used_category is True
     """Falls back to 'all' when category has no configured project ARN."""
     prefix = "arn:aws:bedrock:us-east-1:123:data-automation-project"
     with (
@@ -300,11 +296,9 @@ def test_resolve_project_arn_falls_back_when_category_not_in_arns():
         mock_config.return_value.get_bda_project_arns.return_value = {
             "all": f"{prefix}/all-arn",
         }
-        result = bda_invoker_util.resolve_project_arn("employer_income")
+        result, used_category = bda_invoker_util.resolve_project_arn("employer_income")
         assert result == f"{prefix}/all-arn"
-
-
-def test_resolve_project_arn_falls_back_when_category_is_none():
+        assert used_category is False
     """Falls back to 'all' when no category is provided."""
     prefix = "arn:aws:bedrock:us-east-1:123:data-automation-project"
     with (
@@ -315,5 +309,6 @@ def test_resolve_project_arn_falls_back_when_category_is_none():
         mock_config.return_value.get_bda_project_arns.return_value = {
             "all": f"{prefix}/all-arn",
         }
-        result = bda_invoker_util.resolve_project_arn(None)
+        result, used_category = bda_invoker_util.resolve_project_arn(None)
         assert result == f"{prefix}/all-arn"
+        assert used_category is False

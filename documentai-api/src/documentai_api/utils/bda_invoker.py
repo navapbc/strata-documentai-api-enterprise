@@ -34,24 +34,28 @@ def skip_bda_if_unclassified() -> bool:
     return is_skip_bda_if_unclassified()
 
 
-def resolve_project_arn(category: str | None) -> str:
-    """Resolve BDA project ARN for a preclassification category."""
+def resolve_project_arn(category: str | None) -> tuple[str, bool]:
+    """Resolve BDA project ARN for a preclassification category.
+
+    Returns (arn, used_category_specific_project) where the bool is True only
+    when a category-specific ARN was selected (routing enabled + category hit).
+    """
     from documentai_api.utils.ssm import is_preclassification_routing_enabled
 
     arns = _get_project_arns()
 
     if category and is_preclassification_routing_enabled() and category in arns:
-        return arns[category]
+        return arns[category], True
 
     # Routing disabled or category not found - use "all" project
-    return arns["all"]
+    return arns["all"], False
 
 
 def invoke_bedrock_data_automation(
     source_bucket_name: str, source_object_name: str, category: str | None = None
-) -> tuple[str, str, int]:
-    """Invoke BDA and return (invocation_arn, project_arn, pages_sent_to_bda)."""
-    bda_project_arn = resolve_project_arn(category)
+) -> tuple[str, str, int, bool]:
+    """Invoke BDA and return (invocation_arn, project_arn, pages_sent_to_bda, used_category_specific_project)."""
+    bda_project_arn, used_category_specific_project = resolve_project_arn(category)
     bda_profile_arn = get_required_env(EnvVars.BDA_PROFILE_ARN)
     documentai_output_location = get_required_env(EnvVars.DOCUMENTAI_OUTPUT_LOCATION).replace(
         "s3://", ""
@@ -109,7 +113,12 @@ def invoke_bedrock_data_automation(
                 },
             )
         logger.info(f"BDA response: {response}")
-        return str(response.get("invocationArn")), bda_project_arn, pages_sent
+        return (
+            str(response.get("invocationArn")),
+            bda_project_arn,
+            pages_sent,
+            used_category_specific_project,
+        )
     except Exception as e:
         logger.error(f"BDA API call failed: {e}")
         raise

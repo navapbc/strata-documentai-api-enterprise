@@ -102,6 +102,7 @@ class DocumentMetadata:
     FIELD_CONFIDENCE_SCORES = "fieldConfidenceScores"
 
     # bda processing info
+    USED_CATEGORY_SPECIFIC_PROJECT = "usedCategorySpecificProject"
     BDA_REGION_USED = "bdaRegionUsed"
     BDA_MATCHED_BLUEPRINT_NAME = "matchedBlueprintName"
     BDA_MATCHED_BLUEPRINT_CONFIDENCE = "matchedBlueprintConfidence"

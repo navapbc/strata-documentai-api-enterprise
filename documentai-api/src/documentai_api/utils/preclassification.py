@@ -165,10 +165,20 @@ def _build_blueprint_prompt(schemas: dict[str, Any]) -> str:
     """Build a prompt listing all blueprints for the model to evaluate against."""
     lines = [
         "You are an expert document classification system.",
-        "Analyze the provided document and classify it into EXACTLY ONE of the following categories.",
         "",
-        "Respond in JSON only:",
-        '{"matched_blueprint": "class_name_or_OTHER", "confidence": float 0-1}',
+        "Perform this evaluation step-by-step:",
+        "1. Examine the document and the categories listed below.",
+        "2. Pick the single category whose description best matches the document.",
+        "3. Copy that category's label EXACTLY character-for-character into matched_blueprint -",
+        '   the text immediately after "- " and before the colon. Do not paraphrase, translate,',
+        "   reformat, or change capitalization, hyphenation, or pluralization.",
+        '4. If no category fits, set matched_blueprint to "OTHER".',
+        "",
+        "Then, output your final answer strictly as a raw JSON object with no markdown formatting or backticks:",
+        "{",
+        '  "matched_blueprint": "<category label copied exactly, or OTHER>",',
+        '  "confidence": <float between 0.0 and 1.0>',
+        "}",
         "",
         "Categories:",
         "",
@@ -176,19 +186,13 @@ def _build_blueprint_prompt(schemas: dict[str, Any]) -> str:
 
     for doc_type, schema in schemas.items():
         desc = schema.get("description", "")
-        if desc:
-            lines.append(f"- {doc_type}: {desc}")
-        else:
-            lines.append(f"- {doc_type}")
+        lines.append(f"- {doc_type}: {desc}" if desc else f"- {doc_type}")
+
         fields = schema.get("fields", [])
+
         if fields:
             field_names = ", ".join(f["name"] for f in fields)
             lines.append(f"  Fields: {field_names}")
-
-    lines.append("")
-    lines.append("OTHER: Use this ONLY if the document does not fit any of the above categories.")
-    lines.append("")
-    lines.append("You MUST pick exactly one. Use OTHER if uncertain.")
 
     return "\n".join(lines)
 
@@ -261,7 +265,14 @@ def find_matching_blueprint(
 
         matched = parsed.matched_blueprint
 
-        if matched and (matched == "OTHER" or matched not in schemas):
+        if matched and matched == "OTHER":
+            logger.info(f"Blueprint match: model returned OTHER (confidence {parsed.confidence})")
+            matched = None
+        elif matched and matched not in schemas:
+            logger.warning(
+                f"Blueprint match '{matched}' rejected: not an exact schema key "
+                f"(confidence {parsed.confidence}); known keys: {sorted(schemas)}"
+            )
             matched = None
 
         # Confidence threshold: reject weak matches

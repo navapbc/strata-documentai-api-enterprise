@@ -125,8 +125,8 @@ def _invoke_bda(
             if attempt.retry_state.attempt_number > 1:
                 retry_count += 1
             invoke_start = time.monotonic()
-            invocation_arn, project_arn, pages_sent = invoke_bedrock_data_automation(
-                bucket_name, object_key, preclassification_category
+            invocation_arn, project_arn, pages_sent, used_category_specific_project = (
+                invoke_bedrock_data_automation(bucket_name, object_key, preclassification_category)
             )
             invoke_duration = Decimal(str(round(time.monotonic() - invoke_start, 3)))
 
@@ -134,6 +134,7 @@ def _invoke_bda(
                 object_key=ddb_key,
                 bda_invocation_arn=invocation_arn,
                 bda_project_arn_used=project_arn,
+                used_category_specific_project=used_category_specific_project,
                 pages_sent_to_bda=pages_sent,
                 bda_invoke_duration_seconds=invoke_duration,
                 bda_invoke_retry_count=retry_count,

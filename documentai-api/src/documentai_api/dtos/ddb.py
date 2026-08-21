@@ -149,6 +149,7 @@ class UpdateDdbRecord(BaseModel):
     data: ClassificationData | None = None
     bda_invocation_arn: str | None = None
     bda_project_arn_used: str | None = None
+    used_category_specific_project: bool = False
     error_message: str | None = None
     below_extraction_confidence_floor: bool = False
     extraction_rules_configured: bool | None = None

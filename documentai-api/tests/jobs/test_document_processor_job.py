@@ -122,6 +122,7 @@ def test_invoke_bda_success(input_pdf, mocker):
         "arn:aws:bedrock:us-east-1:123456789012:job/abc123",
         "arn:aws:bedrock:us-east-1:123456789012:project/test",
         1,
+        False,
     )
 
     result = invoke_bda(input_pdf.bucket_name, input_pdf.key, "test.pdf", "tax_documents")
@@ -131,6 +132,7 @@ def test_invoke_bda_success(input_pdf, mocker):
         object_key="test.pdf",
         bda_invocation_arn="arn:aws:bedrock:us-east-1:123456789012:job/abc123",
         bda_project_arn_used="arn:aws:bedrock:us-east-1:123456789012:project/test",
+        used_category_specific_project=False,
         pages_sent_to_bda=1,
         bda_invoke_duration_seconds=ANY,
         bda_invoke_retry_count=0,
@@ -471,7 +473,7 @@ def test_invoke_bda_retry_count(mocker, retry_count):
     mock_set_started = mocker.patch(f"{_MAIN_MODULE}.set_bda_processing_status_started")
     mocker.patch(
         f"{_MAIN_MODULE}.invoke_bedrock_data_automation",
-        side_effect=[throttle] * retry_count + [("arn", "proj-arn", 1)],
+        side_effect=[throttle] * retry_count + [("arn", "proj-arn", 1, False)],
     )
 
     from documentai_api.jobs.document_processor.main import _invoke_bda
@@ -489,7 +491,7 @@ def test_bda_invoke_duration_arithmetic(mocker):
 
     def slow_invoke(*a, **kw):
         time.sleep(0.05)
-        return ("arn", "proj-arn", 1)
+        return ("arn", "proj-arn", 1, False)
 
     mocker.patch(f"{_MAIN_MODULE}.invoke_bedrock_data_automation", side_effect=slow_invoke)
 

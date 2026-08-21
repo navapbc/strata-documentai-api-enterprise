@@ -28,8 +28,8 @@ def _fetch_schemas_from_bda() -> dict[str, Any]:
     for category, project_arn in project_arns.items():
         if category == BDA_PROJECT_KEY_ALL:
             # Skip the "all" project, as it is not a real category
-            continue  
-        
+            continue
+
         try:
             project_response = get_data_automation_project(project_arn)
             blueprints = (
