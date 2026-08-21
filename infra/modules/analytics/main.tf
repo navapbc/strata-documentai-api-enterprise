@@ -214,6 +214,10 @@ resource "aws_glue_catalog_table" "raw_metrics" {
       type = "string"
     }
     columns {
+      name = "used_category_specific_project"
+      type = "boolean"
+    }
+    columns {
       name = "preclassification_category"
       type = "string"
     }
