@@ -203,7 +203,8 @@ def find_matching_blueprint(
     """Match a document against available BDA blueprints.
 
     Called after preclassification to identify which specific blueprint the document
-    matches. Result is stored for observability - no routing decisions are made from it.
+    matches. The matched category is stored in DDB and, when preclassification routing
+    is enabled, drives which BDA project the document is sent to.
 
     Gated by the enable-preclassification-blueprint-matching SSM flag (default true).
     Returns an empty result when disabled.

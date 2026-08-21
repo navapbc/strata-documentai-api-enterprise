@@ -36,10 +36,10 @@ def pytest_collection_modifyitems(items):
     for item in items:
         if _E2E_DIR in Path(item.fspath).parents:
             item.add_marker(pytest.mark.e2e)
-            
+
             if Path(item.fspath).name == "test_e2e_preclassification_routing.py":
                 item.add_marker(pytest.mark.e2e_routing)
-            
+
             if not item.get_closest_marker("flaky"):
                 item.add_marker(pytest.mark.flaky(reruns=1))
 

@@ -80,11 +80,13 @@ def _enable_preclassification_routing(reset_env, monkeypatch_session):
 
     arns = config.get_bda_project_arns()
     per_category = {k: v for k, v in arns.items() if k != BDA_PROJECT_KEY_ALL}
-    
+
     if not per_category:
         pytest.skip("No per-category BDA project IDs configured — skipping routing e2e tests")
 
-    routing_param = f"{config.ssm_prefix}/feature-flags/{FeatureFlags.PRECLASSIFICATION_BASED_ROUTING}"
+    routing_param = (
+        f"{config.ssm_prefix}/feature-flags/{FeatureFlags.PRECLASSIFICATION_BASED_ROUTING}"
+    )
     textract_param = f"{config.ssm_prefix}/feature-flags/{FeatureFlags.TEXTRACT_IDENTITY_ENABLED}"
 
     try:
@@ -108,6 +110,7 @@ def _enable_preclassification_routing(reset_env, monkeypatch_session):
         ssm_service.put_parameter(routing_param, original_routing)
     else:
         from documentai_api.utils.aws_client_factory import AWSClientFactory
+
         AWSClientFactory.get_ssm_client().delete_parameter(Name=routing_param)
 
     if original_textract is not None:
