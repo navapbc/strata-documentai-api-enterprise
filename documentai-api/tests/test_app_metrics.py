@@ -3,7 +3,6 @@
 import json
 
 import pytest
-from fastapi.testclient import TestClient
 
 from documentai_api.app import app
 from documentai_api.config.env import EnvVars
@@ -19,35 +18,30 @@ def _cleanup():
 
 
 @pytest.fixture
-def client():
-    return TestClient(app)
-
-
-@pytest.fixture
-def as_super_admin(client):
+def as_super_admin(api_client):
     """Authenticate as super-admin (JWT)."""
     app.dependency_overrides[get_user_context_with_fallback] = lambda: UserContext(
         tenant_id="__admin__", api_key_name="admin@example.com", auth_method="jwt"
     )
-    return client
+    return api_client
 
 
 @pytest.fixture
-def as_tenant_admin(client):
+def as_tenant_admin(api_client):
     """Authenticate as tenant-admin (JWT)."""
     app.dependency_overrides[get_user_context_with_fallback] = lambda: UserContext(
         tenant_id="test-tenant", api_key_name="user@example.com", auth_method="jwt"
     )
-    return client
+    return api_client
 
 
 @pytest.fixture
-def as_api_key(client):
+def as_api_key(api_client):
     """Authenticate as API key caller."""
     app.dependency_overrides[get_user_context_with_fallback] = lambda: UserContext(
         tenant_id="test-tenant", api_key_name="tenant-ingest", auth_method="api_key"
     )
-    return client
+    return api_client
 
 
 @pytest.fixture
@@ -118,8 +112,8 @@ def seeded_metrics(metrics_bucket):
 ##############################################################################
 
 
-def test_metrics_unauthenticated_returns_401(client):
-    response = client.get(METRICS_URL, params={"start_date": "2026-01-15"})
+def test_metrics_unauthenticated_returns_401(api_client):
+    response = api_client.get(METRICS_URL, params={"start_date": "2026-01-15"})
     assert response.status_code == 401
 
 

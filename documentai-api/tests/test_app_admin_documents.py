@@ -3,30 +3,17 @@
 import json
 
 import pytest
-from fastapi.testclient import TestClient
 
-from documentai_api.app import app
 from documentai_api.config.env import EnvVars
 from documentai_api.schemas.document_metadata import DocumentMetadata
-from documentai_api.utils.jwt_auth import verify_jwt
-from tests.helpers.fixtures.claims import SUPER_ADMIN_CLAIMS, TENANT_ADMIN_CLAIMS
+from tests.helpers.fixtures.claims import (
+    SUPER_ADMIN_CLAIMS,
+    TENANT_ADMIN_CLAIMS,
+    TENANT_ADMIN_ID,
+    override_jwt,
+)
 
 DOCUMENTS_URL = "/v1/admin/documents"
-
-
-def _override_jwt(claims: dict):
-    app.dependency_overrides[verify_jwt] = lambda: claims
-
-
-@pytest.fixture(autouse=True)
-def _cleanup():
-    yield
-    app.dependency_overrides.pop(verify_jwt, None)
-
-
-@pytest.fixture
-def client():
-    return TestClient(app)
 
 
 @pytest.fixture
@@ -37,7 +24,7 @@ def seeded_docs(ddb_doc_metadata_table):
             DocumentMetadata.FILE_NAME: "invoice-test-job-id-1.pdf",
             DocumentMetadata.JOB_ID: "test-job-id-1",
             DocumentMetadata.ORIGINAL_FILE_NAME: "invoice.pdf",
-            DocumentMetadata.TENANT_ID: "test-tenant",
+            DocumentMetadata.TENANT_ID: TENANT_ADMIN_ID,
             DocumentMetadata.API_KEY_NAME: "test-api-key",
             DocumentMetadata.PROCESS_STATUS: "completed",
             DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY: "expenses",
@@ -51,7 +38,7 @@ def seeded_docs(ddb_doc_metadata_table):
             DocumentMetadata.FILE_NAME: "w2-test-job-id-2.pdf",
             DocumentMetadata.JOB_ID: "test-job-id-2",
             DocumentMetadata.ORIGINAL_FILE_NAME: "w2.pdf",
-            DocumentMetadata.TENANT_ID: "test-tenant",
+            DocumentMetadata.TENANT_ID: TENANT_ADMIN_ID,
             DocumentMetadata.API_KEY_NAME: "test-api-key",
             DocumentMetadata.PROCESS_STATUS: "completed",
             DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY: "income",
@@ -94,7 +81,7 @@ def seeded_docs(ddb_doc_metadata_table):
             DocumentMetadata.FILE_NAME: "alt-key-test-job-id-4.pdf",
             DocumentMetadata.JOB_ID: "test-job-id-4",
             DocumentMetadata.ORIGINAL_FILE_NAME: "alt-key.pdf",
-            DocumentMetadata.TENANT_ID: "test-tenant",
+            DocumentMetadata.TENANT_ID: TENANT_ADMIN_ID,
             DocumentMetadata.API_KEY_NAME: "test-api-key",
             DocumentMetadata.PROCESS_STATUS: "completed",
             DocumentMetadata.CREATED_AT: "2026-01-04T00:00:00Z",
@@ -114,7 +101,7 @@ def seeded_docs(ddb_doc_metadata_table):
             DocumentMetadata.FILE_NAME: "corrupt-test-job-id-5.pdf",
             DocumentMetadata.JOB_ID: "test-job-id-5",
             DocumentMetadata.ORIGINAL_FILE_NAME: "corrupt.pdf",
-            DocumentMetadata.TENANT_ID: "test-tenant",
+            DocumentMetadata.TENANT_ID: TENANT_ADMIN_ID,
             DocumentMetadata.API_KEY_NAME: "test-api-key",
             DocumentMetadata.PROCESS_STATUS: "failed",
             DocumentMetadata.CREATED_AT: "2026-01-05T00:00:00Z",
@@ -128,76 +115,76 @@ def seeded_docs(ddb_doc_metadata_table):
 ##############################################################################
 
 
-def test_list_unauthenticated_returns_401(client):
-    response = client.get(DOCUMENTS_URL)
+def test_list_unauthenticated_returns_401(api_client):
+    response = api_client.get(DOCUMENTS_URL)
     assert response.status_code == 401
 
 
-def test_list_pending_user_returns_403(client):
-    _override_jwt({**SUPER_ADMIN_CLAIMS, "cognito:groups": []})
-    response = client.get(DOCUMENTS_URL)
+def test_list_pending_user_returns_403(api_client):
+    override_jwt({**SUPER_ADMIN_CLAIMS, "cognito:groups": []})
+    response = api_client.get(DOCUMENTS_URL)
     assert response.status_code == 403
 
 
-def test_list_requires_tenant_id(client, ddb_doc_metadata_table):
-    _override_jwt(SUPER_ADMIN_CLAIMS)
-    response = client.get(DOCUMENTS_URL)
+def test_list_requires_tenant_id(api_client, ddb_doc_metadata_table):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(DOCUMENTS_URL)
     assert response.status_code == 400
     assert "tenant_id is required" in response.json()["detail"]
 
 
-def test_list_super_admin_by_tenant(client, seeded_docs):
-    _override_jwt(SUPER_ADMIN_CLAIMS)
-    response = client.get(DOCUMENTS_URL, params={"tenant_id": "test-tenant"})
+def test_list_super_admin_by_tenant(api_client, seeded_docs):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(DOCUMENTS_URL, params={"tenant_id": TENANT_ADMIN_ID})
     assert response.status_code == 200
     data = response.json()
     assert data["count"] == 4
-    assert all(d["tenantId"] == "test-tenant" for d in data["documents"])
+    assert all(d["tenantId"] == TENANT_ADMIN_ID for d in data["documents"])
 
 
-def test_list_returns_descending_order(client, seeded_docs):
-    _override_jwt(SUPER_ADMIN_CLAIMS)
-    response = client.get(DOCUMENTS_URL, params={"tenant_id": "test-tenant"})
+def test_list_returns_descending_order(api_client, seeded_docs):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(DOCUMENTS_URL, params={"tenant_id": TENANT_ADMIN_ID})
     data = response.json()
     dates = [d["createdAt"] for d in data["documents"]]
     assert dates == sorted(dates, reverse=True)
 
 
-def test_list_tenant_admin_sees_own_only(client, seeded_docs):
-    _override_jwt(TENANT_ADMIN_CLAIMS)
-    response = client.get(DOCUMENTS_URL)
+def test_list_tenant_admin_sees_own_only(api_client, seeded_docs):
+    override_jwt(TENANT_ADMIN_CLAIMS)
+    response = api_client.get(DOCUMENTS_URL)
     assert response.status_code == 200
     data = response.json()
     assert data["count"] == 4
-    assert all(d["tenantId"] == "test-tenant" for d in data["documents"])
+    assert all(d["tenantId"] == "tenant-admin-id" for d in data["documents"])
 
 
-def test_list_tenant_admin_cannot_query_other_tenant(client, seeded_docs):
-    _override_jwt(TENANT_ADMIN_CLAIMS)
-    response = client.get(DOCUMENTS_URL, params={"tenant_id": "other-tenant"})
+def test_list_tenant_admin_cannot_query_other_tenant(api_client, seeded_docs):
+    override_jwt(TENANT_ADMIN_CLAIMS)
+    response = api_client.get(DOCUMENTS_URL, params={"tenant_id": "other-tenant"})
     assert response.status_code == 403
 
 
-def test_list_pagination(client, seeded_docs):
-    _override_jwt(SUPER_ADMIN_CLAIMS)
-    resp1 = client.get(DOCUMENTS_URL, params={"tenant_id": "test-tenant", "limit": 2})
+def test_list_pagination(api_client, seeded_docs):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    resp1 = api_client.get(DOCUMENTS_URL, params={"tenant_id": TENANT_ADMIN_ID, "limit": 2})
     data1 = resp1.json()
     assert data1["count"] == 2
     assert data1["nextCursor"] is not None
 
-    resp2 = client.get(
+    resp2 = api_client.get(
         DOCUMENTS_URL,
-        params={"tenant_id": "test-tenant", "limit": 2, "cursor": data1["nextCursor"]},
+        params={"tenant_id": TENANT_ADMIN_ID, "limit": 2, "cursor": data1["nextCursor"]},
     )
     data2 = resp2.json()
     assert data2["count"] == 2
     assert data2["nextCursor"] is None
 
 
-def test_list_status_filter(client, seeded_docs):
-    _override_jwt(SUPER_ADMIN_CLAIMS)
-    response = client.get(
-        DOCUMENTS_URL, params={"tenant_id": "test-tenant", "status_filter": "completed"}
+def test_list_status_filter(api_client, seeded_docs):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(
+        DOCUMENTS_URL, params={"tenant_id": TENANT_ADMIN_ID, "status_filter": "completed"}
     )
     assert response.status_code == 200
     data = response.json()
@@ -205,19 +192,19 @@ def test_list_status_filter(client, seeded_docs):
     assert data["count"] == 3
 
 
-def test_list_status_filter_no_match(client, seeded_docs):
-    _override_jwt(SUPER_ADMIN_CLAIMS)
-    response = client.get(
-        DOCUMENTS_URL, params={"tenant_id": "test-tenant", "status_filter": "in_progress"}
+def test_list_status_filter_no_match(api_client, seeded_docs):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(
+        DOCUMENTS_URL, params={"tenant_id": TENANT_ADMIN_ID, "status_filter": "in_progress"}
     )
     assert response.status_code == 200
     assert response.json()["count"] == 0
 
 
-def test_invalid_cursor_returns_400(client, ddb_doc_metadata_table):
-    _override_jwt(SUPER_ADMIN_CLAIMS)
-    response = client.get(
-        DOCUMENTS_URL, params={"tenant_id": "test-tenant", "cursor": "not-valid!"}
+def test_invalid_cursor_returns_400(api_client, ddb_doc_metadata_table):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(
+        DOCUMENTS_URL, params={"tenant_id": TENANT_ADMIN_ID, "cursor": "not-valid!"}
     )
     assert response.status_code == 400
     assert "Invalid cursor" in response.json()["detail"]
@@ -228,20 +215,20 @@ def test_invalid_cursor_returns_400(client, ddb_doc_metadata_table):
 ##############################################################################
 
 
-def test_detail_unauthenticated_returns_401(client):
-    response = client.get(f"{DOCUMENTS_URL}/test-job-id-1")
+def test_detail_unauthenticated_returns_401(api_client):
+    response = api_client.get(f"{DOCUMENTS_URL}/test-job-id-1")
     assert response.status_code == 401
 
 
-def test_detail_not_found(client, ddb_doc_metadata_table):
-    _override_jwt(SUPER_ADMIN_CLAIMS)
-    response = client.get(f"{DOCUMENTS_URL}/nonexistent-job")
+def test_detail_not_found(api_client, ddb_doc_metadata_table):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(f"{DOCUMENTS_URL}/nonexistent-job")
     assert response.status_code == 404
 
 
-def test_detail_super_admin_can_view_any(client, seeded_docs):
-    _override_jwt(SUPER_ADMIN_CLAIMS)
-    response = client.get(f"{DOCUMENTS_URL}/test-job-id-1")
+def test_detail_super_admin_can_view_any(api_client, seeded_docs):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(f"{DOCUMENTS_URL}/test-job-id-1")
     assert response.status_code == 200
     data = response.json()
     assert data["jobId"] == "test-job-id-1"
@@ -250,32 +237,32 @@ def test_detail_super_admin_can_view_any(client, seeded_docs):
     assert data["matchedBlueprint"] == "invoice"
 
 
-def test_detail_tenant_admin_can_view_own(client, seeded_docs):
-    _override_jwt(TENANT_ADMIN_CLAIMS)
-    response = client.get(f"{DOCUMENTS_URL}/test-job-id-1")
+def test_detail_tenant_admin_can_view_own(api_client, seeded_docs):
+    override_jwt(TENANT_ADMIN_CLAIMS)
+    response = api_client.get(f"{DOCUMENTS_URL}/test-job-id-1")
     assert response.status_code == 200
-    assert response.json()["tenantId"] == "test-tenant"
+    assert response.json()["tenantId"] == "tenant-admin-id"
 
 
-def test_detail_tenant_admin_cannot_view_other(client, seeded_docs):
-    _override_jwt(TENANT_ADMIN_CLAIMS)
-    response = client.get(f"{DOCUMENTS_URL}/test-job-id-3")
+def test_detail_tenant_admin_cannot_view_other(api_client, seeded_docs):
+    override_jwt(TENANT_ADMIN_CLAIMS)
+    response = api_client.get(f"{DOCUMENTS_URL}/test-job-id-3")
     assert response.status_code == 404
 
 
-def test_detail_includes_error_message(client, seeded_docs):
-    _override_jwt(SUPER_ADMIN_CLAIMS)
-    response = client.get(f"{DOCUMENTS_URL}/test-job-id-3")
+def test_detail_includes_error_message(api_client, seeded_docs):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(f"{DOCUMENTS_URL}/test-job-id-3")
     assert response.status_code == 200
     data = response.json()
     assert data["errorMessage"] == "Processing timeout"
     assert data["processStatus"] == "failed"
 
 
-def test_detail_extracted_data(client, seeded_docs):
+def test_detail_extracted_data(api_client, seeded_docs):
     """Document with fields in V1_API_RESPONSE_JSON."""
-    _override_jwt(SUPER_ADMIN_CLAIMS)
-    response = client.get(f"{DOCUMENTS_URL}/test-job-id-2")
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(f"{DOCUMENTS_URL}/test-job-id-2")
     assert response.status_code == 200
     body = response.json()
     assert body["fields"]["employeeName"] == {"confidence": 0.95, "value": "John"}
@@ -283,22 +270,22 @@ def test_detail_extracted_data(client, seeded_docs):
     assert body["fieldConfidenceScores"] == [{"employeeName": 0.95}, {"wages": 0.88}]
 
 
-def test_detail_extracted_data_redacted_values(client, seeded_docs):
+def test_detail_extracted_data_redacted_values(api_client, seeded_docs):
     """Fields with redacted values still parse correctly."""
-    _override_jwt(SUPER_ADMIN_CLAIMS)
-    response = client.get(f"{DOCUMENTS_URL}/test-job-id-4")
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(f"{DOCUMENTS_URL}/test-job-id-4")
     assert response.status_code == 200
     assert response.json()["fields"] == {"ssn": {"confidence": 0.99, "value": "<redacted>"}}
 
 
-def test_detail_extracted_data_nests_dotted_fields(client, ddb_doc_metadata_table):
-    """Admin detail nests verbatim, dot-separated stored field names for the client."""
+def test_detail_extracted_data_nests_dotted_fields(api_client, ddb_doc_metadata_table):
+    """Admin detail nests verbatim, dot-separated stored field names for the api_client."""
     ddb_doc_metadata_table.put_item(
         Item={
             DocumentMetadata.FILE_NAME: "lease-job-nested-1.pdf",
             DocumentMetadata.JOB_ID: "job-nested-1",
             DocumentMetadata.ORIGINAL_FILE_NAME: "lease.pdf",
-            DocumentMetadata.TENANT_ID: "test-tenant",
+            DocumentMetadata.TENANT_ID: TENANT_ADMIN_ID,
             DocumentMetadata.PROCESS_STATUS: "completed",
             DocumentMetadata.CREATED_AT: "2026-01-06T00:00:00Z",
             DocumentMetadata.V1_API_RESPONSE_JSON: json.dumps(
@@ -313,9 +300,9 @@ def test_detail_extracted_data_nests_dotted_fields(client, ddb_doc_metadata_tabl
             ),
         }
     )
-    _override_jwt(SUPER_ADMIN_CLAIMS)
+    override_jwt(SUPER_ADMIN_CLAIMS)
 
-    response = client.get(f"{DOCUMENTS_URL}/job-nested-1")
+    response = api_client.get(f"{DOCUMENTS_URL}/job-nested-1")
 
     assert response.status_code == 200
     fields = response.json()["fields"]
@@ -323,10 +310,10 @@ def test_detail_extracted_data_nests_dotted_fields(client, ddb_doc_metadata_tabl
     assert fields["payment_details"]["base_rent"]["value"] == "1200"
 
 
-def test_detail_malformed_json_returns_null(client, seeded_docs):
+def test_detail_malformed_json_returns_null(api_client, seeded_docs):
     """Corrupt V1_API_RESPONSE_JSON yields fields: null, not 500."""
-    _override_jwt(SUPER_ADMIN_CLAIMS)
-    response = client.get(f"{DOCUMENTS_URL}/test-job-id-5")
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(f"{DOCUMENTS_URL}/test-job-id-5")
     assert response.status_code == 200
     assert response.json()["fields"] is None
 
@@ -349,7 +336,7 @@ def seeded_docs_with_content_type(ddb_doc_metadata_table, monkeypatch):
             DocumentMetadata.JOB_ID: "job-preview-pdf",
             DocumentMetadata.ORIGINAL_FILE_NAME: "invoice.pdf",
             DocumentMetadata.ORIGINAL_FILE_NAME_LOWER: "invoice.pdf",
-            DocumentMetadata.TENANT_ID: "test-tenant",
+            DocumentMetadata.TENANT_ID: TENANT_ADMIN_ID,
             DocumentMetadata.API_KEY_NAME: "test-api-key",
             DocumentMetadata.PROCESS_STATUS: "completed",
             DocumentMetadata.CONTENT_TYPE: "application/pdf",
@@ -362,7 +349,7 @@ def seeded_docs_with_content_type(ddb_doc_metadata_table, monkeypatch):
             DocumentMetadata.JOB_ID: "job-preview-img",
             DocumentMetadata.ORIGINAL_FILE_NAME: "photo.jpg",
             DocumentMetadata.ORIGINAL_FILE_NAME_LOWER: "photo.jpg",
-            DocumentMetadata.TENANT_ID: "test-tenant",
+            DocumentMetadata.TENANT_ID: TENANT_ADMIN_ID,
             DocumentMetadata.API_KEY_NAME: "test-api-key",
             DocumentMetadata.PROCESS_STATUS: "completed",
             DocumentMetadata.CONTENT_TYPE: "image/jpeg",
@@ -375,7 +362,7 @@ def seeded_docs_with_content_type(ddb_doc_metadata_table, monkeypatch):
             DocumentMetadata.JOB_ID: "job-preview-csv",
             DocumentMetadata.ORIGINAL_FILE_NAME: "data.csv",
             DocumentMetadata.ORIGINAL_FILE_NAME_LOWER: "data.csv",
-            DocumentMetadata.TENANT_ID: "test-tenant",
+            DocumentMetadata.TENANT_ID: TENANT_ADMIN_ID,
             DocumentMetadata.API_KEY_NAME: "test-api-key",
             DocumentMetadata.PROCESS_STATUS: "completed",
             DocumentMetadata.CONTENT_TYPE: "text/csv",
@@ -397,21 +384,21 @@ def seeded_docs_with_content_type(ddb_doc_metadata_table, monkeypatch):
     )
 
 
-def test_preview_unauthenticated_returns_401(client):
-    response = client.get(PREVIEW_URL.format(job_id="job-preview-pdf"))
+def test_preview_unauthenticated_returns_401(api_client):
+    response = api_client.get(PREVIEW_URL.format(job_id="job-preview-pdf"))
     assert response.status_code == 401
 
 
-def test_preview_not_found(client, ddb_doc_metadata_table, monkeypatch):
+def test_preview_not_found(api_client, ddb_doc_metadata_table, monkeypatch):
     monkeypatch.setenv(EnvVars.DOCUMENTAI_INPUT_LOCATION, "s3://test-bucket/input")
-    _override_jwt(SUPER_ADMIN_CLAIMS)
-    response = client.get(PREVIEW_URL.format(job_id="nonexistent"))
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(PREVIEW_URL.format(job_id="nonexistent"))
     assert response.status_code == 404
 
 
-def test_preview_pdf_returns_presigned_url(client, seeded_docs_with_content_type):
-    _override_jwt(SUPER_ADMIN_CLAIMS)
-    response = client.get(PREVIEW_URL.format(job_id="job-preview-pdf"))
+def test_preview_pdf_returns_presigned_url(api_client, seeded_docs_with_content_type):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(PREVIEW_URL.format(job_id="job-preview-pdf"))
     assert response.status_code == 200
     data = response.json()
     assert "url" in data
@@ -421,42 +408,42 @@ def test_preview_pdf_returns_presigned_url(client, seeded_docs_with_content_type
     assert "invoice-job-preview-pdf.pdf" in data["url"]
 
 
-def test_preview_image_returns_presigned_url(client, seeded_docs_with_content_type):
-    _override_jwt(SUPER_ADMIN_CLAIMS)
-    response = client.get(PREVIEW_URL.format(job_id="job-preview-img"))
+def test_preview_image_returns_presigned_url(api_client, seeded_docs_with_content_type):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(PREVIEW_URL.format(job_id="job-preview-img"))
     assert response.status_code == 200
     data = response.json()
     assert data["contentType"] == "image/jpeg"
     assert "photo-job-preview-img.jpg" in data["url"]
 
 
-def test_preview_unsupported_type_returns_422(client, seeded_docs_with_content_type):
-    _override_jwt(SUPER_ADMIN_CLAIMS)
-    response = client.get(PREVIEW_URL.format(job_id="job-preview-csv"))
+def test_preview_unsupported_type_returns_422(api_client, seeded_docs_with_content_type):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(PREVIEW_URL.format(job_id="job-preview-csv"))
     assert response.status_code == 422
     assert "Preview not available" in response.json()["detail"]
 
 
-def test_preview_tenant_admin_can_view_own(client, seeded_docs_with_content_type):
-    _override_jwt(TENANT_ADMIN_CLAIMS)
-    response = client.get(PREVIEW_URL.format(job_id="job-preview-pdf"))
+def test_preview_tenant_admin_can_view_own(api_client, seeded_docs_with_content_type):
+    override_jwt(TENANT_ADMIN_CLAIMS)
+    response = api_client.get(PREVIEW_URL.format(job_id="job-preview-pdf"))
     assert response.status_code == 200
     assert "url" in response.json()
 
 
-def test_preview_tenant_admin_cannot_view_other(client, seeded_docs_with_content_type):
-    _override_jwt(TENANT_ADMIN_CLAIMS)
-    response = client.get(PREVIEW_URL.format(job_id="job-preview-other"))
+def test_preview_tenant_admin_cannot_view_other(api_client, seeded_docs_with_content_type):
+    override_jwt(TENANT_ADMIN_CLAIMS)
+    response = api_client.get(PREVIEW_URL.format(job_id="job-preview-other"))
     assert response.status_code == 404
 
 
-def test_preview_logs_audit_event(client, seeded_docs_with_content_type, mocker):
+def test_preview_logs_audit_event(api_client, seeded_docs_with_content_type, mocker):
     from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
 
     mock_log = mocker.patch("documentai_api.app_admin_documents.log_event")
-    _override_jwt(SUPER_ADMIN_CLAIMS)
+    override_jwt(SUPER_ADMIN_CLAIMS)
 
-    response = client.get(PREVIEW_URL.format(job_id="job-preview-pdf"))
+    response = api_client.get(PREVIEW_URL.format(job_id="job-preview-pdf"))
     assert response.status_code == 200
 
     mock_log.assert_called_once_with(
@@ -464,48 +451,48 @@ def test_preview_logs_audit_event(client, seeded_docs_with_content_type, mocker)
         action=AuditAction.DOCUMENT_PREVIEW,
         target_type=AuditTargetType.DOCUMENT,
         target_id="job-preview-pdf",
-        tenant_id="test-tenant",
+        tenant_id=TENANT_ADMIN_ID,
     )
 
 
 def test_preview_not_found_does_not_log_audit_event(
-    client, ddb_doc_metadata_table, monkeypatch, mocker
+    api_client, ddb_doc_metadata_table, monkeypatch, mocker
 ):
     monkeypatch.setenv(EnvVars.DOCUMENTAI_INPUT_LOCATION, "s3://test-bucket/input")
     mock_log = mocker.patch("documentai_api.app_admin_documents.log_event")
-    _override_jwt(SUPER_ADMIN_CLAIMS)
+    override_jwt(SUPER_ADMIN_CLAIMS)
 
-    response = client.get(PREVIEW_URL.format(job_id="nonexistent"))
+    response = api_client.get(PREVIEW_URL.format(job_id="nonexistent"))
     assert response.status_code == 404
     mock_log.assert_not_called()
 
 
-def test_list_logs_audit_event(client, seeded_docs, mocker):
+def test_list_logs_audit_event(api_client, seeded_docs, mocker):
     from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
 
     mock_log = mocker.patch("documentai_api.app_admin_documents.log_event")
-    _override_jwt(SUPER_ADMIN_CLAIMS)
+    override_jwt(SUPER_ADMIN_CLAIMS)
 
-    response = client.get(f"{DOCUMENTS_URL}?tenant_id=test-tenant")
+    response = api_client.get(f"{DOCUMENTS_URL}?tenant_id={TENANT_ADMIN_ID}")
     assert response.status_code == 200
 
     mock_log.assert_called_once_with(
         SUPER_ADMIN_CLAIMS,
         action=AuditAction.DOCUMENT_LIST,
         target_type=AuditTargetType.DOCUMENT,
-        target_id="test-tenant",
-        tenant_id="test-tenant",
+        target_id=TENANT_ADMIN_ID,
+        tenant_id=TENANT_ADMIN_ID,
         metadata={"count": 4, "status_filter": None},
     )
 
 
-def test_get_document_logs_search_and_view(client, seeded_docs, mocker):
+def test_get_document_logs_search_and_view(api_client, seeded_docs, mocker):
     from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
 
     mock_log = mocker.patch("documentai_api.app_admin_documents.log_event")
-    _override_jwt(SUPER_ADMIN_CLAIMS)
+    override_jwt(SUPER_ADMIN_CLAIMS)
 
-    response = client.get(f"{DOCUMENTS_URL}/test-job-id-1")
+    response = api_client.get(f"{DOCUMENTS_URL}/test-job-id-1")
     assert response.status_code == 200
 
     assert mock_log.call_count == 2
@@ -520,17 +507,17 @@ def test_get_document_logs_search_and_view(client, seeded_docs, mocker):
         action=AuditAction.DOCUMENT_VIEW,
         target_type=AuditTargetType.DOCUMENT,
         target_id="test-job-id-1",
-        tenant_id="test-tenant",
+        tenant_id=TENANT_ADMIN_ID,
     )
 
 
-def test_get_document_not_found_logs_search_only(client, ddb_doc_metadata_table, mocker):
+def test_get_document_not_found_logs_search_only(api_client, ddb_doc_metadata_table, mocker):
     from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
 
     mock_log = mocker.patch("documentai_api.app_admin_documents.log_event")
-    _override_jwt(SUPER_ADMIN_CLAIMS)
+    override_jwt(SUPER_ADMIN_CLAIMS)
 
-    response = client.get(f"{DOCUMENTS_URL}/nonexistent-job")
+    response = api_client.get(f"{DOCUMENTS_URL}/nonexistent-job")
     assert response.status_code == 404
 
     mock_log.assert_called_once_with(
@@ -541,15 +528,17 @@ def test_get_document_not_found_logs_search_only(client, ddb_doc_metadata_table,
     )
 
 
-def test_get_document_bounding_box_implies_extracted_data(client, ddb_doc_metadata_table, mocker):
+def test_get_document_bounding_box_implies_extracted_data(
+    api_client, ddb_doc_metadata_table, mocker
+):
     """GET with include_bounding_box=true (without include_extracted_data) calls _extract_field_values with both flags."""
-    _override_jwt(SUPER_ADMIN_CLAIMS)
+    override_jwt(SUPER_ADMIN_CLAIMS)
 
     ddb_doc_metadata_table.put_item(
         Item={
             DocumentMetadata.FILE_NAME: "bbox-test.pdf",
             DocumentMetadata.JOB_ID: "bbox-job-id",
-            DocumentMetadata.TENANT_ID: "test-tenant",
+            DocumentMetadata.TENANT_ID: TENANT_ADMIN_ID,
             DocumentMetadata.PROCESS_STATUS: "success",
             DocumentMetadata.CREATED_AT: "2025-01-01T00:00:00+00:00",
             DocumentMetadata.FIELD_CONFIDENCE_SCORES: "[]",
@@ -561,7 +550,7 @@ def test_get_document_bounding_box_implies_extracted_data(client, ddb_doc_metada
         return_value={},
     )
 
-    response = client.get(f"{DOCUMENTS_URL}/bbox-job-id?include_bounding_box=true")
+    response = api_client.get(f"{DOCUMENTS_URL}/bbox-job-id?include_bounding_box=true")
     assert response.status_code == 200
 
     # include_bounding_box=true should have promoted include_extracted_data to True

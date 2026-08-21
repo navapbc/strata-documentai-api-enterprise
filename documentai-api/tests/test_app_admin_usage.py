@@ -3,51 +3,16 @@
 import json
 
 import pytest
-from fastapi.testclient import TestClient
 
-from documentai_api.app import app
 from documentai_api.config.env import EnvVars
-from documentai_api.utils.jwt_auth import verify_jwt
+from tests.helpers.fixtures.claims import (
+    SUPER_ADMIN_CLAIMS,
+    TENANT_ADMIN_CLAIMS,
+    TENANT_ADMIN_ID,
+    override_jwt,
+)
 
 USAGE_URL = "/v1/admin/usage"
-
-SUPER_ADMIN_CLAIMS = {
-    "sub": "admin-001",
-    "email": "admin@example.com",
-    "token_use": "access",
-    "cognito:groups": ["super-admin"],
-}
-
-TENANT_ADMIN_CLAIMS = {
-    "sub": "user-001",
-    "email": "user@example.com",
-    "token_use": "access",
-    "cognito:groups": ["tenant-admin"],
-    "custom:tenant_id": "tenant-a",
-}
-
-
-@pytest.fixture(autouse=True)
-def _cleanup():
-    yield
-    app.dependency_overrides.clear()
-
-
-@pytest.fixture
-def client():
-    return TestClient(app)
-
-
-@pytest.fixture
-def as_super_admin(client):
-    app.dependency_overrides[verify_jwt] = lambda: SUPER_ADMIN_CLAIMS
-    return client
-
-
-@pytest.fixture
-def as_tenant_admin(client):
-    app.dependency_overrides[verify_jwt] = lambda: TENANT_ADMIN_CLAIMS
-    return client
 
 
 @pytest.fixture
@@ -84,8 +49,8 @@ def _make_daily_stats(date: str, total_records: int = 10):
     }
 
 
-TENANT_A = {
-    "tenant_id": "tenant-a",
+TENANT_ADMIN = {
+    "tenant_id": TENANT_ADMIN_ID,
     "total_records": 100,
     "total_bda_invocations": 80,
     "total_file_size_bytes": 50000000,
@@ -94,8 +59,9 @@ TENANT_A = {
     "total_bedrock_output_tokens": 10000,
 }
 
-TENANT_B = {
-    "tenant_id": "tenant-b",
+OTHER_TENANT_ID = "other-tenant-id"
+OTHER_TENANT = {
+    "tenant_id": OTHER_TENANT_ID,
     "total_records": 50,
     "total_bda_invocations": 40,
     "total_file_size_bytes": 25000000,
@@ -107,7 +73,7 @@ TENANT_B = {
 
 @pytest.fixture
 def seeded_monthly(metrics_bucket):
-    _put_monthly_report(metrics_bucket, "2026-06", [TENANT_A, TENANT_B])
+    _put_monthly_report(metrics_bucket, "2026-06", [TENANT_ADMIN, OTHER_TENANT])
 
 
 @pytest.fixture
@@ -117,7 +83,7 @@ def seeded_daily(metrics_bucket):
             metrics_bucket, f"2026-06-{day:02d}", _make_daily_stats(f"2026-06-{day:02d}", 10)
         )
     _put_daily_stats(
-        metrics_bucket, "2026-06-01", _make_daily_stats("2026-06-01", 5), tenant_id="tenant-a"
+        metrics_bucket, "2026-06-01", _make_daily_stats("2026-06-01", 5), tenant_id=TENANT_ADMIN_ID
     )
 
 
@@ -126,8 +92,9 @@ def seeded_daily(metrics_bucket):
 ##############################################################################
 
 
-def test_monthly_returns_all_tenants(as_super_admin, seeded_monthly):
-    response = as_super_admin.get(USAGE_URL, params={"month": "2026-06"})
+def test_monthly_returns_all_tenants(api_client, seeded_monthly):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(USAGE_URL, params={"month": "2026-06"})
     assert response.status_code == 200
     data = response.json()
     assert data["month"] == "2026-06"
@@ -135,39 +102,44 @@ def test_monthly_returns_all_tenants(as_super_admin, seeded_monthly):
     assert len(data["tenants"]) == 2
 
 
-def test_monthly_empty_when_no_report(as_super_admin, metrics_bucket):
-    response = as_super_admin.get(USAGE_URL, params={"month": "2026-01"})
+def test_monthly_empty_when_no_report(api_client, metrics_bucket):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(USAGE_URL, params={"month": "2026-01"})
     assert response.status_code == 200
     assert response.json()["tenants"] == []
 
 
-def test_monthly_defaults_to_current_month(as_super_admin, metrics_bucket):
-    response = as_super_admin.get(USAGE_URL)
+def test_monthly_defaults_to_current_month(api_client, metrics_bucket):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(USAGE_URL)
     assert response.status_code == 200
     from datetime import UTC, datetime
 
     assert response.json()["month"] == datetime.now(UTC).strftime("%Y-%m")
 
 
-def test_monthly_tenant_scoping(as_tenant_admin, seeded_monthly):
-    response = as_tenant_admin.get(USAGE_URL, params={"month": "2026-06"})
+def test_monthly_tenant_scoping(api_client, seeded_monthly):
+    override_jwt(TENANT_ADMIN_CLAIMS)
+    response = api_client.get(USAGE_URL, params={"month": "2026-06"})
     assert response.status_code == 200
     data = response.json()
     assert len(data["tenants"]) == 1
-    assert data["tenants"][0]["tenantId"] == "tenant-a"
+    assert data["tenants"][0]["tenantId"] == TENANT_ADMIN_ID
 
 
-def test_tenant_admin_cannot_see_other_tenant(as_tenant_admin, seeded_monthly):
+def test_tenant_admin_cannot_see_other_tenant(api_client, seeded_monthly):
     """Tenant-admin passing another tenant_id still only sees their own data."""
-    response = as_tenant_admin.get(USAGE_URL, params={"month": "2026-06", "tenant_id": "tenant-b"})
+    override_jwt(TENANT_ADMIN_CLAIMS)
+    response = api_client.get(USAGE_URL, params={"month": "2026-06", "tenant_id": OTHER_TENANT_ID})
     assert response.status_code == 200
     data = response.json()
     assert len(data["tenants"]) == 1
-    assert data["tenants"][0]["tenantId"] == "tenant-a"
+    assert data["tenants"][0]["tenantId"] == TENANT_ADMIN_ID
 
 
-def test_monthly_csv_format(as_super_admin, seeded_monthly):
-    response = as_super_admin.get(USAGE_URL, params={"month": "2026-06", "format": "csv"})
+def test_monthly_csv_format(api_client, seeded_monthly):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(USAGE_URL, params={"month": "2026-06", "format": "csv"})
     assert response.status_code == 200
     assert "text/csv" in response.headers["content-type"]
     lines = response.text.strip().split("\n")
@@ -181,25 +153,28 @@ def test_monthly_csv_format(as_super_admin, seeded_monthly):
 ##############################################################################
 
 
-def test_daily_returns_days(as_super_admin, seeded_daily):
-    response = as_super_admin.get(USAGE_URL, params={"month": "2026-06", "granularity": "daily"})
+def test_daily_returns_days(api_client, seeded_daily):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(USAGE_URL, params={"month": "2026-06", "granularity": "daily"})
     assert response.status_code == 200
     data = response.json()
     assert data["granularity"] == "daily"
     assert len(data["days"]) == 3
 
 
-def test_daily_tenant_scoped(as_tenant_admin, seeded_daily):
-    response = as_tenant_admin.get(USAGE_URL, params={"month": "2026-06", "granularity": "daily"})
+def test_daily_tenant_scoped(api_client, seeded_daily):
+    override_jwt(TENANT_ADMIN_CLAIMS)
+    response = api_client.get(USAGE_URL, params={"month": "2026-06", "granularity": "daily"})
     assert response.status_code == 200
     data = response.json()
     assert len(data["days"]) == 1
     assert data["days"][0]["totalRecords"] == 5
 
 
-def test_daily_super_admin_filters_by_tenant_id(as_super_admin, seeded_daily):
-    response = as_super_admin.get(
-        USAGE_URL, params={"month": "2026-06", "granularity": "daily", "tenant_id": "tenant-a"}
+def test_daily_super_admin_filters_by_tenant_id(api_client, seeded_daily):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(
+        USAGE_URL, params={"month": "2026-06", "granularity": "daily", "tenant_id": TENANT_ADMIN_ID}
     )
     assert response.status_code == 200
     data = response.json()
@@ -207,8 +182,9 @@ def test_daily_super_admin_filters_by_tenant_id(as_super_admin, seeded_daily):
     assert data["days"][0]["totalRecords"] == 5
 
 
-def test_daily_csv_format(as_super_admin, seeded_daily):
-    response = as_super_admin.get(
+def test_daily_csv_format(api_client, seeded_daily):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(
         USAGE_URL, params={"month": "2026-06", "granularity": "daily", "format": "csv"}
     )
     assert response.status_code == 200
@@ -217,8 +193,9 @@ def test_daily_csv_format(as_super_admin, seeded_daily):
     assert "totalRecords" in lines[0]
 
 
-def test_daily_current_day_partial_fallback(as_super_admin, metrics_bucket, monkeypatch):
+def test_daily_current_day_partial_fallback(api_client, metrics_bucket, monkeypatch):
     """Current day falls back to metrics aggregator and is tagged partial=true."""
+    override_jwt(SUPER_ADMIN_CLAIMS)
     from datetime import UTC, datetime
 
     today = datetime.now(UTC).strftime("%Y-%m-%d")
@@ -241,7 +218,7 @@ def test_daily_current_day_partial_fallback(as_super_admin, metrics_bucket, monk
         Body=json.dumps(aggregator_stats),
     )
 
-    response = as_super_admin.get(USAGE_URL, params={"month": month, "granularity": "daily"})
+    response = api_client.get(USAGE_URL, params={"month": month, "granularity": "daily"})
     assert response.status_code == 200
     data = response.json()
 
@@ -254,9 +231,10 @@ def test_daily_current_day_partial_fallback(as_super_admin, metrics_bucket, monk
 
 
 def test_monthly_current_month_includes_today_no_double_count(
-    as_super_admin, metrics_bucket, monkeypatch
+    api_client, metrics_bucket, monkeypatch
 ):
     """Monthly view for current month = report (through yesterday) + today's live. No double-count."""
+    override_jwt(SUPER_ADMIN_CLAIMS)
     from datetime import UTC, datetime
 
     today = datetime.now(UTC).strftime("%Y-%m-%d")
@@ -268,7 +246,7 @@ def test_monthly_current_month_includes_today_no_double_count(
         "report_type": "usage_only",
         "tenants": [
             {
-                "tenant_id": "tenant-a",
+                "tenant_id": TENANT_ADMIN_ID,
                 "total_records": 20,
                 "total_bda_invocations": 18,
                 "total_file_size_bytes": 1000000,
@@ -296,12 +274,12 @@ def test_monthly_current_month_includes_today_no_double_count(
         },
     }
     metrics_bucket.put_object(
-        Key=f"aggregated/utc/date={today}/tenant=tenant-a/stats.json",
+        Key=f"aggregated/utc/date={today}/tenant={TENANT_ADMIN_ID}/stats.json",
         Body=json.dumps(aggregator_stats),
     )
 
     # Monthly view should be report + today (no double-count)
-    response = as_super_admin.get(USAGE_URL, params={"month": month, "tenant_id": "tenant-a"})
+    response = api_client.get(USAGE_URL, params={"month": month, "tenant_id": TENANT_ADMIN_ID})
     assert response.status_code == 200
     data = response.json()
     assert len(data["tenants"]) == 1
@@ -313,22 +291,23 @@ def test_monthly_current_month_includes_today_no_double_count(
 
 
 def test_monthly_current_month_surfaces_new_tenant_not_in_report(
-    as_super_admin, metrics_bucket, monkeypatch
+    api_client, metrics_bucket, monkeypatch
 ):
     """Unfiltered monthly view surfaces a brand-new tenant with today's activity.
 
     even when that tenant is absent from report.json.
     """
+    override_jwt(SUPER_ADMIN_CLAIMS)
     from datetime import UTC, datetime
 
     today = datetime.now(UTC).strftime("%Y-%m-%d")
     month = today[:7]
 
     # Report only has tenant-a (tenant-b is brand new, not in report)
-    _put_monthly_report(metrics_bucket, month, [TENANT_A])
+    _put_monthly_report(metrics_bucket, month, [TENANT_ADMIN])
 
     # Today's aggregator data exists for both tenants
-    for tid, records in [("tenant-a", 3), ("tenant-b", 7)]:
+    for tid, records in [(TENANT_ADMIN_ID, 3), (OTHER_TENANT_ID, 7)]:
         metrics_bucket.put_object(
             Key=f"aggregated/utc/date={today}/tenant={tid}/stats.json",
             Body=json.dumps(
@@ -350,34 +329,35 @@ def test_monthly_current_month_surfaces_new_tenant_not_in_report(
     monkeypatch.setattr(
         "documentai_api.utils.tenants.list_tenants",
         lambda *, active_only: [
-            {"tenantId": "tenant-a", "isActive": True},
-            {"tenantId": "tenant-b", "isActive": True},
+            {"tenantId": TENANT_ADMIN_ID, "isActive": True},
+            {"tenantId": OTHER_TENANT_ID, "isActive": True},
         ],
     )
 
-    response = as_super_admin.get(USAGE_URL, params={"month": month})
+    response = api_client.get(USAGE_URL, params={"month": month})
     assert response.status_code == 200
     data = response.json()
     tenant_ids = {t["tenantId"] for t in data["tenants"]}
-    assert "tenant-b" in tenant_ids
-    tenant_b = next(t for t in data["tenants"] if t["tenantId"] == "tenant-b")
-    assert tenant_b["totalRecords"] == 7
+    assert OTHER_TENANT_ID in tenant_ids
+    other_tenant = next(t for t in data["tenants"] if t["tenantId"] == OTHER_TENANT_ID)
+    assert other_tenant["totalRecords"] == 7
 
 
 def test_monthly_current_month_deactivated_tenant_discovered_via_registry(
-    as_super_admin, metrics_bucket, monkeypatch
+    api_client, metrics_bucket, monkeypatch
 ):
     """A deactivated tenant NOT in report but with today's activity surfaces.
 
     only because active_only=False includes it in the discovery set.
     """
+    override_jwt(SUPER_ADMIN_CLAIMS)
     from datetime import UTC, datetime
 
     today = datetime.now(UTC).strftime("%Y-%m-%d")
     month = today[:7]
 
     # Report has only tenant-a (tenant-deactivated is absent)
-    _put_monthly_report(metrics_bucket, month, [TENANT_A])
+    _put_monthly_report(metrics_bucket, month, [TENANT_ADMIN])
 
     # Today's aggregator data exists for the deactivated tenant
     metrics_bucket.put_object(
@@ -404,16 +384,16 @@ def test_monthly_current_month_deactivated_tenant_discovered_via_registry(
     monkeypatch.setattr(
         "documentai_api.utils.tenants.list_tenants",
         lambda *, active_only: (
-            [{"tenantId": "tenant-a", "isActive": True}]
+            [{"tenantId": TENANT_ADMIN_ID, "isActive": True}]
             if active_only
             else [
-                {"tenantId": "tenant-a", "isActive": True},
+                {"tenantId": TENANT_ADMIN_ID, "isActive": True},
                 {"tenantId": "tenant-deactivated", "isActive": False},
             ]
         ),
     )
 
-    response = as_super_admin.get(USAGE_URL, params={"month": month})
+    response = api_client.get(USAGE_URL, params={"month": month})
     assert response.status_code == 200
     data = response.json()
     tenant_ids = {t["tenantId"] for t in data["tenants"]}
@@ -423,19 +403,20 @@ def test_monthly_current_month_deactivated_tenant_discovered_via_registry(
 
 
 def test_monthly_current_month_graceful_degradation_on_registry_failure(
-    as_super_admin, metrics_bucket, monkeypatch
+    api_client, metrics_bucket, monkeypatch
 ):
     """If list_tenants raises, monthly view still works with report tenants only."""
+    override_jwt(SUPER_ADMIN_CLAIMS)
     from datetime import UTC, datetime
 
     today = datetime.now(UTC).strftime("%Y-%m-%d")
     month = today[:7]
 
-    _put_monthly_report(metrics_bucket, month, [TENANT_A])
+    _put_monthly_report(metrics_bucket, month, [TENANT_ADMIN])
 
-    # Aggregator data for tenant-a
+    # Aggregator data for tenant-admin
     metrics_bucket.put_object(
-        Key=f"aggregated/utc/date={today}/tenant=tenant-a/stats.json",
+        Key=f"aggregated/utc/date={today}/tenant={TENANT_ADMIN_ID}/stats.json",
         Body=json.dumps(
             {
                 "date": today,
@@ -457,13 +438,13 @@ def test_monthly_current_month_graceful_degradation_on_registry_failure(
 
     monkeypatch.setattr("documentai_api.utils.tenants.list_tenants", _boom)
 
-    response = as_super_admin.get(USAGE_URL, params={"month": month})
+    response = api_client.get(USAGE_URL, params={"month": month})
     assert response.status_code == 200
     data = response.json()
     # Still returns tenant-a from report, augmented with today
     assert len(data["tenants"]) == 1
-    assert data["tenants"][0]["tenantId"] == "tenant-a"
-    assert data["tenants"][0]["totalRecords"] == TENANT_A["total_records"] + 2
+    assert data["tenants"][0]["tenantId"] == TENANT_ADMIN_ID
+    assert data["tenants"][0]["totalRecords"] == TENANT_ADMIN["total_records"] + 2
 
 
 ##############################################################################
@@ -471,14 +452,16 @@ def test_monthly_current_month_graceful_degradation_on_registry_failure(
 ##############################################################################
 
 
-def test_invalid_month_returns_400(as_super_admin, metrics_bucket):
-    response = as_super_admin.get(USAGE_URL, params={"month": "abc"})
+def test_invalid_month_returns_400(api_client, metrics_bucket):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(USAGE_URL, params={"month": "abc"})
     assert response.status_code == 400
     assert "YYYY-MM" in response.json()["detail"]
 
 
-def test_invalid_month_number_returns_400(as_super_admin, metrics_bucket):
-    response = as_super_admin.get(USAGE_URL, params={"month": "2026-13"})
+def test_invalid_month_number_returns_400(api_client, metrics_bucket):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(USAGE_URL, params={"month": "2026-13"})
     assert response.status_code == 400
 
 
@@ -487,8 +470,8 @@ def test_invalid_month_number_returns_400(as_super_admin, metrics_bucket):
 ##############################################################################
 
 
-def test_unauthenticated_returns_401(client, metrics_bucket):
-    response = client.get(USAGE_URL)
+def test_unauthenticated_returns_401(api_client, metrics_bucket):
+    response = api_client.get(USAGE_URL)
     assert response.status_code == 401
 
 
@@ -497,8 +480,9 @@ def test_unauthenticated_returns_401(client, metrics_bucket):
 ##############################################################################
 
 
-def test_bucket_not_configured(as_super_admin, monkeypatch):
+def test_bucket_not_configured(api_client, monkeypatch):
+    override_jwt(SUPER_ADMIN_CLAIMS)
     monkeypatch.delenv(EnvVars.DDB_EXPORT_BUCKET_NAME, raising=False)
-    response = as_super_admin.get(USAGE_URL, params={"month": "2026-06"})
+    response = api_client.get(USAGE_URL, params={"month": "2026-06"})
     assert response.status_code == 500
     assert "not configured" in response.json()["detail"]
