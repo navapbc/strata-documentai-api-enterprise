@@ -1,29 +1,16 @@
 """Tests for GET /v1/admin/search/documents."""
 
 import pytest
-from fastapi.testclient import TestClient
 
-from documentai_api.app import app
 from documentai_api.schemas.document_metadata import DocumentMetadata
-from documentai_api.utils.jwt_auth import verify_jwt
-from tests.helpers.fixtures.claims import SUPER_ADMIN_CLAIMS, TENANT_ADMIN_CLAIMS
+from tests.helpers.fixtures.claims import (
+    SUPER_ADMIN_CLAIMS,
+    TENANT_ADMIN_CLAIMS,
+    TENANT_ADMIN_ID,
+    override_jwt,
+)
 
 SEARCH_URL = "/v1/admin/search/documents"
-
-
-def _override_jwt(claims: dict):
-    app.dependency_overrides[verify_jwt] = lambda: claims
-
-
-@pytest.fixture(autouse=True)
-def _cleanup():
-    yield
-    app.dependency_overrides.pop(verify_jwt, None)
-
-
-@pytest.fixture
-def client():
-    return TestClient(app)
 
 
 @pytest.fixture
@@ -34,7 +21,7 @@ def seeded_docs(ddb_doc_metadata_table):
             DocumentMetadata.JOB_ID: "test-job-id-1",
             DocumentMetadata.ORIGINAL_FILE_NAME: "Invoice_Jan.pdf",
             DocumentMetadata.ORIGINAL_FILE_NAME_LOWER: "invoice_jan.pdf",
-            DocumentMetadata.TENANT_ID: "test-tenant",
+            DocumentMetadata.TENANT_ID: TENANT_ADMIN_ID,
             DocumentMetadata.API_KEY_NAME: "test-api-key",
             DocumentMetadata.PROCESS_STATUS: "completed",
             DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY: "expenses",
@@ -49,7 +36,7 @@ def seeded_docs(ddb_doc_metadata_table):
             DocumentMetadata.JOB_ID: "test-job-id-2",
             DocumentMetadata.ORIGINAL_FILE_NAME: "W2_2025.pdf",
             DocumentMetadata.ORIGINAL_FILE_NAME_LOWER: "w2_2025.pdf",
-            DocumentMetadata.TENANT_ID: "test-tenant",
+            DocumentMetadata.TENANT_ID: TENANT_ADMIN_ID,
             DocumentMetadata.API_KEY_NAME: "test-api-key",
             DocumentMetadata.PROCESS_STATUS: "completed",
             DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY: "income",
@@ -64,7 +51,7 @@ def seeded_docs(ddb_doc_metadata_table):
             DocumentMetadata.JOB_ID: "test-job-id-3",
             DocumentMetadata.ORIGINAL_FILE_NAME: "Invoice_Feb.pdf",
             DocumentMetadata.ORIGINAL_FILE_NAME_LOWER: "invoice_feb.pdf",
-            DocumentMetadata.TENANT_ID: "test-tenant",
+            DocumentMetadata.TENANT_ID: TENANT_ADMIN_ID,
             DocumentMetadata.API_KEY_NAME: "test-api-key",
             DocumentMetadata.PROCESS_STATUS: "failed",
             DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY: "expenses",
@@ -88,36 +75,38 @@ def seeded_docs(ddb_doc_metadata_table):
     )
 
 
-def test_search_unauthenticated_returns_401(client, ddb_doc_metadata_table):
-    response = client.get(SEARCH_URL)
+def test_search_unauthenticated_returns_401(api_client, ddb_doc_metadata_table):
+    response = api_client.get(SEARCH_URL)
     assert response.status_code == 401
 
 
-def test_search_pending_user_returns_403(client, ddb_doc_metadata_table):
-    _override_jwt({**SUPER_ADMIN_CLAIMS, "cognito:groups": []})
-    response = client.get(SEARCH_URL)
+def test_search_pending_user_returns_403(api_client, ddb_doc_metadata_table):
+    override_jwt({**SUPER_ADMIN_CLAIMS, "cognito:groups": []})
+    response = api_client.get(SEARCH_URL)
     assert response.status_code == 403
 
 
-def test_search_requires_tenant_id(client, ddb_doc_metadata_table):
-    _override_jwt(SUPER_ADMIN_CLAIMS)
-    response = client.get(SEARCH_URL)
+def test_search_requires_tenant_id(api_client, ddb_doc_metadata_table):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(SEARCH_URL)
     assert response.status_code == 400
     assert "tenant_id is required" in response.json()["detail"]
 
 
-def test_search_no_filters_returns_all(client, seeded_docs):
-    _override_jwt(SUPER_ADMIN_CLAIMS)
-    response = client.get(SEARCH_URL, params={"tenant_id": "test-tenant"})
+def test_search_no_filters_returns_all(api_client, seeded_docs):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(SEARCH_URL, params={"tenant_id": TENANT_ADMIN_ID})
     assert response.status_code == 200
     data = response.json()
     assert data["count"] == 3
-    assert all(d["tenantId"] == "test-tenant" for d in data["documents"])
+    assert all(d["tenantId"] == TENANT_ADMIN_ID for d in data["documents"])
 
 
-def test_search_filename_case_insensitive(client, seeded_docs):
-    _override_jwt(SUPER_ADMIN_CLAIMS)
-    response = client.get(SEARCH_URL, params={"tenant_id": "test-tenant", "filename": "INVOICE"})
+def test_search_filename_case_insensitive(api_client, seeded_docs):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(
+        SEARCH_URL, params={"tenant_id": TENANT_ADMIN_ID, "filename": "INVOICE"}
+    )
     assert response.status_code == 200
     data = response.json()
     assert data["count"] == 2
@@ -136,9 +125,9 @@ def test_search_filename_case_insensitive(client, seeded_docs):
     ],
     ids=["filename", "date_from", "date_to", "document_type", "blueprint_name", "no_match"],
 )
-def test_search_single_filter(client, seeded_docs, params, expected_count, expected_job_ids):
-    _override_jwt(SUPER_ADMIN_CLAIMS)
-    response = client.get(SEARCH_URL, params={"tenant_id": "test-tenant", **params})
+def test_search_single_filter(api_client, seeded_docs, params, expected_count, expected_job_ids):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(SEARCH_URL, params={"tenant_id": TENANT_ADMIN_ID, **params})
     assert response.status_code == 200
     data = response.json()
     assert data["count"] == expected_count
@@ -150,25 +139,27 @@ def test_search_single_filter(client, seeded_docs, params, expected_count, expec
         assert [d["jobId"] for d in data["documents"]] == expected_job_ids
 
 
-def test_search_date_to_same_day_inclusive(client, seeded_docs):
+def test_search_date_to_same_day_inclusive(api_client, seeded_docs):
     """date_to must include documents whose timestamp falls on that day.
 
     Regression: bare date "2026-01-01" is lexicographically less than
     "2026-01-01T00:00:00Z", so a plain lte would exclude the whole day.
     """
-    _override_jwt(SUPER_ADMIN_CLAIMS)
-    response = client.get(SEARCH_URL, params={"tenant_id": "test-tenant", "date_to": "2026-01-01"})
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(
+        SEARCH_URL, params={"tenant_id": TENANT_ADMIN_ID, "date_to": "2026-01-01"}
+    )
     assert response.status_code == 200
     assert response.json()["count"] == 1
     assert response.json()["documents"][0]["jobId"] == "test-job-id-1"
 
 
-def test_search_date_range(client, seeded_docs):
-    _override_jwt(SUPER_ADMIN_CLAIMS)
-    response = client.get(
+def test_search_date_range(api_client, seeded_docs):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(
         SEARCH_URL,
         params={
-            "tenant_id": "test-tenant",
+            "tenant_id": TENANT_ADMIN_ID,
             "date_from": "2026-01-01",
             "date_to": "2026-02-28",
         },
@@ -177,12 +168,12 @@ def test_search_date_range(client, seeded_docs):
     assert response.json()["count"] == 2
 
 
-def test_search_combined_filters(client, seeded_docs):
-    _override_jwt(SUPER_ADMIN_CLAIMS)
-    response = client.get(
+def test_search_combined_filters(api_client, seeded_docs):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(
         SEARCH_URL,
         params={
-            "tenant_id": "test-tenant",
+            "tenant_id": TENANT_ADMIN_ID,
             "filename": "invoice",
             "user_provided_document_type": "expenses",
         },
@@ -191,38 +182,40 @@ def test_search_combined_filters(client, seeded_docs):
     assert response.json()["count"] == 2
 
 
-def test_search_tenant_admin_sees_own_only(client, seeded_docs):
-    _override_jwt(TENANT_ADMIN_CLAIMS)
-    response = client.get(SEARCH_URL)
+def test_search_tenant_admin_sees_own_only(api_client, seeded_docs):
+    override_jwt(TENANT_ADMIN_CLAIMS)
+    response = api_client.get(SEARCH_URL)
     assert response.status_code == 200
     data = response.json()
     assert data["count"] == 3
-    assert all(d["tenantId"] == "test-tenant" for d in data["documents"])
+    assert all(d["tenantId"] == "tenant-admin-id" for d in data["documents"])
 
 
-def test_search_tenant_admin_cannot_query_other_tenant(client, seeded_docs):
-    _override_jwt(TENANT_ADMIN_CLAIMS)
-    response = client.get(SEARCH_URL, params={"tenant_id": "other-tenant"})
+def test_search_tenant_admin_cannot_query_other_tenant(api_client, seeded_docs):
+    override_jwt(TENANT_ADMIN_CLAIMS)
+    response = api_client.get(SEARCH_URL, params={"tenant_id": "other-tenant"})
     assert response.status_code == 403
 
 
-def test_search_invalid_cursor_returns_400(client, ddb_doc_metadata_table):
-    _override_jwt(SUPER_ADMIN_CLAIMS)
-    response = client.get(SEARCH_URL, params={"tenant_id": "test-tenant", "cursor": "not-valid!"})
+def test_search_invalid_cursor_returns_400(api_client, ddb_doc_metadata_table):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(
+        SEARCH_URL, params={"tenant_id": TENANT_ADMIN_ID, "cursor": "not-valid!"}
+    )
     assert response.status_code == 400
     assert "Invalid cursor" in response.json()["detail"]
 
 
-def test_search_pagination(client, seeded_docs):
-    _override_jwt(SUPER_ADMIN_CLAIMS)
-    resp1 = client.get(SEARCH_URL, params={"tenant_id": "test-tenant", "limit": 2})
+def test_search_pagination(api_client, seeded_docs):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    resp1 = api_client.get(SEARCH_URL, params={"tenant_id": TENANT_ADMIN_ID, "limit": 2})
     data1 = resp1.json()
     assert data1["count"] == 2
     assert data1["nextCursor"] is not None
 
-    resp2 = client.get(
+    resp2 = api_client.get(
         SEARCH_URL,
-        params={"tenant_id": "test-tenant", "limit": 2, "cursor": data1["nextCursor"]},
+        params={"tenant_id": TENANT_ADMIN_ID, "limit": 2, "cursor": data1["nextCursor"]},
     )
 
     data2 = resp2.json()

@@ -133,6 +133,15 @@ def api_client(runtime_required_env):
     return TestClient(app)
 
 
+@pytest.fixture(autouse=True)
+def _cleanup_jwt():
+    yield
+    from documentai_api.app import app
+    from documentai_api.utils.jwt_auth import verify_jwt
+
+    app.dependency_overrides.pop(verify_jwt, None)
+
+
 @pytest.fixture
 def disable_auth():
     """Disable API key authentication and tenant validation for tests."""

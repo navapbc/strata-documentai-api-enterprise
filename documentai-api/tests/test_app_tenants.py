@@ -4,21 +4,12 @@ from decimal import Decimal
 
 import pytest
 
-from documentai_api.app import app
 from documentai_api.schemas.tenant_request_counts import TenantRequestCountRecord
 from documentai_api.schemas.tenants import TenantRecord
 from documentai_api.utils.dates import get_month_prefix, get_today_iso
-from documentai_api.utils.jwt_auth import verify_jwt
+from tests.helpers.fixtures.claims import SUPER_ADMIN, TENANT_ADMIN, make_claims, override_jwt
 
 URL = "/v1/admin/tenants"
-SUPER_ADMIN = "super-admin"
-
-
-def _make_claims(*, groups: list[str] | None = None, tenant_id: str | None = None):
-    claims = {"sub": "test-user", "cognito:groups": groups or []}
-    if tenant_id:
-        claims["custom:tenant_id"] = tenant_id
-    return claims
 
 
 @pytest.fixture(autouse=True)
@@ -28,9 +19,8 @@ def _disable_auth(disable_auth):
 
 @pytest.fixture(autouse=True)
 def _super_admin_jwt():
-    app.dependency_overrides[verify_jwt] = lambda: _make_claims(groups=[SUPER_ADMIN])
-    yield
-    app.dependency_overrides.pop(verify_jwt, None)
+    override_jwt(make_claims(groups=[SUPER_ADMIN]))
+    return
 
 
 def _seed_tenant(tenants_table, tenant_id: str, max_per_day=None, max_per_month=None):
@@ -39,10 +29,13 @@ def _seed_tenant(tenants_table, tenant_id: str, max_per_day=None, max_per_month=
         TenantRecord.DISPLAY_NAME: "Test Tenant",
         TenantRecord.IS_ACTIVE: True,
     }
+
     if max_per_day is not None:
         item[TenantRecord.MAX_WRITES_PER_DAY] = max_per_day
+
     if max_per_month is not None:
         item[TenantRecord.MAX_WRITES_PER_MONTH] = max_per_month
+
     tenants_table.put_item(Item=item)
 
 
@@ -86,6 +79,7 @@ def test_create_tenant_with_write_limits(api_client, tenants_table):
             "max_writes_per_month": 2000,
         },
     )
+
     assert response.status_code == 201
     data = response.json()
     assert data["maxWritesPerDay"] == 100
@@ -226,9 +220,7 @@ def test_delete_tenant_not_found(api_client, tenants_table):
 def test_tenant_admin_cannot_set_quota_field(api_client, tenants_table):
     """Tenant-admin setting a quota field returns 403."""
     api_client.post(URL, json={"tenant_id": "t1", "display_name": "T1"})
-    app.dependency_overrides[verify_jwt] = lambda: _make_claims(
-        groups=["tenant-admin"], tenant_id="t1"
-    )
+    override_jwt(make_claims(groups=[TENANT_ADMIN], tenant_id="t1"))
     response = api_client.patch(f"{URL}/t1", json={"max_writes_per_day": 50})
     assert response.status_code == 403
 
@@ -236,9 +228,7 @@ def test_tenant_admin_cannot_set_quota_field(api_client, tenants_table):
 def test_tenant_admin_cannot_clear_quota_field(api_client, tenants_table):
     """Tenant-admin clearing a quota field returns 403."""
     _seed_tenant(tenants_table, "t1", max_per_day=100)
-    app.dependency_overrides[verify_jwt] = lambda: _make_claims(
-        groups=["tenant-admin"], tenant_id="t1"
-    )
+    override_jwt(make_claims(groups=[TENANT_ADMIN], tenant_id="t1"))
     response = api_client.patch(f"{URL}/t1", json={"max_writes_per_day": None})
     assert response.status_code == 403
 
