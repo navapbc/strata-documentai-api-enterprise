@@ -88,5 +88,6 @@ Programs can configure those rules in their own environment, while another progr
 
 ## Learn more
 
-- [Extraction rules](./extraction-rules.md) — required, optional, and excluded fields by tenant and document type
-- [Admin console](../../ui/admin/README.md) — manage tenants, users, API keys, document categories, and rules
+- [Extraction rules](./extraction-rules.md) - required, optional, and excluded fields by tenant and document type
+- [Admin console](../../ui/admin/README.md) - manage tenants, users, API keys, document categories, and rules
+

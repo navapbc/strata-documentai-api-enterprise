@@ -145,6 +145,7 @@ def _build_update_expression(
     v1_api_response: str | None,
     bda_invocation_arn: str | None = None,
     bda_project_arn_used: str | None = None,
+    used_category_specific_project: bool = False,
     error_message: str | None = None,
     below_extraction_confidence_floor: bool = False,
     extraction_rules_configured: bool | None = None,
@@ -226,6 +227,12 @@ def _build_update_expression(
     if bda_project_arn_used:
         updates.append(f"{DocumentMetadata.BDA_PROJECT_ARN_USED} = :bdaProjectArn")
         values[":bdaProjectArn"] = bda_project_arn_used
+
+    if used_category_specific_project:
+        updates.append(
+            f"{DocumentMetadata.USED_CATEGORY_SPECIFIC_PROJECT} = :usedCategorySpecificProject"
+        )
+        values[":usedCategorySpecificProject"] = True
 
     if error_message:
         updates.append(f"{DocumentMetadata.ERROR_MESSAGE} = :errorMessage")
@@ -363,6 +370,7 @@ def update_ddb(data: UpdateDdbRecord) -> None:
             v1_api_response=None,
             bda_invocation_arn=data.bda_invocation_arn,
             bda_project_arn_used=data.bda_project_arn_used,
+            used_category_specific_project=data.used_category_specific_project,
             error_message=data.error_message,
             below_extraction_confidence_floor=data.below_extraction_confidence_floor,
             extraction_rules_configured=data.extraction_rules_configured,

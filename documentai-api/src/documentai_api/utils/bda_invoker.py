@@ -3,7 +3,7 @@ import os
 from opentelemetry import trace
 
 import documentai_api.utils.documents as document_utils
-from documentai_api.config.constants import ConfigDefaults, PreclassificationCategory
+from documentai_api.config.constants import ConfigDefaults
 from documentai_api.config.env import EnvVars, get_aws_config, get_required_env
 from documentai_api.logging import get_logger
 from documentai_api.utils.aws_client_factory import AWSClientFactory
@@ -15,25 +15,12 @@ _project_arns_cache: dict[str, str] | None = None
 
 
 def _get_project_arns() -> dict[str, str]:
-    """Load BDA project ARN map from AWSEnvConfig."""
+    """Load BDA project ARN map from environment variables."""
     global _project_arns_cache
     if _project_arns_cache is not None:
         return _project_arns_cache
 
-    config = get_aws_config()
-    arns = {}
-    for category in PreclassificationCategory:
-        value = getattr(config, f"bda_project_arn_{category.value}", None)
-        if value:
-            arns[category.value] = value
-
-    # "all" project as fallback
-    if config.bda_project_arn_all:
-        arns["all"] = config.bda_project_arn_all
-    elif config.bda_project_arn:
-        arns["all"] = config.bda_project_arn
-
-    _project_arns_cache = arns
+    _project_arns_cache = get_aws_config().get_bda_project_arns()
     return _project_arns_cache
 
 
@@ -47,24 +34,28 @@ def skip_bda_if_unclassified() -> bool:
     return is_skip_bda_if_unclassified()
 
 
-def resolve_project_arn(category: str | None) -> str:
-    """Resolve BDA project ARN for a preclassification category."""
+def resolve_project_arn(category: str | None) -> tuple[str, bool]:
+    """Resolve BDA project ARN for a preclassification category.
+
+    Returns (arn, used_category_specific_project) where the bool is True only
+    when a category-specific ARN was selected (routing enabled + category hit).
+    """
     from documentai_api.utils.ssm import is_preclassification_routing_enabled
 
     arns = _get_project_arns()
 
     if category and is_preclassification_routing_enabled() and category in arns:
-        return arns[category]
+        return arns[category], True
 
     # Routing disabled or category not found - use "all" project
-    return arns["all"]
+    return arns["all"], False
 
 
 def invoke_bedrock_data_automation(
     source_bucket_name: str, source_object_name: str, category: str | None = None
-) -> tuple[str, str, int]:
-    """Invoke BDA and return (invocation_arn, project_arn, pages_sent_to_bda)."""
-    bda_project_arn = resolve_project_arn(category)
+) -> tuple[str, str, int, bool]:
+    """Invoke BDA and return (invocation_arn, project_arn, pages_sent_to_bda, used_category_specific_project)."""
+    bda_project_arn, used_category_specific_project = resolve_project_arn(category)
     bda_profile_arn = get_required_env(EnvVars.BDA_PROFILE_ARN)
     documentai_output_location = get_required_env(EnvVars.DOCUMENTAI_OUTPUT_LOCATION).replace(
         "s3://", ""
@@ -122,7 +113,12 @@ def invoke_bedrock_data_automation(
                 },
             )
         logger.info(f"BDA response: {response}")
-        return str(response.get("invocationArn")), bda_project_arn, pages_sent
+        return (
+            str(response.get("invocationArn")),
+            bda_project_arn,
+            pages_sent,
+            used_category_specific_project,
+        )
     except Exception as e:
         logger.error(f"BDA API call failed: {e}")
         raise

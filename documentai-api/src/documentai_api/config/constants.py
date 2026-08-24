@@ -62,6 +62,7 @@ METRICS_USAGE_REPORT_DAILY_S3_PREFIX = "usage-report/utc/date"
 BDA_JOB_STATUS_RUNNING = ["Created", "InProgress"]
 BDA_JOB_STATUS_FAILED = ["ServiceError", "ClientError"]
 BDA_JOB_STATUS_COMPLETED = ["Success"]
+BDA_PROJECT_KEY_ALL = "all"
 
 
 UUID_PATTERN = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
@@ -433,22 +434,6 @@ class DocumentBuildStatus(StrEnum):
     SUBMITTED = "submitted"
     NOT_SUBMITTED = "not_submitted"
     COMPLETED = "completed"
-
-
-class PreclassificationCategory(StrEnum):
-    TAX_DOCUMENTS = "tax_documents"
-    EMPLOYMENT_WAGES = "employment_wages"
-    INDEPENDENT_EARNINGS = "independent_earnings"
-    GOVERNMENT_BENEFITS = "government_benefits"
-    PRIVATE_BENEFITS_AND_SETTLEMENTS = "private_benefits_and_settlements"
-    COURT_ORDERED_BENEFITS = "court_ordered_benefits"
-    FINANCIAL_ASSETS = "financial_assets"
-    RECEIPTS_AND_INVOICES = "receipts_and_invoices"
-    RECURRING_BILLS = "recurring_bills"
-    HOUSING_EXPENSES = "housing_expenses"
-    DEBT_OBLIGATIONS = "debt_obligations"
-    IDENTITY_VERIFICATION = "identity_verification"
-    RIGHT_TO_WORK = "right_to_work"
 
 
 class PreClassificationDefaults:

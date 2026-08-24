@@ -314,10 +314,15 @@ def test_upsert_initial_ddb_record_sampling_not_applied_to_password_protected(
 # =============================================================================
 
 
-def test_set_bda_processing_status_started(mocker):
+def test_set_bda_processing_status_started_routed_to_category(mocker):
+    """used_category_specific_project is passed straight through to the DDB update."""
     mock_update = mocker.patch(f"{_LIFECYCLE_MODULE}.update_ddb")
+
     lifecycle_util.set_bda_processing_status_started(
-        "test-file", "arn:aws:bda:us-east-1:123:job/1", "arn:aws:project/123"
+        "test-file",
+        "arn:aws:bda:us-east-1:123:job/1",
+        "arn:aws:project/123",
+        used_category_specific_project=True,
     )
     mock_update.assert_called_once_with(
         UpdateDdbRecord(
@@ -326,6 +331,29 @@ def test_set_bda_processing_status_started(mocker):
             internal_api_response=None,
             bda_invocation_arn="arn:aws:bda:us-east-1:123:job/1",
             bda_project_arn_used="arn:aws:project/123",
+            used_category_specific_project=True,
+            pages_sent_to_bda=None,
+            bda_invoke_duration_seconds=None,
+            bda_invoke_retry_count=None,
+        )
+    )
+
+
+def test_set_bda_processing_status_started_falls_back_to_all(mocker):
+    """used_category_specific_project defaults to False when the caller doesn't pass it."""
+    mock_update = mocker.patch(f"{_LIFECYCLE_MODULE}.update_ddb")
+
+    lifecycle_util.set_bda_processing_status_started(
+        "test-file", "arn:aws:bda:us-east-1:123:job/1", "arn:aws:project/all"
+    )
+    mock_update.assert_called_once_with(
+        UpdateDdbRecord(
+            object_key="test-file",
+            status=ProcessStatus.STARTED,
+            internal_api_response=None,
+            bda_invocation_arn="arn:aws:bda:us-east-1:123:job/1",
+            bda_project_arn_used="arn:aws:project/all",
+            used_category_specific_project=False,
             pages_sent_to_bda=None,
             bda_invoke_duration_seconds=None,
             bda_invoke_retry_count=None,
@@ -751,7 +779,7 @@ def test_upsert_initial_ddb_record_multipage_consistent_proceeds_to_bda(
 def test_upsert_initial_ddb_record_single_page_inconsistency_not_flagged(
     ddb_doc_metadata_table, s3_bucket, lifecycle_mocks
 ):
-    """pages_detected=1 gates the check — has_multipage_inconsistency is ignored on single-page docs."""
+    """pages_detected=1 gates the check - has_multipage_inconsistency is ignored on single-page docs."""
     lifecycle_mocks[_Mock.IS_BLUR_DETECTION_ENABLED].return_value = False
     lifecycle_mocks[_Mock.PRECLASSIFY_DOCUMENT].return_value = BedrockClassificationResult(
         document_type="W2",

@@ -124,8 +124,8 @@ def test_get_all_schemas_from_cache(mock_cache):
     mock_cache.add.assert_not_called()
 
 
-def test_get_all_schemas_fetch_and_cache(runtime_required_env, mock_cache, mock_bda_services):
-    """Fetch schemas from BDA and cache them."""
+def test_get_all_schemas_fetch_and_cache(mock_cache, mock_bda_services):
+    """Fetch schemas from BDA per-category projects and cache them."""
     mock_cache.get.return_value = None
 
     mock_bda_services["project"].return_value = {
@@ -135,15 +135,46 @@ def test_get_all_schemas_fetch_and_cache(runtime_required_env, mock_cache, mock_
             }
         }
     }
-
     mock_bda_services["blueprint"].return_value = {
         "blueprint": {"schema": '{"class": "Invoice", "properties": {}}'}
     }
 
-    result = schemas.get_all_schemas()
+    with patch("documentai_api.utils.schemas.get_aws_config") as mock_cfg:
+        mock_cfg.return_value.get_bda_project_arns.return_value = {
+            "invoices": "arn:aws:bedrock:us-east-1:123:project/invoices",
+        }
+        result = schemas.get_all_schemas()
 
     assert "Invoice" in result
+    assert result["Invoice"]["category"] == "invoices"
     mock_cache.add.assert_called_once()
+
+
+def test_fetch_schemas_skips_all_project(mock_bda_services):
+    """'all' project is skipped so per-category tags are never overwritten."""
+    mock_bda_services["project"].return_value = {
+        "project": {
+            "customOutputConfiguration": {
+                "blueprints": [{"blueprintArn": "arn:aws:bedrock:us-east-1:123:blueprint/w2"}]
+            }
+        }
+    }
+    mock_bda_services["blueprint"].return_value = {
+        "blueprint": {"schema": '{"class": "W2", "properties": {}}'}
+    }
+
+    with patch("documentai_api.utils.schemas.get_aws_config") as mock_cfg:
+        mock_cfg.return_value.get_bda_project_arns.return_value = {
+            "employer_income": "arn:aws:bedrock:us-east-1:123:project/employer",
+            "all": "arn:aws:bedrock:us-east-1:123:project/all",
+        }
+        result = schemas._fetch_schemas_from_bda()
+
+    assert result["W2"]["category"] == "employer_income"
+    # project was fetched exactly once - for employer_income, not for 'all'
+    mock_bda_services["project"].assert_called_once_with(
+        "arn:aws:bedrock:us-east-1:123:project/employer"
+    )
 
 
 def test_get_document_schema_found(mock_cache):

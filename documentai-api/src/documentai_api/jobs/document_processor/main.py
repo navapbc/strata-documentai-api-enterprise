@@ -125,8 +125,8 @@ def _invoke_bda(
             if attempt.retry_state.attempt_number > 1:
                 retry_count += 1
             invoke_start = time.monotonic()
-            invocation_arn, project_arn, pages_sent = invoke_bedrock_data_automation(
-                bucket_name, object_key, preclassification_category
+            invocation_arn, project_arn, pages_sent, used_category_specific_project = (
+                invoke_bedrock_data_automation(bucket_name, object_key, preclassification_category)
             )
             invoke_duration = Decimal(str(round(time.monotonic() - invoke_start, 3)))
 
@@ -134,6 +134,7 @@ def _invoke_bda(
                 object_key=ddb_key,
                 bda_invocation_arn=invocation_arn,
                 bda_project_arn_used=project_arn,
+                used_category_specific_project=used_category_specific_project,
                 pages_sent_to_bda=pages_sent,
                 bda_invoke_duration_seconds=invoke_duration,
                 bda_invoke_retry_count=retry_count,
@@ -295,10 +296,14 @@ def main(
         ):
             logger.info(f"{ddb_key} already claimed from PENDING_IMAGE_OPTIMIZATION; skipping")
             return
+
         # JPEG/PNG images always get crop + grayscale before BDA.
         logger.info(f"Branch: PENDING_IMAGE_OPTIMIZATION (apply_grayscale=True) for {ddb_key}")
-        preclassification_category = existing_record.get(
+        preclassification_document_type = existing_record.get(
             DocumentMetadata.PRECLASSIFICATION_CATEGORY
+        )
+        routing_category = existing_record.get(
+            DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_CATEGORY
         )
         opt = optimize_s3_image(
             bucket_name,
@@ -311,8 +316,9 @@ def main(
             _persist_optimization_metrics(
                 ddb_key, opt.crop_result, opt.grayscale_applied, opt.file_size_bytes, opt_result=opt
             )
-            if _should_invoke_bda(preclassification_category):
-                invoke_bda(bucket_name, object_key, ddb_key, preclassification_category)
+
+            if _should_invoke_bda(preclassification_document_type):
+                invoke_bda(bucket_name, object_key, ddb_key, routing_category)
                 logger.info(f"Optimized {ddb_key} and invoked BDA")
             else:
                 logger.info(f"{ddb_key} preclassified as other_document; skipping BDA (flag on)")
@@ -340,8 +346,11 @@ def main(
         # Non-grayscale-convertible files (PDFs, TIFFs). Best-effort crop to
         # isolate the document from background for better extraction quality.
         logger.info(f"Branch: is_awaiting_processing (apply_grayscale=False) for {ddb_key}")
-        preclassification_category = existing_record.get(
+        preclassification_document_type = existing_record.get(
             DocumentMetadata.PRECLASSIFICATION_CATEGORY
+        )
+        routing_category = existing_record.get(
+            DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_CATEGORY
         )
         opt = optimize_s3_image(
             bucket_name,
@@ -353,8 +362,8 @@ def main(
         _persist_optimization_metrics(
             ddb_key, opt.crop_result, False, opt.file_size_bytes, opt_result=opt
         )
-        if _should_invoke_bda(preclassification_category):
-            invoke_bda(bucket_name, object_key, ddb_key, preclassification_category)
+        if _should_invoke_bda(preclassification_document_type):
+            invoke_bda(bucket_name, object_key, ddb_key, routing_category)
         else:
             logger.info(f"{ddb_key} preclassified as other_document; skipping BDA (flag on)")
             classify_as_extraction_not_configured(

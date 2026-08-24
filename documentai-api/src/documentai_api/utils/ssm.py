@@ -112,8 +112,8 @@ def is_preclassification_blueprint_matching_enabled() -> bool:
     """Whether blueprint matching runs after preclassification.
 
     When enabled, documents are matched against available BDA blueprints after
-    preclassification. Results are stored for observability only - no routing
-    decisions are made from them. Default: true.
+    preclassification. The matched category drives BDA project routing when
+    is_preclassification_routing_enabled() is also true. Default: true.
     """
     return _get_flag(FeatureFlags.ENABLE_PRECLASSIFICATION_BLUEPRINT_MATCHING, default=True)
 

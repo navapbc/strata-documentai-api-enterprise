@@ -47,6 +47,7 @@ class DocumentMetadata:
     PRECLASSIFICATION_BLUEPRINT_MATCH_DURATION_SECONDS = (
         "preclassificationBlueprintMatchDurationSeconds"
     )
+    PRECLASSIFICATION_BLUEPRINT_MATCH_CATEGORY = "preclassificationBlueprintMatchCategory"
     PRECLASSIFICATION_MAX_DOCUMENT_COUNT_ON_PAGE = "preclassificationMaxDocumentCountOnPage"
 
     # image optimization fields
@@ -101,6 +102,7 @@ class DocumentMetadata:
     FIELD_CONFIDENCE_SCORES = "fieldConfidenceScores"
 
     # bda processing info
+    USED_CATEGORY_SPECIFIC_PROJECT = "usedCategorySpecificProject"
     BDA_REGION_USED = "bdaRegionUsed"
     BDA_MATCHED_BLUEPRINT_NAME = "matchedBlueprintName"
     BDA_MATCHED_BLUEPRINT_CONFIDENCE = "matchedBlueprintConfidence"
