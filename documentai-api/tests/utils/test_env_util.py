@@ -15,14 +15,15 @@ def _no_lambda_marker(monkeypatch):
 def _no_real_dotenv(monkeypatch):
     """Prevent tests from picking up a real developer .env file.
 
-    AWSEnvConfig reads .env from the current working directory by default
-    (PydanticBaseEnvConfig.model_config). monkeypatch.setenv/delenv only affect
-    os.environ, a separate settings source - it doesn't stop pydantic-settings
-    from reading the same keys from a real .env on disk (e.g. one
-    created locally by `make env-from-aws`). Disabling dotenv here isolates
-    this test file from accidentally picking up a real .env file.
+    AWSEnvConfig and AppEnvConfig both read .env from the current working
+    directory by default (PydanticBaseEnvConfig.model_config). monkeypatch.setenv/
+    delenv only affect os.environ, a separate settings source - it doesn't stop
+    pydantic-settings from reading the same keys from a real .env on disk (e.g.
+    one created locally by `make env-from-aws`). Disabling dotenv on both here
+    isolates this test file from accidentally picking up a real .env file.
     """
     monkeypatch.setitem(AWSEnvConfig.model_config, "env_file", None)
+    monkeypatch.setitem(AppEnvConfig.model_config, "env_file", None)
 
 
 def test_aws_env_config_has_required_fields():
