@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from documentai_api.app import app
+from documentai_api.utils.schemas import DocumentSchema, SchemaField
 
 client = TestClient(app)
 
@@ -14,18 +15,22 @@ def _set_bda_env(bda_project_arns):
 
 
 MOCK_SCHEMAS = {
-    "W2": {
-        "fields": [
-            {"name": "ssn", "type": "string", "description": "Social security number"},
-            {"name": "wages", "type": "number", "description": "Total wages"},
-        ]
-    },
-    "Payslip": {
-        "fields": [
-            {"name": "gross_pay", "type": "number", "description": "Gross pay amount"},
-            {"name": "ssn", "type": "string", "description": "Employee SSN"},
-        ]
-    },
+    "W2": DocumentSchema(
+        document_type="W2",
+        description="",
+        fields=[
+            SchemaField(name="ssn", type="string", description="Social security number"),
+            SchemaField(name="wages", type="number", description="Total wages"),
+        ],
+    ),
+    "Payslip": DocumentSchema(
+        document_type="Payslip",
+        description="",
+        fields=[
+            SchemaField(name="gross_pay", type="number", description="Gross pay amount"),
+            SchemaField(name="ssn", type="string", description="Employee SSN"),
+        ],
+    ),
 }
 
 
@@ -222,11 +227,11 @@ def test_document_categories():
 def test_csv_value_with_quotes():
     """Test CSV escaping for values containing quotes."""
     schemas = {
-        "W2": {
-            "fields": [
-                {"name": "field1", "type": "string", "description": 'Contains "quotes"'},
-            ]
-        },
+        "W2": DocumentSchema(
+            document_type="W2",
+            description="",
+            fields=[SchemaField(name="field1", type="string", description='Contains "quotes"')],
+        ),
     }
     with patch("documentai_api.utils.schemas.get_all_schemas", return_value=schemas):
         response = client.get("/v1/dictionary/fields?format=csv")
@@ -238,11 +243,11 @@ def test_csv_value_with_quotes():
 def test_csv_value_with_commas():
     """Test CSV escaping for values containing commas."""
     schemas = {
-        "W2": {
-            "fields": [
-                {"name": "field1", "type": "string", "description": "Has, commas"},
-            ]
-        },
+        "W2": DocumentSchema(
+            document_type="W2",
+            description="",
+            fields=[SchemaField(name="field1", type="string", description="Has, commas")],
+        ),
     }
     with patch("documentai_api.utils.schemas.get_all_schemas", return_value=schemas):
         response = client.get("/v1/dictionary/fields?format=csv")
@@ -263,11 +268,11 @@ def test_csv_empty_data():
 def test_csv_value_with_newline():
     """Test CSV escaping for values containing newlines."""
     schemas = {
-        "W2": {
-            "fields": [
-                {"name": "field1", "type": "string", "description": "Line1\nLine2"},
-            ]
-        },
+        "W2": DocumentSchema(
+            document_type="W2",
+            description="",
+            fields=[SchemaField(name="field1", type="string", description="Line1\nLine2")],
+        ),
     }
     with patch("documentai_api.utils.schemas.get_all_schemas", return_value=schemas):
         response = client.get("/v1/dictionary/fields?format=csv")
@@ -279,11 +284,11 @@ def test_csv_value_with_newline():
 def test_csv_value_with_none():
     """Test CSV handles None values."""
     schemas = {
-        "W2": {
-            "fields": [
-                {"name": "field1", "type": "string", "description": None},
-            ]
-        },
+        "W2": DocumentSchema(
+            document_type="W2",
+            description="",
+            fields=[SchemaField(name="field1", type="string", description=None)],
+        ),
     }
     with patch("documentai_api.utils.schemas.get_all_schemas", return_value=schemas):
         response = client.get("/v1/dictionary/fields?format=csv")
@@ -316,17 +321,6 @@ def test_list_schemas_503_on_failure(mocker):
     mocker.patch("documentai_api.app_dictionary.get_all_schemas", side_effect=Exception("BDA down"))
     response = client.get("/v1/dictionary/schemas")
     assert response.status_code == 503
-
-
-def test_get_schema_detail_malformed(mocker):
-    """get_schema_detail returns 500 when schema is missing 'fields' key."""
-    mocker.patch(
-        "documentai_api.app_dictionary.get_document_schema",
-        return_value={"documentType": "W2"},  # no 'fields' key
-    )
-    response = client.get("/v1/dictionary/schemas/W2")
-    assert response.status_code == 500
-    assert "malformed" in response.json()["detail"].lower()
 
 
 def test_get_all_fields_503_on_failure(mocker):

@@ -584,8 +584,12 @@ locals {
 
   # API Lambda env: the shared worker map, minus the Athena/Glue vars that only
   # the metrics-aggregator/usage-report workers read, plus CORS_ALLOWED_ORIGINS.
-  # Dropping the worker-only vars keeps the API function under the 4KB Lambda
-  # env limit once CORS is added. (Workers keep lambda_env_vars unchanged.)
+  # BDA_PROJECT_ID_* is also dropped - only the document_processor worker (via
+  # bda_invoker.py) and the offline pull-blueprint-schemas CLI (via schemas.py)
+  # call get_bda_project_arns(); the API Lambda has no runtime path that does,
+  # since get_all_schemas() reads a preloaded static file instead of calling
+  # BDA directly. Dropping these keeps the API function under the 4KB Lambda
+  # env limit once CORS is added.
   api_lambda_env_vars = merge(
     {
       for k, v in local.lambda_env_vars : k => v

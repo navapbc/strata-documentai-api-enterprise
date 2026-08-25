@@ -43,7 +43,7 @@ def write(
     import os
 
     from documentai_api.services.bda import get_blueprint, get_data_automation_project
-    from documentai_api.utils.schemas import _extract_fields
+    from documentai_api.utils.schemas import extract_fields
 
     arns: dict[str, str] = {}
 
@@ -98,10 +98,10 @@ def write(
                     existing = json.loads(label_file.read_text())
 
                 # Merge - only add fields not already present
-                fields = _extract_fields(schema)
+                fields = extract_fields(schema)
                 added = 0
                 for field in fields:
-                    name = field["name"]
+                    name = field.name
                     if name not in existing:
                         existing[name] = _to_human_label(name)
                         added += 1

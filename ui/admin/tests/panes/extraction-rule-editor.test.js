@@ -261,9 +261,21 @@ describe("extraction-rule-editor header", () => {
   });
 
   it("renders header for each doc type section when no activeDocType", () => {
-    Store.set({ schemas: { W2: [{ name: "ssn" }] }, tenantId: "t" });
+    Store.set({ schemasLoading: false, schemas: { W2: [{ name: "ssn" }] }, tenantId: "t" });
     ExtractionRuleEditor.mount(root);
     expect(root.querySelector(".fields-list-header").textContent).toBe("W2");
+  });
+
+  it("shows Loading while schemas are still being fetched", () => {
+    Store.set({ schemasLoading: true, schemas: {}, tenantId: "t" });
+    ExtractionRuleEditor.mount(root);
+    expect(root.querySelector(".empty-state").textContent).toBe("Loading…");
+  });
+
+  it("shows an empty state instead of Loading forever once schema fetch completes with nothing", () => {
+    Store.set({ schemasLoading: false, schemas: {}, tenantId: "t" });
+    ExtractionRuleEditor.mount(root);
+    expect(root.querySelector(".empty-state").textContent).toBe("No document types found.");
   });
 });
 

@@ -1,0 +1,3274 @@
+{
+  "1099-Consolidated-Summary-Statement": {
+    "category": "self_employment_income",
+    "description": "A consolidated tax reporting statement from a financial institution summarizing 1099 forms such as 1099-DIV, 1099-INT, and 1099-MISC.",
+    "document_type": "1099-Consolidated-Summary-Statement",
+    "fields": [
+      {
+        "description": "The account number associated with the brokerage or investment account.",
+        "name": "account_number",
+        "type": "string"
+      },
+      {
+        "description": "The full name of the account holder as printed on the statement.",
+        "name": "account_holder_name",
+        "type": "string"
+      },
+      {
+        "description": "Total miscellaneous income reported for the tax year, typically from 1099-MISC forms.",
+        "name": "misc_income",
+        "type": "string"
+      },
+      {
+        "description": "The name of the financial institution issuing the tax reporting statement, e.g., Fidelity Investments.",
+        "name": "financial_institution",
+        "type": "string"
+      },
+      {
+        "description": "List of IRS forms included in the statement, such as 1099-DIV, 1099-INT, 1099-MISC, or 1099-B.",
+        "name": "form_types",
+        "type": "string"
+      },
+      {
+        "description": "Total dividends reported for the tax year, typically from 1099-DIV forms.",
+        "name": "dividend_income",
+        "type": "string"
+      },
+      {
+        "description": "Total state tax withheld as reported on any of the included 1099 forms.",
+        "name": "state_tax_withheld",
+        "type": "string"
+      },
+      {
+        "description": "The tax year the statement applies to.",
+        "name": "tax_year",
+        "type": "string"
+      },
+      {
+        "description": "Total federal tax withheld as reported on any of the included 1099 forms.",
+        "name": "federal_tax_withheld",
+        "type": "string"
+      },
+      {
+        "description": "Total interest income reported for the tax year, typically from 1099-INT forms.",
+        "name": "interest_income",
+        "type": "string"
+      }
+    ]
+  },
+  "Alimony-Decree": {
+    "category": "dependent_income",
+    "description": "A legal document or court order detailing the financial terms, frequency, and duration of spousal support or alimony payments.",
+    "document_type": "Alimony-Decree",
+    "fields": [
+      {
+        "description": "Date payments are ordered to end, if specified. YYYY-MM-DD format.",
+        "name": "effective_end_date",
+        "type": "string"
+      },
+      {
+        "description": "Zip code of the recipient.",
+        "name": "recipient_zip_code",
+        "type": "string"
+      },
+      {
+        "description": "Recurring dollar amount ordered for spousal support per payment cycle.",
+        "name": "payment_amount",
+        "type": "number"
+      },
+      {
+        "description": "Address of the recipient.",
+        "name": "recipient_address",
+        "type": "string"
+      },
+      {
+        "description": "State of the recipient. Two-letter code.",
+        "name": "recipient_state",
+        "type": "string"
+      },
+      {
+        "description": "Date the court order was issued. YYYY-MM-DD format.",
+        "name": "order_date",
+        "type": "string"
+      },
+      {
+        "description": "Type of support: Alimony, Child Support, or both.",
+        "name": "payment_type",
+        "type": "string"
+      },
+      {
+        "description": "Recurring schedule of the payments, such as Monthly or Bi-Weekly.",
+        "name": "payment_frequency",
+        "type": "string"
+      },
+      {
+        "description": "Date payments are ordered to begin. YYYY-MM-DD format.",
+        "name": "effective_start_date",
+        "type": "string"
+      },
+      {
+        "description": "Court case or child support enforcement case number.",
+        "name": "case_number",
+        "type": "string"
+      },
+      {
+        "description": "Name of the court, county, or state jurisdiction that issued the decree.",
+        "name": "court_name",
+        "type": "string"
+      },
+      {
+        "description": "Full name of the spouse ordered to make alimony payments.",
+        "name": "payer_name",
+        "type": "string"
+      },
+      {
+        "description": "Last name of the recipient.",
+        "name": "recipient_name.last_name",
+        "type": "string"
+      },
+      {
+        "description": "Middle name of the recipient.",
+        "name": "recipient_name.middle_name",
+        "type": "string"
+      },
+      {
+        "description": "First name of the spouse receiving alimony.",
+        "name": "recipient_name.first_name",
+        "type": "string"
+      }
+    ]
+  },
+  "Annuity-Statement": {
+    "category": "retirement_income",
+    "description": "A financial statement outlining the performance, contract value, and distribution details of an annuity investment account.",
+    "document_type": "Annuity-Statement",
+    "fields": [
+      {
+        "description": "Employer Identification Number of the payer.",
+        "name": "payer_ein",
+        "type": "string"
+      },
+      {
+        "description": "Zip code of the recipient.",
+        "name": "recipient_zip_code",
+        "type": "string"
+      },
+      {
+        "description": "Date the statement or form was issued. YYYY-MM-DD format.",
+        "name": "document_date",
+        "type": "string"
+      },
+      {
+        "description": "Date annuity payments began. YYYY-MM-DD format.",
+        "name": "annuity_start_date",
+        "type": "string"
+      },
+      {
+        "description": "Gross annuity payment amount per period.",
+        "name": "payment_amount",
+        "type": "number"
+      },
+      {
+        "description": "Mailing address of the recipient.",
+        "name": "recipient_address",
+        "type": "string"
+      },
+      {
+        "description": "Tax year the annuity income is reported for.",
+        "name": "tax_year",
+        "type": "string"
+      },
+      {
+        "description": "Social Security Number of the recipient. Reformat as XXX-XX-XXXX.",
+        "name": "recipient_ssn",
+        "type": "string"
+      },
+      {
+        "description": "State of the recipient. Two-letter code.",
+        "name": "recipient_state",
+        "type": "string"
+      },
+      {
+        "description": "The total ending monetary value of the annuity contract for the current period, often labeled Ending Value or Account Balance.",
+        "name": "current_contract_value",
+        "type": "string"
+      },
+      {
+        "description": "The unique contract, policy, or account number identifying the annuity.",
+        "name": "contract_number",
+        "type": "string"
+      },
+      {
+        "description": "How often payments are made (monthly, quarterly, annually).",
+        "name": "payment_frequency",
+        "type": "string"
+      },
+      {
+        "description": "Name of the insurance company or financial institution issuing the annuity.",
+        "name": "payer_name",
+        "type": "string"
+      },
+      {
+        "description": "Last name of the annuity payment recipient.",
+        "name": "recipient_name.last_name",
+        "type": "string"
+      },
+      {
+        "description": "Middle name of the annuity payment recipient.",
+        "name": "recipient_name.middle_name",
+        "type": "string"
+      },
+      {
+        "description": "First name of the annuity payment recipient.",
+        "name": "recipient_name.first_name",
+        "type": "string"
+      },
+      {
+        "description": "Federal income tax withheld from annuity payments.",
+        "name": "federal_tax_withheld",
+        "type": "number"
+      },
+      {
+        "description": "Taxable portion of the annuity distribution.",
+        "name": "taxable_amount",
+        "type": "number"
+      }
+    ]
+  },
+  "Bank-Statement": {
+    "category": "account_statements",
+    "description": "A financial statement for a bank account listing transaction summaries for a specific duration",
+    "document_type": "Bank-Statement",
+    "fields": [
+      {
+        "description": "The account number for which the statement is prepared",
+        "name": "account_number",
+        "type": "string"
+      },
+      {
+        "description": "The branch transit number",
+        "name": "branch_transit_number",
+        "type": "string"
+      },
+      {
+        "description": "Description of the line item for the account summary table",
+        "name": "account_summary.summary_desc",
+        "type": "string"
+      },
+      {
+        "description": "Dollar amount for the corresponding summary item",
+        "name": "account_summary.summary_amount",
+        "type": "number"
+      },
+      {
+        "description": "Name of the bank account holder",
+        "name": "account_holder_name",
+        "type": "string"
+      },
+      {
+        "description": "Full address of the account holder including street, city, state and zip code",
+        "name": "account_holder_address",
+        "type": "string"
+      },
+      {
+        "description": "Name of the finanical institution ",
+        "name": "bank_name",
+        "type": "string"
+      },
+      {
+        "description": "Type of the bank account, such as 'Checking', 'Savings', etc.",
+        "name": "account_type",
+        "type": "string"
+      },
+      {
+        "description": "Date of the transaction in MM/DD/YYYY format",
+        "name": "transaction_details.date",
+        "type": "string"
+      },
+      {
+        "description": "Description of the transaction item",
+        "name": "transaction_details.description",
+        "type": "string"
+      },
+      {
+        "description": "dollar amount of withdrawal for this transaction",
+        "name": "transaction_details.withdrawals",
+        "type": "number"
+      },
+      {
+        "description": "Dollar amount of deposits for this transaction",
+        "name": "transaction_details.deposits",
+        "type": "number"
+      },
+      {
+        "description": "Balance amount in the account including this transaction",
+        "name": "transaction_details.balance",
+        "type": "number"
+      },
+      {
+        "description": "Statement start date in MM/DD/YYYY format",
+        "name": "statement_start_date",
+        "type": "string"
+      },
+      {
+        "description": "End date for the statement in MM/DD/YYYY format",
+        "name": "statement_end_date",
+        "type": "string"
+      }
+    ]
+  },
+  "Birth-certificates": {
+    "category": "identity",
+    "description": "The birth certificate record of a person",
+    "document_type": "Birth-certificates",
+    "fields": [
+      {
+        "description": "Document Number or file number of the birth certificate",
+        "name": "CertificateInfo.BirthNum",
+        "type": "string"
+      },
+      {
+        "description": "Name of Hospital or institution where the child is born",
+        "name": "CertificateInfo.BirthPlace",
+        "type": "string"
+      },
+      {
+        "description": "Certifier Name",
+        "name": "CertificateInfo.CertifierName",
+        "type": "string"
+      },
+      {
+        "description": "Certifier address",
+        "name": "CertificateInfo.CertifierAddress",
+        "type": "string"
+      },
+      {
+        "description": "Certifier city",
+        "name": "CertificateInfo.CertifierCity",
+        "type": "string"
+      },
+      {
+        "description": "Certifier P.O.",
+        "name": "CertificateInfo.CertifierPO",
+        "type": "string"
+      },
+      {
+        "description": "Certifier state",
+        "name": "CertificateInfo.CertifierState",
+        "type": "string"
+      },
+      {
+        "description": "Date signed by the ceritifier",
+        "name": "CertificateInfo.CertifierDateSigned",
+        "type": "string"
+      },
+      {
+        "description": "Time signed by the certifier",
+        "name": "CertificateInfo.CertifiedTime",
+        "type": "string"
+      },
+      {
+        "description": "Date issued",
+        "name": "CertificateInfo.DateIssued",
+        "type": "string"
+      },
+      {
+        "description": "Name of State Registrar",
+        "name": "CertificateInfo.StateRegistrarName",
+        "type": "string"
+      },
+      {
+        "description": "Mother's residence state",
+        "name": "MotherInfo.MotherResidenceState",
+        "type": "string"
+      },
+      {
+        "description": "Mother's residence country",
+        "name": "MotherInfo.MotherResidenceCountry",
+        "type": "string"
+      },
+      {
+        "description": "Mother's residence city",
+        "name": "MotherInfo.MotherResidenceCity",
+        "type": "string"
+      },
+      {
+        "description": "Mother's residence street address",
+        "name": "MotherInfo.MotherResidenceStreetAddress",
+        "type": "string"
+      },
+      {
+        "description": "Y/N for \"Is residence inside city limits?\"",
+        "name": "MotherInfo.MotherResidenceInsideCityLimit",
+        "type": "boolean"
+      },
+      {
+        "description": "Y/N for \"Is residence on a Farm?\"",
+        "name": "MotherInfo.MotherResidenceFarm",
+        "type": "boolean"
+      },
+      {
+        "description": "Mother's first name",
+        "name": "MotherInfo.MotherFirstName",
+        "type": "string"
+      },
+      {
+        "description": "Mother's middle name",
+        "name": "MotherInfo.MotherMiddleName",
+        "type": "string"
+      },
+      {
+        "description": "Mother's last name",
+        "name": "MotherInfo.MotherLastName",
+        "type": "string"
+      },
+      {
+        "description": "Mother's race",
+        "name": "MotherInfo.MotherRace",
+        "type": "string"
+      },
+      {
+        "description": "Mother's age at the time of this birth",
+        "name": "MotherInfo.MotherAge",
+        "type": "number"
+      },
+      {
+        "description": "Mother's birthplace",
+        "name": "MotherInfo.MotherBirthPlace",
+        "type": "string"
+      },
+      {
+        "description": "First name of the child",
+        "name": "ChildInfo.ChildFirstName",
+        "type": "string"
+      },
+      {
+        "description": "Middle name of the child",
+        "name": "ChildInfo.ChildMiddleName",
+        "type": "string"
+      },
+      {
+        "description": "Last name of the child",
+        "name": "ChildInfo.ChildLastName",
+        "type": "string"
+      },
+      {
+        "description": "Sex of the child. One of \"Male\" or \"Female\"",
+        "name": "ChildInfo.ChildSex",
+        "type": "string"
+      },
+      {
+        "description": "Type of the birth. One of \"Single\", \"Twin\" or \"Triplet\"",
+        "name": "ChildInfo.BirthType",
+        "type": "string"
+      },
+      {
+        "description": "The birth order of the child if twin or triplet.",
+        "name": "ChildInfo.BirthOrder",
+        "type": "string"
+      },
+      {
+        "description": "Birth month",
+        "name": "ChildInfo.DateOfBirthMonth",
+        "type": "string"
+      },
+      {
+        "description": "Birth day",
+        "name": "ChildInfo.DateOfBirthDay",
+        "type": "string"
+      },
+      {
+        "description": "Birth year",
+        "name": "ChildInfo.DateOfBirthYear",
+        "type": "string"
+      },
+      {
+        "description": "Father's first name",
+        "name": "FatherInfo.FatherFirstName",
+        "type": "string"
+      },
+      {
+        "description": "Father's middle name",
+        "name": "FatherInfo.FatherMiddleName",
+        "type": "string"
+      },
+      {
+        "description": "Father's last name",
+        "name": "FatherInfo.FatherLastName",
+        "type": "string"
+      },
+      {
+        "description": "Father's race",
+        "name": "FatherInfo.FatherRace",
+        "type": "string"
+      },
+      {
+        "description": "Father's age at the time of this birth",
+        "name": "FatherInfo.FatherAge",
+        "type": "number"
+      },
+      {
+        "description": "Father's birthplace",
+        "name": "FatherInfo.FatherBirthplace",
+        "type": "string"
+      },
+      {
+        "description": "Father's usual occupation",
+        "name": "FatherInfo.FatherOccupation",
+        "type": "string"
+      },
+      {
+        "description": "Number of other children born to this mother are now living",
+        "name": "PreviousChildInfo.PreviousChildLiving",
+        "type": "number"
+      },
+      {
+        "description": "Number of other children born alive but are now dead",
+        "name": "PreviousChildInfo.PreviousChildDead",
+        "type": "number"
+      },
+      {
+        "description": "Number of children were still born (born dead after 20 weeks pregnancy)",
+        "name": "PreviousChildInfo.PreviousChildStillborn",
+        "type": "number"
+      },
+      {
+        "description": "Informant's full name",
+        "name": "Informant.InformantName",
+        "type": "string"
+      },
+      {
+        "description": "The type of the informat. One of \"Parent\" or \"Other\"",
+        "name": "Informant.InformantType",
+        "type": "string"
+      },
+      {
+        "description": "Is Signature of state registrar present in the document? ",
+        "name": "StateRegistrarSigned",
+        "type": "boolean"
+      }
+    ]
+  },
+  "Child-Support-Document": {
+    "category": "dependent_income",
+    "description": "A legal order, decree, or official ledger establishing or tracking monthly child support financial obligations.",
+    "document_type": "Child-Support-Document",
+    "fields": [
+      {
+        "description": "Date payments are ordered to end, if specified. YYYY-MM-DD format.",
+        "name": "effective_end_date",
+        "type": "string"
+      },
+      {
+        "description": "Zip code of the recipient.",
+        "name": "recipient_zip_code",
+        "type": "string"
+      },
+      {
+        "description": "Ordered payment amount per period. Presented as lump sum.",
+        "name": "payment_amount",
+        "type": "number"
+      },
+      {
+        "description": "Address of the recipient.",
+        "name": "recipient_address",
+        "type": "string"
+      },
+      {
+        "description": "Name of the child for whom support is ordered. If multiple children, include each child's name.",
+        "name": "child_name",
+        "type": "string"
+      },
+      {
+        "description": "State of the recipient. Two-letter code.",
+        "name": "recipient_state",
+        "type": "string"
+      },
+      {
+        "description": "Date the court order was issued. YYYY-MM-DD format.",
+        "name": "order_date",
+        "type": "string"
+      },
+      {
+        "description": "Type of support: Child Support, Alimony, or both.",
+        "name": "payment_type",
+        "type": "string"
+      },
+      {
+        "description": "How often payments are due, such as Monthly, Semi-Monthly, or Weekly.",
+        "name": "payment_frequency",
+        "type": "string"
+      },
+      {
+        "description": "Date the support obligation begins. YYYY-MM-DD format.",
+        "name": "effective_start_date",
+        "type": "string"
+      },
+      {
+        "description": "The court case number or state registry identification number associated with the child support file.",
+        "name": "case_number",
+        "type": "string"
+      },
+      {
+        "description": "Name of the issuing court.",
+        "name": "court_name",
+        "type": "string"
+      },
+      {
+        "description": "Full name of the person paying child support. May be labeled as Payor, Obligor, or Defendant.",
+        "name": "payer_name",
+        "type": "string"
+      },
+      {
+        "description": "Last name of the recipient.",
+        "name": "recipient_name.last_name",
+        "type": "string"
+      },
+      {
+        "description": "Middle name of the recipient.",
+        "name": "recipient_name.middle_name",
+        "type": "string"
+      },
+      {
+        "description": "First name of the person receiving child support.",
+        "name": "recipient_name.first_name",
+        "type": "string"
+      }
+    ]
+  },
+  "Employment-Termination-Letter": {
+    "category": "employment_records",
+    "description": "A formal letter issued by an employer documenting the end of an employee's employment.",
+    "document_type": "Employment-Termination-Letter",
+    "fields": [
+      {
+        "description": "The date the termination letter was issued.",
+        "name": "letter_date",
+        "type": "string"
+      },
+      {
+        "description": "The date the employee started working at the company.",
+        "name": "employment_start_date",
+        "type": "string"
+      },
+      {
+        "description": "The reason the employment ended, such as layoff, resignation, or reduction in hours.",
+        "name": "termination_reason",
+        "type": "string"
+      },
+      {
+        "description": "The job title of the person issuing the termination letter.",
+        "name": "issuer_title",
+        "type": "string"
+      },
+      {
+        "description": "The full name of the employee whose employment is ending.",
+        "name": "employee_name",
+        "type": "string"
+      },
+      {
+        "description": "The name of the company or organization terminating the employment.",
+        "name": "employer_name",
+        "type": "string"
+      },
+      {
+        "description": "The employee's role or position at the time of termination.",
+        "name": "job_title",
+        "type": "string"
+      },
+      {
+        "description": "The date the employee's employment ended.",
+        "name": "employment_end_date",
+        "type": "string"
+      },
+      {
+        "description": "The name of the person who issued or signed the termination letter.",
+        "name": "issuer_name",
+        "type": "string"
+      }
+    ]
+  },
+  "Employment-Verification-Letter": {
+    "category": "employment_records",
+    "description": "A letter issued by an employer verifying an individual's employment history and job details.",
+    "document_type": "Employment-Verification-Letter",
+    "fields": [
+      {
+        "description": "The employee's salary, hourly wage, or compensation if stated in the letter.",
+        "name": "salary_or_wage",
+        "type": "string"
+      },
+      {
+        "description": "The date the employee began working for the employer.",
+        "name": "employment_start_date",
+        "type": "string"
+      },
+      {
+        "description": "The job title of the person issuing the letter, such as HR manager or supervisor.",
+        "name": "issuer_title",
+        "type": "string"
+      },
+      {
+        "description": "The full name of the employee whose employment is being verified.",
+        "name": "employee_name",
+        "type": "string"
+      },
+      {
+        "description": "The name of the company or organization employing the individual.",
+        "name": "employer_name",
+        "type": "string"
+      },
+      {
+        "description": "The job title or position held by the employee.",
+        "name": "job_title",
+        "type": "string"
+      },
+      {
+        "description": "The date the employee stopped working for the employer if applicable.",
+        "name": "employment_end_date",
+        "type": "string"
+      },
+      {
+        "description": "The name of the person issuing or signing the employment verification letter.",
+        "name": "issuer_name",
+        "type": "string"
+      }
+    ]
+  },
+  "Financial-Aid-Award": {
+    "category": "education",
+    "description": "An official letter from an educational institution detailing the financial aid package, including grants, scholarships, and loans offered to a student.",
+    "document_type": "Financial-Aid-Award",
+    "fields": [
+      {
+        "description": "Date aid was or will be disbursed. YYYY-MM-DD format.",
+        "name": "disbursement_date",
+        "type": "string"
+      },
+      {
+        "description": "Last name of the student.",
+        "name": "student_name.last_name",
+        "type": "string"
+      },
+      {
+        "description": "First name of the student receiving financial aid.",
+        "name": "student_name.first_name",
+        "type": "string"
+      },
+      {
+        "description": "Total financial aid awarded.",
+        "name": "total_aid_amount",
+        "type": "number"
+      },
+      {
+        "description": "The specific academic school year the aid applies to, such as 2024-2025.",
+        "name": "academic_year",
+        "type": "string"
+      },
+      {
+        "description": "Grant or scholarship portion (excluded income). Does not need to be repaid.",
+        "name": "grant_amount",
+        "type": "number"
+      },
+      {
+        "description": "Name of the college, university, or school issuing the financial aid award package. The school name may indicate if it is located in another state.",
+        "name": "school_name",
+        "type": "string"
+      },
+      {
+        "description": "Student ID number.",
+        "name": "student_id",
+        "type": "string"
+      },
+      {
+        "description": "Loan portion of the aid package.",
+        "name": "loan_amount",
+        "type": "number"
+      },
+      {
+        "description": "Type of aid (Pell Grant, SEOG, state grant, institutional, etc.).",
+        "name": "aid_type",
+        "type": "string"
+      },
+      {
+        "description": "Federal work-study amount if applicable.",
+        "name": "work_study_amount",
+        "type": "number"
+      },
+      {
+        "description": "The estimated gross cost to attend the school for the year, including tuition, fees, and housing.",
+        "name": "total_cost_of_attendance",
+        "type": "string"
+      }
+    ]
+  },
+  "Form-1040": {
+    "category": "employer_income",
+    "description": "The form 1040 is a tax form from the US administration for filing income.",
+    "document_type": "Form-1040",
+    "fields": [
+      {
+        "description": "One of the checked boxes at the top of the form. One of [\"Single\", \"Married filing jointly\", \"Married filing separately (MFS)\", \"Head of household (HOH)\", \"Qualifying surviving spouse (QSS)\"].",
+        "name": "filing_status",
+        "type": "string"
+      },
+      {
+        "description": "",
+        "name": "personal_information.first_name",
+        "type": "string"
+      },
+      {
+        "description": "empty if not applicable",
+        "name": "personal_information.middle_initial",
+        "type": "string"
+      },
+      {
+        "description": "",
+        "name": "personal_information.last_name",
+        "type": "string"
+      },
+      {
+        "description": "Reformat as XXX-XX-XXXX",
+        "name": "personal_information.social_security_number",
+        "type": "string"
+      },
+      {
+        "description": "empty if not applicable",
+        "name": "personal_information.spouse_first_name",
+        "type": "string"
+      },
+      {
+        "description": "empty if not applicable",
+        "name": "personal_information.spouse_last_name",
+        "type": "string"
+      },
+      {
+        "description": "empty if not applicable",
+        "name": "personal_information.spouse_middle_initial",
+        "type": "string"
+      },
+      {
+        "description": "",
+        "name": "personal_information.home_address",
+        "type": "string"
+      },
+      {
+        "description": "",
+        "name": "personal_information.state",
+        "type": "string"
+      },
+      {
+        "description": "",
+        "name": "personal_information.zip_code",
+        "type": "number"
+      },
+      {
+        "description": "only if applicable",
+        "name": "personal_information.foreign_country_name",
+        "type": "string"
+      },
+      {
+        "description": "only if applicable",
+        "name": "personal_information.foreign_province",
+        "type": "string"
+      },
+      {
+        "description": "only if applicable",
+        "name": "personal_information.foreign_postal_code",
+        "type": "string"
+      },
+      {
+        "description": "If someone can claim you as a dependent",
+        "name": "personal_information.is_dependent",
+        "type": "boolean"
+      },
+      {
+        "description": "if someone can claim your spouse as dependent",
+        "name": "personal_information.is_spouse_dependent",
+        "type": "boolean"
+      },
+      {
+        "description": "if you were born before 2 jan 1958",
+        "name": "personal_information.is_born_before_jan_1958",
+        "type": "boolean"
+      },
+      {
+        "description": "if you are blind",
+        "name": "personal_information.is_blind",
+        "type": "boolean"
+      },
+      {
+        "description": "if your spouse is blind",
+        "name": "personal_information.is_spouse_blind",
+        "type": "boolean"
+      },
+      {
+        "description": "The spouse social security number, if present reformat to XXX-XX-XXXX",
+        "name": "personal_information.spouse_ssn",
+        "type": "string"
+      },
+      {
+        "description": "Has receive or disposed of a digital asset",
+        "name": "digital_asset",
+        "type": "boolean"
+      },
+      {
+        "description": "",
+        "name": "dependents_table.first_name",
+        "type": "string"
+      },
+      {
+        "description": "",
+        "name": "dependents_table.last_name",
+        "type": "string"
+      },
+      {
+        "description": "",
+        "name": "dependents_table.relationship",
+        "type": "string"
+      },
+      {
+        "description": "if present, reformat to XXX-XX-XXXX",
+        "name": "dependents_table.ssn",
+        "type": "string"
+      },
+      {
+        "description": "",
+        "name": "dependents_table.has_child_tax_credit",
+        "type": "boolean"
+      },
+      {
+        "description": "",
+        "name": "dependents_table.has_credit_for_other_dependents",
+        "type": "boolean"
+      },
+      {
+        "description": "More than four dependents checkbox",
+        "name": "more_than_four_dependents",
+        "type": "boolean"
+      },
+      {
+        "description": "The number item. For example 1a, 1b or 1c. ",
+        "name": "filing_items.number_item",
+        "type": "string"
+      },
+      {
+        "description": "The float value if applicable.",
+        "name": "filing_items.amount_value",
+        "type": "number"
+      },
+      {
+        "description": "True if the checkbox is ticked, False otherwise.",
+        "name": "filing_items.checkbox_value",
+        "type": "boolean"
+      },
+      {
+        "description": "For field 16-3, 35-c, use this to fill the value.",
+        "name": "filing_items.text_value",
+        "type": "string"
+      },
+      {
+        "description": "This is item 33.",
+        "name": "total_payments",
+        "type": "number"
+      },
+      {
+        "description": "The value in 34. 0 if empty.",
+        "name": "total_refund",
+        "type": "number"
+      },
+      {
+        "description": "The value in 37. 0 if empty.",
+        "name": "total_owed",
+        "type": "number"
+      },
+      {
+        "description": "",
+        "name": "signature_information.has_primary_taxpayer_signature",
+        "type": "boolean"
+      },
+      {
+        "description": "The date the document was signed, reformatted to YYYY-MM-DD",
+        "name": "signature_information.primary_taxpayer_date",
+        "type": "string"
+      },
+      {
+        "description": "Occupation of the primary taxpayer",
+        "name": "signature_information.primary_taxpayer_occupation",
+        "type": "string"
+      },
+      {
+        "description": "The 6-character PIN",
+        "name": "signature_information.primary_taxpayer_identity_protection_pin",
+        "type": "string"
+      },
+      {
+        "description": "",
+        "name": "signature_information.has_spouse_signed",
+        "type": "boolean"
+      },
+      {
+        "description": "The date the document was signed by the spouse",
+        "name": "signature_information.spouse_signed_date",
+        "type": "string"
+      },
+      {
+        "description": "",
+        "name": "signature_information.spouse_occupation",
+        "type": "string"
+      },
+      {
+        "description": "The spouse's 6-character PIN",
+        "name": "signature_information.spouse_identity_protection_pin",
+        "type": "string"
+      },
+      {
+        "description": "",
+        "name": "preparer_information.preparer_name",
+        "type": "string"
+      },
+      {
+        "description": "",
+        "name": "preparer_information.preparer_firm_name",
+        "type": "string"
+      },
+      {
+        "description": "",
+        "name": "preparer_information.preparer_phone",
+        "type": "string"
+      },
+      {
+        "description": "",
+        "name": "preparer_information.preparer_address",
+        "type": "string"
+      },
+      {
+        "description": "The preparer's employer insurance number",
+        "name": "preparer_information.preparer_ein",
+        "type": "string"
+      },
+      {
+        "description": "The preprarer PTIN",
+        "name": "preparer_information.preparer_ptin",
+        "type": "string"
+      },
+      {
+        "description": "Is the form signed?",
+        "name": "is_signed",
+        "type": "boolean"
+      }
+    ]
+  },
+  "Form-1040-Schedule-C": {
+    "category": "employer_income",
+    "description": "This is a blueprint of Form 1040 Schedule C",
+    "document_type": "Form-1040-Schedule-C",
+    "fields": [
+      {
+        "description": "Proprietor's first and last name",
+        "name": "ProprietorInformation.ProprietorName",
+        "type": "string"
+      },
+      {
+        "description": "Proprietor's social security number",
+        "name": "ProprietorInformation.SSN",
+        "type": "string"
+      },
+      {
+        "description": "Description of the Proprietor's business or professional activity",
+        "name": "ProprietorInformation.PrincipalBusinessProfession",
+        "type": "string"
+      },
+      {
+        "description": "Six-digit code from the Principal Business or Professional Activity Codes chart",
+        "name": "ProprietorInformation.PrincipalBusinessProfessionActivityCode",
+        "type": "string"
+      },
+      {
+        "description": "Proprietor's business name",
+        "name": "ProprietorInformation.BusinessName",
+        "type": "string"
+      },
+      {
+        "description": "Employer ID number",
+        "name": "ProprietorInformation.EIN",
+        "type": "string"
+      },
+      {
+        "description": "Business address street (including suite or room no.)",
+        "name": "ProprietorInformation.BusinessAddress",
+        "type": "string"
+      },
+      {
+        "description": "Business address city, town, state, zip code",
+        "name": "ProprietorInformation.BusinessAddress2",
+        "type": "string"
+      },
+      {
+        "description": "Enter the accounting method: (1) Cash, (2) Accrual, (3) Other",
+        "name": "ProprietorInformation.Accounting method",
+        "type": "array"
+      },
+      {
+        "description": "Did the proprietor materially participate in the operation of the business?: \"Y\" / \"N\"",
+        "name": "ProprietorInformation.MaterialParticipation",
+        "type": "boolean"
+      },
+      {
+        "description": "Did the proprietor acquire this business in this tax year?: \"Y\" / \"blank\"",
+        "name": "ProprietorInformation.BusinessAcquisition",
+        "type": "boolean"
+      },
+      {
+        "description": "Did the proprietor make any payments in 2022 that would require filing of Form 1099?: \"Y\" / \"N\"",
+        "name": "ProprietorInformation.Form1099Required",
+        "type": "boolean"
+      },
+      {
+        "description": "Did the proprietor or will the proprietor file Form 1099?: \"Y\" / \"N\"",
+        "name": "ProprietorInformation.Form1099Filed",
+        "type": "boolean"
+      }
+    ]
+  },
+  "Form-1099-INT": {
+    "category": "employer_income",
+    "description": "This is a blueprint of Form 1099 INT",
+    "document_type": "Form-1099-INT",
+    "fields": [
+      {
+        "description": "Interest income for calendar year",
+        "name": "InterestIncomeReporting.InterestIncome",
+        "type": "number"
+      },
+      {
+        "description": "Interest on US Bonds and Treasuries",
+        "name": "InterestIncomeReporting.FixedIncomeInterest",
+        "type": "number"
+      },
+      {
+        "description": "Investment expenses",
+        "name": "InterestIncomeReporting.InvestmentExpenses",
+        "type": "number"
+      },
+      {
+        "description": "Federal income tax withheld",
+        "name": "InterestIncomeReporting.FederalTaxWithheld",
+        "type": "number"
+      },
+      {
+        "description": "Foreign tax paid on Fixed Income",
+        "name": "InterestIncomeReporting.ForeignTaxPaid",
+        "type": "number"
+      },
+      {
+        "description": "Foreign country or US",
+        "name": "InterestIncomeReporting.StateofPosession",
+        "type": "string"
+      },
+      {
+        "description": "Tax exempt interest on the Fixed Income",
+        "name": "InterestIncomeReporting.TaxExemptInterest",
+        "type": "number"
+      },
+      {
+        "description": "CUSIP# of the tax exempt Fixed Income",
+        "name": "InterestIncomeReporting.TaxExemptCUSIP",
+        "type": "string"
+      },
+      {
+        "description": "State tax withheld",
+        "name": "InterestIncomeReporting.StateTaxWithheld",
+        "type": "number"
+      },
+      {
+        "description": "State name",
+        "name": "InterestIncomeReporting.State",
+        "type": "string"
+      },
+      {
+        "description": "State ID number",
+        "name": "InterestIncomeReporting.StateID",
+        "type": "number"
+      },
+      {
+        "description": "Payer's TIN number",
+        "name": "GeneralInformation.PayerTIN",
+        "type": "string"
+      },
+      {
+        "description": "Recipient's TIN number",
+        "name": "GeneralInformation.RecipientTIN",
+        "type": "string"
+      },
+      {
+        "description": "Account Number",
+        "name": "GeneralInformation.AccountNumber",
+        "type": "number"
+      },
+      {
+        "description": "Current Calendar year",
+        "name": "GeneralInformation.CalendarYear",
+        "type": "number"
+      }
+    ]
+  },
+  "Form-1099-Misc": {
+    "category": "employer_income",
+    "description": "This is a blueprint of Form 1099 Misc",
+    "document_type": "Form-1099-Misc",
+    "fields": [
+      {
+        "description": "State Income first row",
+        "name": "StateIncome.Box18Row0",
+        "type": "number"
+      },
+      {
+        "description": "State Income second row",
+        "name": "StateIncome.Box18Row1",
+        "type": "number"
+      },
+      {
+        "description": "Payer's TIN number as XXXXXXXXX",
+        "name": "GeneralInformation.PayerTIN",
+        "type": "string"
+      },
+      {
+        "description": "Recipient's TIN number as XXX-XX-XXXX",
+        "name": "GeneralInformation.RecipientTIN",
+        "type": "string"
+      },
+      {
+        "description": "Account Number ",
+        "name": "GeneralInformation.AccountNumber",
+        "type": "string"
+      },
+      {
+        "description": "Rent income for the calendar year",
+        "name": "MiscellaneousIncome.Box1",
+        "type": "number"
+      },
+      {
+        "description": "Royalties received for the calendar year",
+        "name": "MiscellaneousIncome.Box2",
+        "type": "number"
+      },
+      {
+        "description": "Other income for the calendar year",
+        "name": "MiscellaneousIncome.Box3",
+        "type": "number"
+      },
+      {
+        "description": "Federal tax withheld",
+        "name": "MiscellaneousIncome.Box4",
+        "type": "number"
+      },
+      {
+        "description": "Fishing boat proceeds ",
+        "name": "MiscellaneousIncome.Box5",
+        "type": "number"
+      },
+      {
+        "description": "Medical and health care payments",
+        "name": "MiscellaneousIncome.Box6",
+        "type": "number"
+      },
+      {
+        "description": "If True, consumer products totaling $5,000 or more were sold to youfor resale, on a buy-sell, a deposit-commission, or other basis",
+        "name": "MiscellaneousIncome.Box7",
+        "type": "boolean"
+      },
+      {
+        "description": "Substitute payments in lieu of dividends or interest",
+        "name": "MiscellaneousIncome.Box8",
+        "type": "number"
+      },
+      {
+        "description": "Crop insurance proceeds",
+        "name": "MiscellaneousIncome.Box9",
+        "type": "number"
+      },
+      {
+        "description": "Gross proceeds paid to an attorney",
+        "name": "MiscellaneousIncome.Box10",
+        "type": "number"
+      },
+      {
+        "description": "Fish purchased for resale",
+        "name": "MiscellaneousIncome.Box11",
+        "type": "number"
+      },
+      {
+        "description": "Section 409A deferrals",
+        "name": "MiscellaneousIncome.Box12",
+        "type": "number"
+      },
+      {
+        "description": "FATCA filing requirement",
+        "name": "MiscellaneousIncome.Box13",
+        "type": "boolean"
+      },
+      {
+        "description": "Excess golden parachute payments",
+        "name": "MiscellaneousIncome.Box14",
+        "type": "number"
+      },
+      {
+        "description": "Nonqualified deferred compensation",
+        "name": "MiscellaneousIncome.Box15",
+        "type": "number"
+      },
+      {
+        "description": "State/Payer's state no. first row",
+        "name": "StatePayerStateNo.Box17Row0",
+        "type": "string"
+      },
+      {
+        "description": "State/Payer's state no. second row",
+        "name": "StatePayerStateNo.Box17Row1",
+        "type": "string"
+      },
+      {
+        "description": "State Tax Withheld first row",
+        "name": "StateTaxWithheld.Box16Row0",
+        "type": "number"
+      },
+      {
+        "description": "State Tax Withheld second row",
+        "name": "StateTaxWithheld.Box16Row1",
+        "type": "number"
+      }
+    ]
+  },
+  "Household-Contribution-Statement": {
+    "category": "shelter",
+    "description": "An informal letter, signed statement, or note from a household member or contributor verifying that they provide financial assistance to cover household expenses.",
+    "document_type": "Household-Contribution-Statement",
+    "fields": [
+      {
+        "description": "Date the letter or statement was written or signed by the contributor. YYYY-MM-DD format.",
+        "name": "statement_date",
+        "type": "string"
+      },
+      {
+        "description": "Whether the letter or statement is signed by the contributor.",
+        "name": "has_signature",
+        "type": "boolean"
+      },
+      {
+        "description": "The full name of the person who is contributing money or paying towards the household expenses.",
+        "name": "contributor_name",
+        "type": "string"
+      },
+      {
+        "description": "How often the money is contributed, such as Monthly, Weekly, or One-time.",
+        "name": "contribution_frequency",
+        "type": "string"
+      },
+      {
+        "description": "Address of the recipient household.",
+        "name": "recipient_address",
+        "type": "string"
+      },
+      {
+        "description": "Last name of the household member receiving the contribution.",
+        "name": "recipient_name.last_name",
+        "type": "string"
+      },
+      {
+        "description": "First name of the household member receiving the contribution.",
+        "name": "recipient_name.first_name",
+        "type": "string"
+      },
+      {
+        "description": "What the contribution covers (rent, utilities, food, general expenses).",
+        "name": "contribution_purpose",
+        "type": "string"
+      },
+      {
+        "description": "Relationship of the contributor to the household (e.g., parent, friend).",
+        "name": "contributor_relationship",
+        "type": "string"
+      },
+      {
+        "description": "Dollar amount of the contribution per period.",
+        "name": "contribution_amount",
+        "type": "number"
+      }
+    ]
+  },
+  "I-20-Student-Eligibility-Form": {
+    "category": "identity",
+    "description": "Form I-20 Certificate of Eligibility for Nonimmigrant Student Status issued to F-1 or M-1 students.",
+    "document_type": "I-20-Student-Eligibility-Form",
+    "fields": [
+      {
+        "description": "The SEVIS school code associated with the institution.",
+        "name": "school_code",
+        "type": "string"
+      },
+      {
+        "description": "The expected completion date of the academic program.",
+        "name": "program_end_date",
+        "type": "string"
+      },
+      {
+        "description": "The country of citizenship listed for the student.",
+        "name": "country_of_citizenship",
+        "type": "string"
+      },
+      {
+        "description": "The student's date of birth as listed on the form.",
+        "name": "date_of_birth",
+        "type": "string"
+      },
+      {
+        "description": "The student's major or field of study.",
+        "name": "program_of_study",
+        "type": "string"
+      },
+      {
+        "description": "The name of the school issuing the I-20 form.",
+        "name": "school_name",
+        "type": "string"
+      },
+      {
+        "description": "The name of the Designated School Official who issued or signed the form.",
+        "name": "dso_name",
+        "type": "string"
+      },
+      {
+        "description": "The full legal name of the student listed on the I-20 form.",
+        "name": "student_name",
+        "type": "string"
+      },
+      {
+        "description": "The date the I-20 form was issued or signed.",
+        "name": "issue_date",
+        "type": "string"
+      },
+      {
+        "description": "The country where the student was born.",
+        "name": "country_of_birth",
+        "type": "string"
+      },
+      {
+        "description": "The start date of the academic program listed on the form.",
+        "name": "program_start_date",
+        "type": "string"
+      },
+      {
+        "description": "The SEVIS identification number assigned to the student, typically beginning with the letter N followed by numbers.",
+        "name": "sevis_id",
+        "type": "string"
+      },
+      {
+        "description": "The academic level of the program such as bachelor's, master's, doctorate, or language training.",
+        "name": "education_level",
+        "type": "string"
+      }
+    ]
+  },
+  "I-94-Arrival-Departure-Record": {
+    "category": "identity",
+    "description": "Form I-94 Arrival and Departure Record issued to foreign travelers entering the United States.",
+    "document_type": "I-94-Arrival-Departure-Record",
+    "fields": [
+      {
+        "description": "The date the traveler entered the United States, sometimes labeled as Date of Entry or Admit Date.",
+        "name": "date_of_entry",
+        "type": "string"
+      },
+      {
+        "description": "The date until which the traveler is authorized to remain in the United States.",
+        "name": "admit_until_date",
+        "type": "string"
+      },
+      {
+        "description": "The U.S. port of entry where the traveler was admitted into the country.",
+        "name": "port_of_entry",
+        "type": "string"
+      },
+      {
+        "description": "The full legal name of the traveler as shown on the I-94 record.",
+        "name": "traveler_name",
+        "type": "string"
+      },
+      {
+        "description": "The country of citizenship listed for the traveler.",
+        "name": "country_of_citizenship",
+        "type": "string"
+      },
+      {
+        "description": "The date of birth of the traveler.",
+        "name": "date_of_birth",
+        "type": "string"
+      },
+      {
+        "description": "The passport number associated with the traveler's entry to the United States.",
+        "name": "passport_number",
+        "type": "string"
+      },
+      {
+        "description": "The unique admission number assigned to the traveler on the I-94 record. It may be labeled as Admission Number or I-94 Number.",
+        "name": "i94_admission_number",
+        "type": "string"
+      },
+      {
+        "description": "The immigration class of admission granted to the traveler, such as F-1, H-1B, B-1, B-2, J-1, or other visa category.",
+        "name": "class_of_admission",
+        "type": "string"
+      }
+    ]
+  },
+  "IRA-Account-Document": {
+    "category": "investment_and_royalty_income",
+    "description": "A document related to an Individual Retirement Account (IRA), including account details, contributions, and distributions.",
+    "document_type": "IRA-Account-Document",
+    "fields": [
+      {
+        "description": "The unique number assigned to the IRA account by the financial institution.",
+        "name": "account_number",
+        "type": "string"
+      },
+      {
+        "description": "The dates on which contributions were made to the IRA.",
+        "name": "contribution_dates",
+        "type": "string"
+      },
+      {
+        "description": "The type of IRA, such as Traditional IRA, Roth IRA, SEP IRA, or SIMPLE IRA.",
+        "name": "account_type",
+        "type": "string"
+      },
+      {
+        "description": "The account balance as reported on the document.",
+        "name": "account_balance",
+        "type": "string"
+      },
+      {
+        "description": "The full name of the individual who owns the IRA account.",
+        "name": "account_holder_name",
+        "type": "string"
+      },
+      {
+        "description": "The name of the bank, broker, or financial institution that manages the IRA.",
+        "name": "financial_institution",
+        "type": "string"
+      },
+      {
+        "description": "The tax year the document applies to, often printed on statements or Form 5498.",
+        "name": "tax_year",
+        "type": "string"
+      },
+      {
+        "description": "The dates on which distributions or withdrawals were made from the IRA, if any.",
+        "name": "distribution_dates",
+        "type": "string"
+      }
+    ]
+  },
+  "Insurance-Company-Letter": {
+    "category": "insurance",
+    "description": "A formal letter or notice from a private insurance company (life, disability, health, or settlement) regarding policy status, claim decisions, premium changes, or benefit disbursements. Must reference an insurance policy number and be issued by a named insurance provider, not a government agency or public benefits program.",
+    "document_type": "Insurance-Company-Letter",
+    "fields": [
+      {
+        "description": "Date the letter or notice was officially issued. YYYY-MM-DD format.",
+        "name": "letter_date",
+        "type": "string"
+      },
+      {
+        "description": "Zip code of the recipient.",
+        "name": "recipient_zip_code",
+        "type": "string"
+      },
+      {
+        "description": "The official name of the insurance company or provider issuing the letter.",
+        "name": "insurance_company_name",
+        "type": "string"
+      },
+      {
+        "description": "Lump sum or periodic payment amount.",
+        "name": "payment_amount",
+        "type": "number"
+      },
+      {
+        "description": "Mailing address of the recipient.",
+        "name": "recipient_address",
+        "type": "string"
+      },
+      {
+        "description": "Date that insurance policy expires. YYYY-MM-DD format.",
+        "name": "expiration_date",
+        "type": "string"
+      },
+      {
+        "description": "Social Security Number of the recipient. Reformat as XXX-XX-XXXX.",
+        "name": "recipient_ssn",
+        "type": "string"
+      },
+      {
+        "description": "State of the recipient. Two-letter code.",
+        "name": "recipient_state",
+        "type": "string"
+      },
+      {
+        "description": "Cash value of life insurance policy if applicable.",
+        "name": "cash_surrender_value",
+        "type": "number"
+      },
+      {
+        "description": "Whether payment is lump sum or periodic.",
+        "name": "payment_type",
+        "type": "string"
+      },
+      {
+        "description": "Type of insurance (life, disability, settlement, etc.).",
+        "name": "policy_type",
+        "type": "string"
+      },
+      {
+        "description": "The insurance policy or member identification number referenced in the text.",
+        "name": "policy_number",
+        "type": "string"
+      },
+      {
+        "description": "Frequency of payment if periodic (monthly, quarterly, annual).",
+        "name": "payment_frequency",
+        "type": "string"
+      },
+      {
+        "description": "Date that insurance policy has been terminated. YYYY-MM-DD format.",
+        "name": "termination_date",
+        "type": "string"
+      },
+      {
+        "description": "Date the benefit or payment becomes effective. YYYY-MM-DD format.",
+        "name": "effective_date",
+        "type": "string"
+      },
+      {
+        "description": "Last name of the recipient.",
+        "name": "recipient_name.last_name",
+        "type": "string"
+      },
+      {
+        "description": "Middle name of the recipient.",
+        "name": "recipient_name.middle_name",
+        "type": "string"
+      },
+      {
+        "description": "First name of the policy beneficiary or insured.",
+        "name": "recipient_name.first_name",
+        "type": "string"
+      }
+    ]
+  },
+  "Invoices": {
+    "category": "invoices",
+    "description": "An invoice is a document that contains the list of service rendered or items purchased from a company by a person or another company. It contains details such as when the payment is due and how much is owed.",
+    "document_type": "Invoices",
+    "fields": [
+      {
+        "description": "",
+        "name": "SERVICES_TABLE.quantity",
+        "type": "number"
+      },
+      {
+        "description": "",
+        "name": "SERVICES_TABLE.unit price",
+        "type": "number"
+      },
+      {
+        "description": "Unit Price * Quantity",
+        "name": "SERVICES_TABLE.amount",
+        "type": "number"
+      },
+      {
+        "description": "The short name of the product without any extra details",
+        "name": "SERVICES_TABLE.product name",
+        "type": "string"
+      },
+      {
+        "description": "The full item list description text",
+        "name": "SERVICES_TABLE.product description",
+        "type": "string"
+      },
+      {
+        "description": "Unique ID associated with the invoice",
+        "name": "ID",
+        "type": "string"
+      },
+      {
+        "description": "Date on which invoice was issued",
+        "name": "DATE",
+        "type": "string"
+      },
+      {
+        "description": "Purchase order number listed on the invoice",
+        "name": "PO",
+        "type": "string"
+      },
+      {
+        "description": "sum of amounts listed in the line items table for services ",
+        "name": "SUBTOTAL",
+        "type": "number"
+      },
+      {
+        "description": "list of tax amounts charged on the invoice",
+        "name": "TAX",
+        "type": "array"
+      },
+      {
+        "description": "total amount due including subtotal and tax",
+        "name": "TOTAL",
+        "type": "number"
+      },
+      {
+        "description": "name of the vendor issuing the invoice",
+        "name": "VENDORNAME",
+        "type": "string"
+      },
+      {
+        "description": "address of the vendor issuing the invoice",
+        "name": "VENDORADDRESS",
+        "type": "string"
+      },
+      {
+        "description": "name of the person / organization receiving the invoice",
+        "name": "RECIPIENTNAME",
+        "type": "string"
+      },
+      {
+        "description": "address of the person / organization receiving the invoice",
+        "name": "RECIPIENTADDRESS",
+        "type": "string"
+      },
+      {
+        "description": "Is subtotal field = sum of amounts listed in the predict / services table?",
+        "name": "VALIDATION",
+        "type": "boolean"
+      },
+      {
+        "description": "The ABN / VAT / PAN number associated with the vendor",
+        "name": "VENDOR_TAX_ID",
+        "type": "string"
+      },
+      {
+        "description": "The ABN / VAT / PAN number associated with the receiver",
+        "name": "RECEIVER_TAX_ID",
+        "type": "string"
+      }
+    ]
+  },
+  "Mortgage-Statement": {
+    "category": "shelter",
+    "description": "Structured extraction schema for a mortgage statement document.",
+    "document_type": "Mortgage-Statement",
+    "fields": [
+      {
+        "description": "Extract the name of the mortgage lender or loan servicer.",
+        "name": "lender_name",
+        "type": "string"
+      },
+      {
+        "description": "Extract the statement issue date in YYYY-MM-DD format.",
+        "name": "statement_date",
+        "type": "string"
+      },
+      {
+        "description": "Extract the full street address of the mortgaged property, including city, state, and ZIP code if present.",
+        "name": "property_address",
+        "type": "string"
+      },
+      {
+        "description": "Extract the unique loan or account number exactly as shown, preserving leading zeros.",
+        "name": "loan_number",
+        "type": "string"
+      },
+      {
+        "description": "Extract the current escrow account balance as a numeric amount only (e.g., 123456). Do not include currency symbols or commas.",
+        "name": "escrow_balance",
+        "type": "string"
+      },
+      {
+        "description": "Extract the full legal name of the borrower or mortgagor exactly as shown.",
+        "name": "borrower_name",
+        "type": "string"
+      },
+      {
+        "description": "Extract the annual interest rate as a percentage (e.g., 6.5 for 6.5%).",
+        "name": "interest_rate",
+        "type": "string"
+      },
+      {
+        "description": "Extract the next payment due date in YYYY-MM-DD format.",
+        "name": "payment_due_date",
+        "type": "string"
+      },
+      {
+        "description": "Extract the overall remaining principal loan balance as a numeric amount only (e.g., 123456). This is not the monthly payment amount. Do not include currency symbols or commas.",
+        "name": "principal_balance",
+        "type": "string"
+      },
+      {
+        "description": "Extract the loan maturity date in YYYY-MM-DD format if present.",
+        "name": "maturity_date",
+        "type": "string"
+      },
+      {
+        "description": "Monthly principal portion as a numeric amount only (e.g., 1234). Do not include currency symbols or commas.",
+        "name": "monthly_payment.principal",
+        "type": "string"
+      },
+      {
+        "description": "Total monthly payment amount as a numeric amount only (e.g., 2691). Do not include currency symbols or commas.",
+        "name": "monthly_payment.total",
+        "type": "string"
+      },
+      {
+        "description": "Monthly interest portion as a numeric amount only (e.g., 567). Do not include currency symbols or commas.",
+        "name": "monthly_payment.interest",
+        "type": "string"
+      },
+      {
+        "description": "Monthly escrow portion as a numeric amount only (e.g., 890). Do not include currency symbols or commas.",
+        "name": "monthly_payment.escrow",
+        "type": "string"
+      }
+    ]
+  },
+  "New-Hire-Form": {
+    "category": "employment_records",
+    "description": "An onboarding or tax form completed by a newly hired employee, establishing their employment status, starting details, and withholding selections.",
+    "document_type": "New-Hire-Form",
+    "fields": [
+      {
+        "description": "State of the employee. Two-letter code.",
+        "name": "employee_state",
+        "type": "string"
+      },
+      {
+        "description": "Date of first payment to employee. YYYY-MM-DD format.",
+        "name": "date_first_payment",
+        "type": "string"
+      },
+      {
+        "description": "State Employer Identification Number.",
+        "name": "employer_state_ein",
+        "type": "string"
+      },
+      {
+        "description": "Street address of the employee.",
+        "name": "employee_address",
+        "type": "string"
+      },
+      {
+        "description": "Starting salary or hourly wage.",
+        "name": "salary_or_wage",
+        "type": "string"
+      },
+      {
+        "description": "Number of hours worked per week. May be needed for ABAWD population.",
+        "name": "weekly_hours_worked",
+        "type": "string"
+      },
+      {
+        "description": "Date of birth of the employee. YYYY-MM-DD format.",
+        "name": "date_of_birth",
+        "type": "string"
+      },
+      {
+        "description": "Zip code of the employee.",
+        "name": "employee_zip_code",
+        "type": "string"
+      },
+      {
+        "description": "Date of payment to employee. YYYY-MM-DD format.",
+        "name": "date_payment",
+        "type": "string"
+      },
+      {
+        "description": "Last name of the new hire.",
+        "name": "employee_name.last_name",
+        "type": "string"
+      },
+      {
+        "description": "Middle name of the new hire.",
+        "name": "employee_name.middle_name",
+        "type": "string"
+      },
+      {
+        "description": "First name of the new hire.",
+        "name": "employee_name.first_name",
+        "type": "string"
+      },
+      {
+        "description": "The official name of the hiring company or organization.",
+        "name": "employer_name",
+        "type": "string"
+      },
+      {
+        "description": "Pay frequency (weekly, biweekly, monthly).",
+        "name": "pay_frequency",
+        "type": "string"
+      },
+      {
+        "description": "The employee's official first day of work or effective hire date. YYYY-MM-DD format.",
+        "name": "hire_date",
+        "type": "string"
+      },
+      {
+        "description": "City of the employee.",
+        "name": "employee_city",
+        "type": "string"
+      },
+      {
+        "description": "Address of the employer.",
+        "name": "employer_address",
+        "type": "string"
+      },
+      {
+        "description": "Health insurance provided by employer to employee.",
+        "name": "health_insurance",
+        "type": "string"
+      },
+      {
+        "description": "Federal Employer Identification Number.",
+        "name": "employer_federal_ein",
+        "type": "string"
+      },
+      {
+        "description": "Phone number of the employer.",
+        "name": "employer_telephone",
+        "type": "string"
+      },
+      {
+        "description": "Social Security Number of the employee. Reformat as XXX-XX-XXXX.",
+        "name": "employee_ssn",
+        "type": "string"
+      },
+      {
+        "description": "The position, role, or job title assigned to the new hire.",
+        "name": "job_title",
+        "type": "string"
+      }
+    ]
+  },
+  "Payslip": {
+    "category": "employer_income",
+    "description": "This document issued by an employer to an employee contains wages received by an employee for a given period. It usually contains the breakdown of each of the income and tax deductions items.",
+    "document_type": "Payslip",
+    "fields": [
+      {
+        "description": "What is the Pay Period Start Date? YYYY-MM-DD Format",
+        "name": "PayPeriodStartDate",
+        "type": "string"
+      },
+      {
+        "description": "What is the Pay Period End Date? YYYY-MM-DD Format",
+        "name": "PayPeriodEndDate",
+        "type": "string"
+      },
+      {
+        "description": "What is the Pay Date? YYYY-MM-DD Format",
+        "name": "PayDate",
+        "type": "string"
+      },
+      {
+        "description": "",
+        "name": "EmployeeName.FirstName",
+        "type": "string"
+      },
+      {
+        "description": "if available",
+        "name": "EmployeeName.MiddleName",
+        "type": "string"
+      },
+      {
+        "description": "",
+        "name": "EmployeeName.LastName",
+        "type": "string"
+      },
+      {
+        "description": "Such as PhD, Msc., etc",
+        "name": "EmployeeName.SuffixName",
+        "type": "string"
+      },
+      {
+        "description": "What is the address line 1?",
+        "name": "EmployeeAddress.Line1",
+        "type": "string"
+      },
+      {
+        "description": "What is the address line 2?",
+        "name": "EmployeeAddress.Line2",
+        "type": "string"
+      },
+      {
+        "description": "What is the state? Use the two letter code",
+        "name": "EmployeeAddress.State",
+        "type": "string"
+      },
+      {
+        "description": "What is the city?",
+        "name": "EmployeeAddress.City",
+        "type": "string"
+      },
+      {
+        "description": "What is the address zip code?",
+        "name": "EmployeeAddress.ZipCode",
+        "type": "string"
+      },
+      {
+        "description": "What is the address line 1?",
+        "name": "CompanyAddress.Line1",
+        "type": "string"
+      },
+      {
+        "description": "What is the address line 2?",
+        "name": "CompanyAddress.Line2",
+        "type": "string"
+      },
+      {
+        "description": "What is the state? Use the two letter code",
+        "name": "CompanyAddress.State",
+        "type": "string"
+      },
+      {
+        "description": "What is the city?",
+        "name": "CompanyAddress.City",
+        "type": "string"
+      },
+      {
+        "description": "What is the address zip code?",
+        "name": "CompanyAddress.ZipCode",
+        "type": "string"
+      },
+      {
+        "description": "What is the Federal Filing Status? If available",
+        "name": "FederalFilingStatus",
+        "type": "string"
+      },
+      {
+        "description": "What is the State Filing Status? (If available)",
+        "name": "StateFilingStatus",
+        "type": "string"
+      },
+      {
+        "description": "What is the Current Gross Pay?",
+        "name": "CurrentGrossPay",
+        "type": "number"
+      },
+      {
+        "description": "What is the YTD Gross Pay?",
+        "name": "YTDGrossPay",
+        "type": "number"
+      },
+      {
+        "description": "What is the Current Net Pay?",
+        "name": "CurrentNetPay",
+        "type": "number"
+      },
+      {
+        "description": "What is the YTD Net Pay?",
+        "name": "YTDNetPay",
+        "type": "number"
+      },
+      {
+        "description": "What is the Regular Hourly Rate? (if available)",
+        "name": "RegularHourlyRate",
+        "type": "number"
+      },
+      {
+        "description": "What is the Holiday Hourly Rate? (if available)",
+        "name": "HolidayHourlyRate",
+        "type": "number"
+      },
+      {
+        "description": "What is the YTD Federal Taxes amount?",
+        "name": "YTDFederalTax",
+        "type": "number"
+      },
+      {
+        "description": "What are the YTD State Taxes?",
+        "name": "YTDStateTax",
+        "type": "number"
+      },
+      {
+        "description": "Is the YTD Gross Pay the largest amount in the entire paystub?",
+        "name": "is_ytd_gross_pay_highest",
+        "type": "boolean"
+      },
+      {
+        "description": "The tax item description text",
+        "name": "FederalTaxes.ItemDescription",
+        "type": "string"
+      },
+      {
+        "description": "The YTD value",
+        "name": "FederalTaxes.YTD",
+        "type": "number"
+      },
+      {
+        "description": "The value for this period",
+        "name": "FederalTaxes.Period",
+        "type": "number"
+      },
+      {
+        "description": "The tax item description text",
+        "name": "StateTaxes.ItemDescription",
+        "type": "string"
+      },
+      {
+        "description": "The YTD value",
+        "name": "StateTaxes.YTD",
+        "type": "number"
+      },
+      {
+        "description": "The value for this period",
+        "name": "StateTaxes.Period",
+        "type": "number"
+      },
+      {
+        "description": "What is the employee number?",
+        "name": "EmployeeNumber",
+        "type": "string"
+      },
+      {
+        "description": "What is the payroll number?",
+        "name": "PayrollNumber",
+        "type": "string"
+      },
+      {
+        "description": "The tax item description text",
+        "name": "CityTaxes.ItemDescription",
+        "type": "string"
+      },
+      {
+        "description": "The YTD value",
+        "name": "CityTaxes.YTD",
+        "type": "number"
+      },
+      {
+        "description": "The value for this period",
+        "name": "CityTaxes.Period",
+        "type": "number"
+      },
+      {
+        "description": "What are the YTD City Taxes?",
+        "name": "YTDCityTax",
+        "type": "number"
+      },
+      {
+        "description": "What are the current total deductions?",
+        "name": "CurrentTotalDeductions",
+        "type": "number"
+      },
+      {
+        "description": "What are the YTD total deductions?",
+        "name": "YTDTotalDeductions",
+        "type": "number"
+      },
+      {
+        "description": "Is the YTD gross pay the largest dollar amount value on the paystub?",
+        "name": "is_gross_pay_valid",
+        "type": "boolean"
+      },
+      {
+        "description": "Are field names / key values sufficient for any validation?",
+        "name": "are_field_names_sufficient",
+        "type": "boolean"
+      },
+      {
+        "description": "What currency is used in this document? CAD, USD, EUR, etc.",
+        "name": "currency",
+        "type": "string"
+      }
+    ]
+  },
+  "Pension-Verification": {
+    "category": "retirement_income",
+    "description": "An official letter or statement verifying an individual's recurring pension distribution details, usually issued by an employer or retirement board.",
+    "document_type": "Pension-Verification",
+    "fields": [
+      {
+        "description": "Employer Identification Number of the payer.",
+        "name": "payer_ein",
+        "type": "string"
+      },
+      {
+        "description": "Zip code of the recipient.",
+        "name": "recipient_zip_code",
+        "type": "string"
+      },
+      {
+        "description": "Date the statement was issued. YYYY-MM-DD format.",
+        "name": "document_date",
+        "type": "string"
+      },
+      {
+        "description": "IRS distribution code (e.g., 7 for normal distribution).",
+        "name": "distribution_code",
+        "type": "string"
+      },
+      {
+        "description": "Date pension payments began. YYYY-MM-DD format.",
+        "name": "payment_start_date",
+        "type": "string"
+      },
+      {
+        "description": "Mailing address of the recipient.",
+        "name": "recipient_address",
+        "type": "string"
+      },
+      {
+        "description": "Tax year the pension income is reported for.",
+        "name": "tax_year",
+        "type": "string"
+      },
+      {
+        "description": "Social Security Number of the recipient. Reformat as XXX-XX-XXXX.",
+        "name": "recipient_ssn",
+        "type": "string"
+      },
+      {
+        "description": "State of the recipient. Two-letter code.",
+        "name": "recipient_state",
+        "type": "string"
+      },
+      {
+        "description": "Total gross pension distribution amount.",
+        "name": "gross_distribution",
+        "type": "number"
+      },
+      {
+        "description": "Payment frequency (monthly, quarterly, annually).",
+        "name": "payment_frequency",
+        "type": "string"
+      },
+      {
+        "description": "Name of the pension plan or administering organization.",
+        "name": "payer_name",
+        "type": "string"
+      },
+      {
+        "description": "Last name of the pension recipient.",
+        "name": "recipient_name.last_name",
+        "type": "string"
+      },
+      {
+        "description": "Middle name of the pension recipient.",
+        "name": "recipient_name.middle_name",
+        "type": "string"
+      },
+      {
+        "description": "First name of the pension recipient.",
+        "name": "recipient_name.first_name",
+        "type": "string"
+      },
+      {
+        "description": "Federal income tax withheld.",
+        "name": "federal_tax_withheld",
+        "type": "number"
+      },
+      {
+        "description": "Taxable portion of the distribution.",
+        "name": "taxable_amount",
+        "type": "number"
+      }
+    ]
+  },
+  "Proof-of-Loss-of-Health-Coverage": {
+    "category": "employment_records",
+    "description": "A document providing proof that an individual's health insurance coverage has ended, including plan details and coverage dates.",
+    "document_type": "Proof-of-Loss-of-Health-Coverage",
+    "fields": [
+      {
+        "description": "The date the individual's coverage started. Sometimes labeled as Coverage Begin Date, Effective Date, or Start Date.",
+        "name": "coverage_begin_date",
+        "type": "string"
+      },
+      {
+        "description": "The full name of the individual whose health insurance coverage ended.",
+        "name": "policyholder_name",
+        "type": "string"
+      },
+      {
+        "description": "The policy number or member ID associated with the health insurance plan.",
+        "name": "policy_number",
+        "type": "string"
+      },
+      {
+        "description": "The name of the insurance plan or employer group associated with the coverage.",
+        "name": "group_name",
+        "type": "string"
+      },
+      {
+        "description": "The identifier assigned to the insurance group or plan, often labeled as Group Number or Plan Number.",
+        "name": "group_number",
+        "type": "string"
+      },
+      {
+        "description": "The name of the health insurance company or provider.",
+        "name": "insurance_provider",
+        "type": "string"
+      },
+      {
+        "description": "The date the individual's health insurance coverage ended or was terminated. Sometimes labeled as Coverage End Date, Termination Date, or Last Date of Coverage.",
+        "name": "coverage_end_date",
+        "type": "string"
+      },
+      {
+        "description": "The reason the health insurance coverage ended such as job loss, plan cancellation, or voluntary termination.",
+        "name": "termination_reason",
+        "type": "string"
+      },
+      {
+        "description": "The employer providing the health insurance plan if the coverage was employer-sponsored.",
+        "name": "employer_name",
+        "type": "string"
+      }
+    ]
+  },
+  "Receipts": {
+    "category": "receipts",
+    "description": "A document acknowledging that a person has received money or property in payment following a sale or other transfer of goods or provision of a service. All receipts must have the date of purchase on them.",
+    "document_type": "Receipts",
+    "fields": [
+      {
+        "description": "Name of the vendor",
+        "name": "VENDORDETAILS.VENDORNAME",
+        "type": "string"
+      },
+      {
+        "description": "Full address of the vendor",
+        "name": "VENDORDETAILS.VENDORADDRESS",
+        "type": "string"
+      },
+      {
+        "description": "Phone number of the vendor",
+        "name": "VENDORDETAILS.VENDORPHONE",
+        "type": "string"
+      },
+      {
+        "description": "Sum of all the amounts from the line items table",
+        "name": "PAYMENTDETAILS.SUBTOTAL",
+        "type": "number"
+      },
+      {
+        "description": "List of amounts charged as taxes",
+        "name": "PAYMENTDETAILS.TAX",
+        "type": "array"
+      },
+      {
+        "description": "Total receipt amount including taxes",
+        "name": "PAYMENTDETAILS.TOTAL",
+        "type": "number"
+      },
+      {
+        "description": "Amount paid off in the receipt",
+        "name": "PAYMENTDETAILS.AMOUNTPAID",
+        "type": "number"
+      },
+      {
+        "description": "Date on which receipt was generated",
+        "name": "RECEIPT_DATE",
+        "type": "string"
+      },
+      {
+        "description": "Unique ID associated with the receipt",
+        "name": "RECEIPT_ID",
+        "type": "string"
+      },
+      {
+        "description": "The quantity of the purchased item",
+        "name": "LINEITEMS.QTY",
+        "type": "number"
+      },
+      {
+        "description": "The purchase amount",
+        "name": "LINEITEMS.AMT",
+        "type": "number"
+      },
+      {
+        "description": "The code of the product to identify the product",
+        "name": "LINEITEMS.PRODUCT_CODE",
+        "type": "string"
+      },
+      {
+        "description": "Is receipt date older than 1/1/2022?",
+        "name": "expire",
+        "type": "boolean"
+      }
+    ]
+  },
+  "Rent-Lease-Statement": {
+    "category": "shelter",
+    "description": "Structured extraction schema for lease agreements or rent statements including tenant, landlord, property, and payment terms.",
+    "document_type": "Rent-Lease-Statement",
+    "fields": [
+      {
+        "description": "Extract the full rental property address including street, city, state, and ZIP code if available.",
+        "name": "property_address",
+        "type": "string"
+      },
+      {
+        "description": "Extract the security deposit amount as a numeric amount only (e.g., 685). Do not include currency symbols or commas.",
+        "name": "security_deposit",
+        "type": "string"
+      },
+      {
+        "description": "Extract the full legal name of the tenant or lessee exactly as shown in the document.",
+        "name": "tenant_name",
+        "type": "string"
+      },
+      {
+        "description": "Recurring monthly fees (parking, pet rent, amenities, etc.).",
+        "name": "payment_details.fees",
+        "type": "string"
+      },
+      {
+        "description": "Total monthly payment including rent and all recurring charges.",
+        "name": "payment_details.total_monthly_payment",
+        "type": "string"
+      },
+      {
+        "description": "Monthly utilities charged through landlord if included.",
+        "name": "payment_details.utilities",
+        "type": "string"
+      },
+      {
+        "description": "Extract the base monthly rent as a numeric amount only (e.g., 685). Do not include currency symbols, commas, or text like 'per month'.",
+        "name": "payment_details.base_rent",
+        "type": "string"
+      },
+      {
+        "description": "Extract the lease end date in YYYY-MM-DD format if present.",
+        "name": "lease_end_date",
+        "type": "string"
+      },
+      {
+        "description": "Extract the lease start date in YYYY-MM-DD format.",
+        "name": "lease_start_date",
+        "type": "string"
+      },
+      {
+        "description": "Extract total outstanding balance due as a numeric amount only (e.g., 685). Do not include currency symbols or commas.",
+        "name": "balance_due",
+        "type": "string"
+      },
+      {
+        "description": "Classify the lease type if determinable from the document (e.g., fixed term, month to month, sublease).",
+        "name": "lease_type",
+        "type": "string"
+      },
+      {
+        "description": "Extract only the numeric day of the month rent is due (e.g., 1, 15). Do not include ordinal suffixes or additional text.",
+        "name": "payment_due_day",
+        "type": "string"
+      },
+      {
+        "description": "Extract the name of the landlord, property owner, or management company.",
+        "name": "landlord_name",
+        "type": "string"
+      },
+      {
+        "description": "Statement period end date in YYYY-MM-DD format.",
+        "name": "statement_period.end_date",
+        "type": "string"
+      },
+      {
+        "description": "Statement period start date in YYYY-MM-DD format.",
+        "name": "statement_period.start_date",
+        "type": "string"
+      }
+    ]
+  },
+  "Royalty-Statement": {
+    "category": "investment_and_royalty_income",
+    "description": "A financial statement detailing the usage, sales, and corresponding royalty earnings generated from intellectual property or resource rights.",
+    "document_type": "Royalty-Statement",
+    "fields": [
+      {
+        "description": "End of the reporting period. YYYY-MM-DD format.",
+        "name": "payment_period_end",
+        "type": "string"
+      },
+      {
+        "description": "The name of the specific book, song, album, patent, or asset generating the royalty earnings.",
+        "name": "property_or_work_title",
+        "type": "string"
+      },
+      {
+        "description": "Frequency of royalty payments (monthly, quarterly, annually).",
+        "name": "payment_frequency",
+        "type": "string"
+      },
+      {
+        "description": "Start of the reporting period. YYYY-MM-DD format.",
+        "name": "payment_period_start",
+        "type": "string"
+      },
+      {
+        "description": "Date the statement was issued. YYYY-MM-DD format.",
+        "name": "document_date",
+        "type": "string"
+      },
+      {
+        "description": "Total royalty income amount for the period.",
+        "name": "royalties_amount",
+        "type": "number"
+      },
+      {
+        "description": "Name of the publisher, studio, distributor, or corporation paying out the royalties.",
+        "name": "payer_name",
+        "type": "string"
+      },
+      {
+        "description": "Last name of the royalty recipient.",
+        "name": "recipient_name.last_name",
+        "type": "string"
+      },
+      {
+        "description": "First name of the royalty recipient.",
+        "name": "recipient_name.first_name",
+        "type": "string"
+      },
+      {
+        "description": "Federal income tax withheld.",
+        "name": "federal_tax_withheld",
+        "type": "number"
+      },
+      {
+        "description": "Social Security Number of the recipient. Reformat as XXX-XX-XXXX.",
+        "name": "recipient_ssn",
+        "type": "string"
+      }
+    ]
+  },
+  "Social-Security-Card": {
+    "category": "identity",
+    "description": "A document issued by the Social Security Administration that provides the individual's Social Security Number (SSN) and name.",
+    "document_type": "Social-Security-Card",
+    "fields": [
+      {
+        "description": "The signature of the individual or the authorized representative.",
+        "name": "signature",
+        "type": "string"
+      },
+      {
+        "description": "The full name of the individual to whom the Social Security Number is assigned.",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "description": "The statement indicating that the number is established for the USA Social Security Administration.",
+        "name": "established_for_usa_administration",
+        "type": "string"
+      },
+      {
+        "description": "The unique identifier assigned by the Social Security Administration to the individual.",
+        "name": "social_security_number",
+        "type": "string"
+      }
+    ]
+  },
+  "Social-Security-Verification": {
+    "category": "retirement_income",
+    "description": "An official benefit verification letter issued by the Social Security Administration detailing an individual's monthly benefit type and payment amounts.",
+    "document_type": "Social-Security-Verification",
+    "fields": [
+      {
+        "description": "SSA claim number or BIC.",
+        "name": "claim_number",
+        "type": "string"
+      },
+      {
+        "description": "Date the SSA letter was issued. YYYY-MM-DD format.",
+        "name": "letter_date",
+        "type": "string"
+      },
+      {
+        "description": "Type of SSA benefit (retirement, disability, SSI, survivor).",
+        "name": "benefit_type",
+        "type": "string"
+      },
+      {
+        "description": "Net payment after deductions.",
+        "name": "net_payment_amount",
+        "type": "number"
+      },
+      {
+        "description": "Date the current payment amount went into effect. YYYY-MM-DD format.",
+        "name": "effective_date",
+        "type": "string"
+      },
+      {
+        "description": "Medicare premium deducted from benefit if applicable.",
+        "name": "medicare_deduction",
+        "type": "number"
+      },
+      {
+        "description": "Current monthly gross benefit payment amount before deductions. Necessary to track in the event of overpayment.",
+        "name": "monthly_gross_amount",
+        "type": "number"
+      },
+      {
+        "description": "Mailing address of the recipient.",
+        "name": "recipient_address",
+        "type": "string"
+      },
+      {
+        "description": "Last name of the recipient.",
+        "name": "recipient_name.last_name",
+        "type": "string"
+      },
+      {
+        "description": "Middle name of the recipient.",
+        "name": "recipient_name.middle_name",
+        "type": "string"
+      },
+      {
+        "description": "First name of the SSA benefit recipient.",
+        "name": "recipient_name.first_name",
+        "type": "string"
+      },
+      {
+        "description": "Social Security Number. Reformat as XXX-XX-XXXX.",
+        "name": "recipient_ssn",
+        "type": "string"
+      },
+      {
+        "description": "Current monthly benefit payment amount.",
+        "name": "monthly_benefit_amount",
+        "type": "number"
+      }
+    ]
+  },
+  "US-Employment-Authorization-Document": {
+    "category": "identity",
+    "description": "A United States Employment Authorization Document issued to non-citizens authorizing them to work in the United States.",
+    "document_type": "US-Employment-Authorization-Document",
+    "fields": [
+      {
+        "description": "The unique card number printed on the Employment Authorization Document. It may be labeled as Card Number or USCIS Number.",
+        "name": "card_number",
+        "type": "string"
+      },
+      {
+        "description": "The expiration date printed on the Employment Authorization Document.",
+        "name": "card_expires",
+        "type": "string"
+      },
+      {
+        "description": "The date of birth of the cardholder.",
+        "name": "date_of_birth",
+        "type": "string"
+      },
+      {
+        "description": "The sex or gender listed on the card.",
+        "name": "sex",
+        "type": "string"
+      },
+      {
+        "description": "The country where the cardholder was born.",
+        "name": "country_of_birth",
+        "type": "string"
+      },
+      {
+        "description": "The start date of the employment authorization validity period printed on the card.",
+        "name": "valid_from",
+        "type": "string"
+      },
+      {
+        "description": "The full name of the individual listed on the Employment Authorization Document.",
+        "name": "cardholder_name",
+        "type": "string"
+      },
+      {
+        "description": "The employment authorization category printed on the card such as C03B, A12, C09, or other eligibility category.",
+        "name": "category",
+        "type": "string"
+      },
+      {
+        "description": "The USCIS number printed on the card. It may appear as USCIS# or USCIS Number.",
+        "name": "uscis_number",
+        "type": "string"
+      }
+    ]
+  },
+  "US-drivers-licenses": {
+    "category": "identity",
+    "description": "This document is for US driving license from any US state",
+    "document_type": "US-drivers-licenses",
+    "fields": [
+      {
+        "description": "The first name",
+        "name": "NAME_DETAILS.FIRST_NAME",
+        "type": "string"
+      },
+      {
+        "description": "The middle name or initial",
+        "name": "NAME_DETAILS.MIDDLE_NAME",
+        "type": "string"
+      },
+      {
+        "description": "The last name of the driver",
+        "name": "NAME_DETAILS.LAST_NAME",
+        "type": "string"
+      },
+      {
+        "description": "The suffix, such as PhD, MSc. etc",
+        "name": "NAME_DETAILS.SUFFIX",
+        "type": "string"
+      },
+      {
+        "description": "The street address",
+        "name": "ADDRESS_DETAILS.STREET_ADDRESS",
+        "type": "string"
+      },
+      {
+        "description": "The city name",
+        "name": "ADDRESS_DETAILS.CITY",
+        "type": "string"
+      },
+      {
+        "description": "The zip code",
+        "name": "ADDRESS_DETAILS.ZIP_CODE",
+        "type": "string"
+      },
+      {
+        "description": "The two letter code of the state",
+        "name": "ADDRESS_DETAILS.STATE",
+        "type": "string"
+      },
+      {
+        "description": "The county (if available, else empty string)",
+        "name": "COUNTY",
+        "type": "string"
+      },
+      {
+        "description": "The unique identification number of the driving license",
+        "name": "ID_NUMBER",
+        "type": "string"
+      },
+      {
+        "description": "The date of expiry in YYYY-MM-DD format",
+        "name": "EXPIRATION_DATE",
+        "type": "string"
+      },
+      {
+        "description": "The date of birth of the driver in YYYY-MM-DD format",
+        "name": "DATE_OF_BIRTH",
+        "type": "string"
+      },
+      {
+        "description": "The state name ",
+        "name": "STATE_NAME",
+        "type": "string"
+      },
+      {
+        "description": "The date of issue in YYYY-MM-DD format",
+        "name": "DATE_OF_ISSUE",
+        "type": "string"
+      },
+      {
+        "description": "The single letter class code, one of \"A\", \"B\" or \"C\"",
+        "name": "CLASS",
+        "type": "string"
+      },
+      {
+        "description": "The restrictions listed, e.g prescriptive lens or special letter codes",
+        "name": "RESTRICTIONS",
+        "type": "array"
+      },
+      {
+        "description": "The endorsement codes if any",
+        "name": "ENDORSEMENTS",
+        "type": "array"
+      },
+      {
+        "description": "One of [\"M\", \"F\"]",
+        "name": "PERSONAL_DETAILS.SEX",
+        "type": "string"
+      },
+      {
+        "description": "The height in ft and inches",
+        "name": "PERSONAL_DETAILS.HEIGHT",
+        "type": "string"
+      },
+      {
+        "description": "The weight in pounds",
+        "name": "PERSONAL_DETAILS.WEIGHT",
+        "type": "string"
+      },
+      {
+        "description": "Hair colour, unabbreviated",
+        "name": "PERSONAL_DETAILS.HAIR_COLOR",
+        "type": "string"
+      },
+      {
+        "description": "Eye colour, unabbreviated",
+        "name": "PERSONAL_DETAILS.EYE_COLOR",
+        "type": "string"
+      }
+    ]
+  },
+  "US-passports": {
+    "category": "identity",
+    "description": "This is a passport from the United States of America for American citizens",
+    "document_type": "US-passports",
+    "fields": [
+      {
+        "description": "The given names",
+        "name": "name.given_name",
+        "type": "string"
+      },
+      {
+        "description": "The last name",
+        "name": "name.last_name",
+        "type": "string"
+      },
+      {
+        "description": "The passport no",
+        "name": "document_number",
+        "type": "string"
+      },
+      {
+        "description": "The expiration date in YYYY-MM-DD format",
+        "name": "expiration_date",
+        "type": "string"
+      },
+      {
+        "description": "The date of birth in YYYY-MM-DD format",
+        "name": "date_of_birth",
+        "type": "string"
+      },
+      {
+        "description": "The date of issue in YYYY-MM-DD format",
+        "name": "date_of_issue",
+        "type": "string"
+      },
+      {
+        "description": "The sex. One of \"M\" or \"F\"",
+        "name": "sex",
+        "type": "string"
+      },
+      {
+        "description": "The place of birth",
+        "name": "place_of_birth",
+        "type": "string"
+      },
+      {
+        "description": "Type letter",
+        "name": "passport_type",
+        "type": "string"
+      },
+      {
+        "description": "The authority issuing the document",
+        "name": "authority",
+        "type": "string"
+      },
+      {
+        "description": "The full two line MRZ code, space separated",
+        "name": "mrz_code",
+        "type": "string"
+      }
+    ]
+  },
+  "Unemployment-Insurance-Claim-Form": {
+    "category": "government_benefit_income",
+    "description": "A document used to file or process a claim for unemployment insurance benefits.",
+    "document_type": "Unemployment-Insurance-Claim-Form",
+    "fields": [
+      {
+        "description": "Date the letter was issued. YYYY-MM-DD format.",
+        "name": "letter_date",
+        "type": "string"
+      },
+      {
+        "description": "Start of benefit year. YYYY-MM-DD format.",
+        "name": "benefit_year_start",
+        "type": "string"
+      },
+      {
+        "description": "Mailing address of the claimant.",
+        "name": "claimant_address",
+        "type": "string"
+      },
+      {
+        "description": "Weekly unemployment benefit amount.",
+        "name": "weekly_benefit_amount",
+        "type": "number"
+      },
+      {
+        "description": "End of benefit year. YYYY-MM-DD format.",
+        "name": "benefit_year_end",
+        "type": "string"
+      },
+      {
+        "description": "The date the claimant started working for the employer. YYYY-MM-DD format.",
+        "name": "employment_start_date",
+        "type": "string"
+      },
+      {
+        "description": "State of the claimant. Two-letter code.",
+        "name": "claimant_state",
+        "type": "string"
+      },
+      {
+        "description": "The name of the claimant's most recent employer.",
+        "name": "employer_name",
+        "type": "string"
+      },
+      {
+        "description": "Social Security Number. Reformat as XXX-XX-XXXX.",
+        "name": "claimant_ssn",
+        "type": "string"
+      },
+      {
+        "description": "The date the claimant stopped working for the employer. YYYY-MM-DD format.",
+        "name": "employment_end_date",
+        "type": "string"
+      },
+      {
+        "description": "The address of the claimant's most recent employer.",
+        "name": "employer_address",
+        "type": "string"
+      },
+      {
+        "description": "Gross benefit amount. Necessary to collect if there are overpayments on another program, e.g., withholdings for child support.",
+        "name": "gross_benefit_amount",
+        "type": "number"
+      },
+      {
+        "description": "Last name of the claimant.",
+        "name": "claimant_name.last_name",
+        "type": "string"
+      },
+      {
+        "description": "Middle name of the claimant.",
+        "name": "claimant_name.middle_name",
+        "type": "string"
+      },
+      {
+        "description": "First name of the unemployment claimant.",
+        "name": "claimant_name.first_name",
+        "type": "string"
+      },
+      {
+        "description": "Name of issuing agency (e.g., MD Department of Labor, Beacon).",
+        "name": "issuing_agency",
+        "type": "string"
+      },
+      {
+        "description": "Zip code of the claimant.",
+        "name": "claimant_zip_code",
+        "type": "string"
+      },
+      {
+        "description": "The reason the claimant is no longer employed such as layoff, termination, resignation, or reduction in hours.",
+        "name": "reason_for_separation",
+        "type": "string"
+      },
+      {
+        "description": "State income tax withheld.",
+        "name": "state_tax_withheld",
+        "type": "number"
+      },
+      {
+        "description": "Federal income tax withheld.",
+        "name": "federal_tax_withheld",
+        "type": "number"
+      },
+      {
+        "description": "The job title or position held by the claimant.",
+        "name": "job_title",
+        "type": "string"
+      },
+      {
+        "description": "Total unemployment compensation paid for the period.",
+        "name": "total_compensation_paid",
+        "type": "number"
+      }
+    ]
+  },
+  "VA-Benefit-Letter": {
+    "category": "government_benefit_income",
+    "description": "An official summary or award letter issued by the Department of Veterans Affairs verifying a veteran's benefit type, disability rating, and monthly payment details.",
+    "document_type": "VA-Benefit-Letter",
+    "fields": [
+      {
+        "description": "Date the VA letter was issued. YYYY-MM-DD format.",
+        "name": "letter_date",
+        "type": "string"
+      },
+      {
+        "description": "Last name of the veteran.",
+        "name": "veteran_name.last_name",
+        "type": "string"
+      },
+      {
+        "description": "Middle name of the veteran.",
+        "name": "veteran_name.middle_name",
+        "type": "string"
+      },
+      {
+        "description": "First name of the veteran.",
+        "name": "veteran_name.first_name",
+        "type": "string"
+      },
+      {
+        "description": "State of the veteran. Two-letter code.",
+        "name": "veteran_state",
+        "type": "string"
+      },
+      {
+        "description": "Number of dependents factored into benefit calculation.",
+        "name": "number_of_dependents",
+        "type": "number"
+      },
+      {
+        "description": "Mailing address of the veteran.",
+        "name": "veteran_address",
+        "type": "string"
+      },
+      {
+        "description": "VA Regional Office or issuing entity.",
+        "name": "issuing_office",
+        "type": "string"
+      },
+      {
+        "description": "Social Security Number of the veteran. Reformat as XXX-XX-XXXX.",
+        "name": "veteran_ssn",
+        "type": "string"
+      },
+      {
+        "description": "Monthly benefit payment amount.",
+        "name": "monthly_benefit_amount",
+        "type": "number"
+      },
+      {
+        "description": "Zip code of the veteran.",
+        "name": "veteran_zip_code",
+        "type": "string"
+      },
+      {
+        "description": "Type of VA benefit (disability compensation, pension, education, etc.).",
+        "name": "benefit_type",
+        "type": "string"
+      },
+      {
+        "description": "The unique VA file number or service identification number associated with the claim.",
+        "name": "va_file_number",
+        "type": "string"
+      },
+      {
+        "description": "Date the current monthly payment amount or disability rating went into effect. YYYY-MM-DD format.",
+        "name": "effective_date",
+        "type": "string"
+      },
+      {
+        "description": "Combined disability rating percentage if applicable (e.g., 70%, 100%).",
+        "name": "disability_rating",
+        "type": "string"
+      }
+    ]
+  },
+  "W2": {
+    "category": "employer_income",
+    "description": "This is a tax form to file personal income received from an employer in a fiscal year",
+    "document_type": "W2",
+    "fields": [
+      {
+        "description": "The employer identification number",
+        "name": "employer_info.ein",
+        "type": "string"
+      },
+      {
+        "description": "The employer name",
+        "name": "employer_info.employer_name",
+        "type": "string"
+      },
+      {
+        "description": "The employer street address and city",
+        "name": "employer_info.employer_address",
+        "type": "string"
+      },
+      {
+        "description": "The employer zip code",
+        "name": "employer_info.employer_zip_code",
+        "type": "number"
+      },
+      {
+        "description": "The control number. It is the value in box d.",
+        "name": "employer_info.control_number",
+        "type": "string"
+      },
+      {
+        "description": "The SSN, formatted as XXX-XX-XXX",
+        "name": "employee_general_info.ssn",
+        "type": "string"
+      },
+      {
+        "description": "The employee first name ",
+        "name": "employee_general_info.first_name",
+        "type": "string"
+      },
+      {
+        "description": "The employee last name",
+        "name": "employee_general_info.employee_last_name",
+        "type": "string"
+      },
+      {
+        "description": "The employee suffix, such as PhD, MSc. etc. Empty string if non-applicable.",
+        "name": "employee_general_info.employee_name_suffix",
+        "type": "string"
+      },
+      {
+        "description": "The employee street address and city",
+        "name": "employee_general_info.employee_address",
+        "type": "string"
+      },
+      {
+        "description": "The employee zip code",
+        "name": "employee_general_info.employee_zip_code",
+        "type": "number"
+      },
+      {
+        "description": "box 2",
+        "name": "federal_tax_info.federal_income_tax",
+        "type": "number"
+      },
+      {
+        "description": "box 4",
+        "name": "federal_tax_info.social_security_tax",
+        "type": "number"
+      },
+      {
+        "description": "box 6",
+        "name": "federal_tax_info.medicare_tax",
+        "type": "number"
+      },
+      {
+        "description": "box 8",
+        "name": "federal_tax_info.allocated_tips",
+        "type": "number"
+      },
+      {
+        "description": "box 1",
+        "name": "federal_wage_info.wages_tips_other_compensation",
+        "type": "number"
+      },
+      {
+        "description": "box 3",
+        "name": "federal_wage_info.social_security_wages",
+        "type": "number"
+      },
+      {
+        "description": "box 5",
+        "name": "federal_wage_info.medicare_wages_tips",
+        "type": "number"
+      },
+      {
+        "description": "box 7",
+        "name": "federal_wage_info.social_security_tips",
+        "type": "number"
+      },
+      {
+        "description": "The OMB number",
+        "name": "filing_info.omb_number",
+        "type": "string"
+      },
+      {
+        "description": "The value in box 9. Empty string if not applicable.",
+        "name": "filing_info.verification_code",
+        "type": "string"
+      },
+      {
+        "description": "The two letter state code, column 15",
+        "name": "state_taxes_table.state_name",
+        "type": "string"
+      },
+      {
+        "description": "second part of column 15",
+        "name": "state_taxes_table.employer_state_id_number",
+        "type": "number"
+      },
+      {
+        "description": "column 16",
+        "name": "state_taxes_table.state_wages_and_tips",
+        "type": "number"
+      },
+      {
+        "description": "column 17",
+        "name": "state_taxes_table.state_income_tax",
+        "type": "number"
+      },
+      {
+        "description": "column 18",
+        "name": "state_taxes_table.local_wages_tips",
+        "type": "number"
+      },
+      {
+        "description": "column 19",
+        "name": "state_taxes_table.local_income_tax",
+        "type": "number"
+      },
+      {
+        "description": "column 20",
+        "name": "state_taxes_table.locality_name",
+        "type": "string"
+      },
+      {
+        "description": "The code",
+        "name": "codes.code",
+        "type": "string"
+      },
+      {
+        "description": "The corresponding amount",
+        "name": "codes.amount",
+        "type": "number"
+      },
+      {
+        "description": "The value in field 11. 0 if N/A.",
+        "name": "nonqualified_plans_incom",
+        "type": "number"
+      },
+      {
+        "description": "The value or text contained in the field 14.",
+        "name": "other",
+        "type": "string"
+      }
+    ]
+  },
+  "Workers-Compensation-Form": {
+    "category": "employment_records",
+    "description": "This is a blueprint of Workers_Compensation_Form",
+    "document_type": "Workers-Compensation-Form",
+    "fields": [
+      {
+        "description": "Claim number",
+        "name": "Claim ID",
+        "type": "string"
+      },
+      {
+        "description": "Carrier claim number",
+        "name": "Carrier Claim ID",
+        "type": "string"
+      },
+      {
+        "description": "If the claim was denied, list the reasons which were mentioned for denial?",
+        "name": "Reasons for Denial",
+        "type": "array"
+      },
+      {
+        "description": "Was the injury reported to the employer more than 1 month after the injury date?",
+        "name": "was_injury_reported_after_1_month",
+        "type": "boolean"
+      }
+    ]
+  }
+}

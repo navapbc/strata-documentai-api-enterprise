@@ -95,3 +95,17 @@ jobs:
         run: |
           git diff --exit-code src/documentai_api/config/constants_preclassification_category_generated.py \
             || { echo "::error::constants_preclassification_category_generated.py is out of sync with infra/document-types/ - run 'make generate-categories' and commit."; exit 1; }
+
+  blueprint-schemas:
+    name: Custom blueprint schema drift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Runs natively (not in Docker), same as the categories job above, and for
+      # the same reason - infra/document-types/ isn't mounted into the container.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Check blueprint_schemas.json against infra/document-types/ custom blueprints
+        run: make check-blueprint-schemas

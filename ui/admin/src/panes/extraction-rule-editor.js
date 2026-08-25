@@ -188,11 +188,15 @@ function renderDocTypeSection(
 
 function render(state) {
   if (!_root) return;
-  const { schemas, activeDocType, rules, dirty, tenantId, allRules = [] } = state;
+  const { schemas, schemasLoading, activeDocType, rules, dirty, tenantId, allRules = [] } = state;
 
   if (!activeDocType) {
-    if (!Object.keys(schemas).length) {
+    if (schemasLoading) {
       _root.replaceChildren(h("p", { className: "empty-state" }, "Loading…"));
+      return;
+    }
+    if (!Object.keys(schemas).length) {
+      _root.replaceChildren(h("p", { className: "empty-state" }, "No document types found."));
       return;
     }
     const fieldsList = h("div", { id: "bp-fields-list", className: "fields-list" });
@@ -236,7 +240,9 @@ function render(state) {
   const editable = !!tenantId;
   const fields = schemas[activeDocType] || [];
   if (fields.length === 0) {
-    _root.replaceChildren(h("p", { className: "empty-state" }, "No fields defined."));
+    _root.replaceChildren(
+      h("p", { className: "empty-state" }, schemasLoading ? "Loading…" : "No fields defined."),
+    );
     return;
   }
 

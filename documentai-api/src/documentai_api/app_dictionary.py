@@ -1,5 +1,6 @@
 """Dictionary endpoints (schemas, fields, response codes, document categories)."""
 
+from dataclasses import asdict
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -9,7 +10,6 @@ from documentai_api.annotations import AuthUserWithFallback, OutputFormat
 from documentai_api.config.constants import (
     ApiVisualizationTag,
     DictionaryBlueprintField,
-    DictionaryBlueprintSchema,
     OutputFormatType,
 )
 from documentai_api.logging import get_logger
@@ -80,10 +80,7 @@ async def get_schema_detail(
     if not schema:
         raise HTTPException(status_code=404, detail=f"Schema not found: {document_type}")
 
-    data = schema.get(DictionaryBlueprintSchema.FIELDS)
-    if data is None:
-        logger.error(f"Schema for {document_type} missing 'fields' key")
-        raise HTTPException(status_code=500, detail="Schema data is malformed")
+    data = [asdict(f) for f in schema.fields]
 
     if output_format == OutputFormatType.CSV:
         return build_csv_response(data)
@@ -91,8 +88,7 @@ async def get_schema_detail(
     return DictionarySchemaDetailResponse(
         document_type=document_type,
         fields=data,
-        blueprint_arn=schema.get("blueprintArn"),
-        category=schema.get("category"),
+        category=schema.category,
     )
 
 

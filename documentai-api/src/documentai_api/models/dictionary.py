@@ -31,7 +31,6 @@ class DictionarySchemaFieldResponse(BaseApiResponse):
 class DictionarySchemaDetailResponse(BaseApiResponse):
     document_type: str
     fields: list[DictionarySchemaFieldResponse]
-    blueprint_arn: str | None = None
     category: str | None = None
 
 

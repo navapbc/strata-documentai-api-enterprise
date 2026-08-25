@@ -8,7 +8,7 @@ and assert that:
   2. Its value is a valid PreclassificationCategory slug (not "all").
 
 This guards the regression where the 'all' project overwrote per-category tags
-in _fetch_schemas_from_bda, causing routing to always fall back to the 'all' ARN.
+in fetch_schemas_from_bda, causing routing to always fall back to the 'all' ARN.
 """
 
 from pathlib import Path

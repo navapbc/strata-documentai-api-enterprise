@@ -17,6 +17,7 @@ from documentai_api.utils.preclassification import (
     find_matching_blueprint,
     preclassify_document,
 )
+from documentai_api.utils.schemas import DocumentSchema, SchemaField
 
 SAMPLE_IMAGE = b"\x89PNG\r\n" + b"\x00" * 100
 
@@ -422,21 +423,24 @@ def test_invoke_uses_max_tokens(monkeypatch):
 
 
 SAMPLE_SCHEMAS = {
-    "W2": {
-        "documentType": "W2",
-        "description": "IRS W-2 Wage and Tax Statement",
-        "category": "tax_documents",
-        "fields": [{"name": "employer_ein", "type": "string"}, {"name": "wages", "type": "number"}],
-    },
-    "paystub": {
-        "documentType": "paystub",
-        "description": "Employee pay stub",
-        "category": "employment_wages",
-        "fields": [
-            {"name": "employee_name", "type": "string"},
-            {"name": "pay_period", "type": "string"},
+    "W2": DocumentSchema(
+        document_type="W2",
+        description="IRS W-2 Wage and Tax Statement",
+        category="tax_documents",
+        fields=[
+            SchemaField(name="employer_ein", type="string"),
+            SchemaField(name="wages", type="number"),
         ],
-    },
+    ),
+    "paystub": DocumentSchema(
+        document_type="paystub",
+        description="Employee pay stub",
+        category="employment_wages",
+        fields=[
+            SchemaField(name="employee_name", type="string"),
+            SchemaField(name="pay_period", type="string"),
+        ],
+    ),
 }
 
 
@@ -451,7 +455,7 @@ def test_build_blueprint_prompt_lists_all_types():
 
 
 def test_build_blueprint_prompt_handles_missing_description():
-    schemas = {"receipt": {"documentType": "receipt", "fields": []}}
+    schemas = {"receipt": DocumentSchema(document_type="receipt", description="", fields=[])}
     prompt = _build_blueprint_prompt(schemas)
     assert "- receipt" in prompt
 
@@ -652,7 +656,7 @@ _BLUEPRINT_MATCH_EXPECTATIONS = [
 
 @pytest.fixture
 def bda_env(reset_env, monkeypatch):
-    """Restore BDA env vars needed for integration tests that call get_all_schemas()."""
+    """Restore BDA env vars needed for integration tests that call BDA directly."""
     arn = reset_env.get("BDA_PROJECT_ARN_ALL")
     if not arn:
         pytest.skip("BDA_PROJECT_ARN_ALL not set in environment")
@@ -662,31 +666,33 @@ def bda_env(reset_env, monkeypatch):
 
 
 @pytest.mark.integration
-def test_get_all_schemas_has_descriptions(real_aws_credentials, bda_env):
-    """Verify get_all_schemas() returns schemas with non-empty descriptions."""
-    from documentai_api.utils.schemas import get_all_schemas, invalidate_schema_cache
+def test_fetch_schemas_from_bda_has_descriptions(real_aws_credentials, bda_env):
+    """Verify fetch_schemas_from_bda() has non-empty descriptions.
 
-    invalidate_schema_cache()
-    schemas = get_all_schemas()
+    fetch_schemas_from_bda() is used offline by pull-blueprint-schemas.
+    get_all_schemas() itself just reads the static file this produces, so it
+    no longer talks to BDA at all.
+    """
+    from documentai_api.utils.schemas import fetch_schemas_from_bda
+
+    schemas = fetch_schemas_from_bda()
 
     assert len(schemas) > 0, "No schemas returned from BDA"
 
     missing_descriptions = [
-        doc_type for doc_type, schema in schemas.items() if not schema.get("description")
+        doc_type for doc_type, schema in schemas.items() if not schema.description
     ]
     assert not missing_descriptions, (
         f"Schemas missing descriptions: {missing_descriptions}. "
         "Blueprint matching prompt needs descriptions to work."
     )
 
-    missing_categories = [
-        doc_type for doc_type, schema in schemas.items() if not schema.get("category")
-    ]
+    missing_categories = [doc_type for doc_type, schema in schemas.items() if not schema.category]
     assert not missing_categories, f"Schemas missing category: {missing_categories}"
 
     print(f"\nSchemas fetched: {len(schemas)} types, all with descriptions")
     for doc_type, schema in schemas.items():
-        print(f"  {doc_type}: {schema.get('description', '')[:60]}...")
+        print(f"  {doc_type}: {schema.description[:60]}...")
 
 
 @pytest.mark.integration
@@ -697,15 +703,11 @@ def test_get_all_schemas_has_descriptions(real_aws_credentials, bda_env):
 def test_find_matching_blueprint_real(
     filename, expected_match, category, monkeypatch, real_aws_credentials, bda_env
 ):
-    """Match a real document against real BDA schemas via Bedrock."""
-    from documentai_api.utils.schemas import invalidate_schema_cache
-
+    """Match a real document against the preloaded blueprint schemas via Bedrock."""
     monkeypatch.setattr(
         "documentai_api.utils.preclassification._get_model_id",
         lambda: "us.amazon.nova-lite-v1:0",
     )
-
-    invalidate_schema_cache()
 
     filepath = FIXTURES_DIR / filename
     if not filepath.exists():
