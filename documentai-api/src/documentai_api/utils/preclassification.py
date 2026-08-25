@@ -19,6 +19,7 @@ from documentai_api.dtos.classification import (
 )
 from documentai_api.logging import get_logger
 from documentai_api.services.bedrock import invoke_model
+from documentai_api.utils.schemas import DocumentSchema
 from documentai_api.utils.ssm import get_parameter_value
 
 logger = get_logger(__name__)
@@ -161,7 +162,7 @@ def preclassify_document(
         )
 
 
-def _build_blueprint_prompt(schemas: dict[str, Any]) -> str:
+def _build_blueprint_prompt(schemas: dict[str, DocumentSchema]) -> str:
     """Build a prompt listing all blueprints for the model to evaluate against."""
     lines = [
         "You are an expert document classification system.",
@@ -185,13 +186,13 @@ def _build_blueprint_prompt(schemas: dict[str, Any]) -> str:
     ]
 
     for doc_type, schema in schemas.items():
-        desc = schema.get("description", "")
+        desc = schema.description
         lines.append(f"- {doc_type}: {desc}" if desc else f"- {doc_type}")
 
-        fields = schema.get("fields", [])
+        fields = schema.fields
 
         if fields:
-            field_names = ", ".join(f["name"] for f in fields)
+            field_names = ", ".join(f.name for f in fields)
             lines.append(f"  Fields: {field_names}")
 
     return "\n".join(lines)
@@ -221,7 +222,7 @@ def find_matching_blueprint(
     all_schemas = get_all_schemas()
 
     if category:
-        filtered = {k: v for k, v in all_schemas.items() if v.get("category") == category}
+        filtered = {k: v for k, v in all_schemas.items() if v.category == category}
         schemas = filtered or all_schemas
     else:
         schemas = all_schemas
@@ -283,12 +284,12 @@ def find_matching_blueprint(
             )
             matched = None
 
-        matched_schema = schemas.get(matched, {}) if matched else {}
+        matched_schema = schemas.get(matched) if matched else None
 
         return PreclassificationMatchResult(
             matched_document_type=matched,
             confidence=max(0.0, min(1.0, parsed.confidence)),
-            category=matched_schema.get("category"),
+            category=matched_schema.category if matched_schema else None,
             input_tokens=usage.get("inputTokens"),
             output_tokens=usage.get("outputTokens"),
             duration_seconds=Decimal(str(elapsed)),

@@ -109,11 +109,6 @@ class BdaResponseFields:
     DOCUMENT_TYPE = "type"
 
 
-class Cache:
-    KEY_BLUEPRINT_SCHEMAS = "blueprint_schemas"
-    TTL_BLUEPRINT_SCHEMAS_MINUTES = 60
-
-
 class ConfigDefaults:
     FIELD_CONFIDENCE_THRESHOLD = 0.65
     POLL_INTERVAL_SECONDS = 5
