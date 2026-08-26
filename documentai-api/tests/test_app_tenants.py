@@ -1,6 +1,7 @@
 """Tests for tenant admin endpoints."""
 
 from decimal import Decimal
+from typing import Any
 
 import pytest
 
@@ -23,7 +24,12 @@ def _super_admin_jwt():
     return
 
 
-def _seed_tenant(tenants_table, tenant_id: str, max_per_day=None, max_per_month=None):
+def _seed_tenant(
+    tenants_table: Any,
+    tenant_id: str,
+    max_per_day: int | None = None,
+    max_per_month: int | None = None,
+) -> None:
     item = {
         TenantRecord.TENANT_ID: tenant_id,
         TenantRecord.DISPLAY_NAME: "Test Tenant",
@@ -39,7 +45,7 @@ def _seed_tenant(tenants_table, tenant_id: str, max_per_day=None, max_per_month=
     tenants_table.put_item(Item=item)
 
 
-def _seed_counts(counts_table, tenant_id: str, date: str, count: int):
+def _seed_counts(counts_table: Any, tenant_id: str, date: str, count: int) -> None:
     counts_table.put_item(
         Item={
             TenantRequestCountRecord.TENANT_ID: tenant_id,

@@ -8,6 +8,7 @@ real Bedrock and require AWS credentials:
 
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -22,14 +23,14 @@ from documentai_api.utils.schemas import DocumentSchema, SchemaField
 SAMPLE_IMAGE = b"\x89PNG\r\n" + b"\x00" * 100
 
 
-def _mock_invoke_response(parsed: dict) -> dict:
+def _mock_invoke_response(parsed: dict[str, Any]) -> dict[str, Any]:
     return {
         "output": {"message": {"content": [{"text": json.dumps(parsed)}]}},
         "usage": {"inputTokens": 100, "outputTokens": 50},
     }
 
 
-def _patch_invoke(monkeypatch, response):
+def _patch_invoke(monkeypatch: pytest.MonkeyPatch, response: dict[str, Any]) -> None:
     monkeypatch.setattr(
         "documentai_api.utils.preclassification.invoke_model", lambda **kwargs: response
     )
@@ -579,11 +580,11 @@ CONTENT_TYPE_MAP = {
 }
 
 
-def _load_expected():
+def _load_expected() -> dict[str, Any]:
     if not EXPECTED_FILE.exists():
         return {}
     with open(EXPECTED_FILE) as f:
-        return json.load(f)
+        return json.load(f)  # type: ignore[no-any-return]
 
 
 def _get_content_type(filename: str) -> str:
@@ -591,7 +592,9 @@ def _get_content_type(filename: str) -> str:
     return CONTENT_TYPE_MAP.get(ext, "application/octet-stream")
 
 
-_expected_items = [(k, v["preclassificationCategory"]) for k, v in _load_expected().items()]
+_expected_items: list[tuple[str, str]] = [
+    (k, v["preclassificationCategory"]) for k, v in _load_expected().items()
+]
 
 
 @pytest.mark.integration

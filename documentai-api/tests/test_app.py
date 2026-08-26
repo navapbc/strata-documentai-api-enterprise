@@ -1,5 +1,6 @@
 """Tests for app.py (public endpoints and shared utilities)."""
 
+from contextlib import AbstractContextManager
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -165,6 +166,8 @@ async def test_poll_for_completion_nests_stored_fields(mocker):
 
     result = await poll_for_completion("test-job-id", timeout=10)
 
+    assert result is not None
+    assert result.fields is not None
     assert result.fields["amount"] == {"confidence": 0.9, "value": "1"}
     assert result.fields["payment_details"]["base_rent"]["value"] == "1200"
 
@@ -302,7 +305,7 @@ def test_cors_expose_headers(api_client):
 ##############################################################################
 
 
-def _patch_auth_config(*, enabled: bool, hosted: bool):
+def _patch_auth_config(*, enabled: bool, hosted: bool) -> AbstractContextManager[object]:
     """Patch get_app_env_config with a fake whose hosted-ness is controllable.
 
     The env-name / Lambda detection itself is covered by AppEnvConfig.is_hosted_env

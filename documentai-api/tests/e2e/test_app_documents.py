@@ -3,9 +3,10 @@ import os
 import time
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import pytest
-import requests
+import requests  # type: ignore[import-untyped]
 
 from documentai_api.schemas.document_metadata import DocumentMetadata
 
@@ -30,7 +31,7 @@ class Case:
     expected_result: ExpectedResult
 
 
-def load_test_cases() -> list[Case]:
+def load_test_cases() -> list[Any]:
     cases = json.loads(CLASSIFICATIONS.read_text())
     return [
         pytest.param(
@@ -57,7 +58,9 @@ def load_test_cases() -> list[Case]:
     ]
 
 
-def _upload_and_wait(base_url, api_key, file_path, timeout=75, interval=2):
+def _upload_and_wait(
+    base_url: str, api_key: str, file_path: Path, timeout: int = 75, interval: int = 2
+) -> dict[str, Any]:
     with file_path.open("rb") as f:
         response = requests.post(
             f"{base_url}/v1/documents",
@@ -84,7 +87,7 @@ def _upload_and_wait(base_url, api_key, file_path, timeout=75, interval=2):
         # done - including terminal states that never invoke BDA (password
         # protected, blurry), where completedAt is never set.
         if body.get("responseCode") is not None:
-            return body
+            return body  # type: ignore[no-any-return]
 
         time.sleep(interval)
 
@@ -133,7 +136,9 @@ def test_post_document(test_case, base_url, api_key):
         ]
 
     job_id = body["jobId"]
-    items = ddb_service.query_by_key(table_name, job_id_index_name, DocumentMetadata.JOB_ID, job_id)
+    items = ddb_service.query_by_key(
+        table_name or "", job_id_index_name or "", DocumentMetadata.JOB_ID, job_id
+    )
     assert items is not None, f"no record found in DDB for jobId {job_id}"
     assert len(items) == 1, (
         f"expected exactly 1 record in DDB for jobId {job_id} but found {len(items)}"

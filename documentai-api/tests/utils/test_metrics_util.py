@@ -1,6 +1,7 @@
 """Tests for metrics utility."""
 
 import json
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -10,7 +11,7 @@ from documentai_api.config.constants import MetricsGranularity, TimingMetrics
 from documentai_api.utils.metrics import _map_response_codes, build_summary, get_aggregated_metrics
 
 
-def _make_stats(total_records=10, total_bda_invocations=8):
+def _make_stats(total_records: int = 10, total_bda_invocations: int = 8) -> dict[str, Any]:
     return {
         "total_records": total_records,
         "total_bda_invocations": total_bda_invocations,
@@ -28,13 +29,13 @@ def _make_stats(total_records=10, total_bda_invocations=8):
     }
 
 
-def _mock_s3_body(stats: dict):
+def _mock_s3_body(stats: dict[str, Any]) -> dict[str, Any]:
     body = MagicMock()
     body.read.return_value = json.dumps(stats).encode()
     return {"Body": body}
 
 
-def _no_such_key_error():
+def _no_such_key_error() -> ClientError:
     return ClientError({"Error": {"Code": "NoSuchKey"}}, "GetObject")
 
 

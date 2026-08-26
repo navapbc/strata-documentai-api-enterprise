@@ -1,5 +1,6 @@
 import logging
 import re
+from collections.abc import Generator
 
 import pytest
 
@@ -9,7 +10,9 @@ from tests.helpers.assertions import assert_dict_contains
 
 
 @pytest.fixture
-def init_test_logger(caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch):
+def init_test_logger(
+    caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
+) -> Generator[None, None, None]:
     caplog.set_level(logging.DEBUG)
     monkeypatch.setenv("LOG_FORMAT", "human-readable")
     monkeypatch.setenv("LOG_ENABLE_AUDIT", "false")
@@ -24,7 +27,12 @@ def init_test_logger(caplog: pytest.LogCaptureFixture, monkeypatch: pytest.Monke
         ("json", formatters.JsonFormatter),
     ],
 )
-def test_init(caplog: pytest.LogCaptureFixture, monkeypatch, log_format, expected_formatter):
+def test_init(
+    caplog: pytest.LogCaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    log_format: str,
+    expected_formatter: type,
+) -> None:
     caplog.set_level(logging.DEBUG)
     monkeypatch.setenv("LOG_FORMAT", log_format)
 
@@ -56,6 +64,7 @@ def test_log_exception(init_test_logger, caplog):
     assert last_record.message == "test log message example_arg"
     assert last_record.funcName == "test_log_exception"
     assert last_record.threadName == "MainThread"
+    assert last_record.exc_text is not None
     assert last_record.exc_text.startswith("Traceback (most recent call last)")
     assert last_record.exc_text.endswith("Exception: example exception")
     assert last_record.__dict__["key1"] == "value1"
@@ -90,7 +99,13 @@ def test_log_exception(init_test_logger, caplog):
         ),
     ],
 )
-def test_mask_pii(init_test_logger, caplog: pytest.LogCaptureFixture, args, extra, expected):
+def test_mask_pii(
+    init_test_logger: None,
+    caplog: pytest.LogCaptureFixture,
+    args: tuple[object, ...],
+    extra: dict[str, str] | None,
+    expected: dict[str, str],
+) -> None:
     logger = logging.getLogger(__name__)
 
     logger.info(*args, extra=extra)

@@ -65,7 +65,7 @@ def ddb_table(aws_credentials):
             ],
             BillingMode="PAY_PER_REQUEST",
         )
-        table.test_index_name = "test-index"
+        table.test_index_name = "test-index"  # type: ignore[attr-defined]
         yield table
 
 

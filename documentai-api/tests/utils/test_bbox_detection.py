@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -11,14 +12,14 @@ from documentai_api.utils.bbox_detection import detect_document_bbox
 SAMPLE_IMAGE = b"\x89PNG\r\n" + b"\x00" * 100
 
 
-def _mock_invoke_response(parsed: dict) -> dict:
+def _mock_invoke_response(parsed: dict[str, Any]) -> dict[str, Any]:
     return {
         "output": {"message": {"content": [{"text": json.dumps(parsed)}]}},
         "usage": {"inputTokens": 100, "outputTokens": 50},
     }
 
 
-def _patch_bbox_invoke(monkeypatch, response):
+def _patch_bbox_invoke(monkeypatch: pytest.MonkeyPatch, response: dict[str, Any]) -> None:
     monkeypatch.setattr(
         "documentai_api.utils.bbox_detection.invoke_model", lambda **kwargs: response
     )

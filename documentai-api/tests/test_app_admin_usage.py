@@ -1,6 +1,7 @@
 """Tests for GET /v1/admin/usage endpoint."""
 
 import json
+from typing import Any
 
 import pytest
 
@@ -21,7 +22,7 @@ def metrics_bucket(s3_bucket, monkeypatch):
     return s3_bucket
 
 
-def _put_monthly_report(bucket, month: str, tenants: list[dict]):
+def _put_monthly_report(bucket: Any, month: str, tenants: list[dict[str, Any]]) -> None:
     report = {"month": month, "report_type": "usage_only", "tenants": tenants}
     bucket.put_object(
         Key=f"usage-report/month={month}/report.json",
@@ -29,7 +30,9 @@ def _put_monthly_report(bucket, month: str, tenants: list[dict]):
     )
 
 
-def _put_daily_stats(bucket, date: str, stats: dict, tenant_id: str | None = None):
+def _put_daily_stats(
+    bucket: Any, date: str, stats: dict[str, Any], tenant_id: str | None = None
+) -> None:
     if tenant_id:
         key = f"usage-report/utc/date={date}/tenant={tenant_id}/stats.json"
     else:
@@ -37,7 +40,7 @@ def _put_daily_stats(bucket, date: str, stats: dict, tenant_id: str | None = Non
     bucket.put_object(Key=key, Body=json.dumps(stats))
 
 
-def _make_daily_stats(date: str, total_records: int = 10):
+def _make_daily_stats(date: str, total_records: int = 10) -> dict[str, Any]:
     return {
         "date": date,
         "total_records": total_records,
@@ -444,7 +447,7 @@ def test_monthly_current_month_graceful_degradation_on_registry_failure(
     # Still returns tenant-a from report, augmented with today
     assert len(data["tenants"]) == 1
     assert data["tenants"][0]["tenantId"] == TENANT_ADMIN_ID
-    assert data["tenants"][0]["totalRecords"] == TENANT_ADMIN["total_records"] + 2
+    assert data["tenants"][0]["totalRecords"] == TENANT_ADMIN["total_records"] + 2  # type: ignore[operator]
 
 
 ##############################################################################

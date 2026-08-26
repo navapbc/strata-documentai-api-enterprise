@@ -1,6 +1,7 @@
 """Tests for metrics_aggregator."""
 
 import json
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -20,13 +21,13 @@ from documentai_api.jobs.metrics_aggregator.main import (
 
 
 def create_record(
-    status="success",
-    created_at="2026-02-20T10:00:00Z",
-    classification="W2",
-    total_time=None,
-    bda_time=None,
-    tenant_id="test-tenant",
-):
+    status: str = "success",
+    created_at: str = "2026-02-20T10:00:00Z",
+    classification: str = "W2",
+    total_time: float | None = None,
+    bda_time: float | None = None,
+    tenant_id: str | None = "test-tenant",
+) -> dict[str, Any]:
     """Factory function to create test records with defaults."""
     record = {
         "file_name": "test.pdf",
@@ -42,7 +43,9 @@ def create_record(
     return record
 
 
-def create_daily_stats(s3_client, date, total_records=5, tenant_id=None):
+def create_daily_stats(
+    s3_client: Any, date: str, total_records: int = 5, tenant_id: str | None = None
+) -> dict[str, Any]:
     """Factory function to create daily stats in S3.
 
     When tenant_id is given, writes to the tenant-scoped daily path; otherwise
@@ -87,7 +90,7 @@ def create_daily_stats(s3_client, date, total_records=5, tenant_id=None):
     return stats
 
 
-def create_aggregated_stats(date="2026-02-20", total_records=10):
+def create_aggregated_stats(date: str = "2026-02-20", total_records: int = 10) -> dict[str, Any]:
     """Factory function to create aggregated stats structure."""
     bda_wait_time_avg = 2.4
     bda_processing_time_avg = 30.0
@@ -288,7 +291,7 @@ def test_check_if_previously_aggregated_reraises_non_404(s3_client, s3_bucket):
 
     error_response = {"Error": {"Code": "AccessDenied", "Message": "Access Denied"}}
     mock_s3 = MagicMock()
-    mock_s3.head_object.side_effect = ClientError(error_response, "HeadObject")
+    mock_s3.head_object.side_effect = ClientError(error_response, "HeadObject")  # type: ignore[arg-type]
 
     with (
         patch(
@@ -515,7 +518,7 @@ def test_process_record_logs_warning_for_invalid_timing(caplog):
         "bda_processing_time_seconds": "also-bad",
         "bda_wait_time_seconds": "also-invalid",
     }
-    stats = {
+    stats: dict[str, Any] = {
         "total_records": 0,
         "by_status": {},
         "by_classification": {},
@@ -629,8 +632,8 @@ def test_main_multi_tenant_daily_and_monthly(s3_client, s3_bucket, mock_metrics_
     assert result["statusCode"] == 200
     assert result["recordsProcessed"] == 3
 
-    def read(key):
-        return json.loads(
+    def read(key: str) -> dict[str, Any]:
+        return json.loads(  # type: ignore[no-any-return]
             s3_client.get_object(Bucket="test-bucket", Key=key)["Body"].read().decode()
         )
 

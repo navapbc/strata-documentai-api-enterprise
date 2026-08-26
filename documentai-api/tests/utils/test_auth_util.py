@@ -243,7 +243,7 @@ def test_insecure_key_invalid_raises_401(monkeypatch):
 def test_insecure_key_missing_header_raises_401(monkeypatch):
     monkeypatch.setenv(EnvVars.API_AUTH_INSECURE_SHARED_KEY, "correct-key")
     with pytest.raises(HTTPException) as exc_info:
-        auth_util._verify_with_insecure_shared_key(None)
+        auth_util._verify_with_insecure_shared_key(None)  # type: ignore[arg-type]
     assert exc_info.value.status_code == 401
 
 
@@ -274,7 +274,7 @@ def test_invalid_key_format_empty():
 
 
 def test_invalid_key_format_none():
-    assert auth_util._is_valid_key_format(None) is False
+    assert auth_util._is_valid_key_format(None) is False  # type: ignore[arg-type]
 
 
 ##############################################################################
@@ -284,7 +284,7 @@ def test_invalid_key_format_none():
 
 def test_ddb_verify_missing_key_raises_401():
     with pytest.raises(HTTPException) as exc_info:
-        auth_util._verify_with_ddb(None)
+        auth_util._verify_with_ddb(None)  # type: ignore[arg-type]
     assert exc_info.value.status_code == 401
 
 

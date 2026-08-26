@@ -5,6 +5,8 @@ scope (custom:tenant_id) can never drift apart: super-admins always have no
 tenant scope, tenant-admins always have exactly one.
 """
 
+from typing import Any
+
 import pytest
 
 from tests.helpers.fixtures.claims import SUPER_ADMIN_CLAIMS, TENANT_ADMIN_CLAIMS, override_jwt
@@ -19,7 +21,7 @@ def acme_tenant(tenants_table):
     return "acme"
 
 
-def _user(users: list[dict], username: str) -> dict:
+def _user(users: list[dict[str, Any]], username: str) -> dict[str, Any]:
     return next(u for u in users if u["username"] == username)
 
 

@@ -1,6 +1,7 @@
 """Tests for tenant write rate limiting."""
 
 from decimal import Decimal
+from typing import Any
 
 import pytest
 from fastapi import HTTPException
@@ -11,7 +12,12 @@ from documentai_api.utils import write_limit as write_limit_util
 from documentai_api.utils.dates import get_month_prefix, get_today_iso
 
 
-def _seed_tenant(tenants_table, tenant_id: str, max_per_day=None, max_per_month=None):
+def _seed_tenant(
+    tenants_table: Any,
+    tenant_id: str,
+    max_per_day: int | None = None,
+    max_per_month: int | None = None,
+) -> None:
     item = {
         TenantRecord.TENANT_ID: tenant_id,
         TenantRecord.DISPLAY_NAME: "Test Tenant",
@@ -24,7 +30,7 @@ def _seed_tenant(tenants_table, tenant_id: str, max_per_day=None, max_per_month=
     tenants_table.put_item(Item=item)
 
 
-def _seed_count(counts_table, tenant_id: str, date: str, count: int) -> None:
+def _seed_count(counts_table: Any, tenant_id: str, date: str, count: int) -> None:
     counts_table.put_item(
         Item={
             TenantRequestCountRecord.TENANT_ID: tenant_id,
@@ -34,7 +40,7 @@ def _seed_count(counts_table, tenant_id: str, date: str, count: int) -> None:
     )
 
 
-def _get_count(counts_table, tenant_id: str, date: str) -> int:
+def _get_count(counts_table: Any, tenant_id: str, date: str) -> int:
     item = counts_table.get_item(
         Key={TenantRequestCountRecord.TENANT_ID: tenant_id, TenantRequestCountRecord.DATE: date}
     ).get("Item")

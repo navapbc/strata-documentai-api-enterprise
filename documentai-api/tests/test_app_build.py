@@ -72,6 +72,10 @@ def mock_document_build_submit():
         }
 
 
+def _form(**kwargs: object) -> dict[str, str]:
+    return {k: str(v) for k, v in kwargs.items()}
+
+
 def create_page_metadata(
     page_number: int, build_id: str = "test-build-id", category: str | None = None
 ) -> PageMetadata:
@@ -136,7 +140,7 @@ def test_upload_document_build_page_builds(
 ):
     """Test uploading pages to new and existing builds."""
     files = {"file": ("page.pdf", b"fake pdf", "application/pdf")}
-    data = {"page_number": page_number}
+    data = _form(page_number=page_number)
     response = client.post("/v1/builds/test-build-id/pages", files=files, data=data)
 
     assert response.status_code == 200
@@ -162,7 +166,7 @@ def test_upload_document_build_page_invalid_file_type(
     mock_document_build_upload["magic"].return_value = file_type
 
     files = {"file": (file_name, b"fake content", file_type)}
-    data = {"page_number": 1}
+    data = _form(page_number=1)
     response = client.post("/v1/builds/test-build-id/pages", files=files, data=data)
 
     assert response.status_code == 400
@@ -188,7 +192,7 @@ def test_upload_document_build_page_overwrite_scenarios(
         )
 
     files = {"file": ("page1.pdf", b"fake pdf", "application/pdf")}
-    data = {"page_number": 1, "overwrite": overwrite}
+    data = _form(page_number=1, overwrite=overwrite)
     response = client.post("/v1/builds/test-build-id/pages", files=files, data=data)
 
     assert response.status_code == expected_status
@@ -201,7 +205,7 @@ def test_upload_document_build_page_with_category(
 ):
     """Test document build upload with document category."""
     files = {"file": ("page1.pdf", b"fake pdf", "application/pdf")}
-    data = {"page_number": 1, "category": "income"}
+    data = _form(page_number=1, category="income")
     response = client.post("/v1/builds/test-build-id/pages", files=files, data=data)
 
     assert response.status_code == 200
@@ -385,7 +389,7 @@ def test_upload_document_build_page_error_handling(
     mock_document_build_upload["upload"].side_effect = Exception("S3 upload failed")
 
     files = {"file": ("page1.pdf", b"fake pdf", "application/pdf")}
-    data = {"page_number": 1}
+    data = _form(page_number=1)
     response = client.post("/v1/builds/test-build-id/pages", files=files, data=data)
 
     assert response.status_code == 500
@@ -617,7 +621,7 @@ def test_upload_document_build_page_max_pages_cap(
 
     with patch("documentai_api.app_build.get_document_build_pages", return_value=existing_pages):
         files = {"file": ("page.pdf", b"fake pdf", "application/pdf")}
-        data = {"page_number": MAX_PAGES_PER_BUILD + 1}
+        data = _form(page_number=MAX_PAGES_PER_BUILD + 1)
         response = client.post("/v1/builds/test-build-id/pages", files=files, data=data)
 
     assert response.status_code == 400
@@ -677,7 +681,7 @@ def test_upload_document_build_page_file_size_cap(
 ):
     """Upload rejects files exceeding MAX_FILE_SIZE_BYTES."""
     files = {"file": ("big.pdf", b"x" * 100, "application/pdf")}
-    data = {"page_number": 1}
+    data = _form(page_number=1)
 
     # Mock file.size to exceed the cap
     with patch("documentai_api.app_build.MAX_FILE_SIZE_BYTES", 50):
@@ -738,7 +742,7 @@ def test_submit_category_substitution_picks_first_non_none(
 def test_upload_document_build_page_number_validation(document_build_ddb_table):
     """page_number=0 is rejected by Form(ge=1) validation."""
     files = {"file": ("page.pdf", b"fake pdf", "application/pdf")}
-    data = {"page_number": 0}
+    data = _form(page_number=0)
     response = client.post("/v1/builds/test-build-id/pages", files=files, data=data)
 
     assert response.status_code == 422
@@ -758,7 +762,7 @@ def test_upload_document_build_page_image_conversion_error(
     mock_document_build_upload["upload"].side_effect = ImageConversionError("HEIC failed")
 
     files = {"file": ("page.heic", b"fake heic", "image/heic")}
-    data = {"page_number": 1}
+    data = _form(page_number=1)
     response = client.post("/v1/builds/test-build-id/pages", files=files, data=data)
 
     assert response.status_code == 400
@@ -782,7 +786,7 @@ def test_upload_document_build_page_trace_id_echoed(
 ):
     """Client-supplied X-Trace-ID is echoed in response."""
     files = {"file": ("page.pdf", b"fake pdf", "application/pdf")}
-    data = {"page_number": 1}
+    data = _form(page_number=1)
     response = client.post(
         "/v1/builds/test-build-id/pages",
         files=files,
@@ -801,7 +805,7 @@ def test_upload_document_build_page_trace_id_generated(
     import uuid
 
     files = {"file": ("page.pdf", b"fake pdf", "application/pdf")}
-    data = {"page_number": 1}
+    data = _form(page_number=1)
     response = client.post("/v1/builds/test-build-id/pages", files=files, data=data)
 
     assert response.status_code == 200
@@ -870,7 +874,7 @@ def test_batch_upload_file_size_cap(document_build_ddb_table, mock_document_buil
 def test_upload_document_build_page_number_lower_bound(document_build_ddb_table, page_number):
     """page_number below 1 is rejected by Form(ge=1)."""
     files = {"file": ("page.pdf", b"fake pdf", "application/pdf")}
-    data = {"page_number": page_number}
+    data = _form(page_number=page_number)
     response = client.post("/v1/builds/test-build-id/pages", files=files, data=data)
 
     assert response.status_code == 422
@@ -947,7 +951,7 @@ def test_upload_document_build_page_non_pdf_content_types(
     mock_document_build_upload["magic"].return_value = content_type
 
     files = {"file": (f"page.{expected_ext}", b"fake image", content_type)}
-    data = {"page_number": 1}
+    data = _form(page_number=1)
     response = client.post("/v1/builds/test-build-id/pages", files=files, data=data)
 
     assert response.status_code == 200
@@ -961,7 +965,7 @@ def test_upload_document_build_page_non_pdf_content_types(
 def test_upload_build_page_uses_tenant_prefix(document_build_ddb_table, mock_document_build_upload):
     """Build page is written to S3 under the caller's tenant prefix."""
     files = {"file": ("page.pdf", b"fake pdf", "application/pdf")}
-    data = {"page_number": 1}
+    data = _form(page_number=1)
     response = client.post("/v1/builds/test-build-id/pages", files=files, data=data)
 
     assert response.status_code == 200

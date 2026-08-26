@@ -2,9 +2,12 @@
 
 import dataclasses
 import json
+from pathlib import Path
+from typing import Any
 from unittest.mock import patch
 
 import pytest
+from click.testing import Result
 from typer.testing import CliRunner
 
 from documentai_api.cli.pull_blueprint_schemas import app
@@ -22,7 +25,7 @@ _SCHEMA = {
 }
 
 
-def _matching_entry():
+def _matching_entry() -> dict[str, Any]:
     """Build the blueprint_schemas.json entry that exactly matches _SCHEMA.
 
     Derives fields via the real extract_fields(), not a hand-copied list, so
@@ -45,7 +48,7 @@ def custom_blueprint(tmp_path):
     return tmp_path
 
 
-def _check(tmp_path, schemas_entries):
+def _check(tmp_path: Path, schemas_entries: dict[str, Any] | None) -> Result:
     """Run `check`, patching in tmp_path's infra dir and schemas file.
 
     schemas_entries=None means don't write the schemas file at all - simulates
@@ -130,7 +133,7 @@ def test_check_fails_when_custom_blueprint_missing_class(tmp_path):
     assert "class" in result.output
 
 
-def _write_managed_blueprints(tmp_path, category, count):
+def _write_managed_blueprints(tmp_path: Path, category: str, count: int) -> None:
     category_dir = tmp_path / "document-types" / category
     category_dir.mkdir(parents=True, exist_ok=True)
     entries = [

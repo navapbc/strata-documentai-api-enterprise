@@ -282,12 +282,12 @@ def test_csv_value_with_newline():
 
 
 def test_csv_value_with_none():
-    """Test CSV handles None values."""
+    """Test CSV handles None description values without rendering the string 'None'."""
     schemas = {
         "W2": DocumentSchema(
             document_type="W2",
             description="",
-            fields=[SchemaField(name="field1", type="string", description=None)],
+            fields=[SchemaField(name="field1", type="string", description=None)],  # type: ignore[arg-type]
         ),
     }
     with patch("documentai_api.utils.schemas.get_all_schemas", return_value=schemas):

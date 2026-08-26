@@ -1,5 +1,6 @@
 """Tests for tenant utilities and access validation."""
 
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -20,7 +21,7 @@ from documentai_api.utils.tenant_access import (
 # =============================================================================
 
 
-def _add_tenant(table, tenant_id: str, display_name: str = "Test", **kwargs):
+def _add_tenant(table: Any, tenant_id: str, display_name: str = "Test", **kwargs: object) -> None:
     item = {
         TenantRecord.TENANT_ID: tenant_id,
         TenantRecord.DISPLAY_NAME: display_name,

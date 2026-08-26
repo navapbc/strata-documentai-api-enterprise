@@ -134,8 +134,8 @@ def test_routing_writes_per_category_match(file_path, expected_category, base_ur
 
     cfg = get_aws_config()
     items = ddb_service.query_by_key(
-        cfg.documentai_document_metadata_table_name,
-        cfg.documentai_document_metadata_job_id_index_name,
+        cfg.documentai_document_metadata_table_name or "",
+        cfg.documentai_document_metadata_job_id_index_name or "",
         DocumentMetadata.JOB_ID,
         job_id,
     )

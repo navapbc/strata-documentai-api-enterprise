@@ -1,6 +1,7 @@
 """Tests for GET /v1/metrics endpoint."""
 
 import json
+from typing import Any
 
 import pytest
 
@@ -51,7 +52,9 @@ def metrics_bucket(s3_bucket, monkeypatch):
     return s3_bucket
 
 
-def _put_daily_stats(bucket, date: str, stats: dict, tenant_id: str | None = None):
+def _put_daily_stats(
+    bucket: Any, date: str, stats: dict[str, Any], tenant_id: str | None = None
+) -> None:
     """Helper to write a daily stats file."""
     if tenant_id:
         key = f"aggregated/utc/date={date}/tenant={tenant_id}/stats.json"
@@ -60,7 +63,9 @@ def _put_daily_stats(bucket, date: str, stats: dict, tenant_id: str | None = Non
     bucket.put_object(Key=key, Body=json.dumps(stats))
 
 
-def _put_monthly_stats(bucket, month: str, stats: dict, tenant_id: str | None = None):
+def _put_monthly_stats(
+    bucket: Any, month: str, stats: dict[str, Any], tenant_id: str | None = None
+) -> None:
     """Helper to write a monthly stats file."""
     if tenant_id:
         key = f"aggregated/utc/month={month}/tenant={tenant_id}/stats.json"
@@ -69,7 +74,7 @@ def _put_monthly_stats(bucket, month: str, stats: dict, tenant_id: str | None = 
     bucket.put_object(Key=key, Body=json.dumps(stats))
 
 
-def _make_stats(date: str, total_records: int = 10, **overrides) -> dict:
+def _make_stats(date: str, total_records: int = 10, **overrides: Any) -> dict[str, Any]:
     """Build a minimal valid stats dict."""
     base = {
         "date": date,
