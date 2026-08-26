@@ -1,6 +1,6 @@
 """Generic TTL cache."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from documentai_api.logging import get_logger
@@ -13,10 +13,10 @@ class CacheItem:
 
     def __init__(self, value: Any, ttl_minutes: int):
         self.value = value
-        self.expires_at = datetime.now() + timedelta(minutes=ttl_minutes)
+        self.expires_at = datetime.now(UTC) + timedelta(minutes=ttl_minutes)
 
     def is_expired(self) -> bool:
-        return datetime.now() > self.expires_at
+        return datetime.now(UTC) > self.expires_at
 
 
 class Cache:

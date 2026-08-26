@@ -53,7 +53,7 @@ jobs:
       - name: Run tests
         run: |
           make test-audit
-          make test-coverage
+          make test-coverage args="-n auto"
 
   openapi:
     name: OpenAPI + Postman drift

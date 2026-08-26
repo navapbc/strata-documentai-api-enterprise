@@ -619,9 +619,9 @@ module "monitoring" {
   environment  = var.environment
   region       = var.region
 
-  # Dashboard in every env; alarms only in prd.
+  # Dashboard in every env; alarms controlled by var.create_alarms (default false).
   create_dashboard = true
-  create_alarms    = var.environment == "prd"
+  create_alarms    = var.create_alarms
 
   alarm_emails = var.alarm_emails
   slack        = var.slack_config

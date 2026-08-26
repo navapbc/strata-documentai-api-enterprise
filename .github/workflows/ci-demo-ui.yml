@@ -34,7 +34,7 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: "20"
+          node-version-file: ui/demo/.nvmrc
           cache: npm
           cache-dependency-path: ui/demo/package-lock.json
 

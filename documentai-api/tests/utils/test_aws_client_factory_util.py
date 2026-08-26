@@ -8,17 +8,6 @@ from documentai_api.config.env import EnvVars
 from documentai_api.utils.aws_client_factory import AWSClientFactory
 
 
-@pytest.fixture(autouse=True)
-def clear_lru_cache():
-    """Clear LRU cache between tests."""
-    AWSClientFactory.get_s3_client.cache_clear()
-    AWSClientFactory.get_dynamodb_resource.cache_clear()
-    AWSClientFactory.get_bda_client.cache_clear()
-    AWSClientFactory.get_bda_runtime_client.cache_clear()
-    AWSClientFactory.get_ssm_client.cache_clear()
-    return
-
-
 @pytest.fixture
 def mock_boto3_session_class():
     """Mock boto3.Session class for testing session creation.

@@ -151,7 +151,7 @@ def test_cache_hit_returns_record():
 
 
 def test_cache_expired_returns_none():
-    from datetime import datetime, timedelta
+    from datetime import UTC, datetime, timedelta
 
     from documentai_api.utils.cache import CacheItem
 
@@ -160,7 +160,7 @@ def test_cache_expired_returns_none():
 
     # manually expire the cache entry
     expired_item = CacheItem(record, ttl_minutes=1)
-    expired_item.expires_at = datetime.now() - timedelta(minutes=1)
+    expired_item.expires_at = datetime.now(UTC) - timedelta(minutes=1)
     get_cache()._cache["abc"] = expired_item
 
     assert get_cache().get("abc") is None
@@ -391,14 +391,31 @@ def test_update_last_used_silently_ignores_errors(pinned_api_keys_config):
 
 def test_update_last_used_dict_is_bounded(pinned_api_keys_config, monkeypatch):
     """The lastUsed debounce map must not grow without bound (one entry per key)."""
+    import threading
+    from collections import OrderedDict
+
+    # Redirect the module attribute first, then drain any straggler threads that
+    # captured the original dict reference before the redirect. After the drain
+    # no thread holds either the old or new dict, so the loop below is the sole
+    # writer and the final length is deterministic.
+    local_dict: OrderedDict[str, float] = OrderedDict()
+    monkeypatch.setattr(auth_util, "_last_used_written_at", local_dict)
+    monkeypatch.setattr(auth_util, "_last_used_lock", threading.Lock())
     monkeypatch.setattr(auth_util, "_LAST_USED_MAX_ENTRIES", 100)
+
+    # Drain any threads spawned before the monkeypatch took effect.
+    for t in threading.enumerate():
+        if t.name == auth_util._LAST_USED_THREAD_NAME and t.is_alive():
+            t.join(timeout=2.0)
+
     with patch("documentai_api.services.ddb.update_item"):
         for i in range(1000):
             auth_util._update_last_used(f"hash-{i}")
-    assert len(auth_util._last_used_written_at) == 100
+
+    assert len(local_dict) == 100
     # The most recently written hashes are retained; the oldest are evicted.
-    assert "hash-999" in auth_util._last_used_written_at
-    assert "hash-0" not in auth_util._last_used_written_at
+    assert "hash-999" in local_dict
+    assert "hash-0" not in local_dict
 
 
 ##############################################################################

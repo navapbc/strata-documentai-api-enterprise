@@ -54,12 +54,18 @@ def real_aws_credentials(reset_env):
 @pytest.fixture(autouse=True)
 def clear_config_cache():
     from documentai_api.config.env import get_app_env_config, get_aws_config
+    from documentai_api.utils.auth import _get_pepper
+    from documentai_api.utils.document_categories import _registered_categories
 
     get_aws_config.cache_clear()
     get_app_env_config.cache_clear()
+    _get_pepper.cache_clear()
+    _registered_categories.clear()
     yield
     get_aws_config.cache_clear()
     get_app_env_config.cache_clear()
+    _get_pepper.cache_clear()
+    _registered_categories.clear()
 
 
 @pytest.fixture(autouse=True)
