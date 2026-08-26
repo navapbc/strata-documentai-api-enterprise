@@ -1,5 +1,7 @@
 """Tests for API authentication."""
 
+from typing import Any
+
 import pytest
 
 from documentai_api.config.env import EnvVars
@@ -63,7 +65,7 @@ def test_all_non_public_routes_require_auth():
         verify_jwt,
     }
 
-    def walk(dependant) -> set:
+    def walk(dependant: Any) -> set[object]:
         """Collect every callable in this dependency subtree."""
         calls = {d.call for d in dependant.dependencies}
         for child in dependant.dependencies:

@@ -22,14 +22,16 @@ from documentai_api.utils.jwt_auth import (
 # --- Helpers ---
 
 
-def _generate_rsa_keypair():
+def _generate_rsa_keypair() -> tuple[rsa.RSAPrivateKey, rsa.RSAPublicKey]:
     """Generate an RSA key pair for testing."""
     private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     public_key = private_key.public_key()
     return private_key, public_key
 
 
-def _encode_token(payload: dict, private_key, kid: str = "test-kid") -> str:
+def _encode_token(
+    payload: dict[str, object], private_key: rsa.RSAPrivateKey, kid: str = "test-kid"
+) -> str:
     """Encode a JWT with RS256."""
     return pyjwt.encode(payload, private_key, algorithm="RS256", headers={"kid": kid})
 

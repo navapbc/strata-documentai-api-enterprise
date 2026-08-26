@@ -7,10 +7,12 @@ def test_get_data_automation_project(mock_bda_client):
     """Get BDA project details."""
     project_arn = "arn:aws:bedrock:us-east-1:123:project/test"
 
-    mock_bda_client.get_data_automation_project.return_value = {"projectArn": project_arn}
+    mock_bda_client.get_data_automation_project.return_value = {
+        "project": {"projectArn": project_arn}
+    }
 
     result = bda_service.get_data_automation_project(project_arn)
-    assert result["projectArn"] == project_arn
+    assert result["project"]["projectArn"] == project_arn
 
     mock_bda_client.get_data_automation_project.assert_called_once_with(projectArn=project_arn)
 
@@ -19,10 +21,10 @@ def test_get_blueprint(mock_bda_client):
     """Get blueprint schema details."""
     blueprint_arn = "arn:aws:bedrock:us-east-1:123:blueprint/test"
 
-    mock_bda_client.get_blueprint.return_value = {"blueprintArn": blueprint_arn}
+    mock_bda_client.get_blueprint.return_value = {"blueprint": {"blueprintArn": blueprint_arn}}
 
     result = bda_service.get_blueprint(blueprint_arn)
-    assert result["blueprintArn"] == blueprint_arn
+    assert result["blueprint"]["blueprintArn"] == blueprint_arn
 
     mock_bda_client.get_blueprint.assert_called_once_with(blueprintArn=blueprint_arn)
 
@@ -94,6 +96,7 @@ def test_get_bda_job_response_success(mock_bda_runtime_client):
 
     result = bda_service.get_bda_job_response("arn:aws:bedrock:us-east-1:123:invocation/test")
 
+    assert result is not None
     assert result["status"] == "InProgress"
 
 

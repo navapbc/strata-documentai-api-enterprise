@@ -1,4 +1,5 @@
 from decimal import Decimal
+from typing import Any
 
 import pytest
 from botocore.exceptions import ClientError
@@ -97,12 +98,12 @@ def lifecycle_mocks(mocker):
 
 
 def _upsert(
-    s3_bucket,
-    content_type="application/pdf",
-    ddb_key="test-file",
-    user_provided_document_category="income",
-    **kwargs,
-):
+    s3_bucket: Any,
+    content_type: str = "application/pdf",
+    ddb_key: str = "test-file",
+    user_provided_document_category: str | None = "income",
+    **kwargs: Any,
+) -> None:
     """Helper to put an S3 object and call upsert_initial_ddb_record."""
     s3_bucket.put_object(Key="input/test-file", Body=b"bytes", ContentType=content_type)
     lifecycle_util.upsert_initial_ddb_record(

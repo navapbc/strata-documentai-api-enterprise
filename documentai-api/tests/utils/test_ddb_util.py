@@ -1,5 +1,6 @@
 from datetime import UTC, datetime
 from decimal import Decimal
+from typing import Any
 
 import pytest
 from freezegun import freeze_time
@@ -218,8 +219,8 @@ def test_execute_ddb_update(ddb_doc_metadata_table):
 
 @pytest.mark.parametrize("user_provided_document_category", ["income", None])
 def test_get_user_provided_document_category(
-    ddb_doc_metadata_table, user_provided_document_category
-) -> str:
+    ddb_doc_metadata_table: Any, user_provided_document_category: str | None
+) -> None:
     item = {
         DocumentMetadata.FILE_NAME: "test-file",
         DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY: user_provided_document_category,
@@ -259,6 +260,7 @@ def test_get_ddb_record(ddb_doc_metadata_table):
 
     ddb_record = ddb_util.get_ddb_record("test-file")
 
+    assert ddb_record is not None
     for k, v in item.items():
         assert ddb_record[k] == v
 
@@ -272,6 +274,7 @@ def test_get_ddb_by_job_id(ddb_doc_metadata_table):
 
     result = ddb_util.get_ddb_by_job_id(job_id)
 
+    assert result is not None
     for k, v in ddb_record.items():
         assert result[k] == v
 

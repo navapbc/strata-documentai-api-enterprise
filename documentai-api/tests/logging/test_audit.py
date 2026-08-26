@@ -128,12 +128,12 @@ test_audit_hook_data = [
 
 @pytest.mark.parametrize(("func", "args", "expected_records"), test_audit_hook_data)
 def test_audit_hook(
-    init_audit_hook,
+    init_audit_hook: None,
     caplog: pytest.LogCaptureFixture,
-    func: Callable,
-    args: tuple[Any],
+    func: Callable[..., object],
+    args: tuple[Any, ...],
     expected_records: list[dict[str, Any]],
-):
+) -> None:
     caplog.set_level(logging.INFO)
     caplog.clear()
 
@@ -146,7 +146,7 @@ def test_audit_hook(
         assert_record_match(record, expected_record)
 
 
-def test_os_kill(init_audit_hook, caplog: pytest.LogCaptureFixture):
+def test_os_kill(init_audit_hook: None, caplog: pytest.LogCaptureFixture) -> None:
     # Start a process to kill
     process = subprocess.Popen("cat")
     os.kill(process.pid, signal.SIGTERM)
@@ -163,12 +163,12 @@ def test_os_kill(init_audit_hook, caplog: pytest.LogCaptureFixture):
     assert len(caplog.records) == len(expected_records)
     for record, expected_record in zip(caplog.records, expected_records, strict=True):
         assert record.levelname == "AUDIT"
-        assert_record_match(record, expected_record)
+        assert_record_match(record, expected_record)  # type: ignore[arg-type]
 
 
 def test_do_not_log_popen_env(
-    init_audit_hook, caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
-):
+    init_audit_hook: None, caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setenv("FOO", "SENSITIVE-DATA")
     subprocess.Popen(["ls"], env=os.environ)
     for record in caplog.records:
@@ -176,9 +176,9 @@ def test_do_not_log_popen_env(
 
 
 def test_do_not_log_request_data(
-    init_audit_hook,
+    init_audit_hook: None,
     caplog: pytest.LogCaptureFixture,
-):
+) -> None:
     data = urllib.parse.urlencode({"foo": "SENSITIVE-DATA"}).encode()
     req = urllib.request.Request("https://www.python.org", data=data)
     req.add_header("X-Bar", "SENSITIVE-DATA")
@@ -188,8 +188,8 @@ def test_do_not_log_request_data(
 
 
 def test_repeated_audit_logs(
-    init_audit_hook, caplog: pytest.LogCaptureFixture, tmp_path: pathlib.Path
-):
+    init_audit_hook: None, caplog: pytest.LogCaptureFixture, tmp_path: pathlib.Path
+) -> None:
     caplog.set_level(logging.INFO)
     caplog.clear()
 
@@ -236,7 +236,7 @@ def test_repeated_audit_logs(
 
 # Test utility data structure used by audit module
 def test_least_recently_used_dict():
-    lru_dict = audit.LeastRecentlyUsedDict(maxsize=4)
+    lru_dict: audit.LeastRecentlyUsedDict[str] = audit.LeastRecentlyUsedDict(maxsize=4)
 
     assert lru_dict["a"] == 0
     assert len(lru_dict) == 0
@@ -266,6 +266,6 @@ def test_least_recently_used_dict():
     assert tuple(lru_dict.items()) == (("a", 11), ("f", 50), ("c", 31), ("g", 60))
 
 
-def assert_record_match(record: logging.LogRecord, expected_record: dict[str, Any]):
+def assert_record_match(record: logging.LogRecord, expected_record: dict[str, Any]) -> None:
     for key, value in expected_record.items():
         assert record.__dict__[key] == value

@@ -11,7 +11,7 @@ import documentai_api.logging.formatters as formatters
 from tests.helpers.assertions import assert_dict_contains
 
 
-def test_json_formatter(capsys: pytest.CaptureFixture):
+def test_json_formatter(capsys: pytest.CaptureFixture[str]) -> None:
     logger = logging.getLogger("test_json_formatter")
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(formatters.JsonFormatter())
@@ -69,7 +69,7 @@ def test_json_formatter(capsys: pytest.CaptureFixture):
     logger.removeHandler(console_handler)
 
 
-def test_human_readable_formatter(capsys: pytest.CaptureFixture):
+def test_human_readable_formatter(capsys: pytest.CaptureFixture[str]) -> None:
     logger = logging.getLogger("test_human_readable_formatter")
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(formatters.HumanReadableFormatter())

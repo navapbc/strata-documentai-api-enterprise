@@ -238,25 +238,17 @@ def _sweep_stale_e2e_keys():
     swept = 0
 
     # API keys table is small - full scan is fine; no GSI on api_key_name
-    start_key = None
-    while True:
-        kwargs = {}
-        if start_key:
-            kwargs["ExclusiveStartKey"] = start_key
-        items, start_key = ddb_service.scan(table_name, **kwargs)
+    items = ddb_service.scan(table_name)
 
-        for record in items:
-            name = record.get(ApiKeyRecord.API_KEY_NAME, "")
-            created = record.get(ApiKeyRecord.CREATED_AT, "")
-            if name.startswith("e2e-") and created and created < cutoff:
-                ddb_service.delete_item(
-                    table_name,
-                    {ApiKeyRecord.KEY_HASH: record[ApiKeyRecord.KEY_HASH]},
-                )
-                swept += 1
-
-        if not start_key:
-            break
+    for record in items:
+        name = record.get(ApiKeyRecord.API_KEY_NAME, "")
+        created = record.get(ApiKeyRecord.CREATED_AT, "")
+        if name.startswith("e2e-") and created and created < cutoff:
+            ddb_service.delete_item(
+                table_name,
+                {ApiKeyRecord.KEY_HASH: record[ApiKeyRecord.KEY_HASH]},
+            )
+            swept += 1
 
     if swept:
         logger.info(f"e2e: swept {swept} orphaned api keys")

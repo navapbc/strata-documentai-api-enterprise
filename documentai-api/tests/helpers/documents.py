@@ -22,7 +22,7 @@ def generate_ooxml_with_deep_entry(member: str = "word/document.xml") -> bytes:
 
 # Add a blank page (A4 dimensions in points: 1/72 inch per unit)
 # 8.27 * 72 = 595.44, 11.7 * 72 = 842.4
-def generate_blank_pdf(num_pages=1, width=595, height=842) -> bytes:
+def generate_blank_pdf(num_pages: int = 1, width: int = 595, height: int = 842) -> bytes:
     """Generate a blank PDF with specified number of pages."""
     from pypdf import PdfWriter
 
@@ -38,7 +38,7 @@ def generate_blank_pdf(num_pages=1, width=595, height=842) -> bytes:
     return pdf_bytes.getvalue()
 
 
-def generate_blank_pdf_image(num_pages=1, width=100, height=100) -> bytes:
+def generate_blank_pdf_image(num_pages: int = 1, width: int = 100, height: int = 100) -> bytes:
     """Generate a blank PDF with specified number of pages."""
     images = [Image.new("RGB", (width, height), "white") for _ in range(num_pages)]
     pdf_bytes = io.BytesIO()
@@ -51,7 +51,7 @@ def generate_blank_pdf_image(num_pages=1, width=100, height=100) -> bytes:
     return pdf_bytes.getvalue()
 
 
-def generate_blank_tiff(num_pages=1, width=100, height=100) -> bytes:
+def generate_blank_tiff(num_pages: int = 1, width: int = 100, height: int = 100) -> bytes:
     """Generate a blank TIFF with specified number of pages."""
     images = [Image.new("RGB", (width, height), "white") for _ in range(num_pages)]
     tiff_bytes = io.BytesIO()
@@ -64,7 +64,7 @@ def generate_blank_tiff(num_pages=1, width=100, height=100) -> bytes:
     return tiff_bytes.getvalue()
 
 
-def generate_blank_image(format="JPEG", width=100, height=100) -> bytes:
+def generate_blank_image(format: str = "JPEG", width: int = 100, height: int = 100) -> bytes:
     """Generate a blank image in specified format."""
     img = Image.new("RGB", (width, height), "white")
     img_bytes = io.BytesIO()

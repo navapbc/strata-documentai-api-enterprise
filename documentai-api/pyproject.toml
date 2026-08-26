@@ -69,6 +69,11 @@ local_partial_types = true
 allow_redefinition_new = true
 strict_bytes = true
 
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+disallow_untyped_decorators = false
+
 [tool.ruff]
 line-length = 100
 # see docs at https://docs.astral.sh/ruff/rules

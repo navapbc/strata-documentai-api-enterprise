@@ -31,7 +31,7 @@ def _disable_auth(disable_auth):
     pass
 
 
-def _job(response_code, extra_ddb=None):
+def _job(response_code: str, extra_ddb: dict[str, object] | None = None) -> JobStatus:
     ddb = {
         DocumentMetadata.TENANT_ID: "test-tenant",
         DocumentMetadata.FILE_NAME: "test.pdf",

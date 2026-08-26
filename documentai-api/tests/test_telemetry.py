@@ -17,9 +17,9 @@ def reset_tracer_provider():
     proxy = trace.get_tracer_provider()
     if hasattr(proxy, "_lock"):
         with proxy._lock:
-            proxy._real_tracer_provider = None
+            proxy._real_tracer_provider = None  # type: ignore[attr-defined]
     else:
-        trace._TRACER_PROVIDER = None  # type: ignore[attr-defined]
+        trace._TRACER_PROVIDER = None
         trace._TRACER_PROVIDER_INITIALIZED = False  # type: ignore[attr-defined]
 
 

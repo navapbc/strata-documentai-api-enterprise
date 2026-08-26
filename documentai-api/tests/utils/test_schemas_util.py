@@ -214,6 +214,7 @@ def test_get_document_schema_found(schemas_file):
 
     result = schemas.get_document_schema("Invoice")
 
+    assert result is not None
     assert result.document_type == "Invoice"
 
 

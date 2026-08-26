@@ -132,7 +132,7 @@ def test_get_id_type_returns_type(analyze_id_response_fields_only):
 
 
 def test_get_id_type_returns_none_when_missing():
-    response = {"IdentityDocuments": [{"IdentityDocumentFields": []}]}
+    response: dict[str, object] = {"IdentityDocuments": [{"IdentityDocumentFields": []}]}
     assert get_id_type(response) is None
 
 

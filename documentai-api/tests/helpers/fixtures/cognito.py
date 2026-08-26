@@ -30,7 +30,7 @@ def cognito_client(aws_credentials, monkeypatch):
         from documentai_api.config.env import get_aws_config
 
         get_aws_config.cache_clear()
-        client.pool_id = pool_id
+        client.pool_id = pool_id  # type: ignore[attr-defined]
         yield client
 
 

@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from typing import Any
 
 import pytest
 
@@ -6,7 +7,7 @@ from documentai_api.schemas.document_builds import DocumentBuilds
 from documentai_api.utils import document_build as build_util
 
 
-def _assert_ttl_30_days(item):
+def _assert_ttl_30_days(item: dict[str, Any]) -> None:
     """Build records carry an integer `ttl` epoch ~30 days out."""
     ttl = item[DocumentBuilds.TIME_TO_LIVE]
     expected = int(datetime.now(UTC).timestamp()) + 30 * 24 * 60 * 60

@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from typing import Any
 
 import pytest
 
@@ -181,10 +182,10 @@ def test_build_v1_api_response(
     expected_message: str | None,
     expected_error: str | None,
     expected_response_code: str | None,
-    s3_bucket,
-    ddb_doc_metadata_table,
-    mocker,
-):
+    s3_bucket: Any,
+    ddb_doc_metadata_table: Any,
+    mocker: Any,
+) -> None:
     import json
 
     year = datetime.now().year
@@ -236,7 +237,7 @@ def test_build_v1_api_response(
         "test-key", job_status, data, error_message, include_extracted_data
     )
 
-    expected_response = {
+    expected_response: dict[str, Any] = {
         "jobId": "test-job-id",
         "jobStatus": expected_status,
         "createdAt": created_at.isoformat(),
@@ -738,14 +739,14 @@ def test_build_v1_api_response_101_beats_102_and_105(
 # =============================================================================
 
 
-def _minimal_success_record(s3_bucket: object, file_name: str) -> dict:
+def _minimal_success_record(s3_bucket: Any, file_name: str) -> dict[str, Any]:
     """Put a minimal BDA result in S3 and return a DDB record dict ready for put_item."""
     import json
 
     bda_results = {
         BdaResponseFields.EXPLAINABILITY_INFO: [{"wages": {"confidence": 0.9, "value": "50000"}}]
     }
-    bda_obj = s3_bucket.put_object(Key=f"{file_name}.json", Body=json.dumps(bda_results))  # type: ignore[union-attr]
+    bda_obj = s3_bucket.put_object(Key=f"{file_name}.json", Body=json.dumps(bda_results))
     return {
         DocumentMetadata.FILE_NAME: file_name,
         DocumentMetadata.JOB_ID: f"{file_name}-job",

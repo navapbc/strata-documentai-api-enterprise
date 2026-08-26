@@ -1,5 +1,7 @@
 """Shared JWT claims fixtures for admin endpoint tests."""
 
+from typing import Any
+
 SUPER_ADMIN = "super-admin"
 TENANT_ADMIN = "tenant-admin"
 TENANT_ADMIN_ID = "tenant-admin-id"
@@ -20,8 +22,8 @@ TENANT_ADMIN_CLAIMS = {
 }
 
 
-def make_claims(*, groups: list[str] | None = None, tenant_id: str | None = None) -> dict:
-    claims = {
+def make_claims(*, groups: list[str] | None = None, tenant_id: str | None = None) -> dict[str, Any]:
+    claims: dict[str, Any] = {
         "sub": "test-user",
         "email": "test@example.com",
         "token_use": "access",
@@ -34,7 +36,7 @@ def make_claims(*, groups: list[str] | None = None, tenant_id: str | None = None
     return claims
 
 
-def override_jwt(claims: dict) -> None:
+def override_jwt(claims: dict[str, Any]) -> None:
     from documentai_api.app import app
     from documentai_api.utils.jwt_auth import verify_jwt
 

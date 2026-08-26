@@ -212,7 +212,10 @@ def test_get_missing_required_fields_case_mismatch(extraction_rules_table):
         }
     )
 
-    missing, required = get_missing_required_fields("t1", "Payslip", ["employeename.firstname"], [])
+    result = get_missing_required_fields("t1", "Payslip", ["employeename.firstname"], [])
+
+    assert result is not None
+    missing, required = result
 
     assert missing == ["EmployeeName.FirstName"]
     assert required == ["EmployeeName.FirstName"]
@@ -272,9 +275,11 @@ def test_get_missing_required_fields_one_empty(extraction_rules_table):
             "updatedAt": "2026-01-01",
         }
     )
-    missing, required = get_missing_required_fields(
+    result = get_missing_required_fields(
         "t1", "W2", empty_fields=["ssn"], fields_missing_geometry=[]
     )
+    assert result is not None
+    missing, required = result
     assert missing == ["ssn"]
     assert required == ["ssn", "wages"]
 
@@ -291,8 +296,8 @@ def test_get_missing_required_fields_all_present(extraction_rules_table):
             "updatedAt": "2026-01-01",
         }
     )
-    missing, required = get_missing_required_fields(
-        "t1", "W2", empty_fields=[], fields_missing_geometry=[]
-    )
+    result = get_missing_required_fields("t1", "W2", empty_fields=[], fields_missing_geometry=[])
+    assert result is not None
+    missing, required = result
     assert missing == []
     assert required == ["ssn", "wages"]

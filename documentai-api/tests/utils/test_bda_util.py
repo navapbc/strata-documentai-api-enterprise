@@ -188,6 +188,7 @@ def test_extract_fields_identifies_missing_geometry_from_fixture(monkeypatch):
 
     metadata, _, _ = bda_util.extract_field_values_from_bda_results(bda_result)
 
+    assert metadata.fields_missing_geometry is not None
     # These fields have values but no geometry and confidence < 0.25
     assert "PayPeriodStartDate" in metadata.fields_missing_geometry
     assert "PayPeriodEndDate" in metadata.fields_missing_geometry

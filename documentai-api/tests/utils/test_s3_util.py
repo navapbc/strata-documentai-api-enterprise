@@ -50,7 +50,7 @@ def test_extract_s3_info_from_eventbridge_event():
             "object": {"key": "input/doc.pdf"},
         },
     }
-    key, bucket = s3_util.extract_s3_info_from_event(event)
+    key, bucket = s3_util.extract_s3_info_from_event(event)  # type: ignore[misc]
     assert bucket == "my-bucket"
     assert key == "input/doc.pdf"
 
@@ -68,7 +68,7 @@ def test_extract_s3_info_from_direct_s3_notification():
             }
         ]
     }
-    key, bucket = s3_util.extract_s3_info_from_event(event)
+    key, bucket = s3_util.extract_s3_info_from_event(event)  # type: ignore[misc]
     assert bucket == "my-bucket"
     assert key == "input/doc.pdf"
 
@@ -90,7 +90,7 @@ def test_extract_s3_info_url_decodes_key(raw_key, expected_key):
             "object": {"key": raw_key},
         }
     }
-    key, _ = s3_util.extract_s3_info_from_event(event)
+    key, _ = s3_util.extract_s3_info_from_event(event)  # type: ignore[misc]
     assert key == expected_key
 
 

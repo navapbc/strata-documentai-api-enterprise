@@ -235,7 +235,7 @@ lint-ruff: ## Lint Python code with ruff
 	$(PY_RUN_CMD) ruff check $(LINT_ARGS) . $(POSTMAN_DIR)
 
 lint-mypy: ## Type check with mypy
-	$(PY_RUN_CMD) mypy src $(POSTMAN_DIR)
+	$(PY_RUN_CMD) mypy src tests $(POSTMAN_DIR)
 
 lint-uv: ## Check uv lockfile is up-to-date
 	$(RUN_CMD) uv lock --check

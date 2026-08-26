@@ -45,7 +45,9 @@ class Quadrant:
     BOTTOM_RIGHT = (0.6, 0.6)
 
 
-def _quadrant_words(count: int, quadrant: tuple[float, float], confidence: float) -> list[dict]:
+def _quadrant_words(
+    count: int, quadrant: tuple[float, float], confidence: float
+) -> list[dict[str, object]]:
     """Create `count` synthetic Textract WORD blocks placed in `quadrant`."""
     top, left = quadrant
     word = {
@@ -57,7 +59,7 @@ def _quadrant_words(count: int, quadrant: tuple[float, float], confidence: float
     return [word] * count
 
 
-def _textract_response(words: list[dict]) -> dict:
+def _textract_response(words: list[dict[str, object]]) -> dict[str, object]:
     """Wrap word blocks in a Textract detect_document_text response."""
     return {"Blocks": [{"BlockType": "PAGE"}, *words]}
 
@@ -118,7 +120,8 @@ def test_check_quadrant(words, expected):
     ],
 )
 def test_yes_no_re_matches(text, expected):
-    assert _YES_NO_RE.search(text).group(1).upper() == expected
+    assert _YES_NO_RE.search(text) is not None
+    assert _YES_NO_RE.search(text).group(1).upper() == expected  # type: ignore[union-attr]
 
 
 def test_yes_no_re_no_match():
@@ -232,6 +235,7 @@ def test_detect_blur_sparse_quadrant_skipped(mock_textract, mock_llm):
     mock_textract.detect_document_text.return_value = _textract_response(words)
     result = detect_blur(b"fake", "image/jpeg")
     assert result.is_blurry is False
+    assert result.quadrant_stats is not None
     assert result.quadrant_stats["bottom_left"]["skipped"] is True
 
 
@@ -289,6 +293,7 @@ def test_detect_blur_empty_quadrant_llm_fallback(
 
     result = detect_blur(b"fake", "image/jpeg")
     assert result.is_blurry is expected_blurry
+    assert result.quadrant_stats is not None
     assert result.quadrant_stats["bottom_left"]["is_text_detected_by_llm"] is expected_blurry
     mock_llm.assert_called_once()
 
@@ -303,6 +308,7 @@ def test_detect_blur_empty_quadrant_no_llm_when_not_dense(mock_textract, mock_ll
     result = detect_blur(b"fake", "image/jpeg")
     assert result.is_blurry is False
     mock_llm.assert_not_called()
+    assert result.quadrant_stats is not None
     assert result.quadrant_stats["bottom_left"]["skipped"] is True
 
 

@@ -382,13 +382,19 @@ def test_main_propagates_s3_metadata(input_pdf, mocker):
 
 def test_s3_fetch_duration_measured_after_body_read(mocker):
     """Timer stop must come after Body.read() - guards against the header-only measurement bug."""
-    call_order = []
-    mocker.patch(
-        f"{_MAIN_MODULE}.time.monotonic",
-        side_effect=lambda: (call_order.append("monotonic"), 0.0)[1],
-    )
+    call_order: list[str] = []
+
+    def _monotonic() -> float:
+        call_order.append("monotonic")
+        return 0.0
+
+    def _read() -> bytes:
+        call_order.append("read")
+        return b"%PDF-1.4"
+
+    mocker.patch(f"{_MAIN_MODULE}.time.monotonic", side_effect=_monotonic)
     mock_body = Mock()
-    mock_body.read.side_effect = lambda: (call_order.append("read"), b"%PDF-1.4")[1]
+    mock_body.read.side_effect = _read
     mocker.patch(
         f"{_MAIN_MODULE}.s3_service.get_object",
         return_value={

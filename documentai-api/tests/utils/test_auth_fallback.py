@@ -21,12 +21,14 @@ from documentai_api.utils.auth import (
 from documentai_api.utils.jwt_auth import SUPER_ADMIN
 
 
-def _generate_rsa_keypair():
+def _generate_rsa_keypair() -> tuple[rsa.RSAPrivateKey, rsa.RSAPublicKey]:
     private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     return private_key, private_key.public_key()
 
 
-def _make_token(payload: dict, private_key, kid: str = "test-kid") -> str:
+def _make_token(
+    payload: dict[str, object], private_key: rsa.RSAPrivateKey, kid: str = "test-kid"
+) -> str:
     return jwt.encode(payload, private_key, algorithm="RS256", headers={"kid": kid})
 
 
@@ -34,8 +36,8 @@ def _bearer(token: str) -> HTTPAuthorizationCredentials:
     return HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
 
 
-def _base_payload(groups: list[str], tenant_id: str | None = None) -> dict:
-    p = {
+def _base_payload(groups: list[str], tenant_id: str | None = None) -> dict[str, object]:
+    p: dict[str, object] = {
         "sub": "user-123",
         "email": "user@example.com",
         "token_use": "access",

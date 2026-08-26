@@ -166,12 +166,14 @@ async def test_validate_upload_mime_mismatch_logs_warning(
     """Test that MIME mismatch between declared and detected types logs a warning."""
     import logging
 
+    from starlette.datastructures import Headers
+
     from documentai_api.utils.uploads import validate_upload
 
     file = UploadFile(
         filename="test.pdf",
         file=io.BytesIO(blank_pdf_bytes),
-        headers={"content-type": "image/jpeg"},
+        headers=Headers({"content-type": "image/jpeg"}),
     )
 
     with caplog.at_level(logging.WARNING, logger="documentai_api.utils.uploads"):
