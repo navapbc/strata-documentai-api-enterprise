@@ -69,7 +69,11 @@ Only the `dev` environment exists today. To add another, copy `infra/environment
 
 ### API Setup Walkthrough
 
-<video src="docs/documentai-api/media/api-setup-demo.mp4" controls width="100%"></video>
+<!-- GitHub doesn't render locally hosted MP4s referenced from a README as
+inline videos. Upload the video through GitHub's attachment system and use the
+resulting github.com/user-attachments/assets/... URL.
+-->
+<video src="" controls width="100%"></video>
 
 ### API Setup Steps
 
