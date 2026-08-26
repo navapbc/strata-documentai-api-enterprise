@@ -8,7 +8,22 @@ from moto import mock_aws
 def fix_aws_client_factory():
     from documentai_api.utils.aws_client_factory import AWSClientFactory
 
-    AWSClientFactory._session = None
+    def _clear_all() -> None:
+        AWSClientFactory._session = None
+        AWSClientFactory.get_s3_client.cache_clear()
+        AWSClientFactory.get_dynamodb_resource.cache_clear()
+        AWSClientFactory.get_bda_client.cache_clear()
+        AWSClientFactory.get_bda_runtime_client.cache_clear()
+        AWSClientFactory.get_bedrock_runtime_client.cache_clear()
+        AWSClientFactory.get_sqs_client.cache_clear()
+        AWSClientFactory.get_athena_client.cache_clear()
+        AWSClientFactory.get_cognito_client.cache_clear()
+        AWSClientFactory.get_textract_client.cache_clear()
+        AWSClientFactory.get_ssm_client.cache_clear()
+
+    _clear_all()
+    yield
+    _clear_all()
 
 
 @pytest.fixture

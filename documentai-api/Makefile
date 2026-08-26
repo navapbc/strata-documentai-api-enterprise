@@ -37,6 +37,7 @@
 	test \
 	test-e2e \
 	test-e2e-routing \
+	test-integration \
 	metrics-agg \
 	metrics-agg-last-n-days \
 	usage-report \
@@ -165,6 +166,9 @@ test-parallel: ## Run test suite in parallel
 
 test-audit: ## Run audit logging tests
 	$(PY_RUN_CMD) pytest -m "audit" $(args)
+
+test-integration: ## Run integration tests
+	$(PY_RUN_CMD) pytest -m "integration" $(args)
 
 test-e2e: .env.e2e
 test-e2e: ## Run e2e tests

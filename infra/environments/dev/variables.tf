@@ -68,6 +68,12 @@ variable "otel_exporter_otlp_endpoint" {
   default     = "http://localhost:4317"
 }
 
+variable "create_alarms" {
+  type        = bool
+  description = "Whether to create CloudWatch alarms. Defaults to false; set to true in prd or to test alarm configuration in dev."
+  default     = false
+}
+
 variable "extra_cors_allowed_origins" {
   type        = list(string)
   description = "Additional CORS origins beyond the managed admin/demo CloudFront URLs (e.g. ['http://localhost:3000'] for local UI dev). Inject at plan/apply via -var or TF_VAR_extra_cors_allowed_origins; the CloudFront origins are always included automatically."
