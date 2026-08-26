@@ -73,7 +73,7 @@ Only the `dev` environment exists today. To add another, copy `infra/environment
 inline videos. Upload the video through GitHub's attachment system and use the
 resulting github.com/user-attachments/assets/... URL.
 -->
-<video src="" controls width="100%"></video>
+<video src="https://github.com/user-attachments/assets/6518f44b-e689-4d48-87bc-46e14b50c8a1" controls width="100%"></video>
 
 ### API Setup Steps
 
