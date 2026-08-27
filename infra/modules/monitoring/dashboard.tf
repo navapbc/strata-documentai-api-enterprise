@@ -9,23 +9,18 @@
 
 locals {
   pipeline_workers = [
-    for w in [
-      { title = "Document Processor", fn = var.document_processor_function_name },
-      { title = "BDA Result Processor", fn = var.bda_result_processor_function_name },
-    ] : w if w.fn != null
+    for k, w in var.workers : { title = k, fn = w.function_name } if w.pipeline
   ]
   observability_workers = [
-    for w in [
-      { title = "Metrics Processor", fn = var.metrics_processor_function_name },
-      { title = "Metrics Aggregator", fn = var.metrics_aggregator_function_name },
-    ] : w if w.fn != null
+    for k, w in var.workers : { title = k, fn = w.function_name } if !w.pipeline
   ]
   all_workers = concat(local.pipeline_workers, local.observability_workers)
 
   # Scorecard metric rows (built null-safe; an empty row drops its widget).
   scorecard_dlq_metrics = concat(
-    var.document_processor_dlq_name != null ? [["AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", var.document_processor_dlq_name, { stat = "Maximum", label = "Doc Processor" }]] : [],
-    var.bda_output_dlq_name != null ? [["AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", var.bda_output_dlq_name, { stat = "Maximum", label = "BDA Output" }]] : [],
+    var.document_processor_dlq_name != null ? [["AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", var.document_processor_dlq_name, { stat = "Maximum", label = "Document Processor" }]] : [],
+    var.bda_output_dlq_name != null ? [["AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", var.bda_output_dlq_name, { stat = "Maximum", label = "BDA Result Processor" }]] : [],
+    var.metrics_queue_dlq_name != null ? [["AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", var.metrics_queue_dlq_name, { stat = "Maximum", label = "Metrics Processor" }]] : [],
   )
   scorecard_error_metrics = [for w in local.all_workers : ["AWS/Lambda", "Errors", "FunctionName", w.fn, { stat = "Sum", label = w.title }]]
   scorecard_queue_metrics = var.metrics_queue_name != null ? [
@@ -60,14 +55,14 @@ locals {
       }
     }] : [],
     length(local.scorecard_error_metrics) > 0 ? [{
-      type = "metric", width = 16, height = 3,
+      type = "metric", width = 24, height = 3,
       properties = {
         title                = "Errors (sum in range)", region = var.region, view = "singleValue", period = local.period,
         setPeriodToTimeRange = true, metrics = local.scorecard_error_metrics
       }
     }] : [],
     length(local.scorecard_dlq_metrics) > 0 ? [{
-      type = "metric", width = 8, height = 3,
+      type = "metric", width = 24, height = 3,
       properties = {
         title                = "Dead-letter messages (max in range)", region = var.region, view = "singleValue", period = local.period,
         setPeriodToTimeRange = true, metrics = local.scorecard_dlq_metrics
@@ -97,6 +92,32 @@ locals {
           ["AWS/ApiGateway", "Latency", "ApiId", var.api_gateway_id, { stat = "p50", label = "p50" }],
           ["AWS/ApiGateway", "Latency", "ApiId", var.api_gateway_id, { stat = "p99", label = "p99" }],
           ["AWS/ApiGateway", "IntegrationLatency", "ApiId", var.api_gateway_id, { stat = "p99", label = "Integration p99" }],
+        ]
+        yAxis = { left = { label = "ms", showUnits = false } }
+      }
+    }] : [],
+
+    # === API Lambda ===
+    var.api_lambda_function_name != null ? [{
+      type = "metric", width = 12, height = 6,
+      properties = {
+        title = "API Lambda - throughput and error rate", region = var.region, view = "timeSeries", period = local.period,
+        metrics = [
+          ["AWS/Lambda", "Invocations", "FunctionName", var.api_lambda_function_name, { stat = "Sum", id = "inv", label = "Invocations", color = "#1f77b4" }],
+          ["AWS/Lambda", "Errors", "FunctionName", var.api_lambda_function_name, { stat = "Sum", id = "err", visible = false }],
+          [{ expression = "100*err/inv", label = "Error rate %", id = "rate", yAxis = "right", color = "#d62728" }],
+        ]
+        yAxis = { right = { min = 0, label = "%", showUnits = false } }
+      }
+    }] : [],
+    var.api_lambda_function_name != null ? [{
+      type = "metric", width = 12, height = 6,
+      properties = {
+        title = "API Lambda - duration", region = var.region, view = "timeSeries", period = local.period,
+        metrics = [
+          ["AWS/Lambda", "Duration", "FunctionName", var.api_lambda_function_name, { stat = "p50", label = "p50" }],
+          ["AWS/Lambda", "Duration", "FunctionName", var.api_lambda_function_name, { stat = "p99", label = "p99" }],
+          ["AWS/Lambda", "Duration", "FunctionName", var.api_lambda_function_name, { stat = "Maximum", label = "Max" }],
         ]
         yAxis = { left = { label = "ms", showUnits = false } }
       }
@@ -157,7 +178,7 @@ locals {
     length(local.scorecard_dlq_metrics) > 0 ? [{ type = "text", width = 24, height = 1, properties = { markdown = "## Dead Letter Queues" } }] : [],
     var.document_processor_dlq_name != null ? [
       {
-        type = "metric", width = 12, height = 6,
+        type = "metric", width = 8, height = 6,
         properties = {
           title   = "Document Processor DLQ", region = var.region, view = "timeSeries", period = local.period,
           metrics = [["AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", var.document_processor_dlq_name, { stat = "Maximum", label = "Messages Visible" }]]
@@ -166,18 +187,30 @@ locals {
     ] : [],
     var.bda_output_dlq_name != null ? [
       {
-        type = "metric", width = 12, height = 6,
+        type = "metric", width = 8, height = 6,
         properties = {
-          title   = "BDA Output DLQ", region = var.region, view = "timeSeries", period = local.period,
+          title   = "BDA Result Processor DLQ", region = var.region, view = "timeSeries", period = local.period,
           metrics = [["AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", var.bda_output_dlq_name, { stat = "Maximum", label = "Messages Visible" }]]
+        }
+      },
+    ] : [],
+    var.metrics_queue_dlq_name != null ? [
+      {
+        type = "metric", width = 8, height = 6,
+        properties = {
+          title   = "Metrics Processor DLQ", region = var.region, view = "timeSeries", period = local.period,
+          metrics = [["AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", var.metrics_queue_dlq_name, { stat = "Maximum", label = "Messages Visible" }]]
         }
       },
     ] : [],
 
     # === Observability Lambdas: throughput and error rate % ===
+    # Note: once-daily workers (e.g. usage-report) render as a flat line at 1 in
+    # timeSeries view; CloudWatch connects sparse datapoints with a straight line.
+    # This is a rendering quirk, not a sign the function is running continuously.
     length(local.observability_workers) > 0 ? [{ type = "text", width = 24, height = 1, properties = { markdown = "## Observability Lambdas" } }] : [],
     [for w in local.observability_workers : {
-      type = "metric", width = 12, height = 6,
+      type = "metric", width = 8, height = 6,
       properties = {
         title = "${w.title} - throughput and error rate", region = var.region, view = "timeSeries", period = local.period,
         metrics = [

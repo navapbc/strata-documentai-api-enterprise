@@ -71,34 +71,37 @@ variable "api_log_metrics" {
 
 # --- Workers (Lambda) ---
 
-variable "document_processor_function_name" {
+variable "workers" {
+  type = map(object({
+    function_name             = string
+    timeout_seconds           = number
+    pipeline                  = bool
+    scheduled                 = bool
+    invocation_window_seconds = optional(number)
+  }))
+  description = <<-EOT
+    Worker Lambdas to monitor, keyed by a stable logical name (e.g. "document-processor").
+    function_name             - Lambda function name (dimension value).
+    timeout_seconds           - Actual configured Lambda timeout; duration alarm fires at 80% of this.
+    pipeline                  - true = Pipeline Health/Latency sections; false = Observability Lambdas section.
+    scheduled                 - true = missing-invocations alarm with treat_missing_data = breaching.
+    invocation_window_seconds - Required when scheduled = true. Period for the missing-invocations alarm;
+                                 must be wider than the longest gap between scheduled runs
+                                 (e.g. 600 for every-5-min, 86400 for daily).
+  EOT
+  default     = {}
+}
+
+variable "api_lambda_function_name" {
   type        = string
-  description = "Name of the document-processor Lambda to monitor. Null disables its metrics."
+  description = "Name of the API Lambda to monitor. Null disables its alarms and dashboard widgets."
   default     = null
 }
 
-variable "bda_result_processor_function_name" {
-  type        = string
-  description = "Name of the BDA result-processor Lambda to monitor. Null disables its metrics."
-  default     = null
-}
-
-variable "metrics_processor_function_name" {
-  type        = string
-  description = "Name of the metrics-processor Lambda to monitor. Null disables its metrics."
-  default     = null
-}
-
-variable "metrics_aggregator_function_name" {
-  type        = string
-  description = "Name of the metrics-aggregator Lambda to monitor. Null disables its metrics."
-  default     = null
-}
-
-variable "worker_timeout_seconds" {
+variable "api_lambda_timeout_seconds" {
   type        = number
-  description = "Configured timeout for worker Lambdas; duration alarm fires at 80% of this"
-  default     = 300
+  description = "Configured timeout for the API Lambda; duration alarm fires at 80% of this."
+  default     = 30
 }
 
 # --- Queues ---
@@ -106,6 +109,12 @@ variable "worker_timeout_seconds" {
 variable "metrics_queue_name" {
   type        = string
   description = "Name of the metrics SQS queue to monitor. Null disables its metrics."
+  default     = null
+}
+
+variable "metrics_queue_dlq_name" {
+  type        = string
+  description = "Name of the metrics queue dead-letter queue to monitor. Null disables its alarm."
   default     = null
 }
 
@@ -127,6 +136,24 @@ variable "queue_max_age_seconds" {
   type        = number
   description = "Age of the oldest queue message (seconds) that triggers an alarm."
   default     = 900
+}
+
+variable "lambda_error_threshold" {
+  type        = number
+  description = "Lambda error count in one period that triggers an alarm."
+  default     = 3
+}
+
+variable "lambda_throttle_evaluation_periods" {
+  type        = number
+  description = "Consecutive periods of throttling before an alarm fires."
+  default     = 2
+}
+
+variable "lambda_duration_evaluation_periods" {
+  type        = number
+  description = "Consecutive periods of near-timeout duration before an alarm fires."
+  default     = 3
 }
 
 variable "api_5xx_threshold" {
