@@ -122,10 +122,25 @@ def api_keys_table(aws_credentials, monkeypatch):
         table = dynamodb.create_table(
             TableName="api-keys",
             KeySchema=[{"AttributeName": "keyHash", "KeyType": "HASH"}],
-            AttributeDefinitions=[{"AttributeName": "keyHash", "AttributeType": "S"}],
+            AttributeDefinitions=[
+                {"AttributeName": "keyHash", "AttributeType": "S"},
+                {"AttributeName": "tenantId", "AttributeType": "S"},
+                {"AttributeName": "apiKeyName", "AttributeType": "S"},
+            ],
+            GlobalSecondaryIndexes=[
+                {
+                    "IndexName": "tenant-apiKeyName-index",
+                    "KeySchema": [
+                        {"AttributeName": "tenantId", "KeyType": "HASH"},
+                        {"AttributeName": "apiKeyName", "KeyType": "RANGE"},
+                    ],
+                    "Projection": {"ProjectionType": "ALL"},
+                }
+            ],
             BillingMode="PAY_PER_REQUEST",
         )
         monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, table.name)
+        monkeypatch.setenv(EnvVars.API_KEYS_TENANT_INDEX_NAME, "tenant-apiKeyName-index")
         yield table
 
 
