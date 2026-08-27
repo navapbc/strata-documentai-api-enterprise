@@ -50,13 +50,13 @@ A CloudWatch dashboard is provisioned by the `monitoring` Terraform module (`inf
 
 The dashboard is organized into sections:
 
-- Health at a glance - single-value scorecards for documents submitted, API 4xx/5xx, Lambda errors per function, DLQ depths, and analytics queue depth/age
-- API - request volume, error counts, and p50/p99/integration latency from API Gateway
+- Health at a glance - single-value scorecards for documents submitted, API 4xx/5xx, Lambda errors (all functions including API Lambda), DLQ depths, and analytics queue depth/age
+- API - request volume, error counts, and p50/p99/integration latency from API Gateway, plus throughput/error rate and duration for the API Lambda itself
 - Pipeline Health - invocation throughput and error rate % for Document Processor and BDA Result Processor
 - Pipeline Latency - p50/p99/max duration for the same pipeline Lambdas
 - Queues - analytics queue depth and age of oldest message
-- Dead Letter Queues - message depth for the Document Processor and BDA Output DLQs
-- Observability Lambdas - throughput and error rate % for Metrics Processor and Metrics Aggregator
+- Dead Letter Queues - message depth for the Document Processor, BDA Output, and Metrics Queue DLQs
+- Observability Lambdas - throughput and error rate % for Metrics Processor, Metrics Aggregator, and Usage Report
 
 Widgets are emitted conditionally - if a resource (e.g. a DLQ or the API Gateway) is not configured for an environment, its section is omitted rather than rendering with null dimensions.
 
