@@ -540,6 +540,55 @@ def test_get_active_keys_by_name_returns_empty_on_error(monkeypatch):
     assert result == []
 
 
+def test_get_active_keys_by_name_with_tenant_returns_matching(api_keys_table):
+    api_keys_table.put_item(
+        Item={
+            ApiKeyRecord.KEY_HASH: "hash-1",
+            ApiKeyRecord.API_KEY_NAME: "my-service",
+            ApiKeyRecord.TENANT_ID: "tenant-a",
+            ApiKeyRecord.IS_ACTIVE: True,
+        }
+    )
+    api_keys_table.put_item(
+        Item={
+            ApiKeyRecord.KEY_HASH: "hash-2",
+            ApiKeyRecord.API_KEY_NAME: "my-service",
+            ApiKeyRecord.TENANT_ID: "tenant-a",
+            ApiKeyRecord.IS_ACTIVE: False,
+        }
+    )
+
+    result = auth_util.get_active_keys_by_name("my-service", tenant_id="tenant-a")
+
+    assert len(result) == 1
+    assert result[0][ApiKeyRecord.KEY_HASH] == "hash-1"
+
+
+def test_get_active_keys_by_name_with_tenant_excludes_other_tenant(api_keys_table):
+    api_keys_table.put_item(
+        Item={
+            ApiKeyRecord.KEY_HASH: "hash-1",
+            ApiKeyRecord.API_KEY_NAME: "my-service",
+            ApiKeyRecord.TENANT_ID: "tenant-b",
+            ApiKeyRecord.IS_ACTIVE: True,
+        }
+    )
+
+    result = auth_util.get_active_keys_by_name("my-service", tenant_id="tenant-a")
+
+    assert result == []
+
+
+def test_get_active_keys_by_name_with_tenant_returns_empty_when_index_env_missing(
+    api_keys_table, monkeypatch
+):
+    monkeypatch.delenv(EnvVars.API_KEYS_TENANT_INDEX_NAME, raising=False)
+
+    result = auth_util.get_active_keys_by_name("my-service", tenant_id="tenant-a")
+
+    assert result == []
+
+
 ##############################################################################
 # verify_api_key (routing behavior - patches needed)
 ##############################################################################

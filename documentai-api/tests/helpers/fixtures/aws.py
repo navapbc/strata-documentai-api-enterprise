@@ -70,11 +70,15 @@ def ddb_table(aws_credentials):
             AttributeDefinitions=[
                 {"AttributeName": "id", "AttributeType": "S"},
                 {"AttributeName": "userId", "AttributeType": "S"},
+                {"AttributeName": "category", "AttributeType": "S"},
             ],
             GlobalSecondaryIndexes=[
                 {
                     "IndexName": "test-index",
-                    "KeySchema": [{"AttributeName": "userId", "KeyType": "HASH"}],
+                    "KeySchema": [
+                        {"AttributeName": "userId", "KeyType": "HASH"},
+                        {"AttributeName": "category", "KeyType": "RANGE"},
+                    ],
                     "Projection": {"ProjectionType": "ALL"},
                 }
             ],

@@ -47,9 +47,9 @@ def test_update_item(ddb_table):
 
 
 def test_query_by_key(ddb_table):
-    """Query DynamoDB table by key using GSI."""
-    ddb_table.put_item(Item={"id": "123", "userId": "user-123"})
-    ddb_table.put_item(Item={"id": "456", "userId": "user-123"})
+    """Query DynamoDB GSI by partition key only."""
+    ddb_table.put_item(Item={"id": "123", "userId": "user-123", "category": "a"})
+    ddb_table.put_item(Item={"id": "456", "userId": "user-123", "category": "b"})
 
     result = ddb_service.query_by_key(
         ddb_table.name, ddb_table.test_index_name, "userId", "user-123"
@@ -67,14 +67,40 @@ def test_query_by_key_no_results(ddb_table):
     assert result == []
 
 
+def test_query_by_key_with_sort_key(ddb_table):
+    """Query DynamoDB GSI by partition key and sort key returns only matching item."""
+    ddb_table.put_item(Item={"id": "123", "userId": "user-123", "category": "a"})
+    ddb_table.put_item(Item={"id": "456", "userId": "user-123", "category": "b"})
+
+    result = ddb_service.query_by_key(
+        ddb_table.name, ddb_table.test_index_name, "userId", "user-123", "category", "a"
+    )
+
+    assert len(result) == 1
+    assert result[0]["id"] == "123"
+
+
+def test_query_by_key_with_sort_key_no_results(ddb_table):
+    """Query with sort key returns empty list when no items match."""
+    ddb_table.put_item(Item={"id": "123", "userId": "user-123", "category": "a"})
+
+    result = ddb_service.query_by_key(
+        ddb_table.name, ddb_table.test_index_name, "userId", "user-123", "category", "z"
+    )
+
+    assert result == []
+
+
 def test_query_by_key_paginates_past_one_page(ddb_table):
     """Query follows LastEvaluatedKey so results aren't truncated at the 1MB page limit."""
     # DynamoDB caps a query page at 1MB. Write enough large items under one GSI
     # key to span multiple pages; ~350KB each x 5 = ~1.75MB.
     blob = "x" * 350_000
     expected_ids = {f"id-{i}" for i in range(5)}
-    for item_id in expected_ids:
-        ddb_table.put_item(Item={"id": item_id, "userId": "user-123", "blob": blob})
+    for i, item_id in enumerate(expected_ids):
+        ddb_table.put_item(
+            Item={"id": item_id, "userId": "user-123", "category": str(i), "blob": blob}
+        )
 
     result = ddb_service.query_by_key(
         ddb_table.name, ddb_table.test_index_name, "userId", "user-123"

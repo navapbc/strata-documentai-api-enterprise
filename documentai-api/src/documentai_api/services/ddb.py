@@ -93,21 +93,31 @@ def scan(table_name: str) -> list[dict[str, Any]]:
 
 
 def query_by_key(
-    table_name: str, index_name: str, key_name: str, key_value: str
+    table_name: str,
+    index_name: str,
+    pk_name: str,
+    pk_value: str,
+    sk_name: str | None = None,
+    sk_value: str | None = None,
 ) -> list[dict[str, Any]]:
-    """Query DynamoDB table by key using GSI."""
+    """Query DynamoDB GSI by partition key, with an optional sort key condition."""
     import boto3
 
     ddb_table = AWSClientFactory.get_ddb_table(table_name)
-    key_condition = boto3.dynamodb.conditions.Key(key_name).eq(key_value)  # type: ignore[attr-defined]
+    key_condition = boto3.dynamodb.conditions.Key(pk_name).eq(pk_value)  # type: ignore[attr-defined]
+
+    if sk_name and sk_value:
+        key_condition &= boto3.dynamodb.conditions.Key(sk_name).eq(sk_value)  # type: ignore[attr-defined]
 
     items: list[dict[str, Any]] = []
     last_evaluated_key: dict[str, Any] | None = None
+
     while True:
         kwargs: dict[str, Any] = {
             "IndexName": index_name,
             "KeyConditionExpression": key_condition,
         }
+
         if last_evaluated_key:
             kwargs["ExclusiveStartKey"] = last_evaluated_key
 
@@ -115,6 +125,7 @@ def query_by_key(
         items.extend(dict(item) for item in response.get("Items", []))
 
         last_evaluated_key = response.get("LastEvaluatedKey")
+
         if not last_evaluated_key:
             break
 

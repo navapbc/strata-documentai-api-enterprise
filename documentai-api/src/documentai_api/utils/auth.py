@@ -103,12 +103,16 @@ def _migrate_key_hash(old_hash: str, new_hash: str) -> None:
     from documentai_api.services import ddb as ddb_service
 
     table_name = get_aws_config().api_keys_table_name
+
     if not table_name:
         return
+
     try:
         existing = _lookup_key_in_ddb(old_hash)
+
         if not existing:
             return
+
         ddb_service.put_item(table_name, {**existing, ApiKeyRecord.KEY_HASH: new_hash})
         ddb_service.delete_item(table_name, {ApiKeyRecord.KEY_HASH: old_hash})
         get_cache().invalidate(old_hash)
@@ -135,8 +139,10 @@ def _lookup_key_in_ddb(key_hash: str) -> dict[str, Any] | None:
     from documentai_api.services import ddb as ddb_service
 
     table_name = get_aws_config().api_keys_table_name
+
     if not table_name:
         raise ValueError("API_KEYS_TABLE_NAME environment variable not set")
+
     key = {ApiKeyRecord.KEY_HASH: key_hash}
 
     try:
@@ -155,9 +161,11 @@ def _validate_key_record(record: dict[str, Any]) -> bool:
         return False
 
     expires_at = record.get(ApiKeyRecord.EXPIRES_AT)
+
     if expires_at:
         try:
             expiry = datetime.fromisoformat(expires_at)
+
             if datetime.now(UTC) > expiry:
                 return False
         except ValueError:
@@ -177,6 +185,7 @@ def _update_last_used(key_hash: str) -> None:
 
     with _last_used_lock:
         last_written = _last_used_written_at.get(key_hash, 0)
+
         if now - last_written < _LAST_USED_DEBOUNCE_SECONDS:
             return
         _last_used_written_at[key_hash] = now
@@ -189,8 +198,10 @@ def _update_last_used(key_hash: str) -> None:
         from documentai_api.services import ddb as ddb_service
 
         table_name = get_aws_config().api_keys_table_name
+
         if not table_name:
             raise ValueError("API_KEYS_TABLE_NAME environment variable not set")
+
         ddb_service.update_item(
             table_name,
             key={ApiKeyRecord.KEY_HASH: key_hash},
@@ -267,26 +278,42 @@ def get_active_keys_by_name(
 
     If ``tenant_id`` is provided, only keys belonging to that tenant are returned;
     otherwise keys are matched by name across all tenants.
-
-    Note: performs a table scan - acceptable for low-volume admin operations.
     """
     from documentai_api.services import ddb as ddb_service
 
-    table_name = get_aws_config().api_keys_table_name
+    config = get_aws_config()
+    table_name = config.api_keys_table_name
+
     if not table_name:
         raise ValueError("API_KEYS_TABLE_NAME environment variable not set")
 
     try:
-        all_items = ddb_service.scan(table_name)
-        return [
-            item
-            for item in all_items
-            if item.get(ApiKeyRecord.API_KEY_NAME) == api_key_name
-            and item.get(ApiKeyRecord.IS_ACTIVE, False)
-            and (tenant_id is None or item.get(ApiKeyRecord.TENANT_ID) == tenant_id)
-        ]
+        if tenant_id is not None:
+            index_name = config.api_keys_tenant_index_name
+
+            if not index_name:
+                raise ValueError("API_KEYS_TENANT_INDEX_NAME environment variable not set")
+
+            items = ddb_service.query_by_key(
+                table_name,
+                index_name,
+                ApiKeyRecord.TENANT_ID,
+                tenant_id,
+                ApiKeyRecord.API_KEY_NAME,
+                api_key_name,
+            )
+
+            return [item for item in items if item.get(ApiKeyRecord.IS_ACTIVE, False)]
+        else:
+            all_items = ddb_service.scan(table_name)
+            return [
+                item
+                for item in all_items
+                if item.get(ApiKeyRecord.API_KEY_NAME) == api_key_name
+                and item.get(ApiKeyRecord.IS_ACTIVE, False)
+            ]
     except Exception as e:
-        logger.error(f"Failed to scan api-keys table: {e}")
+        logger.error(f"Failed to query api-keys table: {e}")
         return []
 
 
@@ -294,17 +321,28 @@ def is_duplicate_key_name(tenant_id: str, api_key_name: str) -> bool:
     """Check if a key with this name has ever existed for the tenant (active or inactive)."""
     from documentai_api.services import ddb as ddb_service
 
-    table_name = get_aws_config().api_keys_table_name
+    config = get_aws_config()
+    table_name = config.api_keys_table_name
+
     if not table_name:
         raise ValueError("API_KEYS_TABLE_NAME environment variable not set")
 
     try:
-        all_items = ddb_service.scan(table_name)
-        return any(
-            item.get(ApiKeyRecord.API_KEY_NAME) == api_key_name
-            and item.get(ApiKeyRecord.TENANT_ID) == tenant_id
-            for item in all_items
+        index_name = config.api_keys_tenant_index_name
+
+        if not index_name:
+            raise ValueError("API_KEYS_TENANT_INDEX_NAME environment variable not set")
+
+        items = ddb_service.query_by_key(
+            table_name,
+            index_name,
+            ApiKeyRecord.TENANT_ID,
+            tenant_id,
+            ApiKeyRecord.API_KEY_NAME,
+            api_key_name,
         )
+
+        return len(items) > 0
     except Exception as e:
         logger.error(f"Failed to check duplicate key name: {e}")
         return False
@@ -341,6 +379,7 @@ def generate_api_key(
     key_hash = _compute_key_hash(api_key)
 
     table_name = get_aws_config().api_keys_table_name
+
     if not table_name:
         raise ValueError("API_KEYS_TABLE_NAME environment variable not set")
 
@@ -359,6 +398,7 @@ def generate_api_key(
 
     if created_by:
         item[ApiKeyRecord.CREATED_BY] = created_by
+
     if email_address:
         item[ApiKeyRecord.EMAIL_ADDRESS] = email_address
 
@@ -380,6 +420,7 @@ def find_api_key_by_prefix(prefix: str, tenant_id: str | None = None) -> str | N
     from documentai_api.services import ddb as ddb_service
 
     table_name = get_aws_config().api_keys_table_name
+
     if not table_name:
         raise ValueError("API_KEYS_TABLE_NAME environment variable not set")
 
@@ -414,11 +455,14 @@ def deactivate_api_key(key_hash: str) -> bool:
     from documentai_api.services import ddb as ddb_service
 
     table_name = get_aws_config().api_keys_table_name
+
     if not table_name:
         raise ValueError("API_KEYS_TABLE_NAME environment variable not set")
+
     key = {ApiKeyRecord.KEY_HASH: key_hash}
 
     existing = ddb_service.get_item(table_name, key)
+
     if not existing:
         return False
 
@@ -497,6 +541,7 @@ def _get_user_context_from_api_key_from_ddb(api_key: str) -> UserContext:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
 
     tenant_id = record.get(ApiKeyRecord.TENANT_ID)
+
     if not tenant_id:
         logger.error(f"API key missing tenantId for key: {record.get(ApiKeyRecord.API_KEY_NAME)}")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")

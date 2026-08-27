@@ -59,14 +59,15 @@ locals {
   api_auth_cache_ttl            = "300"
 
   # DynamoDB GSI names - single source of truth for infra + env vars
-  gsi_job_id               = "JobIdIndex"
-  gsi_external_document_id = "ExternalDocumentIdIndex"
-  gsi_bda_invocation_id    = "BdaInvocationIdIndex"
-  gsi_tenant_id            = "TenantIdIndex"
-  gsi_status_created_at    = "StatusCreatedAtIndex"
-  gsi_tenant_batches       = "TenantIndex"
-  gsi_tenant_builds        = "TenantIndex"
-  gsi_external_ref_id      = "ExternalReferenceIdIndex"
+  gsi_job_id                = "JobIdIndex"
+  gsi_external_document_id  = "ExternalDocumentIdIndex"
+  gsi_bda_invocation_id     = "BdaInvocationIdIndex"
+  gsi_tenant_id             = "TenantIdIndex"
+  gsi_status_created_at     = "StatusCreatedAtIndex"
+  gsi_tenant_batches        = "TenantIndex"
+  gsi_tenant_builds         = "TenantIndex"
+  gsi_external_ref_id       = "ExternalReferenceIdIndex"
+  gsi_api_keys_tenant_index = "TenantApiKeyNameIndex"
 }
 
 # --- ECR ---
@@ -161,6 +162,16 @@ module "api_keys" {
   source     = "../../modules/nosql"
   table_name = "${local.service_name}-api-keys"
   hash_key   = "keyHash"
+
+  global_secondary_indexes = [
+    {
+      name          = local.gsi_api_keys_tenant_index
+      hash_key      = "tenantId"
+      hash_key_type = "S"
+      sort_key      = "apiKeyName"
+      sort_key_type = "S"
+    },
+  ]
 }
 
 
@@ -543,6 +554,7 @@ locals {
       DOCUMENTAI_DOCUMENT_METADATA_BDA_INVOCATION_ID_INDEX_NAME = local.gsi_bda_invocation_id
       DOCUMENTAI_DOCUMENT_METADATA_TENANT_INDEX_NAME            = local.gsi_tenant_id
       API_KEYS_TABLE_NAME                                       = module.api_keys.table_name
+      API_KEYS_TENANT_INDEX_NAME                                = local.gsi_api_keys_tenant_index
       TENANTS_TABLE_NAME                                        = module.tenants.table_name
       TENANT_REQUEST_COUNTS_TABLE_NAME                          = module.tenant_request_counts.table_name
       AUDIT_EVENTS_TABLE_NAME                                   = module.audit_events.table_name

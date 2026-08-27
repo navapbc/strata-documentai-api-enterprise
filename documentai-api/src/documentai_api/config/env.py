@@ -55,6 +55,7 @@ class EnvVars(StrEnum):
     API_AUTH_CACHE_TTL = "API_AUTH_CACHE_TTL"
     API_KEY_PEPPER_PARAM = "API_KEY_PEPPER_PARAM"
     API_KEYS_TABLE_NAME = "API_KEYS_TABLE_NAME"
+    API_KEYS_TENANT_INDEX_NAME = "API_KEYS_TENANT_INDEX_NAME"
     TENANTS_TABLE_NAME = "TENANTS_TABLE_NAME"
     TENANT_REQUEST_COUNTS_TABLE_NAME = "TENANT_REQUEST_COUNTS_TABLE_NAME"
     AUDIT_EVENTS_TABLE_NAME = "AUDIT_EVENTS_TABLE_NAME"
@@ -141,6 +142,7 @@ class AWSEnvConfig(PydanticBaseEnvConfig):
 
     # Auth / API keys
     api_keys_table_name: str | None = None
+    api_keys_tenant_index_name: str | None = None
     tenants_table_name: str | None = None
     tenant_request_counts_table_name: str | None = None
     audit_events_table_name: str | None = None
