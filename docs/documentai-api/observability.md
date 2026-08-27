@@ -55,7 +55,7 @@ The dashboard is organized into sections:
 - Pipeline Health - invocation throughput and error rate % for Document Processor and BDA Result Processor
 - Pipeline Latency - p50/p99/max duration for the same pipeline Lambdas
 - Queues - analytics queue depth and age of oldest message
-- Dead Letter Queues - message depth for the Document Processor, BDA Output, and Metrics Queue DLQs
+- Dead Letter Queues - message depth for the Document Processor, BDA Result Processor, and Metrics Processor DLQs
 - Observability Lambdas - throughput and error rate % for Metrics Processor, Metrics Aggregator, and Usage Report
 
 Widgets are emitted conditionally - if a resource (e.g. a DLQ or the API Gateway) is not configured for an environment, its section is omitted rather than rendering with null dimensions.

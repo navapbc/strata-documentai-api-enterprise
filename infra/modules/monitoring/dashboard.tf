@@ -18,9 +18,9 @@ locals {
 
   # Scorecard metric rows (built null-safe; an empty row drops its widget).
   scorecard_dlq_metrics = concat(
-    var.document_processor_dlq_name != null ? [["AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", var.document_processor_dlq_name, { stat = "Maximum", label = "Doc Processor" }]] : [],
-    var.bda_output_dlq_name != null ? [["AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", var.bda_output_dlq_name, { stat = "Maximum", label = "BDA Output" }]] : [],
-    var.metrics_queue_dlq_name != null ? [["AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", var.metrics_queue_dlq_name, { stat = "Maximum", label = "Metrics Queue" }]] : [],
+    var.document_processor_dlq_name != null ? [["AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", var.document_processor_dlq_name, { stat = "Maximum", label = "Document Processor" }]] : [],
+    var.bda_output_dlq_name != null ? [["AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", var.bda_output_dlq_name, { stat = "Maximum", label = "BDA Result Processor" }]] : [],
+    var.metrics_queue_dlq_name != null ? [["AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", var.metrics_queue_dlq_name, { stat = "Maximum", label = "Metrics Processor" }]] : [],
   )
   scorecard_error_metrics = [for w in local.all_workers : ["AWS/Lambda", "Errors", "FunctionName", w.fn, { stat = "Sum", label = w.title }]]
   scorecard_queue_metrics = var.metrics_queue_name != null ? [
@@ -189,7 +189,7 @@ locals {
       {
         type = "metric", width = 8, height = 6,
         properties = {
-          title   = "BDA Output DLQ", region = var.region, view = "timeSeries", period = local.period,
+          title   = "BDA Result Processor DLQ", region = var.region, view = "timeSeries", period = local.period,
           metrics = [["AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", var.bda_output_dlq_name, { stat = "Maximum", label = "Messages Visible" }]]
         }
       },
@@ -198,7 +198,7 @@ locals {
       {
         type = "metric", width = 8, height = 6,
         properties = {
-          title   = "Metrics Queue DLQ", region = var.region, view = "timeSeries", period = local.period,
+          title   = "Metrics Processor DLQ", region = var.region, view = "timeSeries", period = local.period,
           metrics = [["AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", var.metrics_queue_dlq_name, { stat = "Maximum", label = "Messages Visible" }]]
         }
       },
