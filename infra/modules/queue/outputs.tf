@@ -23,6 +23,11 @@ output "dlq_arn" {
   value       = aws_sqs_queue.dlq.arn
 }
 
+output "dlq_name" {
+  description = "Name of the dead-letter queue."
+  value       = aws_sqs_queue.dlq.name
+}
+
 output "send_policy_arn" {
   description = "ARN of the IAM policy granting send access to the queue."
   value       = aws_iam_policy.send.arn

@@ -16,10 +16,11 @@ Every alarm sets both `alarm_actions` and `ok_actions` to the SNS topic, so subs
 
 | Category | Metrics | Condition |
 |----------|---------|-----------|
-| DLQ depth | `ApproximateNumberOfMessagesVisible` | ≥ 1 message for 1 period |
-| Lambda errors | `Errors` per function | ≥ 1 for 1 period |
-| Lambda throttles | `Throttles` per function | ≥ 1 for 1 period |
-| Lambda duration | `Duration` max | > 80% of configured timeout for 1 period |
+| DLQ depth | `ApproximateNumberOfMessagesVisible` | >= 1 message for 1 period |
+| Lambda errors | `Errors` per function | >= `lambda_error_threshold` (default 3) for 1 period |
+| Lambda throttles | `Throttles` per function | >= 1 for `lambda_throttle_evaluation_periods` consecutive periods (default 2) |
+| Lambda duration | `Duration` max | > 80% of configured timeout for `lambda_duration_evaluation_periods` consecutive periods (default 3) |
+| Scheduled worker invocations | `Invocations` sum | < 1 in per-worker `invocation_window_seconds`; missing data treated as breaching. On first apply a newly created alarm starts in ALARM until the first invocation lands - expected for long-window workers (e.g. daily). |
 | Metrics queue backlog | `ApproximateAgeOfOldestMessage` | > threshold for 2 periods |
 | API Gateway 5xx | `5xx` sum | > threshold for 1 period |
 | API Gateway latency | `Latency` p99 | > threshold for 3 periods |
@@ -60,13 +61,21 @@ module "monitoring" {
   api_log_metrics = module.api_gateway.api_log_metrics
 
   # Workers
-  document_processor_function_name   = module.workers["document-processor"].function_name
-  bda_result_processor_function_name = module.workers["bda-result-processor"].function_name
-  metrics_processor_function_name    = module.workers["metrics-processor"].function_name
-  metrics_aggregator_function_name   = module.workers["metrics-aggregator"].function_name
+  workers = {
+    "Document Processor"   = { function_name = module.workers["document-processor"].function_name, timeout_seconds = 300, pipeline = true, scheduled = false, invocation_window_seconds = null }
+    "BDA Result Processor" = { function_name = module.workers["bda-result-processor"].function_name, timeout_seconds = 300, pipeline = true, scheduled = false, invocation_window_seconds = null }
+    "Metrics Processor"    = { function_name = module.workers["metrics-processor"].function_name, timeout_seconds = 300, pipeline = false, scheduled = false, invocation_window_seconds = null }
+    "Metrics Aggregator"   = { function_name = module.workers["metrics-aggregator"].function_name, timeout_seconds = 300, pipeline = false, scheduled = true, invocation_window_seconds = 600 }
+    "Usage Report"         = { function_name = module.workers["usage-report"].function_name, timeout_seconds = 300, pipeline = false, scheduled = true, invocation_window_seconds = 86400 }
+  }
+
+  # API Lambda
+  api_lambda_function_name   = module.api_gateway.function_name
+  api_lambda_timeout_seconds = 30
 
   # Queues
   metrics_queue_name          = module.metrics_queue.queue_name
+  metrics_queue_dlq_name      = module.metrics_queue.dlq_name
   document_processor_dlq_name = module.workers["document-processor"].dlq_name
   bda_output_dlq_name         = module.workers["bda-result-processor"].dlq_name
 }
@@ -86,12 +95,14 @@ All inputs with defaults are optional. Pass `null` to omit a resource category f
 | `slack` | object | `null` | Chatbot Slack config (`workspace_id`, `channel_id`) |
 | `api_gateway_id` | string | `null` | API Gateway HTTP API id |
 | `api_log_metrics` | object | `null` | Custom metrics from access-log filters |
-| `document_processor_function_name` | string | `null` | Lambda function name |
-| `bda_result_processor_function_name` | string | `null` | Lambda function name |
-| `metrics_processor_function_name` | string | `null` | Lambda function name |
-| `metrics_aggregator_function_name` | string | `null` | Lambda function name |
-| `worker_timeout_seconds` | number | `300` | Duration alarm threshold base |
+| `workers` | map(object) | `{}` | Worker Lambdas to monitor. Each entry: `function_name`, `timeout_seconds` (duration alarm at 80%), `pipeline` (true = Pipeline sections, false = Observability section), `scheduled` (true = missing-invocations alarm), `invocation_window_seconds` (required when `scheduled = true`; set to the longest expected gap between runs, e.g. 600 for every-5-min, 86400 for daily) |
+| `api_lambda_function_name` | string | `null` | API Lambda function name |
+| `api_lambda_timeout_seconds` | number | `30` | API Lambda timeout; duration alarm fires at 80% |
+| `lambda_error_threshold` | number | `3` | Error count per period before alarm fires |
+| `lambda_throttle_evaluation_periods` | number | `2` | Consecutive throttle periods before alarm fires |
+| `lambda_duration_evaluation_periods` | number | `3` | Consecutive near-timeout periods before alarm fires |
 | `metrics_queue_name` | string | `null` | SQS queue name |
+| `metrics_queue_dlq_name` | string | `null` | Metrics queue DLQ name |
 | `document_processor_dlq_name` | string | `null` | DLQ name |
 | `bda_output_dlq_name` | string | `null` | DLQ name |
 

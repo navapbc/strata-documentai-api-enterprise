@@ -11,22 +11,21 @@
 locals {
   period = 300
 
-  worker_function_names = compact([
-    var.document_processor_function_name,
-    var.bda_result_processor_function_name,
-    var.metrics_processor_function_name,
-    var.metrics_aggregator_function_name,
-  ])
+  # alarm_workers: map of function_name -> timeout_ms, used by for_each on alarm resources.
+  alarm_workers = {
+    for k, w in var.workers : w.function_name => w.timeout_seconds * 1000 * 0.8
+  }
 
   dlq_names = compact([
     var.document_processor_dlq_name,
     var.bda_output_dlq_name,
+    var.metrics_queue_dlq_name,
   ])
 
-  duration_alarm_threshold_ms = var.worker_timeout_seconds * 1000 * 0.8
-
-  alarm_worker_names = var.create_alarms ? toset(local.worker_function_names) : toset([])
+  alarm_worker_names = var.create_alarms ? local.alarm_workers : {}
   alarm_dlq_names    = var.create_alarms ? toset(local.dlq_names) : toset([])
+  # alarm_scheduled_workers: map of function_name -> invocation_window_seconds for scheduled workers.
+  alarm_scheduled_workers = var.create_alarms ? { for k, w in var.workers : w.function_name => w.invocation_window_seconds if w.scheduled } : {}
 }
 
 # --- SNS topic + subscriptions ---

@@ -631,13 +631,25 @@ module "monitoring" {
   api_log_metrics = module.api_gateway.api_log_metrics
 
   # Worker Lambdas
-  document_processor_function_name   = module.workers["document-processor"].function_name
-  bda_result_processor_function_name = module.workers["bda-result-processor"].function_name
-  metrics_processor_function_name    = module.workers["metrics-processor"].function_name
-  metrics_aggregator_function_name   = module.workers["metrics-aggregator"].function_name
+  workers = {
+    "Document Processor"   = { function_name = module.workers["document-processor"].function_name, timeout_seconds = 300, pipeline = true, scheduled = false }
+    "BDA Result Processor" = { function_name = module.workers["bda-result-processor"].function_name, timeout_seconds = 300, pipeline = true, scheduled = false }
+    "Metrics Processor"    = { function_name = module.workers["metrics-processor"].function_name, timeout_seconds = 300, pipeline = false, scheduled = false }
+    "Metrics Aggregator"   = { function_name = module.workers["metrics-aggregator"].function_name, timeout_seconds = 300, pipeline = false, scheduled = true, invocation_window_seconds = 600 }
+    # invocation_window_seconds = 86400: current-month cron fires daily, so a full
+    # day with zero runs means the schedule is broken. Note: on first apply with
+    # create_alarms = true the alarm starts in ALARM until the next daily run lands
+    # (~up to 24 hours) - expected bring-up behavior, not a recurring false positive.
+    "Usage Report" = { function_name = module.workers["usage-report"].function_name, timeout_seconds = 300, pipeline = false, scheduled = true, invocation_window_seconds = 86400 }
+  }
+
+  # API Lambda
+  api_lambda_function_name   = module.api_gateway.function_name
+  api_lambda_timeout_seconds = 30
 
   # Queues
   metrics_queue_name          = module.metrics_queue.queue_name
+  metrics_queue_dlq_name      = module.metrics_queue.dlq_name
   document_processor_dlq_name = module.workers["document-processor"].dlq_name
   bda_output_dlq_name         = module.workers["bda-result-processor"].dlq_name
 }
