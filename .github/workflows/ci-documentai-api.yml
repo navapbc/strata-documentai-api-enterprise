@@ -89,7 +89,7 @@ jobs:
       # Runs natively (not in Docker) because the generator reads infra/document-types/,
       # a sibling directory the app's Docker container doesn't mount.
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
 
       - name: Regenerate categories from infra/document-types/
         run: make generate-categories
@@ -108,7 +108,7 @@ jobs:
       # Runs natively (not in Docker), same as the categories job above, and for
       # the same reason - infra/document-types/ isn't mounted into the container.
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
 
       - name: Check blueprint_schemas.json against infra/document-types/ custom blueprints
         run: make check-blueprint-schemas
