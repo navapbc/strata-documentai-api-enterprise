@@ -47,9 +47,7 @@ def test_all_non_public_routes_require_auth():
     Locks in the auth posture at the structural level: if someone adds a new
     endpoint and forgets the dependency, this test fails immediately.
     """
-    from fastapi.routing import APIRoute
-
-    from documentai_api.app import app
+    from documentai_api.app import app, iter_api_routes
     from documentai_api.utils.auth import (
         get_user_context_from_api_key,
         get_user_context_with_fallback,
@@ -72,12 +70,12 @@ def test_all_non_public_routes_require_auth():
             calls |= walk(child)
         return calls
 
-    for route in app.routes:
-        if not isinstance(route, APIRoute) or route.path in public:
+    for route in iter_api_routes(app.routes):
+        if route.path in public:
             continue
         deps = walk(route.dependant)
         assert not deps.isdisjoint(auth_deps), (
-            f"Route {sorted(route.methods)} {route.path} is missing auth dependency"
+            f"Route {sorted(route.methods or [])} {route.path} is missing auth dependency"
         )
 
 

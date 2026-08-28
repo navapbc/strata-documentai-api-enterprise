@@ -118,16 +118,34 @@ CONFIG_EXCLUDED_ROUTES = {"/", "/health", "/config", "/openapi.json", "/docs", "
 _cached_endpoints: dict[str, str] | None = None
 
 
+def iter_api_routes(routes: list[Any]) -> list[APIRoute]:
+    """Recursively expand routes, descending into FastAPI's lazily-wrapped included routers."""
+    api_routes = []
+
+    for route in routes:
+        if isinstance(route, APIRoute):
+            api_routes.append(route)
+        elif original_router := getattr(route, "original_router", None):
+            api_routes.extend(iter_api_routes(original_router.routes))
+
+    return api_routes
+
+
 def discover_endpoints(app: FastAPI) -> dict[str, str]:
     """Build a sorted map of operation name -> path for all non-excluded routes. Cached after first call."""
     global _cached_endpoints
+
     if _cached_endpoints is not None:
         return dict(_cached_endpoints)
+
     endpoints = {}
-    for route in app.routes:
-        if isinstance(route, APIRoute) and route.name and route.path not in CONFIG_EXCLUDED_ROUTES:
+
+    for route in iter_api_routes(app.routes):
+        if route.name and route.path not in CONFIG_EXCLUDED_ROUTES:
             endpoints[route.name] = route.path
+
     _cached_endpoints = dict(sorted(endpoints.items()))
+
     return dict(_cached_endpoints)
 
 
@@ -149,8 +167,8 @@ async def health() -> HealthResponse:
 @app.get("/config", dependencies=[Depends(verify_api_key)])
 def get_config() -> ConfigResponse:
     endpoints = discover_endpoints(app)
-
     app_config = get_app_env_config()
+
     return ConfigResponse(
         api_url=app_config.api_base_url,
         version=API_VERSION,

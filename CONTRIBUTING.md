@@ -26,6 +26,8 @@ strata@navapbc.com
 
 See [writing-tests.md](docs/documentai-api/writing-tests.md) for test conventions and how to run the suite.
 
+Every pull request is scanned with [gitleaks](https://github.com/gitleaks/gitleaks) for leaked secrets. Pull requests touching `documentai-api/` are also checked with [pip-audit](https://github.com/pypa/pip-audit) for known dependency vulnerabilities; execute it locally first with `make test-pip-audit` from the `documentai-api/` directory.
+
 To contribute, create a pull request on GitHub with:
 
 - Clear title and description
