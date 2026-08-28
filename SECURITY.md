@@ -5,6 +5,10 @@
 We always recommend using the latest version of Strata to ensure you get all
 security updates.
 
+## Security scanning
+
+Every pull request is scanned with [gitleaks](https://github.com/gitleaks/gitleaks) for leaked secrets across the full commit history. The DocumentAI Enterprise API additionally executes [pip-audit](https://github.com/pypa/pip-audit) in CI to check its Python dependencies for known CVEs.
+
 ## Reporting vulnerabilities
 
 Please do not file GitHub issues for security vulnerabilities, as they are

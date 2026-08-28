@@ -7,8 +7,7 @@ from typing import Any
 from unittest.mock import patch
 
 import pytest
-from click.testing import Result
-from typer.testing import CliRunner
+from typer.testing import CliRunner, Result
 
 from documentai_api.cli.pull_blueprint_schemas import app
 from documentai_api.utils.schemas import extract_fields

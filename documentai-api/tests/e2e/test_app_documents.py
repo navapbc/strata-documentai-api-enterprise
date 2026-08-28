@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-import requests  # type: ignore[import-untyped]
+import requests
 
 from documentai_api.schemas.document_metadata import DocumentMetadata
 

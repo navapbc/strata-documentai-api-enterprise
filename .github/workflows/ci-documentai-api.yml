@@ -55,6 +55,9 @@ jobs:
           make test-audit
           make test-coverage args="-n auto"
 
+      - name: Run pip-audit
+        run: make test-pip-audit
+
   openapi:
     name: OpenAPI + Postman drift
     runs-on: ubuntu-latest
