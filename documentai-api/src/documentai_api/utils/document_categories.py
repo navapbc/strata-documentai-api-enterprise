@@ -1,5 +1,6 @@
 """Document category DDB operations."""
 
+from collections import OrderedDict
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
@@ -12,21 +13,25 @@ from documentai_api.utils.cache import get_cache
 
 logger = get_logger(__name__)
 
+_MAX_REGISTERED_CATEGORIES = 10_000
 _table = DocumentCategoriesTable()
-_registered_categories: set[tuple[str, str]] = set()
+_registered_categories: OrderedDict[tuple[str, str], None] = OrderedDict()
 
 
 def get_processing_percentage(tenant_id: str, category_name: str) -> float:
     """Return processingPercentage for a category, defaulting to 1.0 if not found."""
     cache_key = f"processing_percentage:{tenant_id}:{category_name}"
     cached = get_cache().get(cache_key)
+
     if cached is not None:
         return float(cached)
+
     record = get_category(tenant_id, category_name)
     value = float(record.get(DocumentCategoryRecord.PROCESSING_PERCENTAGE, 1.0)) if record else 1.0
     get_cache().add(
         cache_key, value, ttl_minutes=ConfigDefaults.PROCESSING_PERCENTAGE_CACHE_TTL_MINUTES
     )
+
     return value
 
 
@@ -56,6 +61,9 @@ def auto_register_category(tenant_id: str, category_name: str) -> None:
     if (tenant_id, category_name) in _registered_categories:
         return
 
+    if len(_registered_categories) >= _MAX_REGISTERED_CATEGORIES:
+        _registered_categories.popitem(last=False)  # evict oldest
+
     now = datetime.now(UTC).isoformat()
     r = DocumentCategoryRecord
     table = AWSClientFactory.get_ddb_table(_table._get_table_name())
@@ -77,7 +85,9 @@ def auto_register_category(tenant_id: str, category_name: str) -> None:
             ":one": Decimal("1.0"),
         },
     )
-    _registered_categories.add((tenant_id, category_name))
+
+    # OrderedDict used as an ordered set; values are unused and irrelevant
+    _registered_categories[(tenant_id, category_name)] = None
 
 
 def create_category(
@@ -109,12 +119,16 @@ def update_category(
 ) -> dict[str, Any]:
     """Update a document category. Raises ValueError if not found or no fields to update."""
     fields: dict[str, Any] = {}
+
     if display_name is not None:
         fields[DocumentCategoryRecord.DISPLAY_NAME] = display_name
+
     if description is not None:
         fields[DocumentCategoryRecord.DESCRIPTION] = description
+
     if is_active is not None:
         fields[DocumentCategoryRecord.IS_ACTIVE] = is_active
+
     if processing_percentage is not None:
         fields[DocumentCategoryRecord.PROCESSING_PERCENTAGE] = processing_percentage
 
@@ -122,8 +136,10 @@ def update_category(
         raise ValueError("No fields to update")
 
     result = _table.update(tenant_id, category_name, **fields)
+
     if processing_percentage is not None:
         get_cache().invalidate(f"processing_percentage:{tenant_id}:{category_name}")
+
     return result
 
 

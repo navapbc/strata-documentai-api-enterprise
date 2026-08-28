@@ -11,6 +11,13 @@ def clear_cache():
     get_cache().clear()
 
 
+@pytest.fixture
+def clear_registered_categories():
+    categories_util._registered_categories.clear()
+    yield
+    categories_util._registered_categories.clear()
+
+
 def test_get_processing_percentage_returns_stored_value(document_categories_table):
     document_categories_table.put_item(
         Item={"tenantId": "t1", "categoryName": "income", "processingPercentage": "0.5"}
@@ -18,12 +25,17 @@ def test_get_processing_percentage_returns_stored_value(document_categories_tabl
     assert categories_util.get_processing_percentage("t1", "income") == pytest.approx(0.5)
 
 
-def test_get_processing_percentage_defaults_to_1_when_missing(document_categories_table):
-    assert categories_util.get_processing_percentage("t1", "no-such-category") == pytest.approx(1.0)
+@pytest.mark.parametrize(
+    "item",
+    [
+        None,
+        {"tenantId": "t1", "categoryName": "income"},
+    ],
+)
+def test_get_processing_percentage_defaults_to_1(document_categories_table, item):
+    if item:
+        document_categories_table.put_item(Item=item)
 
-
-def test_get_processing_percentage_defaults_to_1_when_field_absent(document_categories_table):
-    document_categories_table.put_item(Item={"tenantId": "t1", "categoryName": "income"})
     assert categories_util.get_processing_percentage("t1", "income") == pytest.approx(1.0)
 
 
@@ -59,6 +71,30 @@ def test_update_category_invalidates_processing_percentage_cache(document_catego
     categories_util.update_category("t1", "income", processing_percentage=0.25)
 
     assert get_cache().get("processing_percentage:t1:income") is None
+
+
+def test_auto_register_category_skips_ddb_on_duplicate(
+    document_categories_table, clear_registered_categories, mocker
+):
+    mock_get_table = mocker.patch(
+        "documentai_api.utils.document_categories.AWSClientFactory.get_ddb_table",
+        return_value=document_categories_table,
+    )
+    categories_util.auto_register_category("t1", "income")
+    categories_util.auto_register_category("t1", "income")
+    mock_get_table.assert_called_once()
+
+
+def test_auto_register_category_evicts_oldest_at_cap(
+    document_categories_table, clear_registered_categories, mocker
+):
+    mocker.patch("documentai_api.utils.document_categories._MAX_REGISTERED_CATEGORIES", 2)
+    categories_util.auto_register_category("t1", "a")
+    categories_util.auto_register_category("t1", "b")
+    categories_util.auto_register_category("t1", "c")
+    assert ("t1", "a") not in categories_util._registered_categories
+    assert ("t1", "b") in categories_util._registered_categories
+    assert ("t1", "c") in categories_util._registered_categories
 
 
 def test_update_category_without_processing_percentage_does_not_invalidate_cache(
