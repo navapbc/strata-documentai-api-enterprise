@@ -395,24 +395,31 @@ def upsert_initial_ddb_record(
             textract_result = None
 
         else:
-            blur_outcome = _get_blur_outcome(file_bytes, content_type)
-            blur_result = blur_outcome.blur_result
-
-            if blur_outcome.process_status is not None:
-                process_status = blur_outcome.process_status
-                response_code = blur_outcome.response_code or ResponseCodes.SUCCESS
-            else:
-                preclassification = _run_preclassification(
+            with ThreadPoolExecutor(max_workers=2) as executor:
+                blur_future: Future[_BlurOutcome] = executor.submit(
+                    _get_blur_outcome, file_bytes, content_type
+                )
+                preclassification_future: Future[_PreclassificationOutcome] = executor.submit(
+                    _run_preclassification,
                     file_bytes,
                     content_type,
                     user_provided_document_category,
                     pages_detected,
                     ddb_key,
                 )
-                process_status = preclassification.process_status
-                response_code = preclassification.response_code
-                pre_classification = preclassification.pre_classification
-                textract_result = preclassification.textract_result
+
+            blur_outcome = blur_future.result()
+            preclassification_outcome = preclassification_future.result()
+            blur_result = blur_outcome.blur_result
+
+            if blur_outcome.process_status is not None:
+                process_status = blur_outcome.process_status
+                response_code = blur_outcome.response_code or ResponseCodes.SUCCESS
+            else:
+                process_status = preclassification_outcome.process_status
+                response_code = preclassification_outcome.response_code
+                pre_classification = preclassification_outcome.pre_classification
+                textract_result = preclassification_outcome.textract_result
 
         # initial status does not qualify for bda processing
         # create the json response signaling the process is complete
