@@ -34,6 +34,7 @@ class _Mock:
     FINALIZE_TEXTRACT_RESULT = "finalize_textract_result"
     IS_MULTIPAGE_DOCUMENT_FLAGGING_ENABLED = "is_multipage_document_flagging_enabled"
     BUILD_V1_API_RESPONSE = "build_v1_api_response"
+    GET_BBOX_IF_ENABLED = "get_bbox_if_enabled"
 
 
 _DEFAULT_PRECLASSIFY = BedrockClassificationResult(
@@ -93,6 +94,9 @@ def lifecycle_mocks(mocker):
         ),
         _Mock.BUILD_V1_API_RESPONSE: mocker.patch(
             "documentai_api.utils.ddb.build_v1_api_response", return_value={"status": "completed"}
+        ),
+        _Mock.GET_BBOX_IF_ENABLED: mocker.patch(
+            f"{_LIFECYCLE_MODULE}.get_bbox_if_enabled", return_value=None
         ),
     }
 
@@ -272,6 +276,39 @@ def test_blur_rejection_runs_preclassification_concurrently(
     lifecycle_mocks[_Mock.PRECLASSIFY_DOCUMENT].assert_called_once()
     item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
     assert item[DocumentMetadata.PROCESS_STATUS] == expected_status
+
+
+@pytest.mark.parametrize(
+    "content_type", ["image/jpeg", "image/png", "image/tiff", "application/pdf"]
+)
+def test_bbox_detection_submitted_concurrently(
+    ddb_doc_metadata_table, s3_bucket, lifecycle_mocks, content_type
+):
+    """get_bbox_if_enabled is always submitted concurrently regardless of content type."""
+    _upsert(s3_bucket, content_type=content_type)
+
+    lifecycle_mocks[_Mock.GET_BBOX_IF_ENABLED].assert_called_once()
+
+
+@pytest.mark.parametrize(
+    "content_type", ["image/jpeg", "image/png", "image/tiff", "application/pdf"]
+)
+def test_upsert_returns_bbox_future_for_all_image_and_pdf_types(
+    ddb_doc_metadata_table, s3_bucket, lifecycle_mocks, content_type
+):
+    """upsert_initial_ddb_record returns a non-None future for all types that proceed to extraction."""
+    s3_bucket.put_object(Key="input/test-file", Body=b"bytes", ContentType=content_type)
+    result = lifecycle_util.upsert_initial_ddb_record(
+        source_bucket_name=s3_bucket.name,
+        source_object_key="input/test-file",
+        original_file_name="test.pdf",
+        ddb_key="test-file",
+        user_provided_document_category="income",
+        job_id="test-job-id",
+        trace_id="test-trace-id",
+    )
+
+    assert result is not None
 
 
 def test_blur_detection_without_enforcement_proceeds_to_preclassify(

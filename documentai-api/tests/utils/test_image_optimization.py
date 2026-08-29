@@ -9,6 +9,7 @@ from PIL import Image
 from documentai_api.config.constants import ConfigDefaults
 from documentai_api.dtos.processing import CropResult
 from documentai_api.services import s3 as s3_service
+from documentai_api.utils.bbox_detection import BboxResult
 from documentai_api.utils.image_optimization import (
     convert_to_grayscale,
     crop_image_to_bbox,
@@ -163,34 +164,31 @@ def test_convert_to_grayscale_large_image_converts_to_pdf():
 
 def test_optimize_crop_disabled_is_noop(s3_bucket, mocker):
     """Feature flag off + no grayscale: object untouched, no write."""
-    mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=False)
-    detect = mocker.patch(f"{MODULE}.detect_document_bbox")
+    mocker.patch(f"{MODULE}.get_bbox_if_enabled", return_value=None)
     original = _png_bytes(100, 100)
     s3_bucket.put_object(Key="a.png", Body=original, ContentType="image/png")
 
     result = optimize_s3_image(s3_bucket.name, "a.png")
 
-    detect.assert_not_called()
     assert s3_bucket.Object("a.png").get()["Body"].read() == original
     assert result.crop_result.cropped is False
     assert result.grayscale_applied is False
 
 
 def test_optimize_skips_crop_for_non_image(s3_bucket, mocker):
-    """PDFs are never detected/cropped."""
-    mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=True)
-    detect = mocker.patch(f"{MODULE}.detect_document_bbox")
+    """PDFs are never cropped - get_bbox_if_enabled returns None for non-images."""
+    mocker.patch(f"{MODULE}.get_bbox_if_enabled", return_value=None)
     s3_bucket.put_object(Key="a.pdf", Body=b"%PDF-1.4", ContentType="application/pdf")
 
-    optimize_s3_image(s3_bucket.name, "a.pdf")
+    result = optimize_s3_image(s3_bucket.name, "a.pdf")
 
-    detect.assert_not_called()
+    assert result.crop_result.cropped is False
 
 
 def test_optimize_no_bbox_leaves_object(s3_bucket, mocker):
     """No bbox detected: object is left uncropped."""
     mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=True)
-    mocker.patch(f"{MODULE}.detect_document_bbox", return_value=(None, CropResult()))
+    mocker.patch(f"{MODULE}.get_bbox_if_enabled", return_value=BboxResult(bbox=None))
     original = _png_bytes(1000, 1000)
     s3_bucket.put_object(Key="a.png", Body=original, ContentType="image/png")
 
@@ -204,10 +202,10 @@ def test_optimize_crop_happy_path(s3_bucket, mocker):
     """A detected bbox crops the S3 image in place to a smaller image."""
     mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=True)
     mocker.patch(
-        f"{MODULE}.detect_document_bbox",
-        return_value=(
-            (200, 200, 600, 600),
-            CropResult(
+        f"{MODULE}.get_bbox_if_enabled",
+        return_value=BboxResult(
+            bbox=(200, 200, 600, 600),
+            crop_result=CropResult(
                 duration_seconds=Decimal("0.5"),
                 input_tokens=100,
                 output_tokens=50,
@@ -228,9 +226,9 @@ def test_optimize_crop_happy_path(s3_bucket, mocker):
 
 
 def test_optimize_detect_bbox_error_is_best_effort(s3_bucket, mocker):
-    """detect_document_bbox failure: object untouched, no crash."""
+    """get_bbox_if_enabled failure: object untouched, no crash."""
     mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=True)
-    mocker.patch(f"{MODULE}.detect_document_bbox", side_effect=RuntimeError("Bedrock timeout"))
+    mocker.patch(f"{MODULE}.get_bbox_if_enabled", side_effect=RuntimeError("Bedrock timeout"))
     original = _png_bytes(100, 100)
     s3_bucket.put_object(Key="a.png", Body=original, ContentType="image/png")
 
@@ -245,8 +243,8 @@ def test_optimize_crop_raises_is_best_effort(s3_bucket, mocker):
     """crop_image_to_bbox failure (e.g. unusable region): object untouched, no crash."""
     mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=True)
     mocker.patch(
-        f"{MODULE}.detect_document_bbox",
-        return_value=((200, 200, 600, 600), CropResult()),
+        f"{MODULE}.get_bbox_if_enabled",
+        return_value=BboxResult(bbox=(200, 200, 600, 600)),
     )
     mocker.patch(f"{MODULE}.crop_image_to_bbox", side_effect=ValueError("empty crop region"))
     original = _png_bytes(1000, 1000)
@@ -304,10 +302,10 @@ def test_optimize_crop_and_grayscale_single_write(s3_bucket, mocker):
     """Both crop and grayscale applied with only one S3 PUT to the live object."""
     mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=True)
     mocker.patch(
-        f"{MODULE}.detect_document_bbox",
-        return_value=(
-            (200, 200, 600, 600),
-            CropResult(
+        f"{MODULE}.get_bbox_if_enabled",
+        return_value=BboxResult(
+            bbox=(200, 200, 600, 600),
+            crop_result=CropResult(
                 duration_seconds=Decimal("0.5"),
                 input_tokens=100,
                 output_tokens=50,

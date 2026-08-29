@@ -255,6 +255,7 @@ def test_main_first_time_image(input_image, mocker, ddb_doc_metadata_table, mock
         apply_grayscale=True,
         file_bytes=ANY,
         content_type="image/jpeg",
+        precomputed_bbox=ANY,
     )
     mock_invoke.assert_called_once_with(
         input_image.bucket_name,

@@ -22,9 +22,11 @@ from documentai_api.dtos.processing import InternalApiResponse
 from documentai_api.logging import get_logger
 from documentai_api.models.document_record import DocumentRecord
 from documentai_api.services import s3 as s3_service
+from documentai_api.utils.bbox_detection import BboxResult
 from documentai_api.utils.blur_detection import BlurResult, detect_blur
 from documentai_api.utils.ddb import update_ddb, upsert_ddb
 from documentai_api.utils.evaluations import BlurSkipReason
+from documentai_api.utils.image_optimization import get_bbox_if_enabled
 from documentai_api.utils.otel_context import submit_with_otel_context
 from documentai_api.utils.preclassification import find_matching_blueprint, preclassify_document
 from documentai_api.utils.response_builder import get_internal_api_response
@@ -323,7 +325,7 @@ def upsert_initial_ddb_record(
     content_type: str | None = None,
     file_size_bytes: int | None = None,
     s3_fetch_duration_seconds: Decimal | None = None,
-) -> None:
+) -> Future[BboxResult | None] | None:
     """Run preclassification on the S3 object and upsert its DDB record.
 
     Creates the row if it doesn't exist; updates it in place if it does. Safe
@@ -396,7 +398,7 @@ def upsert_initial_ddb_record(
             textract_result = None
 
         else:
-            with ThreadPoolExecutor(max_workers=2) as executor:
+            with ThreadPoolExecutor(max_workers=3) as executor:
                 blur_future: Future[_BlurOutcome] = submit_with_otel_context(
                     executor, _get_blur_outcome, file_bytes, content_type
                 )
@@ -410,6 +412,9 @@ def upsert_initial_ddb_record(
                         pages_detected,
                         ddb_key,
                     )
+                )
+                bbox_future: Future[BboxResult | None] = submit_with_otel_context(
+                    executor, get_bbox_if_enabled, file_bytes, content_type
                 )
 
             blur_outcome = blur_future.result()
@@ -478,3 +483,8 @@ def upsert_initial_ddb_record(
         # Textract completed inline -- finalize the record with extraction results
         if textract_result is not None:
             finalize_textract_result(ddb_key, textract_result, user_provided_document_category)
+
+        if ProcessStatus.is_pending_extraction(process_status):
+            return bbox_future
+
+        return None

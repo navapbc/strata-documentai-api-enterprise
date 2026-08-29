@@ -3,6 +3,7 @@
 import io
 import re
 import time
+from dataclasses import dataclass, field
 from decimal import Decimal
 
 from PIL import Image
@@ -18,6 +19,12 @@ from documentai_api.services.bedrock import invoke_model
 from documentai_api.utils.ssm import get_parameter_value
 
 logger = get_logger(__name__)
+
+
+@dataclass
+class BboxResult:
+    bbox: tuple[float, float, float, float] | None = None
+    crop_result: CropResult = field(default_factory=CropResult)
 
 
 def _get_bbox_model_id() -> str:
@@ -82,14 +89,12 @@ def _downscale_for_detection(image_bytes: bytes, content_type: str) -> tuple[byt
         return image_bytes, fmt
 
 
-def detect_document_bbox(
-    image_bytes: bytes, content_type: str
-) -> tuple[tuple[float, float, float, float] | None, CropResult]:
+def detect_document_bbox(image_bytes: bytes, content_type: str) -> BboxResult:
     """Detect the primary document's bounding box in an image via Bedrock vision model."""
-    result = CropResult()
+    result = BboxResult()
 
     if not content_type.startswith("image/"):
-        return None, result
+        return result
 
     detection_bytes, detection_format = _downscale_for_detection(image_bytes, content_type)
 
@@ -110,22 +115,25 @@ def detect_document_bbox(
         elapsed = round(time.time() - start, 2)
 
         usage = response.get("usage", {})
-        result.duration_seconds = Decimal(str(elapsed))
-        result.input_tokens = usage.get("inputTokens")
-        result.output_tokens = usage.get("outputTokens")
-        result.model_id = model_id
+        result.crop_result.duration_seconds = Decimal(str(elapsed))
+        result.crop_result.input_tokens = usage.get("inputTokens")
+        result.crop_result.output_tokens = usage.get("outputTokens")
+        result.crop_result.model_id = model_id
 
         text = response["output"]["message"]["content"][0]["text"]
         box = _parse_bbox(text)
+
         if box is None:
-            return None, result
+            return result
 
         x1, y1, x2, y2 = box
+
         if not (0 <= x1 < x2 <= 1000 and 0 <= y1 < y2 <= 1000):
             logger.warning(f"Ignoring invalid document bbox: {box}")
-            return None, result
+            return result
 
-        return (x1, y1, x2, y2), result
+        result.bbox = (x1, y1, x2, y2)
+        return result
     except Exception as e:
         logger.warning(f"Document bbox detection failed: {e}")
-        return None, result
+        return result

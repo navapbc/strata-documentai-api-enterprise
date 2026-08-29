@@ -29,6 +29,7 @@ def submit_with_otel_context(executor: Executor, fn: Callable[..., _T], *args: A
 
     def _run() -> _T:
         token = otel_context.attach(ctx)
+
         try:
             return fn(*args)
         finally:
