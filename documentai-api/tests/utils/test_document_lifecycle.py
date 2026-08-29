@@ -248,6 +248,32 @@ def test_upsert_initial_ddb_record(
         assert DocumentMetadata.RESPONSE_JSON not in item
 
 
+@pytest.mark.parametrize(
+    ("blur_result", "expected_status"),
+    [
+        (
+            BlurResult(is_blurry=True, is_not_document=False, word_count=3, avg_confidence=45.0),
+            ProcessStatus.BLURRY_DOCUMENT_DETECTED,
+        ),
+        (
+            BlurResult(is_blurry=False, is_not_document=True, word_count=0),
+            ProcessStatus.NO_DOCUMENT_DETECTED,
+        ),
+    ],
+)
+def test_blur_rejection_runs_preclassification_concurrently(
+    ddb_doc_metadata_table, s3_bucket, lifecycle_mocks, blur_result, expected_status
+):
+    """Blur and preclassification concurrent execution validation."""
+    lifecycle_mocks[_Mock.DETECT_BLUR].return_value = blur_result
+
+    _upsert(s3_bucket)
+
+    lifecycle_mocks[_Mock.PRECLASSIFY_DOCUMENT].assert_called_once()
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
+    assert item[DocumentMetadata.PROCESS_STATUS] == expected_status
+
+
 def test_blur_detection_without_enforcement_proceeds_to_preclassify(
     ddb_doc_metadata_table, s3_bucket, lifecycle_mocks
 ):

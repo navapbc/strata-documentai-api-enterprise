@@ -25,6 +25,7 @@ from documentai_api.services import s3 as s3_service
 from documentai_api.utils.blur_detection import BlurResult, detect_blur
 from documentai_api.utils.ddb import update_ddb, upsert_ddb
 from documentai_api.utils.evaluations import BlurSkipReason
+from documentai_api.utils.otel_context import submit_with_otel_context
 from documentai_api.utils.preclassification import find_matching_blueprint, preclassify_document
 from documentai_api.utils.response_builder import get_internal_api_response
 from documentai_api.utils.response_codes import ResponseCodes
@@ -244,8 +245,8 @@ def _run_preclassification(
         span.set_attribute("document.content_type", content_type)
         span.set_attribute("document.key", ddb_key)
         with ThreadPoolExecutor(max_workers=2) as executor:
-            blueprint_future: Future[PreclassificationMatchResult] = executor.submit(
-                find_matching_blueprint, file_bytes, content_type
+            blueprint_future: Future[PreclassificationMatchResult] = submit_with_otel_context(
+                executor, find_matching_blueprint, file_bytes, content_type
             )
             preclassification = preclassify_document(
                 file_bytes, content_type, user_provided_document_category or None
@@ -395,24 +396,34 @@ def upsert_initial_ddb_record(
             textract_result = None
 
         else:
-            blur_outcome = _get_blur_outcome(file_bytes, content_type)
+            with ThreadPoolExecutor(max_workers=2) as executor:
+                blur_future: Future[_BlurOutcome] = submit_with_otel_context(
+                    executor, _get_blur_outcome, file_bytes, content_type
+                )
+                preclassification_future: Future[_PreclassificationOutcome] = (
+                    submit_with_otel_context(
+                        executor,
+                        _run_preclassification,
+                        file_bytes,
+                        content_type,
+                        user_provided_document_category,
+                        pages_detected,
+                        ddb_key,
+                    )
+                )
+
+            blur_outcome = blur_future.result()
+            preclassification_outcome = preclassification_future.result()
             blur_result = blur_outcome.blur_result
 
             if blur_outcome.process_status is not None:
                 process_status = blur_outcome.process_status
                 response_code = blur_outcome.response_code or ResponseCodes.SUCCESS
             else:
-                preclassification = _run_preclassification(
-                    file_bytes,
-                    content_type,
-                    user_provided_document_category,
-                    pages_detected,
-                    ddb_key,
-                )
-                process_status = preclassification.process_status
-                response_code = preclassification.response_code
-                pre_classification = preclassification.pre_classification
-                textract_result = preclassification.textract_result
+                process_status = preclassification_outcome.process_status
+                response_code = preclassification_outcome.response_code
+                pre_classification = preclassification_outcome.pre_classification
+                textract_result = preclassification_outcome.textract_result
 
         # initial status does not qualify for bda processing
         # create the json response signaling the process is complete
