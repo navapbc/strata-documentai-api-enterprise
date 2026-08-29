@@ -15,13 +15,25 @@ from documentai_api.config.constants import ConfigDefaults, FileValidation
 from documentai_api.dtos.processing import CropResult, OptimizationResult
 from documentai_api.logging import get_logger
 from documentai_api.services import s3 as s3_service
-from documentai_api.utils.bbox_detection import detect_document_bbox
+from documentai_api.utils.bbox_detection import BboxResult, detect_document_bbox
 from documentai_api.utils.ssm import is_document_crop_enabled
 
 # Limit maximum image pixels to prevent pixel-flood DoS.
 Image.MAX_IMAGE_PIXELS = ConfigDefaults.MAX_IMAGE_PIXELS
 
 logger = get_logger(__name__)
+
+
+def get_bbox_if_enabled(file_bytes: bytes, content_type: str) -> BboxResult | None:
+    """Run bbox detection if the crop feature flag is enabled and content is an image.
+
+    Returns None when crop is disabled or content_type is not an image, so callers
+    can treat None as "skip crop" without re-checking the flag.
+    """
+    if not is_document_crop_enabled() or not content_type.startswith("image/"):
+        return None
+
+    return detect_document_bbox(file_bytes, content_type)
 
 
 def crop_image_to_bbox(
@@ -135,6 +147,7 @@ def optimize_s3_image(
     apply_grayscale: bool = False,
     file_bytes: bytes | None = None,
     content_type: str | None = None,
+    precomputed_bbox: BboxResult | None = None,
 ) -> OptimizationResult:
     """Crop and/or grayscale-convert an S3 image in a single download/upload pass.
 
@@ -171,24 +184,22 @@ def optimize_s3_image(
     t1 = time.monotonic()
 
     # --- Crop (best-effort: any failure leaves bytes untouched) ---
-    if is_document_crop_enabled() and content_type.startswith("image/"):
+    if content_type.startswith("image/"):
         try:
-            bbox, crop_result = detect_document_bbox(file_bytes, content_type)
-            result.crop_result = crop_result
-
-            if bbox is not None:
-                cropped_bytes = crop_image_to_bbox(file_bytes, bbox)
-                file_bytes = cropped_bytes
-                modified = True
-
-                x1, y1, x2, y2 = bbox
-                retained = Decimal(str(round((x2 - x1) * (y2 - y1) / 1_000_000 * 100, 2)))
-                crop_result.cropped = True
-                crop_result.bounding_box = bbox
-                crop_result.retained_percentage = retained
-                logger.info(f"Cropped {object_key} to document ROI (retained {retained}%)")
-            else:
-                logger.info(f"No document ROI detected for {object_key}; skipping crop")
+            bbox_result = precomputed_bbox or get_bbox_if_enabled(file_bytes, content_type)
+            if bbox_result is not None:
+                result.crop_result = bbox_result.crop_result
+                if bbox_result.bbox is not None:
+                    file_bytes = crop_image_to_bbox(file_bytes, bbox_result.bbox)
+                    modified = True
+                    x1, y1, x2, y2 = bbox_result.bbox
+                    retained = Decimal(str(round((x2 - x1) * (y2 - y1) / 1_000_000 * 100, 2)))
+                    bbox_result.crop_result.cropped = True
+                    bbox_result.crop_result.bounding_box = bbox_result.bbox
+                    bbox_result.crop_result.retained_percentage = retained
+                    logger.info(f"Cropped {object_key} to document ROI (retained {retained}%)")
+                else:
+                    logger.info(f"No document ROI detected for {object_key}; skipping crop")
         except Exception as e:
             logger.warning(f"Document ROI crop skipped for {object_key}: {e}")
 

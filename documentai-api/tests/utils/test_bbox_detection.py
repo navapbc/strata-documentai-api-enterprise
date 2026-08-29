@@ -48,14 +48,14 @@ def _make_image_bytes(width: int, height: int, *, noise: bool = False, fmt: str 
 
 def test_detect_bbox_returns_box(monkeypatch):
     _patch_bbox_invoke(monkeypatch, _mock_invoke_response({"bounding_box": [100, 200, 800, 900]}))
-    bbox, _ = detect_document_bbox(SAMPLE_IMAGE, "image/png")
-    assert bbox == (100.0, 200.0, 800.0, 900.0)
+    result = detect_document_bbox(SAMPLE_IMAGE, "image/png")
+    assert result.bbox == (100.0, 200.0, 800.0, 900.0)
 
 
 def test_detect_bbox_null_returns_none(monkeypatch):
     _patch_bbox_invoke(monkeypatch, _mock_invoke_response({"bounding_box": None}))
-    bbox, _ = detect_document_bbox(SAMPLE_IMAGE, "image/png")
-    assert bbox is None
+    result = detect_document_bbox(SAMPLE_IMAGE, "image/png")
+    assert result.bbox is None
 
 
 @pytest.mark.parametrize(
@@ -69,13 +69,13 @@ def test_detect_bbox_null_returns_none(monkeypatch):
 )
 def test_detect_bbox_rejects_invalid(monkeypatch, box):
     _patch_bbox_invoke(monkeypatch, _mock_invoke_response({"bounding_box": box}))
-    bbox, _ = detect_document_bbox(SAMPLE_IMAGE, "image/png")
-    assert bbox is None
+    result = detect_document_bbox(SAMPLE_IMAGE, "image/png")
+    assert result.bbox is None
 
 
 def test_detect_bbox_non_image_returns_none():
-    bbox, _ = detect_document_bbox(b"%PDF-1.4", "application/pdf")
-    assert bbox is None
+    result = detect_document_bbox(b"%PDF-1.4", "application/pdf")
+    assert result.bbox is None
 
 
 def test_detect_bbox_downscales_oversized_image(monkeypatch):
@@ -91,8 +91,8 @@ def test_detect_bbox_downscales_oversized_image(monkeypatch):
 
     monkeypatch.setattr("documentai_api.utils.bbox_detection.invoke_model", capture_invoke)
 
-    bbox, _ = detect_document_bbox(big, "image/png")
-    assert bbox == (100.0, 200.0, 800.0, 900.0)
+    result = detect_document_bbox(big, "image/png")
+    assert result.bbox == (100.0, 200.0, 800.0, 900.0)
     sent_bytes = sent["image"]["source"]["bytes"]
     assert len(sent_bytes) <= int(ConfigDefaults.BEDROCK_CONVERSE_MAX_IMAGE_BYTES)
     assert sent["image"]["format"] == "jpeg"
@@ -139,8 +139,8 @@ def test_detect_bbox_swallows_errors(monkeypatch):
         raise RuntimeError("bedrock down")
 
     monkeypatch.setattr("documentai_api.utils.bbox_detection.invoke_model", boom)
-    bbox, _ = detect_document_bbox(SAMPLE_IMAGE, "image/png")
-    assert bbox is None
+    result = detect_document_bbox(SAMPLE_IMAGE, "image/png")
+    assert result.bbox is None
 
 
 def test_get_bbox_model_id_uses_default(monkeypatch):
@@ -186,8 +186,8 @@ def test_bbox_detection_uses_bbox_model_id(monkeypatch):
 
     monkeypatch.setattr("documentai_api.utils.bbox_detection.invoke_model", capture_invoke)
 
-    bbox, _ = detect_document_bbox(SAMPLE_IMAGE, "image/png")
-    assert bbox == (100.0, 200.0, 800.0, 900.0)
+    result = detect_document_bbox(SAMPLE_IMAGE, "image/png")
+    assert result.bbox == (100.0, 200.0, 800.0, 900.0)
     assert used["model_id"] == "bbox-model"
 
 
@@ -240,20 +240,20 @@ def test_detect_document_bbox_real(filename, monkeypatch, real_aws_credentials):
     image_bytes = filepath.read_bytes()
     content_type = _get_content_type(filename)
 
-    bbox, metrics = detect_document_bbox(image_bytes, content_type)
-    assert bbox is not None, f"{filename}: no bounding box detected"
+    result = detect_document_bbox(image_bytes, content_type)
+    assert result.bbox is not None, f"{filename}: no bounding box detected"
 
-    assert metrics.model_id == "us.amazon.nova-lite-v1:0"
-    assert metrics.duration_seconds is not None
-    assert metrics.duration_seconds > 0
-    assert metrics.input_tokens is not None
-    assert metrics.input_tokens > 0
-    assert metrics.output_tokens is not None
-    assert metrics.output_tokens > 0
+    assert result.crop_result.model_id == "us.amazon.nova-lite-v1:0"
+    assert result.crop_result.duration_seconds is not None
+    assert result.crop_result.duration_seconds > 0
+    assert result.crop_result.input_tokens is not None
+    assert result.crop_result.input_tokens > 0
+    assert result.crop_result.output_tokens is not None
+    assert result.crop_result.output_tokens > 0
 
-    x1, y1, x2, y2 = bbox
-    assert 0 <= x1 < x2 <= 1000, f"{filename}: invalid x range in {bbox}"
-    assert 0 <= y1 < y2 <= 1000, f"{filename}: invalid y range in {bbox}"
+    x1, y1, x2, y2 = result.bbox
+    assert 0 <= x1 < x2 <= 1000, f"{filename}: invalid x range in {result.bbox}"
+    assert 0 <= y1 < y2 <= 1000, f"{filename}: invalid y range in {result.bbox}"
 
     area_fraction = ((x2 - x1) * (y2 - y1)) / (1000 * 1000)
     assert area_fraction < 0.98, (
@@ -261,10 +261,10 @@ def test_detect_document_bbox_real(filename, monkeypatch, real_aws_credentials):
     )
 
     BBOX_OUTPUT_DIR.mkdir(exist_ok=True)
-    cropped = crop_image_to_bbox(image_bytes, bbox)
+    cropped = crop_image_to_bbox(image_bytes, result.bbox)
     out_path = BBOX_OUTPUT_DIR / f"{Path(filename).stem}.cropped{Path(filename).suffix}"
     out_path.write_bytes(cropped)
-    print(f"\n{filename}: bbox={bbox} area={area_fraction:.0%} -> {out_path}")
+    print(f"\n{filename}: bbox={result.bbox} area={area_fraction:.0%} -> {out_path}")
 
 
 @pytest.mark.integration
@@ -294,14 +294,14 @@ def test_detect_document_bbox_oversized_real(monkeypatch, real_aws_credentials):
     image_bytes = buf.getvalue()
     assert len(image_bytes) > int(ConfigDefaults.BEDROCK_CONVERSE_MAX_IMAGE_BYTES)
 
-    bbox, _ = detect_document_bbox(image_bytes, "image/png")
-    assert bbox is not None, f"{filename}: no bbox detected on oversized image"
+    result = detect_document_bbox(image_bytes, "image/png")
+    assert result.bbox is not None, f"{filename}: no bbox detected on oversized image"
 
-    x1, y1, x2, y2 = bbox
-    assert 0 <= x1 < x2 <= 1000, f"invalid x range in {bbox}"
-    assert 0 <= y1 < y2 <= 1000, f"invalid y range in {bbox}"
+    x1, y1, x2, y2 = result.bbox
+    assert 0 <= x1 < x2 <= 1000, f"invalid x range in {result.bbox}"
+    assert 0 <= y1 < y2 <= 1000, f"invalid y range in {result.bbox}"
 
-    cropped = crop_image_to_bbox(image_bytes, bbox)
+    cropped = crop_image_to_bbox(image_bytes, result.bbox)
     cw, ch = Image.open(io.BytesIO(cropped)).size
     assert cw < big.width, "crop did not reduce original width"
     assert ch < big.height, "crop did not reduce original height"

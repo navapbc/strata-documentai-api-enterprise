@@ -241,7 +241,7 @@ def main(
     )
 
     if needs_preclassification:
-        upsert_initial_ddb_record(
+        bbox_future = upsert_initial_ddb_record(
             source_bucket_name=bucket_name,
             source_object_key=object_key,
             ddb_key=ddb_key,
@@ -262,6 +262,9 @@ def main(
             s3_fetch_duration_seconds=s3_fetch_duration,
         )
         existing_record = get_ddb_record(ddb_key)
+
+    else:
+        bbox_future = None
 
     if existing_record is None:
         raise Exception("Could not retrieve DDB record after upsert")
@@ -311,6 +314,7 @@ def main(
             apply_grayscale=True,
             file_bytes=s3_file_bytes,
             content_type=s3_content_type,
+            precomputed_bbox=bbox_future.result() if bbox_future is not None else None,
         )
         if not opt.too_large and not opt.failed:
             _persist_optimization_metrics(
@@ -358,6 +362,7 @@ def main(
             apply_grayscale=False,
             file_bytes=s3_file_bytes,
             content_type=s3_content_type,
+            precomputed_bbox=bbox_future.result() if bbox_future is not None else None,
         )
         _persist_optimization_metrics(
             ddb_key, opt.crop_result, False, opt.file_size_bytes, opt_result=opt
