@@ -19,7 +19,7 @@ from documentai_api.models.admin_document import (
     DocumentListResponse,
     DocumentPreviewResponse,
 )
-from documentai_api.models.api_responses import UploadAsyncResponse
+from documentai_api.models.job_status import UploadAsyncResponse
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils.auth import UserContext, get_user_context_with_fallback

@@ -8,7 +8,7 @@ from typing import Any
 from documentai_api.config.constants import ProcessStatus
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.logging import get_logger
-from documentai_api.models.api_responses import JobStatusResponse
+from documentai_api.models.job_status import JobStatusResponse
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.ddb import get_ddb_by_job_id
 from documentai_api.utils.document_classification import classify_as_failed

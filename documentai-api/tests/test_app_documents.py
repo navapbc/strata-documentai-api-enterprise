@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from documentai_api.config.constants import DeletionType
-from documentai_api.models.api_responses import JobStatusResponse
+from documentai_api.models.job_status import JobStatusResponse
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.jobs import JobStatus
 

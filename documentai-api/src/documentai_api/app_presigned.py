@@ -23,8 +23,8 @@ from documentai_api.config.constants import (
 )
 from documentai_api.config.env import get_app_env_config, get_aws_config
 from documentai_api.logging import get_logger
-from documentai_api.models.api_responses import PresignedUploadResponse
 from documentai_api.models.document_record import DocumentRecord
+from documentai_api.models.presigned import PresignedUploadResponse
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils.auth import get_user_context_from_api_key
 from documentai_api.utils.document_lifecycle import insert_minimal_ddb_record

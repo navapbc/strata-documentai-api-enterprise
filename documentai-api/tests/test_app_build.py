@@ -224,7 +224,7 @@ def test_submit_document_build_not_found(document_build_ddb_table, mock_document
 
 def test_submit_document_build_synchronous(document_build_ddb_table, mock_document_build_submit):
     """Test synchronous document build submission via /submit/wait."""
-    from documentai_api.models.api_responses import JobStatusResponse
+    from documentai_api.models.job_status import JobStatusResponse
 
     with patch(
         "documentai_api.utils.jobs.poll_for_completion",
@@ -1116,7 +1116,7 @@ def test_build_submit_wait_forwards_include_extracted_data(
     document_build_ddb_table, mock_document_build_submit
 ):
     """Build /submit/wait passes include_extracted_data to poll_for_completion."""
-    from documentai_api.models.api_responses import JobStatusResponse
+    from documentai_api.models.job_status import JobStatusResponse
 
     with patch(
         "documentai_api.utils.jobs.poll_for_completion",
