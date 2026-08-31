@@ -558,8 +558,8 @@ def test_create_document_external_system_id_invalid_chars(api_client, blank_pdf_
 
 
 def test_create_document_sync_timeout_capped(api_client, blank_pdf_bytes, mocker):
-    """Test that /v1/documents/wait caps timeout to MAX_WAIT_SECONDS - ALB_TIMEOUT_BUFFER_SECONDS."""
-    from documentai_api.config.constants import ConfigDefaults
+    """Test that /v1/documents/wait caps timeout to _APIGW_MAX_TIMEOUT_SECONDS."""
+    from documentai_api.app_documents import _APIGW_MAX_TIMEOUT_SECONDS
 
     mock_poll = mocker.patch("documentai_api.app_documents.poll_for_completion")
     mock_poll.return_value = JobStatusResponse(
@@ -570,10 +570,9 @@ def test_create_document_sync_timeout_capped(api_client, blank_pdf_bytes, mocker
     response = api_client.post("/v1/documents/wait?timeout=99999", files=files)
 
     assert response.status_code == 200
-    expected_cap = ConfigDefaults.MAX_WAIT_SECONDS - ConfigDefaults.ALB_TIMEOUT_BUFFER_SECONDS
     mock_poll.assert_called_once()
     actual_timeout = mock_poll.call_args[0][1]
-    assert actual_timeout == expected_cap
+    assert actual_timeout == _APIGW_MAX_TIMEOUT_SECONDS
 
 
 def test_create_document_ai_consent_none_proceeds(api_client, blank_pdf_bytes, mocker):
@@ -660,8 +659,8 @@ def test_create_document_sync_passes_request_to_poll(api_client, blank_pdf_bytes
 
 
 def test_create_document_sync_default_timeout(api_client, blank_pdf_bytes, mocker):
-    """Test that omitting timeout uses the default (MAX_WAIT_SECONDS - ALB_TIMEOUT_BUFFER_SECONDS)."""
-    from documentai_api.config.constants import ConfigDefaults
+    """Test that omitting timeout uses the default (_APIGW_MAX_TIMEOUT_SECONDS)."""
+    from documentai_api.app_documents import _APIGW_MAX_TIMEOUT_SECONDS
 
     mock_poll = mocker.patch("documentai_api.app_documents.poll_for_completion")
     mock_poll.return_value = JobStatusResponse(
@@ -672,9 +671,8 @@ def test_create_document_sync_default_timeout(api_client, blank_pdf_bytes, mocke
     response = api_client.post("/v1/documents/wait", files=files)
 
     assert response.status_code == 200
-    expected = ConfigDefaults.MAX_WAIT_SECONDS - ConfigDefaults.ALB_TIMEOUT_BUFFER_SECONDS
     actual_timeout = mock_poll.call_args[0][1]
-    assert actual_timeout == expected
+    assert actual_timeout == _APIGW_MAX_TIMEOUT_SECONDS
 
 
 def test_get_document_invalid_uuid_returns_422(api_client):

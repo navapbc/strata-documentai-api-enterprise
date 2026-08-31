@@ -77,8 +77,9 @@
           "Documents:Upload"
         ],
         "summary": "Create Document Wait",
-        "description": "Upload a document and poll until processing completes or timeout.\n\nNote: does not accept the `demo` flag. Demo uploads use the async endpoint\nwith client-side polling so the Lambda doesn't hold a connection open for\nthe full processing duration.",
+        "description": "**Deprecated.** Upload a document and poll until processing completes or timeout.\n\nThis endpoint is deprecated and will be removed in a future release.\nAPI Gateway HTTP API enforces a hard 30-second integration timeout; BDA extraction\ncommonly takes 30-50 seconds, so this endpoint cannot reliably return a result before\nthe gateway terminates the connection.\n\nUse `POST /v1/documents` instead and poll `GET /v1/documents/{job_id}` for the result.",
         "operationId": "create_document_wait_v1_documents_wait_post",
+        "deprecated": true,
         "security": [
           {
             "APIKeyHeader": []
@@ -112,7 +113,7 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "default": 105,
+              "default": 25,
               "title": "Timeout"
             }
           },
@@ -814,8 +815,9 @@
           "Builds:Lifecycle"
         ],
         "summary": "Submit Document Build Wait",
-        "description": "Submit a multi-page build and poll until processing completes or timeout.",
+        "description": "**Deprecated.** Submit a multi-page build and poll until processing completes or timeout.\n\nThis endpoint is deprecated and will be removed in a future release.\nAPI Gateway HTTP API enforces a hard 30-second integration timeout; BDA extraction\ncommonly takes 30-50 seconds, so this endpoint cannot reliably return a result before\nthe gateway terminates the connection.\n\nUse `POST /v1/builds/{build_id}/submit` instead and poll `GET /v1/documents/{job_id}` for the result.",
         "operationId": "submit_document_build_wait_v1_builds__build_id__submit_wait_post",
+        "deprecated": true,
         "security": [
           {
             "APIKeyHeader": []
@@ -848,7 +850,7 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "default": 105,
+              "default": 25,
               "title": "Timeout"
             }
           },

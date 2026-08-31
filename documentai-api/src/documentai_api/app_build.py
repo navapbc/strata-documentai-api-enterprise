@@ -123,6 +123,9 @@ async def add_page_to_build(
     return BuildPageBatchItem(page_number=page_number, file_name=file.filename)
 
 
+_APIGW_MAX_TIMEOUT_SECONDS = 25  # API Gateway HTTP API hard limit is 30s; leave 5s buffer
+
+
 @router.post(
     "/v1/builds",
     tags=[ApiVisualizationTag.BUILDS_LIFECYCLE],
@@ -491,6 +494,7 @@ async def submit_document_build(
     "/v1/builds/{build_id}/submit/wait",
     dependencies=[Depends(validate_build_tenant_access)],
     tags=[ApiVisualizationTag.BUILDS_LIFECYCLE],
+    deprecated=True,
 )
 async def submit_document_build_wait(
     request: Request,
@@ -499,10 +503,17 @@ async def submit_document_build_wait(
     auth: AuthUser,
     trace_id: Annotated[str | None, Header(alias="X-Trace-ID")] = None,
     include_extracted_data: bool = False,
-    timeout: Annotated[int, Query(ge=1)] = ConfigDefaults.MAX_WAIT_SECONDS
-    - ConfigDefaults.ALB_TIMEOUT_BUFFER_SECONDS,
+    timeout: Annotated[int, Query(ge=1)] = _APIGW_MAX_TIMEOUT_SECONDS,
 ) -> JobStatusResponse:
-    """Submit a multi-page build and poll until processing completes or timeout."""
+    """**Deprecated.** Submit a multi-page build and poll until processing completes or timeout.
+
+    This endpoint is deprecated and will be removed in a future release.
+    API Gateway HTTP API enforces a hard 30-second integration timeout; BDA extraction
+    commonly takes 30-50 seconds, so this endpoint cannot reliably return a result before
+    the gateway terminates the connection.
+
+    Use `POST /v1/builds/{build_id}/submit` instead and poll `GET /v1/documents/{job_id}` for the result.
+    """
     from documentai_api.utils.jobs import poll_for_completion
 
     result = await _submit_build(response, build_id, trace_id, auth.tenant_id, auth.api_key_name)
@@ -512,9 +523,7 @@ async def submit_document_build_wait(
             job_status=result.job_status,
             message=result.message,
         )
-    safe_timeout = min(
-        timeout, ConfigDefaults.MAX_WAIT_SECONDS - ConfigDefaults.ALB_TIMEOUT_BUFFER_SECONDS
-    )
+    safe_timeout = min(timeout, _APIGW_MAX_TIMEOUT_SECONDS)
     return await poll_for_completion(
         result.job_id, safe_timeout, request=request, include_extracted_data=include_extracted_data
     )
