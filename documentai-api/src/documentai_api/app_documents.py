@@ -217,9 +217,13 @@ async def create_document(
     )
 
 
+_APIGW_MAX_TIMEOUT_SECONDS = 25  # API Gateway HTTP API hard limit is 30s; leave 5s buffer
+
+
 @router.post(
     "/v1/documents/wait",
     tags=[ApiVisualizationTag.DOCUMENTS_UPLOAD],
+    deprecated=True,
 )
 async def create_document_wait(
     request: Request,
@@ -233,15 +237,17 @@ async def create_document_wait(
     ai_consent_flag: AiConsentFlag = True,
     include_extracted_data: bool = False,
     include_bounding_box: bool = False,
-    timeout: Annotated[int, Query(ge=1)] = ConfigDefaults.MAX_WAIT_SECONDS
-    - ConfigDefaults.ALB_TIMEOUT_BUFFER_SECONDS,
+    timeout: Annotated[int, Query(ge=1)] = _APIGW_MAX_TIMEOUT_SECONDS,
     upload_source: UploadSourceField = None,
 ) -> JobStatusResponse:
-    """Upload a document and poll until processing completes or timeout.
+    """**Deprecated.** Upload a document and poll until processing completes or timeout.
 
-    Note: does not accept the `demo` flag. Demo uploads use the async endpoint
-    with client-side polling so the Lambda doesn't hold a connection open for
-    the full processing duration.
+    This endpoint is deprecated and will be removed in a future release.
+    API Gateway HTTP API enforces a hard 30-second integration timeout; BDA extraction
+    commonly takes 30-50 seconds, so this endpoint cannot reliably return a result before
+    the gateway terminates the connection.
+
+    Use `POST /v1/documents` instead and poll `GET /v1/documents/{job_id}` for the result.
     """
     if include_bounding_box:
         include_extracted_data = True
@@ -263,9 +269,7 @@ async def create_document_wait(
             job_status=result.job_status,
             message=result.message,
         )
-    safe_timeout = min(
-        timeout, ConfigDefaults.MAX_WAIT_SECONDS - ConfigDefaults.ALB_TIMEOUT_BUFFER_SECONDS
-    )
+    safe_timeout = min(timeout, _APIGW_MAX_TIMEOUT_SECONDS)
     return await poll_for_completion(
         result.job_id,
         safe_timeout,

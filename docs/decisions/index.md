@@ -10,6 +10,7 @@ This log lists the architectural decisions for DocumentAI API.
 * [ADR-2026-08-06](2026-08-06-audit-log-actor-dropdown-source.md) - Audit Log Actor Dropdown: Use Cognito as the Sole Source
 * [ADR-2026-08-14](2026-08-14-document-identity-model.md) - Defer the Document/Job Identity Split; Start Collecting `systemDocumentId` Now
 * [ADR-2026-08-25](2026-08-25-blueprint-schema-preload.md) - Preload BDA Blueprint Schemas Instead of Fetching Them at Request Time
+* [ADR-2026-08-31](2026-08-31-deprecate-wait-endpoints.md) - Deprecate Synchronous /wait Endpoints
 
 <!-- adrlogstop -->
 

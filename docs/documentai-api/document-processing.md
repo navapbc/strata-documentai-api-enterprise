@@ -20,11 +20,11 @@ For identity documents like driver's licenses and passports, the platform uses A
 
 The platform accepts PDF, JPEG, PNG, and several other image formats (BMP, GIF, TIFF, WEBP, HEIC/HEIF). PDFs are limited to the first five pages. Documents must not be password-protected.
 
-## Sync and async upload
+## Upload pattern
 
-By default, upload is asynchronous - the API returns a job ID immediately and processing happens in the background. Clients poll for the result using the job ID.
+Upload is asynchronous - the API returns a job ID immediately and processing happens in the background. Poll `GET /v1/documents/{job_id}` until the status is a terminal value (see response codes). The platform's own demo (`docs/documentai-api/api-setup-demo.tape`) uses this pattern.
 
-For use cases that need an immediate result, a synchronous endpoint (POST /v1/documents/wait) holds the request open until processing completes and returns the full result, subject to a configurable timeout. Note the deployed API timeout is capped by the API Gateway integration's ~30s limit - real BDA extraction commonly takes 30+ seconds (40-50s if cold-start). `/wait` can return a 503 from the gateway before processing finishes even if the job succeeds. The async upload and poll pattern doesn't have this ceiling and is what this repo's own local demo (`docs/documentai-api/api-setup-demo.tape`) uses.
+`POST /v1/documents/wait` and `POST /v1/builds/{build_id}/submit/wait` are deprecated. API Gateway HTTP API enforces a hard 30-second integration timeout; BDA extraction commonly takes 30-50 seconds, so these endpoints cannot reliably return a result before the gateway terminates the connection. They will be removed in a future release.
 
 ## What is returned
 

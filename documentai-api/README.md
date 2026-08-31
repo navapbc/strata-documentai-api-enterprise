@@ -37,7 +37,7 @@ The diagram source lives in [`request-lifecycle.mmd`](../docs/documentai-api/dia
 - **Metrics pipeline** - SQS → Lambda → S3 Parquet → Glue with partition projection
 - **Audit logging** - All admin actions recorded
 - **Multi-format** - PDF, JPEG, PNG, TIFF support
-- **Sync + async** - Upload with optional `?wait=true` for synchronous processing
+- **Async upload** - Upload returns a job ID immediately; poll `GET /v1/documents/{job_id}` for the result
 
 ## File Requirements
 
@@ -168,11 +168,9 @@ curl -X POST http://localhost:8000/v1/documents \
   -F "file=@document.pdf" \
   -F "category=income"
 
-# Sync upload (wait for result)
-curl -X POST "http://localhost:8000/v1/documents?wait=true&timeout=120" \
-  -H "API-Key: your-key" \
-  -F "file=@document.pdf" \
-  -F "category=income"
+# Poll for result
+curl http://localhost:8000/v1/documents/<job_id> \
+  -H "API-Key: your-key"
 ```
 
 The `category` field must match a configured document category for the tenant.
