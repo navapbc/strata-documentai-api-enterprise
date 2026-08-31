@@ -36,7 +36,7 @@ from documentai_api.config.constants import (
 from documentai_api.config.env import get_aws_config
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.logging import get_logger
-from documentai_api.models.api_responses import (
+from documentai_api.models.batch import (
     BatchJobItem,
     BatchStatusJobItem,
     BatchStatusResponse,

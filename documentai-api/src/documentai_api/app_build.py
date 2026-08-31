@@ -30,7 +30,7 @@ from documentai_api.config.constants import (
 )
 from documentai_api.config.env import EnvVars, get_aws_config
 from documentai_api.logging import get_logger
-from documentai_api.models.api_responses import (
+from documentai_api.models.build import (
     BuildCreatedResponse,
     BuildDetailsResponse,
     BuildPageBatchItem,
@@ -38,9 +38,9 @@ from documentai_api.models.api_responses import (
     BuildPagesBatchResponse,
     BuildPageUploadResponse,
     BuildSubmitAsyncResponse,
-    JobStatusResponse,
 )
 from documentai_api.models.document_record import DocumentRecord
+from documentai_api.models.job_status import JobStatusResponse
 from documentai_api.schemas.document_builds import DocumentBuilds
 from documentai_api.utils.auth import UserContext, get_user_context_from_api_key
 from documentai_api.utils.document_build import (

@@ -36,10 +36,7 @@ from documentai_api.config.constants import (
 )
 from documentai_api.config.env import get_app_env_config
 from documentai_api.logging import get_logger
-from documentai_api.models.api_responses import (
-    ConfigResponse,
-    HealthResponse,
-)
+from documentai_api.models.config import ConfigResponse, HealthResponse
 from documentai_api.telemetry import setup as setup_otel
 from documentai_api.utils.auth import verify_api_key
 

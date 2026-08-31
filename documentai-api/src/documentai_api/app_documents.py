@@ -35,13 +35,13 @@ from documentai_api.config.constants import (
 )
 from documentai_api.config.env import get_aws_config
 from documentai_api.logging import get_logger
-from documentai_api.models.api_responses import (
+from documentai_api.models.document_record import DocumentRecord
+from documentai_api.models.job_status import (
     DocumentSearchRequest,
     DocumentSearchResponse,
     JobStatusResponse,
     UploadAsyncResponse,
 )
-from documentai_api.models.document_record import DocumentRecord
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.auth import get_user_context_from_api_key
 from documentai_api.utils.document_classification import classify_as_ai_consent_declined
