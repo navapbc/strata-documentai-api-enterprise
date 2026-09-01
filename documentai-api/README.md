@@ -21,6 +21,7 @@ The diagram source lives in [`architecture.mmd`](../docs/documentai-api/diagrams
 4. BDA writes results to S3 output bucket
 5. EventBridge triggers BDA Result Processor to extract fields and update DynamoDB
 6. Metrics emitted to SQS → Metrics Processor → S3 (Parquet) → Glue
+7. Document Reaper runs hourly, finds records stuck in non-terminal states, checks BDA status, and resolves them to `timed_out` or `failed`
 
 The request lifecycle across these components:
 
@@ -298,6 +299,7 @@ src/documentai_api/
 │   ├── bda_result_processor/       # EventBridge → extract fields → update DDB
 │   ├── metrics_processor/          # SQS → write Parquet to S3
 │   ├── metrics_aggregator/         # Scheduled → aggregate daily metrics
+│   ├── document_reaper/            # Scheduled → document reaper: resolve stuck non-terminal records
 │   └── usage_report/               # Scheduled → per-tenant usage report via Athena
 ├── services/
 │   ├── s3.py                       # S3 client

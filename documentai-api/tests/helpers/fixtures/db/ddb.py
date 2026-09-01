@@ -25,6 +25,7 @@ def ddb_doc_metadata_table_resource(aws_credentials):
                 {"AttributeName": "bdaInvocationId", "AttributeType": "S"},
                 {"AttributeName": "tenantId", "AttributeType": "S"},
                 {"AttributeName": "createdAt", "AttributeType": "S"},
+                {"AttributeName": "processStatus", "AttributeType": "S"},
             ],
             GlobalSecondaryIndexes=[
                 {
@@ -40,6 +41,14 @@ def ddb_doc_metadata_table_resource(aws_credentials):
                 {
                     "IndexName": "bda-inv-index",
                     "KeySchema": [{"AttributeName": "bdaInvocationId", "KeyType": "HASH"}],
+                    "Projection": {"ProjectionType": "ALL"},
+                },
+                {
+                    "IndexName": "status-created-at-index",
+                    "KeySchema": [
+                        {"AttributeName": "processStatus", "KeyType": "HASH"},
+                        {"AttributeName": "createdAt", "KeyType": "RANGE"},
+                    ],
                     "Projection": {"ProjectionType": "ALL"},
                 },
                 {
@@ -156,6 +165,9 @@ def set_ddb_doc_metadata_table_env_vars(ddb_doc_metadata_table_resource, monkeyp
         EnvVars.DOCUMENTAI_DOCUMENT_METADATA_BDA_INVOCATION_ID_INDEX_NAME, "bda-inv-index"
     )
     monkeypatch.setenv(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_TENANT_INDEX_NAME, "tenant-index")
+    monkeypatch.setenv(
+        EnvVars.DOCUMENTAI_DOCUMENT_METADATA_STATUS_CREATED_AT_INDEX_NAME, "status-created-at-index"
+    )
     monkeypatch.setenv(EnvVars.DOCUMENTAI_INPUT_LOCATION, "s3://test/input")
     monkeypatch.setenv(EnvVars.DOCUMENTAI_OUTPUT_LOCATION, "s3://test/output")
     monkeypatch.setenv(EnvVars.BDA_PROJECT_ARN_ALL, "arn:aws:test")
