@@ -4,111 +4,158 @@ on:
   push:
     branches:
       - main
-    paths:
-      - documentai-api/**
-      - docs/documentai-api/openapi.json
-      - docs/documentai-api/postman/**
-      - infra/document-types/**
-      - .github/workflows/ci-documentai-api.yml
   pull_request:
-    paths:
-      - documentai-api/**
-      - docs/documentai-api/openapi.json
-      - docs/documentai-api/postman/**
-      - infra/document-types/**
-      - .github/workflows/ci-documentai-api.yml
 
 defaults:
   run:
     working-directory: ./documentai-api
 
 jobs:
+  changes:
+    name: Detect relevant changes
+    runs-on: ubuntu-latest
+    outputs:
+      relevant: ${{ steps.filter.outputs.relevant }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            relevant:
+              - 'documentai-api/**'
+              - 'docs/documentai-api/openapi.json'
+              - 'docs/documentai-api/postman/**'
+              - 'infra/document-types/**'
+              - '.github/workflows/ci-documentai-api.yml'
+
   # As an enhancement, it is possible to share the built docker image and share
   # it across jobs as described in:
   # https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts#passing-data-between-jobs-in-a-workflow
   lint:
     name: Lint
+    needs: changes
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
 
+      - name: No relevant changes
+        if: needs.changes.outputs.relevant != 'true'
+        run: echo "No documentai-api changes; check passes."
+
       - name: Build Docker image
+        if: needs.changes.outputs.relevant == 'true'
         run: make build
 
       - name: Check formatting
+        if: needs.changes.outputs.relevant == 'true'
         run: make format
 
       - name: Lint
+        if: needs.changes.outputs.relevant == 'true'
         run: make lint
 
   test:
     name: Test
+    needs: changes
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
 
+      - name: No relevant changes
+        if: needs.changes.outputs.relevant != 'true'
+        run: echo "No documentai-api changes; check passes."
+
       - name: Build Docker image
+        if: needs.changes.outputs.relevant == 'true'
         run: make build
 
       - name: Run tests
+        if: needs.changes.outputs.relevant == 'true'
         run: |
           make test-audit
           make test-coverage args="-n auto"
 
       - name: Run pip-audit
+        if: needs.changes.outputs.relevant == 'true'
         run: make test-pip-audit
 
   openapi:
     name: OpenAPI + Postman drift
+    needs: changes
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
 
+      - name: No relevant changes
+        if: needs.changes.outputs.relevant != 'true'
+        run: echo "No documentai-api changes; check passes."
+
       - name: Build Docker image
+        if: needs.changes.outputs.relevant == 'true'
         run: make build
 
       - name: Regenerate OpenAPI spec from the app
+        if: needs.changes.outputs.relevant == 'true'
         run: make openapi-spec
 
       - name: Fail if openapi.json drifted from the API
+        if: needs.changes.outputs.relevant == 'true'
         working-directory: ${{ github.workspace }}
         run: |
           git diff --exit-code docs/documentai-api/openapi.json \
             || { echo "::error::openapi.json is stale - run 'make openapi-spec' and commit."; exit 1; }
 
       - name: Verify the Postman collection matches the spec
+        if: needs.changes.outputs.relevant == 'true'
         working-directory: ${{ github.workspace }}
         run: python3 docs/documentai-api/postman/check_collection.py
 
   categories:
     name: Preclassification categories drift
+    needs: changes
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
 
+      - name: No relevant changes
+        if: needs.changes.outputs.relevant != 'true'
+        run: echo "No documentai-api changes; check passes."
+
       # Runs natively (not in Docker) because the generator reads infra/document-types/,
       # a sibling directory the app's Docker container doesn't mount.
       - name: Install uv
+        if: needs.changes.outputs.relevant == 'true'
         uses: astral-sh/setup-uv@v5
 
       - name: Regenerate categories from infra/document-types/
+        if: needs.changes.outputs.relevant == 'true'
         run: make generate-categories
 
       - name: Fail if categories drifted from infra/document-types/
+        if: needs.changes.outputs.relevant == 'true'
         run: |
           git diff --exit-code src/documentai_api/config/constants_preclassification_category_generated.py \
             || { echo "::error::constants_preclassification_category_generated.py is out of sync with infra/document-types/ - run 'make generate-categories' and commit."; exit 1; }
 
   blueprint-schemas:
     name: Custom blueprint schema drift
+    needs: changes
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
 
+      - name: No relevant changes
+        if: needs.changes.outputs.relevant != 'true'
+        run: echo "No documentai-api changes; check passes."
+
       # Runs natively (not in Docker), same as the categories job above, and for
       # the same reason - infra/document-types/ isn't mounted into the container.
       - name: Install uv
+        if: needs.changes.outputs.relevant == 'true'
         uses: astral-sh/setup-uv@v5
 
       - name: Check blueprint_schemas.json against infra/document-types/ custom blueprints
+        if: needs.changes.outputs.relevant == 'true'
         run: make check-blueprint-schemas
