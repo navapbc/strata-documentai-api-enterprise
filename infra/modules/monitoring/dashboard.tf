@@ -54,6 +54,18 @@ locals {
         setPeriodToTimeRange = true, metrics = local.scorecard_queue_metrics
       }
     }] : [],
+    # Unconditional: DocumentAI custom namespaces are always present regardless of env config.
+    [{
+      type = "metric", width = 24, height = 3,
+      properties = {
+        title                = "Processing exclusions (sum in range)", region = var.region, view = "singleValue", period = local.period,
+        setPeriodToTimeRange = true,
+        metrics = [
+          ["DocumentAI/DocumentReaper", "StaleRecordsFound", { stat = "Sum", label = "Stale records found" }],
+          ["DocumentAI/DocumentProcessor", "ProcessingExcludedBySampling", { stat = "Sum", label = "Excluded by sampling" }],
+        ]
+      }
+    }],
     length(local.scorecard_error_metrics) > 0 ? [{
       type = "metric", width = 24, height = 3,
       properties = {

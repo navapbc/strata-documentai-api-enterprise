@@ -19,6 +19,7 @@ from documentai_api.config.constants import (
 from documentai_api.config.env import get_aws_config
 from documentai_api.logging import get_logger
 from documentai_api.schemas.document_metadata import DocumentMetadata
+from documentai_api.services import cloudwatch as cloudwatch_service
 from documentai_api.services import ddb as ddb_service
 from documentai_api.services.bda import get_bda_job_response
 from documentai_api.utils.aws_client_factory import AWSClientFactory
@@ -157,9 +158,8 @@ def main() -> dict[str, Any]:
         )
 
     stale = _find_stale_records(table_name, index_name)
-    # TODO: emit staleRecordsFound as a CloudWatch metric so a rising trend can be alarmed on
-    # (same gap as document_lifecycle.py:390 - address both in the metrics-filters follow-up)
     logger.info(f"Found {len(stale)} stale PROCESSING record(s)")
+    cloudwatch_service.put_metric_data("DocumentAI/DocumentReaper", "StaleRecordsFound", len(stale))
 
     counts: dict[str, int] = {}
 

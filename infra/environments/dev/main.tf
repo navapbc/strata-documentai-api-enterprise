@@ -827,6 +827,12 @@ resource "aws_iam_policy" "bedrock_all" {
 }
 
 data "aws_iam_policy_document" "supporting_services" {
+  # CloudWatch
+  statement {
+    actions   = ["cloudwatch:PutMetricData"]
+    resources = ["*"]
+  }
+
   # SQS
   statement {
     actions = [
