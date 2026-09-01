@@ -58,10 +58,6 @@ METRICS_AGG_DDB_MONTHLY_S3_PREFIX = "aggregated/utc/month"
 METRICS_USAGE_REPORT_S3_PREFIX = "usage-report/month"
 METRICS_USAGE_REPORT_DAILY_S3_PREFIX = "usage-report/utc/date"
 
-# === Grouped BDA job statuses ===
-BDA_JOB_STATUS_RUNNING = ["Created", "InProgress"]
-BDA_JOB_STATUS_FAILED = ["ServiceError", "ClientError"]
-BDA_JOB_STATUS_COMPLETED = ["Success"]
 BDA_PROJECT_KEY_ALL = "all"
 
 
@@ -118,6 +114,7 @@ class ConfigDefaults:
     DOCUMENT_BUILDS_TTL_DAYS = 30
     DOCUMENT_METADATA_TTL_DAYS = 180
     DEMO_DOCUMENT_TTL_DAYS = 7
+    PROCESSING_REAPER_STALE_THRESHOLD_HOURS = 1
     TENANT_REQUEST_COUNTS_TTL_DAYS = 365 * 5
     BDA_DOCUMENT_DETECTION_MIN_CHAR_LENGTH = 50
     BLURRY_DOCUMENT_THRESHOLD = 25
@@ -323,6 +320,7 @@ class ProcessStatus(StrEnum):
     PROCESSING_EXCLUDED = "processing_excluded"
     STARTED = "started"
     SUCCESS = "success"
+    TIMED_OUT = "timed_out"
 
     @classmethod
     def is_completed(cls, value: str) -> bool:
@@ -334,6 +332,7 @@ class ProcessStatus(StrEnum):
             cls.FAILED,
             cls.NO_DOCUMENT_DETECTED,
             cls.NO_CUSTOM_BLUEPRINT_MATCHED,
+            cls.TIMED_OUT,
         ]
 
     @classmethod
@@ -353,6 +352,7 @@ class ProcessStatus(StrEnum):
             cls.PASSWORD_PROTECTED,
             cls.PROCESSING_EXCLUDED,
             cls.SUCCESS,
+            cls.TIMED_OUT,
         ]
 
     @classmethod
@@ -390,6 +390,15 @@ class ProcessStatus(StrEnum):
             cls.NO_CUSTOM_BLUEPRINT_MATCHED,
             cls.NOT_IMPLEMENTED,
             cls.EXCLUDED_PER_PRECLASSIFICATION,
+        ]
+
+    @classmethod
+    def non_terminal(cls) -> list["ProcessStatus"]:
+        return [
+            cls.STARTED,
+            cls.NOT_STARTED,
+            cls.PENDING_UPLOAD,
+            cls.PENDING_IMAGE_OPTIMIZATION,
         ]
 
 

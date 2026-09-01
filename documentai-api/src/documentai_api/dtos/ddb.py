@@ -5,6 +5,7 @@ from typing import Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from documentai_api.config.constants import ProcessStatus
 from documentai_api.dtos.classification import (
     BedrockClassificationResult,
     ClassificationData,
@@ -175,7 +176,7 @@ class InitialDdbRecord(BaseModel):
 
     object_key: str
     original_file_name: str
-    process_status: str | None = None
+    process_status: str = ProcessStatus.NOT_STARTED
     user_provided_document_category: str | None = None
     internal_api_response: InternalApiResponse | None = None
     file_size_bytes: int | None = Field(

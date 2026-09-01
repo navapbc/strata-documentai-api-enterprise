@@ -28,9 +28,10 @@ architecture-beta
   service document-processor(logos:aws-lambda)[Document Processor] in processing
   service ddb(logos:aws-dynamodb)[Document Metadata] in processing
   service bedrock-preclassify(server)[AWS Bedrock Preclassify] in processing
+  service document-reaper(logos:aws-lambda)[Document Reaper] in processing
 
   %% Data Extraction
-  service bedrock(server)[Bedrock Data Automation] in data-extraction
+  service bda(server)[Bedrock Data Automation] in data-extraction
   service s3output(logos:aws-s3)[S3 Output] in data-extraction
   service eventbridge2(logos:aws-eventbridge)[EventBridge] in data-extraction
   service bda-result-processor(logos:aws-lambda)[BDA Result Processor] in data-extraction
@@ -66,10 +67,11 @@ architecture-beta
   %% force mermaid chart to render adequate space between groups by using a junction
   document-processor:B -- T:processing-junc1
   junction processing-junc1
-  processing-junc1:B --> T:bedrock
+  processing-junc1:B --> T:bda
+  document-reaper:L --> R:ddb
 
   %% Extraction flow
-  bedrock:R --> L:s3output
+  bda:R --> L:s3output
   s3output:R --> L:eventbridge2
   eventbridge2:R --> L:bda-result-processor
   bda-result-processor:R --> L:ddb2

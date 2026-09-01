@@ -155,6 +155,13 @@ module "document_metadata" {
       sort_key      = "createdAt"
       sort_key_type = "S"
     },
+    {
+      name          = local.gsi_status_created_at
+      hash_key      = "processStatus"
+      hash_key_type = "S"
+      sort_key      = "createdAt"
+      sort_key_type = "S"
+    },
   ]
 }
 
@@ -553,6 +560,7 @@ locals {
       DOCUMENTAI_DOCUMENT_METADATA_EXTERNAL_DOC_ID_INDEX_NAME   = local.gsi_external_document_id
       DOCUMENTAI_DOCUMENT_METADATA_BDA_INVOCATION_ID_INDEX_NAME = local.gsi_bda_invocation_id
       DOCUMENTAI_DOCUMENT_METADATA_TENANT_INDEX_NAME            = local.gsi_tenant_id
+      DOCUMENTAI_DOCUMENT_METADATA_STATUS_CREATED_AT_INDEX_NAME = local.gsi_status_created_at
       API_KEYS_TABLE_NAME                                       = module.api_keys.table_name
       API_KEYS_TENANT_INDEX_NAME                                = local.gsi_api_keys_tenant_index
       TENANTS_TABLE_NAME                                        = module.tenants.table_name
@@ -652,7 +660,8 @@ module "monitoring" {
     # day with zero runs means the schedule is broken. Note: on first apply with
     # create_alarms = true the alarm starts in ALARM until the next daily run lands
     # (~up to 24 hours) - expected bring-up behavior, not a recurring false positive.
-    "Usage Report" = { function_name = module.workers["usage-report"].function_name, timeout_seconds = 300, pipeline = false, scheduled = true, invocation_window_seconds = 86400 }
+    "Usage Report"    = { function_name = module.workers["usage-report"].function_name, timeout_seconds = 300, pipeline = false, scheduled = true, invocation_window_seconds = 86400 }
+    "Document Reaper" = { function_name = module.workers["document-reaper"].function_name, timeout_seconds = 300, pipeline = false, scheduled = true, invocation_window_seconds = 7200 }
   }
 
   # API Lambda
@@ -901,6 +910,7 @@ locals {
     "metrics-processor"    = ["documentai_api.jobs.metrics_processor.handler.handler"]
     "metrics-aggregator"   = ["documentai_api.jobs.metrics_aggregator.handler.handler"]
     "usage-report"         = ["documentai_api.jobs.usage_report.handler.handler"]
+    "document-reaper"      = ["documentai_api.jobs.document_reaper.handler.handler"]
   }
 }
 
@@ -933,6 +943,9 @@ module "workers" {
     "usage-report" = [
       { name = "current-month", schedule_expression = "cron(0 6 * * ? *)", input = { month = "current" } },
       { name = "previous-month", schedule_expression = "cron(0 6 1-5 * ? *)", input = { month = "previous" } },
+    ]
+    "document-reaper" = [
+      { name = "hourly", schedule_expression = "cron(0 * * * ? *)" }
     ]
   }, each.key, [])
 }
