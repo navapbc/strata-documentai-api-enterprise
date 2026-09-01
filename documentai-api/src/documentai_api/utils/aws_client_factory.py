@@ -15,6 +15,7 @@ if TYPE_CHECKING:
         RuntimeforBedrockDataAutomationClient,
     )
     from mypy_boto3_bedrock_runtime.client import BedrockRuntimeClient
+    from mypy_boto3_cloudwatch import CloudWatchClient
     from mypy_boto3_cognito_idp import CognitoIdentityProviderClient
     from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
     from mypy_boto3_s3.client import S3Client
@@ -102,6 +103,11 @@ class AWSClientFactory:
     def get_textract_client(cls):  # type: ignore[no-untyped-def]
         """Get Textract client for identity document analysis."""
         return cls.get_session().client("textract", region_name=cls.get_region())
+
+    @classmethod
+    @lru_cache(maxsize=1)
+    def get_cloudwatch_client(cls) -> CloudWatchClient:
+        return cls.get_session().client("cloudwatch", region_name=cls.get_region())
 
     @classmethod
     @lru_cache(maxsize=1)

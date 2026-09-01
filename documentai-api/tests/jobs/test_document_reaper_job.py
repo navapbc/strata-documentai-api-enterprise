@@ -46,17 +46,27 @@ def test_main_raises_if_config_missing():
         main()
 
 
-def test_no_stale_records(mock_env, ddb_doc_metadata_table):
+def test_no_stale_records(mock_env, ddb_doc_metadata_table, mocker):
+    mock_put = mocker.patch(
+        "documentai_api.jobs.document_reaper.main.cloudwatch_service.put_metric_data"
+    )
+
     result = main()
+
     assert result == {"staleRecordsFound": 0, "outcomes": {}}
+    mock_put.assert_called_once_with("DocumentAI/DocumentReaper", "StaleRecordsFound", 0)
 
 
-def test_timed_out_when_no_bda_arn(mock_env, ddb_doc_metadata_table, create_stale_record):
+def test_timed_out_when_no_bda_arn(mock_env, ddb_doc_metadata_table, create_stale_record, mocker):
+    mock_put = mocker.patch(
+        "documentai_api.jobs.document_reaper.main.cloudwatch_service.put_metric_data"
+    )
     create_stale_record("file.pdf", ProcessStatus.STARTED)
 
     result = main()
 
     assert result["staleRecordsFound"] == 1
+    mock_put.assert_called_once_with("DocumentAI/DocumentReaper", "StaleRecordsFound", 1)
     assert result["outcomes"][ProcessStatus.TIMED_OUT] == 1
     assert (
         _get_record(ddb_doc_metadata_table, "file.pdf")[DocumentMetadata.PROCESS_STATUS]

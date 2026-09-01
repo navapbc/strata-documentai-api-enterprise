@@ -21,6 +21,7 @@ from documentai_api.dtos.ddb import InitialDdbRecord, PreClassificationDdbFields
 from documentai_api.dtos.processing import InternalApiResponse
 from documentai_api.logging import get_logger
 from documentai_api.models.document_record import DocumentRecord
+from documentai_api.services import cloudwatch as cloudwatch_service
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils.bbox_detection import BboxResult
 from documentai_api.utils.blur_detection import BlurResult, detect_blur
@@ -387,8 +388,12 @@ def upsert_initial_ddb_record(
             logger.info(
                 f"{ddb_key} excluded by sampling for category {user_provided_document_category}"
             )
-            # TODO: add a CloudWatch metric filter on this log line (dimensioned by category)
-            # to make sampling rates observable without a custom metric
+            cloudwatch_service.put_metric_data(
+                "DocumentAI/DocumentProcessor",
+                "ProcessingExcludedBySampling",
+                1,
+                dimensions={"Category": user_provided_document_category or "unknown"},
+            )
             if tenant_id and upload_date:
                 from documentai_api.utils.write_limit import decrement
 

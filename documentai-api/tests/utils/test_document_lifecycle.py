@@ -349,11 +349,18 @@ def test_upsert_initial_ddb_record_sampling_excluded(
     """Document excluded by sampling skips blur/preclassification and is marked excluded."""
     mocker.patch(f"{_LIFECYCLE_MODULE}.is_selected_for_processing", return_value=(False, 0.5, 0.6))
     mock_decrement = mocker.patch("documentai_api.utils.write_limit.decrement")
+    mock_put_metric = mocker.patch(f"{_LIFECYCLE_MODULE}.cloudwatch_service.put_metric_data")
 
     _upsert(s3_bucket, tenant_id="tenant-1", upload_date="2026-07-31")
 
     lifecycle_mocks[_Mock.PRECLASSIFY_DOCUMENT].assert_not_called()
     mock_decrement.assert_called_once_with("tenant-1", "2026-07-31")
+    mock_put_metric.assert_called_once_with(
+        "DocumentAI/DocumentProcessor",
+        "ProcessingExcludedBySampling",
+        1,
+        dimensions={"Category": "income"},
+    )
     item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
     assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.PROCESSING_EXCLUDED
     assert DocumentMetadata.RESPONSE_JSON in item

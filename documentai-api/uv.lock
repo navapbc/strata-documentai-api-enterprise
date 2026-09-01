@@ -238,6 +238,9 @@ bedrock-data-automation-runtime = [
 bedrock-runtime = [
     { name = "mypy-boto3-bedrock-runtime" },
 ]
+cloudwatch = [
+    { name = "mypy-boto3-cloudwatch" },
+]
 cognito-idp = [
     { name = "mypy-boto3-cognito-idp" },
 ]
@@ -829,7 +832,7 @@ dependencies = [
 
 [package.optional-dependencies]
 dev = [
-    { name = "boto3-stubs", extra = ["athena", "bedrock", "bedrock-data-automation", "bedrock-data-automation-runtime", "bedrock-runtime", "cognito-idp", "dynamodb", "s3", "sqs", "ssm"] },
+    { name = "boto3-stubs", extra = ["athena", "bedrock", "bedrock-data-automation", "bedrock-data-automation-runtime", "bedrock-runtime", "cloudwatch", "cognito-idp", "dynamodb", "s3", "sqs", "ssm"] },
     { name = "freezegun" },
     { name = "httpx" },
     { name = "moto", extra = ["all"] },
@@ -848,7 +851,7 @@ dev = [
 requires-dist = [
     { name = "awslambdaric", marker = "sys_platform == 'linux'", specifier = ">=3.0.0" },
     { name = "boto3", specifier = ">=1.34.0" },
-    { name = "boto3-stubs", extras = ["s3", "dynamodb", "bedrock", "bedrock-runtime", "bedrock-data-automation", "bedrock-data-automation-runtime", "sqs", "athena", "ssm", "cognito-idp"], marker = "extra == 'dev'", specifier = ">=1.38.0" },
+    { name = "boto3-stubs", extras = ["s3", "dynamodb", "bedrock", "bedrock-runtime", "bedrock-data-automation", "bedrock-data-automation-runtime", "sqs", "athena", "ssm", "cognito-idp", "cloudwatch"], marker = "extra == 'dev'", specifier = ">=1.38.0" },
     { name = "click", specifier = ">=8.1,<8.5" },
     { name = "fastapi", specifier = ">=0.104.0" },
     { name = "filetype", specifier = ">=1.2.0" },
@@ -1687,6 +1690,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/26/78/542f5804cf0f9e3c1ccbf30917eaa3b4b6002b91965de02d065d7441fc93/mypy_boto3_bedrock_runtime-1.43.62.tar.gz", hash = "sha256:beb70b08ef72cdfd5036bcd3270f2fbac0a2ce5e40f70dfc1d87c4f139d4d7ff", size = 31492, upload-time = "2026-07-31T19:54:15.291Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d9/b2/e3bff20acd290b909f1c28856d6d8d7984f7f7d5bda299d5957f64e97bb3/mypy_boto3_bedrock_runtime-1.43.62-py3-none-any.whl", hash = "sha256:603d9df54da5029fc0d0e3c09b6db33733af53182bee030c0c7af99e88ed3b39", size = 37865, upload-time = "2026-07-31T19:54:13.959Z" },
+]
+
+[[package]]
+name = "mypy-boto3-cloudwatch"
+version = "1.43.78"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions", marker = "python_full_version < '3.12'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b1/1a/69354584a68e0de337482dbdbdfdf80e6cdf6a8114b0b5a4a7e5684d7f43/mypy_boto3_cloudwatch-1.43.78.tar.gz", hash = "sha256:80f25b5750e6b61a1ca78f443623bd343edec144ee0215d5fe702cc64c3e5060", size = 39828, upload-time = "2026-08-21T19:53:12.467Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6a/a6/50898f267a3875f5c61e59da358994886476c9989290ccc65f6cd15a36b6/mypy_boto3_cloudwatch-1.43.78-py3-none-any.whl", hash = "sha256:341d7a339afca607ec116503f8423b48dd4a1a875148ad0bfef9f2ecaf391d06", size = 49289, upload-time = "2026-08-21T19:53:11.137Z" },
 ]
 
 [[package]]
