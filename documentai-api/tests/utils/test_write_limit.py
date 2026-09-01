@@ -192,8 +192,10 @@ def test_decrement(
 
 
 def test_decrement_targets_specified_date(tenants_table, tenant_request_counts_table):
-    upload_date = f"{get_month_prefix(get_today_iso())}-01"
-    _seed_count(tenant_request_counts_table, "t1", upload_date, 3)
-    write_limit_util.decrement("t1", upload_date)
-    assert _get_count(tenant_request_counts_table, "t1", upload_date) == 2
+    from datetime import date, timedelta
+
+    yesterday = (date.today() - timedelta(days=1)).isoformat()
+    _seed_count(tenant_request_counts_table, "t1", yesterday, 3)
+    write_limit_util.decrement("t1", yesterday)
+    assert _get_count(tenant_request_counts_table, "t1", yesterday) == 2
     assert _get_count(tenant_request_counts_table, "t1", get_today_iso()) == 0
