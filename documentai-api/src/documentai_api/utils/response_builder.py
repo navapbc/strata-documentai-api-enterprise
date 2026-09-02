@@ -92,9 +92,41 @@ _TERMINAL_STATUS_RESPONSES: dict[str, dict[str, Any]] = {
 }
 
 
-# TODO: Refactor to improve testability - consider making public along with
-# restructuring to reduce mocking in tests
-def _extract_field_values(
+def _build_field_map(
+    field_confidence_map_list: list[dict[str, Any]],
+    field_values: dict[str, Any],
+    field_geometry: dict[str, Any],
+    include_extracted_data: bool,
+    include_bounding_box: bool = False,
+    *,
+    document_type: str | None = None,
+) -> dict[str, Any]:
+    """Build the flat field map from already-fetched extraction data.
+
+    Pure function - no I/O. Keyed by verbatim blueprint names; nesting is
+    deferred to present_v1_response.
+    """
+    fields: dict[str, Any] = {}
+    for field_item in field_confidence_map_list:
+        for field_name, confidence in field_item.items():
+            entry: dict[str, Any] = {
+                "confidence": round(confidence, 2),
+                "value": field_values.get(field_name) if include_extracted_data else "<redacted>",
+                "displayName": get_field_label(document_type, field_name),
+            }
+
+            if include_bounding_box and field_name in field_geometry:
+                geo_data = field_geometry[field_name]
+                entry["geometry"] = geo_data["geometry"]
+                if geo_data.get("type"):
+                    entry["fieldType"] = geo_data["type"]
+
+            fields[field_name] = entry
+
+    return fields
+
+
+def extract_field_values(
     ddb_record: dict[str, Any],
     include_extracted_data: bool,
     include_bounding_box: bool = False,
@@ -105,7 +137,6 @@ def _extract_field_values(
     if not ddb_record:
         return {}
 
-    # get confidence scores and extracted values if requested
     if include_extracted_data:
         s3_uri = ddb_record.get(DocumentMetadata.BDA_OUTPUT_S3_URI)
 
@@ -136,25 +167,14 @@ def _extract_field_values(
         field_values = {}
         field_geometry = {}
 
-    # Flat map keyed by verbatim blueprint names - matches FIELD_CONFIDENCE_SCORES
-    # and extraction rules. Nesting is deferred to present_v1_response.
-    fields: dict[str, Any] = {}
-    for field_item in field_confidence_map_list:
-        for field_name, confidence in field_item.items():
-            entry: dict[str, Any] = {
-                "confidence": round(confidence, 2),
-                "value": field_values.get(field_name) if include_extracted_data else "<redacted>",
-                "displayName": get_field_label(document_type, field_name),
-            }
-            if include_bounding_box and field_name in field_geometry:
-                geo_data = field_geometry[field_name]
-                entry["geometry"] = geo_data["geometry"]
-                if geo_data.get("type"):
-                    entry["fieldType"] = geo_data["type"]
-
-            fields[field_name] = entry
-
-    return fields
+    return _build_field_map(
+        field_confidence_map_list,
+        field_values,
+        field_geometry,
+        include_extracted_data,
+        include_bounding_box,
+        document_type=document_type,
+    )
 
 
 def nest_fields(flat_fields: dict[str, Any]) -> dict[str, Any]:
@@ -327,7 +347,7 @@ def build_v1_api_response(
 
     # success response with full results
     if job_status == ProcessStatus.SUCCESS.value:
-        fields = _extract_field_values(
+        fields = extract_field_values(
             ddb_record,
             include_extracted_data,
             include_bounding_box,
@@ -405,6 +425,7 @@ __all__ = [
     "build_csv_response",
     "build_flat_file",
     "build_v1_api_response",
+    "extract_field_values",
     "get_internal_api_response",
     "nest_fields",
     "present_v1_response",

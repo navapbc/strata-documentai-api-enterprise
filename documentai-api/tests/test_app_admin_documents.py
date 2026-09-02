@@ -531,7 +531,7 @@ def test_get_document_not_found_logs_search_only(api_client, ddb_doc_metadata_ta
 def test_get_document_bounding_box_implies_extracted_data(
     api_client, ddb_doc_metadata_table, mocker
 ):
-    """GET with include_bounding_box=true (without include_extracted_data) calls _extract_field_values with both flags."""
+    """GET with include_bounding_box=true (without include_extracted_data) calls extract_field_values with both flags."""
     override_jwt(SUPER_ADMIN_CLAIMS)
 
     ddb_doc_metadata_table.put_item(
@@ -546,7 +546,7 @@ def test_get_document_bounding_box_implies_extracted_data(
     )
 
     mock_extract = mocker.patch(
-        "documentai_api.app_admin_documents._extract_field_values",
+        "documentai_api.app_admin_documents.extract_field_values",
         return_value={},
     )
 
@@ -556,6 +556,6 @@ def test_get_document_bounding_box_implies_extracted_data(
     # include_bounding_box=true should have promoted include_extracted_data to True
     mock_extract.assert_called_once()
     args = mock_extract.call_args
-    # _extract_field_values(record, include_extracted_data=True, include_bounding_box=True)
+    # extract_field_values(record, include_extracted_data=True, include_bounding_box=True)
     assert args[0][1] is True  # include_extracted_data
     assert args[0][2] is True  # include_bounding_box
