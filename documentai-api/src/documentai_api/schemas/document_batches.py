@@ -7,6 +7,7 @@ class DocumentBatches:
     BATCH_ID = "batchId"
     BATCH_STATUS = "batchStatus"
     TOTAL_FILES = "totalFiles"
+    RESOLVED_COUNT = "resolvedCount"
     CATEGORY = "category"
     CREATED_AT = "createdAt"
     UPDATED_AT = "updatedAt"

@@ -604,7 +604,7 @@ def test_classify_functions(
     ):
         expected_dto = expected_dto.model_copy(update={"result_processor_started_at": None})
 
-    mock_update.assert_called_once_with(expected_dto)
+    assert mock_update.call_args.args[0] == expected_dto
 
 
 def test_classify_as_ai_consent_declined(mocker):
@@ -628,12 +628,10 @@ def test_classify_as_ai_consent_declined(mocker):
         response_code=ResponseCodes.AI_CONSENT_DECLINED,
         matched_document_class=None,
     )
-    mock_update.assert_called_once_with(
-        UpdateDdbRecord(
-            object_key="test-file",
-            status=ProcessStatus.AI_CONSENT_DECLINED,
-            internal_api_response=fake_response,
-        )
+    assert mock_update.call_args.args[0] == UpdateDdbRecord(
+        object_key="test-file",
+        status=ProcessStatus.AI_CONSENT_DECLINED,
+        internal_api_response=fake_response,
     )
 
 
@@ -687,7 +685,7 @@ def test_upsert_initial_ddb_record_routes_to_textract_when_enabled(
 
     lifecycle_mocks[_Mock.TRY_TEXTRACT_IDENTITY].assert_called_once()
     lifecycle_mocks[_Mock.FINALIZE_TEXTRACT_RESULT].assert_called_once_with(
-        "test-file", _DEFAULT_TEXTRACT_RESULT, "identity"
+        "test-file", _DEFAULT_TEXTRACT_RESULT, "identity", None
     )
     item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
     assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.STARTED

@@ -278,12 +278,20 @@ def _execute_ddb_update(
     update_expression: str,
     expression_values: dict[str, Any],
     expression_names: dict[str, str] | None = None,
+    condition_expression: str | None = None,
 ) -> None:
     """Execute the DynamoDB update."""
     table_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME)
     key = {"fileName": object_key}
 
-    ddb_service.update_item(table_name, key, update_expression, expression_values, expression_names)
+    ddb_service.update_item(
+        table_name,
+        key,
+        update_expression,
+        expression_values,
+        expression_names,
+        condition_expression=condition_expression,
+    )
 
 
 def _send_record_to_metrics_queue(object_key: str) -> None:
@@ -360,7 +368,11 @@ def get_ddb_by_job_id(job_id: str) -> dict[str, Any] | None:
     return items[0] if items else None
 
 
-def update_ddb(data: UpdateDdbRecord) -> None:
+def update_ddb(
+    data: UpdateDdbRecord,
+    condition_expression: str | None = None,
+    extra_expression_values: dict[str, Any] | None = None,
+) -> None:
     """Update DynamoDB processing status for a file."""
     try:
         update_expr, expr_values = _build_update_expression(
@@ -405,7 +417,12 @@ def update_ddb(data: UpdateDdbRecord) -> None:
             update_expr += f", {timing_updates}"
             expr_values.update(timing_values)
 
-        _execute_ddb_update(data.object_key, update_expr, expr_values)
+        _execute_ddb_update(
+            data.object_key,
+            update_expr,
+            {**expr_values, **(extra_expression_values or {})},
+            condition_expression=condition_expression,
+        )
         _finalize_v1_response(data.object_key, data.status, data.data, data.error_message)
 
         if ProcessStatus.is_classified(data.status):

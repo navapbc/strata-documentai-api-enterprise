@@ -23,6 +23,7 @@ from documentai_api.services import cloudwatch as cloudwatch_service
 from documentai_api.services import ddb as ddb_service
 from documentai_api.services.bda import get_bda_job_response
 from documentai_api.utils.aws_client_factory import AWSClientFactory
+from documentai_api.utils.batch_operations import increment_resolved_count
 
 logger = get_logger(__name__)
 
@@ -69,6 +70,7 @@ def _find_stale_records(table_name: str, index_name: str) -> list[dict[str, Any]
             executor.submit(_query_stale_by_status, table, index_name, status, cutoff): status
             for status in ProcessStatus.non_terminal()
         }
+
         for future in as_completed(futures):
             status = futures[future]
             try:
@@ -79,6 +81,22 @@ def _find_stale_records(table_name: str, index_name: str) -> list[dict[str, Any]
     return results
 
 
+def _mark_and_increment(
+    table_name: str,
+    file_name: str,
+    batch_id: str | None,
+    status: ProcessStatus,
+    reason: str | None = None,
+) -> str | None:
+    """Mark a record terminal and increment the batch counter if it belongs to a batch."""
+    applied = _mark_terminal(table_name, file_name, status, reason)
+
+    if applied and batch_id:
+        increment_resolved_count(batch_id)
+
+    return status if applied else None
+
+
 def _process_stale_record(table_name: str, ddb_record: dict[str, Any]) -> str | None:
     """Determine and apply the terminal status for a stale record.
 
@@ -86,32 +104,35 @@ def _process_stale_record(table_name: str, ddb_record: dict[str, Any]) -> str | 
     """
     file_name = ddb_record[DocumentMetadata.FILE_NAME]
     bda_invocation_arn = ddb_record.get(DocumentMetadata.BDA_INVOCATION_ARN)
+    batch_id: str | None = ddb_record.get(DocumentMetadata.BATCH_ID)
 
     if not bda_invocation_arn:
-        applied = _mark_terminal(table_name, file_name, ProcessStatus.TIMED_OUT)
-        return ProcessStatus.TIMED_OUT if applied else None
+        return _mark_and_increment(table_name, file_name, batch_id, ProcessStatus.TIMED_OUT)
 
     bda_response = get_bda_job_response(bda_invocation_arn)
+
     if bda_response is None:
-        applied = _mark_terminal(table_name, file_name, ProcessStatus.TIMED_OUT)
-        return ProcessStatus.TIMED_OUT if applied else None
+        return _mark_and_increment(table_name, file_name, batch_id, ProcessStatus.TIMED_OUT)
 
     bda_status = bda_response.get("status", "")
 
     if BdaJobStatus.is_completed(bda_status):
-        applied = _mark_terminal(
+        return _mark_and_increment(
             table_name,
             file_name,
+            batch_id,
             ProcessStatus.FAILED,
             "BDA completed but result was never processed",
         )
-        return ProcessStatus.FAILED if applied else None
 
     if BdaJobStatus.is_failed(bda_status):
-        applied = _mark_terminal(
-            table_name, file_name, ProcessStatus.FAILED, f"BDA reported status: {bda_status}"
+        return _mark_and_increment(
+            table_name,
+            file_name,
+            batch_id,
+            ProcessStatus.FAILED,
+            f"BDA reported status: {bda_status}",
         )
-        return ProcessStatus.FAILED if applied else None
 
     # BDA job is still running or in an unrecognized state - leave it be
     return None
@@ -128,8 +149,7 @@ def _mark_terminal(
         expr += f", {DocumentMetadata.ERROR_MESSAGE} = :e"
         values[":e"] = reason
 
-    non_terminal_values = {f":st{i}": s for i, s in enumerate(ProcessStatus.non_terminal())}
-    condition = f"{DocumentMetadata.PROCESS_STATUS} IN ({', '.join(non_terminal_values)})"
+    condition, non_terminal_values = ProcessStatus.build_ddb_non_terminal_condition()
 
     try:
         ddb_service.update_item(

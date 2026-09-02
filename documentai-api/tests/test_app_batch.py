@@ -258,116 +258,24 @@ def test_get_batch_status_not_found(api_client):
     assert response.status_code == 404
 
 
-def test_get_batch_status_lazy_completion_all_success(api_client):
-    """Batch status flips to COMPLETED when all jobs succeed."""
-    with (
-        patch("documentai_api.app_batch.get_batch") as mock_get_batch,
-        patch("documentai_api.app_batch.query_jobs_by_batch_id") as mock_query_jobs,
-        patch("documentai_api.app_batch.update_batch_status") as mock_update,
-    ):
-        mock_get_batch.return_value = {
-            DocumentBatches.BATCH_ID: "test-batch",
-            DocumentBatches.BATCH_STATUS: "processing",
-            DocumentBatches.CREATED_AT: "2026-02-27",
-        }
-        mock_query_jobs.return_value = [
-            {"fileName": "doc1.pdf", "jobId": "job-1", "processStatus": "success"},
-            {"fileName": "doc2.pdf", "jobId": "job-2", "processStatus": "success"},
-        ]
+def test_get_batch_status_reflects_atomic_counter_result(api_client):
+    """GET /v1/batches/{id} is a pure read - returns whatever status the atomic counter set."""
+    for status in (BatchStatus.COMPLETED, BatchStatus.FAILED, BatchStatus.PARTIAL):
+        with (
+            patch("documentai_api.app_batch.get_batch") as mock_get_batch,
+            patch("documentai_api.app_batch.query_jobs_by_batch_id") as mock_query_jobs,
+        ):
+            mock_get_batch.return_value = {
+                DocumentBatches.BATCH_ID: "test-batch-id",
+                DocumentBatches.BATCH_STATUS: status.value,
+                DocumentBatches.CREATED_AT: "2026-02-27",
+            }
+            mock_query_jobs.return_value = []
 
-        response = api_client.get("/v1/batches/test-batch")
+            response = api_client.get("/v1/batches/test-batch-id")
 
         assert response.status_code == 200
-        data = response.json()
-        assert data["batchStatus"] == "completed"
-        mock_update.assert_called_once_with(
-            "test-batch",
-            status=BatchStatus.COMPLETED,
-            condition_expression=f"{DocumentBatches.BATCH_STATUS} = :expected",
-            condition_values={":expected": BatchStatus.PROCESSING.value},
-        )
-
-
-def test_get_batch_status_lazy_completion_with_failures(api_client):
-    """Batch status flips to FAILED when all jobs are terminal but some failed."""
-    with (
-        patch("documentai_api.app_batch.get_batch") as mock_get_batch,
-        patch("documentai_api.app_batch.query_jobs_by_batch_id") as mock_query_jobs,
-        patch("documentai_api.app_batch.update_batch_status") as mock_update,
-    ):
-        mock_get_batch.return_value = {
-            DocumentBatches.BATCH_ID: "test-batch",
-            DocumentBatches.BATCH_STATUS: "processing",
-            DocumentBatches.CREATED_AT: "2026-02-27",
-        }
-        mock_query_jobs.return_value = [
-            {"fileName": "doc1.pdf", "jobId": "job-1", "processStatus": "success"},
-            {"fileName": "doc2.pdf", "jobId": "job-2", "processStatus": "failed"},
-        ]
-
-        response = api_client.get("/v1/batches/test-batch")
-
-        assert response.status_code == 200
-        data = response.json()
-        assert data["batchStatus"] == "failed"
-        mock_update.assert_called_once_with(
-            "test-batch",
-            status=BatchStatus.FAILED,
-            condition_expression=f"{DocumentBatches.BATCH_STATUS} = :expected",
-            condition_values={":expected": BatchStatus.PROCESSING.value},
-        )
-
-
-def test_get_batch_status_with_failed_count(api_client):
-    """Batch status response includes failed count."""
-    with (
-        patch("documentai_api.app_batch.get_batch") as mock_get_batch,
-        patch("documentai_api.app_batch.query_jobs_by_batch_id") as mock_query_jobs,
-    ):
-        mock_get_batch.return_value = {
-            DocumentBatches.BATCH_ID: "test-batch",
-            DocumentBatches.BATCH_STATUS: "processing",
-            DocumentBatches.CREATED_AT: "2026-02-27",
-        }
-        mock_query_jobs.return_value = [
-            {"fileName": "doc1.pdf", "jobId": "job-1", "processStatus": "success"},
-            {"fileName": "doc2.pdf", "jobId": "job-2", "processStatus": "failed"},
-            {"fileName": "doc3.pdf", "jobId": "job-3", "processStatus": "started"},
-        ]
-
-        response = api_client.get("/v1/batches/test-batch")
-
-        assert response.status_code == 200
-        data = response.json()
-        assert data["totalJobs"] == 3
-        assert data["completed"] == 2
-        assert data["failed"] == 1
-        assert data["inProgress"] == 1
-
-
-def test_get_batch_status_no_lazy_completion_when_incomplete(api_client):
-    """Batch status stays processing when at least one job is still running."""
-    with (
-        patch("documentai_api.app_batch.get_batch") as mock_get_batch,
-        patch("documentai_api.app_batch.query_jobs_by_batch_id") as mock_query_jobs,
-        patch("documentai_api.app_batch.update_batch_status") as mock_update,
-    ):
-        mock_get_batch.return_value = {
-            DocumentBatches.BATCH_ID: "test-batch",
-            DocumentBatches.BATCH_STATUS: "processing",
-            DocumentBatches.CREATED_AT: "2026-02-27",
-        }
-        mock_query_jobs.return_value = [
-            {"fileName": "doc1.pdf", "jobId": "job-1", "processStatus": "success"},
-            {"fileName": "doc2.pdf", "jobId": "job-2", "processStatus": "started"},
-        ]
-
-        response = api_client.get("/v1/batches/test-batch")
-
-        assert response.status_code == 200
-        data = response.json()
-        assert data["batchStatus"] == "processing"
-        mock_update.assert_not_called()
+        assert response.json()["batchStatus"] == status.value
 
 
 def test_batch_upload_returns_uuid_batch_id(api_client, pdf_file):
@@ -415,41 +323,6 @@ def test_upload_document_batch_exceeds_max_size(api_client, monkeypatch):
 
     assert response.status_code == 400
     assert "exceeds maximum of 2 files" in response.json()["detail"]
-
-
-def test_get_batch_status_conditional_update_race(api_client):
-    """When another poller already updated batch status, re-read returns their value."""
-    with (
-        patch("documentai_api.app_batch.get_batch") as mock_get_batch,
-        patch("documentai_api.app_batch.query_jobs_by_batch_id") as mock_query_jobs,
-        patch("documentai_api.app_batch.update_batch_status") as mock_update,
-    ):
-        # First call: initial read (processing). Second call: re-read sees winner's write.
-        mock_get_batch.side_effect = [
-            {
-                DocumentBatches.BATCH_ID: "test-batch",
-                DocumentBatches.BATCH_STATUS: "processing",
-                DocumentBatches.CREATED_AT: "2026-02-27",
-            },
-            {
-                DocumentBatches.BATCH_ID: "test-batch",
-                DocumentBatches.BATCH_STATUS: "completed",
-                DocumentBatches.CREATED_AT: "2026-02-27",
-            },
-        ]
-        mock_query_jobs.return_value = [
-            {"fileName": "doc1.pdf", "jobId": "job-1", "processStatus": "success"},
-            {"fileName": "doc2.pdf", "jobId": "job-2", "processStatus": "success"},
-        ]
-        # Simulate ConditionalCheckFailedException (another poller won)
-        mock_update.side_effect = Exception("ConditionalCheckFailedException")
-
-        response = api_client.get("/v1/batches/test-batch")
-
-        assert response.status_code == 200
-        # Response reflects the winner's write, not our stale snapshot
-        data = response.json()
-        assert data["batchStatus"] == "completed"
 
 
 def test_batch_upload_classify_as_failed_on_upload_error(api_client, pdf_file):
@@ -567,39 +440,6 @@ def test_batch_upload_create_batch_fails(api_client, pdf_file):
     assert response.status_code == 500
     # update_batch_status should NOT be called since get_batch returns None
     mock_update_status.assert_not_called()
-
-
-def test_get_batch_status_is_classified_vs_is_completed(api_client):
-    """NOT_IMPLEMENTED is terminal (is_classified) but not completed (is_completed).
-
-    Lazy completion should trigger (all terminal) but the completed count
-    should not include NOT_IMPLEMENTED jobs.
-    """
-    with (
-        patch("documentai_api.app_batch.get_batch") as mock_get_batch,
-        patch("documentai_api.app_batch.query_jobs_by_batch_id") as mock_query_jobs,
-        patch("documentai_api.app_batch.update_batch_status") as mock_update,
-    ):
-        mock_get_batch.return_value = {
-            DocumentBatches.BATCH_ID: "test-batch",
-            DocumentBatches.BATCH_STATUS: "processing",
-            DocumentBatches.CREATED_AT: "2026-02-27",
-        }
-        mock_query_jobs.return_value = [
-            {"fileName": "doc1.pdf", "jobId": "job-1", "processStatus": "success"},
-            {"fileName": "doc2.pdf", "jobId": "job-2", "processStatus": "not_implemented"},
-        ]
-
-        response = api_client.get("/v1/batches/test-batch")
-
-        assert response.status_code == 200
-        data = response.json()
-        # All jobs are terminal (is_classified) so lazy completion triggers
-        mock_update.assert_called_once()
-        # Only "success" counts as completed - not_implemented does not
-        assert data["completed"] == 1
-        # All jobs are terminal so inProgress is 0
-        assert data["inProgress"] == 0
 
 
 def test_batch_upload_trace_id_generated(api_client, pdf_file):

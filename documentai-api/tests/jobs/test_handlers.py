@@ -54,6 +54,7 @@ def test_document_processor_marks_failed_on_error():
             "documentai_api.jobs.document_processor.handler.main",
             side_effect=RuntimeError("boom"),
         ),
+        patch("documentai_api.jobs.document_processor.handler.get_ddb_record", return_value=None),
         patch("documentai_api.jobs.document_processor.handler.classify_as_failed") as mock_fail,
     ):
         result = doc_handler(EVENTBRIDGE_S3_EVENT, None)
@@ -75,6 +76,7 @@ def test_bda_result_processor_marks_failed_on_error():
             "documentai_api.jobs.bda_result_processor.handler.get_ddb_key_from_bda_output",
             return_value=BDA_DDB_FILE_NAME,
         ),
+        patch("documentai_api.jobs.bda_result_processor.handler.get_ddb_record", return_value=None),
         patch("documentai_api.jobs.bda_result_processor.handler.classify_as_failed") as mock_fail,
     ):
         result = bda_handler(BDA_EVENT, None)
@@ -165,6 +167,55 @@ def test_bda_result_processor_updates_ddb_to_failed(initial_status, ddb_doc_meta
     record = ddb_doc_metadata_table.get_item(Key={"fileName": BDA_DDB_FILE_NAME})["Item"]
     assert record[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.FAILED.value
     assert "bda integration crash" in record.get(DocumentMetadata.ERROR_MESSAGE, "")
+
+
+def test_document_processor_passes_batch_id_to_classify_as_failed(ddb_doc_metadata_table):
+    """Integration: batch_id from DDB record is threaded through to classify_as_failed."""
+    ddb_doc_metadata_table.put_item(
+        Item={
+            DocumentMetadata.FILE_NAME: "doc.pdf",
+            DocumentMetadata.PROCESS_STATUS: ProcessStatus.NOT_STARTED.value,
+            DocumentMetadata.BATCH_ID: "test-batch-id",
+        }
+    )
+
+    with (
+        patch(
+            "documentai_api.jobs.document_processor.handler.main",
+            side_effect=Exception("document processor crash"),
+        ),
+        patch("documentai_api.jobs.document_processor.handler.classify_as_failed") as mock_fail,
+    ):
+        doc_handler(EVENTBRIDGE_S3_EVENT, None)
+
+    assert mock_fail.call_args.kwargs["batch_id"] == "test-batch-id"
+
+
+def test_bda_result_processor_passes_batch_id_to_classify_as_failed(ddb_doc_metadata_table):
+    """Integration: batch_id from DDB record is threaded through to classify_as_failed."""
+    ddb_doc_metadata_table.put_item(
+        Item={
+            DocumentMetadata.FILE_NAME: BDA_DDB_FILE_NAME,
+            DocumentMetadata.BDA_INVOCATION_ID: BDA_INVOCATION_ID,
+            DocumentMetadata.PROCESS_STATUS: ProcessStatus.NOT_STARTED.value,
+            DocumentMetadata.BATCH_ID: "test-batch-id",
+        }
+    )
+
+    with (
+        patch(
+            "documentai_api.jobs.bda_result_processor.handler.main",
+            side_effect=Exception("bda crash"),
+        ),
+        patch(
+            "documentai_api.jobs.bda_result_processor.handler.get_ddb_key_from_bda_output",
+            return_value=BDA_DDB_FILE_NAME,
+        ),
+        patch("documentai_api.jobs.bda_result_processor.handler.classify_as_failed") as mock_fail,
+    ):
+        bda_handler(BDA_EVENT, None)
+
+    assert mock_fail.call_args.kwargs["batch_id"] == "test-batch-id"
 
 
 def test_bda_result_processor_returns_500_when_ddb_key_unresolvable():

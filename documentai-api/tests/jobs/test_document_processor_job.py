@@ -197,6 +197,7 @@ def test_main_first_time_pdf(input_pdf, mocker, ddb_doc_metadata_table, mock_inv
         input_pdf.key,
         expected_object_key,
         PreclassificationCategory.EMPLOYER_INCOME,
+        None,
     )
 
 
@@ -230,7 +231,11 @@ def test_main_strips_tenant_prefix_for_ddb_key(s3_bucket, ddb_doc_metadata_table
 
     # S3 operations still receive the full tenant-prefixed key.
     mock_invoke.assert_called_once_with(
-        obj.bucket_name, tenant_key, expected_ddb_key, PreclassificationCategory.EMPLOYER_INCOME
+        obj.bucket_name,
+        tenant_key,
+        expected_ddb_key,
+        PreclassificationCategory.EMPLOYER_INCOME,
+        None,
     )
 
 
@@ -262,6 +267,7 @@ def test_main_first_time_image(input_image, mocker, ddb_doc_metadata_table, mock
         input_image.key,
         expected_object_key,
         PreclassificationCategory.EMPLOYER_INCOME,
+        None,
     )
 
 
@@ -339,7 +345,11 @@ def test_main_uses_env_bucket_when_not_provided(input_pdf, mocker, mock_invoke):
     main(input_pdf.key)
 
     mock_invoke.assert_called_once_with(
-        input_pdf.bucket_name, input_pdf.key, "test.pdf", PreclassificationCategory.EMPLOYER_INCOME
+        input_pdf.bucket_name,
+        input_pdf.key,
+        "test.pdf",
+        PreclassificationCategory.EMPLOYER_INCOME,
+        None,
     )
 
 
@@ -643,7 +653,11 @@ def test_main_invokes_bda_when_match_found(input_pdf, mocker, mock_invoke):
     main(input_pdf.key, input_pdf.bucket_name)
 
     mock_invoke.assert_called_once_with(
-        input_pdf.bucket_name, input_pdf.key, "test.pdf", PreclassificationCategory.EMPLOYER_INCOME
+        input_pdf.bucket_name,
+        input_pdf.key,
+        "test.pdf",
+        PreclassificationCategory.EMPLOYER_INCOME,
+        None,
     )
 
 

@@ -130,7 +130,9 @@ async def _process_batch_files(
         )
 
         if ai_consent_flag is False:
-            await asyncio.to_thread(classify_as_ai_consent_declined, object_key=ddb_key)
+            await asyncio.to_thread(
+                classify_as_ai_consent_declined, object_key=ddb_key, batch_id=batch_id
+            )
             return BatchJobItem(file_name=file.filename, job_id=job_id, batch_position=idx)
 
         async with semaphore:
@@ -148,7 +150,10 @@ async def _process_batch_files(
                 )
             except ImageConversionError as e:
                 await asyncio.to_thread(
-                    classify_as_conversion_failed, object_key=ddb_key, error_message=str(e)
+                    classify_as_conversion_failed,
+                    object_key=ddb_key,
+                    error_message=str(e),
+                    batch_id=batch_id,
                 )
             except HTTPException as e:
                 await asyncio.to_thread(
@@ -156,6 +161,7 @@ async def _process_batch_files(
                     object_key=ddb_key,
                     error_message=e.detail,
                     data=ClassificationData(additional_info=e.detail),
+                    batch_id=batch_id,
                 )
                 raise
 
@@ -358,46 +364,8 @@ async def get_batch_status(batch_id: str) -> BatchStatusResponse:
 
         completed = sum(1 for j in jobs if ProcessStatus.is_completed(j.job_status))
         failed = sum(1 for j in jobs if j.job_status == ProcessStatus.FAILED.value)
-        current_batch_status = batch_record.get(DocumentBatches.BATCH_STATUS)
-
-        # Lazy completion: if all jobs have reached a terminal state, mark batch done.
-        # Terminal states include success, failed, conversion_failed, ai_consent_declined, etc.
-        # TODO: Replace with atomic counters on the batch row so GET is pure-read
-        # and completion doesn't depend on polling. See _execute_batch for context.
-        all_classified = len(jobs) > 0 and all(
-            ProcessStatus.is_classified(j.job_status) for j in jobs
-        )
-        if current_batch_status == BatchStatus.PROCESSING.value and all_classified:
-            # TODO: Consider adding a PARTIAL batch status for mixed outcomes
-            # (some jobs succeeded, some failed). Currently any failure marks the
-            # entire batch FAILED, even if 99/100 succeeded. The response includes
-            # completed/failed counts so clients can distinguish, but the status
-            # itself doesn't reflect partial success.
-            final_status = BatchStatus.COMPLETED if failed == 0 else BatchStatus.FAILED
-            try:
-                update_batch_status(
-                    batch_id,
-                    status=final_status,
-                    condition_expression=f"{DocumentBatches.BATCH_STATUS} = :expected",
-                    condition_values={":expected": BatchStatus.PROCESSING.value},
-                )
-                current_batch_status = final_status.value
-                logger.info(
-                    "Batch status updated",
-                    extra={
-                        "batch_id": batch_id,
-                        "status": current_batch_status,
-                        "completed": completed,
-                        "failed": failed,
-                    },
-                )
-            except Exception:
-                # Another poller already updated - re-read current status
-                refreshed = get_batch(batch_id)
-                if refreshed:
-                    current_batch_status = refreshed.get(DocumentBatches.BATCH_STATUS)
-
         classified = sum(1 for j in jobs if ProcessStatus.is_classified(j.job_status))
+        current_batch_status = batch_record.get(DocumentBatches.BATCH_STATUS)
 
         return BatchStatusResponse(
             batch_id=batch_id,
