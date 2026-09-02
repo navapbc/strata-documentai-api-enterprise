@@ -825,3 +825,88 @@ def test_inferred_document_type_absent_from_dict_when_not_preclassified(
 
     assert response["responseCode"] == ResponseCodes.SUCCESS
     assert "inferredDocumentType" not in response
+
+
+# =============================================================================
+# _build_field_map - pure unit tests, no S3/DDB fixtures
+# =============================================================================
+# _build_field_map is private, but tested directly as a deliberate exception.
+# it's pure field-shaping logic (redaction, bounding box, confidence) allowing
+# the implementation details to be tested without S3/BDA mocking.
+
+
+def test_build_field_map_redacts_when_not_include_extracted():
+    result = response_builder_util._build_field_map(
+        field_confidence_map_list=[{"amount": 0.95}],
+        field_values={"amount": "1200"},
+        field_geometry={},
+        include_extracted_data=False,
+    )
+    assert result["amount"]["value"] == "<redacted>"
+    assert result["amount"]["confidence"] == 0.95
+
+
+def test_build_field_map_includes_value_when_include_extracted():
+    result = response_builder_util._build_field_map(
+        field_confidence_map_list=[{"amount": 0.95}],
+        field_values={"amount": "1200"},
+        field_geometry={},
+        include_extracted_data=True,
+    )
+    assert result["amount"]["value"] == "1200"
+
+
+def test_build_field_map_missing_value_returns_none():
+    result = response_builder_util._build_field_map(
+        field_confidence_map_list=[{"amount": 0.95}],
+        field_values={},
+        field_geometry={},
+        include_extracted_data=True,
+    )
+    assert result["amount"]["value"] is None
+
+
+def test_build_field_map_includes_geometry_when_requested():
+    geo = {"geometry": [{"boundingBox": {"top": 0.1}}], "type": "string"}
+    result = response_builder_util._build_field_map(
+        field_confidence_map_list=[{"name": 0.9}],
+        field_values={"name": "Ada"},
+        field_geometry={"name": geo},
+        include_extracted_data=True,
+        include_bounding_box=True,
+    )
+    assert result["name"]["geometry"] == geo["geometry"]
+    assert result["name"]["fieldType"] == "string"
+
+
+def test_build_field_map_omits_geometry_when_not_requested():
+    geo = {"geometry": [{"boundingBox": {"top": 0.1}}], "type": "string"}
+    result = response_builder_util._build_field_map(
+        field_confidence_map_list=[{"name": 0.9}],
+        field_values={"name": "Ada"},
+        field_geometry={"name": geo},
+        include_extracted_data=True,
+        include_bounding_box=False,
+    )
+    assert "geometry" not in result["name"]
+    assert "fieldType" not in result["name"]
+
+
+def test_build_field_map_rounds_confidence():
+    result = response_builder_util._build_field_map(
+        field_confidence_map_list=[{"f": 0.9567}],
+        field_values={},
+        field_geometry={},
+        include_extracted_data=False,
+    )
+    assert result["f"]["confidence"] == 0.96
+
+
+def test_build_field_map_empty_map_list_returns_empty():
+    result = response_builder_util._build_field_map(
+        field_confidence_map_list=[],
+        field_values={},
+        field_geometry={},
+        include_extracted_data=True,
+    )
+    assert result == {}

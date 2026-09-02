@@ -23,7 +23,7 @@ from documentai_api.utils.audit_log import log_event
 from documentai_api.utils.document_metadata_table import DocumentMetadataTable
 from documentai_api.utils.jwt_auth import tenant_scope
 from documentai_api.utils.pagination import decode_cursor, encode_cursor
-from documentai_api.utils.response_builder import _extract_field_values, nest_fields
+from documentai_api.utils.response_builder import extract_field_values, nest_fields
 from documentai_api.utils.s3 import get_bucket_and_key
 
 logger = get_logger(__name__)
@@ -60,7 +60,7 @@ def _record_to_detail(
     """Convert a DDB record to a full detail response."""
     fields = (
         nest_fields(
-            _extract_field_values(
+            extract_field_values(
                 record,
                 True,
                 include_bounding_box,
