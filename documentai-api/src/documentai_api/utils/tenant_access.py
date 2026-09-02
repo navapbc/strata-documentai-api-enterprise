@@ -11,9 +11,6 @@ from documentai_api.utils.auth import UserContext, get_user_context_from_api_key
 from documentai_api.utils.batch_operations import get_batch
 from documentai_api.utils.document_build import get_build_metadata
 
-# TODO: Have validate_batch_tenant_access and validate_build_tenant_access return the
-# fetched record to avoid duplicate DDB reads in the endpoint body.
-
 
 def validate_document_tenant_access(
     ddb_record: dict[str, Any] | None, tenant_id: str, job_id: str

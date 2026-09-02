@@ -237,8 +237,7 @@ async def _execute_batch(
         # via S3 event triggers, independent of batch_status. We mark the batch FAILED
         # but do NOT delete completed siblings - those represent real user work and
         # have their own per-job status visible in GET /v1/batches/{batch_id}.
-        # TODO: Jobs cancelled mid-upload leave DDB rows in non-terminal status
-        # (S3 PUT never completed). Add TTL or sweeper to clean these up.
+        # Stale rows here are swept by the document-reaper Lambda
         logger.exception(
             "Batch upload failed",
             extra={"batch_id": batch_id, "trace_id": trace_id, "upload_method": upload_method},
