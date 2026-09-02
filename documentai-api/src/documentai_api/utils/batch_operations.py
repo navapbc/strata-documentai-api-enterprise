@@ -8,10 +8,13 @@ from documentai_api.config.constants import (
     ConfigDefaults,
 )
 from documentai_api.config.env import EnvVars, get_required_env
+from documentai_api.logging import get_logger
 from documentai_api.schemas.document_batches import DocumentBatches
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import ddb as ddb_service
 from documentai_api.utils.dates import get_ttl_epoch_in_days
+
+logger = get_logger(__name__)
 
 
 def create_batch(
@@ -39,8 +42,10 @@ def create_batch(
 
     if category:
         item[DocumentBatches.CATEGORY] = category
+
     if tenant_id is not None:
         item[DocumentBatches.TENANT_ID] = tenant_id
+
     if api_key_name is not None:
         item[DocumentBatches.API_KEY_NAME] = api_key_name
 
@@ -59,6 +64,7 @@ def create_batch(
 
             raise HTTPException(status_code=409, detail="Batch ID already exists") from None
         raise
+
     return created_at
 
 
@@ -91,6 +97,7 @@ def update_batch_status(
         "UpdateExpression": update_expr,
         "ExpressionAttributeValues": expr_values,
     }
+
     if condition_expression:
         kwargs["ConditionExpression"] = condition_expression
 
@@ -112,3 +119,74 @@ def query_jobs_by_batch_id(batch_id: str) -> list[dict[str, Any]]:
     table_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME)
     index_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_BATCH_ID_INDEX_NAME)
     return ddb_service.query_by_key(table_name, index_name, DocumentMetadata.BATCH_ID, batch_id)
+
+
+def increment_resolved_count(batch_id: str) -> None:
+    """Atomically increment resolvedCount and finalize batch status when all jobs are done.
+
+    Swallows all exceptions - a counter failure must never abort the job that triggered it.
+    """
+    try:
+        table_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME)
+        from documentai_api.utils.aws_client_factory import AWSClientFactory
+
+        table = AWSClientFactory.get_ddb_table(table_name)
+
+        response = table.update_item(
+            Key={DocumentBatches.BATCH_ID: batch_id},
+            UpdateExpression=(
+                f"ADD {DocumentBatches.RESOLVED_COUNT} :one SET {DocumentBatches.UPDATED_AT} = :now"
+            ),
+            ExpressionAttributeValues={
+                ":one": 1,
+                ":now": datetime.now(UTC).isoformat(),
+                ":processing": BatchStatus.PROCESSING.value,
+            },
+            ConditionExpression=f"{DocumentBatches.BATCH_STATUS} = :processing",
+            ReturnValues="ALL_NEW",
+        )
+
+        updated = response.get("Attributes", {})
+        resolved = int(updated.get(DocumentBatches.RESOLVED_COUNT) or 0)  # type: ignore[arg-type]
+        total = int(updated.get(DocumentBatches.TOTAL_FILES) or 0)  # type: ignore[arg-type]
+
+        if resolved < total:
+            return
+
+        # All jobs resolved - determine terminal batch status.
+        # Re-query jobs to get accurate failed count rather than tracking it
+        # incrementally (avoids counter drift from retries or reaper overlap).
+        jobs = query_jobs_by_batch_id(batch_id)
+        from documentai_api.config.constants import ProcessStatus
+
+        failed_count = sum(
+            1
+            for j in jobs
+            if j.get(DocumentMetadata.PROCESS_STATUS) == ProcessStatus.FAILED.value
+            or j.get(DocumentMetadata.PROCESS_STATUS) == ProcessStatus.TIMED_OUT.value
+        )
+
+        if failed_count == 0:
+            terminal = BatchStatus.COMPLETED
+        elif failed_count == total:
+            terminal = BatchStatus.FAILED
+        else:
+            terminal = BatchStatus.PARTIAL
+
+        update_batch_status(
+            batch_id,
+            status=terminal,
+            condition_expression=f"{DocumentBatches.BATCH_STATUS} = :expected",
+            condition_values={":expected": BatchStatus.PROCESSING.value},
+        )
+        logger.info(
+            f"Batch {batch_id} finalized",
+            extra={
+                "status": terminal,
+                "resolved": resolved,
+                "failed": failed_count,
+                "total": total,
+            },
+        )
+    except Exception as e:
+        logger.warning(f"Failed to increment resolved count for batch {batch_id}: {e}")

@@ -401,6 +401,13 @@ class ProcessStatus(StrEnum):
             cls.PENDING_IMAGE_OPTIMIZATION,
         ]
 
+    @classmethod
+    def build_ddb_non_terminal_condition(cls) -> tuple[str, dict[str, str]]:
+        values = {f":nt{i}": s.value for i, s in enumerate(cls.non_terminal())}
+        placeholders = ", ".join(values)
+        condition = f"attribute_not_exists(processStatus) OR processStatus IN ({placeholders})"
+        return condition, values
+
 
 class S3MetadataKeys:
     # S3 metadata keys (for reading from S3 objects)
@@ -416,6 +423,7 @@ class BatchStatus(StrEnum):
     UPLOADING = "uploading"
     PROCESSING = "processing"
     COMPLETED = "completed"
+    PARTIAL = "partial"
     FAILED = "failed"
 
 

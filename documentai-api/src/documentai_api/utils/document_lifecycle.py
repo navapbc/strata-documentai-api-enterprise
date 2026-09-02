@@ -383,6 +383,10 @@ def upsert_initial_ddb_record(
             process_status = ProcessStatus.PASSWORD_PROTECTED
             response_code = ResponseCodes.PASSWORD_PROTECTED
             textract_result = None
+            if batch_id:
+                from documentai_api.utils.batch_operations import increment_resolved_count
+
+                increment_resolved_count(batch_id)
 
         elif not is_processing_selected:
             logger.info(
@@ -394,10 +398,17 @@ def upsert_initial_ddb_record(
                 1,
                 dimensions={"Category": user_provided_document_category or "unknown"},
             )
+
             if tenant_id and upload_date:
                 from documentai_api.utils.write_limit import decrement
 
                 decrement(tenant_id, upload_date)
+
+            if batch_id:
+                from documentai_api.utils.batch_operations import increment_resolved_count
+
+                increment_resolved_count(batch_id)
+
             process_status = ProcessStatus.PROCESSING_EXCLUDED
             response_code = ResponseCodes.PROCESSING_EXCLUDED
             textract_result = None
@@ -482,12 +493,14 @@ def upsert_initial_ddb_record(
             )
         )
 
-        # explicitly remove file reference to free memory for the lambda
+        # explicitly remove file reference to free memory
         del file_bytes
 
-        # Textract completed inline -- finalize the record with extraction results
+        # Textract completed inline - finalize the record with extraction results
         if textract_result is not None:
-            finalize_textract_result(ddb_key, textract_result, user_provided_document_category)
+            finalize_textract_result(
+                ddb_key, textract_result, user_provided_document_category, batch_id
+            )
 
         if ProcessStatus.is_pending_extraction(process_status):
             return bbox_future

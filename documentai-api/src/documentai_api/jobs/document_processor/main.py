@@ -147,7 +147,11 @@ def _invoke_bda(
 
 
 def invoke_bda(
-    bucket_name: str, object_key: str, ddb_key: str, preclassification_category: str | None = None
+    bucket_name: str,
+    object_key: str,
+    ddb_key: str,
+    preclassification_category: str | None = None,
+    batch_id: str | None = None,
 ) -> dict[str, Any]:
     """Wrapper that handles retry failures."""
     try:
@@ -161,6 +165,7 @@ def invoke_bda(
             object_key=ddb_key,
             error_message="BDA invocation failed",
             data=ClassificationData(additional_info=str(e)),
+            batch_id=batch_id,
         )
         raise
 
@@ -289,6 +294,7 @@ def main(
                 object_key=ddb_key,
                 error_message="Uploaded file content is not a supported document type",
                 data=ClassificationData(additional_info=str(e)),
+                batch_id=batch_id,
             )
             return
 
@@ -322,7 +328,7 @@ def main(
             )
 
             if _should_invoke_bda(preclassification_document_type):
-                invoke_bda(bucket_name, object_key, ddb_key, routing_category)
+                invoke_bda(bucket_name, object_key, ddb_key, routing_category, batch_id)
                 logger.info(f"Optimized {ddb_key} and invoked BDA")
             else:
                 logger.info(f"{ddb_key} preclassified as other_document; skipping BDA (flag on)")
@@ -331,6 +337,7 @@ def main(
                     data=ClassificationData(
                         additional_info="Preclassified as other_document; BDA skipped per feature flag"
                     ),
+                    batch_id=batch_id,
                 )
         else:
             _persist_optimization_metrics(ddb_key, opt.crop_result, False, None, opt_result=opt)
@@ -341,6 +348,7 @@ def main(
                     if opt.too_large
                     else "Failed to download file for optimization"
                 ),
+                batch_id=batch_id,
             )
     elif status and ProcessStatus.is_awaiting_processing(status):
         # Atomically claim - only one invocation proceeds; duplicates bail.
@@ -368,7 +376,7 @@ def main(
             ddb_key, opt.crop_result, False, opt.file_size_bytes, opt_result=opt
         )
         if _should_invoke_bda(preclassification_document_type):
-            invoke_bda(bucket_name, object_key, ddb_key, routing_category)
+            invoke_bda(bucket_name, object_key, ddb_key, routing_category, batch_id)
         else:
             logger.info(f"{ddb_key} preclassified as other_document; skipping BDA (flag on)")
             classify_as_extraction_not_configured(
@@ -376,6 +384,7 @@ def main(
                 data=ClassificationData(
                     additional_info="Preclassified as other_document; BDA skipped per feature flag"
                 ),
+                batch_id=batch_id,
             )
     else:
         # Already processing or terminal (SUCCESS, FAILED, STARTED) - skip.

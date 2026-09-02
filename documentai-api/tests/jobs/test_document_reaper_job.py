@@ -192,6 +192,32 @@ def test_reap_error_counted(mock_env, ddb_doc_metadata_table, create_stale_recor
     assert result["outcomes"].get("error") == 1
 
 
+def test_reaper_increments_batch_resolved_count(
+    mock_env, ddb_doc_metadata_table, ddb_batches_table, create_stale_record, mocker
+):
+    """Reaped record with a batch_id triggers increment_resolved_count."""
+    from documentai_api.config.constants import BatchStatus
+    from documentai_api.schemas.document_batches import DocumentBatches
+    from documentai_api.utils import batch_operations as batch_util
+
+    batch_util.create_batch("test-batch-id", 1, None)
+    batch_util.update_batch_status("test-batch-id", BatchStatus.PROCESSING)
+
+    item = {
+        DocumentMetadata.FILE_NAME: "batched.pdf",
+        DocumentMetadata.PROCESS_STATUS: ProcessStatus.STARTED,
+        DocumentMetadata.CREATED_AT: STALE_CREATED_AT,
+        DocumentMetadata.BATCH_ID: "test-batch-id",
+    }
+    ddb_doc_metadata_table.put_item(Item=item)
+    mocker.patch("documentai_api.jobs.document_reaper.main.cloudwatch_service.put_metric_data")
+
+    main()
+
+    batch = ddb_batches_table.get_item(Key={"batchId": "test-batch-id"})["Item"]
+    assert batch[DocumentBatches.BATCH_STATUS] == BatchStatus.FAILED.value
+
+
 def test_pipeline_race_not_clobbered(mock_env, ddb_doc_metadata_table, create_stale_record):
     """Pipeline completing a record between GSI read and reaper write must not be clobbered."""
     create_stale_record("file.pdf", ProcessStatus.STARTED)

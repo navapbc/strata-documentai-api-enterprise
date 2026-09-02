@@ -115,6 +115,7 @@ def _process_bda_output_inner(
 ) -> dict[str, Any]:
 
     file_name: str = ddb_record[DocumentMetadata.FILE_NAME]
+    batch_id: str | None = ddb_record.get(DocumentMetadata.BATCH_ID)
 
     bda_result_json = get_bda_result_json(bda_output_s3_uri)
     if not bda_result_json:
@@ -149,6 +150,7 @@ def _process_bda_output_inner(
                 object_key=file_name,
                 data=classification_data,
                 result_processor_started_at=result_processor_started_at,
+                batch_id=batch_id,
             )
         else:
             msg += "Unable to extract meaningful document content."
@@ -158,6 +160,7 @@ def _process_bda_output_inner(
                 object_key=file_name,
                 data=classification_data,
                 result_processor_started_at=result_processor_started_at,
+                batch_id=batch_id,
             )
     else:
         msg = "Custom matching blueprint found, and document type matches. Success."
@@ -191,6 +194,7 @@ def _process_bda_output_inner(
             applied_extraction_confidence_floor=confidence_floor,
             used_default_confidence_floor=used_default_floor,
             result_processor_started_at=result_processor_started_at,
+            batch_id=batch_id,
         )
 
 

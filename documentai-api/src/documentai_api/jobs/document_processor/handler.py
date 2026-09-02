@@ -6,7 +6,9 @@ from typing import Any
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.jobs.document_processor.main import main
 from documentai_api.logging import get_logger, init
+from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.telemetry import setup as setup_otel
+from documentai_api.utils.ddb import get_ddb_record
 from documentai_api.utils.document_classification import classify_as_failed
 from documentai_api.utils.lambda_error_handler import handle_lambda_errors
 from documentai_api.utils.s3 import extract_s3_info_from_event
@@ -36,13 +38,17 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         except Exception as e:
             logger.error(f"Document processing failed for {key}: {e}")
             ddb_key = os.path.basename(key)
+
             try:
+                record = get_ddb_record(ddb_key)
+                batch_id = record.get(DocumentMetadata.BATCH_ID) if record else None
                 classify_as_failed(
                     object_key=ddb_key,
                     error_message=str(e),
                     data=ClassificationData(
                         additional_info="Unhandled error in document processor"
                     ),
+                    batch_id=batch_id,
                 )
             except Exception as ddb_err:
                 logger.error(f"Failed to mark {ddb_key} as failed in DDB: {ddb_err}")

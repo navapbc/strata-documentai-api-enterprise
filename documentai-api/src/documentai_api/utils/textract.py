@@ -540,6 +540,7 @@ def finalize_textract_result(
     ddb_key: str,
     textract_result: dict[str, Any],
     user_provided_document_category: str | None,
+    batch_id: str | None = None,
 ) -> None:
     """Update the DDB record with Textract extraction results.
 
@@ -589,4 +590,5 @@ def finalize_textract_result(
         required_field_list=required_field_list,
         applied_extraction_confidence_floor=confidence_floor,
         used_default_confidence_floor=used_default_floor,
+        batch_id=batch_id,
     )
