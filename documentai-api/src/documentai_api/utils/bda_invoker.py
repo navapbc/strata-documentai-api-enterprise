@@ -99,7 +99,12 @@ def invoke_bedrock_data_automation(
                 bucket=source_bucket_name, key=source_object_name, body=truncated_bytes
             )
 
-        # TODO: refactor to call services/bda.py instead of calling runtime client directly
+        # considered moving to services/bda.py instead of calling runtime client
+        # directly. ultimately decided not to. services/bda.py does not have
+        # tracing/span. moving the call would mean either introducing
+        # span-wrapping into a service module that's otherwise plain client calls,
+        # or splitting the span from the actual invocation across two files.
+        # neither is an improvement. the juice isn't worth the squeeze.
         with tracer.start_as_current_span("bda.invoke_data_automation_async") as span:
             span.set_attribute("bda.project_arn", bda_project_arn)
             span.set_attribute("bda.pages_sent", pages_sent)
@@ -113,6 +118,7 @@ def invoke_bedrock_data_automation(
                 },
             )
         logger.info(f"BDA response: {response}")
+
         return (
             str(response.get("invocationArn")),
             bda_project_arn,

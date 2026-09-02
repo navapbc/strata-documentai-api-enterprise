@@ -24,11 +24,13 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
 
     Processes metrics from SQS queue and writes to S3.
     """
-    # TODO: Update to call main() if more complex processing is needed,
-    # currently just writes raw messages to S3
+    # Calls write_to_s3 directly rather than invoking main(). main()'s receive/delete
+    # loop conflicts with Lambda's SQS event-source mapping, which handles message
+    # delivery and deletion
     bucket_name = get_aws_config().ddb_export_bucket_name
     if not bucket_name:
         raise KeyError("DDB_EXPORT_BUCKET_NAME")
+
     records = event.get("Records", [])
 
     if records:
@@ -36,6 +38,7 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         logger.info(f"Processing {len(records)} records from {queue_arn}")
 
     processed = 0
+
     for record in records:
         try:
             # Extract traceparent from MessageAttributes to stitch this span
