@@ -6,7 +6,6 @@ from typing import Any
 from documentai_api.config.constants import (
     UUID_PATTERN,
     BdaResponseFields,
-    ConfigDefaults,
 )
 from documentai_api.config.env import EnvVars, get_required_env
 from documentai_api.logging import get_logger
@@ -22,6 +21,19 @@ class BdaFieldProcessingData:
     empty_fields: list[str]
     field_confidence_map_list: list[dict[str, float]]
     fields_missing_geometry: list[str] | None = None
+
+
+@dataclass
+class BdaFieldProcessingResult:
+    confidence: float
+    is_empty: bool
+    has_geometry: bool = True
+
+
+@dataclass
+class MatchedBlueprintInfo:
+    name: str
+    confidence: float | None
 
 
 def calculate_average_non_empty_confidence(
@@ -40,108 +52,6 @@ def calculate_average_non_empty_confidence(
     if not scores:
         return None
     return sum(scores) / len(scores)
-
-
-@dataclass
-class BdaFieldProcessingResult:
-    confidence: float
-    is_empty: bool
-    has_geometry: bool = True
-
-
-def _get_missing_geometry_threshold() -> float:
-    """Get the confidence threshold below which a no-geometry field is considered missing.
-
-    Returns 0.0 when the feature is disabled (nothing will be below 0).
-    """
-    from documentai_api.utils.ssm import is_missing_geo_included_with_missing_fields
-
-    if not is_missing_geo_included_with_missing_fields():
-        return 0.0
-
-    return ConfigDefaults.MISSING_GEOMETRY_CONFIDENCE_THRESHOLD
-
-
-def _extract_fields_recursive(
-    data: dict[str, Any],
-    parent_key: str,
-    confidence_scores: list[float],
-    empty_fields: list[str],
-    field_confidence_map_list: list[dict[str, float]],
-    fields_missing_geometry: list[str],
-    field_values: dict[str, Any] | None = None,
-    field_geometry: dict[str, dict[str, Any]] | None = None,
-) -> None:
-    """Recursively process fields, handling both flat and nested structures.
-
-    BDA returns nested objects (e.g. ``payment_details: {base_rent: {...}}``). We
-    flatten them into dot-joined path names (``payment_details.base_rent``) because
-    the flat form is the vocabulary every internal consumer wants: confidence
-    averaging and empty-field counting iterate a flat ``[{name: conf}]`` list,
-    ``FIELD_CONFIDENCE_SCORES`` is stored flat in DDB, and extraction-rule matching
-    is plain set membership over these names. The API response re-nests these dotted
-    names at the edge (``_nest_fields`` in response_builder); do not push the nested
-    shape back through here.
-    """
-    missing_geo_threshold = _get_missing_geometry_threshold()
-
-    for field_name, field_data in data.items():
-        if not isinstance(field_data, dict):
-            continue
-
-        # Dot-join the parent path into the child name to flatten nested BDA fields.
-        full_field_name = f"{parent_key}.{field_name}" if parent_key else field_name
-
-        # check field is an actual extracted value (e.g. confidence score or value) or a nested structure
-        if (
-            BdaResponseFields.FIELD_CONFIDENCE in field_data
-            or BdaResponseFields.FIELD_VALUE in field_data
-        ):
-            # extracted field - process it
-            field_result = _process_single_field(full_field_name, field_data)
-            field_confidence_map_list.append({full_field_name: field_result.confidence})
-
-            if field_result.is_empty:
-                empty_fields.append(full_field_name)
-            elif not field_result.has_geometry and field_result.confidence < missing_geo_threshold:
-                fields_missing_geometry.append(full_field_name)
-            else:
-                confidence_scores.append(field_result.confidence)
-
-            if field_values is not None:
-                field_values[full_field_name] = field_data.get(BdaResponseFields.FIELD_VALUE)
-
-            if field_geometry is not None and BdaResponseFields.FIELD_GEOMETRY in field_data:
-                field_geometry[full_field_name] = {
-                    "type": field_data.get(BdaResponseFields.FIELD_TYPE),
-                    "geometry": field_data[BdaResponseFields.FIELD_GEOMETRY],
-                }
-        else:
-            # nested structure - recursion required
-            _extract_fields_recursive(
-                field_data,
-                full_field_name,
-                confidence_scores,
-                empty_fields,
-                field_confidence_map_list,
-                fields_missing_geometry,
-                field_values,
-                field_geometry,
-            )
-
-
-def _process_single_field(field_name: str, field_data: dict[str, Any]) -> BdaFieldProcessingResult:
-    """Process a single field and return its results."""
-    confidence = field_data.get(BdaResponseFields.FIELD_CONFIDENCE, 0)
-    value = field_data.get(BdaResponseFields.FIELD_VALUE, "")
-    is_empty = len(str(value)) == 0
-    has_geometry = BdaResponseFields.FIELD_GEOMETRY in field_data
-
-    logger.info(
-        f"Extracted field name: {field_name}, confidence: {confidence}, has_geometry: {has_geometry}"
-    )
-
-    return BdaFieldProcessingResult(confidence, is_empty, has_geometry)
 
 
 def get_text_from_standard_blueprint(bda_result_json: dict[str, Any]) -> str | None:
@@ -166,54 +76,6 @@ def get_text_from_standard_blueprint(bda_result_json: dict[str, Any]) -> str | N
             return str(text.strip())
 
     return None
-
-
-def extract_field_values_from_bda_results(
-    bda_result_json: dict[str, Any],
-    include_geometry: bool = False,
-) -> tuple[BdaFieldProcessingData, dict[str, Any], dict[str, dict[str, Any]]]:
-    """Extract metadata, field values, and optionally geometry from BDA result."""
-    if BdaResponseFields.EXPLAINABILITY_INFO not in bda_result_json:
-        return (BdaFieldProcessingData([], [], []), {}, {})
-
-    explainability_info = bda_result_json[BdaResponseFields.EXPLAINABILITY_INFO]
-
-    confidence_scores: list[float] = []
-    empty_fields: list[str] = []
-    field_confidence_map_list: list[dict[str, float]] = []
-    fields_missing_geometry: list[str] = []
-    field_values: dict[str, Any] = {}
-    field_geometry: dict[str, dict[str, Any]] = {}
-
-    for item in explainability_info:
-        if isinstance(item, dict):
-            _extract_fields_recursive(
-                item,
-                "",
-                confidence_scores,
-                empty_fields,
-                field_confidence_map_list,
-                fields_missing_geometry,
-                field_values,
-                field_geometry if include_geometry else None,
-            )
-
-    metadata = BdaFieldProcessingData(
-        confidence_scores=confidence_scores,
-        empty_fields=empty_fields,
-        field_confidence_map_list=field_confidence_map_list,
-        fields_missing_geometry=fields_missing_geometry,
-    )
-
-    return (metadata, field_values, field_geometry)
-
-
-def extract_field_metadata_from_bda_results(
-    bda_result_json: dict[str, Any],
-) -> BdaFieldProcessingData:
-    """Extract only metadata (confidence, empty fields) from BDA result."""
-    metadata, _, _ = extract_field_values_from_bda_results(bda_result_json)
-    return metadata
 
 
 def extract_region_from_bda_arn(bda_invocation_arn: str) -> str | None:
@@ -271,3 +133,12 @@ def get_ddb_key_from_bda_output(output_bucket_name: str, output_object_key: str)
     if not record:
         return None
     return record.get(DocumentMetadata.FILE_NAME)
+
+
+def get_matched_blueprint(bda_result_json: dict[str, Any]) -> MatchedBlueprintInfo:
+    """Extract matched blueprint name and confidence from BDA result JSON."""
+    matched_blueprint = bda_result_json.get(BdaResponseFields.MATCHED_BLUEPRINT, {})
+    return MatchedBlueprintInfo(
+        name=matched_blueprint.get(BdaResponseFields.MATCHED_BLUEPRINT_NAME),
+        confidence=matched_blueprint.get(BdaResponseFields.MATCHED_BLUEPRINT_CONFIDENCE),
+    )

@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+from documentai_api.extractors.textract import extract_textract_identity
 from documentai_api.mappings.textract.us_drivers_licenses import FIELD_MAP as DL_FIELD_MAP
 from documentai_api.mappings.textract.us_drivers_licenses import (
     NON_NORMALIZED_ANALYZE_ID_FIELDS as DL_SUPPLEMENTAL_FIELDS,
@@ -21,12 +22,11 @@ from documentai_api.mappings.textract.us_passports import (
 from documentai_api.mappings.textract.us_passports import (
     NOVA_SUPPLEMENTAL_PROMPT as PASSPORT_SUPPLEMENTAL_PROMPT,
 )
+from documentai_api.processors.textract import process_textract_result
+from documentai_api.readers.textract import extract_field_values_from_textract_results
 from documentai_api.utils.textract import (
-    extract_field_values_from_textract_results,
     extract_fields_from_analyze_id,
-    finalize_textract_result,
     get_id_type,
-    try_textract_identity,
 )
 
 # =============================================================================
@@ -187,7 +187,7 @@ def test_extract_field_values_from_textract_results_empty():
 
 
 # =============================================================================
-# try_textract_identity
+# extract_textract_identity
 # =============================================================================
 
 
@@ -198,39 +198,39 @@ def test_extract_field_values_from_textract_results_empty():
         ("image/tiff", True),  # unsupported content type
     ],
 )
-def test_try_textract_identity_returns_none_early(mocker, content_type, flag_on):
+def test_extract_textract_identity_returns_none_early(mocker, content_type, flag_on):
     mocker.patch(
-        "documentai_api.utils.ssm.is_textract_identity_enabled",
+        "documentai_api.extractors.textract.is_textract_identity_enabled",
         return_value=flag_on,
     )
-    result = try_textract_identity(content_type, b"bytes", "key")
+    result = extract_textract_identity(content_type, b"bytes", "key")
     assert result is None
 
 
-def test_try_textract_identity_returns_result_on_success(mocker, monkeypatch):
+def test_extract_textract_identity_returns_result_on_success(mocker, monkeypatch):
     from documentai_api.config.constants import ExtractMethod
     from documentai_api.config.env import EnvVars
 
     monkeypatch.setenv(EnvVars.DOCUMENTAI_OUTPUT_LOCATION, "s3://test-bucket/output")
 
     mocker.patch(
-        "documentai_api.utils.ssm.is_textract_identity_enabled",
+        "documentai_api.extractors.textract.is_textract_identity_enabled",
         return_value=True,
     )
     mocker.patch(
-        "documentai_api.services.textract.analyze_id",
+        "documentai_api.extractors.textract.analyze_id",
         return_value=json.loads(
             (FIXTURE_DIR / "analyze_id_drivers_license_fields_only.json").read_text()
         ),
     )
-    mocker.patch("documentai_api.services.s3.put_object")
-    mock_set_method = mocker.patch("documentai_api.utils.ddb.set_extract_method")
+    mocker.patch("documentai_api.extractors.textract.s3_service.put_object")
+    mock_set_method = mocker.patch("documentai_api.extractors.textract.set_extract_method")
 
-    result = try_textract_identity("image/jpeg", b"bytes", "test-key")
+    result = extract_textract_identity("image/jpeg", b"bytes", "test-key")
 
     assert result is not None
-    assert result.matched_document_class == "US-drivers-licenses"
-    assert result.textract_s3_uri == "s3://test-bucket/output/textract/test-key.json"
+    assert result.document_type == "US-drivers-licenses"
+    assert result.output_s3_uri == "s3://test-bucket/output/textract/test-key.json"
     assert len(result.field_confidence_scores) > 0
     assert result.extract_started_at is not None
     assert result.extract_completed_at is not None
@@ -242,25 +242,25 @@ def test_try_textract_identity_returns_result_on_success(mocker, monkeypatch):
     assert call_args[1] == ExtractMethod.TEXTRACT
 
 
-def test_try_textract_identity_returns_none_on_textract_failure(mocker, monkeypatch):
+def test_extract_textract_identity_returns_none_on_textract_failure(mocker, monkeypatch):
     from documentai_api.config.env import EnvVars
 
     monkeypatch.setenv(EnvVars.DOCUMENTAI_OUTPUT_LOCATION, "s3://test-bucket/output")
 
     mocker.patch(
-        "documentai_api.utils.ssm.is_textract_identity_enabled",
+        "documentai_api.extractors.textract.is_textract_identity_enabled",
         return_value=True,
     )
     mocker.patch(
-        "documentai_api.services.textract.analyze_id",
+        "documentai_api.extractors.textract.analyze_id",
         side_effect=Exception("Textract down"),
     )
 
-    result = try_textract_identity("image/jpeg", b"bytes", "test-key")
+    result = extract_textract_identity("image/jpeg", b"bytes", "test-key")
     assert result is None
 
 
-def test_try_textract_identity_duplicate_dates_falls_back_despite_supplemental(
+def test_extract_textract_identity_duplicate_dates_falls_back_despite_supplemental(
     mocker, monkeypatch, analyze_id_passport_response
 ):
     """Duplicate dates trigger BDA fallback even when Nova supplemental would add fields.
@@ -274,7 +274,7 @@ def test_try_textract_identity_duplicate_dates_falls_back_despite_supplemental(
     monkeypatch.setenv(EnvVars.DOCUMENTAI_OUTPUT_LOCATION, "s3://test-bucket/output")
 
     mocker.patch(
-        "documentai_api.utils.ssm.is_textract_identity_enabled",
+        "documentai_api.extractors.textract.is_textract_identity_enabled",
         return_value=True,
     )
 
@@ -288,7 +288,7 @@ def test_try_textract_identity_duplicate_dates_falls_back_despite_supplemental(
             }
 
     mocker.patch(
-        "documentai_api.services.textract.analyze_id",
+        "documentai_api.extractors.textract.analyze_id",
         return_value=analyze_id_passport_response,
     )
 
@@ -298,17 +298,17 @@ def test_try_textract_identity_duplicate_dates_falls_back_despite_supplemental(
         return_value=[{"field_name": "sex", "value": "F", "block_index": 0}],
     )
 
-    result = try_textract_identity("image/jpeg", b"bytes", "test-key")
+    result = extract_textract_identity("image/jpeg", b"bytes", "test-key")
 
     # Must fall back to BDA, NOT commit a supplemental-only record
     assert result is None
 
 
-# finalize_textract_result
+# process_textract_result
 # =============================================================================
 
 
-def test_finalize_textract_result_calls_classify_as_success(mocker):
+def test_process_textract_result_calls_classify_as_success(mocker):
     mock_classify = mocker.patch("documentai_api.utils.document_classification.classify_as_success")
     mocker.patch("documentai_api.utils.ddb.get_ddb_record", return_value={"tenantId": "t1"})
     mocker.patch(
@@ -324,22 +324,22 @@ def test_finalize_textract_result_calls_classify_as_success(mocker):
         return_value=None,
     )
 
-    from documentai_api.dtos.classification import TextractResult
+    from documentai_api.dtos.extraction import ExtractionResult
 
     started = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
     completed = datetime(2025, 1, 1, 12, 0, 2, tzinfo=UTC)
 
-    textract_result = TextractResult(
-        matched_document_class="US-drivers-licenses",
+    result = ExtractionResult(
+        document_type="US-drivers-licenses",
+        output_s3_uri="s3://bucket/output/textract/key.json",
         field_confidence_scores=[{"NAME_DETAILS.FIRST_NAME": 0.99}],
         field_empty_list=["ENDORSEMENTS"],
-        textract_s3_uri="s3://bucket/output/textract/key.json",
         extract_started_at=started,
         extract_completed_at=completed,
         extract_time=Decimal("2.00"),
     )
 
-    finalize_textract_result("test-key", textract_result, "identity")
+    process_textract_result("test-key", result, "identity")
 
     mock_classify.assert_called_once()
     call_kwargs = mock_classify.call_args[1]
@@ -350,7 +350,7 @@ def test_finalize_textract_result_calls_classify_as_success(mocker):
     assert call_kwargs["below_extraction_confidence_floor"] is False  # 0.99 > 0.65
 
 
-def test_finalize_textract_result_sets_below_floor_when_low_confidence(mocker):
+def test_process_textract_result_sets_below_floor_when_low_confidence(mocker):
     mock_classify = mocker.patch("documentai_api.utils.document_classification.classify_as_success")
     mocker.patch("documentai_api.utils.ddb.get_ddb_record", return_value={"tenantId": "t1"})
     mocker.patch(
@@ -366,22 +366,22 @@ def test_finalize_textract_result_sets_below_floor_when_low_confidence(mocker):
         return_value=None,
     )
 
-    from documentai_api.dtos.classification import TextractResult
+    from documentai_api.dtos.extraction import ExtractionResult
 
     started = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
     completed = datetime(2025, 1, 1, 12, 0, 2, tzinfo=UTC)
 
-    textract_result = TextractResult(
-        matched_document_class="US-drivers-licenses",
+    result = ExtractionResult(
+        document_type="US-drivers-licenses",
+        output_s3_uri="s3://bucket/output/textract/key.json",
         field_confidence_scores=[{"NAME_DETAILS.FIRST_NAME": 0.70}],
         field_empty_list=[],
-        textract_s3_uri="s3://bucket/output/textract/key.json",
         extract_started_at=started,
         extract_completed_at=completed,
         extract_time=Decimal("2.00"),
     )
 
-    finalize_textract_result("test-key", textract_result, "identity")
+    process_textract_result("test-key", result, "identity")
 
     call_kwargs = mock_classify.call_args[1]
     assert call_kwargs["below_extraction_confidence_floor"] is True  # 0.70 < 0.90

@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from documentai_api.config.constants import ProcessStatus
+from documentai_api.readers.bda import extract_field_values_from_bda_results
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils import bda as bda_util
 
@@ -56,21 +57,16 @@ def test_extract_field_values_from_bda_results():
             }
         ]
     }
-    metadata, field_values, _ = bda_util.extract_field_values_from_bda_results(bda_result)
+    metadata, field_values, _ = extract_field_values_from_bda_results(bda_result)
 
     assert len(metadata.confidence_scores) == 2
     assert len(metadata.empty_fields) == 0
     assert field_values["name"] == "John"
     assert field_values["email"] == "john@example.com"
 
-    # confirm extract_field_metadata_from_bda_results wrapper returns same metadata
-    metadata_only = bda_util.extract_field_metadata_from_bda_results(bda_result)
-    assert metadata_only.confidence_scores == metadata.confidence_scores
-    assert metadata_only.empty_fields == metadata.empty_fields
-
 
 def test_extract_field_values_with_geometry(bda_result_with_geometry):
-    _, field_values, geometry = bda_util.extract_field_values_from_bda_results(
+    _, field_values, geometry = extract_field_values_from_bda_results(
         bda_result_with_geometry, include_geometry=True
     )
 
@@ -84,14 +80,14 @@ def test_extract_field_values_with_geometry(bda_result_with_geometry):
 
 
 def test_extract_field_values_geometry_not_included_by_default(bda_result_with_geometry):
-    _, _, geometry = bda_util.extract_field_values_from_bda_results(bda_result_with_geometry)
+    _, _, geometry = extract_field_values_from_bda_results(bda_result_with_geometry)
     # geometry dict is empty when include_geometry is False (default)
     assert geometry == {}
 
 
 def test_extract_field_values_with_geometry_nested(bda_result_with_geometry):
     """Nested fields carry geometry with the full dotted field name as key."""
-    _, field_values, geometry = bda_util.extract_field_values_from_bda_results(
+    _, field_values, geometry = extract_field_values_from_bda_results(
         bda_result_with_geometry, include_geometry=True
     )
 
@@ -181,12 +177,12 @@ def test_get_ddb_record_from_bda_output_returns_none_no_record(ddb_doc_metadata_
 
 def test_extract_fields_identifies_missing_geometry_from_fixture(monkeypatch):
     """Fields without geometry and below threshold are flagged as missing."""
-    monkeypatch.setattr("documentai_api.utils.bda._get_missing_geometry_threshold", lambda: 0.25)
+    monkeypatch.setattr("documentai_api.readers.bda._get_missing_geometry_threshold", lambda: 0.25)
 
     fixture_path = FIXTURES_DIR / "payslip_missing_geometry.json"
     bda_result = json.loads(fixture_path.read_text())
 
-    metadata, _, _ = bda_util.extract_field_values_from_bda_results(bda_result)
+    metadata, _, _ = extract_field_values_from_bda_results(bda_result)
 
     assert metadata.fields_missing_geometry is not None
     # These fields have values but no geometry and confidence < 0.25

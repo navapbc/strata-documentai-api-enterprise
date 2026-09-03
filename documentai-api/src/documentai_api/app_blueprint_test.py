@@ -130,12 +130,12 @@ async def get_blueprint_test_result(
     claims: AdminClaims,
 ) -> BlueprintTestResult:
     """Poll for blueprint test results."""
+    from documentai_api.readers.bda import extract_field_values_from_bda_results
     from documentai_api.services.bda import (
         extract_bda_output_s3_uri,
         get_bda_result_json,
     )
-    from documentai_api.utils.bda import extract_field_values_from_bda_results
-    from documentai_api.utils.bda_output_processor import get_matched_blueprint
+    from documentai_api.utils.bda import get_matched_blueprint
     from documentai_api.utils.extraction_rules import apply_extraction_rules
 
     logger.info(f"Blueprint test {test_id}: polling for results")

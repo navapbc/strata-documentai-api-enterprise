@@ -2,8 +2,8 @@ from unittest.mock import patch
 
 import pytest
 
-from documentai_api.utils import bda_output_processor as bda_output_processor_util
-from documentai_api.utils.response_codes import ResponseCodes
+from documentai_api.processors import bda as bda_processor
+from documentai_api.utils import bda as bda_output_processor_util
 
 MOCK_S3_URI = "s3://test-bucket/processed/input/test-tenant/file-name.pdf/de8464af-d53e-44dc-a9f7-ad5360530210/0/custom_output/0/result.json"
 MOCK_DDB_RECORD = {"fileName": "input/test-tenant/file-name.pdf", "tenantId": "test-tenant"}
@@ -11,30 +11,6 @@ MOCK_DDB_RECORD = {"fileName": "input/test-tenant/file-name.pdf", "tenantId": "t
 # Realistic BDA output key (matches EventBridge suffix filter)
 BDA_OUTPUT_BUCKET = "output-bucket"
 BDA_OUTPUT_KEY = "processed/input/test-tenant/file-name.pdf/de8464af-d53e-44dc-a9f7-ad5360530210/0/custom_output/job_metadata.json"
-
-
-@pytest.mark.parametrize(
-    ("bda_result", "expected_response_code", "expected_has_confidence_map"),
-    [
-        (
-            {"explainability_info": [{"field1": {"confidence": 0.9, "value": "data"}}]},
-            ResponseCodes.SUCCESS,
-            True,
-        ),
-        ({}, ResponseCodes.INTERNAL_PROCESSING_ERROR, False),
-    ],
-)
-def test_get_bda_processing_results(
-    bda_result, expected_response_code, expected_has_confidence_map
-):
-    result = bda_output_processor_util.get_bda_processing_results(bda_result)
-
-    assert result.response_code == expected_response_code
-    if expected_has_confidence_map:
-        assert len(result.field_confidence_map_list) > 0
-    else:
-        assert result.empty_field_list == []
-        assert result.field_confidence_map_list == []
 
 
 @pytest.mark.parametrize(
@@ -58,15 +34,13 @@ def test_get_matched_blueprint(bda_result, expected_name, expected_confidence):
 def test_process_bda_output_blueprint_matched_without_user_category():
     """Even with no user-provided category, a matched BDA blueprint produces success + fields."""
     with (
-        patch(
-            "documentai_api.utils.bda_output_processor.extract_bda_output_s3_uri"
-        ) as mock_extract_uri,
-        patch("documentai_api.utils.bda_output_processor.get_bda_result_json") as mock_get_json,
+        patch("documentai_api.services.bda.extract_bda_output_s3_uri") as mock_extract_uri,
+        patch("documentai_api.services.bda.get_bda_result_json") as mock_get_json,
         patch(
             "documentai_api.utils.document_classification.classify_as_success"
         ) as mock_classify_as_success,
         patch(
-            "documentai_api.utils.bda_output_processor.get_ddb_record_from_bda_output",
+            "documentai_api.utils.bda.get_ddb_record_from_bda_output",
             return_value=MOCK_DDB_RECORD,
         ),
         patch(
@@ -90,7 +64,7 @@ def test_process_bda_output_blueprint_matched_without_user_category():
         }
         mock_classify_as_success.return_value = {"status": "success"}
 
-        result = bda_output_processor_util.process_bda_output(BDA_OUTPUT_BUCKET, BDA_OUTPUT_KEY)
+        result = bda_processor.process_bda_result(BDA_OUTPUT_BUCKET, BDA_OUTPUT_KEY)
 
         mock_classify_as_success.assert_called_once()
         assert result == {"status": "success"}
@@ -98,15 +72,13 @@ def test_process_bda_output_blueprint_matched_without_user_category():
 
 def test_process_bda_output_blueprint_matched():
     with (
-        patch(
-            "documentai_api.utils.bda_output_processor.extract_bda_output_s3_uri"
-        ) as mock_extract_uri,
-        patch("documentai_api.utils.bda_output_processor.get_bda_result_json") as mock_get_json,
+        patch("documentai_api.services.bda.extract_bda_output_s3_uri") as mock_extract_uri,
+        patch("documentai_api.services.bda.get_bda_result_json") as mock_get_json,
         patch(
             "documentai_api.utils.document_classification.classify_as_success"
         ) as mock_classify_as_success,
         patch(
-            "documentai_api.utils.bda_output_processor.get_ddb_record_from_bda_output",
+            "documentai_api.utils.bda.get_ddb_record_from_bda_output",
             return_value=MOCK_DDB_RECORD,
         ),
         patch(
@@ -130,7 +102,7 @@ def test_process_bda_output_blueprint_matched():
         }
         mock_classify_as_success.return_value = {"status": "success"}
 
-        result = bda_output_processor_util.process_bda_output(BDA_OUTPUT_BUCKET, BDA_OUTPUT_KEY)
+        result = bda_processor.process_bda_result(BDA_OUTPUT_BUCKET, BDA_OUTPUT_KEY)
 
         mock_classify_as_success.assert_called_once()
         assert result == {"status": "success"}
@@ -145,18 +117,14 @@ def test_process_bda_output_blueprint_matched():
 )
 def test_process_bda_output_no_matching_blueprint(text, expected_status, expected_classify_method):
     with (
+        patch("documentai_api.services.bda.extract_bda_output_s3_uri") as mock_extract_uri,
+        patch("documentai_api.services.bda.get_bda_result_json") as mock_get_json,
+        patch("documentai_api.utils.bda.get_text_from_standard_blueprint") as mock_get_text,
         patch(
-            "documentai_api.utils.bda_output_processor.extract_bda_output_s3_uri"
-        ) as mock_extract_uri,
-        patch("documentai_api.utils.bda_output_processor.get_bda_result_json") as mock_get_json,
-        patch(
-            "documentai_api.utils.bda_output_processor.get_text_from_standard_blueprint"
-        ) as mock_get_text,
-        patch(
-            f"documentai_api.utils.bda_output_processor.{expected_classify_method}"
+            f"documentai_api.utils.document_classification.{expected_classify_method}"
         ) as mock_classify_method,
         patch(
-            "documentai_api.utils.bda_output_processor.get_ddb_record_from_bda_output",
+            "documentai_api.utils.bda.get_ddb_record_from_bda_output",
             return_value=MOCK_DDB_RECORD,
         ),
     ):
@@ -168,7 +136,7 @@ def test_process_bda_output_no_matching_blueprint(text, expected_status, expecte
         mock_get_text.return_value = text
         mock_classify_method.return_value = expected_status
 
-        result = bda_output_processor_util.process_bda_output(BDA_OUTPUT_BUCKET, BDA_OUTPUT_KEY)
+        result = bda_processor.process_bda_result(BDA_OUTPUT_BUCKET, BDA_OUTPUT_KEY)
 
         mock_classify_method.assert_called_once()
         assert result == expected_status
@@ -198,11 +166,12 @@ def test_process_bda_output_no_matching_blueprint(text, expected_status, expecte
 def test_classify_extraction_result_below_floor(
     field_confidence_map_list, empty_fields, floor, expected_below
 ):
-    from documentai_api.dtos.classification import ClassificationData
+    from documentai_api.dtos.extraction import ExtractionResult
     from documentai_api.utils.document_classification import classify_extraction_result
 
-    data = ClassificationData(
-        matched_document_class="invoice",
+    result = ExtractionResult(
+        document_type="invoice",
+        output_s3_uri="s3://bucket/output.json",
         field_confidence_scores=field_confidence_map_list,
         field_empty_list=empty_fields,
     )
@@ -223,7 +192,7 @@ def test_classify_extraction_result_below_floor(
         ),
     ):
         mock_classify.return_value = {}
-        classify_extraction_result("key", data, "tenant")
+        classify_extraction_result("key", result, "tenant")
 
         call_kwargs = mock_classify.call_args[1]
         assert call_kwargs["below_extraction_confidence_floor"] is expected_below
