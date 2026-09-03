@@ -20,6 +20,7 @@ from opentelemetry import trace
 from documentai_api.config.constants import ConfigDefaults
 from documentai_api.config.env import get_aws_config
 from documentai_api.logging import get_logger
+from documentai_api.services.textract import get_words
 from documentai_api.utils.ssm import get_parameter_value
 
 logger = get_logger(__name__)
@@ -260,8 +261,6 @@ def detect_blur(image_bytes: bytes, content_type: str | None = None) -> BlurResu
     Returns:
         BlurResult with detection outcomes.
     """
-    from documentai_api.utils.aws_client_factory import AWSClientFactory
-
     if not content_type:
         content_type = "image/jpeg"
 
@@ -279,11 +278,9 @@ def detect_blur(image_bytes: bytes, content_type: str | None = None) -> BlurResu
         start = time.time()
         with tracer.start_as_current_span("textract.detect_document_text") as span:
             span.set_attribute("document.content_type", content_type)
-            textract = AWSClientFactory.get_textract_client()
-            response = textract.detect_document_text(Document={"Bytes": image_bytes})
+            words = get_words(image_bytes)
         elapsed = round(time.time() - start, 2)
 
-        words = [b for b in response["Blocks"] if b["BlockType"] == "WORD"]
         word_count = len(words)
 
         if word_count < min_word_count:

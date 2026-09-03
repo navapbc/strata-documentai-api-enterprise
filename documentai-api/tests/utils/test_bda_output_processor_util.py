@@ -63,22 +63,22 @@ def test_process_bda_output_blueprint_matched_without_user_category():
         ) as mock_extract_uri,
         patch("documentai_api.utils.bda_output_processor.get_bda_result_json") as mock_get_json,
         patch(
-            "documentai_api.utils.bda_output_processor.classify_as_success"
+            "documentai_api.utils.document_classification.classify_as_success"
         ) as mock_classify_as_success,
         patch(
             "documentai_api.utils.bda_output_processor.get_ddb_record_from_bda_output",
             return_value=MOCK_DDB_RECORD,
         ),
         patch(
-            "documentai_api.utils.bda_output_processor.get_extraction_confidence_floor",
+            "documentai_api.utils.document_classification.get_extraction_confidence_floor",
             return_value=0.7,
         ),
         patch(
-            "documentai_api.utils.bda_output_processor.tenant_has_confidence_floor",
+            "documentai_api.utils.document_classification.tenant_has_confidence_floor",
             return_value=False,
         ),
         patch(
-            "documentai_api.utils.bda_output_processor.get_missing_required_fields",
+            "documentai_api.utils.document_classification.get_missing_required_fields",
             return_value=None,
         ),
     ):
@@ -103,22 +103,22 @@ def test_process_bda_output_blueprint_matched():
         ) as mock_extract_uri,
         patch("documentai_api.utils.bda_output_processor.get_bda_result_json") as mock_get_json,
         patch(
-            "documentai_api.utils.bda_output_processor.classify_as_success"
+            "documentai_api.utils.document_classification.classify_as_success"
         ) as mock_classify_as_success,
         patch(
             "documentai_api.utils.bda_output_processor.get_ddb_record_from_bda_output",
             return_value=MOCK_DDB_RECORD,
         ),
         patch(
-            "documentai_api.utils.bda_output_processor.get_extraction_confidence_floor",
+            "documentai_api.utils.document_classification.get_extraction_confidence_floor",
             return_value=0.7,
         ),
         patch(
-            "documentai_api.utils.bda_output_processor.tenant_has_confidence_floor",
+            "documentai_api.utils.document_classification.tenant_has_confidence_floor",
             return_value=False,
         ),
         patch(
-            "documentai_api.utils.bda_output_processor.get_missing_required_fields",
+            "documentai_api.utils.document_classification.get_missing_required_fields",
             return_value=None,
         ),
     ):
@@ -180,7 +180,7 @@ def test_process_bda_output_no_matching_blueprint(text, expected_status, expecte
 
 
 @pytest.mark.parametrize(
-    ("field_confidence_map_list", "empty_fields", "floor", "expected"),
+    ("field_confidence_map_list", "empty_fields", "floor", "expected_below"),
     [
         # avg of non-empty fields below floor -> True
         ([{"a": 0.5}, {"b": 0.6}], [], 0.7, True),
@@ -195,13 +195,35 @@ def test_process_bda_output_no_matching_blueprint(text, expected_status, expecte
         ([{"a": 0.1}], ["a"], 0.7, False),
     ],
 )
-def test_is_below_extraction_confidence_floor(
-    field_confidence_map_list, empty_fields, floor, expected
+def test_classify_extraction_result_below_floor(
+    field_confidence_map_list, empty_fields, floor, expected_below
 ):
-    results = bda_output_processor_util.BdaProcessingResults(
-        field_confidence_map_list=field_confidence_map_list,
-        empty_field_list=empty_fields,
-    )
-    result = bda_output_processor_util._is_below_extraction_confidence_floor(results, floor)
+    from documentai_api.dtos.classification import ClassificationData
+    from documentai_api.utils.document_classification import classify_extraction_result
 
-    assert result is expected
+    data = ClassificationData(
+        matched_document_class="invoice",
+        field_confidence_scores=field_confidence_map_list,
+        field_empty_list=empty_fields,
+    )
+
+    with (
+        patch("documentai_api.utils.document_classification.classify_as_success") as mock_classify,
+        patch(
+            "documentai_api.utils.document_classification.get_extraction_confidence_floor",
+            return_value=floor,
+        ),
+        patch(
+            "documentai_api.utils.document_classification.tenant_has_confidence_floor",
+            return_value=True,
+        ),
+        patch(
+            "documentai_api.utils.document_classification.get_missing_required_fields",
+            return_value=None,
+        ),
+    ):
+        mock_classify.return_value = {}
+        classify_extraction_result("key", data, "tenant")
+
+        call_kwargs = mock_classify.call_args[1]
+        assert call_kwargs["below_extraction_confidence_floor"] is expected_below

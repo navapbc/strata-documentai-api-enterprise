@@ -8,10 +8,10 @@ from opentelemetry import trace
 
 from documentai_api.config.constants import ExtractMethod, TextractConfig
 from documentai_api.config.env import EnvVars, get_required_env
+from documentai_api.dtos.classification import TextractResult
 from documentai_api.logging import get_logger
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.dates import strip_time
-from documentai_api.utils.response_codes import ResponseCodes
 
 logger = get_logger(__name__)
 tracer = trace.get_tracer(__name__)
@@ -432,7 +432,7 @@ def try_textract_identity(
     content_type: str,
     file_bytes: bytes,
     ddb_key: str,
-) -> dict[str, Any] | None:
+) -> TextractResult | None:
     """Attempt Textract AnalyzeID extraction.
 
     Returns a result dict on success, or None if Textract should not be used
@@ -521,15 +521,15 @@ def try_textract_identity(
             f"with {len(field_confidence_scores)} fields in {extract_time}s"
         )
 
-        return {
-            "matched_document_class": matched_document_class,
-            "field_confidence_scores": field_confidence_scores,
-            "field_empty_list": field_empty_list,
-            "textract_s3_uri": textract_s3_uri,
-            "extract_started_at": extract_started_at,
-            "extract_completed_at": extract_completed_at,
-            "extract_time": extract_time,
-        }
+        return TextractResult(
+            matched_document_class=matched_document_class,
+            field_confidence_scores=field_confidence_scores,
+            field_empty_list=field_empty_list,
+            textract_s3_uri=textract_s3_uri,
+            extract_started_at=extract_started_at,
+            extract_completed_at=extract_completed_at,
+            extract_time=extract_time,
+        )
 
     except Exception as e:
         logger.warning(f"Textract AnalyzeID failed for {ddb_key}, falling back to BDA: {e}")
@@ -538,7 +538,7 @@ def try_textract_identity(
 
 def finalize_textract_result(
     ddb_key: str,
-    textract_result: dict[str, Any],
+    textract_result: TextractResult,
     user_provided_document_category: str | None,
     batch_id: str | None = None,
 ) -> None:
@@ -549,46 +549,15 @@ def finalize_textract_result(
     to calculate elapsed time from bdaStartedAt.
     """
     from documentai_api.dtos.classification import ClassificationData
-    from documentai_api.utils.bda import calculate_average_non_empty_confidence
     from documentai_api.utils.ddb import get_ddb_record
-    from documentai_api.utils.document_classification import classify_as_success
-    from documentai_api.utils.extraction_rules import get_missing_required_fields
-    from documentai_api.utils.tenants import (
-        get_extraction_confidence_floor,
-        tenant_has_confidence_floor,
-    )
-
-    field_empty_list = textract_result.get("field_empty_list", [])
-    matched_document_class = textract_result["matched_document_class"]
+    from documentai_api.utils.document_classification import classify_extraction_result
 
     data = ClassificationData(
-        matched_document_class=matched_document_class,
-        field_confidence_scores=textract_result["field_confidence_scores"],
-        field_empty_list=field_empty_list,
-        bda_output_s3_uri=textract_result["textract_s3_uri"],
+        matched_document_class=textract_result.matched_document_class,
+        field_confidence_scores=textract_result.field_confidence_scores,
+        field_empty_list=textract_result.field_empty_list,
+        bda_output_s3_uri=textract_result.textract_s3_uri,
     )
 
     tenant_id = (get_ddb_record(ddb_key) or {}).get(DocumentMetadata.TENANT_ID)
-    avg = calculate_average_non_empty_confidence(
-        data.field_confidence_scores or [], data.field_empty_list
-    )
-    confidence_floor = get_extraction_confidence_floor(tenant_id)
-    used_default_floor = not tenant_has_confidence_floor(tenant_id)
-    below_floor = avg is not None and avg < confidence_floor
-    rule_fields = get_missing_required_fields(
-        tenant_id, matched_document_class, field_empty_list, []
-    )
-    missing_required_field_list, required_field_list = rule_fields or (None, None)
-
-    classify_as_success(
-        object_key=ddb_key,
-        response_code=ResponseCodes.SUCCESS,
-        data=data,
-        below_extraction_confidence_floor=below_floor,
-        extraction_rules_configured=rule_fields is not None,
-        missing_required_field_list=missing_required_field_list,
-        required_field_list=required_field_list,
-        applied_extraction_confidence_floor=confidence_floor,
-        used_default_confidence_floor=used_default_floor,
-        batch_id=batch_id,
-    )
+    classify_extraction_result(ddb_key, data, tenant_id, batch_id)

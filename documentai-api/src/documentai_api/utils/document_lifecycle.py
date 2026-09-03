@@ -4,7 +4,6 @@ import random
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Any
 
 from botocore.exceptions import ClientError
 from opentelemetry import trace
@@ -16,7 +15,7 @@ from documentai_api.config.constants import (
     ProcessStatus,
 )
 from documentai_api.config.env import EnvVars, get_required_env
-from documentai_api.dtos.classification import PreclassificationMatchResult
+from documentai_api.dtos.classification import PreclassificationMatchResult, TextractResult
 from documentai_api.dtos.ddb import InitialDdbRecord, PreClassificationDdbFields, UpdateDdbRecord
 from documentai_api.dtos.processing import InternalApiResponse
 from documentai_api.logging import get_logger
@@ -55,7 +54,7 @@ class _PreclassificationOutcome:
     process_status: str
     response_code: str
     pre_classification: PreClassificationDdbFields | None
-    textract_result: Any
+    textract_result: TextractResult | None
 
 
 def is_selected_for_processing(

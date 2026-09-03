@@ -1,6 +1,7 @@
 """DTOs for document classification operations."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import datetime
 from decimal import Decimal
 
 
@@ -45,3 +46,16 @@ class PreclassificationMatchResult:
     input_tokens: int | None = None
     output_tokens: int | None = None
     duration_seconds: Decimal | None = None
+
+
+@dataclass
+class TextractResult:
+    """Result of a successful Textract AnalyzeID extraction."""
+
+    matched_document_class: str
+    field_confidence_scores: list[dict[str, float]]
+    textract_s3_uri: str
+    extract_started_at: datetime
+    extract_completed_at: datetime
+    extract_time: Decimal
+    field_empty_list: list[str] = field(default_factory=list)
