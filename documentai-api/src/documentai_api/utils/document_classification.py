@@ -10,9 +10,15 @@ from documentai_api.dtos.ddb import UpdateDdbRecord
 from documentai_api.dtos.processing import InternalApiResponse
 from documentai_api.logging import get_logger
 from documentai_api.utils.batch_operations import increment_resolved_count
+from documentai_api.utils.bda import calculate_average_non_empty_confidence
 from documentai_api.utils.ddb import update_ddb
+from documentai_api.utils.extraction_rules import get_missing_required_fields
 from documentai_api.utils.response_builder import get_internal_api_response
 from documentai_api.utils.response_codes import ResponseCodes
+from documentai_api.utils.tenants import (
+    get_extraction_confidence_floor,
+    tenant_has_confidence_floor,
+)
 
 logger = get_logger(__name__)
 
@@ -289,3 +295,45 @@ def classify_as_multiple_documents_in_multipage(
         batch_id,
     )
     return internal_api_response.__dict__
+
+
+def classify_extraction_result(
+    ddb_key: str,
+    data: ClassificationData,
+    tenant_id: str | None,
+    batch_id: str | None = None,
+    response_code: str = ResponseCodes.SUCCESS,
+    result_processor_started_at: str | None = None,
+) -> dict[str, Any]:
+    """Apply confidence floor and extraction rules, then call classify_as_success."""
+    confidence_floor = get_extraction_confidence_floor(tenant_id)
+    used_default_floor = not tenant_has_confidence_floor(tenant_id)
+
+    avg = calculate_average_non_empty_confidence(
+        data.field_confidence_scores or [],
+        data.field_empty_list,
+        data.field_missing_geometry_list or [],
+    )
+    below_floor = avg is not None and avg < confidence_floor
+
+    rule_fields = get_missing_required_fields(
+        tenant_id,
+        data.matched_document_class,
+        data.field_empty_list or [],
+        data.field_missing_geometry_list or [],
+    )
+    missing_required_field_list, required_field_list = rule_fields or (None, None)
+
+    return classify_as_success(
+        object_key=ddb_key,
+        response_code=response_code,
+        data=data,
+        below_extraction_confidence_floor=below_floor,
+        extraction_rules_configured=rule_fields is not None,
+        missing_required_field_list=missing_required_field_list,
+        required_field_list=required_field_list,
+        applied_extraction_confidence_floor=confidence_floor,
+        used_default_confidence_floor=used_default_floor,
+        result_processor_started_at=result_processor_started_at,
+        batch_id=batch_id,
+    )

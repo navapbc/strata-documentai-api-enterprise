@@ -229,11 +229,11 @@ def test_try_textract_identity_returns_result_on_success(mocker, monkeypatch):
     result = try_textract_identity("image/jpeg", b"bytes", "test-key")
 
     assert result is not None
-    assert result["matched_document_class"] == "US-drivers-licenses"
-    assert result["textract_s3_uri"] == "s3://test-bucket/output/textract/test-key.json"
-    assert len(result["field_confidence_scores"]) > 0
-    assert result["extract_started_at"] is not None
-    assert result["extract_completed_at"] is not None
+    assert result.matched_document_class == "US-drivers-licenses"
+    assert result.textract_s3_uri == "s3://test-bucket/output/textract/test-key.json"
+    assert len(result.field_confidence_scores) > 0
+    assert result.extract_started_at is not None
+    assert result.extract_completed_at is not None
 
     # set_extract_method called before analyze_id
     mock_set_method.assert_called_once()
@@ -311,24 +311,33 @@ def test_try_textract_identity_duplicate_dates_falls_back_despite_supplemental(
 def test_finalize_textract_result_calls_classify_as_success(mocker):
     mock_classify = mocker.patch("documentai_api.utils.document_classification.classify_as_success")
     mocker.patch("documentai_api.utils.ddb.get_ddb_record", return_value={"tenantId": "t1"})
-    mocker.patch("documentai_api.utils.tenants.get_extraction_confidence_floor", return_value=0.65)
-    mocker.patch("documentai_api.utils.tenants.tenant_has_confidence_floor", return_value=False)
     mocker.patch(
-        "documentai_api.utils.extraction_rules.get_missing_required_fields", return_value=None
+        "documentai_api.utils.document_classification.get_extraction_confidence_floor",
+        return_value=0.65,
     )
+    mocker.patch(
+        "documentai_api.utils.document_classification.tenant_has_confidence_floor",
+        return_value=False,
+    )
+    mocker.patch(
+        "documentai_api.utils.document_classification.get_missing_required_fields",
+        return_value=None,
+    )
+
+    from documentai_api.dtos.classification import TextractResult
 
     started = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
     completed = datetime(2025, 1, 1, 12, 0, 2, tzinfo=UTC)
 
-    textract_result = {
-        "matched_document_class": "US-drivers-licenses",
-        "field_confidence_scores": [{"NAME_DETAILS.FIRST_NAME": 0.99}],
-        "field_empty_list": ["ENDORSEMENTS"],
-        "textract_s3_uri": "s3://bucket/output/textract/key.json",
-        "extract_started_at": started,
-        "extract_completed_at": completed,
-        "extract_time": Decimal("2.00"),
-    }
+    textract_result = TextractResult(
+        matched_document_class="US-drivers-licenses",
+        field_confidence_scores=[{"NAME_DETAILS.FIRST_NAME": 0.99}],
+        field_empty_list=["ENDORSEMENTS"],
+        textract_s3_uri="s3://bucket/output/textract/key.json",
+        extract_started_at=started,
+        extract_completed_at=completed,
+        extract_time=Decimal("2.00"),
+    )
 
     finalize_textract_result("test-key", textract_result, "identity")
 
@@ -344,24 +353,33 @@ def test_finalize_textract_result_calls_classify_as_success(mocker):
 def test_finalize_textract_result_sets_below_floor_when_low_confidence(mocker):
     mock_classify = mocker.patch("documentai_api.utils.document_classification.classify_as_success")
     mocker.patch("documentai_api.utils.ddb.get_ddb_record", return_value={"tenantId": "t1"})
-    mocker.patch("documentai_api.utils.tenants.get_extraction_confidence_floor", return_value=0.90)
-    mocker.patch("documentai_api.utils.tenants.tenant_has_confidence_floor", return_value=False)
     mocker.patch(
-        "documentai_api.utils.extraction_rules.get_missing_required_fields", return_value=None
+        "documentai_api.utils.document_classification.get_extraction_confidence_floor",
+        return_value=0.90,
     )
+    mocker.patch(
+        "documentai_api.utils.document_classification.tenant_has_confidence_floor",
+        return_value=False,
+    )
+    mocker.patch(
+        "documentai_api.utils.document_classification.get_missing_required_fields",
+        return_value=None,
+    )
+
+    from documentai_api.dtos.classification import TextractResult
 
     started = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
     completed = datetime(2025, 1, 1, 12, 0, 2, tzinfo=UTC)
 
-    textract_result = {
-        "matched_document_class": "US-drivers-licenses",
-        "field_confidence_scores": [{"NAME_DETAILS.FIRST_NAME": 0.70}],
-        "field_empty_list": [],
-        "textract_s3_uri": "s3://bucket/output/textract/key.json",
-        "extract_started_at": started,
-        "extract_completed_at": completed,
-        "extract_time": Decimal("2.00"),
-    }
+    textract_result = TextractResult(
+        matched_document_class="US-drivers-licenses",
+        field_confidence_scores=[{"NAME_DETAILS.FIRST_NAME": 0.70}],
+        field_empty_list=[],
+        textract_s3_uri="s3://bucket/output/textract/key.json",
+        extract_started_at=started,
+        extract_completed_at=completed,
+        extract_time=Decimal("2.00"),
+    )
 
     finalize_textract_result("test-key", textract_result, "identity")
 
