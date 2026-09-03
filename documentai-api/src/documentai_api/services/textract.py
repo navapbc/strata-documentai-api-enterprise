@@ -20,3 +20,16 @@ def analyze_id(image_bytes: bytes) -> dict[str, Any]:
     except Exception as e:
         logger.error(f"Textract AnalyzeID failed: {e}")
         raise
+
+
+def _detect_document_text(image_bytes: bytes) -> list[dict[str, Any]]:
+    """Call Textract DetectDocumentText and return the raw Blocks list."""
+    client = AWSClientFactory.get_textract_client()
+    response: dict[str, Any] = client.detect_document_text(Document={"Bytes": image_bytes})
+    blocks: list[dict[str, Any]] = response["Blocks"]
+    return blocks
+
+
+def get_words(image_bytes: bytes) -> list[dict[str, Any]]:
+    """Return WORD blocks from Textract DetectDocumentText."""
+    return [b for b in _detect_document_text(image_bytes) if b["BlockType"] == "WORD"]
