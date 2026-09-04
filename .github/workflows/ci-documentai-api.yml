@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: dorny/paths-filter@v3
+      - uses: dorny/paths-filter@v4
         id: filter
         with:
           filters: |
@@ -127,7 +127,7 @@ jobs:
       # a sibling directory the app's Docker container doesn't mount.
       - name: Install uv
         if: needs.changes.outputs.relevant == 'true'
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
 
       - name: Regenerate categories from infra/document-types/
         if: needs.changes.outputs.relevant == 'true'
@@ -154,7 +154,7 @@ jobs:
       # the same reason - infra/document-types/ isn't mounted into the container.
       - name: Install uv
         if: needs.changes.outputs.relevant == 'true'
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
 
       - name: Check blueprint_schemas.json against infra/document-types/ custom blueprints
         if: needs.changes.outputs.relevant == 'true'
