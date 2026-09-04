@@ -26,7 +26,7 @@ from documentai_api.config.env import get_aws_config
 from documentai_api.logging import get_logger
 from documentai_api.models.audit import AuditEventItem
 from documentai_api.schemas.audit_event import GLOBAL_TENANT, AuditEventRecord, AuditEventsTable
-from documentai_api.utils.aws_client_factory import AWSClientFactory
+from documentai_api.services.aws_client_factory import AWSClientFactory
 
 _table = AuditEventsTable()
 

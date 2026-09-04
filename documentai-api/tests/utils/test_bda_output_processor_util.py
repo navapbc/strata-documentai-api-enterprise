@@ -3,7 +3,6 @@ from unittest.mock import patch
 import pytest
 
 from documentai_api.processors import bda as bda_processor
-from documentai_api.utils import bda as bda_output_processor_util
 
 MOCK_S3_URI = "s3://test-bucket/processed/input/test-tenant/file-name.pdf/de8464af-d53e-44dc-a9f7-ad5360530210/0/custom_output/0/result.json"
 MOCK_DDB_RECORD = {"fileName": "input/test-tenant/file-name.pdf", "tenantId": "test-tenant"}
@@ -25,22 +24,24 @@ BDA_OUTPUT_KEY = "processed/input/test-tenant/file-name.pdf/de8464af-d53e-44dc-a
     ],
 )
 def test_get_matched_blueprint(bda_result, expected_name, expected_confidence):
-    result = bda_output_processor_util.get_matched_blueprint(bda_result)
+    from documentai_api.extractors.bda import extract_bda_result
 
-    assert result.name == expected_name
-    assert result.confidence == expected_confidence
+    _, matched_blueprint = extract_bda_result(bda_result, "s3://bucket/key")
+
+    assert matched_blueprint.name == expected_name
+    assert matched_blueprint.confidence == expected_confidence
 
 
 def test_process_bda_output_blueprint_matched_without_user_category():
     """Even with no user-provided category, a matched BDA blueprint produces success + fields."""
     with (
-        patch("documentai_api.services.bda.extract_bda_output_s3_uri") as mock_extract_uri,
-        patch("documentai_api.services.bda.get_bda_result_json") as mock_get_json,
+        patch("documentai_api.processors.bda.extract_bda_output_s3_uri") as mock_extract_uri,
+        patch("documentai_api.processors.bda.get_bda_result_json") as mock_get_json,
         patch(
             "documentai_api.utils.document_classification.classify_as_success"
         ) as mock_classify_as_success,
         patch(
-            "documentai_api.utils.bda.get_ddb_record_from_bda_output",
+            "documentai_api.processors.bda.get_ddb_record_from_bda_output",
             return_value=MOCK_DDB_RECORD,
         ),
         patch(
@@ -72,13 +73,13 @@ def test_process_bda_output_blueprint_matched_without_user_category():
 
 def test_process_bda_output_blueprint_matched():
     with (
-        patch("documentai_api.services.bda.extract_bda_output_s3_uri") as mock_extract_uri,
-        patch("documentai_api.services.bda.get_bda_result_json") as mock_get_json,
+        patch("documentai_api.processors.bda.extract_bda_output_s3_uri") as mock_extract_uri,
+        patch("documentai_api.processors.bda.get_bda_result_json") as mock_get_json,
         patch(
             "documentai_api.utils.document_classification.classify_as_success"
         ) as mock_classify_as_success,
         patch(
-            "documentai_api.utils.bda.get_ddb_record_from_bda_output",
+            "documentai_api.processors.bda.get_ddb_record_from_bda_output",
             return_value=MOCK_DDB_RECORD,
         ),
         patch(
@@ -117,14 +118,12 @@ def test_process_bda_output_blueprint_matched():
 )
 def test_process_bda_output_no_matching_blueprint(text, expected_status, expected_classify_method):
     with (
-        patch("documentai_api.services.bda.extract_bda_output_s3_uri") as mock_extract_uri,
-        patch("documentai_api.services.bda.get_bda_result_json") as mock_get_json,
-        patch("documentai_api.utils.bda.get_text_from_standard_blueprint") as mock_get_text,
+        patch("documentai_api.processors.bda.extract_bda_output_s3_uri") as mock_extract_uri,
+        patch("documentai_api.processors.bda.get_bda_result_json") as mock_get_json,
+        patch("documentai_api.processors.bda.get_text_from_standard_blueprint") as mock_get_text,
+        patch(f"documentai_api.processors.bda.{expected_classify_method}") as mock_classify_method,
         patch(
-            f"documentai_api.utils.document_classification.{expected_classify_method}"
-        ) as mock_classify_method,
-        patch(
-            "documentai_api.utils.bda.get_ddb_record_from_bda_output",
+            "documentai_api.processors.bda.get_ddb_record_from_bda_output",
             return_value=MOCK_DDB_RECORD,
         ),
     ):

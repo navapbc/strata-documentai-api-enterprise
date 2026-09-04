@@ -12,13 +12,13 @@ from documentai_api.dtos.classification import (
 )
 from documentai_api.dtos.ddb import UpdateDdbRecord
 from documentai_api.dtos.processing import InternalApiResponse
+from documentai_api.processors import document_lifecycle as lifecycle_util
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils import document_classification as classification_util
-from documentai_api.utils import document_lifecycle as lifecycle_util
 from documentai_api.utils.blur_detection import BlurResult
 from documentai_api.utils.response_codes import ResponseCodes
 
-_LIFECYCLE_MODULE = "documentai_api.utils.document_lifecycle"
+_LIFECYCLE_MODULE = "documentai_api.processors.document_lifecycle"
 _CLASSIFICATION_MODULE = "documentai_api.utils.document_classification"
 
 

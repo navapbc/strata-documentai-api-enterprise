@@ -17,7 +17,7 @@ def _pin_output_location(mocker):
     # documentai_output_location to prevent SSRF. pin config
     # to test-bucket so tests that call through to S3 pass the check.
     mocker.patch(
-        "documentai_api.services.bda.get_aws_config"
+        "documentai_api.config.env.get_aws_config"
     ).return_value.documentai_output_location = "s3://test-bucket/output"
 
 

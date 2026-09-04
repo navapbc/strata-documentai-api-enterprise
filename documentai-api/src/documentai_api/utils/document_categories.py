@@ -8,7 +8,7 @@ from typing import Any
 from documentai_api.config.constants import ConfigDefaults
 from documentai_api.logging import get_logger
 from documentai_api.schemas.document_category import DocumentCategoriesTable, DocumentCategoryRecord
-from documentai_api.utils.aws_client_factory import AWSClientFactory
+from documentai_api.services.aws_client_factory import AWSClientFactory
 from documentai_api.utils.cache import get_cache
 
 logger = get_logger(__name__)

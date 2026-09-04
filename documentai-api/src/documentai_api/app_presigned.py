@@ -25,9 +25,9 @@ from documentai_api.config.env import get_app_env_config, get_aws_config
 from documentai_api.logging import get_logger
 from documentai_api.models.document_record import DocumentRecord
 from documentai_api.models.presigned import PresignedUploadResponse
+from documentai_api.processors.document_lifecycle import insert_minimal_ddb_record
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils.auth import get_user_context_from_api_key
-from documentai_api.utils.document_lifecycle import insert_minimal_ddb_record
 from documentai_api.utils.s3 import build_s3_key, parse_s3_uri, sanitize_for_s3_metadata
 from documentai_api.utils.uploads import generate_unique_filename
 from documentai_api.utils.write_limit import increment_and_check

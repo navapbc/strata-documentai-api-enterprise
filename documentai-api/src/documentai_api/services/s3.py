@@ -8,7 +8,7 @@ from typing import IO, TYPE_CHECKING, Any
 from botocore.config import Config
 
 from documentai_api.config.constants import ConfigDefaults
-from documentai_api.utils.aws_client_factory import AWSClientFactory
+from documentai_api.services.aws_client_factory import AWSClientFactory
 
 _PRESIGN_CONFIG = Config(signature_version=ConfigDefaults.PRESIGNED_URL_SIGNATURE_VERSION)
 

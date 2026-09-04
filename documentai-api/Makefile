@@ -22,6 +22,7 @@
 	lint \
 	lint-mypy \
 	lint-ruff \
+	lint-imports \
 	lint-uv \
 	login \
 	openapi-spec \
@@ -136,6 +137,9 @@ init: setup-env ## Initialize project (container-based)
 init-local: setup-env ## Initialize project for native development
 	uv sync --all-extras --frozen
 
+sync: ## Update lockfile and sync dependencies
+	uv lock && $(RUN_CMD) uv sync --all-extras
+
 clean-volumes: ## Remove project docker volumes
 	docker compose down --volumes
 
@@ -236,13 +240,16 @@ format: ## Format code
 	$(PY_RUN_CMD) ruff format $(FMT_ARGS) . $(POSTMAN_DIR)
 
 lint: ## Run all linters
-lint: lint-ruff lint-uv lint-mypy
+lint: lint-ruff lint-uv lint-mypy lint-imports
 
 lint-ruff: ## Lint Python code with ruff
 	$(PY_RUN_CMD) ruff check $(LINT_ARGS) . $(POSTMAN_DIR)
 
 lint-mypy: ## Type check with mypy
 	$(PY_RUN_CMD) mypy src tests $(POSTMAN_DIR)
+
+lint-imports: ## Check import layer boundaries
+	$(PY_RUN_CMD) lint-imports
 
 lint-uv: ## Check uv lockfile is up-to-date
 	$(RUN_CMD) uv lock --check

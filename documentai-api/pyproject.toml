@@ -41,6 +41,7 @@ dev = [
   "moto[all]>=4.2.0",
   "freezegun>=1.2.0",
   "mypy>=1.20.0",
+  "import-linter>=2.0",
   "boto3-stubs[s3,dynamodb,bedrock,bedrock-runtime,bedrock-data-automation,bedrock-data-automation-runtime,sqs,athena,ssm,cognito-idp,cloudwatch]>=1.38.0",
 ]
 
@@ -144,3 +145,26 @@ markers = [
 [build-system]
 requires = ["uv_build>=0.9.28,<0.12.0"]
 build-backend = "uv_build"
+
+[tool.importlinter]
+root_packages = ["documentai_api"]
+
+[[tool.importlinter.contracts]]
+name = "Layered architecture"
+type = "layers"
+layers = [
+    "documentai_api.processors",
+    "documentai_api.extractors",
+    "documentai_api.readers",
+    "documentai_api.utils",
+    "documentai_api.services",
+    "documentai_api.config",
+]
+# TODO: response_builder -> readers.extraction is a layer violation caused by a circular
+# dependency between utils.ddb and utils.response_builder. ddb.py calls build_v1_api_response
+# at write time, making it impossible to move the readers import to a higher layer without
+# splitting update_ddb/upsert_ddb. Tracked for a follow-up refactor.
+ignore_imports = [
+    "documentai_api.utils.response_builder -> documentai_api.readers.extraction",
+]
+

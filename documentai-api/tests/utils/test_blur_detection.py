@@ -72,7 +72,7 @@ def _textract_response(words: list[dict[str, object]]) -> dict[str, object]:
 @pytest.fixture
 def mock_textract():
     with patch(
-        "documentai_api.utils.aws_client_factory.AWSClientFactory.get_textract_client"
+        "documentai_api.services.aws_client_factory.AWSClientFactory.get_textract_client"
     ) as mock_get:
         mock_client = MagicMock()
         mock_get.return_value = mock_client

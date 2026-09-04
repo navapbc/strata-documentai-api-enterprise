@@ -1,7 +1,7 @@
 """Tests for the Cognito service layer, focused on the include_groups perf flag."""
 
 from documentai_api.services import cognito as cognito_service
-from documentai_api.utils.aws_client_factory import AWSClientFactory
+from documentai_api.services.aws_client_factory import AWSClientFactory
 from tests.helpers.fixtures.cognito import create_cognito_user
 
 

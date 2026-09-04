@@ -35,7 +35,7 @@ def mock_preclassification(mocker):
     from documentai_api.dtos.classification import BedrockClassificationResult
 
     mocker.patch(
-        "documentai_api.utils.document_lifecycle.preclassify_document",
+        "documentai_api.processors.document_lifecycle.preclassify_document",
         return_value=BedrockClassificationResult(
             document_type="tax_documents",
             confidence=0.95,
@@ -49,7 +49,7 @@ def mock_find_matching_blueprint(mocker):
     from documentai_api.dtos.classification import PreclassificationMatchResult
 
     mocker.patch(
-        "documentai_api.utils.document_lifecycle.find_matching_blueprint",
+        "documentai_api.processors.document_lifecycle.find_matching_blueprint",
         return_value=PreclassificationMatchResult(
             matched_document_type="w2-form",
             confidence=0.95,
@@ -584,7 +584,7 @@ def test_main_skips_bda_when_no_match_and_flag_on(input_pdf, mocker, mock_invoke
         return_value=True,
     )
     mocker.patch(
-        "documentai_api.utils.document_lifecycle.preclassify_document",
+        "documentai_api.processors.document_lifecycle.preclassify_document",
         return_value=BedrockClassificationResult(
             document_type="other_document",
             confidence=0.5,

@@ -51,7 +51,7 @@ def test_converse_request_shape(monkeypatch):
 
     # Patch the client factory to return our stubbed client
     monkeypatch.setattr(
-        "documentai_api.utils.aws_client_factory.AWSClientFactory.get_bedrock_runtime_client",
+        "documentai_api.services.aws_client_factory.AWSClientFactory.get_bedrock_runtime_client",
         lambda: client,
     )
 
@@ -89,7 +89,7 @@ def test_retries_on_throttling(monkeypatch):
     stubber = Stubber(client)
 
     monkeypatch.setattr(
-        "documentai_api.utils.aws_client_factory.AWSClientFactory.get_bedrock_runtime_client",
+        "documentai_api.services.aws_client_factory.AWSClientFactory.get_bedrock_runtime_client",
         lambda: client,
     )
 
@@ -122,7 +122,7 @@ def test_does_not_retry_non_retryable_error(monkeypatch):
     stubber = Stubber(client)
 
     monkeypatch.setattr(
-        "documentai_api.utils.aws_client_factory.AWSClientFactory.get_bedrock_runtime_client",
+        "documentai_api.services.aws_client_factory.AWSClientFactory.get_bedrock_runtime_client",
         lambda: client,
     )
 

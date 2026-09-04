@@ -6,7 +6,7 @@ from moto import mock_aws
 
 @pytest.fixture(autouse=True)
 def fix_aws_client_factory():
-    from documentai_api.utils.aws_client_factory import AWSClientFactory
+    from documentai_api.services.aws_client_factory import AWSClientFactory
 
     def _clear_all() -> None:
         AWSClientFactory._session = None

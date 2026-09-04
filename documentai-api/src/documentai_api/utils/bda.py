@@ -5,7 +5,6 @@ from typing import Any
 
 from documentai_api.config.constants import (
     UUID_PATTERN,
-    BdaResponseFields,
 )
 from documentai_api.config.env import EnvVars, get_required_env
 from documentai_api.logging import get_logger
@@ -135,10 +134,62 @@ def get_ddb_key_from_bda_output(output_bucket_name: str, output_object_key: str)
     return record.get(DocumentMetadata.FILE_NAME)
 
 
-def get_matched_blueprint(bda_result_json: dict[str, Any]) -> MatchedBlueprintInfo:
-    """Extract matched blueprint name and confidence from BDA result JSON."""
-    matched_blueprint = bda_result_json.get(BdaResponseFields.MATCHED_BLUEPRINT, {})
-    return MatchedBlueprintInfo(
-        name=matched_blueprint.get(BdaResponseFields.MATCHED_BLUEPRINT_NAME),
-        confidence=matched_blueprint.get(BdaResponseFields.MATCHED_BLUEPRINT_CONFIDENCE),
-    )
+def get_bda_result_json(bda_result_uri: str) -> dict[str, Any] | None:
+    """Read and return BDA result JSON from S3."""
+    from documentai_api.config.env import get_aws_config
+    from documentai_api.services import s3 as s3_service
+    from documentai_api.utils.json_parsing import parse_json_object
+    from documentai_api.utils.s3 import parse_s3_uri
+
+    if not bda_result_uri:
+        return None
+
+    try:
+        s3_parts = bda_result_uri.replace("s3://", "").split("/", 1)
+        result_bucket = s3_parts[0]
+        result_key = s3_parts[1]
+
+        # Validate the bucket is the configured output bucket to prevent SSRF
+        # via a crafted BDA response pointing at an arbitrary S3 location.
+        output_location = get_aws_config().documentai_output_location
+        if output_location:
+            expected_bucket, _ = parse_s3_uri(output_location)
+            if result_bucket != expected_bucket:
+                logger.error(
+                    f"BDA result URI bucket {result_bucket!r} does not match "
+                    f"expected output bucket {expected_bucket!r}"
+                )
+                return None
+
+        bda_result_object = s3_service.get_object(result_bucket, result_key)
+        return parse_json_object(bda_result_object["Body"].read(), context="BDA result JSON")
+    except Exception as e:
+        logger.error(f"Failed to read result JSON: {e}")
+        return None
+
+
+def extract_bda_output_s3_uri(
+    bda_output_bucket_name: str, bda_output_object_key: str
+) -> str | None:
+    """Read and parse BDA job metadata from S3."""
+    from documentai_api.services import s3 as s3_service
+    from documentai_api.utils.json_parsing import parse_json_object
+
+    metadata_response = s3_service.get_object(bda_output_bucket_name, bda_output_object_key)
+    job_metadata = parse_json_object(metadata_response["Body"].read(), context="BDA job metadata")
+    if job_metadata is None:
+        return None
+
+    try:
+        for output_meta in job_metadata.get("output_metadata", []):
+            for segment in output_meta.get("segment_metadata", []):
+                if "custom_output_path" in segment:
+                    return str(segment["custom_output_path"])
+
+                if "standard_output_path" in segment:
+                    return str(segment["standard_output_path"])
+
+        return None
+    except (TypeError, AttributeError) as e:
+        logger.error(f"Failed to extract BDA result uri: {e}")
+        return None

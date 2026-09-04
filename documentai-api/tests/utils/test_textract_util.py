@@ -310,7 +310,9 @@ def test_extract_textract_identity_duplicate_dates_falls_back_despite_supplement
 
 def test_process_textract_result_calls_classify_as_success(mocker):
     mock_classify = mocker.patch("documentai_api.utils.document_classification.classify_as_success")
-    mocker.patch("documentai_api.utils.ddb.get_ddb_record", return_value={"tenantId": "t1"})
+    mocker.patch(
+        "documentai_api.processors.textract.get_ddb_record", return_value={"tenantId": "t1"}
+    )
     mocker.patch(
         "documentai_api.utils.document_classification.get_extraction_confidence_floor",
         return_value=0.65,
@@ -352,7 +354,9 @@ def test_process_textract_result_calls_classify_as_success(mocker):
 
 def test_process_textract_result_sets_below_floor_when_low_confidence(mocker):
     mock_classify = mocker.patch("documentai_api.utils.document_classification.classify_as_success")
-    mocker.patch("documentai_api.utils.ddb.get_ddb_record", return_value={"tenantId": "t1"})
+    mocker.patch(
+        "documentai_api.processors.textract.get_ddb_record", return_value={"tenantId": "t1"}
+    )
     mocker.patch(
         "documentai_api.utils.document_classification.get_extraction_confidence_floor",
         return_value=0.90,
@@ -568,7 +572,7 @@ def test_extract_supplemental_fields_unmatched_block_omits_field(analyze_id_resp
 @pytest.mark.integration
 def test_nova_extracts_physical_descriptors_from_real_dl(analyze_id_response, monkeypatch):
     """Hit real Nova Micro and verify it identifies physical descriptor fields."""
-    from documentai_api.utils.aws_client_factory import AWSClientFactory
+    from documentai_api.services.aws_client_factory import AWSClientFactory
     from documentai_api.utils.textract import extract_supplemental_fields_via_nova
 
     # Clear cached clients so the profile env var takes effect

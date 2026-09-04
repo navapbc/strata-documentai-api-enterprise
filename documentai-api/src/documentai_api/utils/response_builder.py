@@ -6,16 +6,13 @@ from typing import Any
 from fastapi import Response
 
 from documentai_api.config.constants import (
-    ExtractMethod,
     ProcessStatus,
 )
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.dtos.processing import InternalApiResponse
 from documentai_api.logging import get_logger
-from documentai_api.readers.bda import extract_field_values_from_bda_results
-from documentai_api.readers.textract import extract_field_values_from_textract_results
+from documentai_api.readers.extraction import read_extraction_fields
 from documentai_api.schemas.document_metadata import DocumentMetadata
-from documentai_api.services.bda import get_bda_result_json
 from documentai_api.utils.field_labels import get_field_label
 from documentai_api.utils.response_codes import ResponseCodes
 
@@ -137,35 +134,9 @@ def extract_field_values(
     if not ddb_record:
         return {}
 
-    if include_extracted_data:
-        s3_uri = ddb_record.get(DocumentMetadata.BDA_OUTPUT_S3_URI)
-
-        if not s3_uri:
-            return {}
-
-        bda_results = get_bda_result_json(s3_uri)
-
-        if not bda_results:
-            return {}
-
-        extract_method = ddb_record.get(DocumentMetadata.EXTRACT_METHOD)
-
-        if extract_method == ExtractMethod.TEXTRACT:
-            metadata, field_values, field_geometry = extract_field_values_from_textract_results(
-                bda_results
-            )
-            field_confidence_map_list = metadata["field_confidence_map_list"]
-        else:
-            metadata, field_values, field_geometry = extract_field_values_from_bda_results(
-                bda_results, include_geometry=include_bounding_box
-            )
-            field_confidence_map_list = metadata.field_confidence_map_list
-    else:
-        field_confidence_map_list = json.loads(
-            ddb_record.get(DocumentMetadata.FIELD_CONFIDENCE_SCORES, "[]")
-        )
-        field_values = {}
-        field_geometry = {}
+    field_confidence_map_list, field_values, field_geometry = read_extraction_fields(
+        ddb_record, include_extracted_data, include_bounding_box
+    )
 
     return _build_field_map(
         field_confidence_map_list,

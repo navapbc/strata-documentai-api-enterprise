@@ -5,8 +5,22 @@ from typing import Any
 from opentelemetry import trace
 from opentelemetry.propagate import extract as otel_extract
 
+from documentai_api.config.constants import BdaResponseFields, ConfigDefaults
+from documentai_api.dtos.classification import ClassificationData
+from documentai_api.extractors.bda import extract_bda_result
 from documentai_api.logging import get_logger
 from documentai_api.schemas.document_metadata import DocumentMetadata
+from documentai_api.utils.bda import (
+    extract_bda_output_s3_uri,
+    get_bda_result_json,
+    get_ddb_record_from_bda_output,
+    get_text_from_standard_blueprint,
+)
+from documentai_api.utils.document_classification import (
+    classify_as_no_custom_blueprint_matched,
+    classify_as_no_document_detected,
+    classify_extraction_result,
+)
 
 logger = get_logger(__name__)
 tracer = trace.get_tracer(__name__)
@@ -18,9 +32,6 @@ def process_bda_result(
     result_processor_started_at: str | None = None,
 ) -> dict[str, Any]:
     """Handle BDA S3 completion event. Returns the internal API response dict."""
-    from documentai_api.services.bda import extract_bda_output_s3_uri
-    from documentai_api.utils.bda import get_ddb_record_from_bda_output
-
     bda_output_s3_uri = extract_bda_output_s3_uri(bda_output_bucket_name, bda_output_object_key)
     if not bda_output_s3_uri:
         raise ValueError("No BDA output S3 URI found")
@@ -42,17 +53,6 @@ def _process_bda_result(
     ddb_record: dict[str, Any],
     result_processor_started_at: str | None,
 ) -> dict[str, Any]:
-    from documentai_api.config.constants import BdaResponseFields, ConfigDefaults
-    from documentai_api.dtos.classification import ClassificationData
-    from documentai_api.extractors.bda import extract_bda_result
-    from documentai_api.services.bda import get_bda_result_json
-    from documentai_api.utils.bda import get_matched_blueprint, get_text_from_standard_blueprint
-    from documentai_api.utils.document_classification import (
-        classify_as_no_custom_blueprint_matched,
-        classify_as_no_document_detected,
-        classify_extraction_result,
-    )
-
     file_name: str = ddb_record[DocumentMetadata.FILE_NAME]
     batch_id: str | None = ddb_record.get(DocumentMetadata.BATCH_ID)
     tenant_id: str | None = ddb_record.get(DocumentMetadata.TENANT_ID)
@@ -61,12 +61,10 @@ def _process_bda_result(
     if not bda_result_json:
         raise ValueError("No BDA result JSON found")
 
-    matched_blueprint = get_matched_blueprint(bda_result_json)
+    result, matched_blueprint = extract_bda_result(bda_result_json, bda_output_s3_uri)
     document_class = bda_result_json.get(BdaResponseFields.DOCUMENT_CLASS, {}).get(
         BdaResponseFields.DOCUMENT_TYPE
     )
-
-    result = extract_bda_result(bda_result_json, bda_output_s3_uri)
 
     if result is not None:
         logger.info("Custom matching blueprint found, and document type matches. Success.")

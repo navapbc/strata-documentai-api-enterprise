@@ -87,7 +87,7 @@ async def upsert_document_build_page(
         item[DocumentBuilds.CATEGORY] = category
 
     if not overwrite:
-        from documentai_api.utils.aws_client_factory import AWSClientFactory
+        from documentai_api.services.aws_client_factory import AWSClientFactory
 
         ddb_table = AWSClientFactory.get_ddb_table(table_name)
         try:
@@ -145,7 +145,7 @@ def mark_document_build_submitted(build_id: str) -> None:
     Uses attribute_not_exists on submittedAt as a lock - if two concurrent
     submits race, only one succeeds. The loser gets ConditionalCheckFailedException.
     """
-    from documentai_api.utils.aws_client_factory import AWSClientFactory
+    from documentai_api.services.aws_client_factory import AWSClientFactory
 
     table_name = get_document_build_table()
     submitted_at = datetime.now(UTC).isoformat()
@@ -187,7 +187,7 @@ def mark_document_build_submitted(build_id: str) -> None:
 
 def clear_submitted_at(build_id: str) -> None:
     """Remove submittedAt from the build metadata record (rollback on upload failure)."""
-    from documentai_api.utils.aws_client_factory import AWSClientFactory
+    from documentai_api.services.aws_client_factory import AWSClientFactory
 
     table_name = get_document_build_table()
     ddb_table = AWSClientFactory.get_ddb_table(table_name)

@@ -15,7 +15,7 @@ from documentai_api.config.constants import ApiVisualizationTag, BdaJobStatus
 from documentai_api.config.env import EnvVars, get_aws_config, get_required_env
 from documentai_api.logging import get_logger
 from documentai_api.models.base import BaseApiResponse
-from documentai_api.utils.aws_client_factory import AWSClientFactory
+from documentai_api.services.aws_client_factory import AWSClientFactory
 
 logger = get_logger(__name__)
 
@@ -130,12 +130,12 @@ async def get_blueprint_test_result(
     claims: AdminClaims,
 ) -> BlueprintTestResult:
     """Poll for blueprint test results."""
+    from documentai_api.extractors.bda import extract_bda_result
     from documentai_api.readers.bda import extract_field_values_from_bda_results
-    from documentai_api.services.bda import (
+    from documentai_api.utils.bda import (
         extract_bda_output_s3_uri,
         get_bda_result_json,
     )
-    from documentai_api.utils.bda import get_matched_blueprint
     from documentai_api.utils.extraction_rules import apply_extraction_rules
 
     logger.info(f"Blueprint test {test_id}: polling for results")
@@ -202,12 +202,12 @@ async def get_blueprint_test_result(
                 test_id=test_id, status="FAILED", error="Could not read BDA result"
             )
 
-        matched_blueprint = get_matched_blueprint(bda_result_json)
-        metadata, field_values, _ = extract_field_values_from_bda_results(bda_result_json)
+        _, matched_blueprint = extract_bda_result(bda_result_json, bda_output_s3_uri)
+        field_data, field_values, _ = extract_field_values_from_bda_results(bda_result_json)
 
         # Build confidence map from the list of {field: score} dicts
         field_confidences: dict[str, float] = {}
-        for conf_map in metadata.field_confidence_map_list:
+        for conf_map in field_data.field_confidence_map_list:
             field_confidences.update(conf_map)
 
         document_class = bda_result_json.get("document_class", {}).get("document_type")
