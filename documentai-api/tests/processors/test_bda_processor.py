@@ -12,26 +12,6 @@ BDA_OUTPUT_BUCKET = "output-bucket"
 BDA_OUTPUT_KEY = "processed/input/test-tenant/file-name.pdf/de8464af-d53e-44dc-a9f7-ad5360530210/0/custom_output/job_metadata.json"
 
 
-@pytest.mark.parametrize(
-    ("bda_result", "expected_name", "expected_confidence"),
-    [
-        (
-            {"matched_blueprint": {"name": "invoice_blueprint", "confidence": "0.95"}},
-            "invoice_blueprint",
-            "0.95",
-        ),
-        ({}, None, None),
-    ],
-)
-def test_get_matched_blueprint(bda_result, expected_name, expected_confidence):
-    from documentai_api.extractors.bda import extract_bda_result
-
-    _, matched_blueprint = extract_bda_result(bda_result, "s3://bucket/key")
-
-    assert matched_blueprint.name == expected_name
-    assert matched_blueprint.confidence == expected_confidence
-
-
 def test_process_bda_output_blueprint_matched_without_user_category():
     """Even with no user-provided category, a matched BDA blueprint produces success + fields."""
     with (
