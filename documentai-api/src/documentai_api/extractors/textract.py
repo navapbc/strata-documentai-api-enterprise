@@ -108,7 +108,7 @@ def extract_textract_identity(
 
         return ExtractionResult(
             document_type=matched_document_class,
-            output_s3_uri=textract_s3_uri,
+            output_uri=textract_s3_uri,
             extract_started_at=extract_started_at,
             extract_completed_at=extract_completed_at,
             extract_time=extract_time,

@@ -52,7 +52,7 @@ def test_extract_textract_identity_returns_result_on_success(mocker, monkeypatch
 
     assert result is not None
     assert result.document_type == "US-drivers-licenses"
-    assert result.output_s3_uri == "s3://test-bucket/output/textract/test-key.json"
+    assert result.output_uri == "s3://test-bucket/output/textract/test-key.json"
     assert len(result.field_confidence_scores) > 0
     assert result.extract_started_at is not None
     assert result.extract_completed_at is not None

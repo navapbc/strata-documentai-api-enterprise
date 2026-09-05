@@ -26,7 +26,7 @@ def test_process_textract_result_calls_classify_as_success(mocker):
 
     result = ExtractionResult(
         document_type="US-drivers-licenses",
-        output_s3_uri="s3://bucket/output/textract/key.json",
+        output_uri="s3://bucket/output/textract/key.json",
         field_confidence_scores=[{"NAME_DETAILS.FIRST_NAME": 0.99}],
         field_empty_list=["ENDORSEMENTS"],
         extract_started_at=datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC),
@@ -67,7 +67,7 @@ def test_process_textract_result_sets_below_floor_when_low_confidence(mocker):
 
     result = ExtractionResult(
         document_type="US-drivers-licenses",
-        output_s3_uri="s3://bucket/output/textract/key.json",
+        output_uri="s3://bucket/output/textract/key.json",
         field_confidence_scores=[{"NAME_DETAILS.FIRST_NAME": 0.70}],
         field_empty_list=[],
         extract_started_at=datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC),

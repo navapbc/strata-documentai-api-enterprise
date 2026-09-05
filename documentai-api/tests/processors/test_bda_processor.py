@@ -150,7 +150,7 @@ def test_classify_extraction_result_below_floor(
 
     result = ExtractionResult(
         document_type="invoice",
-        output_s3_uri="s3://bucket/output.json",
+        output_uri="s3://bucket/output.json",
         field_confidence_scores=field_confidence_map_list,
         field_empty_list=empty_fields,
     )

@@ -35,7 +35,7 @@ def extract_bda_result(
 
     return ExtractionResult(
         document_type=document_class,
-        output_s3_uri=bda_output_s3_uri,
+        output_uri=bda_output_s3_uri,
         field_confidence_scores=metadata.field_confidence_map_list,
         field_empty_list=metadata.empty_fields,
         field_missing_geometry_list=metadata.fields_missing_geometry or [],

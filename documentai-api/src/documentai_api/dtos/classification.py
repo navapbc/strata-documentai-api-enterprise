@@ -26,7 +26,7 @@ class ClassificationData:
         cls, result: ExtractionResult, additional_info: str | None = None
     ) -> Self:
         return cls(
-            bda_output_s3_uri=result.output_s3_uri,
+            bda_output_s3_uri=result.output_uri,
             matched_document_class=result.document_type,
             matched_blueprint_name=result.matched_blueprint_name,
             matched_blueprint_confidence=result.matched_blueprint_confidence,
