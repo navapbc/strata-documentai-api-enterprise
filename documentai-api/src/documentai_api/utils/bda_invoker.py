@@ -6,7 +6,7 @@ import documentai_api.utils.documents as document_utils
 from documentai_api.config.constants import ConfigDefaults
 from documentai_api.config.env import EnvVars, get_aws_config, get_required_env
 from documentai_api.logging import get_logger
-from documentai_api.utils.aws_client_factory import AWSClientFactory
+from documentai_api.services.aws_client_factory import AWSClientFactory
 
 logger = get_logger(__name__)
 tracer = trace.get_tracer(__name__)

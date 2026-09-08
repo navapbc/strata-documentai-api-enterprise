@@ -208,7 +208,7 @@ def test_actors_does_not_fetch_group_memberships(api_client, cognito_client, moc
 
     It must skip the per-user admin_list_groups_for_user lookup that /users needs.
     """
-    from documentai_api.utils.aws_client_factory import AWSClientFactory
+    from documentai_api.services.aws_client_factory import AWSClientFactory
 
     create_cognito_user(cognito_client, "admin-1", "admin@example.com")
     spy = mocker.spy(AWSClientFactory.get_cognito_client(), "admin_list_groups_for_user")

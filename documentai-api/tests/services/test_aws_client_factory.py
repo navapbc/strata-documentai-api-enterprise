@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from documentai_api.config.env import EnvVars
-from documentai_api.utils.aws_client_factory import AWSClientFactory
+from documentai_api.services.aws_client_factory import AWSClientFactory
 
 
 @pytest.fixture
@@ -17,7 +17,7 @@ def mock_boto3_session_class():
 
     Yields the mock class so you can assert 'mock.assert_called_once_with(profile_name=...)'
     """
-    with patch("documentai_api.utils.aws_client_factory.boto3.Session") as mock_class:
+    with patch("documentai_api.services.aws_client_factory.boto3.Session") as mock_class:
         mock_class.return_value = MagicMock()
         yield mock_class
 
@@ -32,7 +32,7 @@ def mock_aws_session_instance():
     Yields the mock session instance so you can assert 'mock.client.assert_called_once_with("s3")'
     """
     with patch(
-        "documentai_api.utils.aws_client_factory.AWSClientFactory.get_session"
+        "documentai_api.services.aws_client_factory.AWSClientFactory.get_session"
     ) as mock_get_session:
         mock_session = MagicMock()
         mock_get_session.return_value = mock_session

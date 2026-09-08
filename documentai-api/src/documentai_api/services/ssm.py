@@ -1,6 +1,6 @@
 """SSM Parameter Store service methods."""
 
-from documentai_api.utils.aws_client_factory import AWSClientFactory
+from documentai_api.services.aws_client_factory import AWSClientFactory
 
 
 def get_parameter(name: str) -> str:

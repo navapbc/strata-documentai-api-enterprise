@@ -139,7 +139,7 @@ def get_write_counts(tenant_id: str, month: str) -> list[dict[str, Any]]:
 
 
 def _query_month_items(table_name: str, tenant_id: str, month_prefix: str) -> list[dict[str, Any]]:
-    from documentai_api.utils.aws_client_factory import AWSClientFactory
+    from documentai_api.services.aws_client_factory import AWSClientFactory
 
     table = AWSClientFactory.get_ddb_table(table_name)
     response = table.query(

@@ -18,7 +18,7 @@ from typing import Any
 
 from documentai_api.logging import get_logger
 from documentai_api.services import ddb as ddb_service
-from documentai_api.utils.aws_client_factory import AWSClientFactory
+from documentai_api.services.aws_client_factory import AWSClientFactory
 from documentai_api.utils.base_readonly_table import ReadOnlyTable
 from documentai_api.utils.strings import snake_to_camel
 

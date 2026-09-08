@@ -1,6 +1,7 @@
 """Tests for services/bda.py."""
 
 from documentai_api.services import bda as bda_service
+from documentai_api.utils import bda as bda_utils
 
 
 def test_get_data_automation_project(mock_bda_client):
@@ -37,20 +38,20 @@ def test_get_bda_result_json_success(s3_bucket, monkeypatch):
     get_aws_config.cache_clear()
     s3_bucket.put_object(Key="path/to/result.json", Body=b'{"result": "success"}')
 
-    result = bda_service.get_bda_result_json(f"s3://{s3_bucket.name}/path/to/result.json")
+    result = bda_utils.get_bda_result_json(f"s3://{s3_bucket.name}/path/to/result.json")
 
     assert result == {"result": "success"}
 
 
 def test_get_bda_result_json_empty_uri():
     """Return None for empty URI."""
-    result = bda_service.get_bda_result_json("")
+    result = bda_utils.get_bda_result_json("")
     assert result is None
 
 
 def test_get_bda_result_json_exception(aws_credentials):
     """Return None when S3 read fails."""
-    result = bda_service.get_bda_result_json("s3://nonexistent-bucket/key")
+    result = bda_utils.get_bda_result_json("s3://nonexistent-bucket/key")
     assert result is None
 
 
@@ -58,7 +59,7 @@ def test_get_bda_result_json_rejects_non_object(s3_bucket):
     """A well-formed but non-object payload (JSON array) is rejected as None."""
     s3_bucket.put_object(Key="path/to/result.json", Body=b'["not", "an", "object"]')
 
-    result = bda_service.get_bda_result_json(f"s3://{s3_bucket.name}/path/to/result.json")
+    result = bda_utils.get_bda_result_json(f"s3://{s3_bucket.name}/path/to/result.json")
 
     assert result is None
 
@@ -67,7 +68,7 @@ def test_get_bda_result_json_rejects_malformed(s3_bucket):
     """Malformed JSON is rejected as None rather than raising."""
     s3_bucket.put_object(Key="path/to/result.json", Body=b"{not valid json")
 
-    result = bda_service.get_bda_result_json(f"s3://{s3_bucket.name}/path/to/result.json")
+    result = bda_utils.get_bda_result_json(f"s3://{s3_bucket.name}/path/to/result.json")
 
     assert result is None
 
@@ -76,7 +77,7 @@ def test_extract_bda_output_s3_uri_rejects_non_object(s3_bucket):
     """Non-object job metadata (JSON array) returns None instead of raising."""
     s3_bucket.put_object(Key="metadata.json", Body=b"[1, 2, 3]")
 
-    result = bda_service.extract_bda_output_s3_uri(s3_bucket.name, "metadata.json")
+    result = bda_utils.extract_bda_output_s3_uri(s3_bucket.name, "metadata.json")
 
     assert result is None
 
@@ -85,7 +86,7 @@ def test_extract_bda_output_s3_uri_rejects_malformed(s3_bucket):
     """Malformed job metadata returns None instead of raising JSONDecodeError."""
     s3_bucket.put_object(Key="metadata.json", Body=b"{not valid json")
 
-    result = bda_service.extract_bda_output_s3_uri(s3_bucket.name, "metadata.json")
+    result = bda_utils.extract_bda_output_s3_uri(s3_bucket.name, "metadata.json")
 
     assert result is None
 
@@ -116,7 +117,7 @@ def test_extract_bda_output_s3_uri_custom_path(s3_bucket):
         Body=f'{{"output_metadata": [{{"segment_metadata": [{{"custom_output_path": "s3://{s3_bucket.name}/custom/output.json"}}]}}]}}'.encode(),
     )
 
-    result = bda_service.extract_bda_output_s3_uri(s3_bucket.name, "metadata.json")
+    result = bda_utils.extract_bda_output_s3_uri(s3_bucket.name, "metadata.json")
 
     assert result == f"s3://{s3_bucket.name}/custom/output.json"
 
@@ -128,7 +129,7 @@ def test_extract_bda_output_s3_uri_standard_path(s3_bucket):
         Body=f'{{"output_metadata": [{{"segment_metadata": [{{"standard_output_path": "s3://{s3_bucket.name}/standard/output.json"}}]}}]}}'.encode(),
     )
 
-    result = bda_service.extract_bda_output_s3_uri(s3_bucket.name, "metadata.json")
+    result = bda_utils.extract_bda_output_s3_uri(s3_bucket.name, "metadata.json")
 
     assert result == f"s3://{s3_bucket.name}/standard/output.json"
 
@@ -137,7 +138,7 @@ def test_extract_bda_output_s3_uri_no_path(s3_bucket):
     """Return None when no output path found."""
     s3_bucket.put_object(Key="metadata.json", Body=b'{"output_metadata": []}')
 
-    result = bda_service.extract_bda_output_s3_uri(s3_bucket.name, "metadata.json")
+    result = bda_utils.extract_bda_output_s3_uri(s3_bucket.name, "metadata.json")
     assert result is None
 
 
@@ -145,6 +146,6 @@ def test_extract_bda_output_s3_uri_malformed(s3_bucket):
     """Return None when metadata is malformed."""
     s3_bucket.put_object(Key="metadata.json", Body=b'{"output_metadata": "not a list"}')
 
-    result = bda_service.extract_bda_output_s3_uri(s3_bucket.name, "metadata.json")
+    result = bda_utils.extract_bda_output_s3_uri(s3_bucket.name, "metadata.json")
 
     assert result is None

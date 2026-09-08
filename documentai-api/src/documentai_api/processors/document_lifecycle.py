@@ -15,11 +15,14 @@ from documentai_api.config.constants import (
     ProcessStatus,
 )
 from documentai_api.config.env import EnvVars, get_required_env
-from documentai_api.dtos.classification import PreclassificationMatchResult, TextractResult
+from documentai_api.dtos.classification import PreclassificationMatchResult
 from documentai_api.dtos.ddb import InitialDdbRecord, PreClassificationDdbFields, UpdateDdbRecord
+from documentai_api.dtos.extraction import ExtractionResult
 from documentai_api.dtos.processing import InternalApiResponse
+from documentai_api.extractors.textract import extract_textract_identity
 from documentai_api.logging import get_logger
 from documentai_api.models.document_record import DocumentRecord
+from documentai_api.processors.textract import process_textract_result
 from documentai_api.services import cloudwatch as cloudwatch_service
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils.bbox_detection import BboxResult
@@ -36,7 +39,6 @@ from documentai_api.utils.ssm import (
     is_blur_rejection_enforced,
     is_multipage_document_flagging_enabled,
 )
-from documentai_api.utils.textract import finalize_textract_result, try_textract_identity
 
 logger = get_logger(__name__)
 tracer = trace.get_tracer(__name__)
@@ -54,7 +56,7 @@ class _PreclassificationOutcome:
     process_status: str
     response_code: str
     pre_classification: PreClassificationDdbFields | None
-    textract_result: TextractResult | None
+    textract_result: ExtractionResult | None
 
 
 def is_selected_for_processing(
@@ -287,13 +289,13 @@ def _run_preclassification(
     )
 
     textract_result = (
-        try_textract_identity(content_type, file_bytes, ddb_key)
+        extract_textract_identity(content_type, file_bytes, ddb_key)
         if preclassification.is_identity_document
         else None
     )
 
     if textract_result is not None:
-        # Textract succeeded inline; finalize_textract_result transitions to SUCCESS
+        # Textract succeeded inline; process_textract_result transitions to SUCCESS
         return _PreclassificationOutcome(
             ProcessStatus.STARTED, ResponseCodes.SUCCESS, pre_classification, textract_result
         )
@@ -447,7 +449,7 @@ def upsert_initial_ddb_record(
 
         # initial status does not qualify for bda processing
         # create the json response signaling the process is complete
-        # (skip for Textract -- finalize_textract_result handles its own response)
+        # (skip for Textract -- process_textract_result handles its own response)
         if not ProcessStatus.is_pending_extraction(process_status) and textract_result is None:
             internal_api_response = get_internal_api_response(
                 object_key=ddb_key,
@@ -497,7 +499,7 @@ def upsert_initial_ddb_record(
 
         # Textract completed inline - finalize the record with extraction results
         if textract_result is not None:
-            finalize_textract_result(
+            process_textract_result(
                 ddb_key, textract_result, user_provided_document_category, batch_id
             )
 

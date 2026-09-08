@@ -21,8 +21,8 @@ from documentai_api.logging import get_logger
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import cloudwatch as cloudwatch_service
 from documentai_api.services import ddb as ddb_service
+from documentai_api.services.aws_client_factory import AWSClientFactory
 from documentai_api.services.bda import get_bda_job_response
-from documentai_api.utils.aws_client_factory import AWSClientFactory
 from documentai_api.utils.batch_operations import increment_resolved_count
 
 logger = get_logger(__name__)

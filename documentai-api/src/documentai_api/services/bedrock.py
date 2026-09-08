@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING, Any
 
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential_jitter
 
-from documentai_api.utils.aws_client_factory import AWSClientFactory
-from documentai_api.utils.exceptions import is_retryable
+from documentai_api.services.aws_client_factory import AWSClientFactory
+from documentai_api.services.exceptions import is_retryable
 
 if TYPE_CHECKING:
     from mypy_boto3_bedrock_runtime.type_defs import InferenceConfigurationTypeDef

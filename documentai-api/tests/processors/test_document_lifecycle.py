@@ -12,13 +12,13 @@ from documentai_api.dtos.classification import (
 )
 from documentai_api.dtos.ddb import UpdateDdbRecord
 from documentai_api.dtos.processing import InternalApiResponse
+from documentai_api.processors import document_lifecycle as lifecycle_util
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils import document_classification as classification_util
-from documentai_api.utils import document_lifecycle as lifecycle_util
 from documentai_api.utils.blur_detection import BlurResult
 from documentai_api.utils.response_codes import ResponseCodes
 
-_LIFECYCLE_MODULE = "documentai_api.utils.document_lifecycle"
+_LIFECYCLE_MODULE = "documentai_api.processors.document_lifecycle"
 _CLASSIFICATION_MODULE = "documentai_api.utils.document_classification"
 
 
@@ -30,8 +30,8 @@ class _Mock:
     DETECT_BLUR = "detect_blur"
     PRECLASSIFY_DOCUMENT = "preclassify_document"
     FIND_MATCHING_BLUEPRINT = "find_matching_blueprint"
-    TRY_TEXTRACT_IDENTITY = "try_textract_identity"
-    FINALIZE_TEXTRACT_RESULT = "finalize_textract_result"
+    TRY_TEXTRACT_IDENTITY = "extract_textract_identity"
+    FINALIZE_TEXTRACT_RESULT = "process_textract_result"
     IS_MULTIPAGE_DOCUMENT_FLAGGING_ENABLED = "is_multipage_document_flagging_enabled"
     BUILD_V1_API_RESPONSE = "build_v1_api_response"
     GET_BBOX_IF_ENABLED = "get_bbox_if_enabled"
@@ -84,10 +84,10 @@ def lifecycle_mocks(mocker):
             return_value=PreclassificationMatchResult(),
         ),
         _Mock.TRY_TEXTRACT_IDENTITY: mocker.patch(
-            f"{_LIFECYCLE_MODULE}.try_textract_identity", return_value=None
+            f"{_LIFECYCLE_MODULE}.extract_textract_identity", return_value=None
         ),
         _Mock.FINALIZE_TEXTRACT_RESULT: mocker.patch(
-            f"{_LIFECYCLE_MODULE}.finalize_textract_result"
+            f"{_LIFECYCLE_MODULE}.process_textract_result"
         ),
         _Mock.IS_MULTIPAGE_DOCUMENT_FLAGGING_ENABLED: mocker.patch(
             f"{_LIFECYCLE_MODULE}.is_multipage_document_flagging_enabled", return_value=True

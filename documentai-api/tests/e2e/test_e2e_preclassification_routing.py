@@ -109,7 +109,7 @@ def _enable_preclassification_routing(reset_env, monkeypatch_session):
     if original_routing is not None:
         ssm_service.put_parameter(routing_param, original_routing)
     else:
-        from documentai_api.utils.aws_client_factory import AWSClientFactory
+        from documentai_api.services.aws_client_factory import AWSClientFactory
 
         AWSClientFactory.get_ssm_client().delete_parameter(Name=routing_param)
 

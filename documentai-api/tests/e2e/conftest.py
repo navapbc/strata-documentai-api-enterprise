@@ -6,8 +6,8 @@ from pathlib import Path
 import pytest
 
 from documentai_api.logging import get_logger
+from documentai_api.services.aws_client_factory import AWSClientFactory
 from documentai_api.utils.auth import _hash_key, deactivate_api_key, generate_api_key
-from documentai_api.utils.aws_client_factory import AWSClientFactory
 
 E2E_TENANT_BASE = "e2e-test-tenant"
 logger = get_logger(__name__)

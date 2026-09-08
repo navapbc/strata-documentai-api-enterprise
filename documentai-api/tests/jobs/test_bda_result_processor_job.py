@@ -12,7 +12,7 @@ def mock_env(runtime_required_env):
 
 def test_main_success(s3_bucket, mocker):
     """Test successful BDA output processing."""
-    mock_process = mocker.patch("documentai_api.jobs.bda_result_processor.main.process_bda_output")
+    mock_process = mocker.patch("documentai_api.jobs.bda_result_processor.main.process_bda_result")
     mock_process.return_value = {"status": "success", "data": {"field1": "value1"}}
 
     result = main(s3_bucket.name, "output/input/test-file.pdf/job_metadata.json")
@@ -27,7 +27,7 @@ def test_main_success(s3_bucket, mocker):
 
 def test_main_with_truncated_filename(s3_bucket, mocker):
     """Test processing BDA output with truncated filename."""
-    mock_process = mocker.patch("documentai_api.jobs.bda_result_processor.main.process_bda_output")
+    mock_process = mocker.patch("documentai_api.jobs.bda_result_processor.main.process_bda_result")
     mock_process.return_value = {"status": "success"}
 
     main(s3_bucket.name, "output/input/long_truncated.pdf/job_metadata.json")
@@ -41,7 +41,7 @@ def test_main_with_truncated_filename(s3_bucket, mocker):
 
 def test_main_skips_non_metadata_files(s3_bucket, mocker):
     """Test that non-metadata files are skipped."""
-    mock_process = mocker.patch("documentai_api.jobs.bda_result_processor.main.process_bda_output")
+    mock_process = mocker.patch("documentai_api.jobs.bda_result_processor.main.process_bda_result")
 
     result = main(s3_bucket.name, "output/input/test-file.pdf/.s3_access_check")
 

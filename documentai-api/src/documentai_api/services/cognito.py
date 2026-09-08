@@ -5,7 +5,7 @@ from typing import Any
 from documentai_api.config.env import get_aws_config
 from documentai_api.logging import get_logger
 from documentai_api.models.user import CognitoUserItem
-from documentai_api.utils.aws_client_factory import AWSClientFactory
+from documentai_api.services.aws_client_factory import AWSClientFactory
 
 logger = get_logger(__name__)
 

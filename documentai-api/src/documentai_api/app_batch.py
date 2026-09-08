@@ -43,6 +43,7 @@ from documentai_api.models.batch import (
     BatchUploadResponse,
 )
 from documentai_api.models.document_record import DocumentRecord
+from documentai_api.processors.document_lifecycle import insert_minimal_ddb_record
 from documentai_api.schemas.document_batches import DocumentBatches
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.auth import UserContext, get_user_context_from_api_key
@@ -57,7 +58,6 @@ from documentai_api.utils.document_classification import (
     classify_as_conversion_failed,
     classify_as_failed,
 )
-from documentai_api.utils.document_lifecycle import insert_minimal_ddb_record
 from documentai_api.utils.tenant_access import validate_batch_tenant_access
 from documentai_api.utils.uploads import (
     ImageConversionError,

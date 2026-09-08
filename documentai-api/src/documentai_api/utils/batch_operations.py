@@ -101,7 +101,7 @@ def update_batch_status(
     if condition_expression:
         kwargs["ConditionExpression"] = condition_expression
 
-    from documentai_api.utils.aws_client_factory import AWSClientFactory
+    from documentai_api.services.aws_client_factory import AWSClientFactory
 
     ddb_table = AWSClientFactory.get_ddb_table(table_name)
     ddb_table.update_item(**kwargs)
@@ -128,7 +128,7 @@ def increment_resolved_count(batch_id: str) -> None:
     """
     try:
         table_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME)
-        from documentai_api.utils.aws_client_factory import AWSClientFactory
+        from documentai_api.services.aws_client_factory import AWSClientFactory
 
         table = AWSClientFactory.get_ddb_table(table_name)
 

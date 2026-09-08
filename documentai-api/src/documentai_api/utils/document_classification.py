@@ -7,6 +7,7 @@ from botocore.exceptions import ClientError
 from documentai_api.config.constants import ProcessStatus
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.dtos.ddb import UpdateDdbRecord
+from documentai_api.dtos.extraction import ExtractionResult
 from documentai_api.dtos.processing import InternalApiResponse
 from documentai_api.logging import get_logger
 from documentai_api.utils.batch_operations import increment_resolved_count
@@ -299,13 +300,14 @@ def classify_as_multiple_documents_in_multipage(
 
 def classify_extraction_result(
     ddb_key: str,
-    data: ClassificationData,
+    result: ExtractionResult,
     tenant_id: str | None,
     batch_id: str | None = None,
-    response_code: str = ResponseCodes.SUCCESS,
     result_processor_started_at: str | None = None,
 ) -> dict[str, Any]:
     """Apply confidence floor and extraction rules, then call classify_as_success."""
+    data = ClassificationData.from_extraction_result(result)
+
     confidence_floor = get_extraction_confidence_floor(tenant_id)
     used_default_floor = not tenant_has_confidence_floor(tenant_id)
 
@@ -326,7 +328,7 @@ def classify_extraction_result(
 
     return classify_as_success(
         object_key=ddb_key,
-        response_code=response_code,
+        response_code=ResponseCodes.SUCCESS,
         data=data,
         below_extraction_confidence_floor=below_floor,
         extraction_rules_configured=rule_fields is not None,
