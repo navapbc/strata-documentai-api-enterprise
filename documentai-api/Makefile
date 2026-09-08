@@ -249,7 +249,7 @@ lint-mypy: ## Type check with mypy
 	$(PY_RUN_CMD) mypy src tests $(POSTMAN_DIR)
 
 lint-imports: ## Check import layer boundaries
-	$(PY_RUN_CMD) lint-imports
+	$(PY_RUN_CMD) lint-imports --no-logo
 
 lint-uv: ## Check uv lockfile is up-to-date
 	$(RUN_CMD) uv lock --check

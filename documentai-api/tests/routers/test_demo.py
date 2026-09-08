@@ -14,13 +14,13 @@ def _disable_auth(disable_auth):
 
 @pytest.fixture(autouse=True)
 def _bypass_write_limit(mocker):
-    mocker.patch("documentai_api.app_documents.increment_and_check")
+    mocker.patch("documentai_api.routers.documents.increment_and_check")
 
 
 def test_demo_upload_returns_202(api_client, blank_pdf_bytes, mocker):
     """POST /v1/demo/documents returns 202 with job_id."""
-    mocker.patch("documentai_api.app_documents.insert_minimal_ddb_record")
-    mocker.patch("documentai_api.app_documents.dispatch_upload", new_callable=AsyncMock)
+    mocker.patch("documentai_api.routers.documents.insert_minimal_ddb_record")
+    mocker.patch("documentai_api.routers.documents.dispatch_upload", new_callable=AsyncMock)
 
     files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
     response = api_client.post("/v1/demo/documents", files=files)
@@ -33,8 +33,8 @@ def test_demo_upload_returns_202(api_client, blank_pdf_bytes, mocker):
 
 def test_demo_upload_sets_is_demo_true(api_client, blank_pdf_bytes, mocker):
     """POST /v1/demo/documents forces is_demo=True on the record."""
-    mock_insert = mocker.patch("documentai_api.app_documents.insert_minimal_ddb_record")
-    mocker.patch("documentai_api.app_documents.dispatch_upload", new_callable=AsyncMock)
+    mock_insert = mocker.patch("documentai_api.routers.documents.insert_minimal_ddb_record")
+    mocker.patch("documentai_api.routers.documents.dispatch_upload", new_callable=AsyncMock)
 
     files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
     api_client.post("/v1/demo/documents", files=files)
@@ -47,8 +47,8 @@ def test_demo_upload_sets_ttl(api_client, blank_pdf_bytes, mocker):
     """POST /v1/demo/documents sets 3-day TTL on the record."""
     from documentai_api.config.constants import ConfigDefaults
 
-    mock_insert = mocker.patch("documentai_api.app_documents.insert_minimal_ddb_record")
-    mocker.patch("documentai_api.app_documents.dispatch_upload", new_callable=AsyncMock)
+    mock_insert = mocker.patch("documentai_api.routers.documents.insert_minimal_ddb_record")
+    mocker.patch("documentai_api.routers.documents.dispatch_upload", new_callable=AsyncMock)
 
     files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
     api_client.post("/v1/demo/documents", files=files)
@@ -170,7 +170,7 @@ def test_demo_preview_wrong_tenant_returns_404(api_client, ddb_doc_metadata_tabl
 def test_demo_upload_rejects_without_auth(api_client, blank_pdf_bytes):
     """POST /v1/demo/documents returns 401 without valid credentials."""
     from documentai_api.app import app
-    from documentai_api.app_demo import _resolve_demo_context
+    from documentai_api.routers.demo import _resolve_demo_context
 
     # Remove the auth override so the real dependency runs
     app.dependency_overrides.pop(_resolve_demo_context, None)

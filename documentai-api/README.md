@@ -260,9 +260,9 @@ Most tests use pytest with moto for AWS service mocking - no real AWS infrastruc
 > ⚠️ .env.e2e is generated from live Lambda env vars and contains real dev AWS account, API Gateway, bucket, and table identifiers. It's gitignored (both root and `documentai-api/.gitignore`) and _must not be committed_.
 
 ```bash
-make test                                    # Unit suite (excludes integration + e2e)
-make test args=tests/test_app_documents.py   # Specific file
-make test args="tests/test_auth.py::test_valid_key"  # Specific test
+make test                                          # Unit suite (excludes integration + e2e)
+make test args=tests/routers/test_documents.py     # Specific file
+make test args="tests/routers/test_auth.py::test_verify_api_key_valid"  # Specific test
 make test args="-m integration"              # Integration (moto) tests
 make test-e2e                                # E2E tests against real AWS (regenerates .env.e2e)
 ```
@@ -276,21 +276,32 @@ src/documentai_api/
 ├── main.py                         # Lambda + CLI entry point
 ├── app.py                          # FastAPI app + router registration
 ├── annotations.py                  # Shared type annotations (AuthMethod, etc.)
-├── app_documents.py                # Document upload/status endpoints
-├── app_batch.py                    # Batch upload endpoints
-├── app_presigned.py                # Presigned URL endpoints
-├── app_build.py                    # Document build/assembly endpoints
-├── app_api_keys.py                 # API key admin endpoints
-├── app_tenants.py                  # Tenant admin endpoints
-├── app_users.py                    # User admin endpoints
-├── app_audit_log.py                # Audit log endpoints
-├── app_admin_documents.py          # Document viewer endpoints
-├── app_document_categories.py      # Category admin endpoints
-├── app_extraction_rules.py         # Extraction rule config endpoints
-├── app_blueprint_test.py           # BDA test runner endpoints
-├── app_dictionary.py               # Schema/field dictionary endpoints
-├── app_metrics.py                  # Metrics query endpoints
-├── app_me.py                       # Current user endpoint
+├── routers/                        # FastAPI routers (one file per endpoint group)
+│   ├── documents.py                # Document upload/status endpoints
+│   ├── batch.py                    # Batch upload endpoints
+│   ├── presigned.py                # Presigned URL endpoints
+│   ├── build.py                    # Document build/assembly endpoints
+│   ├── api_keys.py                 # API key admin endpoints
+│   ├── tenants.py                  # Tenant admin endpoints
+│   ├── users.py                    # User admin endpoints
+│   ├── audit_log.py                # Audit log endpoints
+│   ├── admin_documents.py          # Document viewer endpoints
+│   ├── document_categories.py      # Category admin endpoints
+│   ├── extraction_rules.py         # Extraction rule config endpoints
+│   ├── blueprint_test.py           # BDA test runner endpoints
+│   ├── dictionary.py               # Schema/field dictionary endpoints
+│   ├── metrics.py                  # Metrics query endpoints
+│   ├── demo.py                     # Demo endpoints
+│   ├── search.py                   # Document search endpoints
+│   ├── evaluation.py               # Evaluation endpoints
+│   ├── auth_events.py              # Auth event endpoints
+│   ├── me.py                       # Current user endpoint
+│   └── admin_usage.py              # Admin usage endpoints
+├── extractors/                     # Extraction logic (BDA, Textract)
+├── processors/                     # Document lifecycle + classification
+├── readers/                        # Extraction result readers (BDA, Textract)
+├── dtos/                           # Internal data transfer objects
+├── mappings/                       # Textract field mappings
 ├── config/
 │   ├── constants.py                # App constants (categories, limits, statuses)
 │   └── env.py                      # Environment variable enum + Pydantic settings
@@ -299,7 +310,7 @@ src/documentai_api/
 │   ├── bda_result_processor/       # EventBridge → extract fields → update DDB
 │   ├── metrics_processor/          # SQS → write Parquet to S3
 │   ├── metrics_aggregator/         # Scheduled → aggregate daily metrics
-│   ├── document_reaper/            # Scheduled → document reaper: resolve stuck non-terminal records
+│   ├── document_reaper/            # Scheduled → resolve stuck non-terminal records
 │   └── usage_report/               # Scheduled → per-tenant usage report via Athena
 ├── services/
 │   ├── s3.py                       # S3 client
@@ -318,10 +329,8 @@ src/documentai_api/
 │   ├── base_crud_table.py          # DynamoDB CRUD base class
 │   ├── base_readonly_table.py      # DynamoDB read-only base class
 │   ├── pagination.py               # Cursor-based pagination
-│   ├── audit.py                    # Audit event recording
 │   ├── tenant_access.py            # Tenant scoping/validation
 │   ├── bda_invoker.py              # BDA invocation logic
-│   ├── bda_output_processor.py     # BDA result parsing
 │   └── ...                         # S3, PDF, image, zip, upload utils
 └── cli/
     ├── api_keys.py                 # API key management CLI
@@ -330,11 +339,10 @@ src/documentai_api/
 tests/
 ├── conftest.py                     # Shared fixtures (moto, test client)
 ├── helpers/                        # Test utilities
+├── routers/                        # Router endpoint tests
 ├── jobs/                           # Job handler tests
 ├── e2e/                            # E2E tests against real deployed AWS (make test-e2e)
-├── test_app_documents.py
-├── test_auth.py
-└── ...
+└── ...                             # Mirrors src/ layout (extractors/, processors/, utils/, etc.)
 ```
 
 Jobs are packaged in the same container image with separate Lambda handler entry points configured by the infrastructure.

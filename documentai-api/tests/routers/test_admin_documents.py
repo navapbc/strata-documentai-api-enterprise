@@ -440,7 +440,7 @@ def test_preview_tenant_admin_cannot_view_other(api_client, seeded_docs_with_con
 def test_preview_logs_audit_event(api_client, seeded_docs_with_content_type, mocker):
     from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
 
-    mock_log = mocker.patch("documentai_api.app_admin_documents.log_event")
+    mock_log = mocker.patch("documentai_api.routers.admin_documents.log_event")
     override_jwt(SUPER_ADMIN_CLAIMS)
 
     response = api_client.get(PREVIEW_URL.format(job_id="job-preview-pdf"))
@@ -459,7 +459,7 @@ def test_preview_not_found_does_not_log_audit_event(
     api_client, ddb_doc_metadata_table, monkeypatch, mocker
 ):
     monkeypatch.setenv(EnvVars.DOCUMENTAI_INPUT_LOCATION, "s3://test-bucket/input")
-    mock_log = mocker.patch("documentai_api.app_admin_documents.log_event")
+    mock_log = mocker.patch("documentai_api.routers.admin_documents.log_event")
     override_jwt(SUPER_ADMIN_CLAIMS)
 
     response = api_client.get(PREVIEW_URL.format(job_id="nonexistent"))
@@ -470,7 +470,7 @@ def test_preview_not_found_does_not_log_audit_event(
 def test_list_logs_audit_event(api_client, seeded_docs, mocker):
     from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
 
-    mock_log = mocker.patch("documentai_api.app_admin_documents.log_event")
+    mock_log = mocker.patch("documentai_api.routers.admin_documents.log_event")
     override_jwt(SUPER_ADMIN_CLAIMS)
 
     response = api_client.get(f"{DOCUMENTS_URL}?tenant_id={TENANT_ADMIN_ID}")
@@ -489,7 +489,7 @@ def test_list_logs_audit_event(api_client, seeded_docs, mocker):
 def test_get_document_logs_search_and_view(api_client, seeded_docs, mocker):
     from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
 
-    mock_log = mocker.patch("documentai_api.app_admin_documents.log_event")
+    mock_log = mocker.patch("documentai_api.routers.admin_documents.log_event")
     override_jwt(SUPER_ADMIN_CLAIMS)
 
     response = api_client.get(f"{DOCUMENTS_URL}/test-job-id-1")
@@ -514,7 +514,7 @@ def test_get_document_logs_search_and_view(api_client, seeded_docs, mocker):
 def test_get_document_not_found_logs_search_only(api_client, ddb_doc_metadata_table, mocker):
     from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
 
-    mock_log = mocker.patch("documentai_api.app_admin_documents.log_event")
+    mock_log = mocker.patch("documentai_api.routers.admin_documents.log_event")
     override_jwt(SUPER_ADMIN_CLAIMS)
 
     response = api_client.get(f"{DOCUMENTS_URL}/nonexistent-job")
@@ -546,7 +546,7 @@ def test_get_document_bounding_box_implies_extracted_data(
     )
 
     mock_extract = mocker.patch(
-        "documentai_api.app_admin_documents.extract_field_values",
+        "documentai_api.routers.admin_documents.extract_field_values",
         return_value={},
     )
 

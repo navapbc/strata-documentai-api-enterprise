@@ -152,7 +152,7 @@ def _cleanup_jwt():
 def disable_auth():
     """Disable API key authentication and tenant validation for tests."""
     from documentai_api.app import app
-    from documentai_api.app_demo import _resolve_demo_context
+    from documentai_api.routers.demo import _resolve_demo_context
     from documentai_api.utils.auth import (
         UserContext,
         get_user_context_from_api_key,

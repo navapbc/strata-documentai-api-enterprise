@@ -6,11 +6,6 @@ from boto3.dynamodb.conditions import Attr
 from fastapi import APIRouter, Depends, HTTPException, Response, UploadFile, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from documentai_api.app_admin_documents import (
-    _record_to_detail,
-    _record_to_item,
-)
-from documentai_api.app_documents import upload_document
 from documentai_api.config.constants import ConfigDefaults, FileValidation
 from documentai_api.config.env import get_aws_config
 from documentai_api.logging import get_logger
@@ -20,6 +15,11 @@ from documentai_api.models.admin_document import (
     DocumentPreviewResponse,
 )
 from documentai_api.models.job_status import UploadAsyncResponse
+from documentai_api.routers.admin_documents import (
+    _record_to_detail,
+    _record_to_item,
+)
+from documentai_api.routers.documents import upload_document
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils.auth import UserContext, get_user_context_with_fallback

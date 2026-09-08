@@ -19,7 +19,7 @@ def _disable_auth(disable_auth):
 
 @pytest.fixture(autouse=True)
 def _mock_quota(mocker):
-    mocker.patch("documentai_api.app_batch.increment_and_check")
+    mocker.patch("documentai_api.routers.batch.increment_and_check")
 
 
 @pytest.fixture
@@ -68,12 +68,14 @@ def test_batch_upload_success(api_client, pdf_file):
             os.environ, {EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"}
         ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
-        patch("documentai_api.app_batch.upload_document_for_processing", new_callable=AsyncMock),
-        patch("documentai_api.app_batch.insert_minimal_ddb_record"),
-        patch("documentai_api.app_batch.create_batch", return_value="2026-03-02T20:00:00Z"),
-        patch("documentai_api.app_batch.update_batch_status"),
         patch(
-            "documentai_api.app_batch.get_batch",
+            "documentai_api.routers.batch.upload_document_for_processing", new_callable=AsyncMock
+        ),
+        patch("documentai_api.routers.batch.insert_minimal_ddb_record"),
+        patch("documentai_api.routers.batch.create_batch", return_value="2026-03-02T20:00:00Z"),
+        patch("documentai_api.routers.batch.update_batch_status"),
+        patch(
+            "documentai_api.routers.batch.get_batch",
             return_value={"batchId": "test-batch", "createdAt": "2026-03-02T20:00:00Z"},
         ),
     ):
@@ -97,12 +99,14 @@ def test_batch_upload_with_external_fields(api_client, pdf_file):
             os.environ, {EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"}
         ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
-        patch("documentai_api.app_batch.upload_document_for_processing", new_callable=AsyncMock),
-        patch("documentai_api.app_batch.insert_minimal_ddb_record") as mock_insert,
-        patch("documentai_api.app_batch.create_batch", return_value="2026-03-02T20:00:00Z"),
-        patch("documentai_api.app_batch.update_batch_status"),
         patch(
-            "documentai_api.app_batch.get_batch",
+            "documentai_api.routers.batch.upload_document_for_processing", new_callable=AsyncMock
+        ),
+        patch("documentai_api.routers.batch.insert_minimal_ddb_record") as mock_insert,
+        patch("documentai_api.routers.batch.create_batch", return_value="2026-03-02T20:00:00Z"),
+        patch("documentai_api.routers.batch.update_batch_status"),
+        patch(
+            "documentai_api.routers.batch.get_batch",
             return_value={"batchId": "test-batch", "createdAt": "2026-03-02T20:00:00Z"},
         ),
     ):
@@ -130,14 +134,14 @@ def test_batch_upload_ai_consent_declined(api_client, pdf_file):
         ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch(
-            "documentai_api.app_batch.upload_document_for_processing", new_callable=AsyncMock
+            "documentai_api.routers.batch.upload_document_for_processing", new_callable=AsyncMock
         ) as mock_upload,
-        patch("documentai_api.app_batch.insert_minimal_ddb_record"),
-        patch("documentai_api.app_batch.classify_as_ai_consent_declined") as mock_classify,
-        patch("documentai_api.app_batch.create_batch", return_value="2026-03-02T20:00:00Z"),
-        patch("documentai_api.app_batch.update_batch_status"),
+        patch("documentai_api.routers.batch.insert_minimal_ddb_record"),
+        patch("documentai_api.routers.batch.classify_as_ai_consent_declined") as mock_classify,
+        patch("documentai_api.routers.batch.create_batch", return_value="2026-03-02T20:00:00Z"),
+        patch("documentai_api.routers.batch.update_batch_status"),
         patch(
-            "documentai_api.app_batch.get_batch",
+            "documentai_api.routers.batch.get_batch",
             return_value={"batchId": "test-batch", "createdAt": "2026-03-02T20:00:00Z"},
         ),
     ):
@@ -163,9 +167,9 @@ def test_batch_upload_invalid_file_type(api_client):
             os.environ, {EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"}
         ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="text/plain"),
-        patch("documentai_api.app_batch.create_batch", return_value="2026-03-02T20:00:00Z"),
-        patch("documentai_api.app_batch.update_batch_status"),
-        patch("documentai_api.app_batch.get_batch", return_value=None),
+        patch("documentai_api.routers.batch.create_batch", return_value="2026-03-02T20:00:00Z"),
+        patch("documentai_api.routers.batch.update_batch_status"),
+        patch("documentai_api.routers.batch.get_batch", return_value=None),
     ):
         files = [("files", ("doc.txt", b"text", "text/plain"))]
         response = api_client.post("/v1/documents/batch", files=files)
@@ -178,19 +182,21 @@ def test_zip_upload_success(api_client, zip_with_pdfs):
     with (
         patch.dict(os.environ, {EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-table"}),
         patch(
-            "documentai_api.app_batch.extract_files_from_zip", new_callable=AsyncMock
+            "documentai_api.routers.batch.extract_files_from_zip", new_callable=AsyncMock
         ) as mock_extract,
         patch(
-            "documentai_api.app_batch.validate_file_type",
+            "documentai_api.routers.batch.validate_file_type",
             new_callable=AsyncMock,
             return_value="application/pdf",
         ),
-        patch("documentai_api.app_batch.upload_document_for_processing", new_callable=AsyncMock),
-        patch("documentai_api.app_batch.insert_minimal_ddb_record"),
-        patch("documentai_api.app_batch.create_batch", return_value="2026-03-02T20:00:00Z"),
-        patch("documentai_api.app_batch.update_batch_status"),
         patch(
-            "documentai_api.app_batch.get_batch",
+            "documentai_api.routers.batch.upload_document_for_processing", new_callable=AsyncMock
+        ),
+        patch("documentai_api.routers.batch.insert_minimal_ddb_record"),
+        patch("documentai_api.routers.batch.create_batch", return_value="2026-03-02T20:00:00Z"),
+        patch("documentai_api.routers.batch.update_batch_status"),
+        patch(
+            "documentai_api.routers.batch.get_batch",
             return_value={"batchId": "test-batch", "createdAt": "2026-03-02T20:00:00Z"},
         ),
     ):
@@ -212,7 +218,7 @@ def test_zip_upload_empty(api_client):
     with (
         patch.dict(os.environ, {EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-table"}),
         patch(
-            "documentai_api.app_batch.extract_files_from_zip", new_callable=AsyncMock
+            "documentai_api.routers.batch.extract_files_from_zip", new_callable=AsyncMock
         ) as mock_extract,
     ):
         mock_extract.return_value = []
@@ -226,8 +232,8 @@ def test_zip_upload_empty(api_client):
 def test_get_batch_status_success(api_client):
     """GET /v1/batches/{id} returns aggregate status + per-job list."""
     with (
-        patch("documentai_api.app_batch.get_batch") as mock_get_batch,
-        patch("documentai_api.app_batch.query_jobs_by_batch_id") as mock_query_jobs,
+        patch("documentai_api.routers.batch.get_batch") as mock_get_batch,
+        patch("documentai_api.routers.batch.query_jobs_by_batch_id") as mock_query_jobs,
     ):
         mock_get_batch.return_value = {
             "batchId": "test-batch-id",
@@ -252,7 +258,7 @@ def test_get_batch_status_success(api_client):
 
 def test_get_batch_status_not_found(api_client):
     """GET /v1/batches/{id} returns 404 when batch doesn't exist."""
-    with patch("documentai_api.app_batch.get_batch", return_value=None):
+    with patch("documentai_api.routers.batch.get_batch", return_value=None):
         response = api_client.get("/v1/batches/fake-batch")
 
     assert response.status_code == 404
@@ -262,8 +268,8 @@ def test_get_batch_status_reflects_atomic_counter_result(api_client):
     """GET /v1/batches/{id} is a pure read - returns whatever status the atomic counter set."""
     for status in (BatchStatus.COMPLETED, BatchStatus.FAILED, BatchStatus.PARTIAL):
         with (
-            patch("documentai_api.app_batch.get_batch") as mock_get_batch,
-            patch("documentai_api.app_batch.query_jobs_by_batch_id") as mock_query_jobs,
+            patch("documentai_api.routers.batch.get_batch") as mock_get_batch,
+            patch("documentai_api.routers.batch.query_jobs_by_batch_id") as mock_query_jobs,
         ):
             mock_get_batch.return_value = {
                 DocumentBatches.BATCH_ID: "test-batch-id",
@@ -287,12 +293,14 @@ def test_batch_upload_returns_uuid_batch_id(api_client, pdf_file):
             os.environ, {EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"}
         ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
-        patch("documentai_api.app_batch.upload_document_for_processing", new_callable=AsyncMock),
-        patch("documentai_api.app_batch.insert_minimal_ddb_record"),
-        patch("documentai_api.app_batch.create_batch", return_value="2026-03-02T20:00:00Z"),
-        patch("documentai_api.app_batch.update_batch_status"),
         patch(
-            "documentai_api.app_batch.get_batch",
+            "documentai_api.routers.batch.upload_document_for_processing", new_callable=AsyncMock
+        ),
+        patch("documentai_api.routers.batch.insert_minimal_ddb_record"),
+        patch("documentai_api.routers.batch.create_batch", return_value="2026-03-02T20:00:00Z"),
+        patch("documentai_api.routers.batch.update_batch_status"),
+        patch(
+            "documentai_api.routers.batch.get_batch",
             return_value={"batchId": "test-batch", "createdAt": "2026-03-02T20:00:00Z"},
         ),
     ):
@@ -311,7 +319,7 @@ def test_batch_upload_returns_uuid_batch_id(api_client, pdf_file):
 
 def test_upload_document_batch_exceeds_max_size(api_client, monkeypatch):
     """Batch upload rejects > MAX_BATCH_SIZE files with 400."""
-    monkeypatch.setattr("documentai_api.app_batch.MAX_BATCH_SIZE", 2)
+    monkeypatch.setattr("documentai_api.routers.batch.MAX_BATCH_SIZE", 2)
 
     files = [
         ("files", ("file1.pdf", b"content1", "application/pdf")),
@@ -333,13 +341,13 @@ def test_batch_upload_classify_as_failed_on_upload_error(api_client, pdf_file):
         ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch(
-            "documentai_api.app_batch.upload_document_for_processing", new_callable=AsyncMock
+            "documentai_api.routers.batch.upload_document_for_processing", new_callable=AsyncMock
         ) as mock_upload,
-        patch("documentai_api.app_batch.insert_minimal_ddb_record"),
-        patch("documentai_api.app_batch.classify_as_failed") as mock_classify_failed,
-        patch("documentai_api.app_batch.create_batch", return_value="2026-03-02T20:00:00Z"),
-        patch("documentai_api.app_batch.update_batch_status"),
-        patch("documentai_api.app_batch.get_batch", return_value={"batchId": "b"}),
+        patch("documentai_api.routers.batch.insert_minimal_ddb_record"),
+        patch("documentai_api.routers.batch.classify_as_failed") as mock_classify_failed,
+        patch("documentai_api.routers.batch.create_batch", return_value="2026-03-02T20:00:00Z"),
+        patch("documentai_api.routers.batch.update_batch_status"),
+        patch("documentai_api.routers.batch.get_batch", return_value={"batchId": "b"}),
     ):
         mock_upload.side_effect = HTTPException(status_code=500, detail="S3 upload failed")
 
@@ -362,14 +370,16 @@ def test_batch_upload_classify_as_conversion_failed(api_client, pdf_file):
         ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch(
-            "documentai_api.app_batch.upload_document_for_processing", new_callable=AsyncMock
+            "documentai_api.routers.batch.upload_document_for_processing", new_callable=AsyncMock
         ) as mock_upload,
-        patch("documentai_api.app_batch.insert_minimal_ddb_record"),
-        patch("documentai_api.app_batch.classify_as_conversion_failed") as mock_classify_conversion,
-        patch("documentai_api.app_batch.create_batch", return_value="2026-03-02T20:00:00Z"),
-        patch("documentai_api.app_batch.update_batch_status"),
+        patch("documentai_api.routers.batch.insert_minimal_ddb_record"),
         patch(
-            "documentai_api.app_batch.get_batch",
+            "documentai_api.routers.batch.classify_as_conversion_failed"
+        ) as mock_classify_conversion,
+        patch("documentai_api.routers.batch.create_batch", return_value="2026-03-02T20:00:00Z"),
+        patch("documentai_api.routers.batch.update_batch_status"),
+        patch(
+            "documentai_api.routers.batch.get_batch",
             return_value={"batchId": "test-batch", "createdAt": "2026-03-02T20:00:00Z"},
         ),
     ):
@@ -393,12 +403,12 @@ def test_batch_upload_partial_success(api_client, pdf_file):
         ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch(
-            "documentai_api.app_batch.upload_document_for_processing", new_callable=AsyncMock
+            "documentai_api.routers.batch.upload_document_for_processing", new_callable=AsyncMock
         ) as mock_upload,
-        patch("documentai_api.app_batch.insert_minimal_ddb_record") as mock_insert,
-        patch("documentai_api.app_batch.create_batch", return_value="2026-03-02T20:00:00Z"),
-        patch("documentai_api.app_batch.update_batch_status") as mock_update_status,
-        patch("documentai_api.app_batch.get_batch", return_value={"batchId": "b"}),
+        patch("documentai_api.routers.batch.insert_minimal_ddb_record") as mock_insert,
+        patch("documentai_api.routers.batch.create_batch", return_value="2026-03-02T20:00:00Z"),
+        patch("documentai_api.routers.batch.update_batch_status") as mock_update_status,
+        patch("documentai_api.routers.batch.get_batch", return_value={"batchId": "b"}),
     ):
         # First file succeeds, second file raises a non-HTTP exception
         mock_upload.side_effect = [
@@ -428,9 +438,9 @@ def test_batch_upload_create_batch_fails(api_client, pdf_file):
             os.environ, {EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"}
         ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
-        patch("documentai_api.app_batch.create_batch") as mock_create,
-        patch("documentai_api.app_batch.update_batch_status") as mock_update_status,
-        patch("documentai_api.app_batch.get_batch", return_value=None),
+        patch("documentai_api.routers.batch.create_batch") as mock_create,
+        patch("documentai_api.routers.batch.update_batch_status") as mock_update_status,
+        patch("documentai_api.routers.batch.get_batch", return_value=None),
     ):
         mock_create.side_effect = Exception("DDB write failed")
 
@@ -451,12 +461,14 @@ def test_batch_upload_trace_id_generated(api_client, pdf_file):
             os.environ, {EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"}
         ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
-        patch("documentai_api.app_batch.upload_document_for_processing", new_callable=AsyncMock),
-        patch("documentai_api.app_batch.insert_minimal_ddb_record"),
-        patch("documentai_api.app_batch.create_batch", return_value="2026-03-02T20:00:00Z"),
-        patch("documentai_api.app_batch.update_batch_status"),
         patch(
-            "documentai_api.app_batch.get_batch",
+            "documentai_api.routers.batch.upload_document_for_processing", new_callable=AsyncMock
+        ),
+        patch("documentai_api.routers.batch.insert_minimal_ddb_record"),
+        patch("documentai_api.routers.batch.create_batch", return_value="2026-03-02T20:00:00Z"),
+        patch("documentai_api.routers.batch.update_batch_status"),
+        patch(
+            "documentai_api.routers.batch.get_batch",
             return_value={"batchId": "test-batch", "createdAt": "2026-03-02T20:00:00Z"},
         ),
     ):
@@ -476,12 +488,14 @@ def test_batch_upload_trace_id_echoed(api_client, pdf_file):
             os.environ, {EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"}
         ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
-        patch("documentai_api.app_batch.upload_document_for_processing", new_callable=AsyncMock),
-        patch("documentai_api.app_batch.insert_minimal_ddb_record"),
-        patch("documentai_api.app_batch.create_batch", return_value="2026-03-02T20:00:00Z"),
-        patch("documentai_api.app_batch.update_batch_status"),
         patch(
-            "documentai_api.app_batch.get_batch",
+            "documentai_api.routers.batch.upload_document_for_processing", new_callable=AsyncMock
+        ),
+        patch("documentai_api.routers.batch.insert_minimal_ddb_record"),
+        patch("documentai_api.routers.batch.create_batch", return_value="2026-03-02T20:00:00Z"),
+        patch("documentai_api.routers.batch.update_batch_status"),
+        patch(
+            "documentai_api.routers.batch.get_batch",
             return_value={"batchId": "test-batch", "createdAt": "2026-03-02T20:00:00Z"},
         ),
     ):
@@ -501,14 +515,16 @@ def test_batch_upload_tenant_propagation(api_client, pdf_file):
             os.environ, {EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"}
         ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
-        patch("documentai_api.app_batch.upload_document_for_processing", new_callable=AsyncMock),
-        patch("documentai_api.app_batch.insert_minimal_ddb_record") as mock_insert,
         patch(
-            "documentai_api.app_batch.create_batch", return_value="2026-03-02T20:00:00Z"
+            "documentai_api.routers.batch.upload_document_for_processing", new_callable=AsyncMock
+        ),
+        patch("documentai_api.routers.batch.insert_minimal_ddb_record") as mock_insert,
+        patch(
+            "documentai_api.routers.batch.create_batch", return_value="2026-03-02T20:00:00Z"
         ) as mock_create,
-        patch("documentai_api.app_batch.update_batch_status"),
+        patch("documentai_api.routers.batch.update_batch_status"),
         patch(
-            "documentai_api.app_batch.get_batch",
+            "documentai_api.routers.batch.get_batch",
             return_value={"batchId": "test-batch", "createdAt": "2026-03-02T20:00:00Z"},
         ),
     ):
@@ -534,13 +550,13 @@ def test_batch_upload_uploads_under_tenant_prefix(api_client, pdf_file):
         ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch(
-            "documentai_api.app_batch.upload_document_for_processing", new_callable=AsyncMock
+            "documentai_api.routers.batch.upload_document_for_processing", new_callable=AsyncMock
         ) as mock_upload,
-        patch("documentai_api.app_batch.insert_minimal_ddb_record"),
-        patch("documentai_api.app_batch.create_batch", return_value="2026-03-02T20:00:00Z"),
-        patch("documentai_api.app_batch.update_batch_status"),
+        patch("documentai_api.routers.batch.insert_minimal_ddb_record"),
+        patch("documentai_api.routers.batch.create_batch", return_value="2026-03-02T20:00:00Z"),
+        patch("documentai_api.routers.batch.update_batch_status"),
         patch(
-            "documentai_api.app_batch.get_batch",
+            "documentai_api.routers.batch.get_batch",
             return_value={"batchId": "test-batch", "createdAt": "2026-03-02T20:00:00Z"},
         ),
     ):
@@ -559,14 +575,16 @@ def test_batch_upload_category_propagation(api_client, pdf_file):
             os.environ, {EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"}
         ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
-        patch("documentai_api.app_batch.upload_document_for_processing", new_callable=AsyncMock),
-        patch("documentai_api.app_batch.insert_minimal_ddb_record") as mock_insert,
         patch(
-            "documentai_api.app_batch.create_batch", return_value="2026-03-02T20:00:00Z"
+            "documentai_api.routers.batch.upload_document_for_processing", new_callable=AsyncMock
+        ),
+        patch("documentai_api.routers.batch.insert_minimal_ddb_record") as mock_insert,
+        patch(
+            "documentai_api.routers.batch.create_batch", return_value="2026-03-02T20:00:00Z"
         ) as mock_create,
-        patch("documentai_api.app_batch.update_batch_status"),
+        patch("documentai_api.routers.batch.update_batch_status"),
         patch(
-            "documentai_api.app_batch.get_batch",
+            "documentai_api.routers.batch.get_batch",
             return_value={"batchId": "test-batch", "createdAt": "2026-03-02T20:00:00Z"},
         ),
     ):
@@ -599,7 +617,9 @@ def test_post_then_get_batch_end_to_end(
     from documentai_api.utils.batch_operations import get_batch, query_jobs_by_batch_id
 
     mocker.patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf")
-    mocker.patch("documentai_api.app_batch.upload_document_for_processing", new_callable=AsyncMock)
+    mocker.patch(
+        "documentai_api.routers.batch.upload_document_for_processing", new_callable=AsyncMock
+    )
 
     files = [
         ("files", pdf_file("doc1.pdf")),
