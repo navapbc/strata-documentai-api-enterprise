@@ -19,7 +19,7 @@ def _disable_auth(disable_auth):
 
 @pytest.fixture(autouse=True)
 def _bypass_write_limit(mocker):
-    mocker.patch("documentai_api.app_documents.increment_and_check")
+    mocker.patch("documentai_api.routers.documents.increment_and_check")
 
 
 def test_document_upload_no_file(api_client):
@@ -34,7 +34,7 @@ def test_document_status_not_found(ddb_doc_metadata_table_resource, api_client):
 
 def test_get_document_results_with_extracted_data(api_client, mocker):
     """Test getting results with extracted data."""
-    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.routers.documents.get_job_status")
     mock_get_job_status.return_value = JobStatus(
         ddb_record={"fileName": "test.pdf", "tenantId": "test-tenant"},
         object_key="test.pdf",
@@ -42,7 +42,7 @@ def test_get_document_results_with_extracted_data(api_client, mocker):
         v1_response_json='{"jobId": "test-job-id", "jobStatus": "success", "message": "Document processed successfully"}',
     )
 
-    mock_build_api_response = mocker.patch("documentai_api.app_documents.build_v1_api_response")
+    mock_build_api_response = mocker.patch("documentai_api.routers.documents.build_v1_api_response")
     mock_build_api_response.return_value = {
         "jobId": "test-job-id",
         "jobStatus": "success",
@@ -63,7 +63,7 @@ def test_get_document_results_with_extracted_data(api_client, mocker):
 
 def test_get_document_results_in_progress(api_client, mocker):
     """Test getting results for in-progress job."""
-    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.routers.documents.get_job_status")
     mock_get_job_status.return_value = JobStatus(
         ddb_record={"fileName": "test.pdf", "tenantId": "test-tenant"},
         object_key="test.pdf",
@@ -81,7 +81,7 @@ def test_get_document_results_in_progress(api_client, mocker):
 
 def test_get_document_results_not_started_reports_awaiting(api_client, mocker):
     """A not-yet-picked-up job reports 'awaiting', not the misleading 'in progress'."""
-    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.routers.documents.get_job_status")
     mock_get_job_status.return_value = JobStatus(
         ddb_record={"fileName": "test.pdf", "tenantId": "test-tenant"},
         object_key="test.pdf",
@@ -122,7 +122,7 @@ def test_create_document_asynchronous(api_client, blank_pdf_bytes):
 def test_create_document_uploads_under_tenant_prefix(api_client, blank_pdf_bytes, mocker):
     """Upload writes the S3 object under the caller's tenant prefix."""
     mock_dispatch = mocker.patch(
-        "documentai_api.app_documents.dispatch_upload", new_callable=AsyncMock
+        "documentai_api.routers.documents.dispatch_upload", new_callable=AsyncMock
     )
 
     files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
@@ -135,7 +135,7 @@ def test_create_document_uploads_under_tenant_prefix(api_client, blank_pdf_bytes
 
 def test_create_document_with_external_fields(api_client, blank_pdf_bytes, mocker):
     """Test document upload with external_document_id, external_system_id, and ai_consent_flag."""
-    mock_insert = mocker.patch("documentai_api.app_documents.insert_minimal_ddb_record")
+    mock_insert = mocker.patch("documentai_api.routers.documents.insert_minimal_ddb_record")
 
     files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
     data = {
@@ -156,7 +156,7 @@ def test_create_document_with_external_fields(api_client, blank_pdf_bytes, mocke
 @pytest.mark.parametrize("upload_source", ["desktop", "mobile", None])
 def test_create_document_passes_upload_source(api_client, blank_pdf_bytes, mocker, upload_source):
     """upload_source is forwarded to the DocumentRecord."""
-    mock_insert = mocker.patch("documentai_api.app_documents.insert_minimal_ddb_record")
+    mock_insert = mocker.patch("documentai_api.routers.documents.insert_minimal_ddb_record")
 
     files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
     data = {"upload_source": upload_source} if upload_source else {}
@@ -169,8 +169,8 @@ def test_create_document_passes_upload_source(api_client, blank_pdf_bytes, mocke
 
 def test_create_document_ai_consent_declined(api_client, blank_pdf_bytes, mocker):
     """Test document upload with ai_consent_flag=false bypasses processing."""
-    mock_insert = mocker.patch("documentai_api.app_documents.insert_minimal_ddb_record")
-    mock_classify = mocker.patch("documentai_api.app_documents.classify_as_ai_consent_declined")
+    mock_insert = mocker.patch("documentai_api.routers.documents.insert_minimal_ddb_record")
+    mock_classify = mocker.patch("documentai_api.routers.documents.classify_as_ai_consent_declined")
     mock_classify.return_value = {
         "response_code": "003",
         "response_message": "Document not processed - AI consent not provided",
@@ -192,7 +192,7 @@ def test_create_document_ai_consent_declined(api_client, blank_pdf_bytes, mocker
 
 def test_create_document_synchronous(api_client, blank_pdf_bytes, mocker):
     """Test synchronous document upload via /v1/documents/wait."""
-    mock_poll = mocker.patch("documentai_api.app_documents.poll_for_completion")
+    mock_poll = mocker.patch("documentai_api.routers.documents.poll_for_completion")
     mock_poll.return_value = JobStatusResponse(
         job_id="test-id", job_status="success", message="Document processed successfully"
     )
@@ -248,7 +248,7 @@ def test_create_document_custom_trace_id(api_client, blank_pdf_bytes):
 
 def test_create_document_upload_failure_classifies_record(api_client, blank_pdf_bytes, mocker):
     """Test unexpected upload failure marks DDB record as failed."""
-    mocker.patch("documentai_api.app_documents.insert_minimal_ddb_record")
+    mocker.patch("documentai_api.routers.documents.insert_minimal_ddb_record")
     mock_classify = mocker.patch("documentai_api.utils.document_classification.classify_as_failed")
     mocker.patch(
         "documentai_api.utils.uploads.upload_document_for_processing",
@@ -267,7 +267,7 @@ def test_create_document_conversion_failure(api_client, blank_pdf_bytes, mocker)
     """Test image conversion failure returns appropriate status."""
     from documentai_api.utils.uploads import ImageConversionError
 
-    mocker.patch("documentai_api.app_documents.insert_minimal_ddb_record")
+    mocker.patch("documentai_api.routers.documents.insert_minimal_ddb_record")
     mocker.patch("documentai_api.utils.document_classification.classify_as_conversion_failed")
     mocker.patch(
         "documentai_api.utils.uploads.upload_document_for_processing",
@@ -284,7 +284,7 @@ def test_create_document_conversion_failure(api_client, blank_pdf_bytes, mocker)
 
 def test_get_document_results_error_handling(api_client, mocker):
     """Test error handling in get_document_results."""
-    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.routers.documents.get_job_status")
     mock_get_job_status.side_effect = Exception("Unexpected error")
 
     response = api_client.get(f"/v1/documents/{TEST_JOB_ID}")
@@ -295,7 +295,7 @@ def test_get_document_results_error_handling(api_client, mocker):
 
 def test_search_documents_success(api_client, mocker):
     """Test searching multiple job IDs returns results."""
-    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.routers.documents.get_job_status")
     mock_get_job_status.side_effect = [
         JobStatus(
             ddb_record={"fileName": "test.pdf", "tenantId": "test-tenant"},
@@ -317,7 +317,7 @@ def test_search_documents_success(api_client, mocker):
 
 def test_search_documents_in_progress(api_client, mocker):
     """Test search returns processing status for incomplete jobs."""
-    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.routers.documents.get_job_status")
     mock_get_job_status.return_value = JobStatus(
         ddb_record={"fileName": "test.pdf", "tenantId": "test-tenant"},
         object_key="test.pdf",
@@ -335,7 +335,7 @@ def test_search_documents_in_progress(api_client, mocker):
 
 def test_search_documents_not_started_reports_awaiting(api_client, mocker):
     """Search reports 'awaiting' for a not-yet-picked-up job, not 'in progress'."""
-    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.routers.documents.get_job_status")
     mock_get_job_status.return_value = JobStatus(
         ddb_record={"fileName": "test.pdf", "tenantId": "test-tenant"},
         object_key="test.pdf",
@@ -368,7 +368,7 @@ def test_search_documents_exceeds_limit(api_client):
 
 def test_search_documents_handles_errors_gracefully(api_client, mocker):
     """Test search continues when individual job lookup fails."""
-    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.routers.documents.get_job_status")
     mock_get_job_status.side_effect = Exception("DDB error")
 
     response = api_client.post("/v1/documents/search", json={"jobIds": ["job-1"]})
@@ -381,7 +381,7 @@ def test_search_documents_handles_errors_gracefully(api_client, mocker):
 
 def test_delete_document_success(api_client, mocker):
     """Test default (soft) deletion: record marked deleted, S3 files retained."""
-    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.routers.documents.get_job_status")
     mock_get_job_status.return_value = JobStatus(
         ddb_record={"fileName": "test.pdf", "tenantId": "test-tenant"},
         object_key="test.pdf",
@@ -403,7 +403,7 @@ def test_delete_document_success(api_client, mocker):
 
 def test_delete_document_hard_delete(api_client, mocker):
     """Test hard deletion: all S3 artifacts purged and record marked deleted (hard)."""
-    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.routers.documents.get_job_status")
     mock_get_job_status.return_value = JobStatus(
         ddb_record={"fileName": "test.pdf", "tenantId": "test-tenant"},
         object_key="test.pdf",
@@ -427,7 +427,7 @@ def test_delete_document_hard_delete(api_client, mocker):
 
 def test_delete_document_not_found(api_client, mocker):
     """Test deleting non-existent document returns 404."""
-    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.routers.documents.get_job_status")
     mock_get_job_status.return_value = JobStatus(
         ddb_record=None, object_key=None, process_status=None, v1_response_json=None
     )
@@ -439,7 +439,7 @@ def test_delete_document_not_found(api_client, mocker):
 
 def test_delete_document_still_processing(api_client, mocker):
     """Test deleting in-progress document returns 400."""
-    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.routers.documents.get_job_status")
     mock_get_job_status.return_value = JobStatus(
         ddb_record={"fileName": "test.pdf", "tenantId": "test-tenant"},
         object_key="test.pdf",
@@ -455,7 +455,7 @@ def test_delete_document_still_processing(api_client, mocker):
 
 def test_delete_document_already_deleted(api_client, mocker):
     """Test deleting already-deleted document returns 404."""
-    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.routers.documents.get_job_status")
     mock_get_job_status.return_value = JobStatus(
         ddb_record={"fileName": "test.pdf"},
         object_key="test.pdf",
@@ -470,7 +470,7 @@ def test_delete_document_already_deleted(api_client, mocker):
 
 def test_get_document_results_wrong_tenant(api_client, mocker):
     """Test GET on document belonging to different tenant returns 404."""
-    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.routers.documents.get_job_status")
     mock_get_job_status.return_value = JobStatus(
         ddb_record={"fileName": "test.pdf", "tenantId": "other-tenant"},
         object_key="test.pdf",
@@ -485,7 +485,7 @@ def test_get_document_results_wrong_tenant(api_client, mocker):
 
 def test_delete_document_wrong_tenant(api_client, mocker):
     """Test DELETE on document belonging to different tenant returns 404."""
-    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.routers.documents.get_job_status")
     mock_get_job_status.return_value = JobStatus(
         ddb_record={"fileName": "test.pdf", "tenantId": "other-tenant"},
         object_key="test.pdf",
@@ -500,7 +500,7 @@ def test_delete_document_wrong_tenant(api_client, mocker):
 
 def test_search_documents_wrong_tenant(api_client, mocker):
     """Test search returns not_found for documents belonging to different tenant."""
-    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.routers.documents.get_job_status")
     mock_get_job_status.return_value = JobStatus(
         ddb_record={"fileName": "test.pdf", "tenantId": "other-tenant"},
         object_key="test.pdf",
@@ -517,7 +517,7 @@ def test_search_documents_wrong_tenant(api_client, mocker):
 
 def test_get_document_results_deleted_returns_404(api_client, mocker):
     """Test GET on deleted document returns 404."""
-    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.routers.documents.get_job_status")
     mock_get_job_status.return_value = JobStatus(
         ddb_record={"fileName": "test.pdf"},
         object_key="test.pdf",
@@ -559,9 +559,9 @@ def test_create_document_external_system_id_invalid_chars(api_client, blank_pdf_
 
 def test_create_document_sync_timeout_capped(api_client, blank_pdf_bytes, mocker):
     """Test that /v1/documents/wait caps timeout to _APIGW_MAX_TIMEOUT_SECONDS."""
-    from documentai_api.app_documents import _APIGW_MAX_TIMEOUT_SECONDS
+    from documentai_api.routers.documents import _APIGW_MAX_TIMEOUT_SECONDS
 
-    mock_poll = mocker.patch("documentai_api.app_documents.poll_for_completion")
+    mock_poll = mocker.patch("documentai_api.routers.documents.poll_for_completion")
     mock_poll.return_value = JobStatusResponse(
         job_id="test-id", job_status="success", message="Done"
     )
@@ -577,7 +577,7 @@ def test_create_document_sync_timeout_capped(api_client, blank_pdf_bytes, mocker
 
 def test_create_document_ai_consent_none_proceeds(api_client, blank_pdf_bytes, mocker):
     """Test that omitting ai_consent_flag (None) proceeds with upload."""
-    mock_classify = mocker.patch("documentai_api.app_documents.classify_as_ai_consent_declined")
+    mock_classify = mocker.patch("documentai_api.routers.documents.classify_as_ai_consent_declined")
 
     files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
     response = api_client.post("/v1/documents", files=files)
@@ -589,7 +589,7 @@ def test_create_document_ai_consent_none_proceeds(api_client, blank_pdf_bytes, m
 
 def test_search_documents_with_extracted_data(api_client, mocker):
     """Test search with include_extracted_data=true returns extracted data."""
-    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.routers.documents.get_job_status")
     mock_get_job_status.return_value = JobStatus(
         ddb_record={"fileName": "test.pdf", "tenantId": "test-tenant"},
         object_key="test.pdf",
@@ -597,7 +597,7 @@ def test_search_documents_with_extracted_data(api_client, mocker):
         v1_response_json='{"jobId": "job-1", "jobStatus": "success", "message": "Done"}',
     )
 
-    mock_build = mocker.patch("documentai_api.app_documents.build_v1_api_response")
+    mock_build = mocker.patch("documentai_api.routers.documents.build_v1_api_response")
     mock_build.return_value = {
         "jobId": "job-1",
         "jobStatus": "success",
@@ -618,7 +618,7 @@ def test_search_documents_with_extracted_data(api_client, mocker):
 
 def test_search_documents_with_extracted_data_incomplete_record(api_client, mocker):
     """Test search with include_extracted_data=true handles incomplete records."""
-    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.routers.documents.get_job_status")
     mock_get_job_status.return_value = JobStatus(
         ddb_record={"fileName": "test.pdf", "tenantId": "test-tenant"},
         object_key=None,
@@ -646,7 +646,7 @@ def test_create_document_timeout_below_minimum(api_client, blank_pdf_bytes):
 
 def test_create_document_sync_passes_request_to_poll(api_client, blank_pdf_bytes, mocker):
     """Test that request is forwarded to poll_for_completion for disconnect detection."""
-    mock_poll = mocker.patch("documentai_api.app_documents.poll_for_completion")
+    mock_poll = mocker.patch("documentai_api.routers.documents.poll_for_completion")
     mock_poll.return_value = JobStatusResponse(
         job_id="test-id", job_status="success", message="Done"
     )
@@ -660,9 +660,9 @@ def test_create_document_sync_passes_request_to_poll(api_client, blank_pdf_bytes
 
 def test_create_document_sync_default_timeout(api_client, blank_pdf_bytes, mocker):
     """Test that omitting timeout uses the default (_APIGW_MAX_TIMEOUT_SECONDS)."""
-    from documentai_api.app_documents import _APIGW_MAX_TIMEOUT_SECONDS
+    from documentai_api.routers.documents import _APIGW_MAX_TIMEOUT_SECONDS
 
-    mock_poll = mocker.patch("documentai_api.app_documents.poll_for_completion")
+    mock_poll = mocker.patch("documentai_api.routers.documents.poll_for_completion")
     mock_poll.return_value = JobStatusResponse(
         job_id="test-id", job_status="success", message="Done"
     )
@@ -689,7 +689,7 @@ def test_delete_document_invalid_uuid_returns_422(api_client):
 
 def test_get_document_enumeration_leak_invariant(api_client, mocker):
     """Test that wrong-tenant and deleted responses are identical to prevent enumeration."""
-    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.routers.documents.get_job_status")
 
     # Wrong tenant
     mock_get_job_status.return_value = JobStatus(
@@ -715,7 +715,7 @@ def test_get_document_enumeration_leak_invariant(api_client, mocker):
 
 def test_get_document_trace_id_echoed(api_client, mocker):
     """Test X-Trace-ID is echoed on GET endpoint."""
-    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.routers.documents.get_job_status")
     mock_get_job_status.return_value = JobStatus(
         ddb_record={"fileName": "test.pdf", "tenantId": "test-tenant"},
         object_key="test.pdf",
@@ -733,7 +733,7 @@ def test_get_document_trace_id_echoed(api_client, mocker):
 
 def test_get_document_completed_without_extracted_data(api_client, mocker):
     """Test GET on completed job without include_extracted_data returns cached response."""
-    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.routers.documents.get_job_status")
     mock_get_job_status.return_value = JobStatus(
         ddb_record={"fileName": "test.pdf", "tenantId": "test-tenant"},
         object_key="test.pdf",
@@ -749,7 +749,7 @@ def test_get_document_completed_without_extracted_data(api_client, mocker):
 
 def test_get_document_completed_has_cache_control(api_client, mocker):
     """Terminal state responses include Cache-Control header."""
-    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.routers.documents.get_job_status")
     mock_get_job_status.return_value = JobStatus(
         ddb_record={"fileName": "test.pdf", "tenantId": "test-tenant"},
         object_key="test.pdf",
@@ -765,7 +765,7 @@ def test_get_document_completed_has_cache_control(api_client, mocker):
 
 def test_get_document_in_progress_no_cache_control(api_client, mocker):
     """In-progress responses must not include Cache-Control."""
-    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.routers.documents.get_job_status")
     mock_get_job_status.return_value = JobStatus(
         ddb_record={"fileName": "test.pdf", "tenantId": "test-tenant"},
         object_key="test.pdf",
@@ -781,7 +781,7 @@ def test_get_document_in_progress_no_cache_control(api_client, mocker):
 
 def test_get_document_results_nests_stored_flat_fields(api_client, mocker):
     """Default GET applies presentation nesting to the stored flat/verbatim fields."""
-    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.routers.documents.get_job_status")
     mock_get_job_status.return_value = JobStatus(
         ddb_record={"fileName": "test.pdf", "tenantId": "test-tenant"},
         object_key="test.pdf",
@@ -804,7 +804,7 @@ def test_get_document_results_nests_stored_flat_fields(api_client, mocker):
 
 def test_get_document_results_serves_legacy_camelcase_record(api_client, mocker):
     """No-backfill: old camelCase-dotted records still serve correctly."""
-    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.routers.documents.get_job_status")
     mock_get_job_status.return_value = JobStatus(
         ddb_record={"fileName": "test.pdf", "tenantId": "test-tenant"},
         object_key="test.pdf",
@@ -826,7 +826,7 @@ def test_get_document_results_serves_legacy_camelcase_record(api_client, mocker)
 
 def test_search_documents_mixed_success_and_failure(api_client, mocker):
     """Test search with one successful and one erroring job preserves both results."""
-    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.routers.documents.get_job_status")
     mock_get_job_status.side_effect = [
         JobStatus(
             ddb_record={"fileName": "test.pdf", "tenantId": "test-tenant"},
@@ -850,7 +850,7 @@ def test_delete_document_hard_purge_failure_returns_500_and_does_not_mark_delete
     api_client, mocker
 ):
     """A failed hard-delete purge returns 500 and leaves the record un-deleted."""
-    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.routers.documents.get_job_status")
     mock_get_job_status.return_value = JobStatus(
         ddb_record={"fileName": "test.pdf", "tenantId": "test-tenant"},
         object_key="test.pdf",
@@ -942,9 +942,9 @@ def test_purge_document_s3_artifacts_reports_failed_locations(monkeypatch, mocke
 
 def test_documents_wait_consent_declined_skips_poll(api_client, blank_pdf_bytes, mocker):
     """Documents /wait returns immediately without polling when consent is declined."""
-    mocker.patch("documentai_api.app_documents.insert_minimal_ddb_record")
-    mocker.patch("documentai_api.app_documents.classify_as_ai_consent_declined")
-    mock_poll = mocker.patch("documentai_api.app_documents.poll_for_completion")
+    mocker.patch("documentai_api.routers.documents.insert_minimal_ddb_record")
+    mocker.patch("documentai_api.routers.documents.classify_as_ai_consent_declined")
+    mock_poll = mocker.patch("documentai_api.routers.documents.poll_for_completion")
 
     files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
     data = {"ai_consent_flag": "false"}
@@ -959,13 +959,13 @@ def test_documents_wait_conversion_failed_skips_poll(api_client, blank_pdf_bytes
     """Documents /wait returns immediately without polling on conversion failure."""
     from documentai_api.utils.uploads import ImageConversionError
 
-    mocker.patch("documentai_api.app_documents.insert_minimal_ddb_record")
+    mocker.patch("documentai_api.routers.documents.insert_minimal_ddb_record")
     mocker.patch("documentai_api.utils.document_classification.classify_as_conversion_failed")
     mocker.patch(
         "documentai_api.utils.uploads.upload_document_for_processing",
         side_effect=ImageConversionError("Cannot convert"),
     )
-    mock_poll = mocker.patch("documentai_api.app_documents.poll_for_completion")
+    mock_poll = mocker.patch("documentai_api.routers.documents.poll_for_completion")
 
     files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
     response = api_client.post("/v1/documents/wait", files=files)
@@ -982,7 +982,7 @@ def test_documents_wait_conversion_failed_skips_poll(api_client, blank_pdf_bytes
 
 def test_documents_wait_forwards_include_extracted_data(api_client, blank_pdf_bytes, mocker):
     """Documents /wait passes include_extracted_data to poll_for_completion."""
-    mock_poll = mocker.patch("documentai_api.app_documents.poll_for_completion")
+    mock_poll = mocker.patch("documentai_api.routers.documents.poll_for_completion")
     mock_poll.return_value = JobStatusResponse(
         job_id="test-id", job_status="success", message="Done"
     )
@@ -996,7 +996,7 @@ def test_documents_wait_forwards_include_extracted_data(api_client, blank_pdf_by
 
 def test_documents_wait_include_extracted_data_defaults_false(api_client, blank_pdf_bytes, mocker):
     """Documents /wait defaults include_extracted_data to False."""
-    mock_poll = mocker.patch("documentai_api.app_documents.poll_for_completion")
+    mock_poll = mocker.patch("documentai_api.routers.documents.poll_for_completion")
     mock_poll.return_value = JobStatusResponse(
         job_id="test-id", job_status="success", message="Done"
     )
@@ -1015,7 +1015,7 @@ def test_documents_wait_include_extracted_data_defaults_false(api_client, blank_
 
 def test_get_document_bounding_box_implies_extracted_data(api_client, mocker):
     """GET with include_bounding_box=true (without include_extracted_data) triggers rebuild."""
-    mock_get_job_status = mocker.patch("documentai_api.app_documents.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.routers.documents.get_job_status")
     mock_get_job_status.return_value = JobStatus(
         ddb_record={
             DocumentMetadata.TENANT_ID: "test-tenant",
@@ -1026,7 +1026,7 @@ def test_get_document_bounding_box_implies_extracted_data(api_client, mocker):
         v1_response_json='{"jobId": "test-job-id", "jobStatus": "success", "message": "ok"}',
     )
 
-    mock_build_api_response = mocker.patch("documentai_api.app_documents.build_v1_api_response")
+    mock_build_api_response = mocker.patch("documentai_api.routers.documents.build_v1_api_response")
     mock_build_api_response.return_value = {
         "jobId": "test-job-id",
         "jobStatus": "success",
@@ -1046,7 +1046,7 @@ def test_get_document_bounding_box_implies_extracted_data(api_client, mocker):
 
 def test_documents_wait_bounding_box_implies_extracted_data(api_client, blank_pdf_bytes, mocker):
     """Documents /wait with include_bounding_box=true implies include_extracted_data."""
-    mock_poll = mocker.patch("documentai_api.app_documents.poll_for_completion")
+    mock_poll = mocker.patch("documentai_api.routers.documents.poll_for_completion")
     mock_poll.return_value = JobStatusResponse(
         job_id="test-id", job_status="success", message="Done"
     )
@@ -1073,8 +1073,8 @@ def test_create_document_demo_flag(
     api_client, blank_pdf_bytes, mocker, use_demo_endpoint, expected_is_demo
 ):
     """Demo endpoint sets is_demo=True, standard endpoint does not."""
-    mock_insert = mocker.patch("documentai_api.app_documents.insert_minimal_ddb_record")
-    mocker.patch("documentai_api.app_documents.dispatch_upload", new_callable=AsyncMock)
+    mock_insert = mocker.patch("documentai_api.routers.documents.insert_minimal_ddb_record")
+    mocker.patch("documentai_api.routers.documents.dispatch_upload", new_callable=AsyncMock)
 
     files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
     endpoint = "/v1/demo/documents" if use_demo_endpoint else "/v1/documents"
@@ -1094,12 +1094,12 @@ def test_create_document_demo_routes_to_correct_location(
     api_client, blank_pdf_bytes, mocker, use_demo_endpoint, expect_demo_path
 ):
     """Upload routes to demo or standard input location based on endpoint."""
-    mock_config = mocker.patch("documentai_api.app_documents.get_aws_config")
+    mock_config = mocker.patch("documentai_api.routers.documents.get_aws_config")
     mock_config.return_value.documentai_input_location = "s3://bucket/input"
     mock_config.return_value.documentai_demo_input_location = "s3://bucket/input/demo"
 
     mock_dispatch = mocker.patch(
-        "documentai_api.app_documents.dispatch_upload", new_callable=AsyncMock
+        "documentai_api.routers.documents.dispatch_upload", new_callable=AsyncMock
     )
 
     files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}

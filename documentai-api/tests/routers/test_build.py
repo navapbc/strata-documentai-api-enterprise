@@ -24,14 +24,14 @@ def mock_document_build_upload():
     with (
         patch("documentai_api.utils.uploads.filetype.guess_mime") as mock_guess,
         patch(
-            "documentai_api.app_build.upload_document_for_processing",
+            "documentai_api.routers.build.upload_document_for_processing",
             new_callable=AsyncMock,
         ) as mock_upload,
         patch(
-            "documentai_api.app_build.upsert_document_build_page",
+            "documentai_api.routers.build.upsert_document_build_page",
             new_callable=AsyncMock,
         ) as mock_upsert,
-        patch("documentai_api.app_build.get_document_build_pages", return_value=[]),
+        patch("documentai_api.routers.build.get_document_build_pages", return_value=[]),
     ):
         mock_guess.return_value = "application/pdf"
 
@@ -48,15 +48,15 @@ def mock_document_build_submit():
     import io
 
     with (
-        patch("documentai_api.app_build.get_build_metadata", return_value=None),
-        patch("documentai_api.app_build.get_document_build_pages") as mock_get_pages,
-        patch("documentai_api.app_build.merge_pages_to_pdf") as mock_merge,
+        patch("documentai_api.routers.build.get_build_metadata", return_value=None),
+        patch("documentai_api.routers.build.get_document_build_pages") as mock_get_pages,
+        patch("documentai_api.routers.build.merge_pages_to_pdf") as mock_merge,
         patch(
-            "documentai_api.app_build.upload_document_for_processing",
+            "documentai_api.routers.build.upload_document_for_processing",
             new_callable=AsyncMock,
         ) as mock_upload,
-        patch("documentai_api.app_build.insert_minimal_ddb_record") as mock_insert,
-        patch("documentai_api.app_build.mark_document_build_submitted") as mock_mark_submitted,
+        patch("documentai_api.routers.build.insert_minimal_ddb_record") as mock_insert,
+        patch("documentai_api.routers.build.mark_document_build_submitted") as mock_mark_submitted,
         patch("documentai_api.config.env.AWSEnvConfig") as mock_aws_config,
     ):
         mock_merge.return_value = io.BytesIO(b"merged pdf bytes")
@@ -89,7 +89,7 @@ def create_page_metadata(
 
 
 def test_create_build(document_build_ddb_table):
-    with patch("documentai_api.app_build.create_document_build") as mock_create:
+    with patch("documentai_api.routers.build.create_document_build") as mock_create:
         mock_create.return_value = "fake-build-id"
         response = client.post("/v1/builds")
 
@@ -101,7 +101,7 @@ def test_create_build(document_build_ddb_table):
 
 def test_create_build_with_external_fields(document_build_ddb_table):
     """Test create build passes external fields to create_document_build."""
-    with patch("documentai_api.app_build.create_document_build") as mock_create:
+    with patch("documentai_api.routers.build.create_document_build") as mock_create:
         mock_create.return_value = "fake-build-id"
         data = {
             "external_document_id": "ext-doc-build",
@@ -120,7 +120,7 @@ def test_create_build_with_external_fields(document_build_ddb_table):
 @pytest.mark.parametrize("upload_source", ["desktop", "mobile", None])
 def test_create_build_passes_upload_source(document_build_ddb_table, upload_source):
     """create_build forwards upload_source to create_document_build."""
-    with patch("documentai_api.app_build.create_document_build") as mock_create:
+    with patch("documentai_api.routers.build.create_document_build") as mock_create:
         data = {"upload_source": upload_source} if upload_source else {}
         response = client.post("/v1/builds", data=data)
 
@@ -363,15 +363,17 @@ def test_submit_propagates_upload_source_from_build_metadata(
     build_metadata = {DocumentBuilds.UPLOAD_SOURCE: upload_source}
 
     with (
-        patch("documentai_api.app_build.get_build_metadata", return_value=build_metadata),
+        patch("documentai_api.routers.build.get_build_metadata", return_value=build_metadata),
         patch(
-            "documentai_api.app_build.get_document_build_pages",
+            "documentai_api.routers.build.get_document_build_pages",
             return_value=[create_page_metadata(1)],
         ),
-        patch("documentai_api.app_build.merge_pages_to_pdf", return_value=io.BytesIO(b"pdf")),
-        patch("documentai_api.app_build.upload_document_for_processing", new_callable=AsyncMock),
-        patch("documentai_api.app_build.insert_minimal_ddb_record") as mock_insert,
-        patch("documentai_api.app_build.mark_document_build_submitted"),
+        patch("documentai_api.routers.build.merge_pages_to_pdf", return_value=io.BytesIO(b"pdf")),
+        patch(
+            "documentai_api.routers.build.upload_document_for_processing", new_callable=AsyncMock
+        ),
+        patch("documentai_api.routers.build.insert_minimal_ddb_record") as mock_insert,
+        patch("documentai_api.routers.build.mark_document_build_submitted"),
         patch("documentai_api.config.env.AWSEnvConfig") as mock_aws_config,
     ):
         mock_aws_config.return_value.documentai_input_location = "s3://test-bucket/input"
@@ -404,8 +406,8 @@ def test_get_document_build_success(document_build_ddb_table):
     ]
 
     with (
-        patch("documentai_api.app_build.get_document_build_pages", return_value=pages),
-        patch("documentai_api.app_build.is_document_build_submitted", return_value=False),
+        patch("documentai_api.routers.build.get_document_build_pages", return_value=pages),
+        patch("documentai_api.routers.build.is_document_build_submitted", return_value=False),
     ):
         response = client.get("/v1/builds/test-build-id")
 
@@ -431,7 +433,7 @@ def test_get_document_build_success(document_build_ddb_table):
 )
 def test_delete_document_build_page(document_build_ddb_table, mock_side_effect, expected_status):
     """Test deleting a page."""
-    with patch("documentai_api.app_build.delete_document_build_page") as mock_delete:
+    with patch("documentai_api.routers.build.delete_document_build_page") as mock_delete:
         if isinstance(mock_side_effect, Exception):
             mock_delete.side_effect = mock_side_effect
         else:
@@ -454,7 +456,7 @@ def test_delete_document_build_page(document_build_ddb_table, mock_side_effect, 
 )
 def test_delete_document_build(document_build_ddb_table, mock_side_effect, expected_status):
     """Test deleting entire document build."""
-    with patch("documentai_api.app_build.delete_document_build") as mock_delete:
+    with patch("documentai_api.routers.build.delete_document_build") as mock_delete:
         if isinstance(mock_side_effect, Exception):
             mock_delete.side_effect = mock_side_effect
         else:
@@ -486,8 +488,8 @@ def test_get_document_build_includes_status_and_filename(document_build_ddb_tabl
     ]
 
     with (
-        patch("documentai_api.app_build.get_document_build_pages", return_value=pages),
-        patch("documentai_api.app_build.is_document_build_submitted", return_value=False),
+        patch("documentai_api.routers.build.get_document_build_pages", return_value=pages),
+        patch("documentai_api.routers.build.is_document_build_submitted", return_value=False),
     ):
         response = client.get("/v1/builds/test-build-id")
 
@@ -510,8 +512,10 @@ def test_get_document_build_status(document_build_ddb_table, is_submitted, expec
     pages = [create_page_metadata(1, category="income")]
 
     with (
-        patch("documentai_api.app_build.get_document_build_pages", return_value=pages),
-        patch("documentai_api.app_build.is_document_build_submitted", return_value=is_submitted),
+        patch("documentai_api.routers.build.get_document_build_pages", return_value=pages),
+        patch(
+            "documentai_api.routers.build.is_document_build_submitted", return_value=is_submitted
+        ),
     ):
         response = client.get("/v1/builds/test-build-id")
 
@@ -523,7 +527,7 @@ def test_upload_document_build_pages_batch_success(
     document_build_ddb_table, mock_document_build_upload
 ):
     """Test batch upload of multiple pages."""
-    with patch("documentai_api.app_build.get_document_build_pages", return_value=[]):
+    with patch("documentai_api.routers.build.get_document_build_pages", return_value=[]):
         files = [
             ("files", ("page1.pdf", b"fake pdf 1", "application/pdf")),
             ("files", ("page2.pdf", b"fake pdf 2", "application/pdf")),
@@ -544,7 +548,7 @@ def test_upload_document_build_pages_batch_single_file(
     document_build_ddb_table, mock_document_build_upload
 ):
     """Test batch upload with single file uses singular message."""
-    with patch("documentai_api.app_build.get_document_build_pages", return_value=[]):
+    with patch("documentai_api.routers.build.get_document_build_pages", return_value=[]):
         files = [("files", ("page1.pdf", b"fake pdf", "application/pdf"))]
         response = client.post("/v1/builds/test-build-id/pages/batch", files=files)
 
@@ -576,7 +580,9 @@ def test_upload_document_build_pages_batch_continues_numbering(
     """Test batch upload continues page numbering from existing pages."""
     existing_pages = [create_page_metadata(1), create_page_metadata(2)]
 
-    with patch("documentai_api.app_build.get_document_build_pages", return_value=existing_pages):
+    with patch(
+        "documentai_api.routers.build.get_document_build_pages", return_value=existing_pages
+    ):
         files = [
             ("files", ("page3.pdf", b"fake pdf", "application/pdf")),
         ]
@@ -596,7 +602,7 @@ def test_submit_document_build_rollback_on_failure(
     ]
     mock_document_build_submit["upload"].side_effect = Exception("S3 exploded")
 
-    with patch("documentai_api.app_build.clear_submitted_at") as mock_clear:
+    with patch("documentai_api.routers.build.clear_submitted_at") as mock_clear:
         response = client.post("/v1/builds/test-build-id/submit")
 
     assert response.status_code == 500
@@ -619,7 +625,9 @@ def test_upload_document_build_page_max_pages_cap(
         for i in range(1, MAX_PAGES_PER_BUILD + 1)
     ]
 
-    with patch("documentai_api.app_build.get_document_build_pages", return_value=existing_pages):
+    with patch(
+        "documentai_api.routers.build.get_document_build_pages", return_value=existing_pages
+    ):
         files = {"file": ("page.pdf", b"fake pdf", "application/pdf")}
         data = _form(page_number=MAX_PAGES_PER_BUILD + 1)
         response = client.post("/v1/builds/test-build-id/pages", files=files, data=data)
@@ -684,7 +692,7 @@ def test_upload_document_build_page_file_size_cap(
     data = _form(page_number=1)
 
     # Mock file.size to exceed the cap
-    with patch("documentai_api.app_build.MAX_FILE_SIZE_BYTES", 50):
+    with patch("documentai_api.routers.build.MAX_FILE_SIZE_BYTES", 50):
         response = client.post("/v1/builds/test-build-id/pages", files=files, data=data)
 
     assert response.status_code == 400
@@ -715,7 +723,7 @@ def test_batch_upload_overwrite_false_409(document_build_ddb_table, mock_documen
         detail="Page 1 already exists for build test-build-id. Set overwrite=true to replace.",
     )
 
-    with patch("documentai_api.app_build.get_document_build_pages", return_value=[]):
+    with patch("documentai_api.routers.build.get_document_build_pages", return_value=[]):
         files = [("files", ("page1.pdf", b"fake pdf", "application/pdf"))]
         response = client.post("/v1/builds/test-build-id/pages/batch", files=files)
 
@@ -773,7 +781,7 @@ def test_batch_upload_image_conversion_error(document_build_ddb_table, mock_docu
     """ImageConversionError in batch is converted to 400 via TaskGroup except*."""
     mock_document_build_upload["upload"].side_effect = ImageConversionError("PNG conversion failed")
 
-    with patch("documentai_api.app_build.get_document_build_pages", return_value=[]):
+    with patch("documentai_api.routers.build.get_document_build_pages", return_value=[]):
         files = [("files", ("page1.png", b"fake png", "image/png"))]
         response = client.post("/v1/builds/test-build-id/pages/batch", files=files)
 
@@ -858,8 +866,8 @@ def test_tenant_access_enforced_on_all_build_routes(method, path, document_build
 def test_batch_upload_file_size_cap(document_build_ddb_table, mock_document_build_upload):
     """Batch upload rejects files exceeding MAX_FILE_SIZE_BYTES with filename in error."""
     with (
-        patch("documentai_api.app_build.MAX_FILE_SIZE_BYTES", 50),
-        patch("documentai_api.app_build.get_document_build_pages", return_value=[]),
+        patch("documentai_api.routers.build.MAX_FILE_SIZE_BYTES", 50),
+        patch("documentai_api.routers.build.get_document_build_pages", return_value=[]),
     ):
         files = [("files", ("big_doc.pdf", b"x" * 100, "application/pdf"))]
         response = client.post("/v1/builds/test-build-id/pages/batch", files=files)
@@ -890,7 +898,7 @@ def test_submit_document_build_timeout_bounds(document_build_ddb_table, timeout)
 
 def test_create_build_trace_id_echoed(document_build_ddb_table):
     """create_build echoes client-supplied X-Trace-ID."""
-    with patch("documentai_api.app_build.create_document_build"):
+    with patch("documentai_api.routers.build.create_document_build"):
         response = client.post("/v1/builds", headers={"X-Trace-ID": "trace-create"})
 
     assert response.status_code == 200
@@ -901,7 +909,7 @@ def test_create_build_trace_id_generated(document_build_ddb_table):
     """create_build generates X-Trace-ID when not supplied."""
     import uuid
 
-    with patch("documentai_api.app_build.create_document_build"):
+    with patch("documentai_api.routers.build.create_document_build"):
         response = client.post("/v1/builds")
 
     assert response.status_code == 200
@@ -910,7 +918,7 @@ def test_create_build_trace_id_generated(document_build_ddb_table):
 
 def test_batch_upload_trace_id_echoed(document_build_ddb_table, mock_document_build_upload):
     """Batch upload echoes client-supplied X-Trace-ID."""
-    with patch("documentai_api.app_build.get_document_build_pages", return_value=[]):
+    with patch("documentai_api.routers.build.get_document_build_pages", return_value=[]):
         files = [("files", ("page1.pdf", b"fake pdf", "application/pdf"))]
         response = client.post(
             "/v1/builds/test-build-id/pages/batch",
@@ -975,7 +983,7 @@ def test_upload_build_page_uses_tenant_prefix(document_build_ddb_table, mock_doc
 
 def test_batch_upload_with_category(document_build_ddb_table, mock_document_build_upload):
     """Batch upload passes category to add_page_to_build."""
-    with patch("documentai_api.app_build.get_document_build_pages", return_value=[]):
+    with patch("documentai_api.routers.build.get_document_build_pages", return_value=[]):
         files = [("files", ("page1.pdf", b"fake pdf", "application/pdf"))]
         data = {"category": "income"}
         response = client.post("/v1/builds/test-build-id/pages/batch", files=files, data=data)
@@ -996,7 +1004,7 @@ def test_submit_document_build_rollback_failure_still_returns_500(
     ]
     mock_document_build_submit["upload"].side_effect = Exception("S3 exploded")
 
-    with patch("documentai_api.app_build.clear_submitted_at") as mock_clear:
+    with patch("documentai_api.routers.build.clear_submitted_at") as mock_clear:
         mock_clear.side_effect = Exception("DDB unavailable")
         response = client.post("/v1/builds/test-build-id/submit")
 
@@ -1026,10 +1034,10 @@ def test_submit_build_ai_consent_declined(document_build_ddb_table):
     }
 
     with (
-        patch("documentai_api.app_build.get_build_metadata", return_value=build_metadata),
-        patch("documentai_api.app_build.insert_minimal_ddb_record") as mock_insert,
-        patch("documentai_api.app_build.classify_as_ai_consent_declined") as mock_classify,
-        patch("documentai_api.app_build.get_document_build_pages") as mock_get_pages,
+        patch("documentai_api.routers.build.get_build_metadata", return_value=build_metadata),
+        patch("documentai_api.routers.build.insert_minimal_ddb_record") as mock_insert,
+        patch("documentai_api.routers.build.classify_as_ai_consent_declined") as mock_classify,
+        patch("documentai_api.routers.build.get_document_build_pages") as mock_get_pages,
     ):
         mock_get_pages.return_value = [
             create_page_metadata(1, category="income"),
@@ -1067,7 +1075,9 @@ def test_submit_build_ai_consent_none_proceeds(
     document_build_ddb_table, mock_document_build_submit
 ):
     """When ai_consent_flag is None (not set), submit proceeds normally."""
-    with patch("documentai_api.app_build.get_build_metadata", return_value={"aiConsentFlag": None}):
+    with patch(
+        "documentai_api.routers.build.get_build_metadata", return_value={"aiConsentFlag": None}
+    ):
         mock_document_build_submit["get_pages"].return_value = [
             create_page_metadata(1, category="income"),
         ]
@@ -1094,10 +1104,10 @@ def test_build_submit_wait_consent_declined_skips_poll(document_build_ddb_table)
     }
 
     with (
-        patch("documentai_api.app_build.get_build_metadata", return_value=build_metadata),
-        patch("documentai_api.app_build.insert_minimal_ddb_record"),
-        patch("documentai_api.app_build.classify_as_ai_consent_declined"),
-        patch("documentai_api.app_build.get_document_build_pages", return_value=[]),
+        patch("documentai_api.routers.build.get_build_metadata", return_value=build_metadata),
+        patch("documentai_api.routers.build.insert_minimal_ddb_record"),
+        patch("documentai_api.routers.build.classify_as_ai_consent_declined"),
+        patch("documentai_api.routers.build.get_document_build_pages", return_value=[]),
         patch("documentai_api.utils.jobs.poll_for_completion", new_callable=AsyncMock) as mock_poll,
     ):
         response = client.post("/v1/builds/test-build-id/submit/wait")

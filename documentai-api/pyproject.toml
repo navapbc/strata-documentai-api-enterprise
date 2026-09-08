@@ -153,6 +153,7 @@ root_packages = ["documentai_api"]
 name = "Layered architecture"
 type = "layers"
 layers = [
+    "documentai_api.routers",
     "documentai_api.processors",
     "documentai_api.extractors",
     "documentai_api.readers",

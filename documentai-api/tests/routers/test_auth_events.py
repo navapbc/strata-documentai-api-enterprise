@@ -29,17 +29,17 @@ def override_auth():
 
 @pytest.fixture
 def mock_log_event(mocker):
-    return mocker.patch("documentai_api.app_auth_events.log_event")
+    return mocker.patch("documentai_api.routers.auth_events.log_event")
 
 
 @pytest.fixture
 def mock_log_event_categories(mocker):
-    return mocker.patch("documentai_api.app_document_categories.log_event")
+    return mocker.patch("documentai_api.routers.document_categories.log_event")
 
 
 @pytest.fixture
 def mock_log_event_rules(mocker):
-    return mocker.patch("documentai_api.app_extraction_rules.log_event")
+    return mocker.patch("documentai_api.routers.extraction_rules.log_event")
 
 
 # =============================================================================
@@ -115,7 +115,7 @@ def test_report_event_without_email_uses_api_key_name(mock_log_event):
 
 def test_create_category_logs_audit(mock_log_event_categories, mocker):
     mocker.patch(
-        "documentai_api.app_document_categories.categories_util.create_category",
+        "documentai_api.routers.document_categories.categories_util.create_category",
         return_value={
             "tenantId": "test-tenant",
             "categoryName": "tax",
@@ -144,7 +144,7 @@ def test_create_category_logs_audit(mock_log_event_categories, mocker):
 
 def test_delete_category_logs_audit(mock_log_event_categories, mocker):
     mocker.patch(
-        "documentai_api.app_document_categories.categories_util.delete_category",
+        "documentai_api.routers.document_categories.categories_util.delete_category",
         return_value=True,
     )
 
@@ -167,7 +167,7 @@ def test_delete_category_logs_audit(mock_log_event_categories, mocker):
 
 def test_put_extraction_rule_logs_audit(mock_log_event_rules, mocker):
     mocker.patch(
-        "documentai_api.app_extraction_rules.get_valid_fields",
+        "documentai_api.routers.extraction_rules.get_valid_fields",
         return_value={"ssn": "ssn"},
     )
     mocker.patch(
@@ -222,7 +222,7 @@ def test_delete_extraction_rule_logs_audit(mock_log_event_rules, mocker):
 
 def test_update_category_logs_audit(mock_log_event_categories, mocker):
     mocker.patch(
-        "documentai_api.app_document_categories.categories_util.update_category",
+        "documentai_api.routers.document_categories.categories_util.update_category",
         return_value={
             "tenantId": "test-tenant",
             "categoryName": "tax",
@@ -256,7 +256,7 @@ def test_update_category_logs_audit(mock_log_event_categories, mocker):
 
 def test_create_category_no_audit_on_conflict(mock_log_event_categories, mocker):
     mocker.patch(
-        "documentai_api.app_document_categories.categories_util.create_category",
+        "documentai_api.routers.document_categories.categories_util.create_category",
         side_effect=ValueError("Category already exists"),
     )
 
@@ -271,7 +271,7 @@ def test_create_category_no_audit_on_conflict(mock_log_event_categories, mocker)
 
 def test_delete_category_no_audit_on_not_found(mock_log_event_categories, mocker):
     mocker.patch(
-        "documentai_api.app_document_categories.categories_util.delete_category",
+        "documentai_api.routers.document_categories.categories_util.delete_category",
         return_value=False,
     )
 
@@ -336,7 +336,7 @@ def test_audit_logging_failure_does_not_break_request(mocker):
 def test_category_audit_failure_does_not_break_create(mocker):
     """log_event failure doesn't prevent category creation."""
     mocker.patch(
-        "documentai_api.app_document_categories.categories_util.create_category",
+        "documentai_api.routers.document_categories.categories_util.create_category",
         return_value={
             "tenantId": "test-tenant",
             "categoryName": "tax",

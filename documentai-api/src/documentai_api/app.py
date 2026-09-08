@@ -9,26 +9,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from mangum import Mangum
 
-from documentai_api.app_admin_documents import router as admin_documents_router
-from documentai_api.app_admin_usage import router as admin_usage_router
-from documentai_api.app_api_keys import router as api_keys_router
-from documentai_api.app_audit_log import router as audit_log_router
-from documentai_api.app_auth_events import router as auth_events_router
-from documentai_api.app_batch import router as batch_router
-from documentai_api.app_blueprint_test import router as blueprint_test_router
-from documentai_api.app_build import router as build_router
-from documentai_api.app_demo import router as demo_router
-from documentai_api.app_dictionary import router as dictionary_router
-from documentai_api.app_document_categories import router as document_categories_router
-from documentai_api.app_documents import router as documents_router
-from documentai_api.app_evaluation import router as evaluation_router
-from documentai_api.app_extraction_rules import router as extraction_rules_router
-from documentai_api.app_me import router as me_router
-from documentai_api.app_metrics import router as metrics_router
-from documentai_api.app_presigned import router as presigned_router
-from documentai_api.app_search import router as search_router
-from documentai_api.app_tenants import router as tenants_router
-from documentai_api.app_users import router as users_router
 from documentai_api.config.constants import (
     API_VERSION,
     APIConfig,
@@ -37,6 +17,26 @@ from documentai_api.config.constants import (
 from documentai_api.config.env import get_app_env_config
 from documentai_api.logging import get_logger
 from documentai_api.models.config import ConfigResponse, HealthResponse
+from documentai_api.routers.admin_documents import router as admin_documents_router
+from documentai_api.routers.admin_usage import router as admin_usage_router
+from documentai_api.routers.api_keys import router as api_keys_router
+from documentai_api.routers.audit_log import router as audit_log_router
+from documentai_api.routers.auth_events import router as auth_events_router
+from documentai_api.routers.batch import router as batch_router
+from documentai_api.routers.blueprint_test import router as blueprint_test_router
+from documentai_api.routers.build import router as build_router
+from documentai_api.routers.demo import router as demo_router
+from documentai_api.routers.dictionary import router as dictionary_router
+from documentai_api.routers.document_categories import router as document_categories_router
+from documentai_api.routers.documents import router as documents_router
+from documentai_api.routers.evaluation import router as evaluation_router
+from documentai_api.routers.extraction_rules import router as extraction_rules_router
+from documentai_api.routers.me import router as me_router
+from documentai_api.routers.metrics import router as metrics_router
+from documentai_api.routers.presigned import router as presigned_router
+from documentai_api.routers.search import router as search_router
+from documentai_api.routers.tenants import router as tenants_router
+from documentai_api.routers.users import router as users_router
 from documentai_api.telemetry import setup as setup_otel
 from documentai_api.utils.auth import verify_api_key
 

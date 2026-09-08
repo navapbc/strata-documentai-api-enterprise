@@ -12,12 +12,12 @@ def _disable_auth(disable_auth):
 
 @pytest.fixture(autouse=True)
 def _mock_quota(mocker):
-    mocker.patch("documentai_api.app_presigned.increment_and_check")
+    mocker.patch("documentai_api.routers.presigned.increment_and_check")
 
 
 def test_create_presigned_url_success(api_client, mocker):
     """Test successful presigned POST generation."""
-    mock_insert = mocker.patch("documentai_api.app_presigned.insert_minimal_ddb_record")
+    mock_insert = mocker.patch("documentai_api.routers.presigned.insert_minimal_ddb_record")
     mock_generate = mocker.patch("documentai_api.services.s3.generate_presigned_post")
     mock_generate.return_value = {
         "url": "https://s3.amazonaws.com/test-bucket",
@@ -44,7 +44,7 @@ def test_create_presigned_url_success(api_client, mocker):
 
 def test_create_presigned_url_with_category(api_client, mocker):
     """Test presigned POST with document category includes metadata in fields."""
-    mocker.patch("documentai_api.app_presigned.insert_minimal_ddb_record")
+    mocker.patch("documentai_api.routers.presigned.insert_minimal_ddb_record")
     mock_generate = mocker.patch("documentai_api.services.s3.generate_presigned_post")
     mock_generate.return_value = {
         "url": "https://s3.amazonaws.com/test-bucket",
@@ -69,7 +69,7 @@ def test_create_presigned_url_with_category(api_client, mocker):
 
 def test_create_presigned_url_with_trace_id(api_client, mocker):
     """Test presigned POST echoes valid UUID trace ID."""
-    mocker.patch("documentai_api.app_presigned.insert_minimal_ddb_record")
+    mocker.patch("documentai_api.routers.presigned.insert_minimal_ddb_record")
     mock_generate = mocker.patch("documentai_api.services.s3.generate_presigned_post")
     mock_generate.return_value = {
         "url": "https://s3.amazonaws.com/test-bucket",
@@ -128,7 +128,7 @@ def test_create_presigned_url_missing_content_type(api_client):
 
 def test_create_presigned_url_s3_error(api_client, mocker):
     """Test presigned POST when S3 service fails."""
-    mocker.patch("documentai_api.app_presigned.insert_minimal_ddb_record")
+    mocker.patch("documentai_api.routers.presigned.insert_minimal_ddb_record")
     mock_generate = mocker.patch("documentai_api.services.s3.generate_presigned_post")
     mock_generate.side_effect = Exception("S3 error")
 
@@ -142,7 +142,7 @@ def test_create_presigned_url_s3_error(api_client, mocker):
 def test_create_presigned_url_no_input_location(api_client, mocker):
     """Test presigned POST when input location not configured."""
     mocker.patch(
-        "documentai_api.app_presigned.get_aws_config"
+        "documentai_api.routers.presigned.get_aws_config"
     ).return_value.documentai_input_location = None
 
     data = {"filename": "test.pdf", "content_type": "application/pdf"}
@@ -156,7 +156,7 @@ def test_create_presigned_url_invalid_trace_id_generates_new(api_client, mocker)
     """Non-UUID trace ID is replaced with a generated UUID."""
     import uuid
 
-    mocker.patch("documentai_api.app_presigned.insert_minimal_ddb_record")
+    mocker.patch("documentai_api.routers.presigned.insert_minimal_ddb_record")
     mock_generate = mocker.patch("documentai_api.services.s3.generate_presigned_post")
     mock_generate.return_value = {
         "url": "https://s3.amazonaws.com/test-bucket",
@@ -178,7 +178,7 @@ def test_create_presigned_url_invalid_trace_id_generates_new(api_client, mocker)
 
 def test_create_presigned_url_tenant_in_s3_key(api_client, mocker):
     """S3 key includes tenant_id for isolation."""
-    mocker.patch("documentai_api.app_presigned.insert_minimal_ddb_record")
+    mocker.patch("documentai_api.routers.presigned.insert_minimal_ddb_record")
     mock_generate = mocker.patch("documentai_api.services.s3.generate_presigned_post")
     mock_generate.return_value = {
         "url": "https://s3.amazonaws.com/test-bucket",
@@ -195,7 +195,7 @@ def test_create_presigned_url_tenant_in_s3_key(api_client, mocker):
 
 def test_s3_error_does_not_write_ddb(api_client, mocker):
     """When signing fails, DDB insert must NOT be called (order-of-operations guard)."""
-    mock_insert = mocker.patch("documentai_api.app_presigned.insert_minimal_ddb_record")
+    mock_insert = mocker.patch("documentai_api.routers.presigned.insert_minimal_ddb_record")
     mock_generate = mocker.patch("documentai_api.services.s3.generate_presigned_post")
     mock_generate.side_effect = Exception("signing failed")
 
@@ -209,9 +209,9 @@ def test_s3_error_does_not_write_ddb(api_client, mocker):
 def test_malformed_input_location(api_client, mocker):
     """Malformed input_location returns 500 with 'misconfigured' detail."""
     mocker.patch(
-        "documentai_api.app_presigned.get_aws_config"
+        "documentai_api.routers.presigned.get_aws_config"
     ).return_value.documentai_input_location = "not-an-s3-uri"
-    mocker.patch("documentai_api.app_presigned.parse_s3_uri", side_effect=Exception("bad uri"))
+    mocker.patch("documentai_api.routers.presigned.parse_s3_uri", side_effect=Exception("bad uri"))
 
     data = {"filename": "test.pdf", "content_type": "application/pdf"}
     response = api_client.post("/v1/documents/presigned-url", data=data)
@@ -222,7 +222,7 @@ def test_malformed_input_location(api_client, mocker):
 
 def test_max_size_bytes_passed_to_s3(api_client, mocker):
     """max_size_bytes is passed to generate_presigned_post for S3 enforcement."""
-    mocker.patch("documentai_api.app_presigned.insert_minimal_ddb_record")
+    mocker.patch("documentai_api.routers.presigned.insert_minimal_ddb_record")
     mock_generate = mocker.patch("documentai_api.services.s3.generate_presigned_post")
     mock_generate.return_value = {
         "url": "https://s3.amazonaws.com/test-bucket",
@@ -247,7 +247,7 @@ def test_filename_length_cap(api_client):
 
 def test_external_document_id_invalid_pattern(api_client, mocker):
     """external_document_id with invalid characters is rejected."""
-    mocker.patch("documentai_api.app_presigned.insert_minimal_ddb_record")
+    mocker.patch("documentai_api.routers.presigned.insert_minimal_ddb_record")
     mocker.patch(
         "documentai_api.services.s3.generate_presigned_post",
         return_value={
@@ -268,7 +268,7 @@ def test_external_document_id_invalid_pattern(api_client, mocker):
 
 def test_external_system_id_too_long(api_client, mocker):
     """external_system_id exceeding max_length is rejected."""
-    mocker.patch("documentai_api.app_presigned.insert_minimal_ddb_record")
+    mocker.patch("documentai_api.routers.presigned.insert_minimal_ddb_record")
     mocker.patch(
         "documentai_api.services.s3.generate_presigned_post",
         return_value={
@@ -289,7 +289,7 @@ def test_external_system_id_too_long(api_client, mocker):
 
 def test_non_ascii_filename_sanitized(api_client, mocker):
     """Non-ASCII filename is percent-encoded in S3 metadata."""
-    mocker.patch("documentai_api.app_presigned.insert_minimal_ddb_record")
+    mocker.patch("documentai_api.routers.presigned.insert_minimal_ddb_record")
     mock_generate = mocker.patch("documentai_api.services.s3.generate_presigned_post")
     mock_generate.return_value = {
         "url": "https://s3.amazonaws.com/test-bucket",
@@ -308,7 +308,7 @@ def test_non_ascii_filename_sanitized(api_client, mocker):
 
 def test_path_traversal_filename_contained(api_client, mocker):
     """Path traversal in filename doesn't escape tenant prefix in S3 key."""
-    mocker.patch("documentai_api.app_presigned.insert_minimal_ddb_record")
+    mocker.patch("documentai_api.routers.presigned.insert_minimal_ddb_record")
     mock_generate = mocker.patch("documentai_api.services.s3.generate_presigned_post")
     mock_generate.return_value = {
         "url": "https://s3.amazonaws.com/test-bucket",
@@ -327,7 +327,7 @@ def test_path_traversal_filename_contained(api_client, mocker):
 
 def test_ddb_insert_failure_returns_500(api_client, mocker):
     """When DDB insert fails after signing, returns 500 with clean message."""
-    mock_insert = mocker.patch("documentai_api.app_presigned.insert_minimal_ddb_record")
+    mock_insert = mocker.patch("documentai_api.routers.presigned.insert_minimal_ddb_record")
     mock_insert.side_effect = Exception("DDB unavailable")
     mocker.patch(
         "documentai_api.services.s3.generate_presigned_post",
@@ -346,7 +346,7 @@ def test_ddb_insert_failure_returns_500(api_client, mocker):
 
 def test_success_response_contains_s3_url(api_client, mocker):
     """upload_url in response matches what S3 returned."""
-    mocker.patch("documentai_api.app_presigned.insert_minimal_ddb_record")
+    mocker.patch("documentai_api.routers.presigned.insert_minimal_ddb_record")
     mock_generate = mocker.patch("documentai_api.services.s3.generate_presigned_post")
     mock_generate.return_value = {
         "url": "https://my-bucket.s3.amazonaws.com",
@@ -364,7 +364,7 @@ def test_success_response_job_id_is_valid_uuid(api_client, mocker):
     """JobId in response is a valid UUID."""
     import uuid
 
-    mocker.patch("documentai_api.app_presigned.insert_minimal_ddb_record")
+    mocker.patch("documentai_api.routers.presigned.insert_minimal_ddb_record")
     mocker.patch(
         "documentai_api.services.s3.generate_presigned_post",
         return_value={
@@ -382,7 +382,7 @@ def test_success_response_job_id_is_valid_uuid(api_client, mocker):
 
 def test_tenant_id_propagated_to_ddb(api_client, mocker):
     """tenant_id from auth is passed to insert_minimal_ddb_record."""
-    mock_insert = mocker.patch("documentai_api.app_presigned.insert_minimal_ddb_record")
+    mock_insert = mocker.patch("documentai_api.routers.presigned.insert_minimal_ddb_record")
     mocker.patch(
         "documentai_api.services.s3.generate_presigned_post",
         return_value={
@@ -403,7 +403,7 @@ def test_tenant_id_propagated_to_ddb(api_client, mocker):
 @pytest.mark.parametrize("upload_source", ["desktop", "mobile", None])
 def test_create_presigned_url_passes_upload_source(api_client, mocker, upload_source):
     """upload_source is forwarded to the DocumentRecord."""
-    mock_insert = mocker.patch("documentai_api.app_presigned.insert_minimal_ddb_record")
+    mock_insert = mocker.patch("documentai_api.routers.presigned.insert_minimal_ddb_record")
     mocker.patch(
         "documentai_api.services.s3.generate_presigned_post",
         return_value={

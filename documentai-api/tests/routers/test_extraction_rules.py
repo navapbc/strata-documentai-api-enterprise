@@ -63,7 +63,7 @@ def test_put_extraction_rule():
     with (
         patch("documentai_api.utils.extraction_rules.upsert_rule", return_value=rule),
         patch(
-            "documentai_api.app_extraction_rules.get_valid_fields",
+            "documentai_api.routers.extraction_rules.get_valid_fields",
             return_value={"ssn": "ssn", "wages": "wages", "employer_name": "employer_name"},
         ),
     ):
@@ -145,7 +145,7 @@ def test_put_extraction_rule_uses_auth_tenant(mocker):
         "updatedAt": "2026-01-01",
     }
     mocker.patch(
-        "documentai_api.app_extraction_rules.get_valid_fields", return_value={"ssn": "ssn"}
+        "documentai_api.routers.extraction_rules.get_valid_fields", return_value={"ssn": "ssn"}
     )
 
     response = client.put(
@@ -185,13 +185,13 @@ def test_put_extraction_rule_rejects_non_string_list():
 def mock_valid_fields(mocker):
     """Patch get_valid_fields to return a known set of fields for 'w2'."""
     return mocker.patch(
-        "documentai_api.app_extraction_rules.get_valid_fields",
+        "documentai_api.routers.extraction_rules.get_valid_fields",
         return_value={"ssn": "ssn", "wages": "wages", "employer_name": "employer_name"},
     )
 
 
 def test_validator_deduplicates_required_fields(mock_valid_fields):
-    from documentai_api.app_extraction_rules import ExtractionRuleRequest
+    from documentai_api.routers.extraction_rules import ExtractionRuleRequest
 
     req = ExtractionRuleRequest(
         document_type="w2", required_fields=["ssn", "ssn", "wages"], optional_fields=[]
@@ -201,7 +201,7 @@ def test_validator_deduplicates_required_fields(mock_valid_fields):
 
 
 def test_validator_deduplicates_case_insensitive_within_list(mock_valid_fields):
-    from documentai_api.app_extraction_rules import ExtractionRuleRequest
+    from documentai_api.routers.extraction_rules import ExtractionRuleRequest
 
     req = ExtractionRuleRequest(
         document_type="w2", required_fields=["SSN", "ssn", "wages"], optional_fields=[]
@@ -212,7 +212,7 @@ def test_validator_deduplicates_case_insensitive_within_list(mock_valid_fields):
 
 
 def test_validator_preserves_mixed_case_field_names(mock_valid_fields):
-    from documentai_api.app_extraction_rules import ExtractionRuleRequest
+    from documentai_api.routers.extraction_rules import ExtractionRuleRequest
 
     req = ExtractionRuleRequest(
         document_type="w2", required_fields=["SSN", "wages"], optional_fields=["employer_name"]
@@ -224,7 +224,7 @@ def test_validator_preserves_mixed_case_field_names(mock_valid_fields):
 
 
 def test_validator_deduplicates_optional_fields(mock_valid_fields):
-    from documentai_api.app_extraction_rules import ExtractionRuleRequest
+    from documentai_api.routers.extraction_rules import ExtractionRuleRequest
 
     req = ExtractionRuleRequest(
         document_type="w2",
@@ -236,12 +236,12 @@ def test_validator_deduplicates_optional_fields(mock_valid_fields):
 
 def test_validator_rejects_unknown_document_type(mocker):
     mocker.patch(
-        "documentai_api.app_extraction_rules.get_valid_fields",
+        "documentai_api.routers.extraction_rules.get_valid_fields",
         return_value=None,
     )
     from pydantic import ValidationError
 
-    from documentai_api.app_extraction_rules import ExtractionRuleRequest
+    from documentai_api.routers.extraction_rules import ExtractionRuleRequest
 
     with pytest.raises(ValidationError, match="Unknown document type"):
         ExtractionRuleRequest(document_type="unknown", required_fields=["ssn"], optional_fields=[])
@@ -250,7 +250,7 @@ def test_validator_rejects_unknown_document_type(mocker):
 def test_validator_rejects_invalid_field_names(mock_valid_fields):
     from pydantic import ValidationError
 
-    from documentai_api.app_extraction_rules import ExtractionRuleRequest
+    from documentai_api.routers.extraction_rules import ExtractionRuleRequest
 
     with pytest.raises(ValidationError, match="Unknown fields"):
         ExtractionRuleRequest(
@@ -261,7 +261,7 @@ def test_validator_rejects_invalid_field_names(mock_valid_fields):
 def test_validator_rejects_overlapping_fields(mock_valid_fields):
     from pydantic import ValidationError
 
-    from documentai_api.app_extraction_rules import ExtractionRuleRequest
+    from documentai_api.routers.extraction_rules import ExtractionRuleRequest
 
     with pytest.raises(ValidationError, match="both required and optional"):
         ExtractionRuleRequest(document_type="w2", required_fields=["ssn"], optional_fields=["ssn"])
@@ -281,7 +281,7 @@ def test_put_deduplicates_fields():
     with (
         patch("documentai_api.utils.extraction_rules.upsert_rule", return_value=rule),
         patch(
-            "documentai_api.app_extraction_rules.get_valid_fields",
+            "documentai_api.routers.extraction_rules.get_valid_fields",
             return_value={"ssn": "ssn", "wages": "wages"},
         ),
     ):
@@ -298,7 +298,7 @@ def test_put_deduplicates_fields():
 
 
 def test_put_unknown_document_type_returns_422():
-    with patch("documentai_api.app_extraction_rules.get_valid_fields", return_value=None):
+    with patch("documentai_api.routers.extraction_rules.get_valid_fields", return_value=None):
         response = client.put(
             "/v1/config/extraction-rules",
             json={"document_type": "unknown", "required_fields": ["ssn"], "optional_fields": []},
@@ -308,7 +308,9 @@ def test_put_unknown_document_type_returns_422():
 
 
 def test_put_invalid_field_names_returns_422():
-    with patch("documentai_api.app_extraction_rules.get_valid_fields", return_value={"ssn": "ssn"}):
+    with patch(
+        "documentai_api.routers.extraction_rules.get_valid_fields", return_value={"ssn": "ssn"}
+    ):
         response = client.put(
             "/v1/config/extraction-rules",
             json={"document_type": "w2", "required_fields": ["not_a_field"], "optional_fields": []},
@@ -318,7 +320,9 @@ def test_put_invalid_field_names_returns_422():
 
 
 def test_put_overlapping_fields_returns_422():
-    with patch("documentai_api.app_extraction_rules.get_valid_fields", return_value={"ssn": "ssn"}):
+    with patch(
+        "documentai_api.routers.extraction_rules.get_valid_fields", return_value={"ssn": "ssn"}
+    ):
         response = client.put(
             "/v1/config/extraction-rules",
             json={"document_type": "w2", "required_fields": ["ssn"], "optional_fields": ["ssn"]},
@@ -349,7 +353,9 @@ def test_put_string_required_fields_returns_422():
 
 def test_put_case_insensitive_overlap_returns_422():
     """SSN in required and ssn in optional should be caught as overlap."""
-    with patch("documentai_api.app_extraction_rules.get_valid_fields", return_value={"ssn": "ssn"}):
+    with patch(
+        "documentai_api.routers.extraction_rules.get_valid_fields", return_value={"ssn": "ssn"}
+    ):
         response = client.put(
             "/v1/config/extraction-rules",
             json={"document_type": "w2", "required_fields": ["SSN"], "optional_fields": ["ssn"]},
@@ -370,7 +376,7 @@ def test_put_normalizes_fields_before_persisting(mocker):
         "updatedAt": "2026-01-01",
     }
     mocker.patch(
-        "documentai_api.app_extraction_rules.get_valid_fields",
+        "documentai_api.routers.extraction_rules.get_valid_fields",
         return_value={
             "employeename.firstname": "EmployeeName.FirstName",
             "currentgrosspay": "CurrentGrossPay",
@@ -440,7 +446,7 @@ def test_put_super_admin_missing_tenant_id_returns_400():
     app.dependency_overrides[get_user_context_with_fallback] = lambda: admin_context
     try:
         with patch(
-            "documentai_api.app_extraction_rules.get_valid_fields", return_value={"ssn": "ssn"}
+            "documentai_api.routers.extraction_rules.get_valid_fields", return_value={"ssn": "ssn"}
         ):
             response = client.put(
                 "/v1/config/extraction-rules",
@@ -479,7 +485,7 @@ def test_put_tenant_admin_body_tenant_id_ignored(mocker):
         "updatedAt": "2026-01-01",
     }
     mocker.patch(
-        "documentai_api.app_extraction_rules.get_valid_fields", return_value={"ssn": "ssn"}
+        "documentai_api.routers.extraction_rules.get_valid_fields", return_value={"ssn": "ssn"}
     )
 
     # Body says "other-tenant" but auth is "test-tenant" - auth wins
