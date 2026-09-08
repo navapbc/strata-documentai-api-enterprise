@@ -1,12 +1,13 @@
-"""BDA processor: tracing, DDB lookup, and classification dispatch."""
+"""BDA processor: tracing, DDB lookup, extraction dispatch. Returns ProcessorResult."""
 
 from typing import Any
 
 from opentelemetry import trace
 from opentelemetry.propagate import extract as otel_extract
 
-from documentai_api.config.constants import BdaResponseFields, ConfigDefaults
+from documentai_api.config.constants import BdaResponseFields, ConfigDefaults, ProcessStatus
 from documentai_api.dtos.classification import ClassificationData
+from documentai_api.dtos.processing import ProcessorResult
 from documentai_api.extractors.bda import extract_bda_result
 from documentai_api.logging import get_logger
 from documentai_api.schemas.document_metadata import DocumentMetadata
@@ -15,11 +16,6 @@ from documentai_api.utils.bda import (
     get_bda_result_json,
     get_ddb_record_from_bda_output,
     get_text_from_standard_blueprint,
-)
-from documentai_api.utils.document_classification import (
-    classify_as_no_custom_blueprint_matched,
-    classify_as_no_document_detected,
-    classify_extraction_result,
 )
 
 logger = get_logger(__name__)
@@ -30,8 +26,8 @@ def process_bda_result(
     bda_output_bucket_name: str,
     bda_output_object_key: str,
     result_processor_started_at: str | None = None,
-) -> dict[str, Any]:
-    """Handle BDA S3 completion event. Returns the internal API response dict."""
+) -> ProcessorResult:
+    """Handle BDA S3 completion event. Returns ProcessorResult for pipeline classification."""
     bda_output_s3_uri = extract_bda_output_s3_uri(bda_output_bucket_name, bda_output_object_key)
     if not bda_output_s3_uri:
         raise ValueError("No BDA output S3 URI found")
@@ -52,7 +48,7 @@ def _process_bda_result(
     bda_output_s3_uri: str,
     ddb_record: dict[str, Any],
     result_processor_started_at: str | None,
-) -> dict[str, Any]:
+) -> ProcessorResult:
     file_name: str = ddb_record[DocumentMetadata.FILE_NAME]
     batch_id: str | None = ddb_record.get(DocumentMetadata.BATCH_ID)
     tenant_id: str | None = ddb_record.get(DocumentMetadata.TENANT_ID)
@@ -68,12 +64,12 @@ def _process_bda_result(
 
     if result is not None:
         logger.info("Custom matching blueprint found, and document type matches. Success.")
-        return classify_extraction_result(
-            ddb_key=file_name,
-            result=result,
+        return ProcessorResult(
+            object_key=file_name,
             tenant_id=tenant_id,
             batch_id=batch_id,
             result_processor_started_at=result_processor_started_at,
+            extraction_result=result,
         )
 
     no_match_data = ClassificationData(
@@ -89,18 +85,26 @@ def _process_bda_result(
     ):
         msg = "No matching custom blueprint found. Document detected, but not implemented."
         logger.info(msg)
-        return classify_as_no_custom_blueprint_matched(
+        return ProcessorResult(
             object_key=file_name,
-            data=ClassificationData(**{**no_match_data.__dict__, "additional_info": msg}),
-            result_processor_started_at=result_processor_started_at,
+            tenant_id=tenant_id,
             batch_id=batch_id,
+            result_processor_started_at=result_processor_started_at,
+            classification_data=ClassificationData(
+                **{**no_match_data.__dict__, "additional_info": msg}
+            ),
+            status=ProcessStatus.NO_CUSTOM_BLUEPRINT_MATCHED,
         )
 
     msg = "No matching custom blueprint found. Unable to extract meaningful document content."
     logger.info(msg)
-    return classify_as_no_document_detected(
+    return ProcessorResult(
         object_key=file_name,
-        data=ClassificationData(**{**no_match_data.__dict__, "additional_info": msg}),
-        result_processor_started_at=result_processor_started_at,
+        tenant_id=tenant_id,
         batch_id=batch_id,
+        result_processor_started_at=result_processor_started_at,
+        classification_data=ClassificationData(
+            **{**no_match_data.__dict__, "additional_info": msg}
+        ),
+        status=ProcessStatus.NO_DOCUMENT_DETECTED,
     )

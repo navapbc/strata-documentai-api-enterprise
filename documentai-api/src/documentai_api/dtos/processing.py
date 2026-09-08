@@ -3,6 +3,25 @@
 from dataclasses import dataclass
 from decimal import Decimal
 
+from documentai_api.config.constants import ProcessStatus
+from documentai_api.dtos.classification import ClassificationData
+from documentai_api.dtos.extraction import ExtractionResult
+
+
+@dataclass
+class ProcessorResult:
+    """Return shape from processors - carries everything pipeline needs to classify."""
+
+    object_key: str
+    tenant_id: str | None = None
+    batch_id: str | None = None
+    result_processor_started_at: str | None = None
+    # success path
+    extraction_result: ExtractionResult | None = None
+    # non-success paths
+    classification_data: ClassificationData | None = None
+    status: ProcessStatus | None = None
+
 
 @dataclass
 class InternalApiResponse:

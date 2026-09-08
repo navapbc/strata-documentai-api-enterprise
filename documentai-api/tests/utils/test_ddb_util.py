@@ -289,8 +289,6 @@ def test_get_ddb_by_job_id(ddb_doc_metadata_table):
 )
 def test_update_ddb(status, has_timing, ddb_doc_metadata_table, mocker):
     """Test DDB update."""
-    import json
-
     internal_response = InternalApiResponse(
         validation_passed=True,
         document_category="income",
@@ -303,9 +301,6 @@ def test_update_ddb(status, has_timing, ddb_doc_metadata_table, mocker):
     mock_timing = mocker.patch("documentai_api.utils.ddb._build_timing_updates")
     mock_timing.return_value = ("timing = :t", {":t": "val"}) if has_timing else ("", {})
 
-    mock_v1 = mocker.patch("documentai_api.utils.ddb.build_v1_api_response")
-    mock_v1.return_value = {"status": "completed"}
-
     object_key = "test-file"
 
     ddb_util.update_ddb(
@@ -316,7 +311,6 @@ def test_update_ddb(status, has_timing, ddb_doc_metadata_table, mocker):
 
     item = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"]
     assert item[DocumentMetadata.PROCESS_STATUS] == status
-    assert item[DocumentMetadata.V1_API_RESPONSE_JSON] == json.dumps(mock_v1.return_value)
 
     if has_timing:
         assert item["timing"] == "val"
@@ -327,7 +321,6 @@ def test_update_ddb_writes_pages_sent_and_result_processor_started_at(
 ):
     """update_ddb with pages_sent_to_bda and result_processor_started_at writes both."""
     mocker.patch("documentai_api.utils.ddb._build_timing_updates", return_value=("", {}))
-    mocker.patch("documentai_api.utils.ddb.build_v1_api_response", return_value={})
 
     object_key = "update-ddb-new-fields"
 
@@ -576,7 +569,6 @@ def test_update_ddb_metrics_enqueue_policy(
     """Metrics enqueue for classified (terminal) statuses, never for in-progress."""
     monkeypatch.setenv("DDB_METRICS_INPUT_QUEUE_URL", "https://sqs.us-east-1.amazonaws.com/queue")
     mocker.patch("documentai_api.utils.ddb._build_timing_updates", return_value=("", {}))
-    mocker.patch("documentai_api.utils.ddb.build_v1_api_response", return_value={})
     mock_sqs = mocker.patch("documentai_api.services.sqs.send_message")
 
     ddb_util.update_ddb(UpdateDdbRecord(object_key="metrics-policy-test", status=status))
@@ -596,7 +588,6 @@ def test_upsert_ddb_metrics_enqueue_policy(
 ):
     """Metrics enqueue for classified (terminal) statuses, never for in-progress."""
     monkeypatch.setenv("DDB_METRICS_INPUT_QUEUE_URL", "https://sqs.us-east-1.amazonaws.com/queue")
-    mocker.patch("documentai_api.utils.ddb.build_v1_api_response", return_value={})
     mock_sqs = mocker.patch("documentai_api.services.sqs.send_message")
 
     ddb_util.upsert_ddb(
@@ -634,7 +625,6 @@ def test_metrics_enqueue_contract(
     """
     monkeypatch.setenv("DDB_METRICS_INPUT_QUEUE_URL", "https://sqs.us-east-1.amazonaws.com/queue")
     mocker.patch("documentai_api.utils.ddb._build_timing_updates", return_value=("", {}))
-    mocker.patch("documentai_api.utils.ddb.build_v1_api_response", return_value={})
     mock_sqs = mocker.patch("documentai_api.services.sqs.send_message")
 
     ddb_util.update_ddb(UpdateDdbRecord(object_key="metrics-contract-test", status=status))

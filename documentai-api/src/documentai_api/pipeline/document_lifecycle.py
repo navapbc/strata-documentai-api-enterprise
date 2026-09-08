@@ -10,6 +10,8 @@ from opentelemetry import trace
 from opentelemetry.propagate import inject
 
 import documentai_api.utils.documents as document_utils
+from documentai_api.classifiers.api_response import finalize_v1_response
+from documentai_api.classifiers.document_classification import classify_extraction_result
 from documentai_api.config.constants import (
     FileValidation,
     ProcessStatus,
@@ -499,11 +501,21 @@ def upsert_initial_ddb_record(
 
         # Textract completed inline - finalize the record with extraction results
         if textract_result is not None:
-            process_textract_result(
-                ddb_key, textract_result, user_provided_document_category, batch_id
-            )
+            processor_result = process_textract_result(ddb_key, textract_result, batch_id)
+
+            if processor_result.extraction_result is not None:
+                classify_extraction_result(
+                    ddb_key=processor_result.object_key,
+                    result=processor_result.extraction_result,
+                    tenant_id=processor_result.tenant_id,
+                    batch_id=processor_result.batch_id,
+                )
 
         if ProcessStatus.is_pending_extraction(process_status):
             return bbox_future
+
+        # finalize v1 response for terminal pre-extraction statuses
+        if not ProcessStatus.is_pending_extraction(process_status) and textract_result is None:
+            finalize_v1_response(ddb_key, process_status)
 
         return None

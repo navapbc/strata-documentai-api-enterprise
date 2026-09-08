@@ -25,6 +25,11 @@ from documentai_api.annotations import (
     DocumentCategoryField,
     TraceId,
 )
+from documentai_api.classifiers.document_classification import (
+    classify_as_ai_consent_declined,
+    classify_as_conversion_failed,
+    classify_as_failed,
+)
 from documentai_api.config.constants import (
     DEFAULT_DDB_ERROR_MESSAGE,
     MAX_BATCH_SIZE,
@@ -43,7 +48,7 @@ from documentai_api.models.batch import (
     BatchUploadResponse,
 )
 from documentai_api.models.document_record import DocumentRecord
-from documentai_api.processors.document_lifecycle import insert_minimal_ddb_record
+from documentai_api.pipeline.document_lifecycle import insert_minimal_ddb_record
 from documentai_api.schemas.document_batches import DocumentBatches
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.auth import UserContext, get_user_context_from_api_key
@@ -52,11 +57,6 @@ from documentai_api.utils.batch_operations import (
     get_batch,
     query_jobs_by_batch_id,
     update_batch_status,
-)
-from documentai_api.utils.document_classification import (
-    classify_as_ai_consent_declined,
-    classify_as_conversion_failed,
-    classify_as_failed,
 )
 from documentai_api.utils.tenant_access import validate_batch_tenant_access
 from documentai_api.utils.uploads import (

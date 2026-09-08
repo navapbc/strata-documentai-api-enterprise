@@ -7,6 +7,7 @@ from boto3.dynamodb.conditions import Attr
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from documentai_api.annotations import AdminClaims, PageLimit, verify_jwt_with_role
+from documentai_api.classifiers.api_response import extract_field_values
 from documentai_api.config.constants import ApiVisualizationTag, ConfigDefaults, FileValidation
 from documentai_api.config.env import get_aws_config
 from documentai_api.logging import get_logger
@@ -23,7 +24,7 @@ from documentai_api.utils.audit_log import log_event
 from documentai_api.utils.document_metadata_table import DocumentMetadataTable
 from documentai_api.utils.jwt_auth import tenant_scope
 from documentai_api.utils.pagination import decode_cursor, encode_cursor
-from documentai_api.utils.response_builder import extract_field_values, nest_fields
+from documentai_api.utils.response_builder import nest_fields
 from documentai_api.utils.s3 import get_bucket_and_key
 
 logger = get_logger(__name__)

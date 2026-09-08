@@ -19,6 +19,7 @@ from fastapi import (
 )
 
 from documentai_api.annotations import AuthUser, DocumentCategoryField, UploadSourceField
+from documentai_api.classifiers.document_classification import classify_as_ai_consent_declined
 from documentai_api.config.constants import (
     MAX_PAGES_PER_BUILD,
     ApiVisualizationTag,
@@ -41,7 +42,7 @@ from documentai_api.models.build import (
 )
 from documentai_api.models.document_record import DocumentRecord
 from documentai_api.models.job_status import JobStatusResponse
-from documentai_api.processors.document_lifecycle import insert_minimal_ddb_record
+from documentai_api.pipeline.document_lifecycle import insert_minimal_ddb_record
 from documentai_api.schemas.document_builds import DocumentBuilds
 from documentai_api.utils.auth import UserContext, get_user_context_from_api_key
 from documentai_api.utils.document_build import (
@@ -55,7 +56,6 @@ from documentai_api.utils.document_build import (
     mark_document_build_submitted,
     upsert_document_build_page,
 )
-from documentai_api.utils.document_classification import classify_as_ai_consent_declined
 from documentai_api.utils.pdf import merge_pages_to_pdf
 from documentai_api.utils.s3 import parse_s3_uri
 from documentai_api.utils.tenant_access import validate_build_tenant_access
@@ -514,7 +514,7 @@ async def submit_document_build_wait(
 
     Use `POST /v1/builds/{build_id}/submit` instead and poll `GET /v1/documents/{job_id}` for the result.
     """
-    from documentai_api.utils.jobs import poll_for_completion
+    from documentai_api.pipeline.jobs import poll_for_completion
 
     result = await _submit_build(response, build_id, trace_id, auth.tenant_id, auth.api_key_name)
     if ProcessStatus.is_classified(result.job_status):
