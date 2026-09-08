@@ -64,6 +64,7 @@ The `all` project (defined separately in Terraform) unions every folder's custom
 | Type | Blueprint |
 |------|-----------|
 | Custom | insurance-company-letter |
+| Custom | health-insurance-premium-statement |
 
 ## investment_and_royalty_income
 | Type | Blueprint |
@@ -99,3 +100,23 @@ The `all` project (defined separately in Terraform) unions every folder's custom
 | Custom | household-contribution-statement |
 | Custom | mortgage-statement |
 | Custom | rent-lease-statement |
+| Custom | shelter-verification-letter |
+| Custom | shelter-payment-receipt |
+
+## expense
+| Type | Blueprint |
+|------|-----------|
+| AWS-Managed | electricity-bill |
+| AWS-Managed | cable-bill |
+| AWS-Managed | water-and-sewer-bill |
+| Custom | burial |
+| Custom | dependent-care |
+
+## assets
+| Type | Blueprint |
+|------|-----------|
+| AWS-Managed | us-vehicle-title-document |
+| Custom | life-insurance-policy |
+| Custom | miscellaneous-assets |
+| Custom | real-estate |
+| Custom | trust-fund |

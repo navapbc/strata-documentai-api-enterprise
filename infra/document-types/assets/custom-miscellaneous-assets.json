@@ -1,0 +1,44 @@
+{
+  "description": "A generic asset declaration, appraisal summary, or itemized personal-property statement for assets that do not fit a standard category, such as collectibles, jewelry, or equipment. Used to verify miscellaneous asset value.",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "class": "Miscellaneous-Assets-Statement",
+  "definitions": {},
+  "properties": {
+    "owner_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The full name of the person who owns the declared assets."
+    },
+    "appraiser_or_preparer_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The name of the appraiser, assessor, or preparer of the statement, if shown."
+    },
+    "asset_description": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "A description of the itemized asset(s), such as jewelry, collectibles, or equipment."
+    },
+    "asset_category": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The general category of the asset, such as collectibles, jewelry, equipment, or other valuables."
+    },
+    "estimated_value": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "The estimated or appraised value of the individual asset item, if itemized."
+    },
+    "total_estimated_value": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "The total estimated value of all declared assets on the statement."
+    },
+    "statement_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The date of the statement or appraisal. YYYY-MM-DD format."
+    }
+  }
+}

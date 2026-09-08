@@ -1,0 +1,54 @@
+{
+  "description": "A trust account statement issued by a trustee or trust company, showing balance and distributions. Used to verify trust-fund asset value.",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "class": "Trust-Fund-Statement",
+  "definitions": {},
+  "properties": {
+    "trust_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The name of the trust."
+    },
+    "trustee_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The name of the trustee or trust company administering the trust."
+    },
+    "beneficiary_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The full name of the trust beneficiary."
+    },
+    "account_number": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The unique account number assigned to the trust account."
+    },
+    "trust_type": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The type of trust, such as revocable, irrevocable, or testamentary."
+    },
+    "statement_period_start": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Start of the statement period. YYYY-MM-DD format."
+    },
+    "statement_period_end": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "End of the statement period. YYYY-MM-DD format."
+    },
+    "account_balance": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "The trust account balance or corpus value as reported on the statement."
+    },
+    "distributions_during_period": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "The total amount distributed from the trust during the statement period, if any."
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "description": "An informal shelter payment record, such as a roommate payment record, money-order receipt, or arrears notice, showing an amount paid or overdue toward rent or shared housing costs.",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "class": "Shelter-Payment-Receipt",
+  "definitions": {},
+  "properties": {
+    "payer_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The full name of the person who made or owes the payment."
+    },
+    "payee_or_provider_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The name of the landlord, property provider, roommate, or service that received or is owed the payment, such as a money-order service."
+    },
+    "document_type": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Type of document, such as money-order receipt, roommate payment record, or overdue notice."
+    },
+    "amount": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "The amount paid, if this document reflects a completed payment."
+    },
+    "amount_overdue": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "The amount overdue or past due, if this document is a notice or arrears record."
+    },
+    "service_period_start": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Start of the service or rental period the payment or notice applies to. YYYY-MM-DD format."
+    },
+    "service_period_end": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "End of the service or rental period the payment or notice applies to. YYYY-MM-DD format."
+    },
+    "receipt_or_notice_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The date the receipt was issued or the notice was sent. YYYY-MM-DD format."
+    },
+    "reference_number": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Any receipt, money-order, or notice reference number shown on the document."
+    }
+  }
+}

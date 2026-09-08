@@ -1,0 +1,84 @@
+{
+    "description": "A document related to burial or funeral expenses, such as a funeral home invoice, burial contract, cemetery statement, or payment receipt. Used to verify burial-related household expenses.",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "class": "Burial",
+    "definitions": {},
+    "properties": {
+        "deceased_name": {
+            "type": "string",
+            "inferenceType": "explicit",
+            "instruction": "The full name of the deceased person associated with the burial expense."
+        },
+        "payer_name": {
+            "type": "string",
+            "inferenceType": "explicit",
+            "instruction": "The full name of the person responsible for paying the burial or funeral expense."
+        },
+        "provider_name": {
+            "type": "string",
+            "inferenceType": "explicit",
+            "instruction": "The name of the funeral home, cemetery, cremation provider, or other service provider."
+        },
+        "provider_address": {
+            "type": "string",
+            "inferenceType": "explicit",
+            "instruction": "The address of the burial or funeral service provider."
+        },
+        "provider_contact": {
+            "type": "string",
+            "inferenceType": "explicit",
+            "instruction": "Contact information for the service provider, such as phone number or email."
+        },
+        "document_type": {
+            "type": "string",
+            "inferenceType": "explicit",
+            "instruction": "Type of burial-related document, such as invoice, contract, statement, or receipt."
+        },
+        "service_date": {
+            "type": "string",
+            "inferenceType": "explicit",
+            "instruction": "Date of burial, funeral, cremation, or related service. YYYY-MM-DD format."
+        },
+        "invoice_date": {
+            "type": "string",
+            "inferenceType": "explicit",
+            "instruction": "Date the invoice or statement was issued. YYYY-MM-DD format."
+        },
+        "due_date": {
+            "type": "string",
+            "inferenceType": "explicit",
+            "instruction": "Payment due date for the burial expense if stated. YYYY-MM-DD format."
+        },
+        "invoice_number": {
+            "type": "string",
+            "inferenceType": "explicit",
+            "instruction": "Invoice, account, or reference number associated with the burial expense."
+        },
+        "amount": {
+            "type": "number",
+            "inferenceType": "explicit",
+            "instruction": "The billed or paid amount for burial or funeral-related services."
+        },
+        "payment_frequency": {
+            "type": "string",
+            "inferenceType": "explicit",
+            "instruction": "Payment frequency if installments are used, such as one-time, monthly, or weekly."
+        },
+        "payment_status": {
+            "type": "string",
+            "inferenceType": "explicit",
+            "instruction": "Payment status, such as paid, partially paid, unpaid, or past due."
+        },
+        "amount_paid": {
+            "type": "number",
+            "inferenceType": "explicit",
+            "instruction": "Amount already paid toward the burial expense if stated."
+        },
+        "balance_due": {
+            "type": "number",
+            "inferenceType": "explicit",
+            "instruction": "Remaining balance due for the burial expense if stated."
+        }
+    }
+}

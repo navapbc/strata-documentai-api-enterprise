@@ -1,0 +1,64 @@
+{
+  "description": "A property tax assessment notice, deed abstract, or county assessor property record showing ownership of real property other than the primary residence. Used to verify real-estate asset value.",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "class": "Real-Estate-Ownership-Document",
+  "definitions": {},
+  "properties": {
+    "owner_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The full name of the property owner."
+    },
+    "property_address": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The full address of the real property, including city, state, and ZIP code if present."
+    },
+    "parcel_number": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The county parcel or assessor identification number for the property."
+    },
+    "county_office_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The name of the county assessor, recorder, or tax office that issued the document."
+    },
+    "document_type": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Type of real-estate document, such as deed, property-tax assessment, or appraisal."
+    },
+    "assessed_value": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "The total assessed value of the property."
+    },
+    "land_value": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "The assessed value attributed to the land, if broken out separately."
+    },
+    "improvement_value": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "The assessed value attributed to improvements or structures, if broken out separately."
+    },
+    "loan_balance": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "The remaining mortgage or lien balance on the property, if shown."
+    },
+    "tax_year": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The tax year the assessment applies to."
+    },
+    "document_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The date the document was issued or recorded. YYYY-MM-DD format."
+    }
+  }
+}

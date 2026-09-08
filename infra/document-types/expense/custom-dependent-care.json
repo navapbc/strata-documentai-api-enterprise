@@ -1,0 +1,64 @@
+{
+  "description": "A document related to dependent or child care expenses, such as a daycare invoice, tuition statement, or in-home care payment receipt. Used to verify dependent-care household expenses.",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "class": "Dependent-Care-Statement",
+  "definitions": {},
+  "properties": {
+    "provider_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The name of the daycare, child care center, or in-home care provider."
+    },
+    "provider_address": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The address of the dependent-care provider."
+    },
+    "dependent_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The full name of the child or dependent receiving care."
+    },
+    "care_period_start": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Start of the care period covered by this statement. YYYY-MM-DD format."
+    },
+    "care_period_end": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "End of the care period covered by this statement. YYYY-MM-DD format."
+    },
+    "rate_amount": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "The rate charged for care, such as a weekly or monthly amount."
+    },
+    "payment_frequency": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Frequency of the care payment, such as weekly, biweekly, or monthly."
+    },
+    "document_type": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Type of dependent-care document, such as invoice, tuition statement, or payment receipt."
+    },
+    "statement_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Date the invoice or statement was issued. YYYY-MM-DD format."
+    },
+    "amount_paid": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "Amount already paid toward the dependent-care expense, if stated."
+    },
+    "balance_due": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "Remaining balance due for the dependent-care expense, if stated."
+    }
+  }
+}
