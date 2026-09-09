@@ -175,7 +175,7 @@ def test_create_document_ai_consent_declined(api_client, blank_pdf_bytes, mocker
         "response_code": "003",
         "response_message": "Document not processed - AI consent not provided",
     }
-    mock_dispatch = mocker.patch("documentai_api.utils.uploads.upload_document_for_processing")
+    mock_dispatch = mocker.patch("documentai_api.pipeline.uploads.upload_document_for_processing")
 
     files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
     data = {"ai_consent_flag": "false"}
@@ -249,9 +249,9 @@ def test_create_document_custom_trace_id(api_client, blank_pdf_bytes):
 def test_create_document_upload_failure_classifies_record(api_client, blank_pdf_bytes, mocker):
     """Test unexpected upload failure marks DDB record as failed."""
     mocker.patch("documentai_api.routers.documents.insert_minimal_ddb_record")
-    mock_classify = mocker.patch("documentai_api.utils.document_classification.classify_as_failed")
+    mock_classify = mocker.patch("documentai_api.pipeline.uploads.classify_as_failed")
     mocker.patch(
-        "documentai_api.utils.uploads.upload_document_for_processing",
+        "documentai_api.pipeline.uploads.upload_document_for_processing",
         side_effect=RuntimeError("S3 exploded"),
     )
 
@@ -268,9 +268,9 @@ def test_create_document_conversion_failure(api_client, blank_pdf_bytes, mocker)
     from documentai_api.utils.uploads import ImageConversionError
 
     mocker.patch("documentai_api.routers.documents.insert_minimal_ddb_record")
-    mocker.patch("documentai_api.utils.document_classification.classify_as_conversion_failed")
+    mocker.patch("documentai_api.pipeline.uploads.classify_as_conversion_failed")
     mocker.patch(
-        "documentai_api.utils.uploads.upload_document_for_processing",
+        "documentai_api.pipeline.uploads.upload_document_for_processing",
         side_effect=ImageConversionError("Cannot convert"),
     )
 
@@ -960,9 +960,9 @@ def test_documents_wait_conversion_failed_skips_poll(api_client, blank_pdf_bytes
     from documentai_api.utils.uploads import ImageConversionError
 
     mocker.patch("documentai_api.routers.documents.insert_minimal_ddb_record")
-    mocker.patch("documentai_api.utils.document_classification.classify_as_conversion_failed")
+    mocker.patch("documentai_api.pipeline.uploads.classify_as_conversion_failed")
     mocker.patch(
-        "documentai_api.utils.uploads.upload_document_for_processing",
+        "documentai_api.pipeline.uploads.upload_document_for_processing",
         side_effect=ImageConversionError("Cannot convert"),
     )
     mock_poll = mocker.patch("documentai_api.routers.documents.poll_for_completion")

@@ -227,7 +227,7 @@ def test_submit_document_build_synchronous(document_build_ddb_table, mock_docume
     from documentai_api.models.job_status import JobStatusResponse
 
     with patch(
-        "documentai_api.utils.jobs.poll_for_completion",
+        "documentai_api.pipeline.jobs.poll_for_completion",
         new_callable=AsyncMock,
     ) as mock_get_results:
         mock_document_build_submit["get_pages"].return_value = [
@@ -1108,7 +1108,9 @@ def test_build_submit_wait_consent_declined_skips_poll(document_build_ddb_table)
         patch("documentai_api.routers.build.insert_minimal_ddb_record"),
         patch("documentai_api.routers.build.classify_as_ai_consent_declined"),
         patch("documentai_api.routers.build.get_document_build_pages", return_value=[]),
-        patch("documentai_api.utils.jobs.poll_for_completion", new_callable=AsyncMock) as mock_poll,
+        patch(
+            "documentai_api.pipeline.jobs.poll_for_completion", new_callable=AsyncMock
+        ) as mock_poll,
     ):
         response = client.post("/v1/builds/test-build-id/submit/wait")
 
@@ -1129,7 +1131,7 @@ def test_build_submit_wait_forwards_include_extracted_data(
     from documentai_api.models.job_status import JobStatusResponse
 
     with patch(
-        "documentai_api.utils.jobs.poll_for_completion",
+        "documentai_api.pipeline.jobs.poll_for_completion",
         new_callable=AsyncMock,
     ) as mock_poll:
         mock_document_build_submit["get_pages"].return_value = [

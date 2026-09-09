@@ -8,7 +8,8 @@ import pytest
 from fastapi import HTTPException
 
 from documentai_api import app as app_module
-from documentai_api.utils.jobs import JobStatus, get_job_status, poll_for_completion
+from documentai_api.pipeline.jobs import poll_for_completion
+from documentai_api.utils.jobs import JobStatus, get_job_status
 from documentai_api.utils.uploads import upload_document_for_processing
 
 
@@ -136,7 +137,7 @@ async def test_upload_always_saves_original_to_preprocessing(
 @pytest.mark.asyncio
 async def test_poll_for_completion_success(mocker):
     """Test polling returns results when processing completes."""
-    mock_get_job_status = mocker.patch("documentai_api.utils.jobs.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.pipeline.jobs.get_job_status")
     mock_get_job_status.return_value = JobStatus(
         ddb_record={"fileName": "test.pdf"},
         object_key="test.pdf",
@@ -152,7 +153,7 @@ async def test_poll_for_completion_success(mocker):
 @pytest.mark.asyncio
 async def test_poll_for_completion_nests_stored_fields(mocker):
     """The /wait path nests the stored flat fields, like the GET endpoints."""
-    mock_get_job_status = mocker.patch("documentai_api.utils.jobs.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.pipeline.jobs.get_job_status")
     mock_get_job_status.return_value = JobStatus(
         ddb_record={"fileName": "test.pdf"},
         object_key="test.pdf",
@@ -175,7 +176,7 @@ async def test_poll_for_completion_nests_stored_fields(mocker):
 @pytest.mark.asyncio
 async def test_poll_for_completion_timeout(mocker):
     """Test polling timeout with object_key."""
-    mock_get_job_status = mocker.patch("documentai_api.utils.jobs.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.pipeline.jobs.get_job_status")
     mock_get_job_status.return_value = JobStatus(
         ddb_record={"fileName": "test.pdf"},
         object_key="test.pdf",
@@ -183,7 +184,7 @@ async def test_poll_for_completion_timeout(mocker):
         v1_response_json=None,
     )
 
-    mock_classify_as_failed = mocker.patch("documentai_api.utils.jobs.classify_as_failed")
+    mock_classify_as_failed = mocker.patch("documentai_api.pipeline.jobs.classify_as_failed")
 
     result = await poll_for_completion("test-job-id", timeout=1)
 
@@ -195,7 +196,7 @@ async def test_poll_for_completion_timeout(mocker):
 @pytest.mark.asyncio
 async def test_poll_for_completion_timeout_no_object_key(mocker):
     """Test polling timeout without object_key."""
-    mock_get_job_status = mocker.patch("documentai_api.utils.jobs.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.pipeline.jobs.get_job_status")
     mock_get_job_status.return_value = JobStatus(
         ddb_record=None,
         object_key=None,
@@ -248,7 +249,7 @@ async def test_upload_document_for_processing_invalid_category_type(
 @pytest.mark.asyncio
 async def test_poll_for_completion_polling_error(mocker):
     """Test polling continues after DDB errors."""
-    mock_get_job_status = mocker.patch("documentai_api.utils.jobs.get_job_status")
+    mock_get_job_status = mocker.patch("documentai_api.pipeline.jobs.get_job_status")
     # first call raises exception, second call returns success
     mock_get_job_status.side_effect = [
         Exception("DDB error"),

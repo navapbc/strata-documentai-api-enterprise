@@ -4,6 +4,7 @@ from typing import Any
 
 from botocore.exceptions import ClientError
 
+from documentai_api.classifiers.api_response import finalize_v1_response
 from documentai_api.config.constants import ProcessStatus
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.dtos.ddb import UpdateDdbRecord
@@ -36,6 +37,7 @@ def _write_terminal_status(record: UpdateDdbRecord, batch_id: str | None) -> Non
 
     try:
         update_ddb(record, condition_expression=condition, extra_expression_values=extra_values)
+        finalize_v1_response(record.object_key, record.status, record.data, record.error_message)
 
         if batch_id:
             increment_resolved_count(batch_id)

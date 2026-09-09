@@ -30,7 +30,6 @@ from documentai_api.utils.extraction_timing import (
     calculate_processing_times,
     calculate_wait_time,
 )
-from documentai_api.utils.response_builder import build_v1_api_response
 
 logger = get_logger(__name__)
 
@@ -423,8 +422,6 @@ def update_ddb(
             {**expr_values, **(extra_expression_values or {})},
             condition_expression=condition_expression,
         )
-        _finalize_v1_response(data.object_key, data.status, data.data, data.error_message)
-
         if ProcessStatus.is_classified(data.status):
             _send_record_to_metrics_queue(data.object_key)
 
@@ -502,28 +499,6 @@ def mark_document_deleted(object_key: str, deletion_type: DeletionType) -> None:
     _execute_ddb_update(object_key, update_expr, expr_values)
 
 
-def _finalize_v1_response(
-    object_key: str,
-    status: str,
-    data: ClassificationData | None = None,
-    error_message: str | None = None,
-) -> None:
-    """Build and persist the v1 API response and sync responseCode.
-
-    This is the single authority for v1 response finalization - called by both
-    update_ddb (extraction completion) and upsert_ddb (terminal pre-extraction statuses).
-    Does NOT enqueue metrics - callers own that policy.
-    """
-    v1_response = build_v1_api_response(object_key, status, data, error_message=error_message)
-
-    update_expr = f"SET {DocumentMetadata.V1_API_RESPONSE_JSON} = :v1ResponseJson"
-    expr_values: dict[str, Any] = {":v1ResponseJson": json.dumps(v1_response)}
-    if "responseCode" in v1_response:
-        update_expr += f", {DocumentMetadata.RESPONSE_CODE} = :responseCode"
-        expr_values[":responseCode"] = v1_response["responseCode"]
-    _execute_ddb_update(object_key, update_expr, expr_values)
-
-
 def upsert_ddb(data: InitialDdbRecord) -> None:
     """Upsert a document-metadata DDB row by file name.
 
@@ -597,9 +572,8 @@ def upsert_ddb(data: InitialDdbRecord) -> None:
             expression_names={"#ttl": DocumentMetadata.TIME_TO_LIVE},
         )
 
-        # finalize terminal statuses: build v1 response, sync responseCode, enqueue metrics
+        # finalize terminal statuses: enqueue metrics
         if data.process_status and ProcessStatus.is_classified(data.process_status):
-            _finalize_v1_response(data.object_key, data.process_status)
             _send_record_to_metrics_queue(data.object_key)
 
     except Exception as e:

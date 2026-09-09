@@ -154,18 +154,13 @@ name = "Layered architecture"
 type = "layers"
 layers = [
     "documentai_api.routers",
+    "documentai_api.pipeline",
+    "documentai_api.classifiers",
     "documentai_api.processors",
     "documentai_api.extractors",
     "documentai_api.readers",
     "documentai_api.utils",
     "documentai_api.services",
     "documentai_api.config",
-]
-# TODO: response_builder -> readers.extraction is a layer violation caused by a circular
-# dependency between utils.ddb and utils.response_builder. ddb.py calls build_v1_api_response
-# at write time, making it impossible to move the readers import to a higher layer without
-# splitting update_ddb/upsert_ddb. Tracked for a follow-up refactor.
-ignore_imports = [
-    "documentai_api.utils.response_builder -> documentai_api.readers.extraction",
 ]
 

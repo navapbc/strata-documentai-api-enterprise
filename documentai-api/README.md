@@ -297,8 +297,18 @@ src/documentai_api/
 │   ├── auth_events.py              # Auth event endpoints
 │   ├── me.py                       # Current user endpoint
 │   └── admin_usage.py              # Admin usage endpoints
-├── extractors/                     # Extraction logic (BDA, Textract)
-├── processors/                     # Document lifecycle + classification
+├── extractors/                     # Parse raw extraction output, return ExtractionResult
+├── pipeline/                       # Top-level orchestration (calls processors, classifiers, finalizes responses)
+│   ├── bda.py                      # BDA result pipeline: process → classify
+│   ├── document_lifecycle.py       # Pre-extraction pipeline: preclassification, blur, Textract routing
+│   ├── jobs.py                     # Async job polling with timeout
+│   └── uploads.py                  # Upload dispatch with error classification
+├── classifiers/                    # Classification + response building
+│   ├── document_classification.py  # classify_as_* functions, writes terminal DDB status
+│   └── api_response.py             # build_v1_api_response, finalize_v1_response
+├── processors/                     # Extraction result processing, return ProcessorResult
+│   ├── bda.py                      # Parse BDA output → ProcessorResult
+│   └── textract.py                 # Parse Textract output → ProcessorResult
 ├── readers/                        # Extraction result readers (BDA, Textract)
 ├── dtos/                           # Internal data transfer objects
 ├── mappings/                       # Textract field mappings
@@ -342,7 +352,7 @@ tests/
 ├── routers/                        # Router endpoint tests
 ├── jobs/                           # Job handler tests
 ├── e2e/                            # E2E tests against real deployed AWS (make test-e2e)
-└── ...                             # Mirrors src/ layout (extractors/, processors/, utils/, etc.)
+└── ...                             # Mirrors src/ layout (extractors/, processors/, classifiers/, pipeline/, utils/, etc.)
 ```
 
 Jobs are packaged in the same container image with separate Lambda handler entry points configured by the infrastructure.

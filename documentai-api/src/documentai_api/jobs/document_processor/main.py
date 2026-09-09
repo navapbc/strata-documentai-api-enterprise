@@ -17,6 +17,11 @@ from tenacity import (
 )
 
 import documentai_api.logging
+from documentai_api.classifiers.document_classification import (
+    classify_as_extraction_not_configured,
+    classify_as_failed,
+    classify_as_not_implemented,
+)
 from documentai_api.config.constants import (
     ProcessStatus,
     S3MetadataKeys,
@@ -24,7 +29,7 @@ from documentai_api.config.constants import (
 from documentai_api.config.env import EnvVars, get_aws_config, get_required_env
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.dtos.processing import CropResult, OptimizationResult
-from documentai_api.processors.document_lifecycle import (
+from documentai_api.pipeline.document_lifecycle import (
     set_bda_processing_status_started,
     set_processing_status_started,
     upsert_initial_ddb_record,
@@ -38,11 +43,6 @@ from documentai_api.utils.bda_invoker import (
 )
 from documentai_api.utils.dates import strip_time
 from documentai_api.utils.ddb import get_ddb_record
-from documentai_api.utils.document_classification import (
-    classify_as_extraction_not_configured,
-    classify_as_failed,
-    classify_as_not_implemented,
-)
 from documentai_api.utils.image_optimization import optimize_s3_image
 from documentai_api.utils.s3 import parse_s3_uri
 from documentai_api.utils.uploads import validate_s3_object_is_bda_native
