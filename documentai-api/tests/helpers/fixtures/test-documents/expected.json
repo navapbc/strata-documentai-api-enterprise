@@ -208,6 +208,61 @@
     "reruns_override": 2,
     "responseCode": "401"
   },
+  "synthetic-expense-burial-picture.png": {
+    "//": [
+      "Verified against a live run (2x, consistent). The new custom 'Burial' blueprint",
+      "(infra/document-types/expense/custom-burial.json, deployed as",
+      "docai-dev-...-expense-custom-burial) is attached to the per-category 'expense'",
+      "BDA project, but per-category routing isn't enabled here (no BDA_PROJECT_ID_EXPENSE",
+      "on the Lambda) - only the 'all' project runs at request time, and it doesn't yet",
+      "include this blueprint. BDA instead matches the generic public 'Invoices' blueprint",
+      "with low field confidence (105). Expect this to change to a 'Burial' match once the",
+      "'all' project is updated to include the new expense-category custom blueprints -",
+      "revisit then."
+    ],
+    "bdaMatchedDocumentClass": "Invoices",
+    "content_type": "image/png",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "105"
+  },
+  "synthetic-expense-burial-rendered-spanish.jpg": {
+    "//": [
+      "Verified against a live run (2x, consistent). Spanish-language variant of the",
+      "prepaid burial expenses statement - same root cause/caveat as",
+      "synthetic-expense-burial-picture.png: the new custom 'Burial' blueprint is attached",
+      "to the 'expense' BDA project but not yet to the 'all' project actually used at",
+      "request time (no per-category routing configured), so BDA falls back to the",
+      "generic public 'Invoices' blueprint with low field confidence (105). Expect this to",
+      "change to a 'Burial' match once the 'all' project picks up the new expense-category",
+      "custom blueprints - revisit then."
+    ],
+    "bdaMatchedDocumentClass": "Invoices",
+    "content_type": "image/jpeg",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "105"
+  },
+  "synthetic-expense-burial-scan-corner-torn.jpg": {
+    "//": [
+      "Verified against a live run (2x, consistent). This is a burial trust account",
+      "statement (balances/contributions/interest), not an invoice, so even once the new",
+      "custom 'Burial' blueprint reaches the 'all' project it may still match the generic",
+      "public 'Bank-Statement' blueprint instead - revisit once that wiring lands to see",
+      "which one wins. Torn-corner scan damage did not trip the blur detector."
+    ],
+    "bdaMatchedDocumentClass": "Bank-Statement",
+    "content_type": "image/jpeg",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
   "synthetic-password-protected.pdf": {
     "//": [
       "Encrypted PDF. Detected as password protected before preclassification, so it ",
