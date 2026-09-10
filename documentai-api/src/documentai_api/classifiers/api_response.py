@@ -6,7 +6,7 @@ from typing import Any
 from documentai_api.config.constants import ProcessStatus
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.logging import get_logger
-from documentai_api.readers.extraction import read_extraction_fields
+from documentai_api.readers.extraction import read_output
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.ddb import _execute_ddb_update, get_ddb_record
 from documentai_api.utils.field_labels import get_field_label
@@ -125,14 +125,12 @@ def extract_field_values(
     if not ddb_record:
         return {}
 
-    field_confidence_map_list, field_values, field_geometry = read_extraction_fields(
-        ddb_record, include_extracted_data, include_bounding_box
-    )
+    result = read_output(ddb_record, include_extracted_data, include_bounding_box)
 
     return _build_field_map(
-        field_confidence_map_list,
-        field_values,
-        field_geometry,
+        result.field_confidence_map_list,
+        result.field_values,
+        result.field_geometry,
         include_extracted_data,
         include_bounding_box,
         document_type=document_type,

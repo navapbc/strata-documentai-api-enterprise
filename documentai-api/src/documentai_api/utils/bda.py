@@ -15,14 +15,6 @@ logger = get_logger(__name__)
 
 
 @dataclass
-class BdaFieldProcessingData:
-    confidence_scores: list[float]
-    empty_fields: list[str]
-    field_confidence_map_list: list[dict[str, float]]
-    fields_missing_geometry: list[str] | None = None
-
-
-@dataclass
 class BdaFieldProcessingResult:
     confidence: float
     is_empty: bool

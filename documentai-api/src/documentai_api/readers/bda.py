@@ -3,8 +3,9 @@
 from typing import Any
 
 from documentai_api.config.constants import BdaResponseFields
+from documentai_api.dtos.processing import ReaderResult
 from documentai_api.logging import get_logger
-from documentai_api.utils.bda import BdaFieldProcessingData, BdaFieldProcessingResult
+from documentai_api.utils.bda import BdaFieldProcessingResult
 
 logger = get_logger(__name__)
 
@@ -15,6 +16,7 @@ def _get_missing_geometry_threshold() -> float:
 
     if not is_missing_geo_included_with_missing_fields():
         return 0.0
+
     return ConfigDefaults.MISSING_GEOMETRY_CONFIDENCE_THRESHOLD
 
 
@@ -84,13 +86,13 @@ def _extract_fields_recursive(
             )
 
 
-def extract_field_values_from_bda_results(
+def read_bda_output(
     bda_result_json: dict[str, Any],
     include_geometry: bool = False,
-) -> tuple[BdaFieldProcessingData, dict[str, Any], dict[str, dict[str, Any]]]:
+) -> ReaderResult:
     """Extract metadata, field values, and optionally geometry from BDA result."""
     if BdaResponseFields.EXPLAINABILITY_INFO not in bda_result_json:
-        return (BdaFieldProcessingData([], [], []), {}, {})
+        return ReaderResult.empty()
 
     explainability_info = bda_result_json[BdaResponseFields.EXPLAINABILITY_INFO]
 
@@ -114,11 +116,11 @@ def extract_field_values_from_bda_results(
                 field_geometry if include_geometry else None,
             )
 
-    metadata = BdaFieldProcessingData(
-        confidence_scores=confidence_scores,
-        empty_fields=empty_fields,
+    return ReaderResult(
         field_confidence_map_list=field_confidence_map_list,
+        field_values=field_values,
+        field_geometry=field_geometry,
+        empty_fields=empty_fields,
         fields_missing_geometry=fields_missing_geometry,
+        confidence_scores=confidence_scores,
     )
-
-    return (metadata, field_values, field_geometry)
