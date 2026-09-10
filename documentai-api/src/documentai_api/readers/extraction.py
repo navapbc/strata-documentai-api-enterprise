@@ -4,44 +4,41 @@ import json
 from typing import Any
 
 from documentai_api.config.constants import ExtractMethod
-from documentai_api.readers.bda import extract_field_values_from_bda_results
-from documentai_api.readers.textract import extract_field_values_from_textract_results
+from documentai_api.dtos.processing import ReaderResult
+from documentai_api.readers.bda import read_bda_output
+from documentai_api.readers.textract import read_textract_output
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.bda import get_bda_result_json
 
+_READERS: dict[str, Any] = {
+    ExtractMethod.TEXTRACT: read_textract_output,
+    ExtractMethod.BDA: read_bda_output,
+}
 
-def read_extraction_fields(
+
+def read_output(
     ddb_record: dict[str, Any],
     include_extracted_data: bool,
     include_bounding_box: bool = False,
-) -> tuple[list[dict[str, Any]], dict[str, Any], dict[str, Any]]:
-    """Fetch stored extraction result from S3 and dispatch to the appropriate reader.
-
-    Returns (field_confidence_map_list, field_values, field_geometry).
-    """
+) -> ReaderResult:
+    """Fetch stored extraction result from S3 and dispatch to the appropriate reader."""
     if not include_extracted_data:
         field_confidence_map_list = json.loads(
             ddb_record.get(DocumentMetadata.FIELD_CONFIDENCE_SCORES, "[]")
         )
-        return field_confidence_map_list, {}, {}
+        return ReaderResult(
+            field_confidence_map_list=field_confidence_map_list, field_values={}, field_geometry={}
+        )
 
     s3_uri = ddb_record.get(DocumentMetadata.BDA_OUTPUT_S3_URI)
     if not s3_uri:
-        return [], {}, {}
+        return ReaderResult.empty()
 
-    bda_results = get_bda_result_json(s3_uri)
-    if not bda_results:
-        return [], {}, {}
+    raw = get_bda_result_json(s3_uri)
+    if not raw:
+        return ReaderResult.empty()
 
-    extract_method = ddb_record.get(DocumentMetadata.EXTRACT_METHOD)
-
-    if extract_method == ExtractMethod.TEXTRACT:
-        metadata, field_values, field_geometry = extract_field_values_from_textract_results(
-            bda_results
-        )
-        return metadata["field_confidence_map_list"], field_values, field_geometry
-
-    metadata, field_values, field_geometry = extract_field_values_from_bda_results(
-        bda_results, include_geometry=include_bounding_box
-    )
-    return metadata.field_confidence_map_list, field_values, field_geometry
+    extract_method = ddb_record.get(DocumentMetadata.EXTRACT_METHOD, ExtractMethod.BDA)
+    reader: Any = _READERS.get(extract_method, read_bda_output)
+    result: ReaderResult = reader(raw, include_bounding_box)
+    return result

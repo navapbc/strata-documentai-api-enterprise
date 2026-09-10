@@ -2,19 +2,16 @@
 
 from typing import Any
 
+from documentai_api.dtos.processing import ReaderResult
 
-def extract_field_values_from_textract_results(
+
+def read_textract_output(
     result_json: dict[str, Any],
-) -> tuple[dict[str, Any], dict[str, str], dict[str, dict[str, Any]]]:
-    """Extract field confidence metadata, values, and geometry from stored Textract results.
-
-    Returns (metadata_dict, field_values_dict, field_geometry_dict) where metadata_dict has:
-      - field_confidence_map_list: list of {name: confidence}
-      - empty_fields: list of field names with no value
-    """
+    include_geometry: bool = False,
+) -> ReaderResult:
+    """Extract field confidence metadata, values, and geometry from stored Textract results."""
     fields = result_json.get("fields", {})
 
-    confidence_scores: list[float] = []
     empty_fields: list[str] = []
     field_confidence_map_list: list[dict[str, float]] = []
     field_values: dict[str, str] = {}
@@ -28,19 +25,18 @@ def extract_field_values_from_textract_results(
 
         if not value:
             empty_fields.append(name)
-        else:
-            confidence_scores.append(conf)
 
         field_values[name] = value
 
-        if "geometry" in data:
+        if "geometry" in data and include_geometry:
             field_geometry[name] = {
                 "geometry": data["geometry"],
                 "type": data.get("fieldType", "string"),
             }
 
-    metadata = {
-        "field_confidence_map_list": field_confidence_map_list,
-        "empty_fields": empty_fields,
-    }
-    return metadata, field_values, field_geometry
+    return ReaderResult(
+        field_confidence_map_list=field_confidence_map_list,
+        field_values=field_values,
+        field_geometry=field_geometry,
+        empty_fields=empty_fields,
+    )

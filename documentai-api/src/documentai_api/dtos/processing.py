@@ -1,11 +1,28 @@
 """DTOs for document processing pipeline."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from decimal import Decimal
+from typing import Any, Self
 
 from documentai_api.config.constants import ProcessStatus
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.dtos.extraction import ExtractionResult
+
+
+@dataclass
+class ReaderResult:
+    """Normalized return shape from all extraction readers."""
+
+    field_confidence_map_list: list[dict[str, float]]
+    field_values: dict[str, Any]
+    field_geometry: dict[str, Any]
+    empty_fields: list[str] = field(default_factory=list)
+    fields_missing_geometry: list[str] = field(default_factory=list)
+    confidence_scores: list[float] = field(default_factory=list)
+
+    @classmethod
+    def empty(cls) -> Self:
+        return cls(field_confidence_map_list=[], field_values={}, field_geometry={})
 
 
 @dataclass

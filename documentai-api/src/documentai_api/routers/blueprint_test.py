@@ -131,7 +131,7 @@ async def get_blueprint_test_result(
 ) -> BlueprintTestResult:
     """Poll for blueprint test results."""
     from documentai_api.extractors.bda import extract_bda_result
-    from documentai_api.readers.bda import extract_field_values_from_bda_results
+    from documentai_api.readers.bda import read_bda_output
     from documentai_api.utils.bda import (
         extract_bda_output_s3_uri,
         get_bda_result_json,
@@ -203,12 +203,14 @@ async def get_blueprint_test_result(
             )
 
         _, matched_blueprint = extract_bda_result(bda_result_json, bda_output_s3_uri)
-        field_data, field_values, _ = extract_field_values_from_bda_results(bda_result_json)
+        reader_result = read_bda_output(bda_result_json)
 
         # Build confidence map from the list of {field: score} dicts
         field_confidences: dict[str, float] = {}
-        for conf_map in field_data.field_confidence_map_list:
+        for conf_map in reader_result.field_confidence_map_list:
             field_confidences.update(conf_map)
+
+        field_values = reader_result.field_values
 
         document_class = bda_result_json.get("document_class", {}).get("document_type")
         effective_doc_type = document_type or document_class or matched_blueprint.name
