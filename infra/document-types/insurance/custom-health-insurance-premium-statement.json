@@ -25,12 +25,12 @@
       "inferenceType": "explicit",
       "instruction": "The policy or member identification number referenced on the statement."
     },
-    "billing_period_start": {
+    "coverage_start_date": {
       "type": "string",
       "inferenceType": "explicit",
       "instruction": "Start of the billing or coverage period. YYYY-MM-DD format."
     },
-    "billing_period_end": {
+    "coverage_end_date": {
       "type": "string",
       "inferenceType": "explicit",
       "instruction": "End of the billing or coverage period. YYYY-MM-DD format."
@@ -52,8 +52,8 @@
     },
     "payment_status": {
       "type": "string",
-      "inferenceType": "explicit",
-      "instruction": "The payment status of the statement, such as paid, due, or past due."
+      "inferenceType": "inferred",
+      "instruction": "Determine the payment status of the statement based on context, such as amounts due, payment confirmations, or due dates. Normalize to one of: Paid, Due, or Past Due."
     },
     "subsidy_or_tax_credit_amount": {
       "type": "number",

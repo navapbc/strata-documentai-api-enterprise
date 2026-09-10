@@ -1734,7 +1734,7 @@
         "type": "string"
       },
       {
-        "description": "The payment status of the statement, such as paid, due, or past due.",
+        "description": "Determine the payment status of the statement based on context, such as amounts due, payment confirmations, or due dates. Normalize to one of: Paid, Due, or Past Due.",
         "name": "payment_status",
         "type": "string"
       },
@@ -1745,7 +1745,7 @@
       },
       {
         "description": "End of the billing or coverage period. YYYY-MM-DD format.",
-        "name": "billing_period_end",
+        "name": "coverage_end_date",
         "type": "string"
       },
       {
@@ -1759,14 +1759,14 @@
         "type": "string"
       },
       {
-        "description": "Start of the billing or coverage period. YYYY-MM-DD format.",
-        "name": "billing_period_start",
-        "type": "string"
-      },
-      {
         "description": "The amount of any premium subsidy or tax credit applied, if shown.",
         "name": "subsidy_or_tax_credit_amount",
         "type": "number"
+      },
+      {
+        "description": "Start of the billing or coverage period. YYYY-MM-DD format.",
+        "name": "coverage_start_date",
+        "type": "string"
       }
     ]
   },
