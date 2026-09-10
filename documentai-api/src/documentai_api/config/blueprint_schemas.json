@@ -806,13 +806,18 @@
         "type": "number"
       },
       {
+        "description": "End of the care period covered by this statement. YYYY-MM-DD format.",
+        "name": "service_end_date",
+        "type": "string"
+      },
+      {
         "description": "The address of the dependent-care provider.",
         "name": "provider_address",
         "type": "string"
       },
       {
-        "description": "End of the care period covered by this statement. YYYY-MM-DD format.",
-        "name": "care_period_end",
+        "description": "Start of the care period covered by this statement. YYYY-MM-DD format.",
+        "name": "service_start_date",
         "type": "string"
       },
       {
@@ -821,8 +826,13 @@
         "type": "string"
       },
       {
+        "description": "The full name(s) of every child or dependent receiving care under this statement. Return one entry per dependent listed.",
+        "name": "dependent_names",
+        "type": "array"
+      },
+      {
         "description": "The rate charged for care, such as a weekly or monthly amount.",
-        "name": "rate_amount",
+        "name": "payment_amount",
         "type": "number"
       },
       {
@@ -833,16 +843,6 @@
       {
         "description": "The name of the daycare, child care center, or in-home care provider.",
         "name": "provider_name",
-        "type": "string"
-      },
-      {
-        "description": "Start of the care period covered by this statement. YYYY-MM-DD format.",
-        "name": "care_period_start",
-        "type": "string"
-      },
-      {
-        "description": "The full name of the child or dependent receiving care.",
-        "name": "dependent_name",
         "type": "string"
       },
       {

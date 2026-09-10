@@ -15,22 +15,25 @@
       "inferenceType": "explicit",
       "instruction": "The address of the dependent-care provider."
     },
-    "dependent_name": {
-      "type": "string",
+    "dependent_names": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
       "inferenceType": "explicit",
-      "instruction": "The full name of the child or dependent receiving care."
+      "instruction": "The full name(s) of every child or dependent receiving care under this statement. Return one entry per dependent listed."
     },
-    "care_period_start": {
+    "service_start_date": {
       "type": "string",
       "inferenceType": "explicit",
       "instruction": "Start of the care period covered by this statement. YYYY-MM-DD format."
     },
-    "care_period_end": {
+    "service_end_date": {
       "type": "string",
       "inferenceType": "explicit",
       "instruction": "End of the care period covered by this statement. YYYY-MM-DD format."
     },
-    "rate_amount": {
+    "payment_amount": {
       "type": "number",
       "inferenceType": "explicit",
       "instruction": "The rate charged for care, such as a weekly or monthly amount."
