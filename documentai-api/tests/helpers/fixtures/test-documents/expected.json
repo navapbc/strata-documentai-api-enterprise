@@ -263,6 +263,62 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
+  "synthetic-expense-child-support-rendered.pdf": {
+    "//": [
+      "Verified against a live run (2x, consistent). A custom 'Child-Support-Document'",
+      "blueprint exists (infra/document-types/dependent_income/custom-child-support-document.json,",
+      "deployed as docai-dev-...-dependent_income-custom-child-support-document) but, like the",
+      "expense/custom-burial blueprint, is attached to its per-category BDA project only -",
+      "not yet to the 'all' project actually used at request time (no per-category routing",
+      "configured) - so BDA finds no matching blueprint. Expect this to change to a",
+      "'Child-Support-Document' match once the 'all' project picks up the new custom",
+      "blueprints - revisit then."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "application/pdf",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "002"
+  },
+  "synthetic-expense-child-support-scan.jpg": {
+    "//": [
+      "Verified against a live run (2x, consistent). Same root cause/caveat as",
+      "synthetic-expense-child-support-rendered.pdf: the custom 'Child-Support-Document'",
+      "blueprint is attached to the 'dependent_income' BDA project but not yet to the 'all'",
+      "project actually used at request time, so BDA finds no matching blueprint. Expect",
+      "this to change once the 'all' project picks up the new custom blueprints - revisit",
+      "then."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/jpeg",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "002"
+  },
+  "synthetic-expense-child-support-spanish-picture.png": {
+    "//": [
+      "Flaky: BDA classification of this Spanish-language child support statement is",
+      "non-deterministic against the current 'all' project blueprint set (which does not",
+      "yet include the new custom 'Child-Support-Document' blueprint - see",
+      "synthetic-expense-child-support-rendered.pdf). Across 5 live runs it returned no",
+      "blueprint match 3 times (responseCode 002) and a false-positive match against the",
+      "generic public 'Bank-Statement' blueprint 2 times (responseCode 105 once, 000 once).",
+      "No single expected value holds. Disabled from e2e (e2e_enabled: false) to stop flaky",
+      "failures; re-enable and set the correct expected match once the 'all' project",
+      "includes the new custom blueprints and behavior is re-verified."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/png",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "002"
+  },
   "synthetic-password-protected.pdf": {
     "//": [
       "Encrypted PDF. Detected as password protected before preclassification, so it ",
