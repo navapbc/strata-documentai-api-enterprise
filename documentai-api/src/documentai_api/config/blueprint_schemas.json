@@ -555,7 +555,7 @@
     "document_type": "Burial",
     "fields": [
       {
-        "description": "The billed or paid amount for burial or funeral-related services.",
+        "description": "The total billed amount or total contract price for the burial or funeral services, such as the invoice total or overall contract cost. This is distinct from amount_paid, balance_due, and any single installment or monthly payment amount shown in a payment plan or schedule.",
         "name": "amount",
         "type": "number"
       },
@@ -565,37 +565,52 @@
         "type": "number"
       },
       {
-        "description": "The address of the burial or funeral service provider.",
-        "name": "provider_address",
-        "type": "string"
-      },
-      {
-        "description": "Payment status, such as paid, partially paid, unpaid, or past due.",
+        "description": "The payment status of this invoice, normalized to exactly one of: Paid, Partially Paid, Unpaid, or Past Due - based on the status text or payment/balance amounts shown, even if the printed wording differs slightly (e.g. 'Paid in Full' means Paid).",
         "name": "payment_status",
         "type": "string"
       },
       {
-        "description": "Payment due date for the burial expense if stated. YYYY-MM-DD format.",
+        "description": "Payment due date for the burial expense if stated, typically labeled 'Due Date' or 'Payment Due'. This is distinct from the invoice date and the service date. YYYY-MM-DD format.",
         "name": "due_date",
         "type": "string"
       },
       {
-        "description": "Date the invoice or statement was issued. YYYY-MM-DD format.",
+        "description": "The date this invoice or statement was issued or printed, typically near the top of the document. This is distinct from the service date (when the burial/funeral service took place) and the due date (when payment is owed). YYYY-MM-DD format.",
         "name": "invoice_date",
         "type": "string"
       },
       {
-        "description": "Contact information for the service provider, such as phone number or email.",
-        "name": "provider_contact",
-        "type": "string"
-      },
-      {
-        "description": "Payment frequency if installments are used, such as one-time, monthly, or weekly.",
+        "description": "How often payments are made toward the burial expense, normalized to exactly one of: One-Time, Monthly, Weekly, or Biweekly - based on the payment terms, installment schedule, or payment plan text shown, even if the printed wording differs slightly (e.g. 'Monthly Installments' means Monthly).",
         "name": "payment_frequency",
         "type": "string"
       },
       {
-        "description": "Date of burial, funeral, cremation, or related service. YYYY-MM-DD format.",
+        "description": "The primary business or company name only, of the funeral home, cemetery, or cremation provider - typically the largest, boldest text in the letterhead or logo area at the top of the document. Do not include any tagline, slogan, or descriptive text shown below or beside the name. If the same business name also appears elsewhere on the page, such as in a 'Remit To' line or footer, always use the occurrence in the letterhead or logo area at the very top of the page.",
+        "name": "provider.business_name",
+        "type": "string"
+      },
+      {
+        "description": "The address of the burial or funeral service provider.",
+        "name": "provider.address",
+        "type": "string"
+      },
+      {
+        "description": "The phone number for the service provider, usually labeled 'Phone' or 'Tel' in the letterhead or contact block. Extract exactly as shown.",
+        "name": "provider.phone",
+        "type": "string"
+      },
+      {
+        "description": "The fax number for the service provider, usually labeled 'Fax' in the letterhead or contact block. Extract exactly as shown.",
+        "name": "provider.fax",
+        "type": "string"
+      },
+      {
+        "description": "The email address for the service provider, usually labeled 'Email' in the letterhead or contact block.",
+        "name": "provider.email",
+        "type": "string"
+      },
+      {
+        "description": "The date the burial, funeral, or cremation service was actually performed, typically found in the body or itemized services section of the document. This is distinct from the invoice date (when the document was issued) and the due date (when payment is owed). YYYY-MM-DD format.",
         "name": "service_date",
         "type": "string"
       },
@@ -615,17 +630,12 @@
         "type": "string"
       },
       {
-        "description": "The name of the funeral home, cemetery, cremation provider, or other service provider.",
-        "name": "provider_name",
-        "type": "string"
-      },
-      {
-        "description": "Invoice, account, or reference number associated with the burial expense.",
+        "description": "The unique invoice, account, or reference number printed on the document, often labeled 'Invoice #', 'Invoice No', 'Account #', or 'Reference #' near the top of the page, distinct from any policy or claim number. Extract exactly as printed, including letters and dashes.",
         "name": "invoice_number",
         "type": "string"
       },
       {
-        "description": "Type of burial-related document, such as invoice, contract, statement, or receipt.",
+        "description": "The specific type of this burial-related document, normalized to exactly one of: Invoice, Contract, Statement, or Receipt, based on the title or header text printed at the top of the document.",
         "name": "document_type",
         "type": "string"
       }

@@ -3,7 +3,37 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "class": "Burial",
-    "definitions": {},
+    "definitions": {
+        "provider": {
+            "properties": {
+                "business_name": {
+                    "type": "string",
+                    "inferenceType": "explicit",
+                    "instruction": "The primary business or company name only, of the funeral home, cemetery, or cremation provider - typically the largest, boldest text in the letterhead or logo area at the top of the document. Do not include any tagline, slogan, or descriptive text shown below or beside the name. If the same business name also appears elsewhere on the page, such as in a 'Remit To' line or footer, always use the occurrence in the letterhead or logo area at the very top of the page."
+                },
+                "address": {
+                    "type": "string",
+                    "inferenceType": "explicit",
+                    "instruction": "The address of the burial or funeral service provider."
+                },
+                "phone": {
+                    "type": "string",
+                    "inferenceType": "explicit",
+                    "instruction": "The phone number for the service provider, usually labeled 'Phone' or 'Tel' in the letterhead or contact block. Extract exactly as shown."
+                },
+                "fax": {
+                    "type": "string",
+                    "inferenceType": "explicit",
+                    "instruction": "The fax number for the service provider, usually labeled 'Fax' in the letterhead or contact block. Extract exactly as shown."
+                },
+                "email": {
+                    "type": "string",
+                    "inferenceType": "explicit",
+                    "instruction": "The email address for the service provider, usually labeled 'Email' in the letterhead or contact block."
+                }
+            }
+        }
+    },
     "properties": {
         "deceased_name": {
             "type": "string",
@@ -15,60 +45,48 @@
             "inferenceType": "explicit",
             "instruction": "The full name of the person responsible for paying the burial or funeral expense."
         },
-        "provider_name": {
-            "type": "string",
-            "inferenceType": "explicit",
-            "instruction": "The name of the funeral home, cemetery, cremation provider, or other service provider."
-        },
-        "provider_address": {
-            "type": "string",
-            "inferenceType": "explicit",
-            "instruction": "The address of the burial or funeral service provider."
-        },
-        "provider_contact": {
-            "type": "string",
-            "inferenceType": "explicit",
-            "instruction": "Contact information for the service provider, such as phone number or email."
+        "provider": {
+            "$ref": "#/definitions/provider"
         },
         "document_type": {
             "type": "string",
             "inferenceType": "explicit",
-            "instruction": "Type of burial-related document, such as invoice, contract, statement, or receipt."
+            "instruction": "The specific type of this burial-related document, normalized to exactly one of: Invoice, Contract, Statement, or Receipt, based on the title or header text printed at the top of the document."
         },
         "service_date": {
             "type": "string",
             "inferenceType": "explicit",
-            "instruction": "Date of burial, funeral, cremation, or related service. YYYY-MM-DD format."
+            "instruction": "The date the burial, funeral, or cremation service was actually performed, typically found in the body or itemized services section of the document. This is distinct from the invoice date (when the document was issued) and the due date (when payment is owed). YYYY-MM-DD format."
         },
         "invoice_date": {
             "type": "string",
             "inferenceType": "explicit",
-            "instruction": "Date the invoice or statement was issued. YYYY-MM-DD format."
+            "instruction": "The date this invoice or statement was issued or printed, typically near the top of the document. This is distinct from the service date (when the burial/funeral service took place) and the due date (when payment is owed). YYYY-MM-DD format."
         },
         "due_date": {
             "type": "string",
             "inferenceType": "explicit",
-            "instruction": "Payment due date for the burial expense if stated. YYYY-MM-DD format."
+            "instruction": "Payment due date for the burial expense if stated, typically labeled 'Due Date' or 'Payment Due'. This is distinct from the invoice date and the service date. YYYY-MM-DD format."
         },
         "invoice_number": {
             "type": "string",
             "inferenceType": "explicit",
-            "instruction": "Invoice, account, or reference number associated with the burial expense."
+            "instruction": "The unique invoice, account, or reference number printed on the document, often labeled 'Invoice #', 'Invoice No', 'Account #', or 'Reference #' near the top of the page, distinct from any policy or claim number. Extract exactly as printed, including letters and dashes."
         },
         "amount": {
             "type": "number",
             "inferenceType": "explicit",
-            "instruction": "The billed or paid amount for burial or funeral-related services."
+            "instruction": "The total billed amount or total contract price for the burial or funeral services, such as the invoice total or overall contract cost. This is distinct from amount_paid, balance_due, and any single installment or monthly payment amount shown in a payment plan or schedule."
         },
         "payment_frequency": {
             "type": "string",
-            "inferenceType": "explicit",
-            "instruction": "Payment frequency if installments are used, such as one-time, monthly, or weekly."
+            "inferenceType": "inferred",
+            "instruction": "How often payments are made toward the burial expense, normalized to exactly one of: One-Time, Monthly, Weekly, or Biweekly - based on the payment terms, installment schedule, or payment plan text shown, even if the printed wording differs slightly (e.g. 'Monthly Installments' means Monthly)."
         },
         "payment_status": {
             "type": "string",
-            "inferenceType": "explicit",
-            "instruction": "Payment status, such as paid, partially paid, unpaid, or past due."
+            "inferenceType": "inferred",
+            "instruction": "The payment status of this invoice, normalized to exactly one of: Paid, Partially Paid, Unpaid, or Past Due - based on the status text or payment/balance amounts shown, even if the printed wording differs slightly (e.g. 'Paid in Full' means Paid)."
         },
         "amount_paid": {
             "type": "number",
