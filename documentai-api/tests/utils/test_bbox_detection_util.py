@@ -149,7 +149,7 @@ def test_get_bbox_model_id_uses_default(monkeypatch):
     from documentai_api.utils.bbox_detection import _get_bbox_model_id
 
     monkeypatch.setattr(
-        "documentai_api.utils.bbox_detection.get_aws_config",
+        "documentai_api.utils.bbox_detection.get_env_config",
         lambda: type("C", (), {"bedrock_bounding_box_model_id_param": None})(),
     )
 
@@ -161,7 +161,7 @@ def test_get_bbox_model_id_reads_ssm(monkeypatch):
     from documentai_api.utils.bbox_detection import _get_bbox_model_id
 
     monkeypatch.setattr(
-        "documentai_api.utils.bbox_detection.get_aws_config",
+        "documentai_api.utils.bbox_detection.get_env_config",
         lambda: type("C", (), {"bedrock_bounding_box_model_id_param": "/test/bbox-model"})(),
     )
     monkeypatch.setattr(

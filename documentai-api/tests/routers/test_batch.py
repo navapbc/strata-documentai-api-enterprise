@@ -8,7 +8,7 @@ import pytest
 from fastapi import HTTPException
 
 from documentai_api.config.constants import BatchStatus
-from documentai_api.config.env import EnvVars
+from documentai_api.config.env_var_names_generated import EnvVarNames
 from documentai_api.schemas.document_batches import DocumentBatches
 
 
@@ -65,7 +65,8 @@ def test_batch_upload_success(api_client, pdf_file):
     """Successful multi-file batch upload returns per-file job info."""
     with (
         patch.dict(
-            os.environ, {EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"}
+            os.environ,
+            {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"},
         ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch(
@@ -96,7 +97,8 @@ def test_batch_upload_with_external_fields(api_client, pdf_file):
     """Batch upload passes external fields to insert_minimal_ddb_record."""
     with (
         patch.dict(
-            os.environ, {EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"}
+            os.environ,
+            {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"},
         ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch(
@@ -130,7 +132,8 @@ def test_batch_upload_ai_consent_declined(api_client, pdf_file):
     """Batch upload with ai_consent_flag=false skips S3 upload and marks as declined."""
     with (
         patch.dict(
-            os.environ, {EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"}
+            os.environ,
+            {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"},
         ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch(
@@ -164,7 +167,8 @@ def test_batch_upload_invalid_file_type(api_client):
     """Batch upload with unsupported content type fails 400."""
     with (
         patch.dict(
-            os.environ, {EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"}
+            os.environ,
+            {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"},
         ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="text/plain"),
         patch("documentai_api.routers.batch.create_batch", return_value="2026-03-02T20:00:00Z"),
@@ -180,7 +184,7 @@ def test_batch_upload_invalid_file_type(api_client):
 def test_zip_upload_success(api_client, zip_with_pdfs):
     """Successful ZIP upload returns batch info."""
     with (
-        patch.dict(os.environ, {EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-table"}),
+        patch.dict(os.environ, {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-table"}),
         patch(
             "documentai_api.routers.batch.extract_files_from_zip", new_callable=AsyncMock
         ) as mock_extract,
@@ -216,7 +220,7 @@ def test_zip_upload_success(api_client, zip_with_pdfs):
 def test_zip_upload_empty(api_client):
     """ZIP upload with no valid files fails 400."""
     with (
-        patch.dict(os.environ, {EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-table"}),
+        patch.dict(os.environ, {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-table"}),
         patch(
             "documentai_api.routers.batch.extract_files_from_zip", new_callable=AsyncMock
         ) as mock_extract,
@@ -290,7 +294,8 @@ def test_batch_upload_returns_uuid_batch_id(api_client, pdf_file):
 
     with (
         patch.dict(
-            os.environ, {EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"}
+            os.environ,
+            {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"},
         ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch(
@@ -337,7 +342,8 @@ def test_batch_upload_classify_as_failed_on_upload_error(api_client, pdf_file):
     """When upload_document_for_processing raises HTTPException, classify_as_failed is called."""
     with (
         patch.dict(
-            os.environ, {EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"}
+            os.environ,
+            {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"},
         ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch(
@@ -366,7 +372,8 @@ def test_batch_upload_classify_as_conversion_failed(api_client, pdf_file):
 
     with (
         patch.dict(
-            os.environ, {EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"}
+            os.environ,
+            {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"},
         ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch(
@@ -399,7 +406,8 @@ def test_batch_upload_partial_success(api_client, pdf_file):
     """When one file fails with a non-HTTP error, batch is marked FAILED but siblings' DDB records persist."""
     with (
         patch.dict(
-            os.environ, {EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"}
+            os.environ,
+            {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"},
         ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch(
@@ -435,7 +443,8 @@ def test_batch_upload_create_batch_fails(api_client, pdf_file):
     """When create_batch itself fails, batch status is not updated (no batch exists)."""
     with (
         patch.dict(
-            os.environ, {EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"}
+            os.environ,
+            {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"},
         ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch("documentai_api.routers.batch.create_batch") as mock_create,
@@ -458,7 +467,8 @@ def test_batch_upload_trace_id_generated(api_client, pdf_file):
 
     with (
         patch.dict(
-            os.environ, {EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"}
+            os.environ,
+            {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"},
         ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch(
@@ -485,7 +495,8 @@ def test_batch_upload_trace_id_echoed(api_client, pdf_file):
     """Client-supplied X-Trace-ID is echoed unchanged in response."""
     with (
         patch.dict(
-            os.environ, {EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"}
+            os.environ,
+            {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"},
         ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch(
@@ -512,7 +523,8 @@ def test_batch_upload_tenant_propagation(api_client, pdf_file):
     """Tenant ID and client name are passed to create_batch and insert_minimal_ddb_record."""
     with (
         patch.dict(
-            os.environ, {EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"}
+            os.environ,
+            {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"},
         ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch(
@@ -546,7 +558,8 @@ def test_batch_upload_uploads_under_tenant_prefix(api_client, pdf_file):
     """Each batch file is written to S3 under the caller's tenant prefix."""
     with (
         patch.dict(
-            os.environ, {EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"}
+            os.environ,
+            {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"},
         ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch(
@@ -572,7 +585,8 @@ def test_batch_upload_category_propagation(api_client, pdf_file):
     """Category is passed through to create_batch and insert_minimal_ddb_record."""
     with (
         patch.dict(
-            os.environ, {EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"}
+            os.environ,
+            {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"},
         ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch(

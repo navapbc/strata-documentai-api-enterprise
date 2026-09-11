@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from documentai_api.annotations import AdminClaims, PageLimit, verify_jwt_with_role
 from documentai_api.classifiers.api_response import extract_field_values
 from documentai_api.config.constants import ApiVisualizationTag, ConfigDefaults, FileValidation
-from documentai_api.config.env import get_aws_config
+from documentai_api.config.env import get_env_config
 from documentai_api.logging import get_logger
 from documentai_api.models.admin_document import (
     DocumentDetail,
@@ -302,7 +302,7 @@ async def get_document_preview(
                 detail="Incomplete document record",
             )
 
-        input_location = get_aws_config().documentai_input_location
+        input_location = get_env_config().documentai_input_location
         if not input_location:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

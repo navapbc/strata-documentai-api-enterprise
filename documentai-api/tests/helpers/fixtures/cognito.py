@@ -23,13 +23,13 @@ def cognito_client(aws_credentials, monkeypatch):
         client.create_group(UserPoolId=pool_id, GroupName="tenant-admin")
 
         monkeypatch.setenv("COGNITO_USER_POOL_ID", pool_id)
-        # get_aws_config() is process-lifetime-cached; whichever fixture reads
+        # get_env_config() is process-lifetime-cached; whichever fixture reads
         # it first (e.g. a sibling fixture that logs an event during setup)
         # freezes this value for the rest of the test unless we invalidate it
         # here, regardless of fixture parameter order.
-        from documentai_api.config.env import get_aws_config
+        from documentai_api.config.env import get_env_config
 
-        get_aws_config.cache_clear()
+        get_env_config.cache_clear()
         client.pool_id = pool_id  # type: ignore[attr-defined]
         yield client
 

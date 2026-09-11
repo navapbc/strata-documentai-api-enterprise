@@ -57,7 +57,7 @@ def mock_document_build_submit():
         ) as mock_upload,
         patch("documentai_api.routers.build.insert_minimal_ddb_record") as mock_insert,
         patch("documentai_api.routers.build.mark_document_build_submitted") as mock_mark_submitted,
-        patch("documentai_api.config.env.AWSEnvConfig") as mock_aws_config,
+        patch("documentai_api.config.env.EnvConfig") as mock_aws_config,
     ):
         mock_merge.return_value = io.BytesIO(b"merged pdf bytes")
         mock_aws_config.return_value.documentai_input_location = "s3://test-bucket/input"
@@ -374,7 +374,7 @@ def test_submit_propagates_upload_source_from_build_metadata(
         ),
         patch("documentai_api.routers.build.insert_minimal_ddb_record") as mock_insert,
         patch("documentai_api.routers.build.mark_document_build_submitted"),
-        patch("documentai_api.config.env.AWSEnvConfig") as mock_aws_config,
+        patch("documentai_api.config.env.EnvConfig") as mock_aws_config,
     ):
         mock_aws_config.return_value.documentai_input_location = "s3://test-bucket/input"
         response = client.post("/v1/builds/test-build-id/submit")

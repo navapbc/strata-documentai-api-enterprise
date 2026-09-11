@@ -5,7 +5,7 @@ from typing import Any
 from boto3.dynamodb.conditions import Key
 from fastapi import HTTPException, status
 
-from documentai_api.config.env import get_aws_config
+from documentai_api.config.env import get_env_config
 from documentai_api.logging import get_logger
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.base_readonly_table import ReadOnlyTable
@@ -20,7 +20,7 @@ class DocumentMetadataTable(ReadOnlyTable):
     pk_field = "fileName"
 
     def _get_index(self, attr: str) -> str:
-        name: str | None = getattr(get_aws_config(), attr, None)
+        name: str | None = getattr(get_env_config(), attr, None)
         if not name:
             logger.error("Required index not configured: %s", attr)
             raise HTTPException(

@@ -2,7 +2,7 @@ import boto3
 import pytest
 from moto import mock_aws
 
-from documentai_api.config.env import EnvVars
+from documentai_api.config.env_var_names_generated import EnvVarNames
 
 
 @pytest.fixture
@@ -81,7 +81,7 @@ def extraction_rules_table(aws_credentials, monkeypatch):
             ],
             BillingMode="PAY_PER_REQUEST",
         )
-        monkeypatch.setenv(EnvVars.EXTRACTION_RULES_TABLE_NAME, table.name)
+        monkeypatch.setenv(EnvVarNames.EXTRACTION_RULES_TABLE_NAME, table.name)
         yield table
 
 
@@ -102,9 +102,9 @@ def document_build_ddb_table(aws_credentials, monkeypatch):
             ],
             BillingMode="PAY_PER_REQUEST",
         )
-        monkeypatch.setenv(EnvVars.DOCUMENTAI_BUILD_TABLE_NAME, table.name)
+        monkeypatch.setenv(EnvVarNames.DOCUMENTAI_BUILD_TABLE_NAME, table.name)
         monkeypatch.setenv(
-            EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION, "s3://test-bucket/preprocessing"
+            EnvVarNames.DOCUMENTAI_PREPROCESSING_LOCATION, "s3://test-bucket/preprocessing"
         )
         yield table
 
@@ -120,7 +120,7 @@ def ddb_batches_table(aws_credentials, monkeypatch):
             AttributeDefinitions=[{"AttributeName": "batchId", "AttributeType": "S"}],
             BillingMode="PAY_PER_REQUEST",
         )
-        monkeypatch.setenv(EnvVars.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME, table.name)
+        monkeypatch.setenv(EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME, table.name)
         yield table
 
 
@@ -148,8 +148,8 @@ def api_keys_table(aws_credentials, monkeypatch):
             ],
             BillingMode="PAY_PER_REQUEST",
         )
-        monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, table.name)
-        monkeypatch.setenv(EnvVars.API_KEYS_TENANT_INDEX_NAME, "tenant-apiKeyName-index")
+        monkeypatch.setenv(EnvVarNames.API_KEYS_TABLE_NAME, table.name)
+        monkeypatch.setenv(EnvVarNames.API_KEYS_TENANT_INDEX_NAME, "tenant-apiKeyName-index")
         yield table
 
 
@@ -157,21 +157,25 @@ def api_keys_table(aws_credentials, monkeypatch):
 def set_ddb_doc_metadata_table_env_vars(ddb_doc_metadata_table_resource, monkeypatch):
 
     monkeypatch.setenv(
-        EnvVars.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME, ddb_doc_metadata_table_resource.name
+        EnvVarNames.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME,
+        ddb_doc_metadata_table_resource.name,
     )
-    monkeypatch.setenv(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_JOB_ID_INDEX_NAME, "job-id-index")
-    monkeypatch.setenv(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_BATCH_ID_INDEX_NAME, "batch-id-index")
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_DOCUMENT_METADATA_JOB_ID_INDEX_NAME, "job-id-index")
     monkeypatch.setenv(
-        EnvVars.DOCUMENTAI_DOCUMENT_METADATA_BDA_INVOCATION_ID_INDEX_NAME, "bda-inv-index"
+        EnvVarNames.DOCUMENTAI_DOCUMENT_METADATA_BATCH_ID_INDEX_NAME, "batch-id-index"
     )
-    monkeypatch.setenv(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_TENANT_INDEX_NAME, "tenant-index")
     monkeypatch.setenv(
-        EnvVars.DOCUMENTAI_DOCUMENT_METADATA_STATUS_CREATED_AT_INDEX_NAME, "status-created-at-index"
+        EnvVarNames.DOCUMENTAI_DOCUMENT_METADATA_BDA_INVOCATION_ID_INDEX_NAME, "bda-inv-index"
     )
-    monkeypatch.setenv(EnvVars.DOCUMENTAI_INPUT_LOCATION, "s3://test/input")
-    monkeypatch.setenv(EnvVars.DOCUMENTAI_OUTPUT_LOCATION, "s3://test/output")
-    monkeypatch.setenv(EnvVars.BDA_PROJECT_ARN_ALL, "arn:aws:test")
-    monkeypatch.setenv(EnvVars.BDA_PROFILE_ARN, "arn:aws:test")
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_DOCUMENT_METADATA_TENANT_INDEX_NAME, "tenant-index")
+    monkeypatch.setenv(
+        EnvVarNames.DOCUMENTAI_DOCUMENT_METADATA_STATUS_CREATED_AT_INDEX_NAME,
+        "status-created-at-index",
+    )
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_INPUT_LOCATION, "s3://test/input")
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_OUTPUT_LOCATION, "s3://test/output")
+    monkeypatch.setenv(EnvVarNames.BDA_PROJECT_ARN_ALL, "arn:aws:test")
+    monkeypatch.setenv(EnvVarNames.BDA_PROFILE_ARN, "arn:aws:test")
 
 
 @pytest.fixture
@@ -190,7 +194,7 @@ def document_categories_table(aws_credentials, monkeypatch):
             ],
             BillingMode="PAY_PER_REQUEST",
         )
-        monkeypatch.setenv(EnvVars.DOCUMENT_CATEGORIES_TABLE_NAME, table.name)
+        monkeypatch.setenv(EnvVarNames.DOCUMENT_CATEGORIES_TABLE_NAME, table.name)
         yield table
 
 
@@ -204,7 +208,7 @@ def tenants_table(aws_credentials, monkeypatch):
             AttributeDefinitions=[{"AttributeName": "tenantId", "AttributeType": "S"}],
             BillingMode="PAY_PER_REQUEST",
         )
-        monkeypatch.setenv(EnvVars.TENANTS_TABLE_NAME, table.name)
+        monkeypatch.setenv(EnvVarNames.TENANTS_TABLE_NAME, table.name)
         yield table
 
 
@@ -224,7 +228,7 @@ def tenant_request_counts_table(aws_credentials, monkeypatch):
             ],
             BillingMode="PAY_PER_REQUEST",
         )
-        monkeypatch.setenv(EnvVars.TENANT_REQUEST_COUNTS_TABLE_NAME, table.name)
+        monkeypatch.setenv(EnvVarNames.TENANT_REQUEST_COUNTS_TABLE_NAME, table.name)
         yield table
 
 
@@ -264,5 +268,5 @@ def audit_events_table(aws_credentials, monkeypatch):
             ],
             BillingMode="PAY_PER_REQUEST",
         )
-        monkeypatch.setenv(EnvVars.AUDIT_EVENTS_TABLE_NAME, table.name)
+        monkeypatch.setenv(EnvVarNames.AUDIT_EVENTS_TABLE_NAME, table.name)
         yield table

@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from documentai_api.config.env import get_aws_config
+from documentai_api.config.env import get_env_config
 from documentai_api.logging import get_logger
 from documentai_api.models.user import CognitoUserItem
 from documentai_api.services.aws_client_factory import AWSClientFactory
@@ -14,7 +14,7 @@ ROLE_GROUPS = ("super-admin", "tenant-admin")
 
 
 def _user_pool_id() -> str:
-    pool_id = get_aws_config().cognito_user_pool_id
+    pool_id = get_env_config().cognito_user_pool_id
 
     if not pool_id:
         raise ValueError("COGNITO_USER_POOL_ID environment variable not set")

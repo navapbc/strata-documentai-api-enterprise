@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 from opentelemetry import trace
 
 from documentai_api.config.constants import ExtractMethod, TextractConfig
-from documentai_api.config.env import EnvVars, get_required_env
+from documentai_api.config.env import get_env_config
 from documentai_api.dtos.extraction import ExtractionResult
 from documentai_api.logging import get_logger
 from documentai_api.mappings import get_bda_field_map, get_document_class
@@ -85,7 +85,7 @@ def extract_textract_identity(
                 fields.update(supplemental)
 
         set_extract_method(ddb_key, ExtractMethod.TEXTRACT, extract_started_at.isoformat())
-        output_location = get_required_env(EnvVars.DOCUMENTAI_OUTPUT_LOCATION)
+        output_location = get_env_config().get_output_location
         output_bucket, output_prefix = s3_utils.parse_s3_uri(output_location)
         textract_s3_key = f"{output_prefix}/textract/{ddb_key}.json"
         textract_s3_uri = f"s3://{output_bucket}/{textract_s3_key}"

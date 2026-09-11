@@ -5,14 +5,16 @@ from unittest.mock import patch
 
 import pytest
 
-from documentai_api.config.env import EnvVars
+from documentai_api.config.env_var_names_generated import EnvVarNames
 from documentai_api.utils import schemas
 from documentai_api.utils.schemas import DocumentSchema, SchemaField
 
 
 @pytest.fixture(autouse=True)
 def mock_env(monkeypatch):
-    monkeypatch.setenv(EnvVars.BDA_PROJECT_ARN_ALL, "arn:aws:bedrock:us-east-1:123:project/test")
+    monkeypatch.setenv(
+        EnvVarNames.BDA_PROJECT_ARN_ALL, "arn:aws:bedrock:us-east-1:123:project/test"
+    )
 
 
 @pytest.fixture(autouse=True)
@@ -124,7 +126,7 @@ def test_fetch_schemas_from_bda(mock_bda_services):
         "blueprint": {"schema": '{"class": "Invoice", "properties": {}}'}
     }
 
-    with patch("documentai_api.utils.schemas.get_aws_config") as mock_cfg:
+    with patch("documentai_api.utils.schemas.get_env_config") as mock_cfg:
         mock_cfg.return_value.get_bda_project_arns.return_value = {
             "invoices": "arn:aws:bedrock:us-east-1:123:project/invoices",
         }
@@ -151,7 +153,7 @@ def test_fetch_schemas_skips_all_project(mock_bda_services):
         "blueprint": {"schema": '{"class": "W2", "properties": {}}'}
     }
 
-    with patch("documentai_api.utils.schemas.get_aws_config") as mock_cfg:
+    with patch("documentai_api.utils.schemas.get_env_config") as mock_cfg:
         mock_cfg.return_value.get_bda_project_arns.return_value = {
             "employer_income": "arn:aws:bedrock:us-east-1:123:project/employer",
             "all": "arn:aws:bedrock:us-east-1:123:project/all",

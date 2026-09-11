@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from documentai_api.config.env import EnvVars
+from documentai_api.config.env_var_names_generated import EnvVarNames
 from documentai_api.services.aws_client_factory import AWSClientFactory
 
 
@@ -75,10 +75,10 @@ def test_get_bda_region_default(runtime_required_env):
 
 def test_get_bda_region_from_env(runtime_required_env, monkeypatch):
     """Test that _get_bda_region() returns value from BDA_REGION env var."""
-    from documentai_api.config.env import get_aws_config
+    from documentai_api.config.env import get_env_config
 
-    monkeypatch.setenv(EnvVars.BDA_REGION, "eu-west-1")
-    get_aws_config.cache_clear()
+    monkeypatch.setenv(EnvVarNames.BDA_REGION, "eu-west-1")
+    get_env_config.cache_clear()
     region = AWSClientFactory._get_bda_region()
     assert region == "eu-west-1"
 

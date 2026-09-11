@@ -59,6 +59,7 @@ pull-blueprint-fields = "documentai_api.cli.pull_blueprint_fields:app"
 pull-blueprint-schemas = "documentai_api.cli.pull_blueprint_schemas:app"
 preclassify = "documentai_api.cli.preclassify:app"
 generate-categories = "documentai_api.cli.generate_categories:app"
+generate-env-names = "documentai_api.cli.generate_env_names:app"
 
 [tool.mypy]
 pretty = true
@@ -122,6 +123,9 @@ lint.ignore = [
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.ruff.format]
+exclude = ["*_generated.py"]
 
 [tool.coverage.report]
 exclude_lines = [

@@ -17,7 +17,7 @@ from documentai_api.config.constants import (
     METRICS_USAGE_REPORT_S3_PREFIX,
     AthenaQueryStatus,
 )
-from documentai_api.config.env import get_aws_config
+from documentai_api.config.env import get_env_config
 from documentai_api.dtos.usage_stats import UsageStats
 from documentai_api.logging import get_logger
 from documentai_api.services.aws_client_factory import AWSClientFactory
@@ -161,7 +161,7 @@ def generate_daily_usage(yyyymm: str) -> dict[str, list[dict[str, Any]]]:
     if not re.match(r"^\d{4}-\d{2}$", yyyymm):
         raise ValueError(f"Invalid month format: {yyyymm!r} (expected YYYY-MM)")
 
-    aws_config = get_aws_config()
+    aws_config = get_env_config()
     database_name = aws_config.glue_database_name
     table_name = aws_config.ddb_raw_data_table_name
     workgroup_name = aws_config.athena_workgroup_name
@@ -227,7 +227,7 @@ def _write_daily_files(bucket: str, daily_data: dict[str, list[dict[str, Any]]])
 
 def main(yyyymm: str) -> dict[str, Any]:
     """Generate and write monthly + daily usage reports to S3."""
-    aws_config = get_aws_config()
+    aws_config = get_env_config()
     bucket = aws_config.ddb_export_bucket_name
     if not bucket:
         raise ValueError("DDB_EXPORT_BUCKET_NAME not configured")

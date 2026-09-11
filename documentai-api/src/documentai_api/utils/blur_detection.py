@@ -18,7 +18,7 @@ from typing import Any
 from opentelemetry import trace
 
 from documentai_api.config.constants import ConfigDefaults
-from documentai_api.config.env import get_aws_config
+from documentai_api.config.env import get_env_config
 from documentai_api.logging import get_logger
 from documentai_api.services.textract import get_words
 from documentai_api.utils.ssm import get_parameter_value
@@ -108,7 +108,7 @@ def _crop_quadrant(image_bytes: bytes, quadrant_name: str) -> tuple[bytes, str]:
 
 
 def _get_blur_quadrant_model_id() -> str:
-    param_name = get_aws_config().bedrock_blur_quadrant_model_id_param
+    param_name = get_env_config().bedrock_blur_quadrant_model_id_param
     if not param_name:
         return ConfigDefaults.BLUR_QUADRANT_MODEL_ID
     return get_parameter_value(param_name, default=ConfigDefaults.BLUR_QUADRANT_MODEL_ID)

@@ -15,7 +15,7 @@ from typing import Any
 
 from fastapi import HTTPException, status
 
-from documentai_api.config.env import get_aws_config
+from documentai_api.config.env import get_env_config
 from documentai_api.logging import get_logger
 from documentai_api.services import ddb as ddb_service
 from documentai_api.services.aws_client_factory import AWSClientFactory
@@ -31,7 +31,7 @@ class ReadOnlyTable:
     sk_field: str | None = None
 
     def _get_table_name(self) -> str:
-        table_name: str | None = getattr(get_aws_config(), self.table_name_env.lower(), None)
+        table_name: str | None = getattr(get_env_config(), self.table_name_env.lower(), None)
         if not table_name:
             # Log the specific config name for operators; keep it out of the
             # client-facing response so we don't leak internal table names.

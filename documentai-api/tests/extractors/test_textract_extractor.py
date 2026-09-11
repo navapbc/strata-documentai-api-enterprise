@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 
+from documentai_api.config.env_var_names_generated import EnvVarNames
 from documentai_api.extractors.textract import extract_textract_identity
 
 FIXTURE_DIR = Path(__file__).parent.parent / "helpers" / "fixtures" / "textract"
@@ -31,9 +32,8 @@ def test_extract_textract_identity_returns_none_early(mocker, content_type, flag
 
 def test_extract_textract_identity_returns_result_on_success(mocker, monkeypatch):
     from documentai_api.config.constants import ExtractMethod
-    from documentai_api.config.env import EnvVars
 
-    monkeypatch.setenv(EnvVars.DOCUMENTAI_OUTPUT_LOCATION, "s3://test-bucket/output")
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_OUTPUT_LOCATION, "s3://test-bucket/output")
 
     mocker.patch(
         "documentai_api.extractors.textract.is_textract_identity_enabled",
@@ -64,9 +64,8 @@ def test_extract_textract_identity_returns_result_on_success(mocker, monkeypatch
 
 
 def test_extract_textract_identity_returns_none_on_textract_failure(mocker, monkeypatch):
-    from documentai_api.config.env import EnvVars
 
-    monkeypatch.setenv(EnvVars.DOCUMENTAI_OUTPUT_LOCATION, "s3://test-bucket/output")
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_OUTPUT_LOCATION, "s3://test-bucket/output")
 
     mocker.patch(
         "documentai_api.extractors.textract.is_textract_identity_enabled",
@@ -85,9 +84,7 @@ def test_extract_textract_identity_duplicate_dates_falls_back_despite_supplement
     mocker, monkeypatch, analyze_id_passport_response
 ):
     """Duplicate dates trigger BDA fallback even when Nova supplemental would add fields."""
-    from documentai_api.config.env import EnvVars
-
-    monkeypatch.setenv(EnvVars.DOCUMENTAI_OUTPUT_LOCATION, "s3://test-bucket/output")
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_OUTPUT_LOCATION, "s3://test-bucket/output")
 
     mocker.patch(
         "documentai_api.extractors.textract.is_textract_identity_enabled",

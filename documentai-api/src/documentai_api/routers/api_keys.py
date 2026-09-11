@@ -128,13 +128,13 @@ async def list_api_keys(
     By default returns only active keys. Pass ``include_inactive=true`` to
     return both active and revoked keys.
     """
-    from documentai_api.config.env import get_aws_config
+    from documentai_api.config.env import get_env_config
     from documentai_api.services import ddb as ddb_service
 
     effective_tenant = resolve_tenant(claims, tenant_id)
 
     try:
-        table_name = get_aws_config().api_keys_table_name
+        table_name = get_env_config().api_keys_table_name
         if not table_name:
             raise ValueError("API_KEYS_TABLE_NAME not configured")
         all_records = ddb_service.scan(table_name)
@@ -196,10 +196,10 @@ async def delete_api_key(
         # For a full-hash delete, still enforce tenant scoping by reading the
         # record and rejecting if the caller isn't allowed to touch it.
         if caller_tenant is not None:
-            from documentai_api.config.env import get_aws_config
+            from documentai_api.config.env import get_env_config
             from documentai_api.services import ddb as ddb_service
 
-            table_name = get_aws_config().api_keys_table_name
+            table_name = get_env_config().api_keys_table_name
             if not table_name:
                 logger.error("Required table not configured: api_keys_table_name")
                 raise HTTPException(

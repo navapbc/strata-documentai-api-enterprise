@@ -16,10 +16,10 @@ NOVA_MICRO_MODEL_ID = "us.amazon.nova-micro-v1:0"
 
 def _get_supplemental_model_id() -> str:
     """Resolve supplemental extraction model ID from SSM, with hardcoded fallback."""
-    from documentai_api.config.env import get_aws_config
+    from documentai_api.config.env import get_env_config
     from documentai_api.utils.ssm import get_parameter_value
 
-    param_name = get_aws_config().bedrock_supplemental_extraction_model_id_param
+    param_name = get_env_config().bedrock_supplemental_extraction_model_id_param
     if not param_name:
         return NOVA_MICRO_MODEL_ID
     return get_parameter_value(param_name, default=NOVA_MICRO_MODEL_ID)

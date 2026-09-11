@@ -1,10 +1,11 @@
 """Shared test fixtures."""
 
 import os
+from collections.abc import Generator
 
 import pytest
 
-from documentai_api.config.env import EnvVars
+from documentai_api.config.env_var_names_generated import EnvVarNames
 
 #############################################################################
 # Autouse fixtures                                                          #
@@ -52,18 +53,22 @@ def real_aws_credentials(reset_env):
 
 
 @pytest.fixture(autouse=True)
-def clear_config_cache():
-    from documentai_api.config.env import get_app_env_config, get_aws_config
+def clear_config_cache(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+    from documentai_api.config.env import AppConfig, EnvConfig, get_app_config, get_env_config
     from documentai_api.utils.auth import _get_pepper
     from documentai_api.utils.document_categories import _registered_categories
 
-    get_aws_config.cache_clear()
-    get_app_env_config.cache_clear()
+    # Disable .env file so monkeypatch.delenv reliably removes values
+    # (pydantic-settings falls back to .env when a var is absent from os.environ)
+    monkeypatch.setitem(EnvConfig.model_config, "env_file", None)
+    monkeypatch.setitem(AppConfig.model_config, "env_file", None)
+    get_env_config.cache_clear()
+    get_app_config.cache_clear()
     _get_pepper.cache_clear()
     _registered_categories.clear()
     yield
-    get_aws_config.cache_clear()
-    get_app_env_config.cache_clear()
+    get_env_config.cache_clear()
+    get_app_config.cache_clear()
     _get_pepper.cache_clear()
     _registered_categories.clear()
 
@@ -117,16 +122,16 @@ def drain_lastused_threads():
 @pytest.fixture
 def runtime_required_env(monkeypatch, s3_bucket, ddb_doc_metadata_table):
     """Required configuration to run the application in general."""
-    monkeypatch.setenv(EnvVars.BDA_PROFILE_ARN, "arn:aws:profile")
-    monkeypatch.setenv(EnvVars.BDA_PROJECT_ARN_ALL, "arn:aws:project")
-    monkeypatch.setenv(EnvVars.BDA_REGION, "us-east-1")
-    monkeypatch.setenv(EnvVars.DOCUMENTAI_INPUT_LOCATION, f"s3://{s3_bucket.name}/input")
-    monkeypatch.setenv(EnvVars.DOCUMENTAI_OUTPUT_LOCATION, f"s3://{s3_bucket.name}/output")
+    monkeypatch.setenv(EnvVarNames.BDA_PROFILE_ARN, "arn:aws:profile")
+    monkeypatch.setenv(EnvVarNames.BDA_PROJECT_ARN_ALL, "arn:aws:project")
+    monkeypatch.setenv(EnvVarNames.BDA_REGION, "us-east-1")
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_INPUT_LOCATION, f"s3://{s3_bucket.name}/input")
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_OUTPUT_LOCATION, f"s3://{s3_bucket.name}/output")
     monkeypatch.setenv(
-        EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION, f"s3://{s3_bucket.name}/preprocessing"
+        EnvVarNames.DOCUMENTAI_PREPROCESSING_LOCATION, f"s3://{s3_bucket.name}/preprocessing"
     )
-    monkeypatch.setenv(EnvVars.API_AUTH_INSECURE_SHARED_KEY, "test-key")
-    monkeypatch.setenv(EnvVars.ENVIRONMENT, "test")
+    monkeypatch.setenv(EnvVarNames.API_AUTH_INSECURE_SHARED_KEY, "test-key")
+    monkeypatch.setenv(EnvVarNames.ENVIRONMENT, "test")
 
 
 @pytest.fixture
@@ -179,7 +184,7 @@ def disable_auth():
 @pytest.fixture
 def api_skeleton_key(monkeypatch):
     key = "foobar"
-    monkeypatch.setenv(EnvVars.API_AUTH_INSECURE_SHARED_KEY, key)
+    monkeypatch.setenv(EnvVarNames.API_AUTH_INSECURE_SHARED_KEY, key)
     return key
 
 
@@ -195,10 +200,10 @@ def api_skeleton_key(monkeypatch):
 @pytest.fixture
 def mock_metrics_aggregator_env(mocker, monkeypatch):
     """Mock environment and Athena dependencies for metrics aggregator tests."""
-    monkeypatch.setenv(EnvVars.GLUE_DATABASE_NAME, "test_db")
-    monkeypatch.setenv(EnvVars.DDB_RAW_DATA_TABLE_NAME, "test_table")
-    monkeypatch.setenv(EnvVars.ATHENA_WORKGROUP_NAME, "test_workgroup")
-    monkeypatch.setenv(EnvVars.DDB_EXPORT_BUCKET_NAME, "test-bucket")
+    monkeypatch.setenv(EnvVarNames.GLUE_DATABASE_NAME, "test_db")
+    monkeypatch.setenv(EnvVarNames.DDB_RAW_DATA_TABLE_NAME, "test_table")
+    monkeypatch.setenv(EnvVarNames.ATHENA_WORKGROUP_NAME, "test_workgroup")
+    monkeypatch.setenv(EnvVarNames.DDB_EXPORT_BUCKET_NAME, "test-bucket")
 
     mock_athena = mocker.patch("documentai_api.jobs.metrics_aggregator.main._execute_athena_query")
     mock_results = mocker.patch("documentai_api.jobs.metrics_aggregator.main._get_athena_results")

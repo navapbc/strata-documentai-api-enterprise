@@ -29,9 +29,9 @@ def get_parameter_value(param_name: str, default: str | None = None) -> str:
 
 
 def _get_flag(flag: str, default: bool) -> bool:
-    from documentai_api.config.env import get_aws_config
+    from documentai_api.config.env import get_env_config
 
-    config = get_aws_config()
+    config = get_env_config()
     if not config.ssm_prefix:
         logger.info(f"{flag}: {default} (default, no SSM prefix)")
         return default

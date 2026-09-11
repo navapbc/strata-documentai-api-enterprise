@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 
 from documentai_api.app import app
-from documentai_api.config.env import EnvVars
+from documentai_api.config.env_var_names_generated import EnvVarNames
 from documentai_api.utils.auth import UserContext, get_user_context_with_fallback
 
 METRICS_URL = "/v1/metrics"
@@ -48,7 +48,7 @@ def as_api_key(api_client):
 @pytest.fixture
 def metrics_bucket(s3_bucket, monkeypatch):
     """Point metrics env var at the shared test bucket."""
-    monkeypatch.setenv(EnvVars.DDB_EXPORT_BUCKET_NAME, s3_bucket.name)
+    monkeypatch.setenv(EnvVarNames.DDB_EXPORT_BUCKET_NAME, s3_bucket.name)
     return s3_bucket
 
 
@@ -320,7 +320,7 @@ def test_api_key_rejects_mismatched_tenant(as_api_key, seeded_metrics):
 
 
 def test_metrics_bucket_not_configured(as_super_admin, monkeypatch):
-    monkeypatch.delenv(EnvVars.DDB_EXPORT_BUCKET_NAME, raising=False)
+    monkeypatch.delenv(EnvVarNames.DDB_EXPORT_BUCKET_NAME, raising=False)
     response = as_super_admin.get(METRICS_URL, params={"start_date": "2026-01-15"})
     assert response.status_code == 500
     assert "not configured" in response.json()["detail"]

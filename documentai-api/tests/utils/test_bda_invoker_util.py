@@ -206,9 +206,9 @@ def test_invoke_bedrock_data_automation_pages_sent_fallback(page_count_return, e
 def test_skip_bda_if_unclassified_defaults_false_when_no_param():
     """When no SSM prefix is configured, defaults to False (don't skip BDA)."""
     with patch.dict("os.environ", {}, clear=True):
-        from documentai_api.config.env import get_aws_config
+        from documentai_api.config.env import get_env_config
 
-        get_aws_config.cache_clear()
+        get_env_config.cache_clear()
         result = bda_invoker_util.skip_bda_if_unclassified()
         assert result is False
 
@@ -225,9 +225,9 @@ def test_skip_bda_if_unclassified_reads_ssm_true():
             return_value="true",
         ),
     ):
-        from documentai_api.config.env import get_aws_config
+        from documentai_api.config.env import get_env_config
 
-        get_aws_config.cache_clear()
+        get_env_config.cache_clear()
         result = bda_invoker_util.skip_bda_if_unclassified()
         assert result is True
 
@@ -244,9 +244,9 @@ def test_skip_bda_if_unclassified_reads_ssm_false():
             return_value="false",
         ),
     ):
-        from documentai_api.config.env import get_aws_config
+        from documentai_api.config.env import get_env_config
 
-        get_aws_config.cache_clear()
+        get_env_config.cache_clear()
         result = bda_invoker_util.skip_bda_if_unclassified()
         assert result is False
 
@@ -263,7 +263,7 @@ def test_resolve_project_arn_returns_all_when_routing_disabled():
         patch.dict("os.environ", {"BDA_PROJECT_ARN_ALL": f"{prefix}/all-arn"}, clear=False),
         patch.object(bda_invoker_util, "_project_arns_cache", None),
         patch("documentai_api.utils.ssm.is_preclassification_routing_enabled", return_value=False),
-        patch("documentai_api.utils.bda_invoker.get_aws_config") as mock_config,
+        patch("documentai_api.utils.bda_invoker.get_env_config") as mock_config,
     ):
         mock_config.return_value.get_bda_project_arns.return_value = {
             "employer_income": f"{prefix}/emp-arn",
@@ -277,7 +277,7 @@ def test_resolve_project_arn_returns_all_when_routing_disabled():
     with (
         patch.object(bda_invoker_util, "_project_arns_cache", None),
         patch("documentai_api.utils.ssm.is_preclassification_routing_enabled", return_value=True),
-        patch("documentai_api.utils.bda_invoker.get_aws_config") as mock_config,
+        patch("documentai_api.utils.bda_invoker.get_env_config") as mock_config,
     ):
         mock_config.return_value.get_bda_project_arns.return_value = {
             "employer_income": f"{prefix}/emp-arn",
@@ -291,7 +291,7 @@ def test_resolve_project_arn_returns_all_when_routing_disabled():
     with (
         patch.object(bda_invoker_util, "_project_arns_cache", None),
         patch("documentai_api.utils.ssm.is_preclassification_routing_enabled", return_value=True),
-        patch("documentai_api.utils.bda_invoker.get_aws_config") as mock_config,
+        patch("documentai_api.utils.bda_invoker.get_env_config") as mock_config,
     ):
         mock_config.return_value.get_bda_project_arns.return_value = {
             "all": f"{prefix}/all-arn",
@@ -304,7 +304,7 @@ def test_resolve_project_arn_returns_all_when_routing_disabled():
     with (
         patch.object(bda_invoker_util, "_project_arns_cache", None),
         patch("documentai_api.utils.ssm.is_preclassification_routing_enabled", return_value=True),
-        patch("documentai_api.utils.bda_invoker.get_aws_config") as mock_config,
+        patch("documentai_api.utils.bda_invoker.get_env_config") as mock_config,
     ):
         mock_config.return_value.get_bda_project_arns.return_value = {
             "all": f"{prefix}/all-arn",

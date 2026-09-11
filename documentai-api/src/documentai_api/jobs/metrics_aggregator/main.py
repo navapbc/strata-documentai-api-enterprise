@@ -22,7 +22,7 @@ from documentai_api.config.constants import (
     MetricsDisplayValues,
     TimingMetrics,
 )
-from documentai_api.config.env import get_aws_config
+from documentai_api.config.env import get_env_config
 from documentai_api.logging import get_logger
 from documentai_api.services.aws_client_factory import AWSClientFactory
 from documentai_api.utils.dates import validate_yyyymmdd_format
@@ -440,7 +440,7 @@ def main(target_date: str, overwrite: bool = False) -> dict[str, Any]:
     validate_yyyymmdd_format(target_date)
     yyyymm = target_date[:7]
 
-    aws_config = get_aws_config()
+    aws_config = get_env_config()
     metrics_bucket = aws_config.ddb_export_bucket_name
     if not metrics_bucket:
         raise ValueError("DDB_EXPORT_BUCKET_NAME environment variable not set")

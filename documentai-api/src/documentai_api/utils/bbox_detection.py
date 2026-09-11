@@ -12,7 +12,7 @@ from documentai_api.config.constants import (
     ConfigDefaults,
     PreprocessingBoundingBoxDefault,
 )
-from documentai_api.config.env import get_aws_config
+from documentai_api.config.env import get_env_config
 from documentai_api.dtos.processing import CropResult
 from documentai_api.logging import get_logger
 from documentai_api.services.bedrock import invoke_model
@@ -28,7 +28,7 @@ class BboxResult:
 
 
 def _get_bbox_model_id() -> str:
-    param_name = get_aws_config().bedrock_bounding_box_model_id_param
+    param_name = get_env_config().bedrock_bounding_box_model_id_param
     if not param_name:
         return PreprocessingBoundingBoxDefault.MODEL_ID
     return get_parameter_value(param_name, default=PreprocessingBoundingBoxDefault.MODEL_ID)

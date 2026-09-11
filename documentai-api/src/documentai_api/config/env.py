@@ -1,97 +1,29 @@
+from __future__ import annotations
+
 import os
-from enum import StrEnum
 from functools import lru_cache
 
 import boto3
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from documentai_api.config.constants import BDA_PROJECT_KEY_ALL
-
-
-class EnvVars(StrEnum):
-    """Canonical names of environment variables read by the application.
-
-    Use with get_required_env(), os.getenv(), os.environ[...], or
-    monkeypatch.setenv() - since StrEnum members ARE str, no .value needed.
-    """
-
-    # === AWS / BDA ===
-    BDA_PROJECT_ARN_ALL = "BDA_PROJECT_ARN_ALL"
-    BDA_PROFILE_ARN = "BDA_PROFILE_ARN"
-    BDA_REGION = "BDA_REGION"
-    MAX_BDA_INVOKE_RETRY_ATTEMPTS = "MAX_BDA_INVOKE_RETRY_ATTEMPTS"
-    BEDROCK_CLASSIFICATION_MODEL_ID_PARAM = "BEDROCK_CLASSIFICATION_MODEL_ID_PARAM"
-    BEDROCK_BOUNDING_BOX_MODEL_ID_PARAM = "BEDROCK_BOUNDING_BOX_MODEL_ID_PARAM"
-
-    # === Document AI core ===
-    DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME = "DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME"
-    DOCUMENTAI_DOCUMENT_METADATA_JOB_ID_INDEX_NAME = (
-        "DOCUMENTAI_DOCUMENT_METADATA_JOB_ID_INDEX_NAME"
-    )
-    DOCUMENTAI_DOCUMENT_METADATA_BDA_INVOCATION_ID_INDEX_NAME = (
-        "DOCUMENTAI_DOCUMENT_METADATA_BDA_INVOCATION_ID_INDEX_NAME"
-    )
-    DOCUMENTAI_DOCUMENT_METADATA_TENANT_INDEX_NAME = (
-        "DOCUMENTAI_DOCUMENT_METADATA_TENANT_INDEX_NAME"
-    )
-    DOCUMENTAI_DOCUMENT_METADATA_STATUS_CREATED_AT_INDEX_NAME = (
-        "DOCUMENTAI_DOCUMENT_METADATA_STATUS_CREATED_AT_INDEX_NAME"
-    )
-    DOCUMENTAI_INPUT_LOCATION = "DOCUMENTAI_INPUT_LOCATION"
-    DOCUMENTAI_DEMO_INPUT_LOCATION = "DOCUMENTAI_DEMO_INPUT_LOCATION"
-    DOCUMENTAI_OUTPUT_LOCATION = "DOCUMENTAI_OUTPUT_LOCATION"
-    DOCUMENTAI_PREPROCESSING_LOCATION = "DOCUMENTAI_PREPROCESSING_LOCATION"
-
-    # === Document AI document batch core ===
-    DOCUMENTAI_DOCUMENT_METADATA_BATCH_ID_INDEX_NAME = (
-        "DOCUMENTAI_DOCUMENT_METADATA_BATCH_ID_INDEX_NAME"
-    )
-    DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME = "DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME"
-
-    # === Document AI document build core ===
-    DOCUMENTAI_BUILD_TABLE_NAME = "DOCUMENTAI_BUILD_TABLE_NAME"
-
-    # === Auth / API keys ===
-    API_AUTH_INSECURE_SHARED_KEY = "API_AUTH_INSECURE_SHARED_KEY"
-    API_AUTH_INSECURE_SHARED_KEY_PARAM = "API_AUTH_INSECURE_SHARED_KEY_PARAM"
-    API_AUTH_ENABLED = "API_AUTH_ENABLED"
-    API_AUTH_CACHE_TTL = "API_AUTH_CACHE_TTL"
-    API_KEY_PEPPER_PARAM = "API_KEY_PEPPER_PARAM"
-    API_KEYS_TABLE_NAME = "API_KEYS_TABLE_NAME"
-    API_KEYS_TENANT_INDEX_NAME = "API_KEYS_TENANT_INDEX_NAME"
-    TENANTS_TABLE_NAME = "TENANTS_TABLE_NAME"
-    TENANT_REQUEST_COUNTS_TABLE_NAME = "TENANT_REQUEST_COUNTS_TABLE_NAME"
-    AUDIT_EVENTS_TABLE_NAME = "AUDIT_EVENTS_TABLE_NAME"
-
-    # === Extraction rules ===
-    EXTRACTION_RULES_TABLE_NAME = "EXTRACTION_RULES_TABLE_NAME"
-    DOCUMENT_CATEGORIES_TABLE_NAME = "DOCUMENT_CATEGORIES_TABLE_NAME"
-
-    # === Metrics pipeline ===
-    ATHENA_WORKGROUP_NAME = "ATHENA_WORKGROUP_NAME"
-    DDB_EXPORT_BUCKET_NAME = "DDB_EXPORT_BUCKET_NAME"
-    DDB_METRICS_INPUT_QUEUE_URL = "DDB_METRICS_INPUT_QUEUE_URL"
-    DDB_RAW_DATA_TABLE_NAME = "DDB_RAW_DATA_TABLE_NAME"
-    GLUE_DATABASE_NAME = "GLUE_DATABASE_NAME"
-
-    # === App runtime ===
-    IMAGE_TAG = "IMAGE_TAG"
-    ENVIRONMENT = "ENVIRONMENT"
-    HOST = "HOST"
-    PORT = "PORT"
-    AWS_LAMBDA_FUNCTION_NAME = "AWS_LAMBDA_FUNCTION_NAME"  # set automatically by the Lambda runtime
-
-    # === OpenTelemetry ===
-    OTEL_SDK_DISABLED = "OTEL_SDK_DISABLED"
-    OTEL_SERVICE_NAME = "OTEL_SERVICE_NAME"
-    OTEL_EXPORTER_OTLP_ENDPOINT = "OTEL_EXPORTER_OTLP_ENDPOINT"
+from documentai_api.config.env_var_names_generated import EnvVarNames
 
 
 class PydanticBaseEnvConfig(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
+    def _require(self, value: str | None, name: str) -> str:
+        if not value:
+            raise ValueError(f"{name} is not configured")
+        return value
 
-class AWSEnvConfig(PydanticBaseEnvConfig):
+
+class EnvConfig(PydanticBaseEnvConfig):
+    # =========================================================================
+    # Environment variables
+    # =========================================================================
+
     # SSM
     ssm_prefix: str | None = None
 
@@ -110,25 +42,6 @@ class AWSEnvConfig(PydanticBaseEnvConfig):
     bda_project_arn_prefix: str | None = None
     bda_project_arn_all: str | None = None
 
-    def get_bda_project_arns(self) -> dict[str, str]:
-        """Return a mapping of category slug -> project ARN for all configured categories."""
-        from documentai_api.config.constants_preclassification_category_generated import (
-            PreclassificationCategory,
-        )
-
-        prefix = self.bda_project_arn_prefix or ""
-        arns: dict[str, str] = {}
-        for category in PreclassificationCategory:
-            project_id = os.getenv(f"BDA_PROJECT_ID_{category.upper()}")
-            if project_id:
-                arns[category.value] = f"{prefix}/{project_id}" if prefix else project_id
-        if self.bda_project_arn_all:
-            arns[BDA_PROJECT_KEY_ALL] = self.bda_project_arn_all
-        elif self.bda_project_arn:
-            arns[BDA_PROJECT_KEY_ALL] = self.bda_project_arn
-
-        return arns
-
     # Cognito
     cognito_user_pool_id: str | None = None
     cognito_client_id: str | None = None
@@ -139,10 +52,13 @@ class AWSEnvConfig(PydanticBaseEnvConfig):
     documentai_document_metadata_tenant_index_name: str | None = None
     documentai_document_metadata_batch_id_index_name: str | None = None
     documentai_document_metadata_status_created_at_index_name: str | None = None
+    documentai_document_metadata_bda_invocation_id_index_name: str | None = None
     documentai_document_batches_table_name: str | None = None
     documentai_input_location: str | None = None
     documentai_demo_input_location: str | None = None
     documentai_output_location: str | None = None
+    documentai_preprocessing_location: str | None = None
+    documentai_build_table_name: str | None = None
 
     # Auth / API keys
     api_keys_table_name: str | None = None
@@ -162,8 +78,101 @@ class AWSEnvConfig(PydanticBaseEnvConfig):
     ddb_raw_data_table_name: str | None = None
     glue_database_name: str | None = None
 
+    # =========================================================================
+    # Accessor methods
+    # =========================================================================
+    def get_bda_project_arns(self) -> dict[str, str]:
+        """Return a mapping of category slug -> project ARN for all configured categories."""
+        from documentai_api.config.constants_preclassification_category_generated import (
+            PreclassificationCategory,
+        )
 
-class AppEnvConfig(PydanticBaseEnvConfig):
+        prefix = self.bda_project_arn_prefix or ""
+        arns: dict[str, str] = {}
+        for category in PreclassificationCategory:
+            project_id = os.getenv(f"BDA_PROJECT_ID_{category.upper()}")
+            if project_id:
+                arns[category.value] = f"{prefix}/{project_id}" if prefix else project_id
+        if self.bda_project_arn_all:
+            arns[BDA_PROJECT_KEY_ALL] = self.bda_project_arn_all
+        elif self.bda_project_arn:
+            arns[BDA_PROJECT_KEY_ALL] = self.bda_project_arn
+
+        return arns
+
+    @property
+    def get_input_location(self) -> str:
+        return self._require(self.documentai_input_location, EnvVarNames.DOCUMENTAI_INPUT_LOCATION)
+
+    @property
+    def get_output_location(self) -> str:
+        return self._require(
+            self.documentai_output_location, EnvVarNames.DOCUMENTAI_OUTPUT_LOCATION
+        )
+
+    @property
+    def get_preprocessing_location(self) -> str:
+        return self._require(
+            self.documentai_preprocessing_location,
+            EnvVarNames.DOCUMENTAI_PREPROCESSING_LOCATION,
+        )
+
+    @property
+    def get_document_metadata_table_name(self) -> str:
+        return self._require(
+            self.documentai_document_metadata_table_name,
+            EnvVarNames.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME,
+        )
+
+    @property
+    def get_document_metadata_job_id_index_name(self) -> str:
+        return self._require(
+            self.documentai_document_metadata_job_id_index_name,
+            EnvVarNames.DOCUMENTAI_DOCUMENT_METADATA_JOB_ID_INDEX_NAME,
+        )
+
+    @property
+    def get_document_metadata_batch_id_index_name(self) -> str:
+        return self._require(
+            self.documentai_document_metadata_batch_id_index_name,
+            EnvVarNames.DOCUMENTAI_DOCUMENT_METADATA_BATCH_ID_INDEX_NAME,
+        )
+
+    @property
+    def get_document_metadata_bda_invocation_id_index_name(self) -> str:
+        return self._require(
+            self.documentai_document_metadata_bda_invocation_id_index_name,
+            EnvVarNames.DOCUMENTAI_DOCUMENT_METADATA_BDA_INVOCATION_ID_INDEX_NAME,
+        )
+
+    @property
+    def get_document_batches_table_name(self) -> str:
+        return self._require(
+            self.documentai_document_batches_table_name,
+            EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME,
+        )
+
+    @property
+    def get_document_build_table_name(self) -> str:
+        return self._require(
+            self.documentai_build_table_name, EnvVarNames.DOCUMENTAI_BUILD_TABLE_NAME
+        )
+
+    @property
+    def get_bda_profile_arn(self) -> str:
+        return self._require(self.bda_profile_arn, EnvVarNames.BDA_PROFILE_ARN)
+
+    @property
+    def get_bda_project_arn_all(self) -> str:
+        return self._require(
+            self.bda_project_arn_all or self.bda_project_arn,
+            EnvVarNames.BDA_PROJECT_ARN_ALL
+            if self.bda_project_arn_all
+            else EnvVarNames.BDA_PROJECT_ARN,
+        )
+
+
+class AppConfig(PydanticBaseEnvConfig):
     api_auth_insecure_shared_key: str = ""
     api_auth_insecure_shared_key_param: str | None = None
     api_key_pepper_param: str | None = None
@@ -192,7 +201,7 @@ class AppEnvConfig(PydanticBaseEnvConfig):
         set automatically by AWS). This ensures local/test runs are never treated
         as hosted regardless of the ENVIRONMENT variable value.
         """
-        return bool(os.environ.get(EnvVars.AWS_LAMBDA_FUNCTION_NAME))
+        return bool(os.environ.get("AWS_LAMBDA_FUNCTION_NAME"))
 
     def resolve_insecure_shared_key(self) -> str:
         """Resolve the insecure shared key from SSM if param is set, else use env var."""
@@ -217,20 +226,10 @@ class AppEnvConfig(PydanticBaseEnvConfig):
 
 
 @lru_cache
-def get_aws_config() -> AWSEnvConfig:
-    return AWSEnvConfig()
+def get_env_config() -> EnvConfig:
+    return EnvConfig()
 
 
 @lru_cache
-def get_app_env_config() -> AppEnvConfig:
-    return AppEnvConfig()
-
-
-def get_required_env(name: EnvVars) -> str:
-    """Read an env var, raising ValueError if not set."""
-    value = os.getenv(name)
-
-    if not value:
-        raise ValueError(f"{name} environment variable not set")
-
-    return value
+def get_app_config() -> AppConfig:
+    return AppConfig()

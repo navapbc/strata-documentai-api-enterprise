@@ -139,6 +139,31 @@ jobs:
           git diff --exit-code src/documentai_api/config/constants_preclassification_category_generated.py \
             || { echo "::error::constants_preclassification_category_generated.py is out of sync with infra/document-types/ - run 'make generate-categories' and commit."; exit 1; }
 
+  env-names:
+    name: Env var names drift
+    needs: changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: No relevant changes
+        if: needs.changes.outputs.relevant != 'true'
+        run: echo "No documentai-api changes; check passes."
+
+      - name: Install uv
+        if: needs.changes.outputs.relevant == 'true'
+        uses: astral-sh/setup-uv@v5
+
+      - name: Regenerate env var names from EnvConfig/AppConfig
+        if: needs.changes.outputs.relevant == 'true'
+        run: make generate-env-names
+
+      - name: Fail if env var names drifted from config
+        if: needs.changes.outputs.relevant == 'true'
+        run: |
+          git diff --exit-code src/documentai_api/config/env_var_names_generated.py \
+            || { echo "::error::env_var_names_generated.py is out of sync - run 'make generate-env-names' and commit."; exit 1; }
+
   blueprint-schemas:
     name: Custom blueprint schema drift
     needs: changes

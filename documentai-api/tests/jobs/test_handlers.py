@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from documentai_api.config.constants import ProcessStatus
-from documentai_api.config.env import EnvVars
+from documentai_api.config.env_var_names_generated import EnvVarNames
 from documentai_api.jobs.bda_result_processor.handler import handler as bda_handler
 from documentai_api.jobs.document_processor.handler import handler as doc_handler
 from documentai_api.schemas.document_metadata import DocumentMetadata
@@ -31,16 +31,16 @@ BDA_DDB_FILE_NAME = "input/test-tenant/doc.pdf"
 
 @pytest.fixture(autouse=True)
 def mock_env(monkeypatch):
-    monkeypatch.setenv(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME, "metadata")
-    monkeypatch.setenv(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_JOB_ID_INDEX_NAME, "job-id-index")
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME, "metadata")
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_DOCUMENT_METADATA_JOB_ID_INDEX_NAME, "job-id-index")
     monkeypatch.setenv(
-        EnvVars.DOCUMENTAI_DOCUMENT_METADATA_BDA_INVOCATION_ID_INDEX_NAME, "bda-inv-index"
+        EnvVarNames.DOCUMENTAI_DOCUMENT_METADATA_BDA_INVOCATION_ID_INDEX_NAME, "bda-inv-index"
     )
-    monkeypatch.setenv(EnvVars.DOCUMENTAI_INPUT_LOCATION, "s3://test-bucket/input")
-    monkeypatch.setenv(EnvVars.DOCUMENTAI_OUTPUT_LOCATION, "s3://test-bucket/output")
-    monkeypatch.setenv(EnvVars.BDA_PROJECT_ARN_ALL, "arn:aws:test")
-    monkeypatch.setenv(EnvVars.BDA_PROFILE_ARN, "arn:aws:test")
-    monkeypatch.setenv(EnvVars.BDA_REGION, "us-east-1")
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_INPUT_LOCATION, "s3://test-bucket/input")
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_OUTPUT_LOCATION, "s3://test-bucket/output")
+    monkeypatch.setenv(EnvVarNames.BDA_PROJECT_ARN_ALL, "arn:aws:test")
+    monkeypatch.setenv(EnvVarNames.BDA_PROFILE_ARN, "arn:aws:test")
+    monkeypatch.setenv(EnvVarNames.BDA_REGION, "us-east-1")
 
 
 ##############################################################################

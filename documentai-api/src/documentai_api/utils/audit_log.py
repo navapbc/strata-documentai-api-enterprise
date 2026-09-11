@@ -22,7 +22,7 @@ from typing import Any
 from boto3.dynamodb.conditions import Attr, ConditionBase, Key
 from ulid import ULID
 
-from documentai_api.config.env import get_aws_config
+from documentai_api.config.env import get_env_config
 from documentai_api.logging import get_logger
 from documentai_api.models.audit import AuditEventItem
 from documentai_api.schemas.audit_event import GLOBAL_TENANT, AuditEventRecord, AuditEventsTable
@@ -42,7 +42,7 @@ def _generate_event_id() -> str:
 
 
 def _get_table_name() -> str:
-    table_name = get_aws_config().audit_events_table_name
+    table_name = get_env_config().audit_events_table_name
     if not table_name:
         raise ValueError("AUDIT_EVENTS_TABLE_NAME environment variable not set")
     return table_name

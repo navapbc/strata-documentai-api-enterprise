@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-from documentai_api.config.env import EnvVars
+from documentai_api.config.env_var_names_generated import EnvVarNames
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils import auth as auth_util
 
@@ -19,10 +19,10 @@ TENANT_A_DOC_ID = "aaaaaaaa-1111-1111-1111-111111111111"
 
 def test_verify_api_key_missing_env_var(api_client, monkeypatch):
     """Test returns 401 when API_AUTH_INSECURE_SHARED_KEY not set."""
-    from documentai_api.config.env import get_app_env_config
+    from documentai_api.config.env import get_app_config
 
-    monkeypatch.delenv(EnvVars.API_AUTH_INSECURE_SHARED_KEY, raising=False)
-    get_app_env_config.cache_clear()
+    monkeypatch.delenv(EnvVarNames.API_AUTH_INSECURE_SHARED_KEY, raising=False)
+    get_app_config.cache_clear()
     response = api_client.get("/v1/dictionary/schemas")
     assert response.status_code == 401
 
@@ -96,7 +96,7 @@ def test_ddb_auth_valid_key(api_client, monkeypatch, mocker, api_keys_table):
     """Test allows request when API key is valid in DDB."""
     import hashlib
 
-    monkeypatch.setenv(EnvVars.API_AUTH_ENABLED, "true")
+    monkeypatch.setenv(EnvVarNames.API_AUTH_ENABLED, "true")
     mocker.patch("documentai_api.routers.dictionary.get_all_schemas", return_value={"test": {}})
 
     raw_key = "docai_" + "a" * 32
@@ -119,7 +119,7 @@ def test_ddb_auth_valid_key(api_client, monkeypatch, mocker, api_keys_table):
 
 def test_ddb_auth_invalid_key(api_client, monkeypatch, api_keys_table):
     """Test returns 401 when API key is not in DDB."""
-    monkeypatch.setenv(EnvVars.API_AUTH_ENABLED, "true")
+    monkeypatch.setenv(EnvVarNames.API_AUTH_ENABLED, "true")
 
     response = api_client.get("/v1/dictionary/schemas", headers={"API-Key": "docai_badkey"})
 
@@ -128,7 +128,7 @@ def test_ddb_auth_invalid_key(api_client, monkeypatch, api_keys_table):
 
 def test_ddb_auth_missing_header(api_client, monkeypatch, api_keys_table):
     """Test returns 401 when API key header is missing in DDB mode."""
-    monkeypatch.setenv(EnvVars.API_AUTH_ENABLED, "true")
+    monkeypatch.setenv(EnvVarNames.API_AUTH_ENABLED, "true")
 
     response = api_client.get("/v1/dictionary/schemas")
 
@@ -168,7 +168,7 @@ def tenant_a_document(ddb_doc_metadata_table):
 @pytest.mark.integration
 def test_tenant_can_access_own_document(api_client, tenant_a_key, tenant_a_document, monkeypatch):
     """API key scoped to tenant-a can read tenant-a's document."""
-    monkeypatch.setenv(EnvVars.API_AUTH_ENABLED, "true")
+    monkeypatch.setenv(EnvVarNames.API_AUTH_ENABLED, "true")
 
     response = api_client.get(f"/v1/documents/{TENANT_A_DOC_ID}", headers={"API-Key": tenant_a_key})
     assert response.status_code == 200
@@ -180,7 +180,7 @@ def test_tenant_cannot_access_other_tenants_document(
     api_client, tenant_b_key, tenant_a_document, monkeypatch
 ):
     """API key scoped to tenant-b cannot read tenant-a's document (returns 404)."""
-    monkeypatch.setenv(EnvVars.API_AUTH_ENABLED, "true")
+    monkeypatch.setenv(EnvVarNames.API_AUTH_ENABLED, "true")
 
     response = api_client.get(f"/v1/documents/{TENANT_A_DOC_ID}", headers={"API-Key": tenant_b_key})
     assert response.status_code == 404
@@ -191,7 +191,7 @@ def test_tenant_cannot_delete_other_tenants_document(
     api_client, tenant_b_key, tenant_a_document, monkeypatch
 ):
     """API key scoped to tenant-b cannot delete tenant-a's document."""
-    monkeypatch.setenv(EnvVars.API_AUTH_ENABLED, "true")
+    monkeypatch.setenv(EnvVarNames.API_AUTH_ENABLED, "true")
 
     response = api_client.delete(
         f"/v1/documents/{TENANT_A_DOC_ID}", headers={"API-Key": tenant_b_key}

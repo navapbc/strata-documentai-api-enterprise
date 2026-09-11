@@ -12,7 +12,7 @@ from pydantic import Field
 
 from documentai_api.annotations import AdminClaims, verify_jwt_with_role
 from documentai_api.config.constants import ApiVisualizationTag, BdaJobStatus
-from documentai_api.config.env import EnvVars, get_aws_config, get_required_env
+from documentai_api.config.env import get_env_config
 from documentai_api.logging import get_logger
 from documentai_api.models.base import BaseApiResponse
 from documentai_api.services.aws_client_factory import AWSClientFactory
@@ -63,7 +63,7 @@ async def start_blueprint_test(
     )
 
     # Upload to temp S3 location
-    input_location = get_aws_config().documentai_input_location
+    input_location = get_env_config().documentai_input_location
     if not input_location:
         raise HTTPException(status_code=500, detail="Input location not configured")
 
@@ -86,7 +86,7 @@ async def start_blueprint_test(
         import json as json_mod
 
         bda_runtime = AWSClientFactory.get_bda_runtime_client()
-        output_location = get_required_env(EnvVars.DOCUMENTAI_OUTPUT_LOCATION).replace("s3://", "")
+        output_location = get_env_config().get_output_location.replace("s3://", "")
 
         # Look up project ARN for the category
         project_arns_json = os.environ.get("BDA_PROJECT_ARNS")
@@ -99,9 +99,9 @@ async def start_blueprint_test(
                     detail=f"Unknown document category: {document_category}",
                 )
         else:
-            bda_project_arn = get_required_env(EnvVars.BDA_PROJECT_ARN_ALL)
+            bda_project_arn = get_env_config().get_bda_project_arn_all
 
-        bda_profile_arn = get_required_env(EnvVars.BDA_PROFILE_ARN)
+        bda_profile_arn = get_env_config().get_bda_profile_arn
 
         logger.info(f"Blueprint test {test_id}: invoking BDA project={bda_project_arn}")
         response = bda_runtime.invoke_data_automation_async(
@@ -255,10 +255,10 @@ def _get_test_table_name() -> str:
     # test runs with production audit events.
     import os
 
-    from documentai_api.config.env import EnvVars
+    from documentai_api.config.env import get_env_config
 
-    table_name = os.environ.get("BLUEPRINT_TEST_TABLE_NAME") or os.environ.get(
-        EnvVars.AUDIT_EVENTS_TABLE_NAME
+    table_name = (
+        os.environ.get("BLUEPRINT_TEST_TABLE_NAME") or get_env_config().audit_events_table_name
     )
     if not table_name:
         raise ValueError("BLUEPRINT_TEST_TABLE_NAME (or AUDIT_EVENTS_TABLE_NAME) not configured")

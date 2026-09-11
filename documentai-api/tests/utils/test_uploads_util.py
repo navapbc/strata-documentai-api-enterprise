@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 from fastapi import HTTPException, UploadFile
 
+from documentai_api.config.env_var_names_generated import EnvVarNames
 from documentai_api.utils.uploads import generate_unique_filename
 from tests.helpers.documents import generate_ooxml_with_deep_entry
 
@@ -184,10 +185,9 @@ async def test_validate_upload_mime_mismatch_logs_warning(
 
 def test_save_original_to_preprocessing_tenant_scoped(mocker, monkeypatch):
     """The upload-time original is stored under the tenant's preprocessing prefix."""
-    from documentai_api.config.env import EnvVars
     from documentai_api.utils.uploads import _save_original_to_preprocessing
 
-    monkeypatch.setenv(EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION, "s3://bucket/preprocessing")
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_PREPROCESSING_LOCATION, "s3://bucket/preprocessing")
     mock_upload = mocker.patch("documentai_api.services.s3.upload_file")
 
     _save_original_to_preprocessing(b"data", "doc-uuid.png", "image/png", tenant_id="test-tenant")
@@ -198,10 +198,9 @@ def test_save_original_to_preprocessing_tenant_scoped(mocker, monkeypatch):
 
 def test_save_original_to_preprocessing_without_tenant_falls_back(mocker, monkeypatch):
     """No tenant_id keeps the legacy un-scoped key (e.g. document-build flow)."""
-    from documentai_api.config.env import EnvVars
     from documentai_api.utils.uploads import _save_original_to_preprocessing
 
-    monkeypatch.setenv(EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION, "s3://bucket/preprocessing")
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_PREPROCESSING_LOCATION, "s3://bucket/preprocessing")
     mock_upload = mocker.patch("documentai_api.services.s3.upload_file")
 
     _save_original_to_preprocessing(b"data", "doc-uuid.png", "image/png")

@@ -6,7 +6,7 @@ from unittest.mock import patch
 import pytest
 from fastapi import HTTPException
 
-from documentai_api.config.env import EnvVars
+from documentai_api.config.env_var_names_generated import EnvVarNames
 from documentai_api.schemas.api_key import ApiKeyRecord
 from documentai_api.utils import auth as auth_util
 from documentai_api.utils.cache import get_cache
@@ -121,17 +121,17 @@ def test_lookup_and_maybe_migrate_no_pepper_uses_sha256(api_keys_table, mocker):
 
 
 def test_get_cache_ttl_default(monkeypatch):
-    monkeypatch.delenv(EnvVars.API_AUTH_CACHE_TTL, raising=False)
+    monkeypatch.delenv(EnvVarNames.API_AUTH_CACHE_TTL, raising=False)
     assert auth_util._get_cache_ttl_minutes() == 5
 
 
 def test_get_cache_ttl_from_env(monkeypatch):
-    monkeypatch.setenv(EnvVars.API_AUTH_CACHE_TTL, "120")
+    monkeypatch.setenv(EnvVarNames.API_AUTH_CACHE_TTL, "120")
     assert auth_util._get_cache_ttl_minutes() == 2
 
 
 def test_get_cache_ttl_invalid_value(monkeypatch):
-    monkeypatch.setenv(EnvVars.API_AUTH_CACHE_TTL, "not-a-number")
+    monkeypatch.setenv(EnvVarNames.API_AUTH_CACHE_TTL, "not-a-number")
     assert auth_util._get_cache_ttl_minutes() == 5
 
 
@@ -226,7 +226,7 @@ def test_insecure_key_missing_env_raises_500():
     # come from the .env file or an SSM param, so deleting the env var alone
     # doesn't reliably exercise the "not configured" path (a local .env would
     # still supply it).
-    with patch("documentai_api.utils.auth.get_app_env_config") as mock_config:
+    with patch("documentai_api.utils.auth.get_app_config") as mock_config:
         mock_config.return_value.resolve_insecure_shared_key.return_value = ""
         with pytest.raises(HTTPException) as exc_info:
             auth_util._verify_with_insecure_shared_key("any-key")
@@ -234,21 +234,21 @@ def test_insecure_key_missing_env_raises_500():
 
 
 def test_insecure_key_invalid_raises_401(monkeypatch):
-    monkeypatch.setenv(EnvVars.API_AUTH_INSECURE_SHARED_KEY, "correct-key")
+    monkeypatch.setenv(EnvVarNames.API_AUTH_INSECURE_SHARED_KEY, "correct-key")
     with pytest.raises(HTTPException) as exc_info:
         auth_util._verify_with_insecure_shared_key("wrong-key")
     assert exc_info.value.status_code == 401
 
 
 def test_insecure_key_missing_header_raises_401(monkeypatch):
-    monkeypatch.setenv(EnvVars.API_AUTH_INSECURE_SHARED_KEY, "correct-key")
+    monkeypatch.setenv(EnvVarNames.API_AUTH_INSECURE_SHARED_KEY, "correct-key")
     with pytest.raises(HTTPException) as exc_info:
         auth_util._verify_with_insecure_shared_key(None)  # type: ignore[arg-type]
     assert exc_info.value.status_code == 401
 
 
 def test_insecure_key_valid_passes(monkeypatch):
-    monkeypatch.setenv(EnvVars.API_AUTH_INSECURE_SHARED_KEY, "correct-key")
+    monkeypatch.setenv(EnvVarNames.API_AUTH_INSECURE_SHARED_KEY, "correct-key")
     auth_util._verify_with_insecure_shared_key("correct-key")  # should not raise
 
 
@@ -353,8 +353,8 @@ def test_ddb_verify_uses_cache_on_second_call(api_keys_table):
 
 @pytest.fixture
 def pinned_api_keys_config():
-    """Pin get_aws_config for _update_last_used tests."""
-    with patch("documentai_api.utils.auth.get_aws_config") as mock_config:
+    """Pin get_env_config for _update_last_used tests."""
+    with patch("documentai_api.utils.auth.get_env_config") as mock_config:
         mock_config.return_value.api_keys_table_name = "api-keys"
         yield
 
@@ -535,7 +535,7 @@ def test_get_active_keys_by_name_returns_matching(api_keys_table):
 
 
 def test_get_active_keys_by_name_returns_empty_on_error(monkeypatch):
-    monkeypatch.setenv(EnvVars.API_KEYS_TABLE_NAME, "nonexistent-table")
+    monkeypatch.setenv(EnvVarNames.API_KEYS_TABLE_NAME, "nonexistent-table")
     result = auth_util.get_active_keys_by_name("my-service")
     assert result == []
 
@@ -582,7 +582,7 @@ def test_get_active_keys_by_name_with_tenant_excludes_other_tenant(api_keys_tabl
 def test_get_active_keys_by_name_with_tenant_returns_empty_when_index_env_missing(
     api_keys_table, monkeypatch
 ):
-    monkeypatch.delenv(EnvVars.API_KEYS_TENANT_INDEX_NAME, raising=False)
+    monkeypatch.delenv(EnvVarNames.API_KEYS_TENANT_INDEX_NAME, raising=False)
 
     result = auth_util.get_active_keys_by_name("my-service", tenant_id="tenant-a")
 
@@ -595,21 +595,21 @@ def test_get_active_keys_by_name_with_tenant_returns_empty_when_index_env_missin
 
 
 def test_verify_api_key_uses_ddb_when_enabled(monkeypatch):
-    monkeypatch.setenv(EnvVars.API_AUTH_ENABLED, "true")
+    monkeypatch.setenv(EnvVarNames.API_AUTH_ENABLED, "true")
     with patch("documentai_api.utils.auth._verify_with_ddb") as mock_ddb:
         auth_util.verify_api_key("docai_" + "a" * 32)
         mock_ddb.assert_called_once_with("docai_" + "a" * 32)
 
 
 def test_verify_api_key_uses_insecure_key_when_disabled(monkeypatch):
-    monkeypatch.setenv(EnvVars.API_AUTH_ENABLED, "false")
+    monkeypatch.setenv(EnvVarNames.API_AUTH_ENABLED, "false")
     with patch("documentai_api.utils.auth._verify_with_insecure_shared_key") as mock_insecure:
         auth_util.verify_api_key("docai_" + "a" * 32)
         mock_insecure.assert_called_once_with("docai_" + "a" * 32)
 
 
 def test_verify_api_key_disabled_by_default(monkeypatch):
-    monkeypatch.delenv(EnvVars.API_AUTH_ENABLED, raising=False)
+    monkeypatch.delenv(EnvVarNames.API_AUTH_ENABLED, raising=False)
     with patch("documentai_api.utils.auth._verify_with_insecure_shared_key") as mock_insecure:
         auth_util.verify_api_key("docai_" + "a" * 32)
         mock_insecure.assert_called_once_with("docai_" + "a" * 32)
@@ -622,7 +622,7 @@ def test_verify_api_key_disabled_by_default(monkeypatch):
 
 def test_verify_api_key_end_to_end_with_moto(seed_api_key, monkeypatch):
     """Test full verify_api_key → _verify_with_ddb → DDB flow using moto."""
-    monkeypatch.setenv(EnvVars.API_AUTH_ENABLED, "true")
+    monkeypatch.setenv(EnvVarNames.API_AUTH_ENABLED, "true")
 
     api_key, _ = seed_api_key()
 
@@ -631,7 +631,7 @@ def test_verify_api_key_end_to_end_with_moto(seed_api_key, monkeypatch):
 
 def test_verify_api_key_end_to_end_invalid_key(api_keys_table, monkeypatch):
     """Test full flow rejects a key that doesn't exist in DDB."""
-    monkeypatch.setenv(EnvVars.API_AUTH_ENABLED, "true")
+    monkeypatch.setenv(EnvVarNames.API_AUTH_ENABLED, "true")
 
     with pytest.raises(HTTPException) as exc_info:
         auth_util.verify_api_key("docai_invalid_key")
@@ -640,7 +640,7 @@ def test_verify_api_key_end_to_end_invalid_key(api_keys_table, monkeypatch):
 
 def test_verify_api_key_end_to_end_deactivated_key(seed_api_key, monkeypatch):
     """Test full flow rejects a deactivated key."""
-    monkeypatch.setenv(EnvVars.API_AUTH_ENABLED, "true")
+    monkeypatch.setenv(EnvVarNames.API_AUTH_ENABLED, "true")
 
     api_key, key_hash = seed_api_key()
     auth_util.deactivate_api_key(key_hash)

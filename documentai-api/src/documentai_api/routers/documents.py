@@ -35,7 +35,7 @@ from documentai_api.config.constants import (
     ProcessStatus,
     UploadMethod,
 )
-from documentai_api.config.env import get_aws_config
+from documentai_api.config.env import get_env_config
 from documentai_api.logging import get_logger
 from documentai_api.models.document_record import DocumentRecord
 from documentai_api.models.job_status import (
@@ -119,9 +119,9 @@ async def upload_document(
     ddb_key = unique_file_name
 
     if is_demo:
-        input_location = get_aws_config().documentai_demo_input_location
+        input_location = get_env_config().documentai_demo_input_location
     else:
-        input_location = get_aws_config().documentai_input_location
+        input_location = get_env_config().documentai_input_location
 
     dest_path = f"{input_location}/{auth.tenant_id}/{unique_file_name}"
 

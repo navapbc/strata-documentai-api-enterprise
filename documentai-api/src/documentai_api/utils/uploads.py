@@ -14,7 +14,7 @@ from documentai_api.config.constants import (
     FileValidation,
     S3MetadataKeys,
 )
-from documentai_api.config.env import EnvVars
+from documentai_api.config.env import get_env_config
 from documentai_api.logging import get_logger
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils.document_categories import auto_register_category
@@ -95,7 +95,7 @@ def purge_document_s3_artifacts(object_key: str, tenant_id: str) -> list[str]:
     failures: list[str] = []
 
     # 1. Original upload: {input}/{tenant}/{object_key}
-    input_location = os.environ.get(EnvVars.DOCUMENTAI_INPUT_LOCATION)
+    input_location = get_env_config().documentai_input_location
     if input_location:
         try:
             bucket, key = get_bucket_and_key(input_location, tenant_id, object_key)
@@ -106,7 +106,7 @@ def purge_document_s3_artifacts(object_key: str, tenant_id: str) -> list[str]:
 
     # 2. Preprocessing copy (tenant-scoped): the upload-time original at
     #    {preprocessing}/{tenant}/{object_key}.
-    preprocessing_location = os.environ.get(EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION)
+    preprocessing_location = get_env_config().documentai_preprocessing_location
     if preprocessing_location:
         try:
             bucket, _ = parse_s3_uri(preprocessing_location)
@@ -121,7 +121,7 @@ def purge_document_s3_artifacts(object_key: str, tenant_id: str) -> list[str]:
     #    standard output, custom output, and job_metadata.json. input_key is the
     #    object_key, or the "_truncated" variant for oversized docs (see
     #    bda_invoker), so purge both candidate roots.
-    output_location = os.environ.get(EnvVars.DOCUMENTAI_OUTPUT_LOCATION)
+    output_location = get_env_config().documentai_output_location
     if output_location:
         try:
             bucket, prefix = parse_s3_uri(output_location)
@@ -258,7 +258,7 @@ def _save_original_to_preprocessing(
     Raises if DOCUMENTAI_PREPROCESSING_LOCATION is unset or the write fails -
     the upload must not proceed without a guaranteed original backup.
     """
-    preprocessing_location = os.environ.get(EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION)
+    preprocessing_location = get_env_config().documentai_preprocessing_location
     if not preprocessing_location:
         raise RuntimeError(
             "DOCUMENTAI_PREPROCESSING_LOCATION is not set; refusing to upload without "

@@ -1,7 +1,6 @@
 """Document build endpoints for multi-page upload + submission."""
 
 import asyncio
-import os
 import uuid
 from typing import Annotated
 
@@ -29,7 +28,7 @@ from documentai_api.config.constants import (
     ProcessStatus,
     UploadMethod,
 )
-from documentai_api.config.env import EnvVars, get_aws_config
+from documentai_api.config.env import get_env_config
 from documentai_api.logging import get_logger
 from documentai_api.models.build import (
     BuildCreatedResponse,
@@ -95,7 +94,7 @@ async def add_page_to_build(
     file_extension = FileValidation.get_extension(content_type)
     unique_file_name = f"{tenant_id}/{build_id}/page-{page_number}.{file_extension}"
 
-    s3_location = os.getenv(EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION, "")
+    s3_location = get_env_config().documentai_preprocessing_location or ""
     dest_path = f"{s3_location}/{unique_file_name}"
 
     await upload_document_for_processing(
@@ -388,7 +387,7 @@ async def _submit_build(
     if not pages:
         raise HTTPException(status_code=400, detail=f"Build {build_id} has no pages to submit")
 
-    input_location = get_aws_config().documentai_input_location
+    input_location = get_env_config().documentai_input_location
     if not input_location:
         raise HTTPException(
             status_code=500, detail="DOCUMENTAI_INPUT_LOCATION environment variable not set"

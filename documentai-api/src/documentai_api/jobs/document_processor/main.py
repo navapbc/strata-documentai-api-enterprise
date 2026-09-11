@@ -29,7 +29,7 @@ from documentai_api.config.constants import (
     ProcessStatus,
     S3MetadataKeys,
 )
-from documentai_api.config.env import EnvVars, get_aws_config, get_required_env
+from documentai_api.config.env import get_env_config
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.dtos.processing import CropResult, OptimizationResult, PreExtractionResult
 from documentai_api.extractors.textract import extract_textract_identity
@@ -155,7 +155,7 @@ def _persist_optimization_metrics(
     opt_result: OptimizationResult | None = None,
 ) -> None:
     """Write image optimization metrics to the DDB record."""
-    from documentai_api.config.env import EnvVars, get_required_env
+    from documentai_api.config.env import get_env_config
     from documentai_api.services import ddb as ddb_service
 
     field_map = {
@@ -186,7 +186,7 @@ def _persist_optimization_metrics(
             values[param] = value
 
     if updates:
-        table_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME)
+        table_name = get_env_config().get_document_metadata_table_name
         ddb_service.update_item(
             table_name, {"fileName": ddb_key}, "SET " + ", ".join(updates), values
         )
@@ -243,7 +243,7 @@ def _invoke_bda(
     retry_count = 0
 
     for attempt in Retrying(
-        stop=stop_after_attempt(get_aws_config().max_bda_invoke_retry_attempts),
+        stop=stop_after_attempt(get_env_config().max_bda_invoke_retry_attempts),
         wait=wait_exponential_jitter(initial=10, max=120),
         retry=retry_if_exception(is_retryable),
     ):
@@ -439,7 +439,7 @@ def main(
     """Process uploaded document: fetch from S3, preclassify, dispatch to extraction."""
     processor_started_at = datetime.now(UTC)
     if bucket_name is None:
-        input_location = get_required_env(EnvVars.DOCUMENTAI_INPUT_LOCATION)
+        input_location = get_env_config().get_input_location
         bucket_name, _ = parse_s3_uri(input_location)
 
     logger.info(f"Processing document: s3://{bucket_name}/{object_key}")
