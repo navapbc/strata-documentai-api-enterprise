@@ -142,6 +142,7 @@ def _build_update_expression(
     data: ClassificationData | None,
     internal_api_response: InternalApiResponse | None,
     v1_api_response: str | None,
+    extraction_method: ExtractMethod,
     bda_invocation_arn: str | None = None,
     bda_project_arn_used: str | None = None,
     used_category_specific_project: bool = False,
@@ -221,7 +222,7 @@ def _build_update_expression(
         values[":bdaRegion"] = bda_region
 
         updates.append(f"{DocumentMetadata.EXTRACT_METHOD} = :extractMethod")
-        values[":extractMethod"] = ExtractMethod.BDA.value
+        values[":extractMethod"] = extraction_method.value
 
     if bda_project_arn_used:
         updates.append(f"{DocumentMetadata.BDA_PROJECT_ARN_USED} = :bdaProjectArn")
@@ -379,6 +380,7 @@ def update_ddb(
             data=data.data,
             internal_api_response=data.internal_api_response,
             v1_api_response=None,
+            extraction_method=data.extraction_method,
             bda_invocation_arn=data.bda_invocation_arn,
             bda_project_arn_used=data.bda_project_arn_used,
             used_category_specific_project=data.used_category_specific_project,

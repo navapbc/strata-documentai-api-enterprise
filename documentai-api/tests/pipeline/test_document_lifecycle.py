@@ -10,8 +10,7 @@ from documentai_api.dtos.classification import (
     PreclassificationMatchResult,
 )
 from documentai_api.dtos.ddb import UpdateDdbRecord
-from documentai_api.dtos.extraction import ExtractionResult
-from documentai_api.dtos.processing import ProcessorResult
+from documentai_api.dtos.processing import PreExtractionResult
 from documentai_api.pipeline import document_lifecycle as lifecycle_util
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.blur_detection import BlurResult
@@ -27,9 +26,6 @@ class _Mock:
     DETECT_BLUR = "detect_blur"
     PRECLASSIFY_DOCUMENT = "preclassify_document"
     FIND_MATCHING_BLUEPRINT = "find_matching_blueprint"
-    TRY_TEXTRACT_IDENTITY = "extract_textract_identity"
-    FINALIZE_TEXTRACT_RESULT = "process_textract_result"
-    CLASSIFY_EXTRACTION_RESULT = "classify_extraction_result"
     IS_MULTIPAGE_DOCUMENT_FLAGGING_ENABLED = "is_multipage_document_flagging_enabled"
     BUILD_V1_API_RESPONSE = "build_v1_api_response"
     GET_BBOX_IF_ENABLED = "get_bbox_if_enabled"
@@ -41,14 +37,6 @@ _DEFAULT_PRECLASSIFY = BedrockClassificationResult(
 _DEFAULT_BLUR = BlurResult(
     is_blurry=False, is_not_document=False, word_count=20, avg_confidence=95.0
 )
-_DEFAULT_TEXTRACT_RESULT = {
-    "matched_document_class": "US-drivers-licenses",
-    "field_confidence_scores": [{"NAME_DETAILS.FIRST_NAME": 0.99}],
-    "textract_s3_uri": "s3://test-bucket/output/textract/test-file.json",
-    "extract_started_at": "2025-01-01T00:00:00+00:00",
-    "extract_completed_at": "2025-01-01T00:00:02+00:00",
-    "extract_time": "2.00",
-}
 
 
 @pytest.fixture
@@ -80,21 +68,6 @@ def lifecycle_mocks(mocker):
         _Mock.FIND_MATCHING_BLUEPRINT: mocker.patch(
             f"{_LIFECYCLE_MODULE}.find_matching_blueprint",
             return_value=PreclassificationMatchResult(),
-        ),
-        _Mock.TRY_TEXTRACT_IDENTITY: mocker.patch(
-            f"{_LIFECYCLE_MODULE}.extract_textract_identity", return_value=None
-        ),
-        _Mock.FINALIZE_TEXTRACT_RESULT: mocker.patch(
-            f"{_LIFECYCLE_MODULE}.process_textract_result",
-            return_value=ProcessorResult(
-                object_key="test-key",
-                extraction_result=ExtractionResult(
-                    document_type="identity", output_uri="s3://bucket/key"
-                ),
-            ),
-        ),
-        _Mock.CLASSIFY_EXTRACTION_RESULT: mocker.patch(
-            f"{_LIFECYCLE_MODULE}.classify_extraction_result"
         ),
         _Mock.IS_MULTIPAGE_DOCUMENT_FLAGGING_ENABLED: mocker.patch(
             f"{_LIFECYCLE_MODULE}.is_multipage_document_flagging_enabled", return_value=True
@@ -543,56 +516,49 @@ def test_is_selected_for_processing(
 # =============================================================================
 
 
-def test_upsert_initial_ddb_record_routes_to_textract_when_enabled(
+def test_upsert_returns_is_identity_document_when_preclassified_as_identity(
     ddb_doc_metadata_table, s3_bucket, lifecycle_mocks
 ):
-    """When textract flag is on and user category is identity, routes to Textract."""
+    """When preclassification flags is_identity_document, upsert returns PreExtractionResult."""
     lifecycle_mocks[_Mock.PRECLASSIFY_DOCUMENT].return_value = BedrockClassificationResult(
         document_type="driver's license",
         confidence=0.95,
         max_document_count_on_page=1,
         is_identity_document=True,
     )
-    lifecycle_mocks[_Mock.TRY_TEXTRACT_IDENTITY].return_value = _DEFAULT_TEXTRACT_RESULT
 
-    _upsert(s3_bucket, content_type="image/jpeg", user_provided_document_category="identity")
-
-    lifecycle_mocks[_Mock.TRY_TEXTRACT_IDENTITY].assert_called_once()
-    lifecycle_mocks[_Mock.FINALIZE_TEXTRACT_RESULT].assert_called_once_with(
-        "test-file", _DEFAULT_TEXTRACT_RESULT, None
+    s3_bucket.put_object(Key="input/test-file", Body=b"bytes", ContentType="image/jpeg")
+    result = lifecycle_util.upsert_initial_ddb_record(
+        source_bucket_name=s3_bucket.name,
+        source_object_key="input/test-file",
+        original_file_name="test.pdf",
+        ddb_key="test-file",
+        user_provided_document_category="identity",
+        job_id="test-job-id",
+        trace_id="test-trace-id",
     )
-    lifecycle_mocks[_Mock.CLASSIFY_EXTRACTION_RESULT].assert_called_once()
-    item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
-    assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.STARTED
+
+    assert isinstance(result, PreExtractionResult)
+    assert result.is_identity_document is True
 
 
-def test_upsert_initial_ddb_record_unknown_category_with_textract_does_not_crash(
+def test_upsert_is_identity_document_false_for_non_identity(
     ddb_doc_metadata_table, s3_bucket, lifecycle_mocks
 ):
-    """Regression: user_provided_document_category=None must not crash with Textract path."""
-    lifecycle_mocks[_Mock.PRECLASSIFY_DOCUMENT].return_value = BedrockClassificationResult(
-        document_type="driver's license", confidence=0.95, max_document_count_on_page=1
+    """Non-identity preclassification result returns PreExtractionResult with is_identity_document=False."""
+    s3_bucket.put_object(Key="input/test-file", Body=b"bytes", ContentType="image/jpeg")
+    result = lifecycle_util.upsert_initial_ddb_record(
+        source_bucket_name=s3_bucket.name,
+        source_object_key="input/test-file",
+        original_file_name="test.pdf",
+        ddb_key="test-file",
+        user_provided_document_category="income",
+        job_id="test-job-id",
+        trace_id="test-trace-id",
     )
 
-    _upsert(s3_bucket, content_type="image/jpeg", user_provided_document_category=None)
-
-    lifecycle_mocks[_Mock.TRY_TEXTRACT_IDENTITY].assert_not_called()
-    item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
-    assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.PENDING_IMAGE_OPTIMIZATION
-
-
-def test_upsert_initial_ddb_record_falls_through_when_textract_returns_none(
-    ddb_doc_metadata_table, s3_bucket, lifecycle_mocks
-):
-    """When textract returns None (flag off or failure), falls through to BDA path."""
-    lifecycle_mocks[_Mock.PRECLASSIFY_DOCUMENT].return_value = BedrockClassificationResult(
-        document_type="driver's license", confidence=0.95, max_document_count_on_page=1
-    )
-
-    _upsert(s3_bucket, content_type="image/jpeg", user_provided_document_category="identity")
-
-    item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
-    assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.PENDING_IMAGE_OPTIMIZATION
+    assert isinstance(result, PreExtractionResult)
+    assert result.is_identity_document is False
 
 
 # =============================================================================

@@ -3,6 +3,7 @@
 
 import os
 import time
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
@@ -21,19 +22,23 @@ from documentai_api.classifiers.document_classification import (
     classify_as_extraction_not_configured,
     classify_as_failed,
     classify_as_not_implemented,
+    classify_extraction_result,
 )
 from documentai_api.config.constants import (
+    ExtractMethod,
     ProcessStatus,
     S3MetadataKeys,
 )
 from documentai_api.config.env import EnvVars, get_aws_config, get_required_env
 from documentai_api.dtos.classification import ClassificationData
-from documentai_api.dtos.processing import CropResult, OptimizationResult
+from documentai_api.dtos.processing import CropResult, OptimizationResult, PreExtractionResult
+from documentai_api.extractors.textract import extract_textract_identity
 from documentai_api.pipeline.document_lifecycle import (
     set_bda_processing_status_started,
     set_processing_status_started,
     upsert_initial_ddb_record,
 )
+from documentai_api.processors.textract import process_textract_result
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import s3 as s3_service
 from documentai_api.services.exceptions import is_retryable
@@ -51,6 +56,83 @@ logger = documentai_api.logging.get_logger(__name__)
 app = typer.Typer()
 
 
+@dataclass
+class _PreclassifyResult:
+    # Internal data class not to be mistaken with a dto. Leave private and local.
+    existing_record: dict[str, Any]
+    pre_extraction_result: PreExtractionResult | None
+    bbox_future: Any
+    tenant_id: str | None
+
+
+def _preclassify(
+    bucket_name: str,
+    object_key: str,
+    ddb_key: str,
+    original_file_name: str,
+    existing_record: dict[str, Any] | None,
+    s3_content_type: str,
+    s3_file_bytes: bytes,
+    s3_file_size_bytes: int,
+    s3_fetch_duration: Decimal,
+    processor_started_at: str,
+    is_cold_start: bool,
+    user_provided_document_category: str | None,
+    job_id: str | None,
+    trace_id: str | None,
+    batch_id: str | None,
+) -> _PreclassifyResult:
+    """Run preclassification if needed and return the post-preclassification state."""
+    tenant_id = existing_record.get(DocumentMetadata.TENANT_ID) if existing_record else None
+
+    needs_preclassification = existing_record is None or (
+        ProcessStatus.is_awaiting_processing(
+            existing_record.get(DocumentMetadata.PROCESS_STATUS, "")
+        )
+        and DocumentMetadata.PRECLASSIFICATION_CATEGORY not in existing_record
+    )
+
+    if not needs_preclassification:
+        return _PreclassifyResult(
+            existing_record=existing_record,  # type: ignore[arg-type]
+            pre_extraction_result=None,
+            bbox_future=None,
+            tenant_id=tenant_id,
+        )
+
+    pre_extraction_result = upsert_initial_ddb_record(
+        source_bucket_name=bucket_name,
+        source_object_key=object_key,
+        ddb_key=ddb_key,
+        original_file_name=original_file_name,
+        tenant_id=tenant_id,
+        upload_date=strip_time(existing_record[DocumentMetadata.CREATED_AT])
+        if existing_record and DocumentMetadata.CREATED_AT in existing_record
+        else None,
+        user_provided_document_category=user_provided_document_category,
+        job_id=job_id,
+        trace_id=trace_id,
+        batch_id=batch_id,
+        document_processor_started_at=processor_started_at,
+        is_document_processor_cold_start=is_cold_start,
+        file_bytes=s3_file_bytes,
+        content_type=s3_content_type,
+        file_size_bytes=s3_file_size_bytes,
+        s3_fetch_duration_seconds=s3_fetch_duration,
+    )
+    updated_record = get_ddb_record(ddb_key)
+
+    if updated_record is None:
+        raise Exception("Could not retrieve DDB record after upsert")
+
+    return _PreclassifyResult(
+        existing_record=updated_record,
+        pre_extraction_result=pre_extraction_result,
+        bbox_future=pre_extraction_result.bbox_future if pre_extraction_result else None,
+        tenant_id=tenant_id,
+    )
+
+
 def _should_invoke_bda(preclassification_category: str | None) -> bool:
     """Determine if BDA should be invoked based on preclassification and feature flag.
 
@@ -61,6 +143,7 @@ def _should_invoke_bda(preclassification_category: str | None) -> bool:
     """
     if preclassification_category and preclassification_category != "other_document":
         return True
+
     return not skip_bda_if_unclassified()
 
 
@@ -107,6 +190,49 @@ def _persist_optimization_metrics(
         ddb_service.update_item(
             table_name, {"fileName": ddb_key}, "SET " + ", ".join(updates), values
         )
+
+
+def _invoke_textract_if_identity_path(
+    pre_extraction_result: PreExtractionResult | None,
+    ddb_key: str,
+    content_type: str | None,
+    file_bytes: bytes | None,
+    tenant_id: str | None = None,
+    batch_id: str | None = None,
+) -> bool:
+    """Run Textract extraction if preclassification identified an identity document.
+
+    Returns True if Textract handled the document (caller should skip BDA).
+    """
+    if not pre_extraction_result or not pre_extraction_result.is_identity_document:
+        return False
+
+    if not content_type or not file_bytes:
+        return False
+
+    try:
+        result = extract_textract_identity(content_type, file_bytes, ddb_key)
+
+        if result is None:
+            return False
+
+        processor_result = process_textract_result(ddb_key, result, tenant_id, batch_id)
+
+        if processor_result.extraction_result is not None:
+            classify_extraction_result(
+                ddb_key=processor_result.object_key,
+                result=processor_result.extraction_result,
+                tenant_id=processor_result.tenant_id,
+                batch_id=processor_result.batch_id,
+                extraction_method=ExtractMethod.TEXTRACT,
+            )
+
+        # If Textract failed to extract any data, return False to fallback to
+        # other extraction methods
+        return processor_result.extraction_result is not None
+    except Exception as e:
+        logger.error(f"Textract extraction failed for {ddb_key}: {e}")
+        return False
 
 
 def _invoke_bda(
@@ -170,6 +296,137 @@ def invoke_bda(
         raise
 
 
+def _invoke_bda_path(
+    bucket_name: str,
+    object_key: str,
+    ddb_key: str,
+    existing_record: dict[str, Any],
+    s3_content_type: str,
+    s3_file_bytes: bytes,
+    bbox_future: Any,
+    apply_grayscale: bool,
+    batch_id: str | None,
+) -> None:
+    """Optimize image and invoke BDA (or classify as not-configured/not-implemented)."""
+    preclassification_document_type = existing_record.get(
+        DocumentMetadata.PRECLASSIFICATION_CATEGORY
+    )
+    routing_category = existing_record.get(
+        DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_CATEGORY
+    )
+
+    opt = optimize_s3_image(
+        bucket_name,
+        object_key,
+        apply_grayscale=apply_grayscale,
+        file_bytes=s3_file_bytes,
+        content_type=s3_content_type,
+        precomputed_bbox=bbox_future.result() if bbox_future is not None else None,
+    )
+
+    if apply_grayscale and (opt.too_large or opt.failed):
+        # It's possible, though unlikely, that an image is too large after optimization.
+        # If so, we persist the optimization metrics for future reference and
+        # classify the document as not implemented
+        _persist_optimization_metrics(ddb_key, opt.crop_result, False, None, opt_result=opt)
+        classify_as_not_implemented(
+            object_key=ddb_key,
+            data=ClassificationData(
+                additional_info="File too large after conversion"
+                if opt.too_large
+                else "Failed to download file for optimization"
+            ),
+            batch_id=batch_id,
+        )
+        return
+
+    _persist_optimization_metrics(
+        ddb_key, opt.crop_result, opt.grayscale_applied, opt.file_size_bytes, opt_result=opt
+    )
+
+    if _should_invoke_bda(preclassification_document_type):
+        invoke_bda(bucket_name, object_key, ddb_key, routing_category, batch_id)
+
+        if apply_grayscale:
+            logger.info(f"Optimized {ddb_key} and invoked BDA")
+    else:
+        logger.info(f"{ddb_key} preclassified as other_document; skipping BDA (flag on)")
+        classify_as_extraction_not_configured(
+            object_key=ddb_key,
+            data=ClassificationData(
+                additional_info="Preclassified as other_document; BDA skipped per feature flag"
+            ),
+            batch_id=batch_id,
+        )
+
+
+def _dispatch_document_processor(
+    bucket_name: str,
+    object_key: str,
+    ddb_key: str,
+    status: str | None,
+    existing_record: dict[str, Any],
+    pre_extraction_result: PreExtractionResult | None,
+    tenant_id: str | None,
+    s3_content_type: str,
+    s3_file_bytes: bytes,
+    bbox_future: Any,
+    batch_id: str | None,
+) -> None:
+    """Validate content and dispatch to the appropriate extraction path."""
+    requires_validation = status == ProcessStatus.PENDING_IMAGE_OPTIMIZATION or (
+        status is not None and ProcessStatus.is_awaiting_processing(status)
+    )
+
+    if requires_validation:
+        try:
+            validate_s3_object_is_bda_native(bucket_name, object_key)
+        except ValueError as e:
+            logger.warning(f"Rejecting {ddb_key}: {e}")
+            classify_as_failed(
+                object_key=ddb_key,
+                error_message="Uploaded file content is not a supported document type",
+                data=ClassificationData(additional_info=str(e)),
+                batch_id=batch_id,
+            )
+            return
+
+    if status == ProcessStatus.PENDING_IMAGE_OPTIMIZATION:
+        apply_grayscale = True
+    elif status and ProcessStatus.is_awaiting_processing(status):
+        apply_grayscale = False
+    else:
+        # Already processing or terminal (SUCCESS, FAILED, STARTED) - skip.
+        logger.info(f"File {ddb_key} already has status: {status}, skipping")
+        return
+
+    if not set_processing_status_started(ddb_key, status):
+        # Atomically claim - only one invocation proceeds; duplicates bail.
+        logger.info(f"{ddb_key} already claimed from {status}; skipping")
+        return
+
+    # Textract identity and BDA are mutually exclusive. Textract identity is
+    # optimized for identity documents (driver's licenses, passports), and
+    # is 5x to 20x faster than BDA.
+    if _invoke_textract_if_identity_path(
+        pre_extraction_result, ddb_key, s3_content_type, s3_file_bytes, tenant_id, batch_id
+    ):
+        # Exit early - Textract handled the document.
+        return
+
+    _invoke_bda_path(
+        bucket_name,
+        object_key,
+        ddb_key,
+        existing_record,
+        s3_content_type,
+        s3_file_bytes,
+        bbox_future,
+        apply_grayscale=apply_grayscale,
+        batch_id=batch_id,
+    )
+
+
 def main(
     object_key: str,
     bucket_name: str | None = None,
@@ -179,20 +436,7 @@ def main(
     batch_id: str | None = None,
     is_cold_start: bool = False,
 ) -> None:
-    """Process uploaded document and invoke BDA.
-
-    This job combines DDB insertion, grayscale conversion, and BDA invocation
-    into a single workflow triggered by S3 upload events.
-
-    Args:
-        object_key: S3 object key (e.g. "input/document.pdf")
-        bucket_name: Optional S3 bucket name (defaults to DOCUMENTAI_INPUT_LOCATION env var)
-        user_provided_document_category: Optional document category (will be read from S3 metadata if not provided)
-        job_id: Optional job ID (will be read from S3 metadata if not provided)
-        trace_id: Optional trace ID (will be read from S3 metadata if not provided)
-        batch_id: Optional batch ID (will be read from S3 metadata if not provided)
-        is_cold_start: Whether this is the Lambda container's first invocation
-    """
+    """Process uploaded document: fetch from S3, preclassify, dispatch to extraction."""
     processor_started_at = datetime.now(UTC)
     if bucket_name is None:
         input_location = get_required_env(EnvVars.DOCUMENTAI_INPUT_LOCATION)
@@ -200,9 +444,8 @@ def main(
 
     logger.info(f"Processing document: s3://{bucket_name}/{object_key}")
 
-    # Single get_object call - response contains Metadata, ContentType, ContentLength,
-    # and Body, eliminating the separate head_object + get_content_type + get_file_size_bytes
-    # head calls that previously added 3 extra round trips.
+    # Single get_object call eliminates separate head_object + get_content_type +
+    # get_file_size_bytes round trips.
     s3_fetch_start = time.monotonic()
     s3_response = s3_service.get_object(bucket_name, object_key)
     metadata = s3_response.get("Metadata", {})
@@ -227,168 +470,47 @@ def main(
         except Exception as e:
             logger.warning(f"Could not read S3 metadata: {e}")
 
-    # strip S3 prefix for DynamoDB key (files are stored without prefix)
     ddb_key = os.path.basename(object_key)
     existing_record = get_ddb_record(ddb_key)
 
-    # Run preclassification (and the rest of upsert_initial_ddb_record) only when
-    # the record is in its initial pre-classification state:
-    #   - no record (doc-processor saw the S3 event before the API Lambda), OR
-    #   - the API Lambda's minimal upload row (status=NOT_STARTED with no
-    #     preclassificationCategory yet).
-    # Otherwise we'd re-classify when grayscale conversion overwrites the input
-    # file in S3 and fires another event, looping the pipeline.
-    needs_preclassification = existing_record is None or (
-        ProcessStatus.is_awaiting_processing(
-            existing_record.get(DocumentMetadata.PROCESS_STATUS, "")
-        )
-        and DocumentMetadata.PRECLASSIFICATION_CATEGORY not in existing_record
+    preclassify_result = _preclassify(
+        bucket_name=bucket_name,
+        object_key=object_key,
+        ddb_key=ddb_key,
+        original_file_name=original_file_name,
+        existing_record=existing_record,
+        s3_content_type=s3_content_type,
+        s3_file_bytes=s3_file_bytes,
+        s3_file_size_bytes=s3_file_size_bytes,
+        s3_fetch_duration=s3_fetch_duration,
+        processor_started_at=processor_started_at.isoformat(),
+        is_cold_start=is_cold_start,
+        user_provided_document_category=user_provided_document_category,
+        job_id=job_id,
+        trace_id=trace_id,
+        batch_id=batch_id,
     )
 
-    if needs_preclassification:
-        bbox_future = upsert_initial_ddb_record(
-            source_bucket_name=bucket_name,
-            source_object_key=object_key,
-            ddb_key=ddb_key,
-            original_file_name=original_file_name,
-            tenant_id=existing_record.get(DocumentMetadata.TENANT_ID) if existing_record else None,
-            upload_date=strip_time(existing_record[DocumentMetadata.CREATED_AT])
-            if existing_record and DocumentMetadata.CREATED_AT in existing_record
-            else None,
-            user_provided_document_category=user_provided_document_category,
-            job_id=job_id,
-            trace_id=trace_id,
-            batch_id=batch_id,
-            document_processor_started_at=processor_started_at.isoformat(),
-            is_document_processor_cold_start=is_cold_start,
-            file_bytes=s3_file_bytes,
-            content_type=s3_content_type,
-            file_size_bytes=s3_file_size_bytes,
-            s3_fetch_duration_seconds=s3_fetch_duration,
-        )
-        existing_record = get_ddb_record(ddb_key)
-
-    else:
-        bbox_future = None
-
-    if existing_record is None:
-        raise Exception("Could not retrieve DDB record after upsert")
-
+    existing_record = preclassify_result.existing_record
     status = existing_record.get(DocumentMetadata.PROCESS_STATUS)
     logger.info(
         f"Processing {ddb_key}: status={status}, "
         f"has_preclassification={'preclassificationCategory' in existing_record}"
     )
 
-    # Validate actual file bytes before processing - presigned uploads skip the
-    # API-layer magic-byte check, so confirm the content is a supported type.
-    requires_bda_native_validation = status == ProcessStatus.PENDING_IMAGE_OPTIMIZATION or (
-        status is not None and ProcessStatus.is_awaiting_processing(status)
+    _dispatch_document_processor(
+        bucket_name=bucket_name,
+        object_key=object_key,
+        ddb_key=ddb_key,
+        status=status,
+        existing_record=existing_record,
+        pre_extraction_result=preclassify_result.pre_extraction_result,
+        tenant_id=preclassify_result.tenant_id,
+        s3_content_type=s3_content_type,
+        s3_file_bytes=s3_file_bytes,
+        bbox_future=preclassify_result.bbox_future,
+        batch_id=batch_id,
     )
-    if requires_bda_native_validation:
-        try:
-            validate_s3_object_is_bda_native(bucket_name, object_key)
-        except ValueError as e:
-            logger.warning(f"Rejecting {ddb_key}: {e}")
-            classify_as_failed(
-                object_key=ddb_key,
-                error_message="Uploaded file content is not a supported document type",
-                data=ClassificationData(additional_info=str(e)),
-                batch_id=batch_id,
-            )
-            return
-
-    if status == ProcessStatus.PENDING_IMAGE_OPTIMIZATION:
-        # Atomically claim - only one invocation proceeds; duplicates bail.
-        if not set_processing_status_started(
-            ddb_key, ProcessStatus.PENDING_IMAGE_OPTIMIZATION.value
-        ):
-            logger.info(f"{ddb_key} already claimed from PENDING_IMAGE_OPTIMIZATION; skipping")
-            return
-
-        # JPEG/PNG images always get crop + grayscale before BDA.
-        logger.info(f"Branch: PENDING_IMAGE_OPTIMIZATION (apply_grayscale=True) for {ddb_key}")
-        preclassification_document_type = existing_record.get(
-            DocumentMetadata.PRECLASSIFICATION_CATEGORY
-        )
-        routing_category = existing_record.get(
-            DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_CATEGORY
-        )
-        opt = optimize_s3_image(
-            bucket_name,
-            object_key,
-            apply_grayscale=True,
-            file_bytes=s3_file_bytes,
-            content_type=s3_content_type,
-            precomputed_bbox=bbox_future.result() if bbox_future is not None else None,
-        )
-        if not opt.too_large and not opt.failed:
-            _persist_optimization_metrics(
-                ddb_key, opt.crop_result, opt.grayscale_applied, opt.file_size_bytes, opt_result=opt
-            )
-
-            if _should_invoke_bda(preclassification_document_type):
-                invoke_bda(bucket_name, object_key, ddb_key, routing_category, batch_id)
-                logger.info(f"Optimized {ddb_key} and invoked BDA")
-            else:
-                logger.info(f"{ddb_key} preclassified as other_document; skipping BDA (flag on)")
-                classify_as_extraction_not_configured(
-                    object_key=ddb_key,
-                    data=ClassificationData(
-                        additional_info="Preclassified as other_document; BDA skipped per feature flag"
-                    ),
-                    batch_id=batch_id,
-                )
-        else:
-            _persist_optimization_metrics(ddb_key, opt.crop_result, False, None, opt_result=opt)
-            classify_as_not_implemented(
-                object_key=ddb_key,
-                data=ClassificationData(
-                    additional_info="File too large after conversion"
-                    if opt.too_large
-                    else "Failed to download file for optimization"
-                ),
-                batch_id=batch_id,
-            )
-    elif status and ProcessStatus.is_awaiting_processing(status):
-        # Atomically claim - only one invocation proceeds; duplicates bail.
-        if not set_processing_status_started(ddb_key, status):
-            logger.info(f"{ddb_key} already claimed from {status}; skipping")
-            return
-        # Non-grayscale-convertible files (PDFs, TIFFs). Best-effort crop to
-        # isolate the document from background for better extraction quality.
-        logger.info(f"Branch: is_awaiting_processing (apply_grayscale=False) for {ddb_key}")
-        preclassification_document_type = existing_record.get(
-            DocumentMetadata.PRECLASSIFICATION_CATEGORY
-        )
-        routing_category = existing_record.get(
-            DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_CATEGORY
-        )
-        opt = optimize_s3_image(
-            bucket_name,
-            object_key,
-            apply_grayscale=False,
-            file_bytes=s3_file_bytes,
-            content_type=s3_content_type,
-            precomputed_bbox=bbox_future.result() if bbox_future is not None else None,
-        )
-        _persist_optimization_metrics(
-            ddb_key, opt.crop_result, False, opt.file_size_bytes, opt_result=opt
-        )
-        if _should_invoke_bda(preclassification_document_type):
-            invoke_bda(bucket_name, object_key, ddb_key, routing_category, batch_id)
-        else:
-            logger.info(f"{ddb_key} preclassified as other_document; skipping BDA (flag on)")
-            classify_as_extraction_not_configured(
-                object_key=ddb_key,
-                data=ClassificationData(
-                    additional_info="Preclassified as other_document; BDA skipped per feature flag"
-                ),
-                batch_id=batch_id,
-            )
-    else:
-        # Already processing or terminal (SUCCESS, FAILED, STARTED) - skip.
-        logger.info(f"File {ddb_key} already has status: {status}, skipping")
 
 
 @app.command()

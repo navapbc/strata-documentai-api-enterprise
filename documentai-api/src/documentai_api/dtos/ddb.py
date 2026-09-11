@@ -5,7 +5,7 @@ from typing import Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from documentai_api.config.constants import ProcessStatus
+from documentai_api.config.constants import ExtractMethod, ProcessStatus
 from documentai_api.dtos.classification import (
     BedrockClassificationResult,
     ClassificationData,
@@ -162,6 +162,7 @@ class UpdateDdbRecord(BaseModel):
     result_processor_started_at: str | None = None
     bda_invoke_duration_seconds: Decimal | None = None
     bda_invoke_retry_count: int | None = None
+    extraction_method: ExtractMethod = ExtractMethod.BDA
 
 
 class InitialDdbRecord(BaseModel):

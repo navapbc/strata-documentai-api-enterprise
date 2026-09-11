@@ -3,7 +3,7 @@
 import pytest
 
 from documentai_api.classifiers import document_classification as classification_util
-from documentai_api.config.constants import ProcessStatus
+from documentai_api.config.constants import ExtractMethod, ProcessStatus
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.dtos.ddb import UpdateDdbRecord
 from documentai_api.dtos.processing import InternalApiResponse
@@ -74,6 +74,7 @@ def test_classify_functions(
         args.insert(1, error_msg)
     elif response_code == ResponseCodes.SUCCESS:
         args.insert(1, response_code)
+        args.insert(3, ExtractMethod.BDA)
 
     function(*args)
 
