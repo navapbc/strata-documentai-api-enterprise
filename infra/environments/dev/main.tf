@@ -329,7 +329,7 @@ module "config" {
   prefix = local.ssm_prefix
 
   parameters = {
-    "feature-flags/preclassification-based-routing"             = "false"
+    "feature-flags/preclassification-based-routing"             = "true"
     "feature-flags/skip-bda-if-unclassified"                    = "false"
     "feature-flags/enable-preclassification-blueprint-matching" = "true"
     "feature-flags/document-crop"                               = "true"
