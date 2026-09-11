@@ -3175,7 +3175,7 @@
         "type": "number"
       },
       {
-        "description": "Any receipt, money-order, or notice reference number shown on the document.",
+        "description": "The unique receipt, money-order, or notice reference number printed on the document, often labeled 'Receipt #', 'Order #', 'Confirmation #', or 'Notice #' near the top of the page. Extract exactly as printed, including letters and dashes.",
         "name": "reference_number",
         "type": "string"
       },
@@ -3185,7 +3185,7 @@
         "type": "string"
       },
       {
-        "description": "Type of document, such as money-order receipt, roommate payment record, or overdue notice.",
+        "description": "The specific type of this shelter payment document, normalized to exactly one of: Payment Receipt, Money Order Receipt, Roommate Payment Record, or Overdue Notice, based on the title or header text printed at the top of the document.",
         "name": "document_type",
         "type": "string"
       }
@@ -3197,7 +3197,7 @@
     "document_type": "Shelter-Verification-Letter",
     "fields": [
       {
-        "description": "The full name of the person or organization writing the statement.",
+        "description": "The full name of the individual person who signed or wrote the statement, typically found in the signature block or byline near the bottom of the letter. This is distinct from the customer whose living situation is being verified and distinct from the organization name.",
         "name": "author_name",
         "type": "string"
       },
@@ -3217,7 +3217,7 @@
         "type": "boolean"
       },
       {
-        "description": "Contact information for the author, such as phone number, email, or address.",
+        "description": "Contact information for the author, such as phone number, email, or address, typically printed in the signature block directly after the author's name and title near the bottom of the letter.",
         "name": "contact_information",
         "type": "string"
       },
@@ -3227,7 +3227,7 @@
         "type": "string"
       },
       {
-        "description": "The author's relationship to the customer, such as landlord, employer, family member, neighbor, shelter staff, or service provider.",
+        "description": "The author's title or relationship to the customer, such as landlord, employer, family member, neighbor, case manager, shelter staff, or service provider, typically printed below the author's name in the signature block.",
         "name": "author_relationship",
         "type": "string"
       }

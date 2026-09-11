@@ -18,7 +18,7 @@
     "document_type": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "Type of document, such as money-order receipt, roommate payment record, or overdue notice."
+      "instruction": "The specific type of this shelter payment document, normalized to exactly one of: Payment Receipt, Money Order Receipt, Roommate Payment Record, or Overdue Notice, based on the title or header text printed at the top of the document."
     },
     "amount": {
       "type": "number",
@@ -48,7 +48,7 @@
     "reference_number": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "Any receipt, money-order, or notice reference number shown on the document."
+      "instruction": "The unique receipt, money-order, or notice reference number printed on the document, often labeled 'Receipt #', 'Order #', 'Confirmation #', or 'Notice #' near the top of the page. Extract exactly as printed, including letters and dashes."
     }
   }
 }

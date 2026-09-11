@@ -13,12 +13,12 @@
     "author_name": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The full name of the person or organization writing the statement."
+      "instruction": "The full name of the individual person who signed or wrote the statement, typically found in the signature block or byline near the bottom of the letter. This is distinct from the customer whose living situation is being verified and distinct from the organization name."
     },
     "author_relationship": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The author's relationship to the customer, such as landlord, employer, family member, neighbor, shelter staff, or service provider."
+      "instruction": "The author's title or relationship to the customer, such as landlord, employer, family member, neighbor, case manager, shelter staff, or service provider, typically printed below the author's name in the signature block."
     },
     "assertion_text": {
       "type": "string",
@@ -33,7 +33,7 @@
     "contact_information": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "Contact information for the author, such as phone number, email, or address."
+      "instruction": "Contact information for the author, such as phone number, email, or address, typically printed in the signature block directly after the author's name and title near the bottom of the letter."
     },
     "has_signature": {
       "type": "boolean",
