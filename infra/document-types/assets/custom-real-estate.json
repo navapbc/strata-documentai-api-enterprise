@@ -1,5 +1,5 @@
 {
-  "description": "A property tax assessment notice, deed abstract, or county assessor property record showing ownership of real property other than the primary residence. Used to verify real-estate asset value.",
+  "description": "A county or municipal property tax assessment notice, deed abstract, or county assessor property record showing ownership and assessed value of real property other than the primary residence. This is issued by a government tax assessor, recorder, or appraisal office, NOT by a mortgage lender or loan servicer. Do not use for lender-issued mortgage or loan statements, which show a payment breakdown and are a different document type. Used to verify real-estate asset value.",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "class": "Real-Estate-Ownership-Document",
@@ -8,27 +8,32 @@
     "owner_name": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The full name of the property owner."
+      "instruction": "The full name of the property owner, as shown on the county assessor, recorder, or deed record."
     },
     "property_address": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The full address of the real property, including city, state, and ZIP code if present."
+      "instruction": "The full address of the real property, including city, state, and ZIP code if present, as shown on the county assessor, recorder, or deed record."
     },
     "parcel_number": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The county parcel or assessor identification number for the property."
+      "instruction": "The county parcel or assessor identification number for the property. This field is required and should be present on any genuine county assessor or deed record."
     },
     "county_office_name": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The name of the county assessor, recorder, or tax office that issued the document."
+      "instruction": "The name of the county assessor, recorder, or tax office that issued the document, typically found in the header or letterhead at the top of the page. This is a government office, not a mortgage lender, loan servicer, or the property owner."
     },
     "document_type": {
       "type": "string",
-      "inferenceType": "explicit",
-      "instruction": "Type of real-estate document, such as deed, property-tax assessment, or appraisal."
+      "inferenceType": "inferred",
+      "instruction": "Classify the document into one of: Deed, Property-Tax Assessment, Appraisal, or Other. This document is issued by a government tax assessor, recorder, or appraisal office, not a mortgage lender or loan servicer."
+    },
+    "property_type": {
+      "type": "string",
+      "inferenceType": "inferred",
+      "instruction": "Classify the type of property into one of: Single-Family Residential, Multi-Family Residential, Condominium, Commercial, Land/Vacant Lot, or Other, based on the property description or classification shown on the document."
     },
     "assessed_value": {
       "type": "number",
@@ -48,7 +53,7 @@
     "loan_balance": {
       "type": "number",
       "inferenceType": "explicit",
-      "instruction": "The remaining mortgage or lien balance on the property, if shown."
+      "instruction": "The remaining mortgage or lien balance on the property, only if referenced on the county assessor, recorder, or deed record itself. Leave blank if this information is not present on that record."
     },
     "tax_year": {
       "type": "string",
