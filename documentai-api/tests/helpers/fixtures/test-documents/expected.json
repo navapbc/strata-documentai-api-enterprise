@@ -210,15 +210,12 @@
   },
   "synthetic-expense-burial-picture.png": {
     "//": [
-      "Verified against a live run (2x, consistent). The new custom 'Burial' blueprint",
-      "(infra/document-types/expense/custom-burial.json, deployed as",
-      "docai-dev-...-expense-custom-burial) is attached to the per-category 'expense'",
-      "BDA project, but per-category routing isn't enabled here (no BDA_PROJECT_ID_EXPENSE",
-      "on the Lambda) - only the 'all' project runs at request time, and it doesn't yet",
-      "include this blueprint. BDA instead matches the generic public 'Invoices' blueprint",
-      "with low field confidence (105). Expect this to change to a 'Burial' match once the",
-      "'all' project is updated to include the new expense-category custom blueprints -",
-      "revisit then."
+      "Verified live with preclassification-based-routing ON (2x, consistent). Routed to",
+      "the 'invoices' per-category project (preclassified as an invoice-like document,",
+      "not 'expense'), which has no 'Burial' blueprint, so it matches the generic public",
+      "'Invoices' blueprint at low confidence (105). Once routing is live in dev this is",
+      "the expected steady-state result unless preclassification accuracy improves for",
+      "this doc - revisit if so."
     ],
     "bdaMatchedDocumentClass": "Invoices",
     "content_type": "image/png",
@@ -230,14 +227,11 @@
   },
   "synthetic-expense-burial-rendered-spanish.jpg": {
     "//": [
-      "Verified against a live run (2x, consistent). Spanish-language variant of the",
-      "prepaid burial expenses statement - same root cause/caveat as",
-      "synthetic-expense-burial-picture.png: the new custom 'Burial' blueprint is attached",
-      "to the 'expense' BDA project but not yet to the 'all' project actually used at",
-      "request time (no per-category routing configured), so BDA falls back to the",
-      "generic public 'Invoices' blueprint with low field confidence (105). Expect this to",
-      "change to a 'Burial' match once the 'all' project picks up the new expense-category",
-      "custom blueprints - revisit then."
+      "Verified live with preclassification-based-routing ON (2x, consistent). Spanish-",
+      "language burial expenses statement - preclassification doesn't match any known",
+      "category here, so it falls back to the 'all' project (which lacks the custom",
+      "'Burial' blueprint) and matches the generic public 'Invoices' blueprint at low",
+      "confidence (105)."
     ],
     "bdaMatchedDocumentClass": "Invoices",
     "content_type": "image/jpeg",
@@ -249,11 +243,11 @@
   },
   "synthetic-expense-burial-scan-corner-torn.jpg": {
     "//": [
-      "Verified against a live run (2x, consistent). This is a burial trust account",
-      "statement (balances/contributions/interest), not an invoice, so even once the new",
-      "custom 'Burial' blueprint reaches the 'all' project it may still match the generic",
-      "public 'Bank-Statement' blueprint instead - revisit once that wiring lands to see",
-      "which one wins. Torn-corner scan damage did not trip the blur detector."
+      "Verified live with preclassification-based-routing ON (2x, consistent). Routed to",
+      "the 'account_statements' per-category project (this trust-account-style statement",
+      "preclassifies closer to a bank/account statement than an expense doc), which",
+      "matches the generic public 'Bank-Statement' blueprint. Torn-corner scan damage did",
+      "not trip the blur detector."
     ],
     "bdaMatchedDocumentClass": "Bank-Statement",
     "content_type": "image/jpeg",
@@ -265,71 +259,55 @@
   },
   "synthetic-expense-child-support-rendered.pdf": {
     "//": [
-      "Verified against a live run (2x, consistent). A custom 'Child-Support-Document'",
-      "blueprint exists (infra/document-types/dependent_income/custom-child-support-document.json,",
-      "deployed as docai-dev-...-dependent_income-custom-child-support-document) but, like the",
-      "expense/custom-burial blueprint, is attached to its per-category BDA project only -",
-      "not yet to the 'all' project actually used at request time (no per-category routing",
-      "configured) - so BDA finds no matching blueprint. Expect this to change to a",
-      "'Child-Support-Document' match once the 'all' project picks up the new custom",
-      "blueprints - revisit then."
+      "Verified live with preclassification-based-routing ON (2x, consistent). Correctly",
+      "routed to the 'dependent_income' per-category project, which has the custom",
+      "'Child-Support-Document' blueprint attached, and matches it directly."
     ],
-    "bdaMatchedDocumentClass": null,
+    "bdaMatchedDocumentClass": "Child-Support-Document",
     "content_type": "application/pdf",
     "e2e_enabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "002"
+    "responseCode": "000"
   },
   "synthetic-expense-child-support-scan.jpg": {
     "//": [
-      "Verified against a live run (2x, consistent). Same root cause/caveat as",
-      "synthetic-expense-child-support-rendered.pdf: the custom 'Child-Support-Document'",
-      "blueprint is attached to the 'dependent_income' BDA project but not yet to the 'all'",
-      "project actually used at request time, so BDA finds no matching blueprint. Expect",
-      "this to change once the 'all' project picks up the new custom blueprints - revisit",
-      "then."
+      "Verified live with preclassification-based-routing ON (2x, consistent). Same as",
+      "synthetic-expense-child-support-rendered.pdf - correctly routed to the",
+      "'dependent_income' project and matches the custom 'Child-Support-Document'",
+      "blueprint directly."
     ],
-    "bdaMatchedDocumentClass": null,
+    "bdaMatchedDocumentClass": "Child-Support-Document",
     "content_type": "image/jpeg",
     "e2e_enabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "002"
+    "responseCode": "000"
   },
   "synthetic-expense-child-support-spanish-picture.png": {
     "//": [
-      "Flaky: BDA classification of this Spanish-language child support statement is",
-      "non-deterministic against the current 'all' project blueprint set (which does not",
-      "yet include the new custom 'Child-Support-Document' blueprint - see",
-      "synthetic-expense-child-support-rendered.pdf). Across 5 live runs it returned no",
-      "blueprint match 3 times (responseCode 002) and a false-positive match against the",
-      "generic public 'Bank-Statement' blueprint 2 times (responseCode 105 once, 000 once).",
-      "No single expected value holds. Disabled from e2e (e2e_enabled: false) to stop flaky",
-      "failures; re-enable and set the correct expected match once the 'all' project",
-      "includes the new custom blueprints and behavior is re-verified."
+      "Was flaky (e2e_enabled: false) prior to preclassification-based-routing: BDA",
+      "classification against the 'all' project was non-deterministic (see git history",
+      "for details). Re-verified live with routing ON (2x, consistent) - now",
+      "deterministically routes to the 'dependent_income' project and matches the custom",
+      "'Child-Support-Document' blueprint directly. Re-enabled."
     ],
-    "bdaMatchedDocumentClass": null,
+    "bdaMatchedDocumentClass": "Child-Support-Document",
     "content_type": "image/png",
-    "e2e_enabled": false,
+    "e2e_enabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "002"
+    "responseCode": "000"
   },
   "synthetic-expense-dependent-care-render.pdf": {
     "//": [
-      "Verified against a live run (2x, consistent). A custom 'Dependent-Care-Statement'",
-      "blueprint exists (infra/document-types/expense/custom-dependent-care.json, deployed",
-      "as docai-dev-...-expense-custom-dependent-care) but, like the other new custom",
-      "blueprints this session, is attached to its per-category 'expense' BDA project only -",
-      "not yet to the 'all' project actually used at request time (no per-category routing",
-      "configured). Unlike burial/child-support, BDA here confidently matches the generic",
-      "public 'Invoices' blueprint at full confidence (000), not a low-confidence or",
-      "no-match result. Expect this to change to a 'Dependent-Care-Statement' match once the",
-      "'all' project picks up the new expense-category custom blueprints - revisit then."
+      "Verified live with preclassification-based-routing ON (2x, consistent).",
+      "Preclassification doesn't match any known category for this doc, so it falls back",
+      "to the 'all' project (no custom 'Dependent-Care-Statement' blueprint there) and",
+      "matches the generic public 'Invoices' blueprint."
     ],
     "bdaMatchedDocumentClass": "Invoices",
     "content_type": "application/pdf",
@@ -341,12 +319,10 @@
   },
   "synthetic-expense-dependent-care-scan.png": {
     "//": [
-      "Verified against a live run (2x, consistent). Same root cause/caveat as",
-      "synthetic-expense-dependent-care-render.pdf: the custom 'Dependent-Care-Statement'",
-      "blueprint is attached to the 'expense' BDA project but not yet to the 'all' project",
-      "actually used at request time, so BDA falls back to a confident match against the",
-      "generic public 'Invoices' blueprint (000). Expect this to change once the 'all'",
-      "project picks up the new custom blueprints - revisit then."
+      "Verified live with preclassification-based-routing ON (2x, consistent). Routed to",
+      "the 'invoices' per-category project (preclassified as invoice-like, not 'expense'),",
+      "which lacks the custom 'Dependent-Care-Statement' blueprint, so it matches the",
+      "generic public 'Invoices' blueprint."
     ],
     "bdaMatchedDocumentClass": "Invoices",
     "content_type": "image/png",
@@ -358,13 +334,11 @@
   },
   "synthetic-expense-dependent-care-render-spanish.png": {
     "//": [
-      "Verified against a live run (2x, consistent). Spanish-language variant of the",
-      "dependent care expense statement - same root cause/caveat as",
-      "synthetic-expense-dependent-care-render.pdf: the custom 'Dependent-Care-Statement'",
-      "blueprint is attached to the 'expense' BDA project but not yet to the 'all' project",
-      "actually used at request time, so BDA falls back to a confident match against the",
-      "generic public 'Invoices' blueprint (000). Expect this to change once the 'all'",
-      "project picks up the new custom blueprints - revisit then."
+      "Verified live with preclassification-based-routing ON (2x, consistent). Same root",
+      "cause as synthetic-expense-dependent-care-scan.png - routed to the 'invoices'",
+      "per-category project (preclassified as invoice-like), which lacks the custom",
+      "'Dependent-Care-Statement' blueprint, so it matches the generic public 'Invoices'",
+      "blueprint."
     ],
     "bdaMatchedDocumentClass": "Invoices",
     "content_type": "image/png",
@@ -376,19 +350,11 @@
   },
   "synthetic-insurance-health-insurance-premium-render.pdf": {
     "//": [
-      "Verified against a live run (2x, consistent). A custom",
-      "'Health-Insurance-Premium-Statement' blueprint exists",
-      "(deployed as docai-dev-...-insurance-custom-health-insurance-premium-statement) but,",
-      "like the other new custom blueprints this session, is attached to its per-category",
-      "'insurance' BDA project only - not yet to the 'all' project actually used at request",
-      "time (confirmed the 'preclassification-based-routing' feature flag is still 'false',",
-      "so per-category BDA_PROJECT_ID_* env vars now present on the Lambda aren't consulted",
-      "either). BDA falls back to a confident match against the generic public 'Invoices'",
-      "blueprint (000). Expect this to change to a 'Health-Insurance-Premium-Statement'",
-      "match once the 'all' project picks up the new insurance-category custom blueprints -",
-      "revisit then."
+      "Verified live with preclassification-based-routing ON (2x, consistent). Correctly",
+      "routed to the 'insurance' per-category project, which has the custom",
+      "'Health-Insurance-Premium-Statement' blueprint attached, and matches it directly."
     ],
-    "bdaMatchedDocumentClass": "Invoices",
+    "bdaMatchedDocumentClass": "Health-Insurance-Premium-Statement",
     "content_type": "application/pdf",
     "e2e_enabled": true,
     "isDocumentBlurry": false,
@@ -398,44 +364,79 @@
   },
   "synthetic-insurance-health-insurance-premium-render-spanish.png": {
     "//": [
-      "Flaky: BDA classification of this Spanish-language health insurance premium",
-      "statement is non-deterministic against the current 'all' project blueprint set",
-      "(which does not yet include the new custom 'Health-Insurance-Premium-Statement'",
-      "blueprint - see synthetic-insurance-health-insurance-premium-render.pdf). Across 7",
-      "live runs (2 initial probe passes, a real pytest run + its automatic rerun, and 3",
-      "further targeted probes) it matched the generic public 'Invoices' blueprint 3 times",
-      "(responseCode 000) and returned no blueprint match 4 times (responseCode 002). No",
-      "single expected value holds. Disabled from e2e (e2e_enabled: false) to stop flaky",
-      "failures; re-enable and set the correct expected match once the 'all' project",
-      "includes the new custom blueprints and behavior is re-verified."
+      "Was flaky (e2e_enabled: false) prior to preclassification-based-routing: BDA",
+      "classification against the 'all' project was non-deterministic (see git history",
+      "for details). Re-verified live with routing ON (2x, consistent) - now",
+      "deterministically routes to the 'insurance' project and matches the custom",
+      "'Health-Insurance-Premium-Statement' blueprint directly. Re-enabled."
     ],
-    "bdaMatchedDocumentClass": null,
+    "bdaMatchedDocumentClass": "Health-Insurance-Premium-Statement",
     "content_type": "image/png",
-    "e2e_enabled": false,
+    "e2e_enabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "002"
+    "responseCode": "000"
   },
   "synthetic-insurance-health-insurance-premium-scan.jpg": {
     "//": [
-      "Verified against a live run (2x, consistent). Unlike the render/spanish variants,",
-      "this scanned copy does not even trip the generic public 'Invoices' fallback - BDA",
-      "finds no matching blueprint at all (002/null), likely due to scan-quality reducing",
-      "field-extraction confidence below whatever threshold gates a match. Same root",
-      "cause/caveat as the other health-insurance-premium entries: the custom",
-      "'Health-Insurance-Premium-Statement' blueprint is attached to the 'insurance' BDA",
-      "project but not yet to the 'all' project actually used at request time. Expect this",
-      "to change to a 'Health-Insurance-Premium-Statement' match once the 'all' project",
-      "picks up the new custom blueprints - revisit then."
+      "Verified live with preclassification-based-routing ON (2x, consistent). Same as",
+      "synthetic-insurance-health-insurance-premium-render.pdf - correctly routed to the",
+      "'insurance' project and matches the custom 'Health-Insurance-Premium-Statement'",
+      "blueprint directly."
     ],
-    "bdaMatchedDocumentClass": null,
+    "bdaMatchedDocumentClass": "Health-Insurance-Premium-Statement",
     "content_type": "image/jpeg",
     "e2e_enabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "synthetic-shelter-shelter-verification-render.pdf": {
+    "//": [
+      "Verified live with preclassification-based-routing ON (2x, consistent). Correctly",
+      "routed to the 'shelter' per-category project, which has the custom",
+      "'Shelter-Verification-Letter' blueprint attached, and matches it directly."
+    ],
+    "bdaMatchedDocumentClass": "Shelter-Verification-Letter",
+    "content_type": "application/pdf",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "synthetic-shelter-shelter-verification-render-spanish.png": {
+    "//": [
+      "Verified live with preclassification-based-routing ON (2x, consistent). Spanish-",
+      "language shelter verification letter - preclassification doesn't match any known",
+      "category here, so it falls back to the 'all' project (no custom",
+      "'Shelter-Verification-Letter' blueprint there) and finds no matching blueprint at",
+      "all."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/png",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
     "responseCode": "002"
+  },
+  "synthetic-shelter-shelter-verification-scan.jpg": {
+    "//": [
+      "Verified live with preclassification-based-routing ON (2x, consistent). Routed to",
+      "the 'receipts' per-category project (preclassified as a money-order-receipt-like",
+      "document, not 'shelter'), which lacks the custom 'Shelter-Verification-Letter'",
+      "blueprint, so it matches the generic public 'Receipts' blueprint."
+    ],
+    "bdaMatchedDocumentClass": "Receipts",
+    "content_type": "image/jpeg",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
   },
   "synthetic-password-protected.pdf": {
     "//": [
