@@ -1,5 +1,6 @@
 """DTOs for document processing pipeline."""
 
+from concurrent.futures import Future
 from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Any, Self
@@ -104,3 +105,11 @@ class PageMetadata:
     original_file_name: str | None = None
     category: str | None = None
     created_at: str | None = None
+
+
+@dataclass
+class PreExtractionResult:
+    """Carries pre-extraction outputs from upsert_initial_ddb_record to the doc-processor job."""
+
+    bbox_future: Future[Any] | None
+    is_identity_document: bool = False

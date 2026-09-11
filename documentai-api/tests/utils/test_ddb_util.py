@@ -5,7 +5,7 @@ from typing import Any
 import pytest
 from freezegun import freeze_time
 
-from documentai_api.config.constants import ProcessStatus
+from documentai_api.config.constants import ExtractMethod, ProcessStatus
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.dtos.ddb import InitialDdbRecord, PreClassificationDdbFields, UpdateDdbRecord
 from documentai_api.dtos.processing import InternalApiResponse
@@ -155,6 +155,7 @@ def test_build_update_expression(
         data=data,
         internal_api_response=internal_api_response,
         v1_api_response=v1_api_response,
+        extraction_method=ExtractMethod.BDA,
         bda_invocation_arn=bda_invocation_arn,
         error_message=error_message,
     )

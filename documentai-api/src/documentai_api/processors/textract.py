@@ -12,10 +12,11 @@ logger = get_logger(__name__)
 def process_textract_result(
     ddb_key: str,
     result: ExtractionResult,
+    tenant_id: str | None = None,
     batch_id: str | None = None,
 ) -> ProcessorResult:
     """Resolve tenant context and return ProcessorResult for pipeline classification."""
-    tenant_id = (get_ddb_record(ddb_key) or {}).get(DocumentMetadata.TENANT_ID)
+    tenant_id = tenant_id or (get_ddb_record(ddb_key) or {}).get(DocumentMetadata.TENANT_ID)
     return ProcessorResult(
         object_key=ddb_key,
         tenant_id=tenant_id,

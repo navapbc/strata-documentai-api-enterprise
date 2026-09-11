@@ -11,7 +11,6 @@ from opentelemetry.propagate import inject
 
 import documentai_api.utils.documents as document_utils
 from documentai_api.classifiers.api_response import finalize_v1_response
-from documentai_api.classifiers.document_classification import classify_extraction_result
 from documentai_api.config.constants import (
     FileValidation,
     ProcessStatus,
@@ -19,12 +18,9 @@ from documentai_api.config.constants import (
 from documentai_api.config.env import EnvVars, get_required_env
 from documentai_api.dtos.classification import PreclassificationMatchResult
 from documentai_api.dtos.ddb import InitialDdbRecord, PreClassificationDdbFields, UpdateDdbRecord
-from documentai_api.dtos.extraction import ExtractionResult
-from documentai_api.dtos.processing import InternalApiResponse
-from documentai_api.extractors.textract import extract_textract_identity
+from documentai_api.dtos.processing import InternalApiResponse, PreExtractionResult
 from documentai_api.logging import get_logger
 from documentai_api.models.document_record import DocumentRecord
-from documentai_api.processors.textract import process_textract_result
 from documentai_api.services import cloudwatch as cloudwatch_service
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils.bbox_detection import BboxResult
@@ -58,7 +54,7 @@ class _PreclassificationOutcome:
     process_status: str
     response_code: str
     pre_classification: PreClassificationDdbFields | None
-    textract_result: ExtractionResult | None
+    is_identity_document: bool
 
 
 def is_selected_for_processing(
@@ -263,7 +259,7 @@ def _run_preclassification(
             ProcessStatus.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
             ResponseCodes.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
             pre_classification=PreClassificationDdbFields.from_results(preclassification, None),
-            textract_result=None,
+            is_identity_document=False,
         )
 
     if (
@@ -276,7 +272,7 @@ def _run_preclassification(
             ProcessStatus.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
             ResponseCodes.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
             pre_classification=PreClassificationDdbFields.from_results(preclassification, None),
-            textract_result=None,
+            is_identity_document=False,
         )
 
     blueprint_match = blueprint_future.result()
@@ -290,25 +286,14 @@ def _run_preclassification(
         },
     )
 
-    textract_result = (
-        extract_textract_identity(content_type, file_bytes, ddb_key)
-        if preclassification.is_identity_document
-        else None
-    )
-
-    if textract_result is not None:
-        # Textract succeeded inline; process_textract_result transitions to SUCCESS
-        return _PreclassificationOutcome(
-            ProcessStatus.STARTED, ResponseCodes.SUCCESS, pre_classification, textract_result
-        )
-
+    is_identity = preclassification.is_identity_document
     process_status = (
         ProcessStatus.PENDING_IMAGE_OPTIMIZATION
         if content_type in FileValidation.GRAYSCALE_CONVERTIBLE
         else ProcessStatus.NOT_STARTED
     )
     return _PreclassificationOutcome(
-        process_status, ResponseCodes.SUCCESS, pre_classification, None
+        process_status, ResponseCodes.SUCCESS, pre_classification, is_identity
     )
 
 
@@ -329,7 +314,7 @@ def upsert_initial_ddb_record(
     content_type: str | None = None,
     file_size_bytes: int | None = None,
     s3_fetch_duration_seconds: Decimal | None = None,
-) -> Future[BboxResult | None] | None:
+) -> PreExtractionResult | None:
     """Run preclassification on the S3 object and upsert its DDB record.
 
     Creates the row if it doesn't exist; updates it in place if it does. Safe
@@ -371,7 +356,7 @@ def upsert_initial_ddb_record(
         processing_percentage: float | None = None
         processing_assigned_value: float | None = None
         pre_classification: PreClassificationDdbFields | None = None
-        textract_result = None
+        is_identity_document = False
 
         # assume document will be processed, but check if it should be excluded by sampling
         is_processing_selected = True
@@ -385,7 +370,6 @@ def upsert_initial_ddb_record(
         if is_password_protected:
             process_status = ProcessStatus.PASSWORD_PROTECTED
             response_code = ResponseCodes.PASSWORD_PROTECTED
-            textract_result = None
             if batch_id:
                 from documentai_api.utils.batch_operations import increment_resolved_count
 
@@ -414,7 +398,6 @@ def upsert_initial_ddb_record(
 
             process_status = ProcessStatus.PROCESSING_EXCLUDED
             response_code = ResponseCodes.PROCESSING_EXCLUDED
-            textract_result = None
 
         else:
             with ThreadPoolExecutor(max_workers=3) as executor:
@@ -447,12 +430,11 @@ def upsert_initial_ddb_record(
                 process_status = preclassification_outcome.process_status
                 response_code = preclassification_outcome.response_code
                 pre_classification = preclassification_outcome.pre_classification
-                textract_result = preclassification_outcome.textract_result
+                is_identity_document = preclassification_outcome.is_identity_document
 
         # initial status does not qualify for bda processing
         # create the json response signaling the process is complete
-        # (skip for Textract -- process_textract_result handles its own response)
-        if not ProcessStatus.is_pending_extraction(process_status) and textract_result is None:
+        if not ProcessStatus.is_pending_extraction(process_status) and not is_identity_document:
             internal_api_response = get_internal_api_response(
                 object_key=ddb_key,
                 response_code=response_code,
@@ -499,23 +481,15 @@ def upsert_initial_ddb_record(
         # explicitly remove file reference to free memory
         del file_bytes
 
-        # Textract completed inline - finalize the record with extraction results
-        if textract_result is not None:
-            processor_result = process_textract_result(ddb_key, textract_result, batch_id)
-
-            if processor_result.extraction_result is not None:
-                classify_extraction_result(
-                    ddb_key=processor_result.object_key,
-                    result=processor_result.extraction_result,
-                    tenant_id=processor_result.tenant_id,
-                    batch_id=processor_result.batch_id,
-                )
-
-        if ProcessStatus.is_pending_extraction(process_status):
-            return bbox_future
+        if ProcessStatus.is_pending_extraction(process_status) or is_identity_document:
+            return PreExtractionResult(
+                bbox_future=bbox_future
+                if ProcessStatus.is_pending_extraction(process_status)
+                else None,
+                is_identity_document=is_identity_document,
+            )
 
         # finalize v1 response for terminal pre-extraction statuses
-        if not ProcessStatus.is_pending_extraction(process_status) and textract_result is None:
-            finalize_v1_response(ddb_key, process_status)
+        finalize_v1_response(ddb_key, process_status)
 
         return None

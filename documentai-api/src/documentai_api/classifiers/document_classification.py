@@ -5,7 +5,7 @@ from typing import Any
 from botocore.exceptions import ClientError
 
 from documentai_api.classifiers.api_response import finalize_v1_response
-from documentai_api.config.constants import ProcessStatus
+from documentai_api.config.constants import ExtractMethod, ProcessStatus
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.dtos.ddb import UpdateDdbRecord
 from documentai_api.dtos.extraction import ExtractionResult
@@ -54,6 +54,7 @@ def classify_as_success(
     object_key: str,
     response_code: str,
     data: ClassificationData,
+    extraction_method: ExtractMethod,
     below_extraction_confidence_floor: bool = False,
     extraction_rules_configured: bool | None = None,
     missing_required_field_list: list[str] | None = None,
@@ -76,6 +77,7 @@ def classify_as_success(
             status=ProcessStatus.SUCCESS,
             internal_api_response=internal_api_response,
             data=data,
+            extraction_method=extraction_method,
             below_extraction_confidence_floor=below_extraction_confidence_floor,
             extraction_rules_configured=extraction_rules_configured,
             missing_required_field_list=missing_required_field_list,
@@ -306,6 +308,7 @@ def classify_extraction_result(
     tenant_id: str | None,
     batch_id: str | None = None,
     result_processor_started_at: str | None = None,
+    extraction_method: ExtractMethod = ExtractMethod.BDA,
 ) -> dict[str, Any]:
     """Apply confidence floor and extraction rules, then call classify_as_success."""
     data = ClassificationData.from_extraction_result(result)
@@ -332,6 +335,7 @@ def classify_extraction_result(
         object_key=ddb_key,
         response_code=ResponseCodes.SUCCESS,
         data=data,
+        extraction_method=extraction_method,
         below_extraction_confidence_floor=below_floor,
         extraction_rules_configured=rule_fields is not None,
         missing_required_field_list=missing_required_field_list,
