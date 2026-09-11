@@ -2095,6 +2095,63 @@
       }
     ]
   },
+  "Investment-Account-Statement": {
+    "category": "investment_and_royalty_income",
+    "description": "A general investment account statement, such as a brokerage statement, mutual-fund statement, or stock statement, showing the account holder, institution, and total portfolio value. Distinct from an IRA-specific account document.",
+    "document_type": "Investment-Account-Statement",
+    "fields": [
+      {
+        "description": "The total account or portfolio value as of the end of the statement period.",
+        "name": "total_value",
+        "type": "number"
+      },
+      {
+        "description": "The full name of the individual who owns the investment account.",
+        "name": "account_holder_name",
+        "type": "string"
+      },
+      {
+        "description": "Total capital gains distributions received during the statement period (cumulative).",
+        "name": "capital_gains_distributions_cumulative",
+        "type": "number"
+      },
+      {
+        "description": "Total dividend payments received during the statement period (cumulative).",
+        "name": "dividend_payments_cumulative",
+        "type": "number"
+      },
+      {
+        "description": "The name of the brokerage, fund company, or financial institution that manages the account.",
+        "name": "financial_institution",
+        "type": "string"
+      },
+      {
+        "description": "End of the statement period. YYYY-MM-DD format.",
+        "name": "statement_period_end",
+        "type": "string"
+      },
+      {
+        "description": "Start of the statement period. YYYY-MM-DD format.",
+        "name": "statement_period_start",
+        "type": "string"
+      },
+      {
+        "description": "The types of assets held in the account, such as stocks, mutual funds, bonds, or ETFs. Return one entry per asset type listed.",
+        "name": "asset_types",
+        "type": "array"
+      },
+      {
+        "description": "Total interest credited to the account during the statement period (cumulative).",
+        "name": "interest_credits_cumulative",
+        "type": "number"
+      },
+      {
+        "description": "The specific type of this investment document, normalized to exactly one of: Brokerage Statement, Mutual Fund Statement, or Stock Statement, based on the title or header text printed at the top of the document.",
+        "name": "document_type",
+        "type": "string"
+      }
+    ]
+  },
   "Invoices": {
     "category": "invoices",
     "description": "An invoice is a document that contains the list of service rendered or items purchased from a company by a person or another company. It contains details such as when the payment is due and how much is owed.",
