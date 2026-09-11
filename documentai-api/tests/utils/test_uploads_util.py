@@ -111,7 +111,7 @@ async def test_validate_file_type_password_protected_docx_accepted(runtime_requi
     """
     from documentai_api.utils.uploads import validate_file_type
 
-    data = (FIXTURES_DIR / "synthetic-password-protected.docx").read_bytes()
+    data = (FIXTURES_DIR / "happy-path" / "synthetic-password-protected.docx").read_bytes()
     file = UploadFile(filename="pw.docx", file=io.BytesIO(data))
     content_type = await validate_file_type(file)
     assert content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
