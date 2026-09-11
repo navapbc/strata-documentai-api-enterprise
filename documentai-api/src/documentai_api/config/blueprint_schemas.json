@@ -2317,9 +2317,14 @@
         "type": "string"
       },
       {
-        "description": "The general category of the asset, such as collectibles, jewelry, equipment, or other valuables.",
-        "name": "asset_category",
-        "type": "string"
+        "description": "The description of each individual itemized asset, such as its name, brand, model, or identifying details. Return one entry per asset item listed, in the same order as asset_categories and estimated_values.",
+        "name": "asset_descriptions",
+        "type": "array"
+      },
+      {
+        "description": "The estimated or appraised value of each individual asset item. Return one entry per asset item listed, in the same order as asset_descriptions and asset_categories.",
+        "name": "estimated_values",
+        "type": "array"
       },
       {
         "description": "The full name of the person who owns the declared assets.",
@@ -2327,24 +2332,19 @@
         "type": "string"
       },
       {
+        "description": "Classify each individual asset item into one of: Collectibles, Jewelry, Electronics, Equipment, Furniture, or Other, based on its description, even if no category label is printed on the document. Return one entry per asset item listed, in the same order as asset_descriptions and estimated_values.",
+        "name": "asset_categories",
+        "type": "array"
+      },
+      {
         "description": "The total estimated value of all declared assets on the statement.",
         "name": "total_estimated_value",
         "type": "number"
       },
       {
-        "description": "A description of the itemized asset(s), such as jewelry, collectibles, or equipment.",
-        "name": "asset_description",
-        "type": "string"
-      },
-      {
         "description": "The name of the appraiser, assessor, or preparer of the statement, if shown.",
         "name": "appraiser_or_preparer_name",
         "type": "string"
-      },
-      {
-        "description": "The estimated or appraised value of the individual asset item, if itemized.",
-        "name": "estimated_value",
-        "type": "number"
       }
     ]
   },

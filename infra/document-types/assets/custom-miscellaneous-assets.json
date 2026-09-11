@@ -15,20 +15,29 @@
       "inferenceType": "explicit",
       "instruction": "The name of the appraiser, assessor, or preparer of the statement, if shown."
     },
-    "asset_description": {
-      "type": "string",
+    "asset_descriptions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
       "inferenceType": "explicit",
-      "instruction": "A description of the itemized asset(s), such as jewelry, collectibles, or equipment."
+      "instruction": "The description of each individual itemized asset, such as its name, brand, model, or identifying details. Return one entry per asset item listed, in the same order as asset_categories and estimated_values."
     },
-    "asset_category": {
-      "type": "string",
-      "inferenceType": "explicit",
-      "instruction": "The general category of the asset, such as collectibles, jewelry, equipment, or other valuables."
+    "asset_categories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "inferenceType": "inferred",
+      "instruction": "Classify each individual asset item into one of: Collectibles, Jewelry, Electronics, Equipment, Furniture, or Other, based on its description, even if no category label is printed on the document. Return one entry per asset item listed, in the same order as asset_descriptions and estimated_values."
     },
-    "estimated_value": {
-      "type": "number",
+    "estimated_values": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
       "inferenceType": "explicit",
-      "instruction": "The estimated or appraised value of the individual asset item, if itemized."
+      "instruction": "The estimated or appraised value of each individual asset item. Return one entry per asset item listed, in the same order as asset_descriptions and asset_categories."
     },
     "total_estimated_value": {
       "type": "number",
