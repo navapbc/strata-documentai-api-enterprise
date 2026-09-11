@@ -3443,6 +3443,11 @@
         "description": "The total amount distributed from the trust during the statement period, if any.",
         "name": "distributions_during_period",
         "type": "number"
+      },
+      {
+        "description": "The types of assets held within the trust, such as cash, stocks, bonds, mutual funds, or real estate, as listed on the statement. Return one entry per asset type shown.",
+        "name": "asset_types",
+        "type": "array"
       }
     ]
   },
