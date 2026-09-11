@@ -374,6 +374,69 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
+  "synthetic-insurance-health-insurance-premium-render.pdf": {
+    "//": [
+      "Verified against a live run (2x, consistent). A custom",
+      "'Health-Insurance-Premium-Statement' blueprint exists",
+      "(deployed as docai-dev-...-insurance-custom-health-insurance-premium-statement) but,",
+      "like the other new custom blueprints this session, is attached to its per-category",
+      "'insurance' BDA project only - not yet to the 'all' project actually used at request",
+      "time (confirmed the 'preclassification-based-routing' feature flag is still 'false',",
+      "so per-category BDA_PROJECT_ID_* env vars now present on the Lambda aren't consulted",
+      "either). BDA falls back to a confident match against the generic public 'Invoices'",
+      "blueprint (000). Expect this to change to a 'Health-Insurance-Premium-Statement'",
+      "match once the 'all' project picks up the new insurance-category custom blueprints -",
+      "revisit then."
+    ],
+    "bdaMatchedDocumentClass": "Invoices",
+    "content_type": "application/pdf",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "synthetic-insurance-health-insurance-premium-render-spanish.png": {
+    "//": [
+      "Flaky: BDA classification of this Spanish-language health insurance premium",
+      "statement is non-deterministic against the current 'all' project blueprint set",
+      "(which does not yet include the new custom 'Health-Insurance-Premium-Statement'",
+      "blueprint - see synthetic-insurance-health-insurance-premium-render.pdf). Across 7",
+      "live runs (2 initial probe passes, a real pytest run + its automatic rerun, and 3",
+      "further targeted probes) it matched the generic public 'Invoices' blueprint 3 times",
+      "(responseCode 000) and returned no blueprint match 4 times (responseCode 002). No",
+      "single expected value holds. Disabled from e2e (e2e_enabled: false) to stop flaky",
+      "failures; re-enable and set the correct expected match once the 'all' project",
+      "includes the new custom blueprints and behavior is re-verified."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/png",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "002"
+  },
+  "synthetic-insurance-health-insurance-premium-scan.jpg": {
+    "//": [
+      "Verified against a live run (2x, consistent). Unlike the render/spanish variants,",
+      "this scanned copy does not even trip the generic public 'Invoices' fallback - BDA",
+      "finds no matching blueprint at all (002/null), likely due to scan-quality reducing",
+      "field-extraction confidence below whatever threshold gates a match. Same root",
+      "cause/caveat as the other health-insurance-premium entries: the custom",
+      "'Health-Insurance-Premium-Statement' blueprint is attached to the 'insurance' BDA",
+      "project but not yet to the 'all' project actually used at request time. Expect this",
+      "to change to a 'Health-Insurance-Premium-Statement' match once the 'all' project",
+      "picks up the new custom blueprints - revisit then."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/jpeg",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "002"
+  },
   "synthetic-password-protected.pdf": {
     "//": [
       "Encrypted PDF. Detected as password protected before preclassification, so it ",
