@@ -39,7 +39,9 @@ ROUTING_CASES = [
         id="wage-verification-letter -> employment_records",
     ),
     pytest.param(
-        TEST_DOCS_DIR / "happy-path" / "synthetic-public-benefits-identity-proof-state-photo-id.jpg",
+        TEST_DOCS_DIR
+        / "happy-path"
+        / "synthetic-public-benefits-identity-proof-state-photo-id.jpg",
         PreclassificationCategory.IDENTITY,
         id="state-id -> identity",
     ),
