@@ -1,154 +1,4 @@
 {
-  "synthetic-public-benefits-identity-coverage-medicaid-card.jpg": {
-    "//": [
-      "Bedrock Data Automation is unable to classify this document using existing blueprints. ",
-      "Additional investigation is needed to determine why. ",
-      "Including in tests as-is to avoid blocking other work. ",
-      "Marking e2e_enabled: true to flag for follow-up and prevent accidental regressions."
-    ],
-    "bdaMatchedDocumentClass": null,
-    "content_type": "image/jpeg",
-    "e2e_enabled": true,
-    "isDocumentBlurry": false,
-    "isPasswordProtected": false,
-    "preclassificationCategory": "present",
-    "responseCode": "002"
-  },
-  "synthetic-public-benefits-identity-proof-state-photo-id.jpg": {
-    "bdaMatchedDocumentClass": "US-drivers-licenses",
-    "content_type": "image/jpeg",
-    "e2e_enabled": true,
-    "isDocumentBlurry": false,
-    "isPasswordProtected": false,
-    "preclassificationCategory": "present",
-    "responseCode": "000"
-  },
-  "synthetic-public-benefits-income-proof-pay-statement-photo.png": {
-    "bdaMatchedDocumentClass": "Payslip",
-    "content_type": "image/png",
-    "e2e_enabled": true,
-    "isDocumentBlurry": false,
-    "isPasswordProtected": false,
-    "preclassificationCategory": "present",
-    "responseCode": "000"
-  },
-  "synthetic-public-benefits-income-proof-pay-statement-rendered.png": {
-    "bdaMatchedDocumentClass": "Payslip",
-    "content_type": "image/png",
-    "e2e_enabled": true,
-    "isDocumentBlurry": false,
-    "isPasswordProtected": false,
-    "preclassificationCategory": "present",
-    "responseCode": "000"
-  },
-  "synthetic-public-benefits-income-proof-pay-stub.jpg": {
-    "bdaMatchedDocumentClass": "Payslip",
-    "content_type": "image/jpeg",
-    "e2e_enabled": true,
-    "isDocumentBlurry": false,
-    "isPasswordProtected": false,
-    "preclassificationCategory": "present",
-    "responseCode": "000"
-  },
-  "synthetic-public-benefits-residency-proof-utility-bill.jpg": {
-    "//": [
-      "Bedrock Data Automation is unable to classify this document using existing blueprints. ",
-      "Additional investigation is needed to determine why. ",
-      "Including in tests as-is to avoid blocking other work. ",
-      "Marking e2e_enabled: true to flag for follow-up and prevent accidental regressions."
-    ],
-    "bdaMatchedDocumentClass": null,
-    "content_type": "image/jpeg",
-    "e2e_enabled": true,
-    "isDocumentBlurry": false,
-    "isPasswordProtected": false,
-    "preclassificationCategory": "present",
-    "responseCode": "002"
-  },
-  "synthetic-snap-income-proof-employment-wage-verification-letter-photo.png": {
-    "bdaMatchedDocumentClass": "Employment-Verification-Letter",
-    "content_type": "image/png",
-    "e2e_enabled": true,
-    "isDocumentBlurry": false,
-    "isPasswordProtected": false,
-    "preclassificationCategory": "present",
-    "responseCode": "000"
-  },
-  "synthetic-snap-income-proof-employment-wage-verification-letter-rendered.png": {
-    "//": [
-      "BDA blueprint match is occasionally nondeterministic on this document,",
-      "intermittently returning no match instead of Employment-Verification-Letter.",
-      "reruns=2 gives 3 attempts."
-    ],
-    "bdaMatchedDocumentClass": "Employment-Verification-Letter",
-    "content_type": "image/png",
-    "e2e_enabled": true,
-    "isDocumentBlurry": false,
-    "isPasswordProtected": false,
-    "preclassificationCategory": "present",
-    "reruns_override": 2,
-    "responseCode": "000"
-  },
-  "synthetic-snap-income-proof-self-employment-ledger-photo.png": {
-    "//": [
-      "Flaky: BDA classification of this synthetic Schedule-C ledger is non-deterministic. ",
-      "Across runs it has returned both a Form-1040-Schedule-C match (~0.80 confidence, right ",
-      "at the matching threshold) and no match at all, so no single expected value holds. ",
-      "Disabled from e2e (e2e_enabled: false) to stop flaky failures; re-enable once the ",
-      "classification stabilizes or the test can accept 'either a match or none'."
-    ],
-    "bdaMatchedDocumentClass": null,
-    "content_type": "image/png",
-    "e2e_enabled": false,
-    "isDocumentBlurry": false,
-    "isPasswordProtected": false,
-    "preclassificationCategory": "present",
-    "responseCode": "002"
-  },
-  "synthetic-snap-income-proof-self-employment-ledger-rendered.png": {
-    "//": [
-      "Flaky: BDA classification of this synthetic Schedule-C ledger is non-deterministic. ",
-      "Across runs it has returned both a Form-1040-Schedule-C match (~0.80 confidence, right ",
-      "at the matching threshold) and no match at all, so no single expected value holds. ",
-      "Disabled from e2e (e2e_enabled: false) to stop flaky failures; re-enable once the ",
-      "classification stabilizes or the test can accept 'either a match or none'."
-    ],
-    "bdaMatchedDocumentClass": null,
-    "content_type": "image/png",
-    "e2e_enabled": false,
-    "isDocumentBlurry": false,
-    "isPasswordProtected": false,
-    "preclassificationCategory": "present",
-    "responseCode": "002"
-  },
-  "synthetic-wic-adjunctive-eligibility-snap-benefits-letter.jpg": {
-    "bdaMatchedDocumentClass": null,
-    "content_type": "image/jpeg",
-    "e2e_enabled": true,
-    "isDocumentBlurry": false,
-    "isPasswordProtected": false,
-    "preclassificationCategory": "present",
-    "responseCode": "002"
-  },
-  "synthetic-wic-certification-pregnancy-verification-clinic-note.jpg": {
-    "//": [
-      "Previously misclassified as Proof-of-Loss-of-Health-Coverage. ",
-      "Adding fields to blueprints resolved the false match - BDA now correctly ",
-      "returns no blueprint match for this pregnancy verification clinic note. ",
-      "BDA blueprint match is occasionally nondeterministic on this document, ",
-      "intermittently matching again instead of returning null; confirmed via ",
-      "rerun that it's wobble, not the false-match regression recurring. ",
-      "reruns=2 gives 3 attempts."
-    ],
-    "bdaMatchedDocumentClass": null,
-    "content_type": "image/jpeg",
-    "e2e_enabled": true,
-    "isDocumentBlurry": false,
-    "isPasswordProtected": false,
-    "preclassificationCategory": "present",
-    "reruns_override": 2,
-    "responseCode": "002"
-  },
   "blur/synthetic-disk-defocus.jpeg": {
     "bdaMatchedDocumentClass": null,
     "content_type": "image/jpeg",
@@ -176,28 +26,118 @@
     "preclassificationCategory": null,
     "responseCode": "104"
   },
-  "synthetic-multipage-mixed-paystub-photo.pdf": {
+  "synthetic-assests-bank-statement-render-spanish.png": {
     "//": [
-      "Multipage PDF combining two different pay stubs (different employees).",
-      "Same-type/different-individual detection is best-effort (~78% reliable at temp=0).",
-      "reruns=2 gives 3 attempts, reducing CI flake rate to ~1%."
+      "Verified live with preclassification-based-routing ON (permanently enabled in dev,",
+      "2x consistent). Correctly routed to the 'account_statements' per-category project,",
+      "which has the generic public 'Bank-Statement' blueprint, and matches it directly."
     ],
-    "bdaMatchedDocumentClass": null,
-    "content_type": "application/pdf",
+    "bdaMatchedDocumentClass": "Bank-Statement",
+    "content_type": "image/png",
     "e2e_enabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "reruns_override": 2,
-    "responseCode": "401"
+    "responseCode": "000"
   },
-  "synthetic-multipage-mixed-state-id-paystub.pdf": {
+  "synthetic-assests-bank-statement-render.pdf": {
     "//": [
-      "Multipage PDF combining a state photo ID and a pay stub - two distinct document types.",
-      "Preclassification consistently returns has_multipage_inconsistency: true.",
-      "Requires FLAG_MULTIPLE_DOCUMENTS_IN_MULTIPAGE, which defaults to true.",
-      "Same-type/different-individual detection is best-effort at temp=0.",
-      "reruns=2 gives 3 attempts, matching synthetic-multipage-mixed-paystub-photo.pdf."
+      "Verified live with preclassification-based-routing ON (permanently enabled in dev,",
+      "2x consistent). Correctly routed to the 'account_statements' per-category project,",
+      "which has the generic public 'Bank-Statement' blueprint, and matches it directly."
+    ],
+    "bdaMatchedDocumentClass": "Bank-Statement",
+    "content_type": "application/pdf",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "synthetic-assests-bank-statement-scan.jpg": {
+    "//": [
+      "Verified live with preclassification-based-routing ON (permanently enabled in dev,",
+      "2x consistent). Correctly routed to the 'account_statements' per-category project,",
+      "which has the generic public 'Bank-Statement' blueprint, and matches it directly."
+    ],
+    "bdaMatchedDocumentClass": "Bank-Statement",
+    "content_type": "image/jpeg",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "synthetic-assets-life-insurance-policy-render-spanish.png": {
+    "//": [
+      "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
+      "Preclassifies as an insurance document (not 'assets'), so it's routed to the",
+      "'insurance' per-category project. That project has no dedicated life-insurance-",
+      "policy blueprint (the custom 'Assets-Life-Insurance-Policy' blueprint lives on the",
+      "'assets' project instead), so it matches the generic 'Insurance-Company-Letter'",
+      "blueprint at low confidence (105)."
+    ],
+    "bdaMatchedDocumentClass": "Insurance-Company-Letter",
+    "content_type": "image/png",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "105"
+  },
+  "synthetic-assets-life-insurance-policy-render.pdf": {
+    "//": [
+      "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
+      "Same root cause as the Spanish variant - preclassifies as an insurance document (not",
+      "'assets'), routes to the 'insurance' per-category project, and matches the generic",
+      "'Insurance-Company-Letter' blueprint there (no dedicated life-insurance-policy",
+      "blueprint on that project)."
+    ],
+    "bdaMatchedDocumentClass": "Insurance-Company-Letter",
+    "content_type": "application/pdf",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "synthetic-assets-life-insurance-policy-scan.jpg": {
+    "//": [
+      "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
+      "Preclassifies as an insurance document (not 'assets'), routes to the 'insurance'",
+      "per-category project, and matches the generic 'Health-Insurance-Premium-Statement'",
+      "blueprint there (no dedicated life-insurance-policy blueprint on that project)."
+    ],
+    "bdaMatchedDocumentClass": "Health-Insurance-Premium-Statement",
+    "content_type": "image/jpeg",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "synthetic-assets-misc-assets-render-spanish.png": {
+    "//": [
+      "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
+      "Preclassification doesn't match any known category for this doc, so it falls back",
+      "to the 'all' project (no custom 'Miscellaneous-Assets' blueprint there) and finds no",
+      "matching blueprint at all."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/png",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "002"
+  },
+  "synthetic-assets-misc-assets-render.pdf": {
+    "//": [
+      "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
+      "Preclassified as a 'miscellaneous assets statement', which maps to the",
+      "'dependent_income' per-category project (mis-mapped keyword overlap, not 'assets'),",
+      "which has no 'Miscellaneous-Assets' blueprint, so it finds no matching blueprint at",
+      "all."
     ],
     "bdaMatchedDocumentClass": null,
     "content_type": "application/pdf",
@@ -205,8 +145,162 @@
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "reruns_override": 2,
-    "responseCode": "401"
+    "responseCode": "002"
+  },
+  "synthetic-assets-misc-assets-scan.jpg": {
+    "//": [
+      "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
+      "Preclassification doesn't match any known category for this doc, so it falls back",
+      "to the 'all' project (no custom 'Miscellaneous-Assets' blueprint there) and finds no",
+      "matching blueprint at all."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/jpeg",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "002"
+  },
+  "synthetic-assets-real-estate-render-spanish.png": {
+    "//": [
+      "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
+      "Preclassification doesn't match any known category for this doc, so it falls back to",
+      "the 'all' project (no custom 'Real-Estate' blueprint there) and finds no matching",
+      "blueprint at all."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/png",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "002"
+  },
+  "synthetic-assets-real-estate-render.pdf": {
+    "//": [
+      "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
+      "Preclassification doesn't match any known category for this doc, so it falls back to",
+      "the 'all' project (no custom 'Real-Estate' blueprint there) and finds no matching",
+      "blueprint at all."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "application/pdf",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "002"
+  },
+  "synthetic-assets-real-estate-scan.jpg": {
+    "//": [
+      "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
+      "Preclassification doesn't match any known category for this doc, so it falls back to",
+      "the 'all' project (no custom 'Real-Estate' blueprint there) and finds no matching",
+      "blueprint at all."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/jpeg",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "002"
+  },
+  "synthetic-assets-trust-funds-investment-accounts-render-spanish.png": {
+    "//": [
+      "Flaky under preclassification-based-routing (permanently enabled in dev): re-tested",
+      "11x total. Preclassification text always identifies a trust/fideicomiso document, but",
+      "the category mapping is non-deterministic - 7/11 runs mapped to an 'account_statements'-",
+      "like category (routes to the account_statements project -> matches generic",
+      "'Bank-Statement'), 4/11 mapped to an 'investment_and_royalty_income'-like category",
+      "(routes to that project -> matches the custom 'Investment-Account-Statement'",
+      "blueprint). Disabling rather than asserting either value. Likely needs either sharper",
+      "category-mapping keywords or regenerating this doc with clearer investment-account-",
+      "specific language to stop it drifting toward the bank-statement bucket."
+    ],
+    "bdaMatchedDocumentClass": "Investment-Account-Statement",
+    "content_type": "image/png",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "synthetic-assets-trust-funds-investment-accounts-render.pdf": {
+    "//": [
+      "Verified live with preclassification-based-routing ON (permanently enabled in dev,",
+      "2x consistent). Correctly routed to the 'investment_and_royalty_income' per-category",
+      "project, which has the custom 'Investment-Account-Statement' blueprint, and matches",
+      "it directly."
+    ],
+    "bdaMatchedDocumentClass": "Investment-Account-Statement",
+    "content_type": "application/pdf",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "synthetic-assets-trust-funds-investment-accounts-scan.jpg": {
+    "//": [
+      "Verified live with preclassification-based-routing ON (permanently enabled in dev,",
+      "2x consistent). Same as the rendered PDF - correctly routed to the",
+      "'investment_and_royalty_income' per-category project and matches the custom",
+      "'Investment-Account-Statement' blueprint directly."
+    ],
+    "bdaMatchedDocumentClass": "Investment-Account-Statement",
+    "content_type": "image/jpeg",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "synthetic-assets-vehicles-render-spanish.png": {
+    "//": [
+      "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
+      "Preclassified as 'vehicle_title_and_registration_certification', which maps to the 'identity' per-category project (vehicle",
+      "registration documents get bucketed with identity docs, not 'assets'), which has no",
+      "'Vehicles' blueprint, so it finds no matching blueprint at all."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/png",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "002"
+  },
+  "synthetic-assets-vehicles-render.pdf": {
+    "//": [
+      "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
+      "Preclassified as 'motor_vehicle_registration', which maps to the 'identity' per-category project (vehicle",
+      "registration documents get bucketed with identity docs, not 'assets'), which has no",
+      "'Vehicles' blueprint, so it finds no matching blueprint at all."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "application/pdf",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "002"
+  },
+  "synthetic-assets-vehicles-scan.jpg": {
+    "//": [
+      "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
+      "Preclassified as 'vehicle_registration', which maps to the 'identity' per-category project (vehicle",
+      "registration documents get bucketed with identity docs, not 'assets'), which has no",
+      "'Vehicles' blueprint, so it finds no matching blueprint at all."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/jpeg",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "002"
   },
   "synthetic-expense-burial-picture.png": {
     "//": [
@@ -302,6 +396,22 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
+  "synthetic-expense-dependent-care-render-spanish.png": {
+    "//": [
+      "Verified live with preclassification-based-routing ON (2x, consistent). Same root",
+      "cause as synthetic-expense-dependent-care-scan.png - routed to the 'invoices'",
+      "per-category project (preclassified as invoice-like), which lacks the custom",
+      "'Dependent-Care-Statement' blueprint, so it matches the generic public 'Invoices'",
+      "blueprint."
+    ],
+    "bdaMatchedDocumentClass": "Invoices",
+    "content_type": "image/png",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
   "synthetic-expense-dependent-care-render.pdf": {
     "//": [
       "Verified live with preclassification-based-routing ON (2x, consistent).",
@@ -332,13 +442,13 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-expense-dependent-care-render-spanish.png": {
+  "synthetic-expense-utility-cable-bill-render-spanish.png": {
     "//": [
-      "Verified live with preclassification-based-routing ON (2x, consistent). Same root",
-      "cause as synthetic-expense-dependent-care-scan.png - routed to the 'invoices'",
-      "per-category project (preclassified as invoice-like), which lacks the custom",
-      "'Dependent-Care-Statement' blueprint, so it matches the generic public 'Invoices'",
-      "blueprint."
+      "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
+      "Preclassified as an invoice/cable bill-like document, which maps to the 'invoices'",
+      "per-category project (not 'expense' - the custom utility blueprints live on the",
+      "'expense' project instead), so it matches the generic public 'Invoices' blueprint",
+      "directly."
     ],
     "bdaMatchedDocumentClass": "Invoices",
     "content_type": "image/png",
@@ -348,14 +458,128 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-insurance-health-insurance-premium-render.pdf": {
+  "synthetic-expense-utility-cable-bill-render.pdf": {
     "//": [
-      "Verified live with preclassification-based-routing ON (2x, consistent). Correctly",
-      "routed to the 'insurance' per-category project, which has the custom",
-      "'Health-Insurance-Premium-Statement' blueprint attached, and matches it directly."
+      "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
+      "Preclassified as an invoice/cable bill-like document, which maps to the 'invoices'",
+      "per-category project (not 'expense' - the custom utility blueprints live on the",
+      "'expense' project instead), so it matches the generic public 'Invoices' blueprint",
+      "directly."
     ],
-    "bdaMatchedDocumentClass": "Health-Insurance-Premium-Statement",
+    "bdaMatchedDocumentClass": "Invoices",
     "content_type": "application/pdf",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "synthetic-expense-utility-cable-bill-scan.jpg": {
+    "//": [
+      "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
+      "Preclassified as an invoice/cable bill-like document, which maps to the 'invoices'",
+      "per-category project (not 'expense' - the custom utility blueprints live on the",
+      "'expense' project instead), so it matches the generic public 'Invoices' blueprint",
+      "at low confidence (105)."
+    ],
+    "bdaMatchedDocumentClass": "Invoices",
+    "content_type": "image/jpeg",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "105"
+  },
+  "synthetic-expense-utility-electric-bill-render-spanish.png": {
+    "//": [
+      "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
+      "Preclassified as an invoice/electricity bill-like document, which maps to the 'invoices'",
+      "per-category project (not 'expense' - the custom utility blueprints live on the",
+      "'expense' project instead), so it matches the generic public 'Invoices' blueprint",
+      "directly."
+    ],
+    "bdaMatchedDocumentClass": "Invoices",
+    "content_type": "image/png",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "synthetic-expense-utility-electric-bill-render.pdf": {
+    "//": [
+      "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
+      "Preclassified as an invoice/electricity bill-like document, which maps to the 'invoices'",
+      "per-category project (not 'expense' - the custom utility blueprints live on the",
+      "'expense' project instead), so it matches the generic public 'Invoices' blueprint",
+      "directly."
+    ],
+    "bdaMatchedDocumentClass": "Invoices",
+    "content_type": "application/pdf",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "synthetic-expense-utility-electric-bill-scan.jpg": {
+    "//": [
+      "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
+      "Preclassified as an invoice/electricity bill-like document, which maps to the 'invoices'",
+      "per-category project (not 'expense' - the custom utility blueprints live on the",
+      "'expense' project instead), so it matches the generic public 'Invoices' blueprint",
+      "directly."
+    ],
+    "bdaMatchedDocumentClass": "Invoices",
+    "content_type": "image/jpeg",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "synthetic-expense-utility-water-sewer-bill-render-spanish.png": {
+    "//": [
+      "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
+      "Preclassified as an invoice/water/sewer bill-like document, which maps to the 'invoices'",
+      "per-category project (not 'expense' - the custom utility blueprints live on the",
+      "'expense' project instead), so it matches the generic public 'Invoices' blueprint",
+      "directly."
+    ],
+    "bdaMatchedDocumentClass": "Invoices",
+    "content_type": "image/png",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "synthetic-expense-utility-water-sewer-bill-render.pdf": {
+    "//": [
+      "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
+      "Preclassified as an invoice/water/sewer bill-like document, which maps to the 'invoices'",
+      "per-category project (not 'expense' - the custom utility blueprints live on the",
+      "'expense' project instead), so it matches the generic public 'Invoices' blueprint",
+      "directly."
+    ],
+    "bdaMatchedDocumentClass": "Invoices",
+    "content_type": "application/pdf",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "synthetic-expense-utility-water-sewer-bill-scan.jpg": {
+    "//": [
+      "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
+      "Preclassified as an invoice/water/sewer bill-like document, which maps to the 'invoices'",
+      "per-category project (not 'expense' - the custom utility blueprints live on the",
+      "'expense' project instead), so it matches the generic public 'Invoices' blueprint",
+      "directly."
+    ],
+    "bdaMatchedDocumentClass": "Invoices",
+    "content_type": "image/jpeg",
     "e2e_enabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
@@ -378,6 +602,20 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
+  "synthetic-insurance-health-insurance-premium-render.pdf": {
+    "//": [
+      "Verified live with preclassification-based-routing ON (2x, consistent). Correctly",
+      "routed to the 'insurance' per-category project, which has the custom",
+      "'Health-Insurance-Premium-Statement' blueprint attached, and matches it directly."
+    ],
+    "bdaMatchedDocumentClass": "Health-Insurance-Premium-Statement",
+    "content_type": "application/pdf",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
   "synthetic-insurance-health-insurance-premium-scan.jpg": {
     "//": [
       "Verified live with preclassification-based-routing ON (2x, consistent). Same as",
@@ -393,19 +631,164 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-shelter-shelter-verification-render.pdf": {
+  "synthetic-investment-and-royalty-income-render-spanish.png": {
     "//": [
-      "Verified live with preclassification-based-routing ON (2x, consistent). Correctly",
-      "routed to the 'shelter' per-category project, which has the custom",
-      "'Shelter-Verification-Letter' blueprint attached, and matches it directly."
+      "Verified live with preclassification-based-routing ON (permanently enabled in dev,",
+      "2x consistent). Correctly routed to the 'investment_and_royalty_income' per-category",
+      "project, which has the custom 'Investment-Account-Statement' blueprint (among others",
+      "in the same project), and matches it directly."
     ],
-    "bdaMatchedDocumentClass": "Shelter-Verification-Letter",
+    "bdaMatchedDocumentClass": "Investment-Account-Statement",
+    "content_type": "image/png",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "synthetic-investment-and-royalty-income-render.pdf": {
+    "//": [
+      "Verified live with preclassification-based-routing ON (permanently enabled in dev,",
+      "2x consistent). Correctly routed to the 'investment_and_royalty_income' per-category",
+      "project, which has the custom 'Investment-Account-Statement' blueprint (among others",
+      "in the same project), and matches it directly."
+    ],
+    "bdaMatchedDocumentClass": "Investment-Account-Statement",
     "content_type": "application/pdf",
     "e2e_enabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
     "responseCode": "000"
+  },
+  "synthetic-investment-and-royalty-income-scan.jpg": {
+    "//": [
+      "Verified live with preclassification-based-routing ON (permanently enabled in dev,",
+      "2x consistent). Correctly routed to the 'investment_and_royalty_income' per-category",
+      "project, which has the custom 'Investment-Account-Statement' blueprint (among others",
+      "in the same project), and matches it directly."
+    ],
+    "bdaMatchedDocumentClass": "Investment-Account-Statement",
+    "content_type": "image/jpeg",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "synthetic-multipage-mixed-paystub-photo.pdf": {
+    "//": [
+      "Multipage PDF combining two different pay stubs (different employees).",
+      "Same-type/different-individual detection is best-effort (~78% reliable at temp=0).",
+      "reruns=2 gives 3 attempts, reducing CI flake rate to ~1%."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "application/pdf",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "reruns_override": 2,
+    "responseCode": "401"
+  },
+  "synthetic-multipage-mixed-state-id-paystub.pdf": {
+    "//": [
+      "Multipage PDF combining a state photo ID and a pay stub - two distinct document types.",
+      "Preclassification consistently returns has_multipage_inconsistency: true.",
+      "Requires FLAG_MULTIPLE_DOCUMENTS_IN_MULTIPAGE, which defaults to true.",
+      "Same-type/different-individual detection is best-effort at temp=0.",
+      "reruns=2 gives 3 attempts, matching synthetic-multipage-mixed-paystub-photo.pdf."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "application/pdf",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "reruns_override": 2,
+    "responseCode": "401"
+  },
+  "synthetic-password-protected.pdf": {
+    "//": [
+      "Encrypted PDF. Detected as password protected before preclassification, so it ",
+      "short-circuits to the terminal password_protected state (responseCode 106) and ",
+      "never runs preclassification or BDA - hence null preclassificationCategory and no ",
+      "BDA output. Guards the regression where the poller failed to treat this terminal ",
+      "state as done."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "application/pdf",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": true,
+    "preclassificationCategory": null,
+    "responseCode": "106"
+  },
+  "synthetic-public-benefits-identity-coverage-medicaid-card.jpg": {
+    "//": [
+      "Bedrock Data Automation is unable to classify this document using existing blueprints. ",
+      "Additional investigation is needed to determine why. ",
+      "Including in tests as-is to avoid blocking other work. ",
+      "Marking e2e_enabled: true to flag for follow-up and prevent accidental regressions."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/jpeg",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "002"
+  },
+  "synthetic-public-benefits-identity-proof-state-photo-id.jpg": {
+    "bdaMatchedDocumentClass": "US-drivers-licenses",
+    "content_type": "image/jpeg",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "synthetic-public-benefits-income-proof-pay-statement-photo.png": {
+    "bdaMatchedDocumentClass": "Payslip",
+    "content_type": "image/png",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "synthetic-public-benefits-income-proof-pay-statement-rendered.png": {
+    "bdaMatchedDocumentClass": "Payslip",
+    "content_type": "image/png",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "synthetic-public-benefits-income-proof-pay-stub.jpg": {
+    "bdaMatchedDocumentClass": "Payslip",
+    "content_type": "image/jpeg",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "synthetic-public-benefits-residency-proof-utility-bill.jpg": {
+    "//": [
+      "Bedrock Data Automation is unable to classify this document using existing blueprints. ",
+      "Additional investigation is needed to determine why. ",
+      "Including in tests as-is to avoid blocking other work. ",
+      "Marking e2e_enabled: true to flag for follow-up and prevent accidental regressions."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/jpeg",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "002"
   },
   "synthetic-shelter-shelter-verification-render-spanish.png": {
     "//": [
@@ -423,6 +806,20 @@
     "preclassificationCategory": "present",
     "responseCode": "002"
   },
+  "synthetic-shelter-shelter-verification-render.pdf": {
+    "//": [
+      "Verified live with preclassification-based-routing ON (2x, consistent). Correctly",
+      "routed to the 'shelter' per-category project, which has the custom",
+      "'Shelter-Verification-Letter' blueprint attached, and matches it directly."
+    ],
+    "bdaMatchedDocumentClass": "Shelter-Verification-Letter",
+    "content_type": "application/pdf",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
   "synthetic-shelter-shelter-verification-scan.jpg": {
     "//": [
       "Verified live with preclassification-based-routing ON (2x, consistent). Routed to",
@@ -438,20 +835,88 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-password-protected.pdf": {
-    "//": [
-      "Encrypted PDF. Detected as password protected before preclassification, so it ",
-      "short-circuits to the terminal password_protected state (responseCode 106) and ",
-      "never runs preclassification or BDA - hence null preclassificationCategory and no ",
-      "BDA output. Guards the regression where the poller failed to treat this terminal ",
-      "state as done."
-    ],
-    "bdaMatchedDocumentClass": null,
-    "content_type": "application/pdf",
+  "synthetic-snap-income-proof-employment-wage-verification-letter-photo.png": {
+    "bdaMatchedDocumentClass": "Employment-Verification-Letter",
+    "content_type": "image/png",
     "e2e_enabled": true,
     "isDocumentBlurry": false,
-    "isPasswordProtected": true,
-    "preclassificationCategory": null,
-    "responseCode": "106"
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "synthetic-snap-income-proof-employment-wage-verification-letter-rendered.png": {
+    "//": [
+      "BDA blueprint match is occasionally nondeterministic on this document,",
+      "intermittently returning no match instead of Employment-Verification-Letter.",
+      "reruns=2 gives 3 attempts."
+    ],
+    "bdaMatchedDocumentClass": "Employment-Verification-Letter",
+    "content_type": "image/png",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "reruns_override": 2,
+    "responseCode": "000"
+  },
+  "synthetic-snap-income-proof-self-employment-ledger-photo.png": {
+    "//": [
+      "Flaky: BDA classification of this synthetic Schedule-C ledger is non-deterministic. ",
+      "Across runs it has returned both a Form-1040-Schedule-C match (~0.80 confidence, right ",
+      "at the matching threshold) and no match at all, so no single expected value holds. ",
+      "Disabled from e2e (e2e_enabled: false) to stop flaky failures; re-enable once the ",
+      "classification stabilizes or the test can accept 'either a match or none'."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/png",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "002"
+  },
+  "synthetic-snap-income-proof-self-employment-ledger-rendered.png": {
+    "//": [
+      "Flaky: BDA classification of this synthetic Schedule-C ledger is non-deterministic. ",
+      "Across runs it has returned both a Form-1040-Schedule-C match (~0.80 confidence, right ",
+      "at the matching threshold) and no match at all, so no single expected value holds. ",
+      "Disabled from e2e (e2e_enabled: false) to stop flaky failures; re-enable once the ",
+      "classification stabilizes or the test can accept 'either a match or none'."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/png",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "002"
+  },
+  "synthetic-wic-adjunctive-eligibility-snap-benefits-letter.jpg": {
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/jpeg",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "002"
+  },
+  "synthetic-wic-certification-pregnancy-verification-clinic-note.jpg": {
+    "//": [
+      "Previously misclassified as Proof-of-Loss-of-Health-Coverage. ",
+      "Adding fields to blueprints resolved the false match - BDA now correctly ",
+      "returns no blueprint match for this pregnancy verification clinic note. ",
+      "BDA blueprint match is occasionally nondeterministic on this document, ",
+      "intermittently matching again instead of returning null; confirmed via ",
+      "rerun that it's wobble, not the false-match regression recurring. ",
+      "reruns=2 gives 3 attempts."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/jpeg",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "reruns_override": 2,
+    "responseCode": "002"
   }
 }
