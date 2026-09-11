@@ -319,6 +319,61 @@
     "preclassificationCategory": "present",
     "responseCode": "002"
   },
+  "synthetic-expense-dependent-care-render.pdf": {
+    "//": [
+      "Verified against a live run (2x, consistent). A custom 'Dependent-Care-Statement'",
+      "blueprint exists (infra/document-types/expense/custom-dependent-care.json, deployed",
+      "as docai-dev-...-expense-custom-dependent-care) but, like the other new custom",
+      "blueprints this session, is attached to its per-category 'expense' BDA project only -",
+      "not yet to the 'all' project actually used at request time (no per-category routing",
+      "configured). Unlike burial/child-support, BDA here confidently matches the generic",
+      "public 'Invoices' blueprint at full confidence (000), not a low-confidence or",
+      "no-match result. Expect this to change to a 'Dependent-Care-Statement' match once the",
+      "'all' project picks up the new expense-category custom blueprints - revisit then."
+    ],
+    "bdaMatchedDocumentClass": "Invoices",
+    "content_type": "application/pdf",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "synthetic-expense-dependent-care-scan.png": {
+    "//": [
+      "Verified against a live run (2x, consistent). Same root cause/caveat as",
+      "synthetic-expense-dependent-care-render.pdf: the custom 'Dependent-Care-Statement'",
+      "blueprint is attached to the 'expense' BDA project but not yet to the 'all' project",
+      "actually used at request time, so BDA falls back to a confident match against the",
+      "generic public 'Invoices' blueprint (000). Expect this to change once the 'all'",
+      "project picks up the new custom blueprints - revisit then."
+    ],
+    "bdaMatchedDocumentClass": "Invoices",
+    "content_type": "image/png",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "synthetic-expense-dependent-care-render-spanish.png": {
+    "//": [
+      "Verified against a live run (2x, consistent). Spanish-language variant of the",
+      "dependent care expense statement - same root cause/caveat as",
+      "synthetic-expense-dependent-care-render.pdf: the custom 'Dependent-Care-Statement'",
+      "blueprint is attached to the 'expense' BDA project but not yet to the 'all' project",
+      "actually used at request time, so BDA falls back to a confident match against the",
+      "generic public 'Invoices' blueprint (000). Expect this to change once the 'all'",
+      "project picks up the new custom blueprints - revisit then."
+    ],
+    "bdaMatchedDocumentClass": "Invoices",
+    "content_type": "image/png",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
   "synthetic-password-protected.pdf": {
     "//": [
       "Encrypted PDF. Detected as password protected before preclassification, so it ",
