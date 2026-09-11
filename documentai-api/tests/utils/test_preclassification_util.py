@@ -712,7 +712,7 @@ def test_find_matching_blueprint_real(
         lambda: "us.amazon.nova-lite-v1:0",
     )
 
-    filepath = FIXTURES_DIR / filename
+    filepath = FIXTURES_DIR / "happy-path" / filename
     if not filepath.exists():
         pytest.skip(f"Test fixture not found: {filepath}")
 

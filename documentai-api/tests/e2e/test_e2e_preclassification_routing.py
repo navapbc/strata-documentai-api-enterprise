@@ -27,17 +27,19 @@ TEST_DOCS_DIR = Path(__file__).parent.parent / "helpers" / "fixtures" / "test-do
 # File -> expected preclassificationBlueprintMatchCategory value.
 ROUTING_CASES = [
     pytest.param(
-        TEST_DOCS_DIR / "synthetic-public-benefits-income-proof-pay-stub.jpg",
+        TEST_DOCS_DIR / "happy-path" / "synthetic-public-benefits-income-proof-pay-stub.jpg",
         PreclassificationCategory.EMPLOYER_INCOME,
         id="pay-stub -> employer_income",
     ),
     pytest.param(
-        TEST_DOCS_DIR / "synthetic-snap-income-proof-employment-wage-verification-letter-photo.png",
+        TEST_DOCS_DIR
+        / "happy-path"
+        / "synthetic-snap-income-proof-employment-wage-verification-letter-photo.png",
         PreclassificationCategory.EMPLOYMENT_RECORDS,
         id="wage-verification-letter -> employment_records",
     ),
     pytest.param(
-        TEST_DOCS_DIR / "synthetic-public-benefits-identity-proof-state-photo-id.jpg",
+        TEST_DOCS_DIR / "happy-path" / "synthetic-public-benefits-identity-proof-state-photo-id.jpg",
         PreclassificationCategory.IDENTITY,
         id="state-id -> identity",
     ),

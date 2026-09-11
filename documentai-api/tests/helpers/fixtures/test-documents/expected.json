@@ -26,7 +26,7 @@
     "preclassificationCategory": null,
     "responseCode": "104"
   },
-  "synthetic-assests-bank-statement-render-spanish.png": {
+  "happy-path/synthetic-assests-bank-statement-render-spanish.png": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev,",
       "2x consistent). Correctly routed to the 'account_statements' per-category project,",
@@ -40,7 +40,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-assests-bank-statement-render.pdf": {
+  "happy-path/synthetic-assests-bank-statement-render.pdf": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev,",
       "2x consistent). Correctly routed to the 'account_statements' per-category project,",
@@ -54,7 +54,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-assests-bank-statement-scan.jpg": {
+  "happy-path/synthetic-assests-bank-statement-scan.jpg": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev,",
       "2x consistent). Correctly routed to the 'account_statements' per-category project,",
@@ -68,7 +68,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-assets-life-insurance-policy-render-spanish.png": {
+  "happy-path/synthetic-assets-life-insurance-policy-render-spanish.png": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
       "Preclassifies as an insurance document (not 'assets'), so it's routed to the",
@@ -85,7 +85,7 @@
     "preclassificationCategory": "present",
     "responseCode": "105"
   },
-  "synthetic-assets-life-insurance-policy-render.pdf": {
+  "happy-path/synthetic-assets-life-insurance-policy-render.pdf": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
       "Same root cause as the Spanish variant - preclassifies as an insurance document (not",
@@ -101,7 +101,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-assets-life-insurance-policy-scan.jpg": {
+  "happy-path/synthetic-assets-life-insurance-policy-scan.jpg": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
       "Preclassifies as an insurance document (not 'assets'), routes to the 'insurance'",
@@ -116,7 +116,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-assets-misc-assets-render-spanish.png": {
+  "happy-path/synthetic-assets-misc-assets-render-spanish.png": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
       "Preclassification doesn't match any known category for this doc, so it falls back",
@@ -131,7 +131,7 @@
     "preclassificationCategory": "present",
     "responseCode": "002"
   },
-  "synthetic-assets-misc-assets-render.pdf": {
+  "happy-path/synthetic-assets-misc-assets-render.pdf": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
       "Preclassified as a 'miscellaneous assets statement', which maps to the",
@@ -147,7 +147,7 @@
     "preclassificationCategory": "present",
     "responseCode": "002"
   },
-  "synthetic-assets-misc-assets-scan.jpg": {
+  "happy-path/synthetic-assets-misc-assets-scan.jpg": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
       "Preclassification doesn't match any known category for this doc, so it falls back",
@@ -162,7 +162,7 @@
     "preclassificationCategory": "present",
     "responseCode": "002"
   },
-  "synthetic-assets-real-estate-render-spanish.png": {
+  "happy-path/synthetic-assets-real-estate-render-spanish.png": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
       "Preclassification doesn't match any known category for this doc, so it falls back to",
@@ -177,7 +177,7 @@
     "preclassificationCategory": "present",
     "responseCode": "002"
   },
-  "synthetic-assets-real-estate-render.pdf": {
+  "happy-path/synthetic-assets-real-estate-render.pdf": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
       "Preclassification doesn't match any known category for this doc, so it falls back to",
@@ -192,7 +192,7 @@
     "preclassificationCategory": "present",
     "responseCode": "002"
   },
-  "synthetic-assets-real-estate-scan.jpg": {
+  "happy-path/synthetic-assets-real-estate-scan.jpg": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
       "Preclassification doesn't match any known category for this doc, so it falls back to",
@@ -207,7 +207,7 @@
     "preclassificationCategory": "present",
     "responseCode": "002"
   },
-  "synthetic-assets-trust-funds-investment-accounts-render-spanish.png": {
+  "happy-path/synthetic-assets-trust-funds-investment-accounts-render-spanish.png": {
     "//": [
       "Flaky under preclassification-based-routing (permanently enabled in dev): re-tested",
       "11x total. Preclassification text always identifies a trust/fideicomiso document, but",
@@ -227,7 +227,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-assets-trust-funds-investment-accounts-render.pdf": {
+  "happy-path/synthetic-assets-trust-funds-investment-accounts-render.pdf": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev,",
       "2x consistent). Correctly routed to the 'investment_and_royalty_income' per-category",
@@ -242,7 +242,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-assets-trust-funds-investment-accounts-scan.jpg": {
+  "happy-path/synthetic-assets-trust-funds-investment-accounts-scan.jpg": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev,",
       "2x consistent). Same as the rendered PDF - correctly routed to the",
@@ -257,7 +257,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-assets-vehicles-render-spanish.png": {
+  "happy-path/synthetic-assets-vehicles-render-spanish.png": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
       "Preclassified as 'vehicle_title_and_registration_certification', which maps to the 'identity' per-category project (vehicle",
@@ -272,7 +272,7 @@
     "preclassificationCategory": "present",
     "responseCode": "002"
   },
-  "synthetic-assets-vehicles-render.pdf": {
+  "happy-path/synthetic-assets-vehicles-render.pdf": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
       "Preclassified as 'motor_vehicle_registration', which maps to the 'identity' per-category project (vehicle",
@@ -287,7 +287,7 @@
     "preclassificationCategory": "present",
     "responseCode": "002"
   },
-  "synthetic-assets-vehicles-scan.jpg": {
+  "happy-path/synthetic-assets-vehicles-scan.jpg": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
       "Preclassified as 'vehicle_registration', which maps to the 'identity' per-category project (vehicle",
@@ -302,7 +302,7 @@
     "preclassificationCategory": "present",
     "responseCode": "002"
   },
-  "synthetic-expense-burial-picture.png": {
+  "happy-path/synthetic-expense-burial-picture.png": {
     "//": [
       "Verified live with preclassification-based-routing ON (2x, consistent). Routed to",
       "the 'invoices' per-category project (preclassified as an invoice-like document,",
@@ -319,7 +319,7 @@
     "preclassificationCategory": "present",
     "responseCode": "105"
   },
-  "synthetic-expense-burial-rendered-spanish.jpg": {
+  "happy-path/synthetic-expense-burial-rendered-spanish.jpg": {
     "//": [
       "Verified live with preclassification-based-routing ON (2x, consistent). Spanish-",
       "language burial expenses statement - preclassification doesn't match any known",
@@ -335,7 +335,7 @@
     "preclassificationCategory": "present",
     "responseCode": "105"
   },
-  "synthetic-expense-burial-scan-corner-torn.jpg": {
+  "happy-path/synthetic-expense-burial-scan-corner-torn.jpg": {
     "//": [
       "Verified live with preclassification-based-routing ON (2x, consistent). Routed to",
       "the 'account_statements' per-category project (this trust-account-style statement",
@@ -351,7 +351,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-expense-child-support-rendered.pdf": {
+  "happy-path/synthetic-expense-child-support-rendered.pdf": {
     "//": [
       "Verified live with preclassification-based-routing ON (2x, consistent). Correctly",
       "routed to the 'dependent_income' per-category project, which has the custom",
@@ -365,7 +365,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-expense-child-support-scan.jpg": {
+  "happy-path/synthetic-expense-child-support-scan.jpg": {
     "//": [
       "Verified live with preclassification-based-routing ON (2x, consistent). Same as",
       "synthetic-expense-child-support-rendered.pdf - correctly routed to the",
@@ -380,7 +380,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-expense-child-support-spanish-picture.png": {
+  "happy-path/synthetic-expense-child-support-spanish-picture.png": {
     "//": [
       "Was flaky (e2e_enabled: false) prior to preclassification-based-routing: BDA",
       "classification against the 'all' project was non-deterministic (see git history",
@@ -396,7 +396,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-expense-dependent-care-render-spanish.png": {
+  "happy-path/synthetic-expense-dependent-care-render-spanish.png": {
     "//": [
       "Verified live with preclassification-based-routing ON (2x, consistent). Same root",
       "cause as synthetic-expense-dependent-care-scan.png - routed to the 'invoices'",
@@ -412,7 +412,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-expense-dependent-care-render.pdf": {
+  "happy-path/synthetic-expense-dependent-care-render.pdf": {
     "//": [
       "Verified live with preclassification-based-routing ON (2x, consistent).",
       "Preclassification doesn't match any known category for this doc, so it falls back",
@@ -427,7 +427,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-expense-dependent-care-scan.png": {
+  "happy-path/synthetic-expense-dependent-care-scan.png": {
     "//": [
       "Verified live with preclassification-based-routing ON (2x, consistent). Routed to",
       "the 'invoices' per-category project (preclassified as invoice-like, not 'expense'),",
@@ -442,7 +442,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-expense-utility-cable-bill-render-spanish.png": {
+  "happy-path/synthetic-expense-utility-cable-bill-render-spanish.png": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
       "Preclassified as an invoice/cable bill-like document, which maps to the 'invoices'",
@@ -458,7 +458,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-expense-utility-cable-bill-render.pdf": {
+  "happy-path/synthetic-expense-utility-cable-bill-render.pdf": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
       "Preclassified as an invoice/cable bill-like document, which maps to the 'invoices'",
@@ -474,7 +474,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-expense-utility-cable-bill-scan.jpg": {
+  "happy-path/synthetic-expense-utility-cable-bill-scan.jpg": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
       "Preclassified as an invoice/cable bill-like document, which maps to the 'invoices'",
@@ -490,7 +490,7 @@
     "preclassificationCategory": "present",
     "responseCode": "105"
   },
-  "synthetic-expense-utility-electric-bill-render-spanish.png": {
+  "happy-path/synthetic-expense-utility-electric-bill-render-spanish.png": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
       "Preclassified as an invoice/electricity bill-like document, which maps to the 'invoices'",
@@ -506,7 +506,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-expense-utility-electric-bill-render.pdf": {
+  "happy-path/synthetic-expense-utility-electric-bill-render.pdf": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
       "Preclassified as an invoice/electricity bill-like document, which maps to the 'invoices'",
@@ -522,7 +522,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-expense-utility-electric-bill-scan.jpg": {
+  "happy-path/synthetic-expense-utility-electric-bill-scan.jpg": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
       "Preclassified as an invoice/electricity bill-like document, which maps to the 'invoices'",
@@ -538,7 +538,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-expense-utility-water-sewer-bill-render-spanish.png": {
+  "happy-path/synthetic-expense-utility-water-sewer-bill-render-spanish.png": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
       "Preclassified as an invoice/water/sewer bill-like document, which maps to the 'invoices'",
@@ -554,7 +554,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-expense-utility-water-sewer-bill-render.pdf": {
+  "happy-path/synthetic-expense-utility-water-sewer-bill-render.pdf": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
       "Preclassified as an invoice/water/sewer bill-like document, which maps to the 'invoices'",
@@ -570,7 +570,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-expense-utility-water-sewer-bill-scan.jpg": {
+  "happy-path/synthetic-expense-utility-water-sewer-bill-scan.jpg": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev).",
       "Preclassified as an invoice/water/sewer bill-like document, which maps to the 'invoices'",
@@ -586,7 +586,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-insurance-health-insurance-premium-render-spanish.png": {
+  "happy-path/synthetic-insurance-health-insurance-premium-render-spanish.png": {
     "//": [
       "Was flaky (e2e_enabled: false) prior to preclassification-based-routing: BDA",
       "classification against the 'all' project was non-deterministic (see git history",
@@ -602,7 +602,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-insurance-health-insurance-premium-render.pdf": {
+  "happy-path/synthetic-insurance-health-insurance-premium-render.pdf": {
     "//": [
       "Verified live with preclassification-based-routing ON (2x, consistent). Correctly",
       "routed to the 'insurance' per-category project, which has the custom",
@@ -616,7 +616,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-insurance-health-insurance-premium-scan.jpg": {
+  "happy-path/synthetic-insurance-health-insurance-premium-scan.jpg": {
     "//": [
       "Verified live with preclassification-based-routing ON (2x, consistent). Same as",
       "synthetic-insurance-health-insurance-premium-render.pdf - correctly routed to the",
@@ -631,7 +631,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-investment-and-royalty-income-render-spanish.png": {
+  "happy-path/synthetic-investment-and-royalty-income-render-spanish.png": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev,",
       "2x consistent). Correctly routed to the 'investment_and_royalty_income' per-category",
@@ -646,7 +646,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-investment-and-royalty-income-render.pdf": {
+  "happy-path/synthetic-investment-and-royalty-income-render.pdf": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev,",
       "2x consistent). Correctly routed to the 'investment_and_royalty_income' per-category",
@@ -661,7 +661,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-investment-and-royalty-income-scan.jpg": {
+  "happy-path/synthetic-investment-and-royalty-income-scan.jpg": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev,",
       "2x consistent). Correctly routed to the 'investment_and_royalty_income' per-category",
@@ -676,7 +676,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-multipage-mixed-paystub-photo.pdf": {
+  "happy-path/synthetic-multipage-mixed-paystub-photo.pdf": {
     "//": [
       "Multipage PDF combining two different pay stubs (different employees).",
       "Same-type/different-individual detection is best-effort (~78% reliable at temp=0).",
@@ -691,7 +691,7 @@
     "reruns_override": 2,
     "responseCode": "401"
   },
-  "synthetic-multipage-mixed-state-id-paystub.pdf": {
+  "happy-path/synthetic-multipage-mixed-state-id-paystub.pdf": {
     "//": [
       "Multipage PDF combining a state photo ID and a pay stub - two distinct document types.",
       "Preclassification consistently returns has_multipage_inconsistency: true.",
@@ -708,7 +708,7 @@
     "reruns_override": 2,
     "responseCode": "401"
   },
-  "synthetic-password-protected.pdf": {
+  "happy-path/synthetic-password-protected.pdf": {
     "//": [
       "Encrypted PDF. Detected as password protected before preclassification, so it ",
       "short-circuits to the terminal password_protected state (responseCode 106) and ",
@@ -724,7 +724,7 @@
     "preclassificationCategory": null,
     "responseCode": "106"
   },
-  "synthetic-public-benefits-identity-coverage-medicaid-card.jpg": {
+  "happy-path/synthetic-public-benefits-identity-coverage-medicaid-card.jpg": {
     "//": [
       "Bedrock Data Automation is unable to classify this document using existing blueprints. ",
       "Additional investigation is needed to determine why. ",
@@ -739,7 +739,7 @@
     "preclassificationCategory": "present",
     "responseCode": "002"
   },
-  "synthetic-public-benefits-identity-proof-state-photo-id.jpg": {
+  "happy-path/synthetic-public-benefits-identity-proof-state-photo-id.jpg": {
     "bdaMatchedDocumentClass": "US-drivers-licenses",
     "content_type": "image/jpeg",
     "e2e_enabled": true,
@@ -748,7 +748,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-public-benefits-income-proof-pay-statement-photo.png": {
+  "happy-path/synthetic-public-benefits-income-proof-pay-statement-photo.png": {
     "bdaMatchedDocumentClass": "Payslip",
     "content_type": "image/png",
     "e2e_enabled": true,
@@ -757,7 +757,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-public-benefits-income-proof-pay-statement-rendered.png": {
+  "happy-path/synthetic-public-benefits-income-proof-pay-statement-rendered.png": {
     "bdaMatchedDocumentClass": "Payslip",
     "content_type": "image/png",
     "e2e_enabled": true,
@@ -766,7 +766,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-public-benefits-income-proof-pay-stub.jpg": {
+  "happy-path/synthetic-public-benefits-income-proof-pay-stub.jpg": {
     "bdaMatchedDocumentClass": "Payslip",
     "content_type": "image/jpeg",
     "e2e_enabled": true,
@@ -775,7 +775,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-public-benefits-residency-proof-utility-bill.jpg": {
+  "happy-path/synthetic-public-benefits-residency-proof-utility-bill.jpg": {
     "//": [
       "Bedrock Data Automation is unable to classify this document using existing blueprints. ",
       "Additional investigation is needed to determine why. ",
@@ -790,7 +790,7 @@
     "preclassificationCategory": "present",
     "responseCode": "002"
   },
-  "synthetic-shelter-shelter-verification-render-spanish.png": {
+  "happy-path/synthetic-shelter-shelter-verification-render-spanish.png": {
     "//": [
       "Verified live with preclassification-based-routing ON (2x, consistent). Spanish-",
       "language shelter verification letter - preclassification doesn't match any known",
@@ -806,7 +806,7 @@
     "preclassificationCategory": "present",
     "responseCode": "002"
   },
-  "synthetic-shelter-shelter-verification-render.pdf": {
+  "happy-path/synthetic-shelter-shelter-verification-render.pdf": {
     "//": [
       "Verified live with preclassification-based-routing ON (2x, consistent). Correctly",
       "routed to the 'shelter' per-category project, which has the custom",
@@ -820,7 +820,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-shelter-shelter-verification-scan.jpg": {
+  "happy-path/synthetic-shelter-shelter-verification-scan.jpg": {
     "//": [
       "Verified live with preclassification-based-routing ON (2x, consistent). Routed to",
       "the 'receipts' per-category project (preclassified as a money-order-receipt-like",
@@ -835,7 +835,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-snap-income-proof-employment-wage-verification-letter-photo.png": {
+  "happy-path/synthetic-snap-income-proof-employment-wage-verification-letter-photo.png": {
     "bdaMatchedDocumentClass": "Employment-Verification-Letter",
     "content_type": "image/png",
     "e2e_enabled": true,
@@ -844,7 +844,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "synthetic-snap-income-proof-employment-wage-verification-letter-rendered.png": {
+  "happy-path/synthetic-snap-income-proof-employment-wage-verification-letter-rendered.png": {
     "//": [
       "BDA blueprint match is occasionally nondeterministic on this document,",
       "intermittently returning no match instead of Employment-Verification-Letter.",
@@ -859,7 +859,7 @@
     "reruns_override": 2,
     "responseCode": "000"
   },
-  "synthetic-snap-income-proof-self-employment-ledger-photo.png": {
+  "happy-path/synthetic-snap-income-proof-self-employment-ledger-photo.png": {
     "//": [
       "Flaky: BDA classification of this synthetic Schedule-C ledger is non-deterministic. ",
       "Across runs it has returned both a Form-1040-Schedule-C match (~0.80 confidence, right ",
@@ -875,7 +875,7 @@
     "preclassificationCategory": "present",
     "responseCode": "002"
   },
-  "synthetic-snap-income-proof-self-employment-ledger-rendered.png": {
+  "happy-path/synthetic-snap-income-proof-self-employment-ledger-rendered.png": {
     "//": [
       "Flaky: BDA classification of this synthetic Schedule-C ledger is non-deterministic. ",
       "Across runs it has returned both a Form-1040-Schedule-C match (~0.80 confidence, right ",
@@ -891,7 +891,7 @@
     "preclassificationCategory": "present",
     "responseCode": "002"
   },
-  "synthetic-wic-adjunctive-eligibility-snap-benefits-letter.jpg": {
+  "happy-path/synthetic-wic-adjunctive-eligibility-snap-benefits-letter.jpg": {
     "bdaMatchedDocumentClass": null,
     "content_type": "image/jpeg",
     "e2e_enabled": true,
@@ -900,7 +900,7 @@
     "preclassificationCategory": "present",
     "responseCode": "002"
   },
-  "synthetic-wic-certification-pregnancy-verification-clinic-note.jpg": {
+  "happy-path/synthetic-wic-certification-pregnancy-verification-clinic-note.jpg": {
     "//": [
       "Previously misclassified as Proof-of-Loss-of-Health-Coverage. ",
       "Adding fields to blueprints resolved the false match - BDA now correctly ",

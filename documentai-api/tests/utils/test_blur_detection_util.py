@@ -433,7 +433,7 @@ def test_blur_detects_blurry(filename, real_aws_credentials):
 @pytest.mark.parametrize("filename", _SHARP_SAMPLES)
 def test_blur_passes_sharp(filename, real_aws_credentials):
     """Sharp images should NOT be flagged as blurry."""
-    filepath = FIXTURES_DIR / filename
+    filepath = FIXTURES_DIR / "happy-path" / filename
     if not filepath.exists():
         pytest.skip(f"Fixture not found: {filepath}")
 

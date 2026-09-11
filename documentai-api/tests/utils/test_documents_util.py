@@ -12,7 +12,7 @@ _OLE2_MAGIC = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"
 
 def test_is_password_protected_encrypted_ooxml():
     """An ECMA-376-encrypted docx (OLE2-wrapped) is detected as password protected."""
-    data = (FIXTURES_DIR / "synthetic-password-protected.docx").read_bytes()
+    data = (FIXTURES_DIR / "happy-path" / "synthetic-password-protected.docx").read_bytes()
     assert is_password_protected(data) is True
 
 
