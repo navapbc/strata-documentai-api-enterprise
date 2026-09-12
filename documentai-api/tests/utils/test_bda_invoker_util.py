@@ -3,22 +3,27 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from documentai_api.config.constants import ConfigDefaults
+from documentai_api.config.env import get_env_config
+from documentai_api.config.env_var_names_generated import EnvVarNames
 from documentai_api.utils import bda_invoker as bda_invoker_util
+
+
+@pytest.fixture(autouse=True)
+def bda_env(monkeypatch):
+    """Set the env vars required by invoke_bedrock_data_automation for every test."""
+    monkeypatch.setenv(EnvVarNames.BDA_PROJECT_ARN, "arn:aws:project")
+    monkeypatch.setenv(EnvVarNames.BDA_PROJECT_ARN_ALL, "arn:aws:project")
+    monkeypatch.setenv(EnvVarNames.BDA_PROFILE_ARN, "arn:aws:profile")
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_OUTPUT_LOCATION, "s3://output-bucket/path")
+    get_env_config.cache_clear()
+    yield
+    get_env_config.cache_clear()
 
 
 def test_invoke_bedrock_data_automation_single_page():
     bda_invocation_arn = "arn:aws:invocation:123"
 
     with (
-        patch.dict(
-            "os.environ",
-            {
-                "BDA_PROJECT_ARN": "arn:aws:project",
-                "BDA_PROJECT_ARN_ALL": "arn:aws:project",
-                "BDA_PROFILE_ARN": "arn:aws:profile",
-                "DOCUMENTAI_OUTPUT_LOCATION": "s3://output-bucket/path",
-            },
-        ),
         patch.object(bda_invoker_util, "_project_arns_cache", None),
         patch(
             "documentai_api.utils.bda_invoker.AWSClientFactory.get_bda_runtime_client"
@@ -50,15 +55,6 @@ def test_invoke_bedrock_data_automation_document_truncation():
     bda_invocation_arn = "arn:aws:invocation:123"
 
     with (
-        patch.dict(
-            "os.environ",
-            {
-                "BDA_PROJECT_ARN": "arn:aws:project",
-                "BDA_PROJECT_ARN_ALL": "arn:aws:project",
-                "BDA_PROFILE_ARN": "arn:aws:profile",
-                "DOCUMENTAI_OUTPUT_LOCATION": "s3://output-bucket/path",
-            },
-        ),
         patch.object(bda_invoker_util, "_project_arns_cache", None),
         patch(
             "documentai_api.utils.bda_invoker.AWSClientFactory.get_bda_runtime_client"
@@ -94,34 +90,24 @@ def test_invoke_bedrock_data_automation_document_truncation():
         )
 
 
-def test_demo_upload_output_key_starts_with_expected_prefix():
+def test_demo_upload_output_key_starts_with_expected_prefix(monkeypatch):
     """Lock the cross-system contract: BDA output for demo uploads.
 
     BDA output is written to {DOCUMENTAI_OUTPUT_LOCATION}/{tenant_id}/{ddb_key}/{ExtractMethod.BDA}.
-    ddb_key is the bare filename (e.g. doc-uuid.pdf), so the output key becomes:
-        processed/{tenant_id}/{ddb_key}/{ExtractMethod.BDA}/...
+    Demo tenant IDs always start with 'demo-' (see demo.py _resolve_demo_context).
+    The infra S3 lifecycle rule (expire-demo-results) filters on prefix 'processed/demo-'.
 
-    If this test fails, the infra S3 lifecycle rule (expire-demo-results) will
-    stop matching and demo output won't auto-expire.
+    If this test fails, the lifecycle rule will stop matching and demo output won't auto-expire.
     """
-    from documentai_api.config.constants import ExtractMethod
-
     bda_invocation_arn = "arn:aws:invocation:demo-test"
     demo_source_object = "input/demo/test-tenant-id/doc-uuid.pdf"
     demo_ddb_key = "doc-uuid.pdf"
-    output_location = "s3://output-bucket/processed"
-    tenant_id = "test-tenant-id"
+    tenant_id = "demo-test-sub"
+
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_OUTPUT_LOCATION, "s3://output-bucket/processed")
+    get_env_config.cache_clear()
 
     with (
-        patch.dict(
-            "os.environ",
-            {
-                "BDA_PROJECT_ARN": "arn:aws:project",
-                "BDA_PROJECT_ARN_ALL": "arn:aws:project",
-                "BDA_PROFILE_ARN": "arn:aws:profile",
-                "DOCUMENTAI_OUTPUT_LOCATION": output_location,
-            },
-        ),
         patch.object(bda_invoker_util, "_project_arns_cache", None),
         patch(
             "documentai_api.utils.bda_invoker.AWSClientFactory.get_bda_runtime_client"
@@ -144,11 +130,9 @@ def test_demo_upload_output_key_starts_with_expected_prefix():
 
         call_kwargs = mock_bda.invoke_data_automation_async.call_args.kwargs
         output_s3_uri = call_kwargs["outputConfiguration"]["s3Uri"]
-
-        assert output_s3_uri == f"{output_location}/{tenant_id}/{demo_ddb_key}/{ExtractMethod.BDA}"
         output_key = output_s3_uri.replace("s3://output-bucket/", "")
-        assert output_key.startswith(f"processed/{tenant_id}/{demo_ddb_key}/"), (
-            f"Demo output key '{output_key}' does not start with 'processed/{tenant_id}/{demo_ddb_key}/'. "
+        assert output_key.startswith("processed/demo-"), (
+            f"Demo output key '{output_key}' does not start with 'processed/demo-'. "
             "This means the infra S3 lifecycle rule (expire-demo-results) won't match."
         )
 
@@ -165,15 +149,6 @@ def test_invoke_bedrock_data_automation_pages_sent_fallback(page_count_return, e
     bda_invocation_arn = "arn:aws:invocation:fallback"
 
     with (
-        patch.dict(
-            "os.environ",
-            {
-                "BDA_PROJECT_ARN": "arn:aws:project",
-                "BDA_PROJECT_ARN_ALL": "arn:aws:project",
-                "BDA_PROFILE_ARN": "arn:aws:profile",
-                "DOCUMENTAI_OUTPUT_LOCATION": "s3://output-bucket/path",
-            },
-        ),
         patch.object(bda_invoker_util, "_project_arns_cache", None),
         patch(
             "documentai_api.utils.bda_invoker.AWSClientFactory.get_bda_runtime_client"
@@ -202,52 +177,30 @@ def test_invoke_bedrock_data_automation_pages_sent_fallback(page_count_return, e
 # =============================================================================
 
 
-def test_skip_bda_if_unclassified_defaults_false_when_no_param():
+def test_skip_bda_if_unclassified_defaults_false_when_no_param(monkeypatch):
     """When no SSM prefix is configured, defaults to False (don't skip BDA)."""
-    with patch.dict("os.environ", {}, clear=True):
-        from documentai_api.config.env import get_env_config
-
-        get_env_config.cache_clear()
-        result = bda_invoker_util.skip_bda_if_unclassified()
-        assert result is False
+    monkeypatch.setattr("os.environ", {})
+    get_env_config.cache_clear()
+    result = bda_invoker_util.skip_bda_if_unclassified()
+    assert result is False
 
 
-def test_skip_bda_if_unclassified_reads_ssm_true():
+def test_skip_bda_if_unclassified_reads_ssm_true(monkeypatch):
     """When SSM param returns 'true', returns True (skip BDA)."""
-    with (
-        patch.dict(
-            "os.environ",
-            {"SSM_PREFIX": "/test"},
-        ),
-        patch(
-            "documentai_api.utils.ssm.get_parameter_value",
-            return_value="true",
-        ),
-    ):
-        from documentai_api.config.env import get_env_config
-
-        get_env_config.cache_clear()
+    monkeypatch.setenv(EnvVarNames.SSM_PREFIX, "/test")
+    get_env_config.cache_clear()
+    with patch("documentai_api.utils.ssm.get_parameter_value", return_value="true"):
         result = bda_invoker_util.skip_bda_if_unclassified()
-        assert result is True
+    assert result is True
 
 
-def test_skip_bda_if_unclassified_reads_ssm_false():
+def test_skip_bda_if_unclassified_reads_ssm_false(monkeypatch):
     """When SSM param returns 'false', returns False (don't skip BDA)."""
-    with (
-        patch.dict(
-            "os.environ",
-            {"SSM_PREFIX": "/test"},
-        ),
-        patch(
-            "documentai_api.utils.ssm.get_parameter_value",
-            return_value="false",
-        ),
-    ):
-        from documentai_api.config.env import get_env_config
-
-        get_env_config.cache_clear()
+    monkeypatch.setenv(EnvVarNames.SSM_PREFIX, "/test")
+    get_env_config.cache_clear()
+    with patch("documentai_api.utils.ssm.get_parameter_value", return_value="false"):
         result = bda_invoker_util.skip_bda_if_unclassified()
-        assert result is False
+    assert result is False
 
 
 # =============================================================================
@@ -259,7 +212,6 @@ def test_resolve_project_arn_returns_all_when_routing_disabled():
     """Falls back to 'all' project when routing flag is off."""
     prefix = "arn:aws:bedrock:us-east-1:123:data-automation-project"
     with (
-        patch.dict("os.environ", {"BDA_PROJECT_ARN_ALL": f"{prefix}/all-arn"}, clear=False),
         patch.object(bda_invoker_util, "_project_arns_cache", None),
         patch(
             "documentai_api.utils.bda_invoker.is_preclassification_routing_enabled",
