@@ -11,6 +11,7 @@ from fastapi import HTTPException, UploadFile
 
 from documentai_api.config.constants import (
     MAX_UPLOAD_SIZE_BYTES,
+    ExtractMethod,
     FileValidation,
     S3MetadataKeys,
 )
@@ -82,10 +83,14 @@ class ImageConversionError(Exception):
 def purge_document_s3_artifacts(object_key: str, tenant_id: str) -> list[str]:
     """Remove every S3 copy of a document, used by hard delete.
 
-    Covers all three locations a document's bytes can land in: the original
-    upload (input), the preprocessing copies, and the BDA output tree. Attempts
-    all three regardless of individual failures (so one error doesn't strand the
-    rest), and returns the names of any locations that could NOT be purged.
+    Covers all locations a document's bytes can land:
+       1. original upload (input)
+       2. preprocessing copies
+       3. BDA output tree
+       4. Textract output
+
+    Attempts all locations regardless of individual failures (so one error doesn't
+    strand the rest), and returns the names of any locations that could NOT be purged.
 
     The caller treats a non-empty return as a failed hard delete: an empty list
     means every artifact is confirmed gone. Note that S3 deletes are idempotent -
@@ -116,22 +121,35 @@ def purge_document_s3_artifacts(object_key: str, tenant_id: str) -> list[str]:
             logger.warning(f"Failed to delete preprocessing object for {object_key}: {e}")
             failures.append("preprocessing")
 
-    # 3. BDA output tree: {output}/{input_key}/{invocation_id}/... A recursive
-    #    prefix delete of the doc's output root removes everything BDA wrote -
-    #    standard output, custom output, and job_metadata.json. input_key is the
-    #    object_key, or the "_truncated" variant for oversized docs (see
+    # 3. BDA output tree: {output}/{tenant}/{input_key}/{invocation_id}/... A
+    #    recursive prefix delete of the doc's output root removes everything BDA
+    #    wrote - standard output, custom output, and job_metadata.json. input_key
+    #    is the object_key, or the "_truncated" variant for oversized docs (see
     #    bda_invoker), so purge both candidate roots.
     output_location = get_env_config().documentai_output_location
     if output_location:
         try:
-            bucket, prefix = parse_s3_uri(output_location)
+            bucket, _ = parse_s3_uri(output_location)
             base, ext = os.path.splitext(object_key)
             for name in (object_key, f"{base}_truncated{ext}"):
-                out_prefix = f"{prefix}/{name}/" if prefix else f"{name}/"
-                s3_service.delete_prefix(bucket, out_prefix)
+                _, key = get_bucket_and_key(output_location, tenant_id, name)
+                s3_service.delete_prefix(bucket, f"{key}/")
         except Exception as e:
             logger.warning(f"Failed to delete output objects for {object_key}: {e}")
             failures.append("output")
+
+    # 4. Textract output: {output}/{tenant}/{object_key}.json/textract
+    #    Written by write_extraction_output for identity documents.
+    if output_location:
+        try:
+            bucket, _ = parse_s3_uri(output_location)
+            _, key = get_bucket_and_key(
+                output_location, tenant_id, f"{object_key}.json/{ExtractMethod.TEXTRACT}"
+            )
+            s3_service.delete_object(bucket, key)
+        except Exception as e:
+            logger.warning(f"Failed to delete Textract output for {object_key}: {e}")
+            failures.append("textract_output")
 
     return failures
 

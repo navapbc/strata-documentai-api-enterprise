@@ -6,14 +6,11 @@ from datetime import UTC, datetime
 from opentelemetry import trace
 
 from documentai_api.config.constants import ExtractMethod, TextractConfig
-from documentai_api.config.env import get_env_config
 from documentai_api.dtos.extraction import ExtractionResult
 from documentai_api.logging import get_logger
 from documentai_api.mappings import get_bda_field_map, get_document_class
 from documentai_api.mappings.textract import get_supplemental_config
-from documentai_api.services import s3 as s3_service
 from documentai_api.services.textract import analyze_id
-from documentai_api.utils import s3 as s3_utils
 from documentai_api.utils.ddb import set_extract_method
 from documentai_api.utils.extraction_timing import get_elapsed_time_seconds
 from documentai_api.utils.ssm import is_textract_identity_enabled
@@ -85,17 +82,6 @@ def extract_textract_identity(
                 fields.update(supplemental)
 
         set_extract_method(ddb_key, ExtractMethod.TEXTRACT, extract_started_at.isoformat())
-        output_location = get_env_config().get_output_location
-        output_bucket, output_prefix = s3_utils.parse_s3_uri(output_location)
-        textract_s3_key = f"{output_prefix}/textract/{ddb_key}.json"
-        textract_s3_uri = f"s3://{output_bucket}/{textract_s3_key}"
-
-        s3_service.put_object(
-            output_bucket,
-            textract_s3_key,
-            json.dumps({"source": "textract", "fields": fields}).encode(),
-            content_type="application/json",
-        )
 
         field_confidence_scores = [{name: data["confidence"]} for name, data in fields.items()]
         field_empty_list = [name for name, data in fields.items() if not data.get("value")]
@@ -106,9 +92,11 @@ def extract_textract_identity(
             f"with {len(field_confidence_scores)} fields in {extract_time}s"
         )
 
+        body = json.dumps({"source": "textract", "fields": fields}).encode()
+
         return ExtractionResult(
             document_type=matched_document_class,
-            output_uri=textract_s3_uri,
+            body=body,
             extract_started_at=extract_started_at,
             extract_completed_at=extract_completed_at,
             extract_time=extract_time,

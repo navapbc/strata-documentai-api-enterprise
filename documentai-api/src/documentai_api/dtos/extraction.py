@@ -9,12 +9,12 @@ from decimal import Decimal
 class ExtractionResult:
     """Common return shape from all extraction paths (BDA, Textract, LLM).
 
-    output_uri points to the extraction output written by the extractor;
-    response_builder reads it back via the appropriate ExtractionReader.
+    Carries extracted fields and metadata. output_uri and body are managed
+    by the job layer, not the extractor.
     """
 
     document_type: str
-    output_uri: str
+    body: bytes | None = None
     field_confidence_scores: list[dict[str, float]] = field(default_factory=list)
     extract_started_at: datetime | None = None
     extract_completed_at: datetime | None = None

@@ -10,7 +10,6 @@ def test_process_textract_result_returns_processor_result(mocker):
 
     result = ExtractionResult(
         document_type="US-drivers-licenses",
-        output_uri="s3://bucket/output/textract/key.json",
         field_confidence_scores=[{"NAME_DETAILS.FIRST_NAME": 0.99}],
         field_empty_list=["ENDORSEMENTS"],
     )
@@ -29,7 +28,6 @@ def test_process_textract_result_handles_missing_ddb_record(mocker):
 
     result = ExtractionResult(
         document_type="US-drivers-licenses",
-        output_uri="s3://bucket/output/textract/key.json",
     )
 
     processor_result = process_textract_result("test-key", result)

@@ -33,6 +33,7 @@ def _classify(result: ProcessorResult) -> dict[str, Any]:
         return classify_extraction_result(
             ddb_key=result.object_key,
             result=result.extraction_result,
+            output_uri=result.output_uri,
             tenant_id=result.tenant_id,
             batch_id=result.batch_id,
             result_processor_started_at=result.result_processor_started_at,

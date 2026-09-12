@@ -1,21 +1,32 @@
 """Tests for jobs/document_processor/main.py."""
 
+import time
 from decimal import Decimal
 from unittest.mock import ANY, Mock
 
 import pytest
+from botocore.exceptions import ClientError
+from tenacity import RetryError
 
-from documentai_api.config.constants import ProcessStatus
+from documentai_api.config.constants import ExtractMethod, ProcessStatus
 from documentai_api.config.constants_preclassification_category_generated import (
     PreclassificationCategory,
 )
-from documentai_api.dtos.processing import CropResult, OptimizationResult
+from documentai_api.dtos.classification import (
+    BedrockClassificationResult,
+    PreclassificationMatchResult,
+)
+from documentai_api.dtos.extraction import ExtractionResult
+from documentai_api.dtos.processing import CropResult, OptimizationResult, ProcessorResult
 from documentai_api.jobs.document_processor.main import (
+    _invoke_bda,
+    _persist_optimization_metrics,
     _should_invoke_bda,
     invoke_bda,
     main,
 )
 from documentai_api.schemas.document_metadata import DocumentMetadata
+from documentai_api.utils.blur_detection import BlurResult
 
 _MAIN_MODULE = "documentai_api.jobs.document_processor.main"
 _LIFECYCLE_MODULE = "documentai_api.pipeline.document_lifecycle"
@@ -33,8 +44,6 @@ def mock_env(runtime_required_env):
 
 @pytest.fixture(autouse=True)
 def mock_preclassification(mocker):
-    from documentai_api.dtos.classification import BedrockClassificationResult
-
     mocker.patch(
         f"{_LIFECYCLE_MODULE}.preclassify_document",
         return_value=BedrockClassificationResult(
@@ -47,8 +56,6 @@ def mock_preclassification(mocker):
 
 @pytest.fixture(autouse=True)
 def mock_find_matching_blueprint(mocker):
-    from documentai_api.dtos.classification import PreclassificationMatchResult
-
     mocker.patch(
         f"{_LIFECYCLE_MODULE}.find_matching_blueprint",
         return_value=PreclassificationMatchResult(
@@ -62,6 +69,15 @@ def mock_find_matching_blueprint(mocker):
 @pytest.fixture(autouse=True)
 def mock_invoke_bda(mocker):
     return mocker.patch("documentai_api.jobs.document_processor.main.invoke_bda")
+
+
+@pytest.fixture(autouse=True)
+def mock_is_selected_for_processing(mocker):
+    """Prevent document_categories table lookup. Document is always selected for processing."""
+    return mocker.patch(
+        "documentai_api.pipeline.document_lifecycle.is_selected_for_processing",
+        return_value=(True, None, None),
+    )
 
 
 @pytest.fixture(autouse=True)
@@ -81,7 +97,14 @@ PDF_MAGIC = b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n"
 
 
 @pytest.fixture
-def input_image(s3_bucket):
+def input_image(s3_bucket, ddb_doc_metadata_table):
+    ddb_doc_metadata_table.put_item(
+        Item={
+            "fileName": "test.jpg",
+            "tenantId": "test-tenant-id",
+            DocumentMetadata.PROCESS_STATUS: ProcessStatus.NOT_STARTED.value,
+        }
+    )
     return s3_bucket.put_object(
         Key="input/test.jpg",
         Body=JPEG_MAGIC,
@@ -96,7 +119,14 @@ def input_image(s3_bucket):
 
 
 @pytest.fixture
-def input_pdf(s3_bucket):
+def input_pdf(s3_bucket, ddb_doc_metadata_table):
+    ddb_doc_metadata_table.put_item(
+        Item={
+            "fileName": "test.pdf",
+            "tenantId": "test-tenant-id",
+            DocumentMetadata.PROCESS_STATUS: ProcessStatus.NOT_STARTED.value,
+        }
+    )
     return s3_bucket.put_object(
         Key="input/test.pdf",
         Body=PDF_MAGIC,
@@ -126,7 +156,9 @@ def test_invoke_bda_success(input_pdf, mocker):
         False,
     )
 
-    result = invoke_bda(input_pdf.bucket_name, input_pdf.key, "test.pdf", "tax_documents")
+    result = invoke_bda(
+        input_pdf.bucket_name, input_pdf.key, "test.pdf", "test-tenant-id", "tax_documents"
+    )
 
     assert result["invocationArn"] == "arn:aws:bedrock:us-east-1:123456789012:job/abc123"
     mock_set_status.assert_called_once_with(
@@ -144,9 +176,6 @@ def test_invoke_bda_success(input_pdf, mocker):
 
 def test_invoke_bda_retryable_failure(input_pdf, mock_invoke_bda, mocker):
     """Transient errors (ThrottlingException) exhaust retries -> RetryError -> classify_as_failed."""
-    from botocore.exceptions import ClientError
-    from tenacity import RetryError
-
     mock_classify = mocker.patch("documentai_api.jobs.document_processor.main.classify_as_failed")
 
     mock_low_level_invoke = mocker.patch(
@@ -158,7 +187,7 @@ def test_invoke_bda_retryable_failure(input_pdf, mock_invoke_bda, mocker):
     )
 
     with pytest.raises(RetryError):
-        invoke_bda(input_pdf.bucket_name, input_pdf.key, "test.pdf")
+        invoke_bda(input_pdf.bucket_name, input_pdf.key, "test.pdf", "test-tenant-id")
 
     mock_classify.assert_called_once()
     assert mock_classify.call_args.kwargs["object_key"] == "test.pdf"
@@ -167,8 +196,6 @@ def test_invoke_bda_retryable_failure(input_pdf, mock_invoke_bda, mocker):
 
 def test_invoke_bda_non_retryable_failure(input_pdf, mock_invoke_bda, mocker):
     """Non-retryable errors (ValidationException) raise ClientError immediately, no retries."""
-    from botocore.exceptions import ClientError
-
     mock_low_level_invoke = mocker.patch(
         "documentai_api.jobs.document_processor.main.invoke_bedrock_data_automation"
     )
@@ -178,7 +205,7 @@ def test_invoke_bda_non_retryable_failure(input_pdf, mock_invoke_bda, mocker):
     )
 
     with pytest.raises(ClientError):
-        invoke_bda(input_pdf.bucket_name, input_pdf.key, "test.pdf")
+        invoke_bda(input_pdf.bucket_name, input_pdf.key, "test.pdf", "test-tenant-id")
 
     mock_low_level_invoke.assert_called_once()  # no retries
 
@@ -197,6 +224,7 @@ def test_main_first_time_pdf(input_pdf, mocker, ddb_doc_metadata_table, mock_inv
         input_pdf.bucket_name,
         input_pdf.key,
         expected_object_key,
+        "test-tenant-id",
         PreclassificationCategory.EMPLOYER_INCOME,
         None,
     )
@@ -209,7 +237,7 @@ def test_main_strips_tenant_prefix_for_ddb_key(s3_bucket, ddb_doc_metadata_table
     processor must key off the basename to update it in place. S3 operations,
     by contrast, must keep the full tenant-prefixed key.
     """
-    tenant_key = "input/test-tenant/document-build-abc.pdf"
+    tenant_key = "input/test-tenant-id/test-file-name.pdf"
     obj = s3_bucket.put_object(
         Key=tenant_key,
         Body=PDF_MAGIC,
@@ -222,10 +250,19 @@ def test_main_strips_tenant_prefix_for_ddb_key(s3_bucket, ddb_doc_metadata_table
         },
     )
 
+    # Can't use input_pdf fixture here - we need a tenant-prefixed key to test stripping.
+    ddb_doc_metadata_table.put_item(
+        Item={
+            "fileName": "test-file-name.pdf",
+            "tenantId": "test-tenant-id",
+            DocumentMetadata.PROCESS_STATUS: ProcessStatus.NOT_STARTED.value,
+        }
+    )
+
     main(obj.key, obj.bucket_name)
 
     # DDB key is the basename, with the tenant segment stripped.
-    expected_ddb_key = "document-build-abc.pdf"
+    expected_ddb_key = "test-file-name.pdf"
     record = ddb_doc_metadata_table.get_item(Key={"fileName": expected_ddb_key})["Item"]
     # The atomic claim transitions the status to STARTED before BDA is invoked.
     assert record[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.STARTED
@@ -235,6 +272,7 @@ def test_main_strips_tenant_prefix_for_ddb_key(s3_bucket, ddb_doc_metadata_table
         obj.bucket_name,
         tenant_key,
         expected_ddb_key,
+        "test-tenant-id",
         PreclassificationCategory.EMPLOYER_INCOME,
         None,
     )
@@ -267,6 +305,7 @@ def test_main_first_time_image(input_image, mocker, ddb_doc_metadata_table, mock
         input_image.bucket_name,
         input_image.key,
         expected_object_key,
+        "test-tenant-id",
         PreclassificationCategory.EMPLOYER_INCOME,
         None,
     )
@@ -291,10 +330,10 @@ def test_main_grayscale_conversion_fails(input_image, mocker, mock_invoke_bda):
     )
 
     mock_get = mocker.patch("documentai_api.jobs.document_processor.main.get_ddb_record")
-    mock_get.side_effect = [
-        None,
-        {DocumentMetadata.PROCESS_STATUS: ProcessStatus.PENDING_IMAGE_OPTIMIZATION},
-    ]
+    mock_get.return_value = {
+        DocumentMetadata.TENANT_ID: "test-tenant-id",
+        DocumentMetadata.PROCESS_STATUS: ProcessStatus.PENDING_IMAGE_OPTIMIZATION.value,
+    }
 
     main(input_image.key, input_image.bucket_name)
 
@@ -341,6 +380,25 @@ def test_main_already_processed(input_pdf, mocker, mock_invoke_bda):
     mock_invoke_bda.assert_not_called()
 
 
+def test_main_missing_tenant_id_calls_classify_as_failed(input_pdf, mocker, mock_invoke_bda):
+    """A record with no tenantId is failed; neither Textract nor BDA is invoked."""
+    mock_get = mocker.patch("documentai_api.jobs.document_processor.main.get_ddb_record")
+    mock_get.return_value = {DocumentMetadata.PROCESS_STATUS: ProcessStatus.NOT_STARTED.value}
+    mocker.patch("documentai_api.jobs.document_processor.main.upsert_initial_ddb_record")
+    mock_classify = mocker.patch("documentai_api.jobs.document_processor.main.classify_as_failed")
+    mock_textract = mocker.patch(f"{_MAIN_MODULE}.extract_textract_identity")
+
+    main(input_pdf.key, input_pdf.bucket_name)
+
+    mock_classify.assert_called_once()
+    assert (
+        mock_classify.call_args.kwargs["error_message"]
+        == "tenant_id is required for document processing"
+    )
+    mock_textract.assert_not_called()
+    mock_invoke_bda.assert_not_called()
+
+
 def test_main_uses_env_bucket_when_not_provided(input_pdf, mocker, mock_invoke_bda):
     """Test bucket name defaults to environment variable."""
     main(input_pdf.key)
@@ -349,6 +407,7 @@ def test_main_uses_env_bucket_when_not_provided(input_pdf, mocker, mock_invoke_b
         input_pdf.bucket_name,
         input_pdf.key,
         "test.pdf",
+        "test-tenant-id",
         PreclassificationCategory.EMPLOYER_INCOME,
         None,
     )
@@ -430,8 +489,6 @@ def test_s3_fetch_duration_measured_after_body_read(mocker):
         ],
     )
 
-    from documentai_api.jobs.document_processor.main import main
-
     main("input/f.pdf", "bucket")
 
     assert call_order == ["monotonic", "read", "monotonic"]
@@ -468,8 +525,6 @@ def test_s3_fetch_duration_arithmetic(mocker):
         ],
     )
 
-    from documentai_api.jobs.document_processor.main import main
-
     main("input/f.pdf", "bucket")
 
     assert mock_upsert.call_args.kwargs["s3_fetch_duration_seconds"] == Decimal("5.123")
@@ -482,8 +537,6 @@ def test_s3_fetch_duration_arithmetic(mocker):
 
 @pytest.mark.parametrize("retry_count", [0, 1, 2])
 def test_invoke_bda_retry_count(mocker, retry_count):
-    from botocore.exceptions import ClientError
-
     throttle = ClientError(
         {"Error": {"Code": "ThrottlingException", "Message": "Rate exceeded"}},
         "InvokeDataAutomation",
@@ -494,17 +547,13 @@ def test_invoke_bda_retry_count(mocker, retry_count):
         side_effect=[throttle] * retry_count + [("arn", "proj-arn", 1, False)],
     )
 
-    from documentai_api.jobs.document_processor.main import _invoke_bda
-
-    _invoke_bda("bucket", "key", "ddb-key")
+    _invoke_bda("bucket", "key", "ddb-key", "test-tenant-id")
 
     assert mock_set_started.call_args.kwargs["bda_invoke_retry_count"] == retry_count
 
 
 def test_bda_invoke_duration_arithmetic(mocker):
     """bda_invoke_duration_seconds is a Decimal reflecting the actual invoke wall time."""
-    import time
-
     mock_set_started = mocker.patch(f"{_MAIN_MODULE}.set_bda_processing_status_started")
 
     def slow_invoke(*a, **kw):
@@ -513,9 +562,7 @@ def test_bda_invoke_duration_arithmetic(mocker):
 
     mocker.patch(f"{_MAIN_MODULE}.invoke_bedrock_data_automation", side_effect=slow_invoke)
 
-    from documentai_api.jobs.document_processor.main import _invoke_bda
-
-    _invoke_bda("bucket", "key", "ddb-key")
+    _invoke_bda("bucket", "key", "ddb-key", "test-tenant-id")
 
     duration = mock_set_started.call_args.kwargs["bda_invoke_duration_seconds"]
     assert Decimal("0.05") <= duration < Decimal("0.5")
@@ -578,8 +625,6 @@ def test_should_invoke_bda_none_flag_on(mocker):
 
 def test_main_skips_bda_when_no_match_and_flag_on(input_pdf, mocker, mock_invoke_bda):
     """When no blueprint matched and skip flag is on, BDA is skipped."""
-    from documentai_api.dtos.classification import BedrockClassificationResult
-
     mocker.patch(
         "documentai_api.jobs.document_processor.main.skip_bda_if_unclassified",
         return_value=True,
@@ -598,13 +643,11 @@ def test_main_skips_bda_when_no_match_and_flag_on(input_pdf, mocker, mock_invoke
     )
 
     mock_get = mocker.patch("documentai_api.jobs.document_processor.main.get_ddb_record")
-    mock_get.side_effect = [
-        None,
-        {
-            DocumentMetadata.PROCESS_STATUS: ProcessStatus.NOT_STARTED.value,
-            DocumentMetadata.PRECLASSIFICATION_CATEGORY: "other_document",
-        },
-    ]
+    mock_get.return_value = {
+        DocumentMetadata.TENANT_ID: "test-tenant-id",
+        DocumentMetadata.PROCESS_STATUS: ProcessStatus.NOT_STARTED.value,
+        DocumentMetadata.PRECLASSIFICATION_CATEGORY: "other_document",
+    }
     mocker.patch("documentai_api.jobs.document_processor.main.upsert_initial_ddb_record")
     mocker.patch(
         "documentai_api.jobs.document_processor.main.set_processing_status_started",
@@ -631,14 +674,12 @@ def test_main_invokes_bda_when_match_found(input_pdf, mocker, mock_invoke_bda):
     )
 
     mock_get = mocker.patch("documentai_api.jobs.document_processor.main.get_ddb_record")
-    mock_get.side_effect = [
-        None,
-        {
-            DocumentMetadata.PROCESS_STATUS: ProcessStatus.NOT_STARTED.value,
-            DocumentMetadata.PRECLASSIFICATION_CATEGORY: "w2-form",
-            DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_CATEGORY: PreclassificationCategory.EMPLOYER_INCOME,
-        },
-    ]
+    mock_get.return_value = {
+        DocumentMetadata.TENANT_ID: "test-tenant-id",
+        DocumentMetadata.PROCESS_STATUS: ProcessStatus.NOT_STARTED.value,
+        DocumentMetadata.PRECLASSIFICATION_CATEGORY: "w2-form",
+        DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_CATEGORY: PreclassificationCategory.EMPLOYER_INCOME,
+    }
     mocker.patch("documentai_api.jobs.document_processor.main.upsert_initial_ddb_record")
     mocker.patch(
         "documentai_api.jobs.document_processor.main.set_processing_status_started",
@@ -657,6 +698,7 @@ def test_main_invokes_bda_when_match_found(input_pdf, mocker, mock_invoke_bda):
         input_pdf.bucket_name,
         input_pdf.key,
         "test.pdf",
+        "test-tenant-id",
         PreclassificationCategory.EMPLOYER_INCOME,
         None,
     )
@@ -664,8 +706,6 @@ def test_main_invokes_bda_when_match_found(input_pdf, mocker, mock_invoke_bda):
 
 def test_persist_optimization_metrics_writes_timing_fields(ddb_doc_metadata_table, mocker):
     """opt_result timing fields are written to DDB when provided."""
-    from documentai_api.jobs.document_processor.main import _persist_optimization_metrics
-
     ddb_key = "timing-test.png"
     ddb_doc_metadata_table.put_item(Item={"fileName": ddb_key})
 
@@ -683,8 +723,6 @@ def test_persist_optimization_metrics_writes_timing_fields(ddb_doc_metadata_tabl
 
 def test_persist_optimization_metrics_no_timing_when_opt_result_none(ddb_doc_metadata_table):
     """Without opt_result, no timing fields are written."""
-    from documentai_api.jobs.document_processor.main import _persist_optimization_metrics
-
     ddb_key = "no-timing-test.png"
     ddb_doc_metadata_table.put_item(Item={"fileName": ddb_key})
 
@@ -701,7 +739,14 @@ def test_persist_optimization_metrics_no_timing_when_opt_result_none(ddb_doc_met
 
 
 @pytest.fixture
-def input_identity_image(s3_bucket):
+def input_identity_image(s3_bucket, ddb_doc_metadata_table):
+    ddb_doc_metadata_table.put_item(
+        Item={
+            "fileName": "id.jpg",
+            "tenantId": "test-tenant-id",
+            DocumentMetadata.PROCESS_STATUS: ProcessStatus.NOT_STARTED.value,
+        }
+    )
     return s3_bucket.put_object(
         Key="input/id.jpg",
         Body=JPEG_MAGIC,
@@ -717,8 +762,6 @@ def input_identity_image(s3_bucket):
 
 @pytest.fixture
 def mock_preclassify_identity(mocker):
-    from documentai_api.dtos.classification import BedrockClassificationResult
-
     return mocker.patch(
         f"{_LIFECYCLE_MODULE}.preclassify_document",
         return_value=BedrockClassificationResult(
@@ -744,29 +787,35 @@ def test_main_invokes_textract_for_identity_document(
     input_identity_image, ddb_doc_metadata_table, mocker, mock_invoke_bda, mock_preclassify_identity
 ):
     """When preclassification flags an identity document, main dispatches to Textract and skips BDA."""
-    from documentai_api.config.constants import ExtractMethod
-    from documentai_api.dtos.extraction import ExtractionResult
-    from documentai_api.dtos.processing import ProcessorResult
-
     mock_textract_extract = mocker.patch(
         f"{_MAIN_MODULE}.extract_textract_identity",
-        return_value={"matched_document_class": "US-drivers-licenses"},
+        return_value=ExtractionResult(document_type="identity", body=b"{}"),
     )
     mock_process = mocker.patch(
         f"{_MAIN_MODULE}.process_textract_result",
         return_value=ProcessorResult(
             object_key="id.jpg",
-            extraction_result=ExtractionResult(document_type="identity", output_uri="s3://b/k"),
+            extraction_result=ExtractionResult(document_type="identity"),
         ),
     )
     mock_classify = mocker.patch(f"{_MAIN_MODULE}.classify_extraction_result")
+    mock_write = mocker.patch(
+        f"{_MAIN_MODULE}.write_extraction_output",
+        return_value="s3://bucket/test-tenant-id/textract/id.jpg.json",
+    )
 
     main(input_identity_image.key, input_identity_image.bucket_name)
 
     mock_textract_extract.assert_called_once()
     mock_process.assert_called_once()
+    mock_write.assert_called_once()
+    assert mock_write.call_args.args[0] == "test-tenant-id"
     mock_classify.assert_called_once()
     assert mock_classify.call_args.kwargs["extraction_method"] == ExtractMethod.TEXTRACT
+    assert (
+        mock_classify.call_args.kwargs["output_uri"]
+        == "s3://bucket/test-tenant-id/textract/id.jpg.json"
+    )
     mock_invoke_bda.assert_not_called()
 
 
@@ -796,8 +845,6 @@ def test_main_blur_rejected_identity_document_skips_textract(
     is_identity_document is only set when blur_outcome.process_status is None; a
     blur-rejected doc never reaches Textract.
     """
-    from documentai_api.utils.blur_detection import BlurResult
-
     mocker.patch(
         f"{_LIFECYCLE_MODULE}.is_blur_detection_enabled",
         return_value=True,
@@ -840,11 +887,9 @@ def test_main_textract_extraction_result_none_falls_through_to_bda(
     mock_optimize_s3_image_identity,
 ):
     """When process_textract_result returns extraction_result=None, the document falls through to BDA."""
-    from documentai_api.dtos.processing import ProcessorResult
-
     mock_textract_extract = mocker.patch(
         f"{_MAIN_MODULE}.extract_textract_identity",
-        return_value={"matched_document_class": "US-drivers-licenses"},
+        return_value=ExtractionResult(document_type="identity", body=b"{}"),
     )
     mocker.patch(
         f"{_MAIN_MODULE}.process_textract_result",

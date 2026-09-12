@@ -891,8 +891,8 @@ def test_purge_document_s3_artifacts_deletes_all_locations(monkeypatch, mocker):
     assert ("bucket", "preprocessing/test-tenant/doc-uuid.pdf") in deleted
     # BDA output is a tree, deleted by prefix - including the truncated variant.
     prefixes = [c.args for c in mock_delete_prefix.mock_calls]
-    assert ("bucket", "output/doc-uuid.pdf/") in prefixes
-    assert ("bucket", "output/doc-uuid_truncated.pdf/") in prefixes
+    assert ("bucket", "output/test-tenant/doc-uuid.pdf/") in prefixes
+    assert ("bucket", "output/test-tenant/doc-uuid_truncated.pdf/") in prefixes
 
 
 def test_purge_document_s3_artifacts_skips_unset_locations(monkeypatch, mocker):

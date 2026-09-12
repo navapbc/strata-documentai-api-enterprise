@@ -6,7 +6,13 @@ import documentai_api.utils.documents as document_utils
 from documentai_api.config.constants import ConfigDefaults
 from documentai_api.config.env import get_env_config
 from documentai_api.logging import get_logger
+from documentai_api.services import s3 as s3_service
 from documentai_api.services.aws_client_factory import AWSClientFactory
+from documentai_api.utils.s3 import get_bucket_and_key
+from documentai_api.utils.ssm import (
+    is_preclassification_routing_enabled,
+    is_skip_bda_if_unclassified,
+)
 
 logger = get_logger(__name__)
 tracer = trace.get_tracer(__name__)
@@ -29,8 +35,6 @@ def skip_bda_if_unclassified() -> bool:
 
     Defaults to false (always invoke BDA) if the param is not configured.
     """
-    from documentai_api.utils.ssm import is_skip_bda_if_unclassified
-
     return is_skip_bda_if_unclassified()
 
 
@@ -40,8 +44,6 @@ def resolve_project_arn(category: str | None) -> tuple[str, bool]:
     Returns (arn, used_category_specific_project) where the bool is True only
     when a category-specific ARN was selected (routing enabled + category hit).
     """
-    from documentai_api.utils.ssm import is_preclassification_routing_enabled
-
     arns = _get_project_arns()
 
     if category and is_preclassification_routing_enabled() and category in arns:
@@ -52,14 +54,17 @@ def resolve_project_arn(category: str | None) -> tuple[str, bool]:
 
 
 def invoke_bedrock_data_automation(
-    source_bucket_name: str, source_object_name: str, category: str | None = None
+    source_bucket_name: str,
+    source_object_name: str,
+    tenant_id: str,
+    category: str | None = None,
 ) -> tuple[str, str, int, bool]:
     """Invoke BDA and return (invocation_arn, project_arn, pages_sent_to_bda, used_category_specific_project)."""
     bda_project_arn, used_category_specific_project = resolve_project_arn(category)
     bda_profile_arn = get_env_config().get_bda_profile_arn
-    documentai_output_location = get_env_config().get_output_location.replace("s3://", "")
+    output_location = get_env_config().get_output_location
+    output_bucket, output_key = get_bucket_and_key(output_location, tenant_id, source_object_name)
 
-    logger.info(f"documentai_output_location after processing: {documentai_output_location}")
     logger.info(f"BDA_PROJECT_ARN: {bda_project_arn}")
     logger.info(f"BDA_PROFILE_ARN: {bda_profile_arn}")
 
@@ -70,8 +75,6 @@ def invoke_bedrock_data_automation(
         raise
 
     try:
-        from documentai_api.services import s3 as s3_service
-
         file_bytes = s3_service.get_file_bytes(source_bucket_name, source_object_name)
         page_count = document_utils.get_page_count(file_bytes)
         pages_sent = (
@@ -111,9 +114,7 @@ def invoke_bedrock_data_automation(
                 dataAutomationProfileArn=bda_profile_arn,
                 dataAutomationConfiguration={"dataAutomationProjectArn": bda_project_arn},
                 inputConfiguration={"s3Uri": f"s3://{source_bucket_name}/{source_object_name}"},
-                outputConfiguration={
-                    "s3Uri": f"s3://{documentai_output_location}/{source_object_name}"
-                },
+                outputConfiguration={"s3Uri": f"s3://{output_bucket}/{output_key}"},
             )
         logger.info(f"BDA response: {response}")
 

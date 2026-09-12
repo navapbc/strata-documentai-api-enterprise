@@ -35,7 +35,9 @@ def test_invoke_bedrock_data_automation_single_page():
         mock_get_file_bytes.return_value = b"file_content"
         mock_get_page_count.return_value = 3
 
-        result = bda_invoker_util.invoke_bedrock_data_automation("test-bucket", "test.pdf")
+        result = bda_invoker_util.invoke_bedrock_data_automation(
+            "test-bucket", "test.pdf", "test-tenant-id"
+        )
 
         invocation_arn, project_arn, pages_sent, _ = result
         assert invocation_arn == bda_invocation_arn
@@ -76,7 +78,9 @@ def test_invoke_bedrock_data_automation_document_truncation():
         mock_get_page_count.return_value = 10
         mock_truncate.return_value = b"truncated_content"
 
-        result = bda_invoker_util.invoke_bedrock_data_automation("test-bucket", "test.pdf")
+        result = bda_invoker_util.invoke_bedrock_data_automation(
+            "test-bucket", "test.pdf", "test-tenant-id"
+        )
 
         invocation_arn, project_arn, pages_sent, _ = result
         assert invocation_arn == bda_invocation_arn
@@ -96,11 +100,11 @@ def test_demo_upload_output_key_starts_with_expected_prefix():
     Demo uploads land under processed/input/demo/ - matching the infra
     lifecycle rule prefix.
 
-    BDA output is written to {DOCUMENTAI_OUTPUT_LOCATION}/{source_object_name}.
+    BDA output is written to {DOCUMENTAI_OUTPUT_LOCATION}/{tenant_id}/{source_object_name}.
     For demo uploads, source_object_name is the full S3 key:
         input/demo/{tenant}/{file}
     So the output key becomes:
-        processed/input/demo/{tenant}/{file}/...
+        processed/{tenant_id}/input/demo/{tenant}/{file}/...
 
     If this test fails, the infra S3 lifecycle rule (expire-demo-results) will
     stop matching and demo output won't auto-expire.
@@ -108,9 +112,9 @@ def test_demo_upload_output_key_starts_with_expected_prefix():
     from unittest.mock import MagicMock, patch
 
     bda_invocation_arn = "arn:aws:invocation:demo-test"
-    # Simulate a demo upload input key
-    demo_source_object = "input/demo/test-tenant/doc-uuid.pdf"
+    demo_source_object = "input/demo/test-tenant-id-id/doc-uuid.pdf"
     output_location = "s3://output-bucket/processed"
+    tenant_id = "test-tenant-id-id"
 
     with (
         patch.dict(
@@ -138,18 +142,17 @@ def test_demo_upload_output_key_starts_with_expected_prefix():
         mock_get_file_bytes.return_value = b"file_content"
         mock_get_page_count.return_value = 1
 
-        bda_invoker_util.invoke_bedrock_data_automation("input-bucket", demo_source_object)
+        bda_invoker_util.invoke_bedrock_data_automation(
+            "input-bucket", demo_source_object, tenant_id=tenant_id
+        )
 
-        # Assert the output s3Uri passed to BDA starts with the expected prefix
         call_kwargs = mock_bda.invoke_data_automation_async.call_args.kwargs
         output_s3_uri = call_kwargs["outputConfiguration"]["s3Uri"]
 
-        # Must match: s3://output-bucket/processed/input/demo/...
-        assert output_s3_uri == f"{output_location}/{demo_source_object}"
-        # Extract just the key portion and verify the prefix that lifecycle rules target
+        assert output_s3_uri == f"{output_location}/{tenant_id}/{demo_source_object}"
         output_key = output_s3_uri.replace("s3://output-bucket/", "")
-        assert output_key.startswith("processed/input/demo/"), (
-            f"Demo output key '{output_key}' does not start with 'processed/input/demo/'. "
+        assert output_key.startswith("processed/test-tenant-id-id/input/demo/"), (
+            f"Demo output key '{output_key}' does not start with 'processed/test-tenant-id-id/input/demo/'. "
             "This means the infra lifecycle rule (expire-demo-results) won't match."
         )
 
@@ -192,7 +195,7 @@ def test_invoke_bedrock_data_automation_pages_sent_fallback(page_count_return, e
         mock_get_page_count.return_value = page_count_return
 
         _, _, pages_sent, _ = bda_invoker_util.invoke_bedrock_data_automation(
-            "test-bucket", "test.pdf"
+            "test-bucket", "test.pdf", "test-tenant-id"
         )
 
         assert pages_sent == expected_pages_sent
@@ -262,7 +265,10 @@ def test_resolve_project_arn_returns_all_when_routing_disabled():
     with (
         patch.dict("os.environ", {"BDA_PROJECT_ARN_ALL": f"{prefix}/all-arn"}, clear=False),
         patch.object(bda_invoker_util, "_project_arns_cache", None),
-        patch("documentai_api.utils.ssm.is_preclassification_routing_enabled", return_value=False),
+        patch(
+            "documentai_api.utils.bda_invoker.is_preclassification_routing_enabled",
+            return_value=False,
+        ),
         patch("documentai_api.utils.bda_invoker.get_env_config") as mock_config,
     ):
         mock_config.return_value.get_bda_project_arns.return_value = {
@@ -272,11 +278,17 @@ def test_resolve_project_arn_returns_all_when_routing_disabled():
         result, used_category = bda_invoker_util.resolve_project_arn("employer_income")
         assert result == f"{prefix}/all-arn"
         assert used_category is False
+
+
+def test_resolve_project_arn_returns_category_arn_when_routing_enabled():
     """Returns category-specific ARN when routing is enabled and category matches."""
     prefix = "arn:aws:bedrock:us-east-1:123:data-automation-project"
     with (
         patch.object(bda_invoker_util, "_project_arns_cache", None),
-        patch("documentai_api.utils.ssm.is_preclassification_routing_enabled", return_value=True),
+        patch(
+            "documentai_api.utils.bda_invoker.is_preclassification_routing_enabled",
+            return_value=True,
+        ),
         patch("documentai_api.utils.bda_invoker.get_env_config") as mock_config,
     ):
         mock_config.return_value.get_bda_project_arns.return_value = {
@@ -286,11 +298,17 @@ def test_resolve_project_arn_returns_all_when_routing_disabled():
         result, used_category = bda_invoker_util.resolve_project_arn("employer_income")
         assert result == f"{prefix}/emp-arn"
         assert used_category is True
+
+
+def test_resolve_project_arn_falls_back_to_all_when_category_not_configured():
     """Falls back to 'all' when category has no configured project ARN."""
     prefix = "arn:aws:bedrock:us-east-1:123:data-automation-project"
     with (
         patch.object(bda_invoker_util, "_project_arns_cache", None),
-        patch("documentai_api.utils.ssm.is_preclassification_routing_enabled", return_value=True),
+        patch(
+            "documentai_api.utils.bda_invoker.is_preclassification_routing_enabled",
+            return_value=True,
+        ),
         patch("documentai_api.utils.bda_invoker.get_env_config") as mock_config,
     ):
         mock_config.return_value.get_bda_project_arns.return_value = {
@@ -299,11 +317,17 @@ def test_resolve_project_arn_returns_all_when_routing_disabled():
         result, used_category = bda_invoker_util.resolve_project_arn("employer_income")
         assert result == f"{prefix}/all-arn"
         assert used_category is False
+
+
+def test_resolve_project_arn_falls_back_to_all_when_no_category():
     """Falls back to 'all' when no category is provided."""
     prefix = "arn:aws:bedrock:us-east-1:123:data-automation-project"
     with (
         patch.object(bda_invoker_util, "_project_arns_cache", None),
-        patch("documentai_api.utils.ssm.is_preclassification_routing_enabled", return_value=True),
+        patch(
+            "documentai_api.utils.bda_invoker.is_preclassification_routing_enabled",
+            return_value=True,
+        ),
         patch("documentai_api.utils.bda_invoker.get_env_config") as mock_config,
     ):
         mock_config.return_value.get_bda_project_arns.return_value = {
