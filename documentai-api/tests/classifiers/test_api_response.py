@@ -13,7 +13,7 @@ from documentai_api.utils.response_codes import ResponseCodes
 @pytest.fixture(autouse=True)
 def _pin_output_location(mocker):
     mocker.patch(
-        "documentai_api.config.env.get_aws_config"
+        "documentai_api.config.env.get_env_config"
     ).return_value.documentai_output_location = "s3://test-bucket/output"
 
 

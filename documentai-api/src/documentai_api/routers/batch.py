@@ -38,7 +38,7 @@ from documentai_api.config.constants import (
     ProcessStatus,
     UploadMethod,
 )
-from documentai_api.config.env import get_aws_config
+from documentai_api.config.env import get_env_config
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.logging import get_logger
 from documentai_api.models.batch import (
@@ -88,7 +88,7 @@ async def _process_batch_files(
     upload_method: str = UploadMethod.BATCH,
 ) -> list[BatchJobItem]:
     """Upload each file in a batch to S3, return per-file job info."""
-    input_location = get_aws_config().documentai_input_location
+    input_location = get_env_config().documentai_input_location
     if not input_location:
         raise HTTPException(
             status_code=500, detail="DOCUMENTAI_INPUT_LOCATION environment variable not set"

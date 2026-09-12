@@ -142,7 +142,7 @@ def test_create_presigned_url_s3_error(api_client, mocker):
 def test_create_presigned_url_no_input_location(api_client, mocker):
     """Test presigned POST when input location not configured."""
     mocker.patch(
-        "documentai_api.routers.presigned.get_aws_config"
+        "documentai_api.routers.presigned.get_env_config"
     ).return_value.documentai_input_location = None
 
     data = {"filename": "test.pdf", "content_type": "application/pdf"}
@@ -209,7 +209,7 @@ def test_s3_error_does_not_write_ddb(api_client, mocker):
 def test_malformed_input_location(api_client, mocker):
     """Malformed input_location returns 500 with 'misconfigured' detail."""
     mocker.patch(
-        "documentai_api.routers.presigned.get_aws_config"
+        "documentai_api.routers.presigned.get_env_config"
     ).return_value.documentai_input_location = "not-an-s3-uri"
     mocker.patch("documentai_api.routers.presigned.parse_s3_uri", side_effect=Exception("bad uri"))
 

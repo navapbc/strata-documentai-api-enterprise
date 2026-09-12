@@ -16,7 +16,7 @@ from documentai_api.config.constants import (
     ConfigDefaults,
     ProcessStatus,
 )
-from documentai_api.config.env import get_aws_config
+from documentai_api.config.env import get_env_config
 from documentai_api.logging import get_logger
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import cloudwatch as cloudwatch_service
@@ -168,7 +168,7 @@ def _mark_terminal(
 
 
 def main() -> dict[str, Any]:
-    aws_config = get_aws_config()
+    aws_config = get_env_config()
     table_name = aws_config.documentai_document_metadata_table_name
     index_name = aws_config.documentai_document_metadata_status_created_at_index_name
 

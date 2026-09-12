@@ -12,7 +12,7 @@ from documentai_api.config.constants import (
     ConfigDefaults,
     PreClassificationDefaults,
 )
-from documentai_api.config.env import get_aws_config
+from documentai_api.config.env import get_env_config
 from documentai_api.dtos.classification import (
     BedrockClassificationResult,
     PreclassificationMatchResult,
@@ -56,7 +56,7 @@ class _BlueprintMatchResponse(BaseModel):
 
 
 def _get_model_id() -> str:
-    param_name = get_aws_config().bedrock_classification_model_id_param
+    param_name = get_env_config().bedrock_classification_model_id_param
     if not param_name:
         return PreClassificationDefaults.MODEL_ID
     return get_parameter_value(param_name, default=PreClassificationDefaults.MODEL_ID)

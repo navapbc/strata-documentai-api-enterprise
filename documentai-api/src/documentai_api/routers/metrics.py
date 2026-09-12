@@ -7,7 +7,7 @@ from fastapi.concurrency import run_in_threadpool
 
 from documentai_api.annotations import AuthUserWithFallback
 from documentai_api.config.constants import ApiVisualizationTag, MetricsGranularity
-from documentai_api.config.env import get_aws_config
+from documentai_api.config.env import get_env_config
 from documentai_api.logging import get_logger
 from documentai_api.models.metrics import MetricsResponse
 from documentai_api.utils.auth import resolve_tenant_from_context
@@ -43,7 +43,7 @@ async def get_metrics(
         start_date, end_date = validate_date_range(start_date, end_date)
         _check_span(start_date, end_date, granularity)
 
-        bucket_name = get_aws_config().ddb_export_bucket_name
+        bucket_name = get_env_config().ddb_export_bucket_name
         if not bucket_name:
             raise HTTPException(status_code=500, detail="Metrics bucket not configured")
 

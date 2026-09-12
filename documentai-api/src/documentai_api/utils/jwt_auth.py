@@ -8,7 +8,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt import PyJWKClient, PyJWKClientError
 
-from documentai_api.config.env import get_aws_config
+from documentai_api.config.env import get_env_config
 from documentai_api.logging import get_logger
 
 logger = get_logger(__name__)
@@ -19,7 +19,7 @@ bearer_scheme = HTTPBearer(auto_error=False)
 @lru_cache(maxsize=1)
 def _get_jwks_client() -> PyJWKClient:
     """Create and cache a JWKS client for the Cognito user pool."""
-    config = get_aws_config()
+    config = get_env_config()
     pool_id = config.cognito_user_pool_id
     region = pool_id.split("_")[0] if pool_id else "us-east-1"
     jwks_url = f"https://cognito-idp.{region}.amazonaws.com/{pool_id}/.well-known/jwks.json"
@@ -28,7 +28,7 @@ def _get_jwks_client() -> PyJWKClient:
 
 @lru_cache(maxsize=1)
 def _get_issuer() -> str:
-    config = get_aws_config()
+    config = get_env_config()
     pool_id = config.cognito_user_pool_id
     region = pool_id.split("_")[0] if pool_id else "us-east-1"
     return f"https://cognito-idp.{region}.amazonaws.com/{pool_id}"
@@ -59,7 +59,7 @@ def _decode_and_verify(token: str) -> dict[str, Any]:
 
     # Validate client_id/audience for both token types to prevent cross-client reuse.
     # Access tokens carry client_id; id tokens carry aud.
-    config = get_aws_config()
+    config = get_env_config()
     expected_client_id = config.cognito_client_id
 
     if expected_client_id:

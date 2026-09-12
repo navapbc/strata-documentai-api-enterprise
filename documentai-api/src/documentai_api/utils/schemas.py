@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from documentai_api.config.constants import BDA_PROJECT_KEY_ALL, DictionaryBlueprintField
-from documentai_api.config.env import get_aws_config
+from documentai_api.config.env import get_env_config
 from documentai_api.logging import get_logger
 from documentai_api.services.bda import get_blueprint, get_data_automation_project
 
@@ -46,7 +46,7 @@ def fetch_schemas_from_bda(
     """
     logger.info("Fetching schemas from BDA")
 
-    project_arns = get_aws_config().get_bda_project_arns()
+    project_arns = get_env_config().get_bda_project_arns()
 
     # "all" is a superset of every category project's blueprints, so it's
     # skipped here - the union of the category projects covers all blueprints

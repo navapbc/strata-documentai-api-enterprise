@@ -176,6 +176,11 @@ def generate_categories() -> int:
     return _uv("generate-categories")
 
 
+def generate_env_names() -> int:
+    """Regenerate env_var_names_generated.py from EnvConfig/AppConfig model fields."""
+    return _uv("generate-env-names")
+
+
 def openapi_spec() -> int:
     """Export OpenAPI spec to docs directory."""
     output = Path(__file__).parent.parent / "docs" / "documentai-api" / "openapi.json"

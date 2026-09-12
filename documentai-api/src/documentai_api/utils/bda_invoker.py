@@ -4,7 +4,7 @@ from opentelemetry import trace
 
 import documentai_api.utils.documents as document_utils
 from documentai_api.config.constants import ConfigDefaults
-from documentai_api.config.env import EnvVars, get_aws_config, get_required_env
+from documentai_api.config.env import get_env_config
 from documentai_api.logging import get_logger
 from documentai_api.services.aws_client_factory import AWSClientFactory
 
@@ -20,7 +20,7 @@ def _get_project_arns() -> dict[str, str]:
     if _project_arns_cache is not None:
         return _project_arns_cache
 
-    _project_arns_cache = get_aws_config().get_bda_project_arns()
+    _project_arns_cache = get_env_config().get_bda_project_arns()
     return _project_arns_cache
 
 
@@ -56,10 +56,8 @@ def invoke_bedrock_data_automation(
 ) -> tuple[str, str, int, bool]:
     """Invoke BDA and return (invocation_arn, project_arn, pages_sent_to_bda, used_category_specific_project)."""
     bda_project_arn, used_category_specific_project = resolve_project_arn(category)
-    bda_profile_arn = get_required_env(EnvVars.BDA_PROFILE_ARN)
-    documentai_output_location = get_required_env(EnvVars.DOCUMENTAI_OUTPUT_LOCATION).replace(
-        "s3://", ""
-    )
+    bda_profile_arn = get_env_config().get_bda_profile_arn
+    documentai_output_location = get_env_config().get_output_location.replace("s3://", "")
 
     logger.info(f"documentai_output_location after processing: {documentai_output_location}")
     logger.info(f"BDA_PROJECT_ARN: {bda_project_arn}")

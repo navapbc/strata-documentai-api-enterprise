@@ -99,11 +99,11 @@ def test_post_document(test_case, base_url, api_key):
     body = _upload_and_wait(base_url, api_key, test_case.file_path)
     expected_result = test_case.expected_result
 
-    from documentai_api.config.env import get_aws_config
+    from documentai_api.config.env import get_env_config
     from documentai_api.services import ddb as ddb_service
 
-    table_name = get_aws_config().documentai_document_metadata_table_name
-    job_id_index_name = get_aws_config().documentai_document_metadata_job_id_index_name
+    table_name = get_env_config().documentai_document_metadata_table_name
+    job_id_index_name = get_env_config().documentai_document_metadata_job_id_index_name
 
     expect: dict[str, str | bool | None] = {
         DocumentMetadata.BDA_MATCHED_DOCUMENT_CLASS: expected_result.bda_matched_document_class,

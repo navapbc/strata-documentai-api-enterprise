@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from documentai_api.config.env import EnvVars
+from documentai_api.config.env_var_names_generated import EnvVarNames
 from tests.helpers.fixtures.claims import (
     SUPER_ADMIN_CLAIMS,
     TENANT_ADMIN_CLAIMS,
@@ -18,7 +18,7 @@ USAGE_URL = "/v1/admin/usage"
 
 @pytest.fixture
 def metrics_bucket(s3_bucket, monkeypatch):
-    monkeypatch.setenv(EnvVars.DDB_EXPORT_BUCKET_NAME, s3_bucket.name)
+    monkeypatch.setenv(EnvVarNames.DDB_EXPORT_BUCKET_NAME, s3_bucket.name)
     return s3_bucket
 
 
@@ -485,7 +485,7 @@ def test_unauthenticated_returns_401(api_client, metrics_bucket):
 
 def test_bucket_not_configured(api_client, monkeypatch):
     override_jwt(SUPER_ADMIN_CLAIMS)
-    monkeypatch.delenv(EnvVars.DDB_EXPORT_BUCKET_NAME, raising=False)
+    monkeypatch.delenv(EnvVarNames.DDB_EXPORT_BUCKET_NAME, raising=False)
     response = api_client.get(USAGE_URL, params={"month": "2026-06"})
     assert response.status_code == 500
     assert "not configured" in response.json()["detail"]

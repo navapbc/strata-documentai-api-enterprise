@@ -21,7 +21,7 @@ from documentai_api.config.constants import (
     ProcessStatus,
     UploadMethod,
 )
-from documentai_api.config.env import get_app_env_config, get_aws_config
+from documentai_api.config.env import get_app_config, get_env_config
 from documentai_api.logging import get_logger
 from documentai_api.models.document_record import DocumentRecord
 from documentai_api.models.presigned import PresignedUploadResponse
@@ -89,9 +89,9 @@ async def create_presigned_upload_url(
 
     increment_and_check(auth.tenant_id)
 
-    expiry = get_app_env_config().presigned_url_expiry_seconds
+    expiry = get_app_config().presigned_url_expiry_seconds
 
-    input_location = get_aws_config().documentai_input_location
+    input_location = get_env_config().documentai_input_location
     if not input_location:
         raise HTTPException(status_code=500, detail="Upload location not configured")
 

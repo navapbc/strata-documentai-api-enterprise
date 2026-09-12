@@ -6,7 +6,7 @@ from typing import Any
 from documentai_api.config.constants import (
     UUID_PATTERN,
 )
-from documentai_api.config.env import EnvVars, get_required_env
+from documentai_api.config.env import get_env_config
 from documentai_api.logging import get_logger
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import ddb as ddb_service
@@ -99,8 +99,8 @@ def get_ddb_record_from_bda_output(
 
     bda_invocation_id = str(uuid_mod.UUID(uuid_matches[-1]))
 
-    table_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME)
-    index_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_BDA_INVOCATION_ID_INDEX_NAME)
+    table_name = get_env_config().get_document_metadata_table_name
+    index_name = get_env_config().get_document_metadata_bda_invocation_id_index_name
 
     items = ddb_service.query_by_key(
         table_name, index_name, DocumentMetadata.BDA_INVOCATION_ID, bda_invocation_id
@@ -128,7 +128,7 @@ def get_ddb_key_from_bda_output(output_bucket_name: str, output_object_key: str)
 
 def get_bda_result_json(bda_result_uri: str) -> dict[str, Any] | None:
     """Read and return BDA result JSON from S3."""
-    from documentai_api.config.env import get_aws_config
+    from documentai_api.config.env import get_env_config
     from documentai_api.services import s3 as s3_service
     from documentai_api.utils.json_parsing import parse_json_object
     from documentai_api.utils.s3 import parse_s3_uri
@@ -143,7 +143,7 @@ def get_bda_result_json(bda_result_uri: str) -> dict[str, Any] | None:
 
         # Validate the bucket is the configured output bucket to prevent SSRF
         # via a crafted BDA response pointing at an arbitrary S3 location.
-        output_location = get_aws_config().documentai_output_location
+        output_location = get_env_config().documentai_output_location
         if output_location:
             expected_bucket, _ = parse_s3_uri(output_location)
             if result_bucket != expected_bucket:

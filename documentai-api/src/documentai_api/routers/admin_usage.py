@@ -16,7 +16,7 @@ from documentai_api.config.constants import (
     MetricsGranularity,
     OutputFormatType,
 )
-from documentai_api.config.env import get_aws_config
+from documentai_api.config.env import get_env_config
 from documentai_api.dtos.usage_stats import UsageStats
 from documentai_api.logging import get_logger
 from documentai_api.models.usage import (
@@ -134,7 +134,7 @@ async def get_usage(
                 detail="month must be in YYYY-MM format",
             ) from None
 
-    aws_config = get_aws_config()
+    aws_config = get_env_config()
     bucket = aws_config.ddb_export_bucket_name
     if not bucket:
         raise HTTPException(

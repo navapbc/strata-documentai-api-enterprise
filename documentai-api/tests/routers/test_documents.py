@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from documentai_api.config.constants import DeletionType
+from documentai_api.config.env_var_names_generated import EnvVarNames
 from documentai_api.models.job_status import JobStatusResponse
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.jobs import JobStatus
@@ -872,12 +873,11 @@ def test_delete_document_hard_purge_failure_returns_500_and_does_not_mark_delete
 
 def test_purge_document_s3_artifacts_deletes_all_locations(monkeypatch, mocker):
     """Hard-delete purge removes input, preprocessing, and BDA output artifacts."""
-    from documentai_api.config.env import EnvVars
     from documentai_api.utils.uploads import purge_document_s3_artifacts
 
-    monkeypatch.setenv(EnvVars.DOCUMENTAI_INPUT_LOCATION, "s3://bucket/input")
-    monkeypatch.setenv(EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION, "s3://bucket/preprocessing")
-    monkeypatch.setenv(EnvVars.DOCUMENTAI_OUTPUT_LOCATION, "s3://bucket/output")
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_INPUT_LOCATION, "s3://bucket/input")
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_PREPROCESSING_LOCATION, "s3://bucket/preprocessing")
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_OUTPUT_LOCATION, "s3://bucket/output")
 
     mock_delete = mocker.patch("documentai_api.services.s3.delete_object")
     mock_delete_prefix = mocker.patch("documentai_api.services.s3.delete_prefix")
@@ -897,12 +897,11 @@ def test_purge_document_s3_artifacts_deletes_all_locations(monkeypatch, mocker):
 
 def test_purge_document_s3_artifacts_skips_unset_locations(monkeypatch, mocker):
     """Locations that aren't configured are skipped rather than erroring."""
-    from documentai_api.config.env import EnvVars
     from documentai_api.utils.uploads import purge_document_s3_artifacts
 
-    monkeypatch.setenv(EnvVars.DOCUMENTAI_INPUT_LOCATION, "s3://bucket/input")
-    monkeypatch.delenv(EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION, raising=False)
-    monkeypatch.delenv(EnvVars.DOCUMENTAI_OUTPUT_LOCATION, raising=False)
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_INPUT_LOCATION, "s3://bucket/input")
+    monkeypatch.delenv(EnvVarNames.DOCUMENTAI_PREPROCESSING_LOCATION, raising=False)
+    monkeypatch.delenv(EnvVarNames.DOCUMENTAI_OUTPUT_LOCATION, raising=False)
 
     mock_delete = mocker.patch("documentai_api.services.s3.delete_object")
     mock_delete_prefix = mocker.patch("documentai_api.services.s3.delete_prefix")
@@ -915,12 +914,11 @@ def test_purge_document_s3_artifacts_skips_unset_locations(monkeypatch, mocker):
 
 def test_purge_document_s3_artifacts_reports_failed_locations(monkeypatch, mocker):
     """A genuine S3 error on a location is reported, and other locations still run."""
-    from documentai_api.config.env import EnvVars
     from documentai_api.utils.uploads import purge_document_s3_artifacts
 
-    monkeypatch.setenv(EnvVars.DOCUMENTAI_INPUT_LOCATION, "s3://bucket/input")
-    monkeypatch.setenv(EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION, "s3://bucket/preprocessing")
-    monkeypatch.setenv(EnvVars.DOCUMENTAI_OUTPUT_LOCATION, "s3://bucket/output")
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_INPUT_LOCATION, "s3://bucket/input")
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_PREPROCESSING_LOCATION, "s3://bucket/preprocessing")
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_OUTPUT_LOCATION, "s3://bucket/output")
 
     # input delete fails; preprocessing + output succeed
     mocker.patch("documentai_api.services.s3.delete_object", side_effect=Exception("denied"))
@@ -1094,7 +1092,7 @@ def test_create_document_demo_routes_to_correct_location(
     api_client, blank_pdf_bytes, mocker, use_demo_endpoint, expect_demo_path
 ):
     """Upload routes to demo or standard input location based on endpoint."""
-    mock_config = mocker.patch("documentai_api.routers.documents.get_aws_config")
+    mock_config = mocker.patch("documentai_api.routers.documents.get_env_config")
     mock_config.return_value.documentai_input_location = "s3://bucket/input"
     mock_config.return_value.documentai_demo_input_location = "s3://bucket/input/demo"
 

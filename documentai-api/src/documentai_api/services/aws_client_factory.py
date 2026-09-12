@@ -44,7 +44,7 @@ class AWSClientFactory:
     def _get_bda_region(cls) -> str:
         from documentai_api.config import env
 
-        return env.get_aws_config().bda_region
+        return env.get_env_config().bda_region
 
     @classmethod
     def _get_dynamodb_table(cls, table_name: str) -> Table:

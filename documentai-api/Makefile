@@ -6,6 +6,7 @@
 	api-key-list \
 	diagrams \
 	generate-categories \
+	generate-env-names \
 	tenant \
 	tenant-deactivate \
 	tenant-list \
@@ -310,6 +311,9 @@ check-blueprint-schemas: ## Verify blueprint_schemas.json matches infra/document
 
 generate-categories: ## Regenerate the PreclassificationCategory enum from infra/document-types/ folder names
 	$(AWS_RUN_CMD) generate-categories
+
+generate-env-names: ## Regenerate the EnvVarNames enum from EnvConfig/AppConfig model fields
+	$(AWS_RUN_CMD) generate-env-names
 
 metrics-agg: ## Aggregate metrics for a date or range (DATE=YYYY-MM-DD [END=YYYY-MM-DD] [OVERWRITE=1])
 	@:$(call check_defined, DATE, target date, e.g. DATE=2025-01-15)

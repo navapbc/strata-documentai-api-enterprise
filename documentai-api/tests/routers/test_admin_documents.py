@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from documentai_api.config.env import EnvVars
+from documentai_api.config.env_var_names_generated import EnvVarNames
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from tests.helpers.fixtures.claims import (
     SUPER_ADMIN_CLAIMS,
@@ -328,7 +328,7 @@ PREVIEW_URL = "/v1/admin/documents/{job_id}/preview"
 @pytest.fixture
 def seeded_docs_with_content_type(ddb_doc_metadata_table, monkeypatch):
     """Seed documents with content_type for preview tests."""
-    monkeypatch.setenv(EnvVars.DOCUMENTAI_INPUT_LOCATION, "s3://test-bucket/input")
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_INPUT_LOCATION, "s3://test-bucket/input")
 
     ddb_doc_metadata_table.put_item(
         Item={
@@ -390,7 +390,7 @@ def test_preview_unauthenticated_returns_401(api_client):
 
 
 def test_preview_not_found(api_client, ddb_doc_metadata_table, monkeypatch):
-    monkeypatch.setenv(EnvVars.DOCUMENTAI_INPUT_LOCATION, "s3://test-bucket/input")
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_INPUT_LOCATION, "s3://test-bucket/input")
     override_jwt(SUPER_ADMIN_CLAIMS)
     response = api_client.get(PREVIEW_URL.format(job_id="nonexistent"))
     assert response.status_code == 404
@@ -458,7 +458,7 @@ def test_preview_logs_audit_event(api_client, seeded_docs_with_content_type, moc
 def test_preview_not_found_does_not_log_audit_event(
     api_client, ddb_doc_metadata_table, monkeypatch, mocker
 ):
-    monkeypatch.setenv(EnvVars.DOCUMENTAI_INPUT_LOCATION, "s3://test-bucket/input")
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_INPUT_LOCATION, "s3://test-bucket/input")
     mock_log = mocker.patch("documentai_api.routers.admin_documents.log_event")
     override_jwt(SUPER_ADMIN_CLAIMS)
 

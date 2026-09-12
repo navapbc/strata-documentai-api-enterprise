@@ -67,14 +67,14 @@ def _enable_preclassification_routing(reset_env, monkeypatch_session):
         if k.startswith("BDA_PROJECT_ID_"):
             monkeypatch_session.setenv(k, v)
 
-    from documentai_api.config.env import get_aws_config
+    from documentai_api.config.env import get_env_config
 
-    get_aws_config.cache_clear()
+    get_env_config.cache_clear()
 
     from documentai_api.services import ssm as ssm_service
     from documentai_api.utils.cache import get_cache
 
-    config = get_aws_config()
+    config = get_env_config()
     if not config.ssm_prefix:
         pytest.skip("SSM prefix not configured - skipping routing e2e tests")
 
@@ -125,14 +125,14 @@ def _enable_preclassification_routing(reset_env, monkeypatch_session):
 @pytest.mark.parametrize(("file_path", "expected_category"), ROUTING_CASES)
 def test_routing_writes_per_category_match(file_path, expected_category, base_url, api_key):
     """Blueprint match category is a per-category slug, never 'all'."""
-    from documentai_api.config.env import get_aws_config
+    from documentai_api.config.env import get_env_config
     from documentai_api.services import ddb as ddb_service
     from tests.e2e.test_app_documents import _upload_and_wait
 
     body = _upload_and_wait(base_url, api_key, file_path)
     job_id = body["jobId"]
 
-    cfg = get_aws_config()
+    cfg = get_env_config()
     items = ddb_service.query_by_key(
         cfg.documentai_document_metadata_table_name or "",
         cfg.documentai_document_metadata_job_id_index_name or "",

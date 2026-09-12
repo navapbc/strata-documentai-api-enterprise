@@ -11,7 +11,7 @@ from documentai_api.config.constants import (
     ExtractMethod,
     ProcessStatus,
 )
-from documentai_api.config.env import EnvVars, get_aws_config, get_required_env
+from documentai_api.config.env import get_env_config
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.dtos.ddb import InitialDdbRecord, UpdateDdbRecord
 from documentai_api.dtos.processing import InternalApiResponse, ProcessingTimes
@@ -281,7 +281,7 @@ def _execute_ddb_update(
     condition_expression: str | None = None,
 ) -> None:
     """Execute the DynamoDB update."""
-    table_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME)
+    table_name = get_env_config().get_document_metadata_table_name
     key = {"fileName": object_key}
 
     ddb_service.update_item(
@@ -297,7 +297,7 @@ def _execute_ddb_update(
 def _send_record_to_metrics_queue(object_key: str) -> None:
     """Write object key to SQS queue."""
     try:
-        queue_url = get_aws_config().ddb_metrics_input_queue_url
+        queue_url = get_env_config().ddb_metrics_input_queue_url
 
         if not queue_url:
             msg = "DDB_METRICS_INPUT_QUEUE_URL environment variable not set, skipping metrics"
@@ -306,7 +306,7 @@ def _send_record_to_metrics_queue(object_key: str) -> None:
             # prevent process from completing successfully
             return
 
-        table_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME)
+        table_name = get_env_config().get_document_metadata_table_name
         key = {"fileName": object_key}
         ddb_record = ddb_service.get_item(table_name, key)
 
@@ -350,7 +350,7 @@ def get_user_provided_document_category(object_key: str) -> str | None:
 
 def get_ddb_record(object_key: str) -> dict[str, Any] | None:
     """Get DDB record by file name. Raises ValueError if not found."""
-    table_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME)
+    table_name = get_env_config().get_document_metadata_table_name
     key = {"fileName": object_key}
     item = ddb_service.get_item(table_name, key)
 
@@ -362,8 +362,8 @@ def get_ddb_record(object_key: str) -> dict[str, Any] | None:
 
 def get_ddb_by_job_id(job_id: str) -> dict[str, Any] | None:
     """Get document metadata record by job ID."""
-    table_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME)
-    index_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_JOB_ID_INDEX_NAME)
+    table_name = get_env_config().get_document_metadata_table_name
+    index_name = get_env_config().get_document_metadata_job_id_index_name
     items = ddb_service.query_by_key(table_name, index_name, "jobId", job_id)
     return items[0] if items else None
 

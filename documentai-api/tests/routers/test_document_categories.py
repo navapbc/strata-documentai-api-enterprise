@@ -2,6 +2,7 @@
 
 import pytest
 
+from documentai_api.config.env_var_names_generated import EnvVarNames
 from tests.helpers.fixtures.claims import SUPER_ADMIN, TENANT_ADMIN, make_claims, override_jwt
 
 CATEGORIES_URL = "/v1/admin/document-categories"
@@ -24,8 +25,6 @@ def document_categories_table(aws_credentials, monkeypatch):
     import boto3
     from moto import mock_aws
 
-    from documentai_api.config.env import EnvVars
-
     with mock_aws():
         dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
         table = dynamodb.create_table(
@@ -40,7 +39,7 @@ def document_categories_table(aws_credentials, monkeypatch):
             ],
             BillingMode="PAY_PER_REQUEST",
         )
-        monkeypatch.setenv(EnvVars.DOCUMENT_CATEGORIES_TABLE_NAME, table.name)
+        monkeypatch.setenv(EnvVarNames.DOCUMENT_CATEGORIES_TABLE_NAME, table.name)
         yield table
 
 

@@ -32,10 +32,10 @@ def test_get_blueprint(mock_bda_client):
 
 def test_get_bda_result_json_success(s3_bucket, monkeypatch):
     """Read BDA result JSON from S3."""
-    from documentai_api.config.env import get_aws_config
+    from documentai_api.config.env import get_env_config
 
     monkeypatch.setenv("DOCUMENTAI_OUTPUT_LOCATION", f"s3://{s3_bucket.name}/output")
-    get_aws_config.cache_clear()
+    get_env_config.cache_clear()
     s3_bucket.put_object(Key="path/to/result.json", Body=b'{"result": "success"}')
 
     result = bda_utils.get_bda_result_json(f"s3://{s3_bucket.name}/path/to/result.json")

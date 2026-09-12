@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, UploadFile, sta
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from documentai_api.config.constants import ConfigDefaults, FileValidation
-from documentai_api.config.env import get_aws_config
+from documentai_api.config.env import get_env_config
 from documentai_api.logging import get_logger
 from documentai_api.models.admin_document import (
     DocumentDetail,
@@ -70,7 +70,7 @@ DemoAuth = Annotated[UserContext, Depends(_resolve_demo_context)]
 
 
 def _get_demo_input_location() -> str:
-    location = get_aws_config().documentai_demo_input_location
+    location = get_env_config().documentai_demo_input_location
     if not location:
         raise HTTPException(status_code=500, detail="Demo storage not configured")
     return location

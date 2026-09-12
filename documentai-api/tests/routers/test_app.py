@@ -8,6 +8,7 @@ import pytest
 from fastapi import HTTPException
 
 from documentai_api import app as app_module
+from documentai_api.config.env_var_names_generated import EnvVarNames
 from documentai_api.pipeline.jobs import poll_for_completion
 from documentai_api.utils.jobs import JobStatus, get_job_status
 from documentai_api.utils.uploads import upload_document_for_processing
@@ -109,10 +110,8 @@ async def test_upload_always_saves_original_to_preprocessing(
     runtime_required_env, blank_pdf_file, s3_bucket, monkeypatch
 ):
     """Every upload writes the original to preprocessing, regardless of file type."""
-    from documentai_api.config.env import EnvVars
-
     monkeypatch.setenv(
-        EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION, f"s3://{s3_bucket.name}/preprocessing"
+        EnvVarNames.DOCUMENTAI_PREPROCESSING_LOCATION, f"s3://{s3_bucket.name}/preprocessing"
     )
 
     await upload_document_for_processing(
@@ -307,9 +306,9 @@ def test_cors_expose_headers(api_client):
 
 
 def _patch_auth_config(*, enabled: bool, hosted: bool) -> AbstractContextManager[object]:
-    """Patch get_app_env_config with a fake whose hosted-ness is controllable.
+    """Patch get_app_config with a fake whose hosted-ness is controllable.
 
-    The env-name / Lambda detection itself is covered by AppEnvConfig.is_hosted_env
+    The env-name / Lambda detection itself is covered by AppConfig.is_hosted_env
     tests; here we only exercise the guard's branching.
     """
     cfg = SimpleNamespace(
@@ -317,7 +316,7 @@ def _patch_auth_config(*, enabled: bool, hosted: bool) -> AbstractContextManager
         environment="prod" if hosted else "local",
         is_hosted_env=lambda: hosted,
     )
-    return patch.object(app_module, "get_app_env_config", return_value=cfg)
+    return patch.object(app_module, "get_app_config", return_value=cfg)
 
 
 def test_require_auth_allows_non_hosted_without_auth():

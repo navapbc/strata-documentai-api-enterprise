@@ -15,7 +15,7 @@ from documentai_api.config.constants import (
     FileValidation,
     ProcessStatus,
 )
-from documentai_api.config.env import EnvVars, get_required_env
+from documentai_api.config.env import get_env_config
 from documentai_api.dtos.classification import PreclassificationMatchResult
 from documentai_api.dtos.ddb import InitialDdbRecord, PreClassificationDdbFields, UpdateDdbRecord
 from documentai_api.dtos.processing import InternalApiResponse, PreExtractionResult
@@ -129,7 +129,7 @@ def set_processing_status_started(object_key: str, expected_status: str) -> bool
     """
     from documentai_api.services import ddb as ddb_service
 
-    table_name = get_required_env(EnvVars.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME)
+    table_name = get_env_config().get_document_metadata_table_name
     try:
         ddb_service.update_item(
             table_name,

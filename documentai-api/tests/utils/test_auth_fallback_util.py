@@ -137,7 +137,7 @@ async def test_fallback_api_key_takes_precedence(api_keys_table):
         "test-api-key-name", "prod", tenant_id="tenant-from-key"
     )
 
-    with patch("documentai_api.utils.auth.get_app_env_config") as mock_cfg:
+    with patch("documentai_api.utils.auth.get_app_config") as mock_cfg:
         mock_cfg.return_value.api_auth_enabled = True
         mock_cfg.return_value.api_auth_cache_ttl = 300
         ctx = await get_user_context_with_fallback(api_key=raw_key, credentials=None)

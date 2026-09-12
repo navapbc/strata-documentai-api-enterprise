@@ -2,32 +2,32 @@
 
 import pytest
 
-from documentai_api.config.env import AppEnvConfig, AWSEnvConfig, EnvVars
+from documentai_api.config.env import AppConfig, EnvConfig
 
 
 @pytest.fixture(autouse=True)
 def _no_lambda_marker(monkeypatch):
     """Ensure the Lambda runtime marker is absent unless a test sets it."""
-    monkeypatch.delenv(EnvVars.AWS_LAMBDA_FUNCTION_NAME, raising=False)
+    monkeypatch.delenv("AWS_LAMBDA_FUNCTION_NAME", raising=False)
 
 
 @pytest.fixture(autouse=True)
 def _no_real_dotenv(monkeypatch):
     """Prevent tests from picking up a real developer .env file.
 
-    AWSEnvConfig and AppEnvConfig both read .env from the current working
+    EnvConfig and AppConfig both read .env from the current working
     directory by default (PydanticBaseEnvConfig.model_config). monkeypatch.setenv/
     delenv only affect os.environ, a separate settings source - it doesn't stop
     pydantic-settings from reading the same keys from a real .env on disk (e.g.
     one created locally by `make env-from-aws`). Disabling dotenv on both here
     isolates this test file from accidentally picking up a real .env file.
     """
-    monkeypatch.setitem(AWSEnvConfig.model_config, "env_file", None)
-    monkeypatch.setitem(AppEnvConfig.model_config, "env_file", None)
+    monkeypatch.setitem(EnvConfig.model_config, "env_file", None)
+    monkeypatch.setitem(AppConfig.model_config, "env_file", None)
 
 
 def test_aws_env_config_has_required_fields():
-    fields = AWSEnvConfig.model_fields
+    fields = EnvConfig.model_fields
     assert "bda_project_arn" in fields
     assert "bda_profile_arn" in fields
     assert "documentai_input_location" in fields
@@ -37,13 +37,13 @@ def test_aws_env_config_has_required_fields():
 
 
 def test_aws_env_config_defaults():
-    fields = AWSEnvConfig.model_fields | AppEnvConfig.model_fields
+    fields = EnvConfig.model_fields | AppConfig.model_fields
     assert fields["bda_region"].default == "us-east-1"
     assert fields["max_bda_invoke_retry_attempts"].default == 3
 
 
 ##############################################################################
-# AppEnvConfig.is_hosted_env
+# AppConfig.is_hosted_env
 ##############################################################################
 
 
@@ -53,18 +53,18 @@ def test_is_hosted_env_false_off_lambda():
     The `prod` case guards against reintroducing name-based detection, which would
     let a hosted environment's name (rather than the runtime) decide auth enforcement.
     """
-    assert AppEnvConfig(environment="local").is_hosted_env() is False
-    assert AppEnvConfig(environment="prod").is_hosted_env() is False
+    assert AppConfig(environment="local").is_hosted_env() is False
+    assert AppConfig(environment="prod").is_hosted_env() is False
 
 
 def test_is_hosted_env_true_in_lambda(monkeypatch):
     """The Lambda runtime marker is the sole signal, regardless of ENVIRONMENT name."""
-    monkeypatch.setenv(EnvVars.AWS_LAMBDA_FUNCTION_NAME, "documentai-api")
-    assert AppEnvConfig(environment="local").is_hosted_env() is True
+    monkeypatch.setenv("AWS_LAMBDA_FUNCTION_NAME", "documentai-api")
+    assert AppConfig(environment="local").is_hosted_env() is True
 
 
 ##############################################################################
-# AWSEnvConfig.get_bda_project_arns
+# EnvConfig.get_bda_project_arns
 ##############################################################################
 
 
@@ -79,7 +79,7 @@ def test_get_bda_project_arns_builds_from_prefix_and_ids(monkeypatch):
     monkeypatch.setenv("BDA_PROJECT_ID_EMPLOYER_INCOME", "abc-123")
     monkeypatch.setenv("BDA_PROJECT_ARN_ALL", f"{prefix}/all-456")
 
-    config = AWSEnvConfig(bda_project_arn_all=f"{prefix}/all-456")
+    config = EnvConfig(bda_project_arn_all=f"{prefix}/all-456")
     arns = config.get_bda_project_arns()
 
     assert arns[PreclassificationCategory.EMPLOYER_INCOME] == f"{prefix}/abc-123"
@@ -93,7 +93,7 @@ def test_get_bda_project_arns_omits_unconfigured_categories(monkeypatch):
     )
     monkeypatch.setenv("BDA_PROJECT_ID_IDENTITY", "id-789")
 
-    config = AWSEnvConfig()
+    config = EnvConfig()
     arns = config.get_bda_project_arns()
 
     assert "identity" in arns
@@ -106,7 +106,7 @@ def test_get_bda_project_arns_falls_back_to_bda_project_arn(monkeypatch):
     prefix = "arn:aws:bedrock:us-east-1:123:data-automation-project"
     monkeypatch.setenv("BDA_PROJECT_ARN_PREFIX", prefix)
 
-    config = AWSEnvConfig(bda_project_arn=f"{prefix}/fallback-arn")
+    config = EnvConfig(bda_project_arn=f"{prefix}/fallback-arn")
     arns = config.get_bda_project_arns()
 
     assert arns["all"] == f"{prefix}/fallback-arn"

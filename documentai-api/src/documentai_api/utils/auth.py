@@ -15,7 +15,7 @@ from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBea
 from pydantic import BaseModel
 
 from documentai_api.config.constants import API_AUTH_KEY_HEADER_NAME
-from documentai_api.config.env import get_app_env_config, get_aws_config
+from documentai_api.config.env import get_app_config, get_env_config
 from documentai_api.logging import get_logger
 from documentai_api.schemas.api_key import ApiKeyRecord
 from documentai_api.utils.cache import get_cache
@@ -53,7 +53,7 @@ def _hash_key(api_key: str) -> str:
 def _get_pepper() -> str | None:
     """Fetch the API key pepper from SSM once and cache it for the process lifetime."""
     try:
-        return get_app_env_config().resolve_api_key_pepper()
+        return get_app_config().resolve_api_key_pepper()
     except Exception as e:
         logger.warning(f"Failed to resolve API key pepper: {e}")
         return None
@@ -102,7 +102,7 @@ def _migrate_key_hash(old_hash: str, new_hash: str) -> None:
     """Replace an old key hash with a new one in DDB. Best-effort - failures are logged."""
     from documentai_api.services import ddb as ddb_service
 
-    table_name = get_aws_config().api_keys_table_name
+    table_name = get_env_config().api_keys_table_name
 
     if not table_name:
         return
@@ -128,7 +128,7 @@ def _get_cache_ttl_minutes() -> int:
     but Cache.add() takes minutes, so we convert here.
     """
     try:
-        seconds = get_app_env_config().api_auth_cache_ttl
+        seconds = get_app_config().api_auth_cache_ttl
         return max(1, seconds // 60)
     except Exception:
         return 5
@@ -138,7 +138,7 @@ def _lookup_key_in_ddb(key_hash: str) -> dict[str, Any] | None:
     """Look up an API key record from DynamoDB by its hash."""
     from documentai_api.services import ddb as ddb_service
 
-    table_name = get_aws_config().api_keys_table_name
+    table_name = get_env_config().api_keys_table_name
 
     if not table_name:
         raise ValueError("API_KEYS_TABLE_NAME environment variable not set")
@@ -197,7 +197,7 @@ def _update_last_used(key_hash: str) -> None:
     try:
         from documentai_api.services import ddb as ddb_service
 
-        table_name = get_aws_config().api_keys_table_name
+        table_name = get_env_config().api_keys_table_name
 
         if not table_name:
             raise ValueError("API_KEYS_TABLE_NAME environment variable not set")
@@ -260,7 +260,7 @@ def _verify_with_ddb(api_key: str) -> None:
 
 def _verify_with_insecure_shared_key(api_key: str) -> None:
     """Validate API key against a single shared key (for local dev only)."""
-    expected_key = get_app_env_config().resolve_insecure_shared_key()
+    expected_key = get_app_config().resolve_insecure_shared_key()
 
     if not expected_key:
         raise HTTPException(
@@ -281,7 +281,7 @@ def get_active_keys_by_name(
     """
     from documentai_api.services import ddb as ddb_service
 
-    config = get_aws_config()
+    config = get_env_config()
     table_name = config.api_keys_table_name
 
     if not table_name:
@@ -321,7 +321,7 @@ def is_duplicate_key_name(tenant_id: str, api_key_name: str) -> bool:
     """Check if a key with this name has ever existed for the tenant (active or inactive)."""
     from documentai_api.services import ddb as ddb_service
 
-    config = get_aws_config()
+    config = get_env_config()
     table_name = config.api_keys_table_name
 
     if not table_name:
@@ -378,7 +378,7 @@ def generate_api_key(
     api_key = f"docai_{random_part}"
     key_hash = _compute_key_hash(api_key)
 
-    table_name = get_aws_config().api_keys_table_name
+    table_name = get_env_config().api_keys_table_name
 
     if not table_name:
         raise ValueError("API_KEYS_TABLE_NAME environment variable not set")
@@ -419,7 +419,7 @@ def find_api_key_by_prefix(prefix: str, tenant_id: str | None = None) -> str | N
     """
     from documentai_api.services import ddb as ddb_service
 
-    table_name = get_aws_config().api_keys_table_name
+    table_name = get_env_config().api_keys_table_name
 
     if not table_name:
         raise ValueError("API_KEYS_TABLE_NAME environment variable not set")
@@ -454,7 +454,7 @@ def deactivate_api_key(key_hash: str) -> bool:
     """
     from documentai_api.services import ddb as ddb_service
 
-    table_name = get_aws_config().api_keys_table_name
+    table_name = get_env_config().api_keys_table_name
 
     if not table_name:
         raise ValueError("API_KEYS_TABLE_NAME environment variable not set")
@@ -488,7 +488,7 @@ def verify_api_key(api_key: str = Depends(api_key_header)) -> None:
     When API_AUTH_ENABLED is true, validates against DynamoDB api-keys table
     with in-memory caching. When disabled (local dev), uses insecure shared key.
     """
-    config = get_app_env_config()
+    config = get_app_config()
 
     if not config.api_auth_enabled:
         _verify_with_insecure_shared_key(api_key)
@@ -506,7 +506,7 @@ def get_user_context_from_api_key(api_key: str = Depends(api_key_header)) -> Use
     Returns:
         UserContext with tenant_id and api_key_name.
     """
-    auth_enabled = get_app_env_config().api_auth_enabled
+    auth_enabled = get_app_config().api_auth_enabled
 
     if auth_enabled:
         return _get_user_context_from_api_key_from_ddb(api_key)

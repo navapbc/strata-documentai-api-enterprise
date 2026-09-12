@@ -72,9 +72,9 @@ def api_key(reset_env, monkeypatch_session, e2e_tenant_id):
         if v := reset_env.get(k):
             monkeypatch_session.setenv(k, v)
 
-    from documentai_api.config.env import get_aws_config
+    from documentai_api.config.env import get_env_config
 
-    get_aws_config.cache_clear()  # ensure config picks up monkeypatch changes
+    get_env_config.cache_clear()  # ensure config picks up monkeypatch changes
 
     raw_key, _ = generate_api_key(
         api_key_name=f"e2e-{secrets.token_hex(4)}",
@@ -107,12 +107,12 @@ def _wipe_e2e_tenant(tenant_id: str) -> None:
 
     import boto3
 
-    from documentai_api.config.env import get_aws_config
+    from documentai_api.config.env import get_env_config
     from documentai_api.schemas.document_metadata import DocumentMetadata
     from documentai_api.services import ddb as ddb_service
     from documentai_api.utils.s3 import parse_s3_uri
 
-    cfg = get_aws_config()
+    cfg = get_env_config()
     table_name = cfg.documentai_document_metadata_table_name
     tenant_index_name = cfg.documentai_document_metadata_tenant_index_name
     input_location = cfg.documentai_input_location
@@ -187,11 +187,11 @@ def _ensure_multipage_flagging_enabled(monkeypatch_session):
     whatever the flag is set to in the target environment.
     """
     from documentai_api.config.constants import FeatureFlags
-    from documentai_api.config.env import get_aws_config
+    from documentai_api.config.env import get_env_config
     from documentai_api.services import ssm as ssm_service
     from documentai_api.utils.cache import get_cache
 
-    config = get_aws_config()
+    config = get_env_config()
 
     if not config.ssm_prefix:
         yield
@@ -226,11 +226,11 @@ def _sweep_stale_e2e_keys():
     """
     from datetime import UTC, datetime, timedelta
 
-    from documentai_api.config.env import get_aws_config
+    from documentai_api.config.env import get_env_config
     from documentai_api.schemas.api_key import ApiKeyRecord
     from documentai_api.services import ddb as ddb_service
 
-    table_name = get_aws_config().api_keys_table_name
+    table_name = get_env_config().api_keys_table_name
     if not table_name:
         return
 

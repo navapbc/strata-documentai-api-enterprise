@@ -1,9 +1,8 @@
-import os
 from datetime import UTC, datetime
 from typing import Any
 
 from documentai_api.config.constants import ConfigDefaults
-from documentai_api.config.env import EnvVars
+from documentai_api.config.env import get_env_config
 from documentai_api.dtos.processing import PageMetadata
 from documentai_api.schemas.document_builds import DocumentBuilds
 from documentai_api.services import ddb as ddb_service
@@ -16,11 +15,7 @@ _METADATA_PAGE_NUMBER = 0
 
 
 def get_document_build_table() -> str:
-    """Get multipage upload sessions table name from environment."""
-    table_name = os.getenv(EnvVars.DOCUMENTAI_BUILD_TABLE_NAME)
-    if not table_name:
-        raise ValueError(f"{EnvVars.DOCUMENTAI_BUILD_TABLE_NAME} not set")
-    return table_name
+    return get_env_config().get_document_build_table_name
 
 
 def _page_key(build_id: str, page_number: int) -> dict[str, Any]:
@@ -114,7 +109,7 @@ async def upsert_document_build_page(
 
 def get_document_build_pages(build_id: str) -> list[PageMetadata]:
     """Get all pages for a multipage session."""
-    s3_location = os.getenv(EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION, "")
+    s3_location = get_env_config().documentai_preprocessing_location or ""
     bucket_name, _ = s3_utils.parse_s3_uri(s3_location)
 
     pages = [
@@ -203,7 +198,7 @@ def delete_document_build_page(build_id: str, page_number: int) -> bool:
         raise ValueError(f"Cannot delete - session {build_id} has already been submitted")
 
     table_name = get_document_build_table()
-    s3_location = os.getenv(EnvVars.DOCUMENTAI_PREPROCESSING_LOCATION, "")
+    s3_location = get_env_config().documentai_preprocessing_location or ""
     bucket_name, _ = s3_utils.parse_s3_uri(s3_location)
 
     key = _page_key(build_id, page_number)

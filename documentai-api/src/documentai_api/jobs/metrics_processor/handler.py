@@ -6,7 +6,7 @@ from typing import Any
 from opentelemetry import trace
 from opentelemetry.propagate import extract
 
-from documentai_api.config.env import get_aws_config
+from documentai_api.config.env import get_env_config
 from documentai_api.jobs.metrics_processor.main import write_to_s3
 from documentai_api.logging import get_logger
 from documentai_api.telemetry import setup as setup_otel
@@ -27,7 +27,7 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     # Calls write_to_s3 directly rather than invoking main(). main()'s receive/delete
     # loop conflicts with Lambda's SQS event-source mapping, which handles message
     # delivery and deletion
-    bucket_name = get_aws_config().ddb_export_bucket_name
+    bucket_name = get_env_config().ddb_export_bucket_name
     if not bucket_name:
         raise KeyError("DDB_EXPORT_BUCKET_NAME")
 

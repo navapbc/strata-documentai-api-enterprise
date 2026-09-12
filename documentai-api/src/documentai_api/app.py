@@ -14,7 +14,7 @@ from documentai_api.config.constants import (
     APIConfig,
     FileValidation,
 )
-from documentai_api.config.env import get_app_env_config
+from documentai_api.config.env import get_app_config
 from documentai_api.logging import get_logger
 from documentai_api.models.config import ConfigResponse, HealthResponse
 from documentai_api.routers.admin_documents import router as admin_documents_router
@@ -72,7 +72,7 @@ app.include_router(search_router)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=get_app_env_config().get_cors_origins(),
+    allow_origins=get_app_config().get_cors_origins(),
     allow_credentials=False,
     allow_methods=["GET", "PUT", "POST", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "x-api-key", "API-Key", "Authorization", "X-Trace-ID"],
@@ -100,7 +100,7 @@ def _require_auth_in_hosted_envs() -> None:
     behind one shared secret, so fail closed instead. Mangum runs with lifespan="off",
     so a FastAPI startup event would not fire in Lambda; this runs at import time.
     """
-    config = get_app_env_config()
+    config = get_app_config()
     if not config.api_auth_enabled and config.is_hosted_env():
         raise RuntimeError(
             f"API_AUTH_ENABLED is false in a hosted environment (ENVIRONMENT={config.environment!r}). "
@@ -164,7 +164,7 @@ async def health() -> HealthResponse:
 @app.get("/config", dependencies=[Depends(verify_api_key)])
 def get_config() -> ConfigResponse:
     endpoints = discover_endpoints(app)
-    app_config = get_app_env_config()
+    app_config = get_app_config()
 
     return ConfigResponse(
         api_url=app_config.api_base_url,

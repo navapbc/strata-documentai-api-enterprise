@@ -366,7 +366,7 @@ def test_get_model_id_uses_default(monkeypatch):
     from documentai_api.utils.preclassification import _get_model_id
 
     monkeypatch.setattr(
-        "documentai_api.utils.preclassification.get_aws_config",
+        "documentai_api.utils.preclassification.get_env_config",
         lambda: type("C", (), {"bedrock_classification_model_id_param": None})(),
     )
 
@@ -379,7 +379,7 @@ def test_get_model_id_reads_ssm(monkeypatch):
     from documentai_api.utils.preclassification import _get_model_id
 
     monkeypatch.setattr(
-        "documentai_api.utils.preclassification.get_aws_config",
+        "documentai_api.utils.preclassification.get_env_config",
         lambda: type("C", (), {"bedrock_classification_model_id_param": "/test/model"})(),
     )
     monkeypatch.setattr(
