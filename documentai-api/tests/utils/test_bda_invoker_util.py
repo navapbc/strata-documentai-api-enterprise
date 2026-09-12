@@ -36,7 +36,7 @@ def test_invoke_bedrock_data_automation_single_page():
         mock_get_page_count.return_value = 3
 
         result = bda_invoker_util.invoke_bedrock_data_automation(
-            "test-bucket", "test.pdf", "test-tenant-id"
+            "test-bucket", "test.pdf", "test-tenant-id", "test.pdf"
         )
 
         invocation_arn, project_arn, pages_sent, _ = result
@@ -79,7 +79,7 @@ def test_invoke_bedrock_data_automation_document_truncation():
         mock_truncate.return_value = b"truncated_content"
 
         result = bda_invoker_util.invoke_bedrock_data_automation(
-            "test-bucket", "test.pdf", "test-tenant-id"
+            "test-bucket", "test.pdf", "test-tenant-id", "test.pdf"
         )
 
         invocation_arn, project_arn, pages_sent, _ = result
@@ -97,24 +97,20 @@ def test_invoke_bedrock_data_automation_document_truncation():
 def test_demo_upload_output_key_starts_with_expected_prefix():
     """Lock the cross-system contract: BDA output for demo uploads.
 
-    Demo uploads land under processed/input/demo/ - matching the infra
-    lifecycle rule prefix.
-
-    BDA output is written to {DOCUMENTAI_OUTPUT_LOCATION}/{tenant_id}/{source_object_name}.
-    For demo uploads, source_object_name is the full S3 key:
-        input/demo/{tenant}/{file}
-    So the output key becomes:
-        processed/{tenant_id}/input/demo/{tenant}/{file}/...
+    BDA output is written to {DOCUMENTAI_OUTPUT_LOCATION}/{tenant_id}/{ddb_key}/{ExtractMethod.BDA}.
+    ddb_key is the bare filename (e.g. doc-uuid.pdf), so the output key becomes:
+        processed/{tenant_id}/{ddb_key}/{ExtractMethod.BDA}/...
 
     If this test fails, the infra S3 lifecycle rule (expire-demo-results) will
     stop matching and demo output won't auto-expire.
     """
-    from unittest.mock import MagicMock, patch
+    from documentai_api.config.constants import ExtractMethod
 
     bda_invocation_arn = "arn:aws:invocation:demo-test"
-    demo_source_object = "input/demo/test-tenant-id-id/doc-uuid.pdf"
+    demo_source_object = "input/demo/test-tenant-id/doc-uuid.pdf"
+    demo_ddb_key = "doc-uuid.pdf"
     output_location = "s3://output-bucket/processed"
-    tenant_id = "test-tenant-id-id"
+    tenant_id = "test-tenant-id"
 
     with (
         patch.dict(
@@ -143,17 +139,17 @@ def test_demo_upload_output_key_starts_with_expected_prefix():
         mock_get_page_count.return_value = 1
 
         bda_invoker_util.invoke_bedrock_data_automation(
-            "input-bucket", demo_source_object, tenant_id=tenant_id
+            "input-bucket", demo_source_object, tenant_id=tenant_id, ddb_key=demo_ddb_key
         )
 
         call_kwargs = mock_bda.invoke_data_automation_async.call_args.kwargs
         output_s3_uri = call_kwargs["outputConfiguration"]["s3Uri"]
 
-        assert output_s3_uri == f"{output_location}/{tenant_id}/{demo_source_object}"
+        assert output_s3_uri == f"{output_location}/{tenant_id}/{demo_ddb_key}/{ExtractMethod.BDA}"
         output_key = output_s3_uri.replace("s3://output-bucket/", "")
-        assert output_key.startswith("processed/test-tenant-id-id/input/demo/"), (
-            f"Demo output key '{output_key}' does not start with 'processed/test-tenant-id-id/input/demo/'. "
-            "This means the infra lifecycle rule (expire-demo-results) won't match."
+        assert output_key.startswith(f"processed/{tenant_id}/{demo_ddb_key}/"), (
+            f"Demo output key '{output_key}' does not start with 'processed/{tenant_id}/{demo_ddb_key}/'. "
+            "This means the infra S3 lifecycle rule (expire-demo-results) won't match."
         )
 
 
@@ -195,7 +191,7 @@ def test_invoke_bedrock_data_automation_pages_sent_fallback(page_count_return, e
         mock_get_page_count.return_value = page_count_return
 
         _, _, pages_sent, _ = bda_invoker_util.invoke_bedrock_data_automation(
-            "test-bucket", "test.pdf", "test-tenant-id"
+            "test-bucket", "test.pdf", "test-tenant-id", "test.pdf"
         )
 
         assert pages_sent == expected_pages_sent

@@ -217,7 +217,7 @@ def _invoke_textract_if_identity_path(
         output_uri = write_extraction_output(
             tenant_id,
             ExtractMethod.TEXTRACT,
-            f"{ddb_key}.json",
+            ddb_key,
             result.body or b"",
             content_type="application/json",
         )
@@ -264,7 +264,7 @@ def _invoke_bda(
             invoke_start = time.monotonic()
             invocation_arn, project_arn, pages_sent, used_category_specific_project = (
                 invoke_bedrock_data_automation(
-                    bucket_name, object_key, tenant_id, preclassification_category
+                    bucket_name, object_key, tenant_id, ddb_key, preclassification_category
                 )
             )
             invoke_duration = Decimal(str(round(time.monotonic() - invoke_start, 3)))

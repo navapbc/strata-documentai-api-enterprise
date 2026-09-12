@@ -147,10 +147,10 @@ def test_write_extraction_output_uri(monkeypatch, mocker):
     mock_put = mocker.patch("documentai_api.utils.s3.s3_service.put_object")
 
     uri = s3_util.write_extraction_output(
-        "tenant-a", "textract", "doc-uuid.json", b"data", "application/json"
+        "tenant-a", "textract", "doc-uuid", b"data", "application/json"
     )
 
-    assert uri == "s3://output-bucket/processed/tenant-a/doc-uuid.json/textract"
+    assert uri == "s3://output-bucket/processed/tenant-a/doc-uuid/textract/result.json"
     mock_put.assert_called_once()
 
 

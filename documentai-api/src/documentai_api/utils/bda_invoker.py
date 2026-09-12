@@ -3,12 +3,12 @@ import os
 from opentelemetry import trace
 
 import documentai_api.utils.documents as document_utils
-from documentai_api.config.constants import ConfigDefaults
+from documentai_api.config.constants import ConfigDefaults, ExtractMethod
 from documentai_api.config.env import get_env_config
 from documentai_api.logging import get_logger
 from documentai_api.services import s3 as s3_service
 from documentai_api.services.aws_client_factory import AWSClientFactory
-from documentai_api.utils.s3 import get_bucket_and_key
+from documentai_api.utils.s3 import generate_s3_uri
 from documentai_api.utils.ssm import (
     is_preclassification_routing_enabled,
     is_skip_bda_if_unclassified,
@@ -57,13 +57,14 @@ def invoke_bedrock_data_automation(
     source_bucket_name: str,
     source_object_name: str,
     tenant_id: str,
+    ddb_key: str,
     category: str | None = None,
 ) -> tuple[str, str, int, bool]:
     """Invoke BDA and return (invocation_arn, project_arn, pages_sent_to_bda, used_category_specific_project)."""
     bda_project_arn, used_category_specific_project = resolve_project_arn(category)
     bda_profile_arn = get_env_config().get_bda_profile_arn
     output_location = get_env_config().get_output_location
-    output_bucket, output_key = get_bucket_and_key(output_location, tenant_id, source_object_name)
+    output_uri = generate_s3_uri(output_location, tenant_id, ddb_key, ExtractMethod.BDA)
 
     logger.info(f"BDA_PROJECT_ARN: {bda_project_arn}")
     logger.info(f"BDA_PROFILE_ARN: {bda_profile_arn}")
@@ -114,7 +115,7 @@ def invoke_bedrock_data_automation(
                 dataAutomationProfileArn=bda_profile_arn,
                 dataAutomationConfiguration={"dataAutomationProjectArn": bda_project_arn},
                 inputConfiguration={"s3Uri": f"s3://{source_bucket_name}/{source_object_name}"},
-                outputConfiguration={"s3Uri": f"s3://{output_bucket}/{output_key}"},
+                outputConfiguration={"s3Uri": output_uri},
             )
         logger.info(f"BDA response: {response}")
 
