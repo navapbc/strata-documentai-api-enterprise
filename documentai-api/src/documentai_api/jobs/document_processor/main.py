@@ -40,6 +40,7 @@ from documentai_api.pipeline.document_lifecycle import (
 )
 from documentai_api.processors.textract import process_textract_result
 from documentai_api.schemas.document_metadata import DocumentMetadata
+from documentai_api.services import ddb as ddb_service
 from documentai_api.services import s3 as s3_service
 from documentai_api.services.exceptions import is_retryable
 from documentai_api.utils.bda_invoker import (
@@ -49,7 +50,7 @@ from documentai_api.utils.bda_invoker import (
 from documentai_api.utils.dates import strip_time
 from documentai_api.utils.ddb import get_ddb_record
 from documentai_api.utils.image_optimization import optimize_s3_image
-from documentai_api.utils.s3 import parse_s3_uri
+from documentai_api.utils.s3 import parse_s3_uri, write_extraction_output
 from documentai_api.utils.uploads import validate_s3_object_is_bda_native
 
 logger = documentai_api.logging.get_logger(__name__)
@@ -155,9 +156,6 @@ def _persist_optimization_metrics(
     opt_result: OptimizationResult | None = None,
 ) -> None:
     """Write image optimization metrics to the DDB record."""
-    from documentai_api.config.env import get_env_config
-    from documentai_api.services import ddb as ddb_service
-
     field_map = {
         DocumentMetadata.CROP_BOUNDING_BOX: str(list(crop_result.bounding_box))
         if crop_result.bounding_box
@@ -197,7 +195,7 @@ def _invoke_textract_if_identity_path(
     ddb_key: str,
     content_type: str | None,
     file_bytes: bytes | None,
-    tenant_id: str | None = None,
+    tenant_id: str,
     batch_id: str | None = None,
 ) -> bool:
     """Run Textract extraction if preclassification identified an identity document.
@@ -216,12 +214,21 @@ def _invoke_textract_if_identity_path(
         if result is None:
             return False
 
+        output_uri = write_extraction_output(
+            tenant_id,
+            ExtractMethod.TEXTRACT,
+            ddb_key,
+            result.body or b"",
+            content_type="application/json",
+        )
+
         processor_result = process_textract_result(ddb_key, result, tenant_id, batch_id)
 
         if processor_result.extraction_result is not None:
             classify_extraction_result(
                 ddb_key=processor_result.object_key,
                 result=processor_result.extraction_result,
+                output_uri=output_uri,
                 tenant_id=processor_result.tenant_id,
                 batch_id=processor_result.batch_id,
                 extraction_method=ExtractMethod.TEXTRACT,
@@ -236,7 +243,11 @@ def _invoke_textract_if_identity_path(
 
 
 def _invoke_bda(
-    bucket_name: str, object_key: str, ddb_key: str, preclassification_category: str | None = None
+    bucket_name: str,
+    object_key: str,
+    ddb_key: str,
+    tenant_id: str,
+    preclassification_category: str | None = None,
 ) -> dict[str, Any]:
     """Invoke BDA for a file that's ready for processing."""
     result: dict[str, Any] = {}
@@ -252,7 +263,9 @@ def _invoke_bda(
                 retry_count += 1
             invoke_start = time.monotonic()
             invocation_arn, project_arn, pages_sent, used_category_specific_project = (
-                invoke_bedrock_data_automation(bucket_name, object_key, preclassification_category)
+                invoke_bedrock_data_automation(
+                    bucket_name, object_key, tenant_id, ddb_key, preclassification_category
+                )
             )
             invoke_duration = Decimal(str(round(time.monotonic() - invoke_start, 3)))
 
@@ -276,12 +289,13 @@ def invoke_bda(
     bucket_name: str,
     object_key: str,
     ddb_key: str,
+    tenant_id: str,
     preclassification_category: str | None = None,
     batch_id: str | None = None,
 ) -> dict[str, Any]:
     """Wrapper that handles retry failures."""
     try:
-        return _invoke_bda(bucket_name, object_key, ddb_key, preclassification_category)
+        return _invoke_bda(bucket_name, object_key, ddb_key, tenant_id, preclassification_category)
     except RetryError as e:
         retry_state = e.last_attempt
         attempt_number = retry_state.attempt_number
@@ -305,6 +319,7 @@ def _invoke_bda_path(
     s3_file_bytes: bytes,
     bbox_future: Any,
     apply_grayscale: bool,
+    tenant_id: str,
     batch_id: str | None,
 ) -> None:
     """Optimize image and invoke BDA (or classify as not-configured/not-implemented)."""
@@ -345,7 +360,7 @@ def _invoke_bda_path(
     )
 
     if _should_invoke_bda(preclassification_document_type):
-        invoke_bda(bucket_name, object_key, ddb_key, routing_category, batch_id)
+        invoke_bda(bucket_name, object_key, ddb_key, tenant_id, routing_category, batch_id)
 
         if apply_grayscale:
             logger.info(f"Optimized {ddb_key} and invoked BDA")
@@ -374,23 +389,6 @@ def _dispatch_document_processor(
     batch_id: str | None,
 ) -> None:
     """Validate content and dispatch to the appropriate extraction path."""
-    requires_validation = status == ProcessStatus.PENDING_IMAGE_OPTIMIZATION or (
-        status is not None and ProcessStatus.is_awaiting_processing(status)
-    )
-
-    if requires_validation:
-        try:
-            validate_s3_object_is_bda_native(bucket_name, object_key)
-        except ValueError as e:
-            logger.warning(f"Rejecting {ddb_key}: {e}")
-            classify_as_failed(
-                object_key=ddb_key,
-                error_message="Uploaded file content is not a supported document type",
-                data=ClassificationData(additional_info=str(e)),
-                batch_id=batch_id,
-            )
-            return
-
     if status == ProcessStatus.PENDING_IMAGE_OPTIMIZATION:
         apply_grayscale = True
     elif status and ProcessStatus.is_awaiting_processing(status):
@@ -398,6 +396,28 @@ def _dispatch_document_processor(
     else:
         # Already processing or terminal (SUCCESS, FAILED, STARTED) - skip.
         logger.info(f"File {ddb_key} already has status: {status}, skipping")
+        return
+
+    try:
+        validate_s3_object_is_bda_native(bucket_name, object_key)
+    except ValueError as e:
+        logger.warning(f"Rejecting {ddb_key}: {e}")
+        classify_as_failed(
+            object_key=ddb_key,
+            error_message="Uploaded file content is not a supported document type",
+            data=ClassificationData(additional_info=str(e)),
+            batch_id=batch_id,
+        )
+        return
+
+    if not tenant_id:
+        logger.error(f"Cannot dispatch {ddb_key}: tenant_id is required")
+        classify_as_failed(
+            object_key=ddb_key,
+            error_message="tenant_id is required for document processing",
+            data=ClassificationData(additional_info="Missing tenant_id"),
+            batch_id=batch_id,
+        )
         return
 
     if not set_processing_status_started(ddb_key, status):
@@ -423,6 +443,7 @@ def _dispatch_document_processor(
         s3_file_bytes,
         bbox_future,
         apply_grayscale=apply_grayscale,
+        tenant_id=tenant_id,
         batch_id=batch_id,
     )
 

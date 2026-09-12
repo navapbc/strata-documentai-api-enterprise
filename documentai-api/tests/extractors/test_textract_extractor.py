@@ -3,7 +3,6 @@ from pathlib import Path
 
 import pytest
 
-from documentai_api.config.env_var_names_generated import EnvVarNames
 from documentai_api.extractors.textract import extract_textract_identity
 
 FIXTURE_DIR = Path(__file__).parent.parent / "helpers" / "fixtures" / "textract"
@@ -30,10 +29,8 @@ def test_extract_textract_identity_returns_none_early(mocker, content_type, flag
     assert result is None
 
 
-def test_extract_textract_identity_returns_result_on_success(mocker, monkeypatch):
+def test_extract_textract_identity_returns_result_on_success(mocker):
     from documentai_api.config.constants import ExtractMethod
-
-    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_OUTPUT_LOCATION, "s3://test-bucket/output")
 
     mocker.patch(
         "documentai_api.extractors.textract.is_textract_identity_enabled",
@@ -45,14 +42,13 @@ def test_extract_textract_identity_returns_result_on_success(mocker, monkeypatch
             (FIXTURE_DIR / "analyze_id_drivers_license_fields_only.json").read_text()
         ),
     )
-    mocker.patch("documentai_api.extractors.textract.s3_service.put_object")
     mock_set_method = mocker.patch("documentai_api.extractors.textract.set_extract_method")
 
     result = extract_textract_identity("image/jpeg", b"bytes", "test-key")
 
     assert result is not None
     assert result.document_type == "US-drivers-licenses"
-    assert result.output_uri == "s3://test-bucket/output/textract/test-key.json"
+    assert result.body is not None
     assert len(result.field_confidence_scores) > 0
     assert result.extract_started_at is not None
     assert result.extract_completed_at is not None
@@ -63,10 +59,7 @@ def test_extract_textract_identity_returns_result_on_success(mocker, monkeypatch
     assert call_args[1] == ExtractMethod.TEXTRACT
 
 
-def test_extract_textract_identity_returns_none_on_textract_failure(mocker, monkeypatch):
-
-    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_OUTPUT_LOCATION, "s3://test-bucket/output")
-
+def test_extract_textract_identity_returns_none_on_textract_failure(mocker):
     mocker.patch(
         "documentai_api.extractors.textract.is_textract_identity_enabled",
         return_value=True,
@@ -81,11 +74,9 @@ def test_extract_textract_identity_returns_none_on_textract_failure(mocker, monk
 
 
 def test_extract_textract_identity_duplicate_dates_falls_back_despite_supplemental(
-    mocker, monkeypatch, analyze_id_passport_response
+    mocker, analyze_id_passport_response
 ):
     """Duplicate dates trigger BDA fallback even when Nova supplemental would add fields."""
-    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_OUTPUT_LOCATION, "s3://test-bucket/output")
-
     mocker.patch(
         "documentai_api.extractors.textract.is_textract_identity_enabled",
         return_value=True,

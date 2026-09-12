@@ -33,7 +33,7 @@ def test_process_bda_result_blueprint_matched_returns_extraction_result():
         from documentai_api.dtos.extraction import ExtractionResult
         from documentai_api.utils.bda import MatchedBlueprintInfo
 
-        extraction_result = ExtractionResult(document_type="invoice", output_uri=MOCK_S3_URI)
+        extraction_result = ExtractionResult(document_type="invoice")
         mock_extract.return_value = (
             extraction_result,
             MatchedBlueprintInfo(name="invoice_blueprint", confidence=0.95),
@@ -109,7 +109,6 @@ def test_classify_extraction_result_below_floor(
 
     result = ExtractionResult(
         document_type="invoice",
-        output_uri="s3://bucket/output.json",
         field_confidence_scores=field_confidence_map_list,
         field_empty_list=empty_fields,
     )
@@ -132,7 +131,9 @@ def test_classify_extraction_result_below_floor(
         ),
     ):
         mock_classify.return_value = {}
-        classify_extraction_result("key", result, "tenant")
+        classify_extraction_result(
+            "key", result, output_uri="s3://bucket/output.json", tenant_id="tenant"
+        )
 
         call_kwargs = mock_classify.call_args[1]
         assert call_kwargs["below_extraction_confidence_floor"] is expected_below

@@ -70,6 +70,7 @@ def _process_bda_result(
             batch_id=batch_id,
             result_processor_started_at=result_processor_started_at,
             extraction_result=result,
+            output_uri=bda_output_s3_uri,
         )
 
     no_match_data = ClassificationData(

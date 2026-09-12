@@ -51,7 +51,7 @@ locals {
   input_prefix       = "input"
   demo_input_prefix  = "${local.input_prefix}/demo"
   output_prefix      = "processed"
-  demo_output_prefix = "${local.output_prefix}/${local.demo_input_prefix}"
+  demo_output_prefix = "${local.output_prefix}/demo-"
 
   # App defaults
   max_bda_invoke_retry_attempts = "3"
@@ -119,7 +119,7 @@ module "output_bucket" {
     },
     {
       id              = "expire-demo-results"
-      prefix          = "${local.demo_output_prefix}/"
+      prefix          = "${local.demo_output_prefix}"
       expiration_days = 7
   }]
 }

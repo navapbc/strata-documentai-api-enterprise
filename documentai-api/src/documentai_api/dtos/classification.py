@@ -23,10 +23,13 @@ class ClassificationData:
 
     @classmethod
     def from_extraction_result(
-        cls, result: ExtractionResult, additional_info: str | None = None
+        cls,
+        result: ExtractionResult,
+        output_uri: str | None = None,
+        additional_info: str | None = None,
     ) -> Self:
         return cls(
-            bda_output_s3_uri=result.output_uri,
+            bda_output_s3_uri=output_uri,
             matched_document_class=result.document_type,
             matched_blueprint_name=result.matched_blueprint_name,
             matched_blueprint_confidence=result.matched_blueprint_confidence,

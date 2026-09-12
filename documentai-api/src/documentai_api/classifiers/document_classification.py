@@ -305,13 +305,14 @@ def classify_as_multiple_documents_in_multipage(
 def classify_extraction_result(
     ddb_key: str,
     result: ExtractionResult,
+    output_uri: str | None,
     tenant_id: str | None,
     batch_id: str | None = None,
     result_processor_started_at: str | None = None,
     extraction_method: ExtractMethod = ExtractMethod.BDA,
 ) -> dict[str, Any]:
     """Apply confidence floor and extraction rules, then call classify_as_success."""
-    data = ClassificationData.from_extraction_result(result)
+    data = ClassificationData.from_extraction_result(result, output_uri=output_uri)
 
     confidence_floor = get_extraction_confidence_floor(tenant_id)
     used_default_floor = not tenant_has_confidence_floor(tenant_id)

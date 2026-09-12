@@ -168,3 +168,24 @@ layers = [
     "documentai_api.config",
 ]
 
+[[tool.importlinter.contracts]]
+name = "Extractors must not import services.s3 directly"
+type = "forbidden"
+source_modules = ["documentai_api.extractors"]
+forbidden_modules = ["documentai_api.services.s3"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "Jobs must not write to S3 directly"
+type = "forbidden"
+source_modules = ["documentai_api.jobs"]
+forbidden_modules = ["documentai_api.services.s3"]
+allow_indirect_imports = true
+
+# main.py uses services.s3.get_object directly for the initial document fetch (read-only).
+# All S3 writes go through utils.s3. TODO: wrap get_object in utils.s3 to fully enforce.
+ignore_imports = [
+    "documentai_api.jobs.document_processor.main -> documentai_api.services.s3",
+    "documentai_api.jobs.metrics_processor.main -> documentai_api.services.s3",
+]
+

@@ -229,3 +229,62 @@ def test_validate_s3_object_is_bda_native_rejects_disguised_content(s3_bucket, e
 
     with pytest.raises(ValueError, match="not a supported document type"):
         validate_s3_object_is_bda_native(s3_bucket.name, "input/evil.pdf")
+
+
+def test_purge_document_s3_artifacts_output_is_tenant_scoped(mocker, monkeypatch):
+    """Output prefix delete uses a single tenant-scoped prefix covering all extraction output.
+
+    Regression: before this fix, step 3 built the prefix by hand and omitted
+    tenant_id, so the delete_prefix call targeted the wrong path and left the
+    tenant's actual output on S3.
+    """
+    from documentai_api.utils.uploads import purge_document_s3_artifacts
+
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_INPUT_LOCATION, "s3://bucket/input")
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_OUTPUT_LOCATION, "s3://bucket/output")
+    mock_delete_prefix = mocker.patch("documentai_api.services.s3.delete_prefix")
+    mocker.patch("documentai_api.services.s3.delete_object")
+
+    purge_document_s3_artifacts("doc.pdf", "test-tenant")
+
+    prefixes_deleted = [call.args[1] for call in mock_delete_prefix.call_args_list]
+    assert prefixes_deleted == ["output/test-tenant/doc.pdf/"]
+    # Old (broken) un-scoped prefix must not appear.
+    assert "output/doc.pdf/" not in prefixes_deleted
+
+
+def test_purge_bda_output_deletes_bda_invoker_output(s3_bucket, monkeypatch):
+    """purge_document_s3_artifacts removes the object that invoke_bedrock_data_automation would write."""
+    from documentai_api.config.constants import ExtractMethod
+    from documentai_api.utils.s3 import get_bucket_and_key
+    from documentai_api.utils.uploads import purge_document_s3_artifacts
+
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_INPUT_LOCATION, f"s3://{s3_bucket.name}/input")
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_OUTPUT_LOCATION, f"s3://{s3_bucket.name}/output")
+
+    output_uri = f"s3://{s3_bucket.name}/output"
+    _, key = get_bucket_and_key(
+        output_uri, "test-tenant", f"doc.pdf/{ExtractMethod.BDA}/invocation-id/result.json"
+    )
+    s3_bucket.put_object(Key=key, Body=b"bda output")
+
+    purge_document_s3_artifacts("doc.pdf", "test-tenant")
+
+    remaining = [o.key for o in s3_bucket.objects.filter(Prefix="output/test-tenant/doc.pdf/")]
+    assert remaining == []
+
+
+def test_purge_textract_output_deletes_write_extraction_output(s3_bucket, monkeypatch):
+    """purge_document_s3_artifacts removes the object that write_extraction_output writes."""
+    from documentai_api.utils.s3 import write_extraction_output
+    from documentai_api.utils.uploads import purge_document_s3_artifacts
+
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_INPUT_LOCATION, f"s3://{s3_bucket.name}/input")
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_OUTPUT_LOCATION, f"s3://{s3_bucket.name}/output")
+
+    write_extraction_output("test-tenant", "textract", "id.jpg", b"{}")
+
+    purge_document_s3_artifacts("id.jpg", "test-tenant")
+
+    remaining = [o.key for o in s3_bucket.objects.filter(Prefix="output/test-tenant/id.jpg/")]
+    assert remaining == []

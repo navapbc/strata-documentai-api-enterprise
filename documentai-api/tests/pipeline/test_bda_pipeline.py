@@ -20,7 +20,8 @@ def test_classify_dispatches_to_classify_extraction_result_when_extraction_resul
         tenant_id="tenant",
         batch_id="batch-1",
         result_processor_started_at="2024-01-01T00:00:00",
-        extraction_result=ExtractionResult(document_type="passport", output_uri="s3://bucket/key"),
+        extraction_result=ExtractionResult(document_type="passport"),
+        output_uri="s3://bucket/key",
     )
 
     response = _classify(result)
@@ -28,6 +29,7 @@ def test_classify_dispatches_to_classify_extraction_result_when_extraction_resul
     mock.assert_called_once_with(
         ddb_key="tenant/file.pdf",
         result=result.extraction_result,
+        output_uri="s3://bucket/key",
         tenant_id="tenant",
         batch_id="batch-1",
         result_processor_started_at="2024-01-01T00:00:00",

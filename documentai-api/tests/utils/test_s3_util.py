@@ -2,7 +2,16 @@
 
 import pytest
 
+from documentai_api.config.env import get_env_config
+from documentai_api.config.env_var_names_generated import EnvVarNames
 from documentai_api.utils import s3 as s3_util
+
+
+@pytest.fixture(autouse=True)
+def clear_env_config_cache():
+    get_env_config.cache_clear()
+    yield
+    get_env_config.cache_clear()
 
 
 @pytest.mark.parametrize(
@@ -114,7 +123,7 @@ def test_extract_s3_info_raises_on_invalid_shape(event):
 @pytest.mark.parametrize(
     ("tenant_id", "expected_key"),
     [
-        ("tenant-a", "input/tenant-a/doc.pdf"),
+        ("test-tenant-id", "input/test-tenant-id/doc.pdf"),
         (None, "input/doc.pdf"),
     ],
 )
@@ -127,6 +136,28 @@ def test_get_bucket_and_key(tenant_id, expected_key):
 
 def test_get_bucket_and_key_no_prefix():
     """A location with no prefix yields a tenant-scoped key with no leading slash."""
-    bucket, key = s3_util.get_bucket_and_key("s3://my-bucket", "tenant-a", "doc.pdf")
+    bucket, key = s3_util.get_bucket_and_key("s3://my-bucket", "test-tenant-id", "doc.pdf")
     assert bucket == "my-bucket"
-    assert key == "tenant-a/doc.pdf"
+    assert key == "test-tenant-id/doc.pdf"
+
+
+def test_write_extraction_output_uri(monkeypatch, mocker):
+    """write_extraction_output returns a correctly tenant-scoped URI."""
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_OUTPUT_LOCATION, "s3://output-bucket/processed")
+    mock_put = mocker.patch("documentai_api.utils.s3.s3_service.put_object")
+
+    uri = s3_util.write_extraction_output(
+        "tenant-a", "textract", "doc-uuid", b"data", "application/json"
+    )
+
+    assert uri == "s3://output-bucket/processed/tenant-a/doc-uuid/textract/result.json"
+    mock_put.assert_called_once()
+
+
+def test_write_extraction_output_raises_without_tenant(monkeypatch, mocker):
+    """write_extraction_output raises if tenant_id is empty."""
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_OUTPUT_LOCATION, "s3://output-bucket/processed")
+    mocker.patch("documentai_api.utils.s3.s3_service.put_object")
+
+    with pytest.raises(ValueError, match="tenant_id is required"):
+        s3_util.write_extraction_output("", "textract", "doc-uuid.json", b"data")

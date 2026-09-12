@@ -3,8 +3,9 @@
 import asyncio
 import os
 import zipfile
+from collections.abc import Callable
 from io import BytesIO
-from typing import BinaryIO
+from typing import Any, BinaryIO
 
 import filetype  # type: ignore[import-untyped]
 from fastapi import HTTPException, UploadFile
@@ -82,10 +83,14 @@ class ImageConversionError(Exception):
 def purge_document_s3_artifacts(object_key: str, tenant_id: str) -> list[str]:
     """Remove every S3 copy of a document, used by hard delete.
 
-    Covers all three locations a document's bytes can land in: the original
-    upload (input), the preprocessing copies, and the BDA output tree. Attempts
-    all three regardless of individual failures (so one error doesn't strand the
-    rest), and returns the names of any locations that could NOT be purged.
+    Covers all locations a document's bytes can land:
+       1. original upload (input)
+       2. preprocessing copies
+       3. BDA output tree
+       4. Textract output
+
+    Attempts all locations regardless of individual failures (so one error doesn't
+    strand the rest), and returns the names of any locations that could NOT be purged.
 
     The caller treats a non-empty return as a failed hard delete: an empty list
     means every artifact is confirmed gone. Note that S3 deletes are idempotent -
@@ -93,45 +98,30 @@ def purge_document_s3_artifacts(object_key: str, tenant_id: str) -> list[str]:
     a real error (permissions, throttling, etc.), not "nothing to delete".
     """
     failures: list[str] = []
+    env = get_env_config()
 
-    # 1. Original upload: {input}/{tenant}/{object_key}
-    input_location = get_env_config().documentai_input_location
-    if input_location:
-        try:
-            bucket, key = get_bucket_and_key(input_location, tenant_id, object_key)
-            s3_service.delete_object(bucket, key)
-        except Exception as e:
-            logger.warning(f"Failed to delete input object for {object_key}: {e}")
-            failures.append("input")
+    # (label, location, delete_fn)
+    # Output uses delete_prefix to cover the full extraction tree;
+    # input and preprocessing are single-object deletes.
+    locations: list[tuple[str, str | None, Callable[[str, str], Any]]] = [
+        ("input", env.documentai_input_location, s3_service.delete_object),
+        ("preprocessing", env.documentai_preprocessing_location, s3_service.delete_object),
+        (
+            "output",
+            env.documentai_output_location,
+            lambda b, k: s3_service.delete_prefix(b, f"{k}/"),
+        ),
+    ]
 
-    # 2. Preprocessing copy (tenant-scoped): the upload-time original at
-    #    {preprocessing}/{tenant}/{object_key}.
-    preprocessing_location = get_env_config().documentai_preprocessing_location
-    if preprocessing_location:
+    for label, location, delete_fn in locations:
+        if not location:
+            continue
         try:
-            bucket, _ = parse_s3_uri(preprocessing_location)
-            _, key = get_bucket_and_key(preprocessing_location, tenant_id, object_key)
-            s3_service.delete_object(bucket, key)
+            bucket, key = get_bucket_and_key(location, tenant_id, object_key)
+            delete_fn(bucket, key)
         except Exception as e:
-            logger.warning(f"Failed to delete preprocessing object for {object_key}: {e}")
-            failures.append("preprocessing")
-
-    # 3. BDA output tree: {output}/{input_key}/{invocation_id}/... A recursive
-    #    prefix delete of the doc's output root removes everything BDA wrote -
-    #    standard output, custom output, and job_metadata.json. input_key is the
-    #    object_key, or the "_truncated" variant for oversized docs (see
-    #    bda_invoker), so purge both candidate roots.
-    output_location = get_env_config().documentai_output_location
-    if output_location:
-        try:
-            bucket, prefix = parse_s3_uri(output_location)
-            base, ext = os.path.splitext(object_key)
-            for name in (object_key, f"{base}_truncated{ext}"):
-                out_prefix = f"{prefix}/{name}/" if prefix else f"{name}/"
-                s3_service.delete_prefix(bucket, out_prefix)
-        except Exception as e:
-            logger.warning(f"Failed to delete output objects for {object_key}: {e}")
-            failures.append("output")
+            logger.warning(f"Failed to delete {label} object for {object_key}: {e}")
+            failures.append(label)
 
     return failures
 

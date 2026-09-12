@@ -1,6 +1,8 @@
 from typing import Any
 from urllib.parse import quote, unquote_plus, urlparse
 
+from documentai_api.config.constants import ExtractMethod
+from documentai_api.config.env import get_env_config
 from documentai_api.services import s3 as s3_service
 
 
@@ -97,6 +99,14 @@ def build_s3_key(*parts: str) -> str:
     return "/".join(p.strip("/") for p in parts if p)
 
 
+def generate_s3_uri(
+    location_uri: str, tenant_id: str, ddb_key: str, extraction_method: ExtractMethod
+) -> str:
+    """Return a fully-qualified S3 URI for a tenant-scoped extraction artifact."""
+    bucket, key = get_bucket_and_key(location_uri, tenant_id, f"{ddb_key}/{extraction_method}")
+    return f"s3://{bucket}/{key}"
+
+
 def get_bucket_and_key(location_uri: str, tenant_id: str | None, file_name: str) -> tuple[str, str]:
     """Resolve (bucket, key) for a tenant-scoped document artifact.
 
@@ -108,6 +118,29 @@ def get_bucket_and_key(location_uri: str, tenant_id: str | None, file_name: str)
     """
     bucket, prefix = parse_s3_uri(location_uri)
     return bucket, build_s3_key(prefix, tenant_id or "", file_name)
+
+
+def write_extraction_output(
+    tenant_id: str,
+    extraction_method: str,
+    file_name: str,
+    body: bytes,
+    content_type: str | None = None,
+) -> str:
+    """Write a tenant-scoped extraction artifact to S3 and return its URI.
+
+    Enforces the ``{prefix}/{tenant_id}/{file_name}/{extraction_method}`` key
+    convention so callers never construct output keys manually.
+    """
+    if not tenant_id:
+        raise ValueError("tenant_id is required for extraction output")
+
+    output_location = get_env_config().get_output_location
+    bucket, key = get_bucket_and_key(
+        output_location, tenant_id, f"{file_name}/{extraction_method}/result.json"
+    )
+    s3_service.put_object(bucket, key, body, content_type)
+    return f"s3://{bucket}/{key}"
 
 
 def sanitize_for_s3_metadata(value: str, max_length: int = 512) -> str:

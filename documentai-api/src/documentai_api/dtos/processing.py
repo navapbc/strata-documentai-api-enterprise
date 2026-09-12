@@ -36,6 +36,7 @@ class ProcessorResult:
     result_processor_started_at: str | None = None
     # success path
     extraction_result: ExtractionResult | None = None
+    output_uri: str | None = None
     # non-success paths
     classification_data: ClassificationData | None = None
     status: ProcessStatus | None = None

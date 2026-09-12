@@ -858,6 +858,7 @@ def test_delete_document_hard_purge_failure_returns_500_and_does_not_mark_delete
         process_status="success",
         v1_response_json='{"jobId": "job-1", "jobStatus": "success", "message": "Done"}',
     )
+
     # delete_object/delete_prefix raise -> purge reports failed locations.
     mocker.patch("documentai_api.services.s3.delete_object", side_effect=Exception("S3 down"))
     mocker.patch("documentai_api.services.s3.delete_prefix", side_effect=Exception("S3 down"))
@@ -872,7 +873,7 @@ def test_delete_document_hard_purge_failure_returns_500_and_does_not_mark_delete
 
 
 def test_purge_document_s3_artifacts_deletes_all_locations(monkeypatch, mocker):
-    """Hard-delete purge removes input, preprocessing, and BDA output artifacts."""
+    """Hard-delete purge removes input, preprocessing, and extraction output artifacts."""
     from documentai_api.utils.uploads import purge_document_s3_artifacts
 
     monkeypatch.setenv(EnvVarNames.DOCUMENTAI_INPUT_LOCATION, "s3://bucket/input")
@@ -885,14 +886,15 @@ def test_purge_document_s3_artifacts_deletes_all_locations(monkeypatch, mocker):
     failures = purge_document_s3_artifacts(object_key="doc-uuid.pdf", tenant_id="test-tenant")
 
     assert failures == []  # every location purged cleanly
+
     # Original upload and preprocessing copy are tenant-scoped single objects.
     deleted = [c.args for c in mock_delete.mock_calls]
     assert ("bucket", "input/test-tenant/doc-uuid.pdf") in deleted
     assert ("bucket", "preprocessing/test-tenant/doc-uuid.pdf") in deleted
-    # BDA output is a tree, deleted by prefix - including the truncated variant.
+
+    # All extraction output (BDA + Textract) is under one tenant-scoped prefix.
     prefixes = [c.args for c in mock_delete_prefix.mock_calls]
-    assert ("bucket", "output/doc-uuid.pdf/") in prefixes
-    assert ("bucket", "output/doc-uuid_truncated.pdf/") in prefixes
+    assert prefixes == [("bucket", "output/test-tenant/doc-uuid.pdf/")]
 
 
 def test_purge_document_s3_artifacts_skips_unset_locations(monkeypatch, mocker):
