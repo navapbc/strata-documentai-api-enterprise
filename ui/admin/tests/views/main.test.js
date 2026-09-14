@@ -71,9 +71,8 @@ describe("main.js router", () => {
       default: `<div id="connected-url"></div><select id="global-tenant-select"></select>
         <div id="main-content"></div><h2 id="view-title"></h2><div id="view-actions"></div>
         <button id="logout-btn"></button>
-        <div class="nav-section"><button class="nav-section-header" data-section="keys"><span class="nav-arrow">▸</span></button><div class="nav-section-body hidden" id="section-keys"><a class="nav-item" data-view="keys">API Keys</a></div></div>
-        <div class="nav-section" id="nav-section-users"><button class="nav-section-header" data-section="users"><span class="nav-arrow">▸</span></button><div class="nav-section-body hidden" id="section-users"><a class="nav-item" data-view="users">Users</a></div></div>
-        <div class="nav-section" id="nav-section-tenants"><button class="nav-section-header" data-section="tenants"><span class="nav-arrow">▸</span></button><div class="nav-section-body hidden" id="section-tenants"><a class="nav-item" data-view="tenants">Tenants</a></div></div>`,
+        <div class="nav-section" id="nav-section-console-access"><button class="nav-section-header" data-section="console-access"><span class="nav-arrow">▸</span></button><div class="nav-section-body hidden" id="section-console-access"><a class="nav-item hidden super-admin-only" data-view="users">Manage Users</a><a class="nav-item" data-view="audit-log">Audit Log</a></div></div>
+        <div class="nav-section" id="nav-section-management"><button class="nav-section-header" data-section="management"><span class="nav-arrow">▸</span></button><div class="nav-section-body hidden" id="section-management"><a class="nav-item hidden super-admin-only" data-view="tenants">Manage Tenants</a><a class="nav-item" data-view="keys">Manage API Keys</a></div></div>`,
     }));
 
     document.body.innerHTML = '<div id="app"></div>';
@@ -139,8 +138,8 @@ describe("main.js router", () => {
     await import("../../src/main.js");
     await flush();
 
-    expect(document.querySelector("#nav-section-users").classList.contains("hidden")).toBe(true);
-    expect(document.querySelector("#nav-section-tenants").classList.contains("hidden")).toBe(true);
+    expect(document.querySelector("[data-view='users']").classList.contains("hidden")).toBe(true);
+    expect(document.querySelector("[data-view='tenants']").classList.contains("hidden")).toBe(true);
   });
 
   it("shows users/tenants nav for super-admin", async () => {
@@ -151,8 +150,8 @@ describe("main.js router", () => {
     await import("../../src/main.js");
     await flush();
 
-    expect(document.querySelector("#nav-section-users").classList.contains("hidden")).toBe(false);
-    expect(document.querySelector("#nav-section-tenants").classList.contains("hidden")).toBe(false);
+    expect(document.querySelector("[data-view='users']").classList.contains("hidden")).toBe(false);
+    expect(document.querySelector("[data-view='tenants']").classList.contains("hidden")).toBe(false);
   });
 
   it("configures HTTP client with JWT on dashboard", async () => {
@@ -178,9 +177,8 @@ describe("main.js router", () => {
       default: `<div id="connected-url"></div><select id="global-tenant-select"></select>
         <div id="main-content"></div><h2 id="view-title"></h2><div id="view-actions"></div>
         <button id="logout-btn"></button>
-        <div class="nav-section" id="nav-section-users"><button class="nav-section-header" data-section="users"><span class="nav-arrow">▸</span></button><div class="nav-section-body hidden" id="section-users"><a class="nav-item" data-view="users">Users</a></div></div>
-        <div class="nav-section" id="nav-section-tenants"><button class="nav-section-header" data-section="tenants"><span class="nav-arrow">▸</span></button><div class="nav-section-body hidden" id="section-tenants"><a class="nav-item" data-view="tenants">Tenants</a></div></div>
-        <div class="nav-section"><button class="nav-section-header" data-section="audit"><span class="nav-arrow">▸</span></button><div class="nav-section-body hidden" id="section-audit"><a class="nav-item" data-view="audit-log">Audit Log</a></div></div>`,
+        <div class="nav-section" id="nav-section-console-access"><button class="nav-section-header" data-section="console-access"><span class="nav-arrow">▸</span></button><div class="nav-section-body hidden" id="section-console-access"><a class="nav-item hidden super-admin-only" data-view="users">Manage Users</a><a class="nav-item" data-view="audit-log">Audit Log</a></div></div>
+        <div class="nav-section" id="nav-section-management"><button class="nav-section-header" data-section="management"><span class="nav-arrow">▸</span></button><div class="nav-section-body hidden" id="section-management"><a class="nav-item hidden super-admin-only" data-view="tenants">Manage Tenants</a><a class="nav-item" data-view="keys">Manage API Keys</a></div></div>`,
     }));
 
     const AuditLogView = await import("../../src/views/audit-log/audit-log.js");

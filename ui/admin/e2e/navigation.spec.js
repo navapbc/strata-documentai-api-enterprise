@@ -39,15 +39,15 @@ test.describe("Navigation", () => {
   });
 
   test("clicking nav items changes view title", async ({ page }) => {
-    await page.locator('[data-section="tenants"]').click();
-    await expect(page.locator("#section-tenants")).toBeVisible();
+    await page.locator('[data-section="management"]').click();
+    await expect(page.locator("#section-management")).toBeVisible();
     await page.locator('[data-view="tenants"]').click({ force: true });
     await expect(page.locator("#view-title")).toHaveText("Manage Tenants");
   });
 
   test("clicking users nav changes title", async ({ page }) => {
-    await page.locator('[data-section="users"]').click();
-    await expect(page.locator("#section-users")).toBeVisible();
+    await page.locator('[data-section="console-access"]').click();
+    await expect(page.locator("#section-console-access")).toBeVisible();
     await page.locator('[data-view="users"]').click({ force: true });
     await expect(page.locator("#view-title")).toHaveText("Manage Users");
   });
@@ -64,8 +64,8 @@ test.describe("Navigation", () => {
   test("view actions update on navigation", async ({ page }) => {
     await expect(page.locator("#view-actions button").first()).toContainText("Create Key");
 
-    await page.locator('[data-section="tenants"]').click();
-    await expect(page.locator("#section-tenants")).toBeVisible();
+    await page.locator('[data-section="management"]').click();
+    await expect(page.locator("#section-management")).toBeVisible();
     await page.locator('[data-view="tenants"]').click({ force: true });
     await expect(page.locator("#view-actions button").first()).toContainText("Create Tenant");
   });
@@ -73,16 +73,16 @@ test.describe("Navigation", () => {
   test("previous view is unmounted on navigation", async ({ page }) => {
     await expect(page.locator("#keys-table")).toBeVisible();
 
-    await page.locator('[data-section="tenants"]').click();
-    await expect(page.locator("#section-tenants")).toBeVisible();
+    await page.locator('[data-section="management"]').click();
+    await expect(page.locator("#section-management")).toBeVisible();
     await page.locator('[data-view="tenants"]').click({ force: true });
     await expect(page.locator("#keys-table")).not.toBeAttached();
     await expect(page.locator("#tenants-table")).toBeVisible();
   });
 
-  test("super-admin sees Users and Tenants nav sections", async ({ page }) => {
-    await expect(page.locator("#nav-section-users")).toBeVisible();
-    await expect(page.locator("#nav-section-tenants")).toBeVisible();
+  test("super-admin sees Users and Tenants nav items", async ({ page }) => {
+    await expect(page.locator("[data-view='users']")).toBeVisible();
+    await expect(page.locator("[data-view='tenants']")).toBeVisible();
   });
 
   test("sidebar sections expand on click", async ({ page }) => {

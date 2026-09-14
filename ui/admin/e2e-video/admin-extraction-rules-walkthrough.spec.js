@@ -80,66 +80,59 @@ test("extraction rules walkthrough", async ({ page }) => {
   await page.route("**/v1/audit/**", (route) => route.fulfill(json({})));
 
   // === 1. Login + MFA =======================================================
-  await page.goto("/");
-  await loginWithMfa(page, { expect });
+  await test.step("Login + MFA", async () => {
+    await page.addInitScript(() => sessionStorage.clear());
+    await page.goto("/");
+    await loginWithMfa(page, { expect });
+  });
 
-  // === 3. Navigate to Extraction Rules =====================================
-  await page.locator('[data-section="docs"]').click();
-  await expect(page.locator("#section-docs")).not.toHaveClass(/hidden/);
-  await page.locator('a.nav-item[data-view="extraction-rules"]').click();
-  await expect(page.locator("#view-title")).toHaveText(/^Manage Extraction Rules/);
-  await page.waitForTimeout(800);
+  // === 2. Navigate to Extraction Rules =====================================
+  await test.step("Navigate to Extraction Rules", async () => {
+    await page.locator('[data-section="management"]').click();
+    await expect(page.locator("#section-management")).not.toHaveClass(/hidden/);
+    await page.locator('a.nav-item[data-view="extraction-rules"]').click();
+    await expect(page.locator("#view-title")).toHaveText(/^Manage Extraction Rules/);
+    await page.waitForTimeout(800);
+    await page.locator("#tenant-select").selectOption(TENANT_ID);
+    await page.waitForTimeout(600);
+    await page.locator("#bp-list-pane .combobox-input").clear();
+    await page.locator("#bp-list-pane .combobox-input").click();
+    await expect(page.locator("#bp-list-pane .combobox-option").first()).toBeVisible({ timeout: 15000 });
+  });
 
-  // === 4. Select tenant =====================================================
-  await page.locator("#tenant-select").selectOption(TENANT_ID);
-  await page.waitForTimeout(600);
+  // === 3. W-2 Blueprint ====================================================
+  await test.step("W-2 Blueprint", async () => {
+    await page.locator("#bp-list-pane .combobox-option", { hasText: "US Tax Form W-2" }).click();
+    await expect(page.locator("#bp-fields-list h3")).toHaveText("US Tax Form W-2");
+    await page.waitForTimeout(500);
+    await expect(page.locator(".field-row").first()).toBeVisible();
+    await page.waitForTimeout(1000);
+    await page.locator("#bp-fields-list").evaluate((el) => el.scrollTo({ top: el.scrollHeight, behavior: "smooth" }));
+    await page.waitForTimeout(700);
+    await page.locator("#bp-fields-list").evaluate((el) => el.scrollTo({ top: 0, behavior: "smooth" }));
+    await page.waitForTimeout(600);
+    await page.locator('.field-row').filter({ hasText: 'socialSecurityNumber' }).locator('.toggle-label:has(input[value="required"])').click();
+    await page.waitForTimeout(700);
+    await page.locator('.field-row').filter({ hasText: 'taxYear' }).locator('.toggle-label:has(input[value="excluded"])').click();
+    await page.waitForTimeout(700);
+    await page.locator("#bp-fields-list button.btn-primary").click();
+    await page.waitForTimeout(800);
+  });
 
-  // === 5. Blueprint list should be populated ================================
-  await page.locator("#bp-list-pane .combobox-input").clear();
-  await page.locator("#bp-list-pane .combobox-input").click();
-  await expect(page.locator("#bp-list-pane .combobox-option").first()).toBeVisible({ timeout: 15000 });
-
-  // === 6. Click W-2 blueprint ===============================================
-  await page.locator("#bp-list-pane .combobox-option", { hasText: "US Tax Form W-2" }).click();
-  await expect(page.locator("#bp-fields-list h3")).toHaveText("US Tax Form W-2");
-  await page.waitForTimeout(500);
-  await expect(page.locator(".field-row").first()).toBeVisible();
-  await page.waitForTimeout(1000);
-
-  // === 7. Scroll field list to show all fields ==============================
-  await page.locator("#bp-fields-list").evaluate((el) => el.scrollTo({ top: el.scrollHeight, behavior: "smooth" }));
-  await page.waitForTimeout(700);
-  await page.locator("#bp-fields-list").evaluate((el) => el.scrollTo({ top: 0, behavior: "smooth" }));
-  await page.waitForTimeout(600);
-
-  // === 8. Toggle socialSecurityNumber to required ===========================
-  await page.locator('.field-row').filter({ hasText: 'socialSecurityNumber' }).locator('.toggle-label:has(input[value="required"])').click();
-  await page.waitForTimeout(700);
-
-  // === 9. Toggle taxYear to excluded ========================================
-  await page.locator('.field-row').filter({ hasText: 'taxYear' }).locator('.toggle-label:has(input[value="excluded"])').click();
-  await page.waitForTimeout(700);
-
-  // === 10. Save =============================================================
-  await page.locator("#bp-fields-list button.btn-primary").click();
-  await page.waitForTimeout(800);
-
-  // === 11. Switch to Invoice blueprint ======================================
-  await page.locator("#bp-list-pane .combobox-input").clear();
-  await page.locator("#bp-list-pane .combobox-input").click();
-  await page.locator("#bp-list-pane .combobox-option", { hasText: "Invoice" }).click();
-  await expect(page.locator("#bp-fields-list h3")).toHaveText("Invoice");
-  await page.waitForTimeout(1000);
-
-  // === 12. Toggle a couple of Invoice fields ================================
-  await page.locator('.field-row').filter({ hasText: 'invoiceNumber' }).locator('.toggle-label:has(input[value="required"])').click();
-  await page.waitForTimeout(600);
-  await page.locator('.field-row').filter({ hasText: 'totalAmount' }).locator('.toggle-label:has(input[value="required"])').click();
-  await page.waitForTimeout(600);
-  await page.locator('.field-row').filter({ hasText: 'lineItems' }).locator('.toggle-label:has(input[value="excluded"])').click();
-  await page.waitForTimeout(800);
-
-  // === 13. Save Invoice rules ===============================================
-  await page.locator("#bp-fields-list button.btn-primary").click();
-  await page.waitForTimeout(1200);
+  // === 4. Invoice Blueprint ================================================
+  await test.step("Invoice Blueprint", async () => {
+    await page.locator("#bp-list-pane .combobox-input").clear();
+    await page.locator("#bp-list-pane .combobox-input").click();
+    await page.locator("#bp-list-pane .combobox-option", { hasText: "Invoice" }).click();
+    await expect(page.locator("#bp-fields-list h3")).toHaveText("Invoice");
+    await page.waitForTimeout(1000);
+    await page.locator('.field-row').filter({ hasText: 'invoiceNumber' }).locator('.toggle-label:has(input[value="required"])').click();
+    await page.waitForTimeout(600);
+    await page.locator('.field-row').filter({ hasText: 'totalAmount' }).locator('.toggle-label:has(input[value="required"])').click();
+    await page.waitForTimeout(600);
+    await page.locator('.field-row').filter({ hasText: 'lineItems' }).locator('.toggle-label:has(input[value="excluded"])').click();
+    await page.waitForTimeout(800);
+    await page.locator("#bp-fields-list button.btn-primary").click();
+    await page.waitForTimeout(1200);
+  });
 });

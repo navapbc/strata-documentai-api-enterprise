@@ -12,6 +12,9 @@ import { defineConfig } from "@playwright/test";
 export default defineConfig({
   testDir: "./e2e-video",
   timeout: 120_000,
+  reporter: [
+    ['list', { printSteps: true }]
+  ],
   outputDir: "./video-output",
   webServer: {
     command: "npm run dev",
