@@ -55,37 +55,37 @@ test("document viewer walkthrough: bbox overlay and field highlighting", async (
   await page.route("**/v1/dictionary/**", (route) => route.fulfill(json({ fields: [] })));
 
   // === 1. Login + MFA =======================================================
-  await page.goto("/");
-  await loginWithMfa(page, { expect });
+  await test.step("Login + MFA", async () => {
+    await page.addInitScript(() => sessionStorage.clear());
+    await page.goto("/");
+    await loginWithMfa(page, { expect });
+  });
 
   // === 2. Navigate to Documents ============================================
-  await page.locator('[data-section="docs"]').click();
-  await expect(page.locator("#section-docs")).not.toHaveClass(/hidden/);
-  await page.locator('a.nav-item[data-view="documents"]').click();
-  await expect(page.locator("#view-title")).toHaveText(/^Recently Processed/);
-  await page.waitForTimeout(600);
+  await test.step("Navigate to Documents", async () => {
+    await page.locator('[data-section="docs"]').click();
+    await expect(page.locator("#section-docs")).not.toHaveClass(/hidden/);
+    await page.locator('a.nav-item[data-view="documents"]').click();
+    await expect(page.locator("#view-title")).toHaveText(/^Recently Processed/);
+    await page.waitForTimeout(600);
+    await page.locator(SELECTORS.tenantSelect).selectOption(TENANT_ID);
+    await expect(page.locator("#documents-list .doc-list-item").first()).toBeVisible();
+    await page.waitForTimeout(900);
+  });
 
-  // === 3. Select tenant =====================================================
-  await page.locator(SELECTORS.tenantSelect).selectOption(TENANT_ID);
-  await expect(page.locator("#documents-list .doc-list-item").first()).toBeVisible();
-  await page.waitForTimeout(900);
-
-  // === 4. Open the W-2 document ============================================
-  await page.locator(`[data-job-id="${JOB_ID}"]`).click();
-  await expect(page.locator(SELECTORS.detailPane)).toBeVisible();
-  await page.waitForTimeout(800);
-
-  // === 5. Bbox overlay =====================================================
-  await expectBboxOverlay(page, expect, SELECTORS.bboxOverlay);
-  await page.waitForTimeout(1000);
-
-  // === 6. Hover each field to show highlight linking =======================
-  await hoverFields(
-    page,
-    FIELDS.map((f) => f.name),
-    SELECTORS.fieldRows,
-    900,
-  );
-
-  await page.waitForTimeout(1200);
+  // === 3. Document Viewer: Bbox + Field Highlighting =======================
+  await test.step("Document Viewer: Bbox + Field Highlighting", async () => {
+    await page.locator(`[data-job-id="${JOB_ID}"]`).click();
+    await expect(page.locator(SELECTORS.detailPane)).toBeVisible();
+    await page.waitForTimeout(800);
+    await expectBboxOverlay(page, expect, SELECTORS.bboxOverlay);
+    await page.waitForTimeout(1000);
+    await hoverFields(
+      page,
+      FIELDS.map((f) => f.name),
+      SELECTORS.fieldRows,
+      900,
+    );
+    await page.waitForTimeout(1200);
+  });
 });
