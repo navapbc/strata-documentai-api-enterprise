@@ -124,6 +124,19 @@ def test_list_tenants(api_client, tenants_table):
     assert response.json()["count"] == 2
 
 
+def test_list_tenants_sorted_by_tenant_id(api_client, tenants_table):
+    api_client.post(URL, json={"tenant_id": "z-tenant", "display_name": "Tenant Z"})
+    api_client.post(URL, json={"tenant_id": "a-tenant", "display_name": "Tenant A"})
+    api_client.post(URL, json={"tenant_id": "b-tenant", "display_name": "Tenant B"})
+    response = api_client.get(URL)
+    assert response.status_code == 200
+    assert [t["tenantId"] for t in response.json()["tenants"]] == [
+        "a-tenant",
+        "b-tenant",
+        "z-tenant",
+    ]
+
+
 def test_get_tenant(api_client, tenants_table):
     api_client.post(URL, json={"tenant_id": "t1", "display_name": "One"})
     response = api_client.get(f"{URL}/t1")
