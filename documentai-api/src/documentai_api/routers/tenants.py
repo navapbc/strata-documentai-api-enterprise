@@ -105,7 +105,7 @@ async def list_tenants(
         items = [_to_item(record)] if record else []
     else:
         records = tenants_util.list_tenants(active_only=active_only)
-        items = [_to_item(r) for r in records]
+        items = sorted([_to_item(r) for r in records], key=lambda x: x.tenant_id.lower())
     return ListTenantsResponse(tenants=items, count=len(items))
 
 
