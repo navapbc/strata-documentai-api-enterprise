@@ -146,7 +146,9 @@ function showDashboard(session) {
 
   // Super-admin nav visibility
   const isSuper = Session.isSuperAdmin();
-  app.querySelectorAll(".super-admin-only").forEach((el) => el.classList.toggle("hidden", !isSuper));
+  app
+    .querySelectorAll(".super-admin-only")
+    .forEach((el) => el.classList.toggle("hidden", !isSuper));
 
   // Sidebar section toggles
   app.querySelectorAll(".nav-section-header").forEach((/** @type {HTMLElement} */ header) => {

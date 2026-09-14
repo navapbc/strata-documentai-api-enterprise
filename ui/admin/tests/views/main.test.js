@@ -151,7 +151,9 @@ describe("main.js router", () => {
     await flush();
 
     expect(document.querySelector("[data-view='users']").classList.contains("hidden")).toBe(false);
-    expect(document.querySelector("[data-view='tenants']").classList.contains("hidden")).toBe(false);
+    expect(document.querySelector("[data-view='tenants']").classList.contains("hidden")).toBe(
+      false,
+    );
   });
 
   it("configures HTTP client with JWT on dashboard", async () => {
