@@ -395,7 +395,7 @@ def test_duplicate_dates_fall_back_to_bda_at_any_rotation(rotation, monkeypatch)
     import boto3
     from PIL import Image
 
-    img_path = FIXTURE_DIR.parent / "test-documents" / "synthetic-passport.jpg"
+    img_path = FIXTURE_DIR.parent / "test-documents" / "happy-path" / "synthetic-passport.jpg"
     img = Image.open(img_path)
     if rotation:
         img = img.rotate(-rotation, expand=True)

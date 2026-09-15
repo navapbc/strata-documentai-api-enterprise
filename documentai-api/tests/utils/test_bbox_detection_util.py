@@ -233,7 +233,7 @@ def test_detect_document_bbox_real(filename, monkeypatch, real_aws_credentials):
         lambda: "us.amazon.nova-lite-v1:0",
     )
 
-    filepath = FIXTURES_DIR / filename
+    filepath = FIXTURES_DIR / "happy-path" / filename
     if not filepath.exists():
         pytest.skip(f"Test fixture not found: {filepath}")
 
@@ -283,7 +283,7 @@ def test_detect_document_bbox_oversized_real(monkeypatch, real_aws_credentials):
     )
 
     filename = BBOX_SAMPLES[0]
-    filepath = FIXTURES_DIR / filename
+    filepath = FIXTURES_DIR / "happy-path" / filename
     if not filepath.exists():
         pytest.skip(f"Test fixture not found: {filepath}")
 
