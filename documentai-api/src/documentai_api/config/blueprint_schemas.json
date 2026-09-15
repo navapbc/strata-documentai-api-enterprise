@@ -549,6 +549,160 @@
       }
     ]
   },
+  "Burial": {
+    "category": "expenses",
+    "description": "A document related to burial or funeral expenses, such as a funeral home invoice, burial contract, cemetery statement, or payment receipt. Used to verify burial-related household expenses.",
+    "document_type": "Burial",
+    "fields": [
+      {
+        "description": "The total billed amount or total contract price for the burial or funeral services, such as the invoice total or overall contract cost. This is distinct from amount_paid, balance_due, and any single installment or monthly payment amount shown in a payment plan or schedule.",
+        "name": "amount",
+        "type": "number"
+      },
+      {
+        "description": "Amount already paid toward the burial expense if stated.",
+        "name": "amount_paid",
+        "type": "number"
+      },
+      {
+        "description": "The payment status of this invoice, normalized to exactly one of: Paid, Partially Paid, Unpaid, or Past Due - based on the status text or payment/balance amounts shown, even if the printed wording differs slightly (e.g. 'Paid in Full' means Paid).",
+        "name": "payment_status",
+        "type": "string"
+      },
+      {
+        "description": "Payment due date for the burial expense if stated, typically labeled 'Due Date' or 'Payment Due'. This is distinct from the invoice date and the service date. YYYY-MM-DD format.",
+        "name": "due_date",
+        "type": "string"
+      },
+      {
+        "description": "The date this invoice or statement was issued or printed, typically near the top of the document. This is distinct from the service date (when the burial/funeral service took place) and the due date (when payment is owed). YYYY-MM-DD format.",
+        "name": "invoice_date",
+        "type": "string"
+      },
+      {
+        "description": "How often payments are made toward the burial expense, normalized to exactly one of: One-Time, Monthly, Weekly, or Biweekly - based on the payment terms, installment schedule, or payment plan text shown, even if the printed wording differs slightly (e.g. 'Monthly Installments' means Monthly).",
+        "name": "payment_frequency",
+        "type": "string"
+      },
+      {
+        "description": "The primary business or company name only, of the funeral home, cemetery, or cremation provider - typically the largest, boldest text in the letterhead or logo area at the top of the document. Do not include any tagline, slogan, or descriptive text shown below or beside the name. If the same business name also appears elsewhere on the page, such as in a 'Remit To' line or footer, always use the occurrence in the letterhead or logo area at the very top of the page.",
+        "name": "provider.business_name",
+        "type": "string"
+      },
+      {
+        "description": "The address of the burial or funeral service provider.",
+        "name": "provider.address",
+        "type": "string"
+      },
+      {
+        "description": "The phone number for the service provider, usually labeled 'Phone' or 'Tel' in the letterhead or contact block. Extract exactly as shown.",
+        "name": "provider.phone",
+        "type": "string"
+      },
+      {
+        "description": "The fax number for the service provider, usually labeled 'Fax' in the letterhead or contact block. Extract exactly as shown.",
+        "name": "provider.fax",
+        "type": "string"
+      },
+      {
+        "description": "The email address for the service provider, usually labeled 'Email' in the letterhead or contact block.",
+        "name": "provider.email",
+        "type": "string"
+      },
+      {
+        "description": "The date the burial, funeral, or cremation service was actually performed, typically found in the body or itemized services section of the document. This is distinct from the invoice date (when the document was issued) and the due date (when payment is owed). YYYY-MM-DD format.",
+        "name": "service_date",
+        "type": "string"
+      },
+      {
+        "description": "The full name of the deceased person associated with the burial expense.",
+        "name": "deceased_name",
+        "type": "string"
+      },
+      {
+        "description": "Remaining balance due for the burial expense if stated.",
+        "name": "balance_due",
+        "type": "number"
+      },
+      {
+        "description": "The full name of the person responsible for paying the burial or funeral expense.",
+        "name": "payer_name",
+        "type": "string"
+      },
+      {
+        "description": "The unique invoice, account, or reference number printed on the document, often labeled 'Invoice #', 'Invoice No', 'Account #', or 'Reference #' near the top of the page, distinct from any policy or claim number. Extract exactly as printed, including letters and dashes.",
+        "name": "invoice_number",
+        "type": "string"
+      },
+      {
+        "description": "The specific type of this burial-related document, normalized to exactly one of: Invoice, Contract, Statement, or Receipt, based on the title or header text printed at the top of the document.",
+        "name": "document_type",
+        "type": "string"
+      }
+    ]
+  },
+  "Cable-Bill": {
+    "category": "expenses",
+    "description": "This is a blueprint of Cable_Bill_2",
+    "document_type": "Cable-Bill",
+    "fields": [
+      {
+        "description": "Account number on the bill",
+        "name": "Account_Number",
+        "type": "string"
+      },
+      {
+        "description": "full address of building for which bill is being generated",
+        "name": "Service_Address",
+        "type": "string"
+      },
+      {
+        "description": "Beginning date of period for which bill is generated in MM/DD/YY format",
+        "name": "Start_Date",
+        "type": "string"
+      },
+      {
+        "description": "Ending date of period for which bill is generated in MM/DD/YY format",
+        "name": "End_Date",
+        "type": "string"
+      },
+      {
+        "description": "Date on which total balance has to be paid by in MM/DD/YY format",
+        "name": "Balance_DueDate",
+        "type": "string"
+      },
+      {
+        "description": "Date on which bill was generated in MM/DD/YY format",
+        "name": "Billing_Date",
+        "type": "string"
+      },
+      {
+        "description": "Is the billing date before the balance due date?",
+        "name": "BillingDateBeforeDueDate",
+        "type": "boolean"
+      },
+      {
+        "description": "",
+        "name": "Summary_table.Description",
+        "type": "string"
+      },
+      {
+        "description": "",
+        "name": "Summary_table.Amount",
+        "type": "string"
+      },
+      {
+        "description": "",
+        "name": "Line_Item_table.Line item",
+        "type": "string"
+      },
+      {
+        "description": "",
+        "name": "Line_Item_table.Amount",
+        "type": "string"
+      }
+    ]
+  },
   "Child-Support-Document": {
     "category": "dependent_income",
     "description": "A legal order, decree, or official ledger establishing or tracking monthly child support financial obligations.",
@@ -632,6 +786,215 @@
       {
         "description": "First name of the person receiving child support.",
         "name": "recipient_name.first_name",
+        "type": "string"
+      }
+    ]
+  },
+  "Dependent-Care-Statement": {
+    "category": "expenses",
+    "description": "A document related to dependent or child care expenses, such as a daycare invoice, tuition statement, or in-home care payment receipt. Used to verify dependent-care household expenses.",
+    "document_type": "Dependent-Care-Statement",
+    "fields": [
+      {
+        "description": "Date the invoice or statement was issued. YYYY-MM-DD format.",
+        "name": "statement_date",
+        "type": "string"
+      },
+      {
+        "description": "Amount already paid toward the dependent-care expense, if stated.",
+        "name": "amount_paid",
+        "type": "number"
+      },
+      {
+        "description": "End of the care period covered by this statement. YYYY-MM-DD format.",
+        "name": "service_end_date",
+        "type": "string"
+      },
+      {
+        "description": "The address of the dependent-care provider.",
+        "name": "provider_address",
+        "type": "string"
+      },
+      {
+        "description": "Start of the care period covered by this statement. YYYY-MM-DD format.",
+        "name": "service_start_date",
+        "type": "string"
+      },
+      {
+        "description": "Frequency of the care payment, such as weekly, biweekly, or monthly.",
+        "name": "payment_frequency",
+        "type": "string"
+      },
+      {
+        "description": "The full name(s) of every child or dependent receiving care under this statement. Return one entry per dependent listed.",
+        "name": "dependent_names",
+        "type": "array"
+      },
+      {
+        "description": "The rate charged for care, such as a weekly or monthly amount.",
+        "name": "payment_amount",
+        "type": "number"
+      },
+      {
+        "description": "Remaining balance due for the dependent-care expense, if stated.",
+        "name": "balance_due",
+        "type": "number"
+      },
+      {
+        "description": "The name of the daycare, child care center, or in-home care provider.",
+        "name": "provider_name",
+        "type": "string"
+      },
+      {
+        "description": "Type of dependent-care document, such as invoice, tuition statement, or payment receipt.",
+        "name": "document_type",
+        "type": "string"
+      }
+    ]
+  },
+  "Electricity-Bill": {
+    "category": "expenses",
+    "description": "This is a blueprint of Electricity_Bill_1",
+    "document_type": "Electricity-Bill",
+    "fields": [
+      {
+        "description": "Beginning date of period for which bill is generated in MM/DD/YY format",
+        "name": "StartDate",
+        "type": "string"
+      },
+      {
+        "description": "Ending date of period for which bill is generated in MM/DD/YY format",
+        "name": "End Date",
+        "type": "string"
+      },
+      {
+        "description": "Date on which total balance has to be paid by in MM/DD/YY format",
+        "name": "BalanceDue Date",
+        "type": "string"
+      },
+      {
+        "description": "Total balance / charges due",
+        "name": "Total Balance Due",
+        "type": "number"
+      },
+      {
+        "description": "Total balance / charges due for current period",
+        "name": "Current Balance",
+        "type": "number"
+      },
+      {
+        "description": "Balance / charges due from previous period",
+        "name": "Previous Balance",
+        "type": "number"
+      },
+      {
+        "description": "list of account numbers on the bill",
+        "name": "Account Number",
+        "type": "array"
+      },
+      {
+        "description": "type of bill such as electric, water, gas etc.",
+        "name": "Category",
+        "type": "string"
+      },
+      {
+        "description": "list of meter IDs for which usage is being billed",
+        "name": "Meter Number",
+        "type": "array"
+      },
+      {
+        "description": "name of compnay providing service",
+        "name": "Provider",
+        "type": "string"
+      },
+      {
+        "description": "Usage multiplier applied",
+        "name": "UsageMult",
+        "type": "string"
+      },
+      {
+        "description": "Are there more than 5 meter IDs listed on the bill?",
+        "name": "Is_NumMeterIDsListed",
+        "type": "boolean"
+      },
+      {
+        "description": "How many meter IDs are listed on the bill?",
+        "name": "CountMeterIDs",
+        "type": "string"
+      },
+      {
+        "description": "Is previous balance greater than $1000?",
+        "name": "BalanceGreaterCheck",
+        "type": "boolean"
+      },
+      {
+        "description": "Is the previous reading greater than current reading?",
+        "name": "Is_PrevGreaterThanCurr",
+        "type": "boolean"
+      },
+      {
+        "description": "Is the state name in service address valid US state?",
+        "name": "Is_ValidState",
+        "type": "boolean"
+      },
+      {
+        "description": "Is the pincode in service address, valid?",
+        "name": "Is_ValidPinCode",
+        "type": "boolean"
+      },
+      {
+        "description": "address of building for which bill is being generated",
+        "name": "Address.Service Address",
+        "type": "string"
+      },
+      {
+        "description": "What is the state name and pin-code in the address?",
+        "name": "Address.Service address pin code",
+        "type": "string"
+      },
+      {
+        "description": "Description of a line item charge. This will include things like electricity charges, tax, delivery charges etc.",
+        "name": "Line_Item_Charges.Line item Description",
+        "type": "string"
+      },
+      {
+        "description": "Charge amount in dollars",
+        "name": "Line_Item_Charges.Charge",
+        "type": "number"
+      },
+      {
+        "description": "Value of the previous meter reading",
+        "name": "MeterRead.Previous value",
+        "type": "number"
+      },
+      {
+        "description": "Current meter reading",
+        "name": "MeterRead.Current value",
+        "type": "number"
+      },
+      {
+        "description": "Difference between the current reading and the previous reading",
+        "name": "MeterRead.Delta or Metered value",
+        "type": "number"
+      },
+      {
+        "description": "Unit of the meter reading and usage",
+        "name": "MeterRead.Usage Unit",
+        "type": "string"
+      },
+      {
+        "description": "Unique identifier for the meter",
+        "name": "MeterRead.Meter ID",
+        "type": "string"
+      },
+      {
+        "description": "Total electricity usage in this line item",
+        "name": "Usage.usage",
+        "type": "string"
+      },
+      {
+        "description": "Power factor or multiplier used for this usage line item",
+        "name": "Usage.power factor",
         "type": "string"
       }
     ]
@@ -1340,6 +1703,73 @@
       }
     ]
   },
+  "Health-Insurance-Premium-Statement": {
+    "category": "insurance",
+    "description": "A health insurance premium invoice, billing statement, or payment confirmation from an insurer or marketplace, showing the recurring premium amount and billing period. Used to verify health-insurance-premium expenses, distinct from a one-time insurer notice letter.",
+    "document_type": "Health-Insurance-Premium-Statement",
+    "fields": [
+      {
+        "description": "The full name of the policyholder.",
+        "name": "policyholder_name",
+        "type": "string"
+      },
+      {
+        "description": "The date the statement was issued. YYYY-MM-DD format.",
+        "name": "statement_date",
+        "type": "string"
+      },
+      {
+        "description": "The name of the insurance company or health insurance marketplace issuing the statement.",
+        "name": "insurer_or_marketplace_name",
+        "type": "string"
+      },
+      {
+        "description": "How often the premium is billed, such as monthly, quarterly, or annually.",
+        "name": "payment_frequency",
+        "type": "string"
+      },
+      {
+        "description": "The policy or member identification number referenced on the statement.",
+        "name": "policy_or_member_id",
+        "type": "string"
+      },
+      {
+        "description": "Determine the payment status of the statement based on context, such as amounts due, payment confirmations, or due dates. Normalize to one of: Paid, Due, or Past Due.",
+        "name": "payment_status",
+        "type": "string"
+      },
+      {
+        "description": "The premium amount billed or due for the period.",
+        "name": "premium_amount",
+        "type": "number"
+      },
+      {
+        "description": "End of the billing or coverage period. YYYY-MM-DD format.",
+        "name": "coverage_end_date",
+        "type": "string"
+      },
+      {
+        "description": "The date the premium payment is due. YYYY-MM-DD format.",
+        "name": "payment_due_date",
+        "type": "string"
+      },
+      {
+        "description": "The name of the employer sponsoring the health plan, if this is an employer-sponsored premium statement.",
+        "name": "employer_name",
+        "type": "string"
+      },
+      {
+        "description": "The amount of any premium subsidy or tax credit applied, if shown.",
+        "name": "subsidy_or_tax_credit_amount",
+        "type": "number"
+      },
+      {
+        "description": "Start of the billing or coverage period. YYYY-MM-DD format.",
+        "name": "coverage_start_date",
+        "type": "string"
+      }
+    ]
+  },
   "Household-Contribution-Statement": {
     "category": "shelter",
     "description": "An informal letter, signed statement, or note from a household member or contributor verifying that they provide financial assistance to cover household expenses.",
@@ -1665,6 +2095,63 @@
       }
     ]
   },
+  "Investment-Account-Statement": {
+    "category": "investment_and_royalty_income",
+    "description": "A general investment account statement, such as a brokerage statement, mutual-fund statement, or stock statement, showing the account holder, institution, and total portfolio value. Distinct from an IRA-specific account document.",
+    "document_type": "Investment-Account-Statement",
+    "fields": [
+      {
+        "description": "The total account or portfolio value as of the end of the statement period.",
+        "name": "total_value",
+        "type": "number"
+      },
+      {
+        "description": "The full name of the individual who owns the investment account.",
+        "name": "account_holder_name",
+        "type": "string"
+      },
+      {
+        "description": "Total capital gains distributions received during the statement period (cumulative).",
+        "name": "capital_gains_distributions_cumulative",
+        "type": "number"
+      },
+      {
+        "description": "Total dividend payments received during the statement period (cumulative).",
+        "name": "dividend_payments_cumulative",
+        "type": "number"
+      },
+      {
+        "description": "The name of the brokerage, fund company, or financial institution that manages the account.",
+        "name": "financial_institution",
+        "type": "string"
+      },
+      {
+        "description": "End of the statement period. YYYY-MM-DD format.",
+        "name": "statement_period_end",
+        "type": "string"
+      },
+      {
+        "description": "Start of the statement period. YYYY-MM-DD format.",
+        "name": "statement_period_start",
+        "type": "string"
+      },
+      {
+        "description": "The types of assets held in the account, such as stocks, mutual funds, bonds, or ETFs. Return one entry per asset type listed.",
+        "name": "asset_types",
+        "type": "array"
+      },
+      {
+        "description": "Total interest credited to the account during the statement period (cumulative).",
+        "name": "interest_credits_cumulative",
+        "type": "number"
+      },
+      {
+        "description": "The specific type of this investment document, normalized to exactly one of: Brokerage Statement, Mutual Fund Statement, or Stock Statement, based on the title or header text printed at the top of the document.",
+        "name": "document_type",
+        "type": "string"
+      }
+    ]
+  },
   "Invoices": {
     "category": "invoices",
     "description": "An invoice is a document that contains the list of service rendered or items purchased from a company by a person or another company. It contains details such as when the payment is due and how much is owed.",
@@ -1758,6 +2245,105 @@
       {
         "description": "The ABN / VAT / PAN number associated with the receiver",
         "name": "RECEIVER_TAX_ID",
+        "type": "string"
+      }
+    ]
+  },
+  "Life-Insurance-Policy-Statement": {
+    "category": "assets",
+    "description": "A life insurance policy statement, in-force illustration summary, or annual policy statement showing cash value and coverage details. Used to verify life-insurance asset value.",
+    "document_type": "Life-Insurance-Policy-Statement",
+    "fields": [
+      {
+        "description": "The full name of the person who owns the policy.",
+        "name": "policyholder_name",
+        "type": "string"
+      },
+      {
+        "description": "The statement or policy anniversary date shown on the document. YYYY-MM-DD format.",
+        "name": "statement_date",
+        "type": "string"
+      },
+      {
+        "description": "The current cash surrender value of the policy, if applicable.",
+        "name": "cash_surrender_value",
+        "type": "number"
+      },
+      {
+        "description": "The type of life insurance policy, such as term, whole, or universal life.",
+        "name": "policy_type",
+        "type": "string"
+      },
+      {
+        "description": "The full name of the person whose life is insured under the policy, if different from the policyholder.",
+        "name": "insured_name",
+        "type": "string"
+      },
+      {
+        "description": "The unique policy number assigned by the insurer.",
+        "name": "policy_number",
+        "type": "string"
+      },
+      {
+        "description": "The face value or death benefit amount of the policy.",
+        "name": "death_benefit",
+        "type": "number"
+      },
+      {
+        "description": "The premium amount owed or paid for the policy.",
+        "name": "premium_amount",
+        "type": "number"
+      },
+      {
+        "description": "The name of the life insurance company that issued the policy.",
+        "name": "insurer_name",
+        "type": "string"
+      },
+      {
+        "description": "How often the premium is paid, such as monthly, quarterly, or annually.",
+        "name": "premium_frequency",
+        "type": "string"
+      }
+    ]
+  },
+  "Miscellaneous-Assets-Statement": {
+    "category": "assets",
+    "description": "A generic asset declaration, appraisal summary, or itemized personal-property statement for assets that do not fit a standard category, such as collectibles, jewelry, or equipment. Used to verify miscellaneous asset value.",
+    "document_type": "Miscellaneous-Assets-Statement",
+    "fields": [
+      {
+        "description": "The date of the statement or appraisal. YYYY-MM-DD format.",
+        "name": "statement_date",
+        "type": "string"
+      },
+      {
+        "description": "The description of each individual itemized asset, such as its name, brand, model, or identifying details. Return one entry per asset item listed, in the same order as asset_categories and estimated_values.",
+        "name": "asset_descriptions",
+        "type": "array"
+      },
+      {
+        "description": "The estimated or appraised value of each individual asset item. Return one entry per asset item listed, in the same order as asset_descriptions and asset_categories.",
+        "name": "estimated_values",
+        "type": "array"
+      },
+      {
+        "description": "The full name of the person who owns the declared assets.",
+        "name": "owner_name",
+        "type": "string"
+      },
+      {
+        "description": "Classify each individual asset item into one of: Collectibles, Jewelry, Electronics, Equipment, Furniture, or Other, based on its description, even if no category label is printed on the document. Return one entry per asset item listed, in the same order as asset_descriptions and estimated_values.",
+        "name": "asset_categories",
+        "type": "array"
+      },
+      {
+        "description": "The total estimated value of all declared assets on the statement.",
+        "name": "total_estimated_value",
+        "type": "number"
+      },
+      {
+        "description": "The name of the appraiser, assessor, or preparer of the statement, if shown.",
+        "name": "appraiser_or_preparer_name",
         "type": "string"
       }
     ]
@@ -2332,6 +2918,73 @@
       }
     ]
   },
+  "Real-Estate-Ownership-Document": {
+    "category": "assets",
+    "description": "A county or municipal property tax assessment notice, deed abstract, or county assessor property record showing ownership and assessed value of real property other than the primary residence. This is issued by a government tax assessor, recorder, or appraisal office, NOT by a mortgage lender or loan servicer. Do not use for lender-issued mortgage or loan statements, which show a payment breakdown and are a different document type. Used to verify real-estate asset value.",
+    "document_type": "Real-Estate-Ownership-Document",
+    "fields": [
+      {
+        "description": "The assessed value attributed to improvements or structures, if broken out separately.",
+        "name": "improvement_value",
+        "type": "number"
+      },
+      {
+        "description": "The total assessed value of the property.",
+        "name": "assessed_value",
+        "type": "number"
+      },
+      {
+        "description": "The full address of the real property, including city, state, and ZIP code if present, as shown on the county assessor, recorder, or deed record.",
+        "name": "property_address",
+        "type": "string"
+      },
+      {
+        "description": "The name of the county assessor, recorder, or tax office that issued the document, typically found in the header or letterhead at the top of the page. This is a government office, not a mortgage lender, loan servicer, or the property owner.",
+        "name": "county_office_name",
+        "type": "string"
+      },
+      {
+        "description": "The remaining mortgage or lien balance on the property, only if referenced on the county assessor, recorder, or deed record itself. Leave blank if this information is not present on that record.",
+        "name": "loan_balance",
+        "type": "number"
+      },
+      {
+        "description": "The full name of the property owner, as shown on the county assessor, recorder, or deed record.",
+        "name": "owner_name",
+        "type": "string"
+      },
+      {
+        "description": "The county parcel or assessor identification number for the property. This field is required and should be present on any genuine county assessor or deed record.",
+        "name": "parcel_number",
+        "type": "string"
+      },
+      {
+        "description": "The date the document was issued or recorded. YYYY-MM-DD format.",
+        "name": "document_date",
+        "type": "string"
+      },
+      {
+        "description": "Classify the type of property into one of: Single-Family Residential, Multi-Family Residential, Condominium, Commercial, Land/Vacant Lot, or Other, based on the property description or classification shown on the document.",
+        "name": "property_type",
+        "type": "string"
+      },
+      {
+        "description": "The tax year the assessment applies to.",
+        "name": "tax_year",
+        "type": "string"
+      },
+      {
+        "description": "The assessed value attributed to the land, if broken out separately.",
+        "name": "land_value",
+        "type": "number"
+      },
+      {
+        "description": "Classify the document into one of: Deed, Property-Tax Assessment, Appraisal, or Other. This document is issued by a government tax assessor, recorder, or appraisal office, not a mortgage lender or loan servicer.",
+        "name": "document_type",
+        "type": "string"
+      }
+    ]
+  },
   "Receipts": {
     "category": "receipts",
     "description": "A document acknowledging that a person has received money or property in payment following a sale or other transfer of goods or provision of a service. All receipts must have the date of purchase on them.",
@@ -2548,6 +3201,100 @@
       }
     ]
   },
+  "Shelter-Payment-Receipt": {
+    "category": "shelter",
+    "description": "An informal shelter payment record, such as a roommate payment record, money-order receipt, or arrears notice, showing an amount paid or overdue toward rent or shared housing costs.",
+    "document_type": "Shelter-Payment-Receipt",
+    "fields": [
+      {
+        "description": "Start of the service or rental period the payment or notice applies to. YYYY-MM-DD format.",
+        "name": "service_period_start",
+        "type": "string"
+      },
+      {
+        "description": "The amount paid, if this document reflects a completed payment.",
+        "name": "amount",
+        "type": "number"
+      },
+      {
+        "description": "The date the receipt was issued or the notice was sent. YYYY-MM-DD format.",
+        "name": "receipt_or_notice_date",
+        "type": "string"
+      },
+      {
+        "description": "The name of the landlord, property provider, roommate, or service that received or is owed the payment, such as a money-order service.",
+        "name": "payee_or_provider_name",
+        "type": "string"
+      },
+      {
+        "description": "The full name of the person who made or owes the payment.",
+        "name": "payer_name",
+        "type": "string"
+      },
+      {
+        "description": "The amount overdue or past due, if this document is a notice or arrears record.",
+        "name": "amount_overdue",
+        "type": "number"
+      },
+      {
+        "description": "The unique receipt, money-order, or notice reference number printed on the document, often labeled 'Receipt #', 'Order #', 'Confirmation #', or 'Notice #' near the top of the page. Extract exactly as printed, including letters and dashes.",
+        "name": "reference_number",
+        "type": "string"
+      },
+      {
+        "description": "End of the service or rental period the payment or notice applies to. YYYY-MM-DD format.",
+        "name": "service_period_end",
+        "type": "string"
+      },
+      {
+        "description": "The specific type of this shelter payment document, normalized to exactly one of: Payment Receipt, Money Order Receipt, Roommate Payment Record, or Overdue Notice, based on the title or header text printed at the top of the document.",
+        "name": "document_type",
+        "type": "string"
+      }
+    ]
+  },
+  "Shelter-Verification-Letter": {
+    "category": "shelter",
+    "description": "An informal letter, signed statement, or verbal attestation transcribed in writing from a landlord, employer, family member, neighbor, shelter, or other service provider verifying a person's living situation. Distinct from a household-contribution-statement in that it need not describe a monetary contribution.",
+    "document_type": "Shelter-Verification-Letter",
+    "fields": [
+      {
+        "description": "The full name of the individual person who signed or wrote the statement, typically found in the signature block or byline near the bottom of the letter. This is distinct from the customer whose living situation is being verified and distinct from the organization name.",
+        "name": "author_name",
+        "type": "string"
+      },
+      {
+        "description": "Date the statement or letter was written or signed. YYYY-MM-DD format.",
+        "name": "statement_date",
+        "type": "string"
+      },
+      {
+        "description": "A summary of what the author is attesting to about the customer's living situation.",
+        "name": "assertion_text",
+        "type": "string"
+      },
+      {
+        "description": "Whether the letter or statement is signed by the author.",
+        "name": "has_signature",
+        "type": "boolean"
+      },
+      {
+        "description": "Contact information for the author, such as phone number, email, or address, typically printed in the signature block directly after the author's name and title near the bottom of the letter.",
+        "name": "contact_information",
+        "type": "string"
+      },
+      {
+        "description": "The full name of the person whose living situation is being verified.",
+        "name": "customer_name",
+        "type": "string"
+      },
+      {
+        "description": "The author's title or relationship to the customer, such as landlord, employer, family member, neighbor, case manager, shelter staff, or service provider, typically printed below the author's name in the signature block.",
+        "name": "author_relationship",
+        "type": "string"
+      }
+    ]
+  },
   "Social-Security-Card": {
     "category": "identity",
     "description": "A document issued by the Social Security Administration that provides the individual's Social Security Number (SSN) and name.",
@@ -2644,6 +3391,63 @@
         "description": "Current monthly benefit payment amount.",
         "name": "monthly_benefit_amount",
         "type": "number"
+      }
+    ]
+  },
+  "Trust-Fund-Statement": {
+    "category": "assets",
+    "description": "A trust account statement issued by a trustee or trust company, showing balance and distributions. Used to verify trust-fund asset value.",
+    "document_type": "Trust-Fund-Statement",
+    "fields": [
+      {
+        "description": "The unique account number assigned to the trust account.",
+        "name": "account_number",
+        "type": "string"
+      },
+      {
+        "description": "The full name of the trust beneficiary.",
+        "name": "beneficiary_name",
+        "type": "string"
+      },
+      {
+        "description": "The trust account balance or corpus value as reported on the statement.",
+        "name": "account_balance",
+        "type": "number"
+      },
+      {
+        "description": "The name of the trust.",
+        "name": "trust_name",
+        "type": "string"
+      },
+      {
+        "description": "The name of the trustee or trust company administering the trust.",
+        "name": "trustee_name",
+        "type": "string"
+      },
+      {
+        "description": "End of the statement period. YYYY-MM-DD format.",
+        "name": "statement_period_end",
+        "type": "string"
+      },
+      {
+        "description": "Start of the statement period. YYYY-MM-DD format.",
+        "name": "statement_period_start",
+        "type": "string"
+      },
+      {
+        "description": "The type of trust, such as revocable, irrevocable, or testamentary.",
+        "name": "trust_type",
+        "type": "string"
+      },
+      {
+        "description": "The total amount distributed from the trust during the statement period, if any.",
+        "name": "distributions_during_period",
+        "type": "number"
+      },
+      {
+        "description": "The types of assets held within the trust, such as cash, stocks, bonds, mutual funds, or real estate, as listed on the statement. Return one entry per asset type shown.",
+        "name": "asset_types",
+        "type": "array"
       }
     ]
   },
@@ -3077,6 +3881,93 @@
       }
     ]
   },
+  "Vehicle-titles": {
+    "category": "assets",
+    "description": "This is a blueprint of Vehicle_Title",
+    "document_type": "Vehicle-titles",
+    "fields": [
+      {
+        "description": "State issuing the document",
+        "name": "State",
+        "type": "string"
+      },
+      {
+        "description": "Issue date of vehicle title document in mm/dd/yy format",
+        "name": "Issue Date",
+        "type": "string"
+      },
+      {
+        "description": "Type of the title",
+        "name": "Title Type",
+        "type": "string"
+      },
+      {
+        "description": "The job title and division of the person who has signed the title",
+        "name": "Signing Authority",
+        "type": "string"
+      },
+      {
+        "description": "Is the document signed?",
+        "name": "is_signed",
+        "type": "boolean"
+      },
+      {
+        "description": "Title number",
+        "name": "Vehicle_Details.Title_Num",
+        "type": "string"
+      },
+      {
+        "description": "Vehicle Identification Number",
+        "name": "Vehicle_Details.VIN",
+        "type": "string"
+      },
+      {
+        "description": "Reading recorded from odometer on vehicle",
+        "name": "Vehicle_Details.Odometer_Reading",
+        "type": "string"
+      },
+      {
+        "description": "Year car was made",
+        "name": "Vehicle_Details.Year",
+        "type": "string"
+      },
+      {
+        "description": "Company / Make of the vehicle",
+        "name": "Vehicle_Details.Make",
+        "type": "string"
+      },
+      {
+        "description": "Model of the vehicle",
+        "name": "Vehicle_Details.Model",
+        "type": "string"
+      },
+      {
+        "description": "Body Type associated with the vehicle",
+        "name": "Vehicle_Details.Body Type",
+        "type": "string"
+      },
+      {
+        "description": "Fuel Type to use with the vehicle",
+        "name": "Vehicle_Details.Fuel Type",
+        "type": "string"
+      },
+      {
+        "description": "Whether the vehcicle is in used / new condition",
+        "name": "Vehicle_Details.Condition",
+        "type": "string"
+      },
+      {
+        "description": "Purchase date of vehicle in mm/dd/yy format",
+        "name": "Vehicle_Details.Purchase Date",
+        "type": "string"
+      },
+      {
+        "description": "Old title number associated with the vehicle",
+        "name": "Vehicle_Details.Prev_Title Number",
+        "type": "string"
+      }
+    ]
+  },
   "W2": {
     "category": "employer_income",
     "description": "This is a tax form to file personal income received from an employer in a fiscal year",
@@ -3240,6 +4131,118 @@
       {
         "description": "The value or text contained in the field 14.",
         "name": "other",
+        "type": "string"
+      }
+    ]
+  },
+  "Water-and-Sewer-Bill": {
+    "category": "expenses",
+    "description": "This is a blueprint of Water and sewer bill 2",
+    "document_type": "Water-and-Sewer-Bill",
+    "fields": [
+      {
+        "description": "Name of company generating bill or providing service",
+        "name": "Provider Name",
+        "type": "string"
+      },
+      {
+        "description": "Reading / Value of meter at end of previous month / beginning of period",
+        "name": "Prev_Meter_Reading",
+        "type": "string"
+      },
+      {
+        "description": "Reading / value of meter at end of current month / end of current periof",
+        "name": "Curr_Meter_Reading",
+        "type": "string"
+      },
+      {
+        "description": "Total Amount Duenow ",
+        "name": "Tot_Amt",
+        "type": "number"
+      },
+      {
+        "description": "Previous Balance",
+        "name": "Prev_Bal",
+        "type": "number"
+      },
+      {
+        "description": "Total Current Charges",
+        "name": "Total_Current_Charges",
+        "type": "number"
+      },
+      {
+        "description": "Is total amount greater than or equal to current charges?",
+        "name": "is_total_amount_greater_than_equal_to_current_charges",
+        "type": "boolean"
+      },
+      {
+        "description": "Building / line 1 of Address of property / location for which bill is generated",
+        "name": "Service_Address.Building_Line 1",
+        "type": "string"
+      },
+      {
+        "description": "State within address of property / location for which bill is generated",
+        "name": "Service_Address.Street",
+        "type": "string"
+      },
+      {
+        "description": "City within address of property / location for which bill is generated",
+        "name": "Service_Address.City",
+        "type": "string"
+      },
+      {
+        "description": "State within address of property / location for which bill is generated",
+        "name": "Service_Address.State",
+        "type": "string"
+      },
+      {
+        "description": "Zip code within address of property / location for which bill is generated",
+        "name": "Service_Address.Zip_Code",
+        "type": "string"
+      },
+      {
+        "description": "Start date of billing period in mm/dd/yyyy format",
+        "name": "Dates.Bill_From_Date",
+        "type": "string"
+      },
+      {
+        "description": "End date of billing period in n mm/dd/yyyy format",
+        "name": "Dates.Bill_To_Date",
+        "type": "string"
+      },
+      {
+        "description": "Date on which bill was generated n mm/dd/yyyy format",
+        "name": "Dates.Billing_Date",
+        "type": "string"
+      },
+      {
+        "description": "Date of which bill needs to be paid in mm/dd/yyyy format",
+        "name": "Dates.Due_Date",
+        "type": "string"
+      },
+      {
+        "description": "Account number",
+        "name": "Account_Info.Acct_No",
+        "type": "string"
+      },
+      {
+        "description": "Account Name",
+        "name": "Account_Info.Acct_Name",
+        "type": "string"
+      },
+      {
+        "description": "Unique ID of the meter",
+        "name": "Account_Info.Meter_Number",
+        "type": "string"
+      },
+      {
+        "description": "",
+        "name": "Line_Items.LineItemDescription",
+        "type": "string"
+      },
+      {
+        "description": "",
+        "name": "Line_Items.Amount or Value",
         "type": "string"
       }
     ]

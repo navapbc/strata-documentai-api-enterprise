@@ -1,0 +1,62 @@
+{
+  "description": "A general investment account statement, such as a brokerage statement, mutual-fund statement, or stock statement, showing the account holder, institution, and total portfolio value. Distinct from an IRA-specific account document.",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "class": "Investment-Account-Statement",
+  "definitions": {},
+  "properties": {
+    "account_holder_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The full name of the individual who owns the investment account."
+    },
+    "financial_institution": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The name of the brokerage, fund company, or financial institution that manages the account."
+    },
+    "document_type": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The specific type of this investment document, normalized to exactly one of: Brokerage Statement, Mutual Fund Statement, or Stock Statement, based on the title or header text printed at the top of the document."
+    },
+    "statement_period_start": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Start of the statement period. YYYY-MM-DD format."
+    },
+    "statement_period_end": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "End of the statement period. YYYY-MM-DD format."
+    },
+    "total_value": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "The total account or portfolio value as of the end of the statement period."
+    },
+    "asset_types": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "inferenceType": "explicit",
+      "instruction": "The types of assets held in the account, such as stocks, mutual funds, bonds, or ETFs. Return one entry per asset type listed."
+    },
+    "interest_credits_cumulative": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "Total interest credited to the account during the statement period (cumulative)."
+    },
+    "dividend_payments_cumulative": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "Total dividend payments received during the statement period (cumulative)."
+    },
+    "capital_gains_distributions_cumulative": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "Total capital gains distributions received during the statement period (cumulative)."
+    }
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "description": "A generic asset declaration, appraisal summary, or itemized personal-property statement for assets that do not fit a standard category, such as collectibles, jewelry, or equipment. Used to verify miscellaneous asset value.",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "class": "Miscellaneous-Assets-Statement",
+  "definitions": {},
+  "properties": {
+    "owner_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The full name of the person who owns the declared assets."
+    },
+    "appraiser_or_preparer_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The name of the appraiser, assessor, or preparer of the statement, if shown."
+    },
+    "asset_descriptions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "inferenceType": "explicit",
+      "instruction": "The description of each individual itemized asset, such as its name, brand, model, or identifying details. Return one entry per asset item listed, in the same order as asset_categories and estimated_values."
+    },
+    "asset_categories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "inferenceType": "inferred",
+      "instruction": "Classify each individual asset item into one of: Collectibles, Jewelry, Electronics, Equipment, Furniture, or Other, based on its description, even if no category label is printed on the document. Return one entry per asset item listed, in the same order as asset_descriptions and estimated_values."
+    },
+    "estimated_values": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "inferenceType": "explicit",
+      "instruction": "The estimated or appraised value of each individual asset item. Return one entry per asset item listed, in the same order as asset_descriptions and asset_categories."
+    },
+    "total_estimated_value": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "The total estimated value of all declared assets on the statement."
+    },
+    "statement_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The date of the statement or appraisal. YYYY-MM-DD format."
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "description": "An informal letter, signed statement, or verbal attestation transcribed in writing from a landlord, employer, family member, neighbor, shelter, or other service provider verifying a person's living situation. Distinct from a household-contribution-statement in that it need not describe a monetary contribution.",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "class": "Shelter-Verification-Letter",
+  "definitions": {},
+  "properties": {
+    "customer_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The full name of the person whose living situation is being verified."
+    },
+    "author_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The full name of the individual person who signed or wrote the statement, typically found in the signature block or byline near the bottom of the letter. This is distinct from the customer whose living situation is being verified and distinct from the organization name."
+    },
+    "author_relationship": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The author's title or relationship to the customer, such as landlord, employer, family member, neighbor, case manager, shelter staff, or service provider, typically printed below the author's name in the signature block."
+    },
+    "assertion_text": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "A summary of what the author is attesting to about the customer's living situation."
+    },
+    "statement_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Date the statement or letter was written or signed. YYYY-MM-DD format."
+    },
+    "contact_information": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Contact information for the author, such as phone number, email, or address, typically printed in the signature block directly after the author's name and title near the bottom of the letter."
+    },
+    "has_signature": {
+      "type": "boolean",
+      "inferenceType": "explicit",
+      "instruction": "Whether the letter or statement is signed by the author."
+    }
+  }
+}
