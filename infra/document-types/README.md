@@ -2,7 +2,7 @@
 
 Each folder is a Bedrock Data Automation  (BDA) project category. `managed_blueprints.json` lists AWS-managed blueprint ARNs for that category. Custom blueprint schemas are the remaining `*.json` files.
 
-The `all` project (defined separately in Terraform) unions every folder's custom and managed blueprints.
+The `all` project (defined separately in Terraform) unions most folders' custom and managed blueprints. `expenses` and `assets` are currently excluded from the `all` project to stay under AWS's 40-blueprint-per-project limit; see the `TODO` on `module.bedrock_data_automation_all` in `infra/environments/dev/main.tf`.
 
 > **Note:** AWS (BDA) has a limit of 40 blueprints per project. This structure is designed to accommodate the limit and inform application preclassification, project-based routing.
 
@@ -103,7 +103,7 @@ The `all` project (defined separately in Terraform) unions every folder's custom
 | Custom | shelter-verification-letter |
 | Custom | shelter-payment-receipt |
 
-## expense
+## expenses
 | Type | Blueprint |
 |------|-----------|
 | AWS-Managed | electricity-bill |

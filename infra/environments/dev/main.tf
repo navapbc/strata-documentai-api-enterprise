@@ -414,7 +414,17 @@ module "secrets" {
 locals {
   document_type_folders = toset([for f in fileset("${path.module}/../../document-types", "*/managed_blueprints.json") : dirname(f)])
 
-  all_managed_blueprint_arns = distinct(flatten([for folder in local.document_type_folders : [for bp in jsondecode(file("${path.module}/../../document-types/${folder}/managed_blueprints.json")) : bp.arn]]))
+  # TODO: AWS BDA enforces a 40-blueprint-per-project limit. Adding the
+  # `expenses` (5) and `assets` (5) folders pushed the `all` project's would-be
+  # total to 50, so those two categories are excluded from `all` below.
+  # Longer-term, revisit the document-types folder structure (e.g. splitting
+  # further or reorganizing by BDA project) and consider removing the `all`
+  # project altogether now that per-category routing exists, rather than
+  # continuing to special-case categories here as new ones are added.
+  all_project_excluded_folders = toset(["expenses", "assets"])
+  all_project_folders          = setsubtract(local.document_type_folders, local.all_project_excluded_folders)
+
+  all_managed_blueprint_arns = distinct(flatten([for folder in local.all_project_folders : [for bp in jsondecode(file("${path.module}/../../document-types/${folder}/managed_blueprints.json")) : bp.arn]]))
 }
 
 module "bedrock_data_automation" {
@@ -473,7 +483,7 @@ module "bedrock_data_automation_all" {
   name        = "${local.service_name}-all"
   description = "BDA project for all document types"
   blueprints = concat(
-    flatten([for k, v in module.bedrock_data_automation : v.blueprint_arns]),
+    flatten([for k, v in module.bedrock_data_automation : v.blueprint_arns if !contains(local.all_project_excluded_folders, k)]),
     local.all_managed_blueprint_arns,
   )
 

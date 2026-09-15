@@ -550,7 +550,7 @@
     ]
   },
   "Burial": {
-    "category": "expense",
+    "category": "expenses",
     "description": "A document related to burial or funeral expenses, such as a funeral home invoice, burial contract, cemetery statement, or payment receipt. Used to verify burial-related household expenses.",
     "document_type": "Burial",
     "fields": [
@@ -642,7 +642,7 @@
     ]
   },
   "Cable-Bill": {
-    "category": "expense",
+    "category": "expenses",
     "description": "This is a blueprint of Cable_Bill_2",
     "document_type": "Cable-Bill",
     "fields": [
@@ -791,7 +791,7 @@
     ]
   },
   "Dependent-Care-Statement": {
-    "category": "expense",
+    "category": "expenses",
     "description": "A document related to dependent or child care expenses, such as a daycare invoice, tuition statement, or in-home care payment receipt. Used to verify dependent-care household expenses.",
     "document_type": "Dependent-Care-Statement",
     "fields": [
@@ -853,7 +853,7 @@
     ]
   },
   "Electricity-Bill": {
-    "category": "expense",
+    "category": "expenses",
     "description": "This is a blueprint of Electricity_Bill_1",
     "document_type": "Electricity-Bill",
     "fields": [
@@ -4136,7 +4136,7 @@
     ]
   },
   "Water-and-Sewer-Bill": {
-    "category": "expense",
+    "category": "expenses",
     "description": "This is a blueprint of Water and sewer bill 2",
     "document_type": "Water-and-Sewer-Bill",
     "fields": [

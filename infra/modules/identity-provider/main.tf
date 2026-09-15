@@ -105,14 +105,14 @@ data "aws_ssm_parameter" "google_client_secret" {
 }
 
 locals {
-  resolved_google_client_id = coalesce(
+  resolved_google_client_id = try(coalesce(
     var.google_client_id,
     try(data.aws_ssm_parameter.google_client_id[0].value, null),
-  )
-  resolved_google_client_secret = coalesce(
+  ), null)
+  resolved_google_client_secret = try(coalesce(
     var.google_client_secret,
     try(data.aws_ssm_parameter.google_client_secret[0].value, null),
-  )
+  ), null)
   google_enabled = local.resolved_google_client_id != null
 }
 

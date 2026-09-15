@@ -10,7 +10,7 @@ class PreclassificationCategory(StrEnum):
     EDUCATION = "education"
     EMPLOYER_INCOME = "employer_income"
     EMPLOYMENT_RECORDS = "employment_records"
-    EXPENSE = "expense"
+    EXPENSES = "expenses"
     GOVERNMENT_BENEFIT_INCOME = "government_benefit_income"
     IDENTITY = "identity"
     INSURANCE = "insurance"
