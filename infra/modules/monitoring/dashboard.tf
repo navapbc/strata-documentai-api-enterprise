@@ -20,6 +20,7 @@ locals {
   scorecard_dlq_metrics = concat(
     var.document_processor_dlq_name != null ? [["AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", var.document_processor_dlq_name, { stat = "Maximum", label = "Document Processor" }]] : [],
     var.bda_output_dlq_name != null ? [["AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", var.bda_output_dlq_name, { stat = "Maximum", label = "BDA Result Processor" }]] : [],
+    var.llm_queue_dlq_name != null ? [["AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", var.llm_queue_dlq_name, { stat = "Maximum", label = "LLM Result Processor" }]] : [],
     var.metrics_queue_dlq_name != null ? [["AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", var.metrics_queue_dlq_name, { stat = "Maximum", label = "Metrics Processor" }]] : [],
   )
   scorecard_error_metrics = [for w in local.all_workers : ["AWS/Lambda", "Errors", "FunctionName", w.fn, { stat = "Sum", label = w.title }]]
@@ -203,6 +204,15 @@ locals {
         properties = {
           title   = "BDA Result Processor DLQ", region = var.region, view = "timeSeries", period = local.period,
           metrics = [["AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", var.bda_output_dlq_name, { stat = "Maximum", label = "Messages Visible" }]]
+        }
+      },
+    ] : [],
+    var.llm_queue_dlq_name != null ? [
+      {
+        type = "metric", width = 8, height = 6,
+        properties = {
+          title   = "LLM Result Processor DLQ", region = var.region, view = "timeSeries", period = local.period,
+          metrics = [["AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", var.llm_queue_dlq_name, { stat = "Maximum", label = "Messages Visible" }]]
         }
       },
     ] : [],

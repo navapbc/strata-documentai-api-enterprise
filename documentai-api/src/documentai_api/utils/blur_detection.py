@@ -18,10 +18,9 @@ from typing import Any
 from opentelemetry import trace
 
 from documentai_api.config.constants import ConfigDefaults
-from documentai_api.config.env import get_env_config
 from documentai_api.logging import get_logger
 from documentai_api.services.textract import get_words
-from documentai_api.utils.ssm import get_parameter_value
+from documentai_api.utils.ssm import get_blur_quadrant_model_id
 
 logger = get_logger(__name__)
 tracer = trace.get_tracer(__name__)
@@ -107,13 +106,6 @@ def _crop_quadrant(image_bytes: bytes, quadrant_name: str) -> tuple[bytes, str]:
     return output.getvalue(), "jpeg"
 
 
-def _get_blur_quadrant_model_id() -> str:
-    param_name = get_env_config().bedrock_blur_quadrant_model_id_param
-    if not param_name:
-        return ConfigDefaults.BLUR_QUADRANT_MODEL_ID
-    return get_parameter_value(param_name, default=ConfigDefaults.BLUR_QUADRANT_MODEL_ID)
-
-
 def _check_empty_quadrants_for_text(
     image_bytes: bytes, quadrant_names: list[str]
 ) -> dict[str, bool]:
@@ -126,7 +118,7 @@ def _check_empty_quadrants_for_text(
     from documentai_api.services.bedrock import invoke_model
     from documentai_api.utils.bbox_detection import _downscale_for_detection
 
-    model_id = _get_blur_quadrant_model_id()
+    model_id = get_blur_quadrant_model_id()
     results: dict[str, bool] = {}
 
     for name in quadrant_names:

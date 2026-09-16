@@ -146,36 +146,36 @@ def test_detect_bbox_swallows_errors(monkeypatch):
 def test_get_bbox_model_id_uses_default(monkeypatch):
     """When no SSM param configured, returns the default bbox model ID."""
     from documentai_api.config.constants import PreprocessingBoundingBoxDefault
-    from documentai_api.utils.bbox_detection import _get_bbox_model_id
+    from documentai_api.utils.ssm import get_bounding_box_model_id
 
     monkeypatch.setattr(
-        "documentai_api.utils.bbox_detection.get_env_config",
+        "documentai_api.config.env.get_env_config",
         lambda: type("C", (), {"bedrock_bounding_box_model_id_param": None})(),
     )
 
-    assert _get_bbox_model_id() == PreprocessingBoundingBoxDefault.MODEL_ID
+    assert get_bounding_box_model_id() == PreprocessingBoundingBoxDefault.MODEL_ID
 
 
 def test_get_bbox_model_id_reads_ssm(monkeypatch):
     """When SSM param is configured, reads the bbox model ID from SSM."""
-    from documentai_api.utils.bbox_detection import _get_bbox_model_id
+    from documentai_api.utils.ssm import get_bounding_box_model_id
 
     monkeypatch.setattr(
-        "documentai_api.utils.bbox_detection.get_env_config",
+        "documentai_api.config.env.get_env_config",
         lambda: type("C", (), {"bedrock_bounding_box_model_id_param": "/test/bbox-model"})(),
     )
     monkeypatch.setattr(
-        "documentai_api.utils.bbox_detection.get_parameter_value",
+        "documentai_api.utils.ssm._get_parameter_value",
         lambda name, default=None: "us.amazon.nova-pro-v1:0",
     )
 
-    assert _get_bbox_model_id() == "us.amazon.nova-pro-v1:0"
+    assert get_bounding_box_model_id() == "us.amazon.nova-pro-v1:0"
 
 
 def test_bbox_detection_uses_bbox_model_id(monkeypatch):
     """detect_document_bbox invokes the bbox model, independent of the preclass model."""
     monkeypatch.setattr(
-        "documentai_api.utils.bbox_detection._get_bbox_model_id", lambda: "bbox-model"
+        "documentai_api.utils.bbox_detection.get_bounding_box_model_id", lambda: "bbox-model"
     )
 
     used = {}
@@ -230,7 +230,7 @@ def test_detect_document_bbox_real(filename, monkeypatch, real_aws_credentials):
     from documentai_api.utils.image_optimization import crop_image_to_bbox
 
     monkeypatch.setattr(
-        "documentai_api.utils.bbox_detection._get_bbox_model_id",
+        "documentai_api.utils.bbox_detection.get_bounding_box_model_id",
         lambda: "us.amazon.nova-lite-v1:0",
     )
 
@@ -279,7 +279,7 @@ def test_detect_document_bbox_oversized_real(monkeypatch, real_aws_credentials):
     from documentai_api.utils.image_optimization import crop_image_to_bbox
 
     monkeypatch.setattr(
-        "documentai_api.utils.bbox_detection._get_bbox_model_id",
+        "documentai_api.utils.bbox_detection.get_bounding_box_model_id",
         lambda: "us.amazon.nova-lite-v1:0",
     )
 

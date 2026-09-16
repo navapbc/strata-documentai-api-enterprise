@@ -77,6 +77,7 @@ class EnvConfig(PydanticBaseEnvConfig):
     ddb_metrics_input_queue_url: str | None = None
     ddb_raw_data_table_name: str | None = None
     glue_database_name: str | None = None
+    llm_input_queue_url: str | None = None
 
     # =========================================================================
     # Accessor methods

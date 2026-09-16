@@ -30,7 +30,12 @@ from documentai_api.config.constants import (
 )
 from documentai_api.config.env import get_env_config
 from documentai_api.dtos.classification import ClassificationData
-from documentai_api.dtos.processing import CropResult, OptimizationResult, PreExtractionResult
+from documentai_api.dtos.processing import (
+    CropResult,
+    LlmExtractionMessage,
+    OptimizationResult,
+    PreExtractionResult,
+)
 from documentai_api.pipeline.document_lifecycle import (
     set_bda_processing_status_started,
     set_processing_status_started,
@@ -40,7 +45,9 @@ from documentai_api.pipeline.textract import run_textract_pipeline
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import ddb as ddb_service
 from documentai_api.services import s3 as s3_service
+from documentai_api.services import sqs as sqs_service
 from documentai_api.services.exceptions import is_retryable
+from documentai_api.services.textract import get_ocr_blocks
 from documentai_api.utils.bda_invoker import (
     invoke_bedrock_data_automation,
     skip_bda_if_unclassified,
@@ -49,6 +56,7 @@ from documentai_api.utils.dates import strip_time
 from documentai_api.utils.ddb import get_ddb_record
 from documentai_api.utils.image_optimization import optimize_s3_image
 from documentai_api.utils.s3 import parse_s3_uri
+from documentai_api.utils.ssm import is_llm_extraction_enabled
 from documentai_api.utils.uploads import validate_s3_object_is_bda_native
 
 logger = documentai_api.logging.get_logger(__name__)
@@ -281,6 +289,66 @@ def invoke_bda(
         raise
 
 
+def _invoke_llm_path(
+    ddb_key: str,
+    existing_record: dict[str, Any],
+    file_bytes: bytes,
+    content_type: str,
+    tenant_id: str,
+    batch_id: str | None,
+) -> None:
+    """Write OCR blocks to S3 and enqueue an LLM extraction request.
+
+    No-ops when the feature flag is off or no blueprint type was matched.
+    Errors are logged and swallowed — BDA is the authoritative extraction path.
+    """
+    import json
+
+    document_type = existing_record.get(DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCHED_TYPE)
+
+    if not document_type or not is_llm_extraction_enabled():
+        return
+
+    try:
+        output_location = get_env_config().get_output_location
+        output_bucket, output_prefix = parse_s3_uri(output_location)
+        ocr_blocks = get_ocr_blocks(file_bytes)
+        ocr_key = f"{output_prefix}/llm/ocr/{ddb_key}.json"
+        s3_service.put_object(
+            output_bucket,
+            ocr_key,
+            json.dumps(ocr_blocks).encode(),
+            content_type="application/json",
+        )
+        ocr_blocks_uri = f"s3://{output_bucket}/{ocr_key}"
+
+        queue_url = get_env_config().llm_input_queue_url
+        if not queue_url:
+            logger.warning("LLM_INPUT_QUEUE_URL not set, skipping LLM extraction")
+            return
+
+        from opentelemetry.propagate import inject
+
+        carrier: dict[str, str] = {}
+        inject(carrier)
+        message_attributes = {
+            k: {"DataType": "String", "StringValue": v} for k, v in carrier.items()
+        } or None
+        payload = json.dumps(
+            LlmExtractionMessage(
+                ddb_key=ddb_key,
+                document_type=document_type,
+                ocr_blocks_uri=ocr_blocks_uri,
+                tenant_id=tenant_id,
+                batch_id=batch_id,
+            ).to_dict()
+        )
+        sqs_service.send_message(queue_url, payload, message_attributes)
+        logger.info(f"Enqueued LLM extraction for {ddb_key}")
+    except Exception as e:
+        logger.error(f"Failed to enqueue LLM extraction for {ddb_key}: {e}")
+
+
 def _invoke_bda_path(
     bucket_name: str,
     object_key: str,
@@ -412,6 +480,15 @@ def _dispatch_document_processor(
     ):
         # Exit early - Textract handled the document.
         return
+
+    _invoke_llm_path(
+        ddb_key,
+        existing_record,
+        s3_file_bytes,
+        s3_content_type,
+        tenant_id,
+        batch_id,
+    )
 
     _invoke_bda_path(
         bucket_name,

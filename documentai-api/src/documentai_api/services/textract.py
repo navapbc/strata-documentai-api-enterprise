@@ -33,3 +33,8 @@ def _detect_document_text(image_bytes: bytes) -> list[dict[str, Any]]:
 def get_words(image_bytes: bytes) -> list[dict[str, Any]]:
     """Return WORD blocks from Textract DetectDocumentText."""
     return [b for b in _detect_document_text(image_bytes) if b["BlockType"] == "WORD"]
+
+
+def get_ocr_blocks(image_bytes: bytes) -> list[dict[str, Any]]:
+    """Return all blocks from Textract DetectDocumentText (LINE, WORD, PAGE, etc.)."""
+    return _detect_document_text(image_bytes)

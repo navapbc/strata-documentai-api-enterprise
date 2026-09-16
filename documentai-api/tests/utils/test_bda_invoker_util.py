@@ -189,7 +189,7 @@ def test_skip_bda_if_unclassified_reads_ssm_true(monkeypatch):
     """When SSM param returns 'true', returns True (skip BDA)."""
     monkeypatch.setenv(EnvVarNames.SSM_PREFIX, "/test")
     get_env_config.cache_clear()
-    with patch("documentai_api.utils.ssm.get_parameter_value", return_value="true"):
+    with patch("documentai_api.utils.ssm._get_parameter_value", return_value="true"):
         result = bda_invoker_util.skip_bda_if_unclassified()
     assert result is True
 
@@ -198,7 +198,7 @@ def test_skip_bda_if_unclassified_reads_ssm_false(monkeypatch):
     """When SSM param returns 'false', returns False (don't skip BDA)."""
     monkeypatch.setenv(EnvVarNames.SSM_PREFIX, "/test")
     get_env_config.cache_clear()
-    with patch("documentai_api.utils.ssm.get_parameter_value", return_value="false"):
+    with patch("documentai_api.utils.ssm._get_parameter_value", return_value="false"):
         result = bda_invoker_util.skip_bda_if_unclassified()
     assert result is False
 

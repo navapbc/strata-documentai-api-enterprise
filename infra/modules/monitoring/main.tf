@@ -19,6 +19,7 @@ locals {
   dlq_names = compact([
     var.document_processor_dlq_name,
     var.bda_output_dlq_name,
+    var.llm_queue_dlq_name,
     var.metrics_queue_dlq_name,
   ])
 

@@ -130,6 +130,12 @@ variable "bda_output_dlq_name" {
   default     = null
 }
 
+variable "llm_queue_dlq_name" {
+  type        = string
+  description = "Name of the LLM result processor dead-letter queue to monitor. Null disables its metrics."
+  default     = null
+}
+
 # --- Alarm thresholds ---
 
 variable "queue_max_age_seconds" {

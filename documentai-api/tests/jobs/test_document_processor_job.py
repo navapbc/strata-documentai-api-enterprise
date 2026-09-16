@@ -865,3 +865,112 @@ def test_main_textract_extraction_result_none_falls_through_to_bda(
     mocker.patch(f"{_MAIN_MODULE}.run_textract_pipeline", return_value=False)
     main(input_identity_image.key, input_identity_image.bucket_name)
     mock_invoke_bda.assert_called_once()
+
+
+# =============================================================================
+# LLM extraction dispatch
+# =============================================================================
+
+
+@pytest.fixture
+def llm_ddb_record(mocker):
+    """DDB record with a matched blueprint type, wired with the standard stubs."""
+    mock_get = mocker.patch(f"{_MAIN_MODULE}.get_ddb_record")
+    mock_get.return_value = {
+        DocumentMetadata.TENANT_ID: "test-tenant-id",
+        DocumentMetadata.PROCESS_STATUS: ProcessStatus.NOT_STARTED.value,
+        DocumentMetadata.PRECLASSIFICATION_CATEGORY: "w2",
+        DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_CATEGORY: "employer_income",
+        DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCHED_TYPE: "w2",
+    }
+    mocker.patch(f"{_MAIN_MODULE}.upsert_initial_ddb_record")
+    mocker.patch(f"{_MAIN_MODULE}.set_processing_status_started", return_value=True)
+    mocker.patch(
+        f"{_MAIN_MODULE}.optimize_s3_image",
+        return_value=OptimizationResult(
+            crop_result=CropResult(), grayscale_applied=False, file_size_bytes=100, too_large=False
+        ),
+    )
+    return mock_get
+
+
+def test_main_invokes_llm_when_flag_on_and_blueprint_matched(
+    input_pdf, mocker, mock_invoke_bda, monkeypatch, llm_ddb_record
+):
+    """When LLM flag is on and a blueprint type is matched, LLM enqueues and BDA runs."""
+    monkeypatch.setenv("LLM_INPUT_QUEUE_URL", "https://sqs/llm-queue")
+    mocker.patch(f"{_MAIN_MODULE}.is_llm_extraction_enabled", return_value=True)
+    mock_get_ocr = mocker.patch(f"{_MAIN_MODULE}.get_ocr_blocks", return_value=[])
+    mock_put = mocker.patch(f"{_MAIN_MODULE}.s3_service.put_object")
+    mock_send = mocker.patch(f"{_MAIN_MODULE}.sqs_service.send_message")
+
+    main(input_pdf.key, input_pdf.bucket_name)
+
+    mock_get_ocr.assert_called_once()
+    mock_put.assert_called_once()
+    mock_send.assert_called_once()
+    assert "llm-queue" in mock_send.call_args.args[0]
+    mock_invoke_bda.assert_called_once()
+
+
+def test_main_bda_still_runs_when_llm_fails(input_pdf, mocker, mock_invoke_bda, llm_ddb_record):
+    """When LLM enqueue raises, BDA still runs."""
+    mocker.patch(f"{_MAIN_MODULE}.is_llm_extraction_enabled", return_value=True)
+    mocker.patch(f"{_MAIN_MODULE}.get_ocr_blocks", side_effect=RuntimeError("OCR down"))
+
+    main(input_pdf.key, input_pdf.bucket_name)
+
+    mock_invoke_bda.assert_called_once()
+
+
+def test_main_skips_llm_when_flag_off(input_pdf, mocker, mock_invoke_bda, llm_ddb_record):
+    """When LLM flag is off, nothing is enqueued even if a blueprint type is matched."""
+    mocker.patch(f"{_MAIN_MODULE}.is_llm_extraction_enabled", return_value=False)
+    mock_send = mocker.patch(f"{_MAIN_MODULE}.sqs_service.send_message")
+
+    main(input_pdf.key, input_pdf.bucket_name)
+
+    mock_send.assert_not_called()
+    mock_invoke_bda.assert_called_once()
+
+
+def test_main_skips_llm_when_queue_url_not_configured(
+    input_pdf, mocker, mock_invoke_bda, llm_ddb_record
+):
+    """When LLM_INPUT_QUEUE_URL is not set, nothing is enqueued and BDA still runs."""
+    mocker.patch(f"{_MAIN_MODULE}.is_llm_extraction_enabled", return_value=True)
+    mocker.patch(f"{_MAIN_MODULE}.get_ocr_blocks", return_value=[])
+    mocker.patch(f"{_MAIN_MODULE}.s3_service.put_object")
+    mock_send = mocker.patch(f"{_MAIN_MODULE}.sqs_service.send_message")
+
+    # LLM_INPUT_QUEUE_URL intentionally not set
+    main(input_pdf.key, input_pdf.bucket_name)
+
+    mock_send.assert_not_called()
+    mock_invoke_bda.assert_called_once()
+
+
+def test_main_skips_llm_when_no_blueprint_type(input_pdf, mocker, mock_invoke_bda):
+    """When LLM flag is on but no blueprint type was matched, nothing is enqueued."""
+    mocker.patch(f"{_MAIN_MODULE}.is_llm_extraction_enabled", return_value=True)
+    mocker.patch(f"{_MAIN_MODULE}.get_ddb_record").return_value = {
+        DocumentMetadata.TENANT_ID: "test-tenant-id",
+        DocumentMetadata.PROCESS_STATUS: ProcessStatus.NOT_STARTED.value,
+        DocumentMetadata.PRECLASSIFICATION_CATEGORY: "w2",
+        DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_CATEGORY: "employer_income",
+        # no PRECLASSIFICATION_BLUEPRINT_MATCHED_TYPE
+    }
+    mocker.patch(f"{_MAIN_MODULE}.upsert_initial_ddb_record")
+    mocker.patch(f"{_MAIN_MODULE}.set_processing_status_started", return_value=True)
+    mocker.patch(
+        f"{_MAIN_MODULE}.optimize_s3_image",
+        return_value=OptimizationResult(
+            crop_result=CropResult(), grayscale_applied=False, file_size_bytes=100, too_large=False
+        ),
+    )
+    mock_send = mocker.patch(f"{_MAIN_MODULE}.sqs_service.send_message")
+
+    main(input_pdf.key, input_pdf.bucket_name)
+
+    mock_send.assert_not_called()
+    mock_invoke_bda.assert_called_once()

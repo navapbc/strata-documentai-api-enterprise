@@ -12,11 +12,10 @@ from documentai_api.config.constants import (
     ConfigDefaults,
     PreprocessingBoundingBoxDefault,
 )
-from documentai_api.config.env import get_env_config
 from documentai_api.dtos.processing import CropResult
 from documentai_api.logging import get_logger
 from documentai_api.services.bedrock import invoke_model
-from documentai_api.utils.ssm import get_parameter_value
+from documentai_api.utils.ssm import get_bounding_box_model_id
 
 logger = get_logger(__name__)
 
@@ -25,13 +24,6 @@ logger = get_logger(__name__)
 class BboxResult:
     bbox: tuple[float, float, float, float] | None = None
     crop_result: CropResult = field(default_factory=CropResult)
-
-
-def _get_bbox_model_id() -> str:
-    param_name = get_env_config().bedrock_bounding_box_model_id_param
-    if not param_name:
-        return PreprocessingBoundingBoxDefault.MODEL_ID
-    return get_parameter_value(param_name, default=PreprocessingBoundingBoxDefault.MODEL_ID)
 
 
 def _parse_bbox(text: str) -> tuple[float, float, float, float] | None:
@@ -109,7 +101,7 @@ def detect_document_bbox(image_bytes: bytes, content_type: str) -> BboxResult:
     ]
 
     try:
-        model_id = _get_bbox_model_id()
+        model_id = get_bounding_box_model_id()
         start = time.time()
         response = invoke_model(messages=messages, model_id=model_id)
         elapsed = round(time.time() - start, 2)

@@ -12,7 +12,6 @@ from documentai_api.config.constants import (
     ConfigDefaults,
     PreClassificationDefaults,
 )
-from documentai_api.config.env import get_env_config
 from documentai_api.dtos.classification import (
     BedrockClassificationResult,
     PreclassificationMatchResult,
@@ -20,7 +19,7 @@ from documentai_api.dtos.classification import (
 from documentai_api.logging import get_logger
 from documentai_api.services.bedrock import invoke_model
 from documentai_api.utils.schemas import DocumentSchema
-from documentai_api.utils.ssm import get_parameter_value
+from documentai_api.utils.ssm import get_classification_model_id
 
 logger = get_logger(__name__)
 tracer = trace.get_tracer(__name__)
@@ -53,13 +52,6 @@ class _BlueprintMatchResponse(BaseModel):
 
     matched_blueprint: str | None = None
     confidence: float = 0.0
-
-
-def _get_model_id() -> str:
-    param_name = get_env_config().bedrock_classification_model_id_param
-    if not param_name:
-        return PreClassificationDefaults.MODEL_ID
-    return get_parameter_value(param_name, default=PreClassificationDefaults.MODEL_ID)
 
 
 def _build_content_block(document_bytes: bytes, content_type: str) -> dict[str, Any]:
@@ -109,7 +101,7 @@ def preclassify_document(
     ]
 
     try:
-        model_id = _get_model_id()
+        model_id = get_classification_model_id()
         start = time.time()
         with tracer.start_as_current_span("bedrock.preclassify") as span:
             span.set_attribute("bedrock.model_id", model_id)
@@ -242,7 +234,7 @@ def find_matching_blueprint(
     ]
 
     try:
-        model_id = _get_model_id()
+        model_id = get_classification_model_id()
         start = time.time()
 
         with tracer.start_as_current_span("bedrock.blueprint_match") as span:

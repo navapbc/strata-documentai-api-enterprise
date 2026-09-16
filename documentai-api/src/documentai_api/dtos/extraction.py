@@ -15,6 +15,7 @@ class ExtractionResult:
 
     document_type: str
     body: bytes | None = None
+    output_uri: str | None = None
     field_confidence_scores: list[dict[str, float]] = field(default_factory=list)
     extract_started_at: datetime | None = None
     extract_completed_at: datetime | None = None

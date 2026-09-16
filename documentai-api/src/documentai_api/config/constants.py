@@ -601,6 +601,7 @@ class ExtractMethod(StrEnum):
 
     BDA = "bda"
     TEXTRACT = "textract"
+    LLM = "llm"
 
 
 class FeatureFlags:
@@ -613,6 +614,7 @@ class FeatureFlags:
     SKIP_BDA_IF_UNCLASSIFIED = "skip-bda-if-unclassified"
     ENABLE_PRECLASSIFICATION_BLUEPRINT_MATCHING = "enable-preclassification-blueprint-matching"
     FLAG_MULTIPLE_DOCUMENTS_IN_MULTIPAGE = "flag-multiple-documents-in-multipage"
+    LLM_EXTRACTION_ENABLED = "llm-extraction-enabled"
 
 
 ATHENA_QUERY_TIMEOUT_SECONDS = 300

@@ -109,6 +109,36 @@ class PageMetadata:
 
 
 @dataclass
+class LlmExtractionMessage:
+    """SQS message payload for async LLM extraction."""
+
+    ddb_key: str
+    document_type: str
+    ocr_blocks_uri: str
+    tenant_id: str | None
+    batch_id: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "ddb_key": self.ddb_key,
+            "document_type": self.document_type,
+            "ocr_blocks_uri": self.ocr_blocks_uri,
+            "tenant_id": self.tenant_id,
+            "batch_id": self.batch_id,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        return cls(
+            ddb_key=data["ddb_key"],
+            document_type=data["document_type"],
+            ocr_blocks_uri=data["ocr_blocks_uri"],
+            tenant_id=data.get("tenant_id"),
+            batch_id=data.get("batch_id"),
+        )
+
+
+@dataclass
 class PreExtractionResult:
     """Carries pre-extraction outputs from upsert_initial_ddb_record to the doc-processor job."""
 
