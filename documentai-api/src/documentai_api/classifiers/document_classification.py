@@ -312,6 +312,9 @@ def classify_extraction_result(
     extraction_method: ExtractMethod = ExtractMethod.BDA,
 ) -> dict[str, Any]:
     """Apply confidence floor and extraction rules, then call classify_as_success."""
+    if output_uri is None:
+        raise ValueError(f"output_uri missing for {ddb_key} on success path ({extraction_method})")
+
     data = ClassificationData.from_extraction_result(result, output_uri=output_uri)
 
     confidence_floor = get_extraction_confidence_floor(tenant_id)

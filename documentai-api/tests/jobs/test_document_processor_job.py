@@ -8,7 +8,7 @@ import pytest
 from botocore.exceptions import ClientError
 from tenacity import RetryError
 
-from documentai_api.config.constants import ExtractMethod, ProcessStatus
+from documentai_api.config.constants import ProcessStatus
 from documentai_api.config.constants_preclassification_category_generated import (
     PreclassificationCategory,
 )
@@ -16,8 +16,7 @@ from documentai_api.dtos.classification import (
     BedrockClassificationResult,
     PreclassificationMatchResult,
 )
-from documentai_api.dtos.extraction import ExtractionResult
-from documentai_api.dtos.processing import CropResult, OptimizationResult, ProcessorResult
+from documentai_api.dtos.processing import CropResult, OptimizationResult
 from documentai_api.jobs.document_processor.main import (
     _invoke_bda,
     _persist_optimization_metrics,
@@ -386,7 +385,7 @@ def test_main_missing_tenant_id_calls_classify_as_failed(input_pdf, mocker, mock
     mock_get.return_value = {DocumentMetadata.PROCESS_STATUS: ProcessStatus.NOT_STARTED.value}
     mocker.patch("documentai_api.jobs.document_processor.main.upsert_initial_ddb_record")
     mock_classify = mocker.patch("documentai_api.jobs.document_processor.main.classify_as_failed")
-    mock_textract = mocker.patch(f"{_MAIN_MODULE}.extract_textract_identity")
+    mock_textract = mocker.patch(f"{_MAIN_MODULE}.run_textract_pipeline")
 
     main(input_pdf.key, input_pdf.bucket_name)
 
@@ -787,35 +786,11 @@ def test_main_invokes_textract_for_identity_document(
     input_identity_image, ddb_doc_metadata_table, mocker, mock_invoke_bda, mock_preclassify_identity
 ):
     """When preclassification flags an identity document, main dispatches to Textract and skips BDA."""
-    mock_textract_extract = mocker.patch(
-        f"{_MAIN_MODULE}.extract_textract_identity",
-        return_value=ExtractionResult(document_type="identity", body=b"{}"),
-    )
-    mock_process = mocker.patch(
-        f"{_MAIN_MODULE}.process_textract_result",
-        return_value=ProcessorResult(
-            object_key="id.jpg",
-            extraction_result=ExtractionResult(document_type="identity"),
-        ),
-    )
-    mock_classify = mocker.patch(f"{_MAIN_MODULE}.classify_extraction_result")
-    mock_write = mocker.patch(
-        f"{_MAIN_MODULE}.write_extraction_output",
-        return_value="s3://bucket/test-tenant-id/textract/id.jpg.json",
-    )
+    mock_pipeline = mocker.patch(f"{_MAIN_MODULE}.run_textract_pipeline", return_value=True)
 
     main(input_identity_image.key, input_identity_image.bucket_name)
 
-    mock_textract_extract.assert_called_once()
-    mock_process.assert_called_once()
-    mock_write.assert_called_once()
-    assert mock_write.call_args.args[0] == "test-tenant-id"
-    mock_classify.assert_called_once()
-    assert mock_classify.call_args.kwargs["extraction_method"] == ExtractMethod.TEXTRACT
-    assert (
-        mock_classify.call_args.kwargs["output_uri"]
-        == "s3://bucket/test-tenant-id/textract/id.jpg.json"
-    )
+    mock_pipeline.assert_called_once()
     mock_invoke_bda.assert_not_called()
 
 
@@ -829,7 +804,7 @@ def test_main_textract_exception_does_not_abort_pipeline(
 ):
     """A Textract failure is swallowed; the document still proceeds to BDA."""
     mocker.patch(
-        f"{_MAIN_MODULE}.extract_textract_identity",
+        f"{_MAIN_MODULE}.run_textract_pipeline",
         side_effect=RuntimeError("Textract down"),
     )
 
@@ -857,10 +832,10 @@ def test_main_blur_rejected_identity_document_skips_textract(
         f"{_LIFECYCLE_MODULE}.detect_blur",
         return_value=BlurResult(is_blurry=True),
     )
-    mock_textract_extract = mocker.patch(f"{_MAIN_MODULE}.extract_textract_identity")
+    mock_pipeline = mocker.patch(f"{_MAIN_MODULE}.run_textract_pipeline")
 
     main(input_identity_image.key, input_identity_image.bucket_name)
-    mock_textract_extract.assert_not_called()
+    mock_pipeline.assert_not_called()
     mock_invoke_bda.assert_not_called()
 
 
@@ -872,8 +847,8 @@ def test_main_textract_returns_none_falls_through_to_bda(
     mock_preclassify_identity,
     mock_optimize_s3_image_identity,
 ):
-    """When extract_textract_identity returns None, the document falls through to BDA."""
-    mocker.patch(f"{_MAIN_MODULE}.extract_textract_identity", return_value=None)
+    """When run_textract_pipeline returns False, the document falls through to BDA."""
+    mocker.patch(f"{_MAIN_MODULE}.run_textract_pipeline", return_value=False)
     main(input_identity_image.key, input_identity_image.bucket_name)
     mock_invoke_bda.assert_called_once()
 
@@ -886,16 +861,7 @@ def test_main_textract_extraction_result_none_falls_through_to_bda(
     mock_preclassify_identity,
     mock_optimize_s3_image_identity,
 ):
-    """When process_textract_result returns extraction_result=None, the document falls through to BDA."""
-    mock_textract_extract = mocker.patch(
-        f"{_MAIN_MODULE}.extract_textract_identity",
-        return_value=ExtractionResult(document_type="identity", body=b"{}"),
-    )
-    mocker.patch(
-        f"{_MAIN_MODULE}.process_textract_result",
-        return_value=ProcessorResult(object_key="id.jpg", extraction_result=None),
-    )
-
+    """When run_textract_pipeline returns False, the document falls through to BDA."""
+    mocker.patch(f"{_MAIN_MODULE}.run_textract_pipeline", return_value=False)
     main(input_identity_image.key, input_identity_image.bucket_name)
-    mock_textract_extract.assert_called_once()
     mock_invoke_bda.assert_called_once()

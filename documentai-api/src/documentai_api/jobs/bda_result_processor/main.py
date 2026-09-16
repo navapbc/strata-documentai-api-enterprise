@@ -7,7 +7,7 @@ from typing import Any
 import typer
 
 import documentai_api.logging
-from documentai_api.pipeline.bda import run_bda_pipeline
+from documentai_api.pipeline.bda import run_bda_result_pipeline
 
 logger = documentai_api.logging.get_logger(__name__)
 app = typer.Typer()
@@ -33,7 +33,7 @@ def main(
         logger.info(f"Skipping non-metadata file: {object_key}")
         return {}
 
-    result = run_bda_pipeline(
+    result = run_bda_result_pipeline(
         bucket_name, object_key, result_processor_started_at=result_processor_started_at
     )
     logger.info(f"Successfully processed BDA output for s3://{bucket_name}/{object_key}")

@@ -14,7 +14,7 @@ from documentai_api.processors.bda import process_bda_result
 logger = get_logger(__name__)
 
 
-def run_bda_pipeline(
+def run_bda_result_pipeline(
     bda_output_bucket_name: str,
     bda_output_object_key: str,
     result_processor_started_at: str | None = None,
