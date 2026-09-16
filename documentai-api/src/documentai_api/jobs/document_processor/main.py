@@ -22,23 +22,20 @@ from documentai_api.classifiers.document_classification import (
     classify_as_extraction_not_configured,
     classify_as_failed,
     classify_as_not_implemented,
-    classify_extraction_result,
 )
 from documentai_api.config.constants import (
-    ExtractMethod,
     ProcessStatus,
     S3MetadataKeys,
 )
 from documentai_api.config.env import get_env_config
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.dtos.processing import CropResult, OptimizationResult, PreExtractionResult
-from documentai_api.extractors.textract import extract_textract_identity
 from documentai_api.pipeline.document_lifecycle import (
     set_bda_processing_status_started,
     set_processing_status_started,
     upsert_initial_ddb_record,
 )
-from documentai_api.processors.textract import process_textract_result
+from documentai_api.pipeline.textract import run_textract_pipeline
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import ddb as ddb_service
 from documentai_api.services import s3 as s3_service
@@ -50,7 +47,7 @@ from documentai_api.utils.bda_invoker import (
 from documentai_api.utils.dates import strip_time
 from documentai_api.utils.ddb import get_ddb_record
 from documentai_api.utils.image_optimization import optimize_s3_image
-from documentai_api.utils.s3 import parse_s3_uri, write_extraction_output
+from documentai_api.utils.s3 import parse_s3_uri
 from documentai_api.utils.uploads import validate_s3_object_is_bda_native
 
 logger = documentai_api.logging.get_logger(__name__)
@@ -209,34 +206,7 @@ def _invoke_textract_if_identity_path(
         return False
 
     try:
-        result = extract_textract_identity(content_type, file_bytes, ddb_key)
-
-        if result is None:
-            return False
-
-        output_uri = write_extraction_output(
-            tenant_id,
-            ExtractMethod.TEXTRACT,
-            ddb_key,
-            result.body or b"",
-            content_type="application/json",
-        )
-
-        processor_result = process_textract_result(ddb_key, result, tenant_id, batch_id)
-
-        if processor_result.extraction_result is not None:
-            classify_extraction_result(
-                ddb_key=processor_result.object_key,
-                result=processor_result.extraction_result,
-                output_uri=output_uri,
-                tenant_id=processor_result.tenant_id,
-                batch_id=processor_result.batch_id,
-                extraction_method=ExtractMethod.TEXTRACT,
-            )
-
-        # If Textract failed to extract any data, return False to fallback to
-        # other extraction methods
-        return processor_result.extraction_result is not None
+        return run_textract_pipeline(ddb_key, content_type, file_bytes, tenant_id, batch_id)
     except Exception as e:
         logger.error(f"Textract extraction failed for {ddb_key}: {e}")
         return False
