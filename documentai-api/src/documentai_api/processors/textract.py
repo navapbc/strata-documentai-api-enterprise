@@ -19,16 +19,17 @@ def process_textract_result(
 ) -> ProcessorResult:
     """Resolve tenant context, write tenant-scoped output, return ProcessorResult."""
     tenant_id = tenant_id or (get_ddb_record(ddb_key) or {}).get(DocumentMetadata.TENANT_ID)
-    output_uri: str | None = None
 
-    if tenant_id:
-        output_uri = write_extraction_output(
-            tenant_id,
-            ExtractMethod.TEXTRACT,
-            ddb_key,
-            result.body or b"",
-            content_type="application/json",
-        )
+    if not tenant_id:
+        raise ValueError(f"tenant_id is required for Textract extraction of {ddb_key}")
+
+    output_uri = write_extraction_output(
+        tenant_id,
+        ExtractMethod.TEXTRACT,
+        ddb_key,
+        result.body or b"",
+        content_type="application/json",
+    )
 
     return ProcessorResult(
         object_key=ddb_key,

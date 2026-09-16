@@ -1,3 +1,6 @@
+import pytest
+
+from documentai_api.config.constants import ExtractMethod
 from documentai_api.dtos.extraction import ExtractionResult
 from documentai_api.dtos.processing import ProcessorResult
 from documentai_api.processors.textract import process_textract_result
@@ -5,11 +8,12 @@ from documentai_api.processors.textract import process_textract_result
 
 def test_process_textract_result_returns_processor_result(mocker):
     mocker.patch(
-        "documentai_api.processors.textract.get_ddb_record", return_value={"tenantId": "t1"}
+        "documentai_api.processors.textract.get_ddb_record",
+        return_value={"tenantId": "test-tenant-id"},
     )
-    mocker.patch(
+    mock_write = mocker.patch(
         "documentai_api.processors.textract.write_extraction_output",
-        return_value="s3://bucket/t1/test-key/textract/result.json",
+        return_value="s3://bucket/test-tenant-id/test-object-key/textract/result.json",
     )
 
     result = ExtractionResult(
@@ -19,23 +23,32 @@ def test_process_textract_result_returns_processor_result(mocker):
         body=b"{}",
     )
 
-    processor_result = process_textract_result("test-key", result, batch_id="b1")
+    processor_result = process_textract_result("test-object-key", result, batch_id="test-batch-id")
 
     assert isinstance(processor_result, ProcessorResult)
-    assert processor_result.object_key == "test-key"
-    assert processor_result.tenant_id == "t1"
-    assert processor_result.batch_id == "b1"
+    assert processor_result.object_key == "test-object-key"
+    assert processor_result.tenant_id == "test-tenant-id"
+    assert processor_result.batch_id == "test-batch-id"
     assert processor_result.extraction_result is result
-    assert processor_result.output_uri == "s3://bucket/t1/test-key/textract/result.json"
+    assert (
+        processor_result.output_uri
+        == "s3://bucket/test-tenant-id/test-object-key/textract/result.json"
+    )
+    mock_write.assert_called_once_with(
+        "test-tenant-id",
+        ExtractMethod.TEXTRACT,
+        "test-object-key",
+        b"{}",
+        content_type="application/json",
+    )
 
 
-def test_process_textract_result_handles_missing_ddb_record(mocker):
+def test_process_textract_result_raises_on_missing_tenant(mocker):
     mocker.patch("documentai_api.processors.textract.get_ddb_record", return_value=None)
 
     result = ExtractionResult(document_type="US-drivers-licenses")
 
-    processor_result = process_textract_result("test-key", result)
-
-    assert processor_result.tenant_id is None
-    assert processor_result.output_uri is None
-    assert processor_result.extraction_result is result
+    with pytest.raises(
+        ValueError, match="tenant_id is required for Textract extraction of test-object-key"
+    ):
+        process_textract_result("test-object-key", result)
