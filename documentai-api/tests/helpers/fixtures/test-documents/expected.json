@@ -932,5 +932,760 @@
     "preclassificationCategory": "present",
     "reruns_override": 2,
     "responseCode": "002"
+  },
+  "unhappy-path/synthetic-assets-bank-statement-handwritten.jpg": {
+    "//": [
+      "Disabled pending follow-up: succeeds (000, matches 'Bank-Statement') despite being",
+      "handwritten - BDA reads it well enough that avgConfidence (0.818) still clears the",
+      "tenant's default extractionConfidenceThreshold (0.65), so it never trips",
+      "the LOW_EXTRACTION_CONFIDENCE (105) path this fixture is meant to exercise. Captured",
+      "here for reference; revisit once the fixture is regenerated with lower-confidence",
+      "(messier/less legible) handwriting, or once we decide how these should factor into",
+      "the unhappy-path suite."
+    ],
+    "bdaMatchedDocumentClass": "Bank-Statement",
+    "content_type": "image/jpeg",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-expense-burial-handwritten.jpg": {
+    "//": [
+      "Verified live (2x, consistent). Handwriting degrades extraction enough that this",
+      "matches the generic 'Invoices' blueprint (no dedicated burial blueprint reachable",
+      "from the 'all' project) but only at low confidence (105) - the intended failure",
+      "mode for this fixture."
+    ],
+    "bdaMatchedDocumentClass": "Invoices",
+    "content_type": "image/jpeg",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "105"
+  },
+  "unhappy-path/synthetic-expense-child-support-or-alimony-handwritten.jpg": {
+    "//": [
+      "Disabled pending follow-up: succeeds (000, matches 'Child-Support-Document') despite being",
+      "handwritten - BDA reads it well enough that avgConfidence (0.820) still clears the",
+      "tenant's default extractionConfidenceThreshold (0.65), so it never trips",
+      "the LOW_EXTRACTION_CONFIDENCE (105) path this fixture is meant to exercise. Captured",
+      "here for reference; revisit once the fixture is regenerated with lower-confidence",
+      "(messier/less legible) handwriting, or once we decide how these should factor into",
+      "the unhappy-path suite."
+    ],
+    "bdaMatchedDocumentClass": "Child-Support-Document",
+    "content_type": "image/jpeg",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-expense-dependent-care-handwritten.jpg": {
+    "//": [
+      "Regenerated with heavier wrinkles, stains, fold shadow, glare, and uneven exposure.",
+      "Verified live twice: still succeeds (000), matches 'Invoices', and does not trip",
+      "the LOW_EXTRACTION_CONFIDENCE (105) path. Keep disabled pending a harsher fixture."
+    ],
+    "bdaMatchedDocumentClass": "Invoices",
+    "content_type": "image/jpeg",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-insurance-health-insurance-premiums-handwritten.jpg": {
+    "//": [
+      "Disabled pending follow-up: succeeds (000, matches 'Health-Insurance-Premium-Statement') despite being",
+      "handwritten - BDA reads it well enough that avgConfidence (0.885) still clears the",
+      "tenant's default extractionConfidenceThreshold (0.65), so it never trips",
+      "the LOW_EXTRACTION_CONFIDENCE (105) path this fixture is meant to exercise. Captured",
+      "here for reference; revisit once the fixture is regenerated with lower-confidence",
+      "(messier/less legible) handwriting, or once we decide how these should factor into",
+      "the unhappy-path suite."
+    ],
+    "bdaMatchedDocumentClass": "Health-Insurance-Premium-Statement",
+    "content_type": "image/jpeg",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-investment-and-royalty-income-investments-handwritten.jpg": {
+    "//": [
+      "Disabled pending follow-up: succeeds (000, matches 'Investment-Account-Statement') despite being",
+      "handwritten - BDA reads it well enough that avgConfidence (0.817) still clears the",
+      "tenant's default extractionConfidenceThreshold (0.65), so it never trips",
+      "the LOW_EXTRACTION_CONFIDENCE (105) path this fixture is meant to exercise. Captured",
+      "here for reference; revisit once the fixture is regenerated with lower-confidence",
+      "(messier/less legible) handwriting, or once we decide how these should factor into",
+      "the unhappy-path suite."
+    ],
+    "bdaMatchedDocumentClass": "Investment-Account-Statement",
+    "content_type": "image/jpeg",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-assets-life-insurance-policy-handwritten.jpg": {
+    "//": [
+      "Disabled pending follow-up: succeeds (000, matches 'Insurance-Company-Letter') despite being",
+      "handwritten - BDA reads it well enough that avgConfidence (0.839) still clears the",
+      "tenant's default extractionConfidenceThreshold (0.65), so it never trips",
+      "the LOW_EXTRACTION_CONFIDENCE (105) path this fixture is meant to exercise. Captured",
+      "here for reference; revisit once the fixture is regenerated with lower-confidence",
+      "(messier/less legible) handwriting, or once we decide how these should factor into",
+      "the unhappy-path suite."
+    ],
+    "bdaMatchedDocumentClass": "Insurance-Company-Letter",
+    "content_type": "image/jpeg",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-assets-misc-assets-handwritten.jpg": {
+    "//": [
+      "Verified live (7x total). Handwriting degrades legibility enough that preclassification",
+      "usually returns 'miscellaneous assets statement' with no blueprint match at all (6/7",
+      "runs, responseCode 002) - the intended failure mode for this fixture. Rarely (1/7) it",
+      "instead matches the generic 'Invoices' blueprint at low confidence (105). Leaving the",
+      "default flaky(reruns=1) to absorb that occasional flip rather than asserting either",
+      "value with a reruns_override."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/jpeg",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "002"
+  },
+  "unhappy-path/synthetic-assets-real-estate-handwritten.jpg": {
+    "//": [
+      "Verified live (2x, consistent). Handwriting degrades legibility enough that",
+      "preclassification returns 'unknown' but no blueprint matches at all - the intended",
+      "failure mode for this fixture."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/jpeg",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "002"
+  },
+  "unhappy-path/synthetic-shelter-shelter-handwritten.jpg": {
+    "//": [
+      "Disabled pending follow-up: succeeds (000, matches 'Shelter-Verification-Letter') despite being",
+      "handwritten - BDA reads it well enough that avgConfidence (0.729) still clears the",
+      "tenant's default extractionConfidenceThreshold (0.65), so it never trips",
+      "the LOW_EXTRACTION_CONFIDENCE (105) path this fixture is meant to exercise. Captured",
+      "here for reference; revisit once the fixture is regenerated with lower-confidence",
+      "(messier/less legible) handwriting, or once we decide how these should factor into",
+      "the unhappy-path suite."
+    ],
+    "bdaMatchedDocumentClass": "Shelter-Verification-Letter",
+    "content_type": "image/jpeg",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-assets-trust-funds-investment-accounts-handwritten.jpg": {
+    "//": [
+      "Disabled pending follow-up: succeeds (000, matches 'Bank-Statement') despite being",
+      "handwritten - BDA reads it well enough that avgConfidence (0.725) still clears the",
+      "tenant's default extractionConfidenceThreshold (0.65), so it never trips",
+      "the LOW_EXTRACTION_CONFIDENCE (105) path this fixture is meant to exercise. Captured",
+      "here for reference; revisit once the fixture is regenerated with lower-confidence",
+      "(messier/less legible) handwriting, or once we decide how these should factor into",
+      "the unhappy-path suite."
+    ],
+    "bdaMatchedDocumentClass": "Bank-Statement",
+    "content_type": "image/jpeg",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-expense-utility-cable-bill-handwritten.jpg": {
+    "//": [
+      "Disabled pending follow-up: after the preclassification-based-routing flag went live,",
+      "this now succeeds (000, matches 'Invoices') instead of the previously-verified no-match",
+      "(002) - avgConfidence (~0.696-0.697, verified live 2x) clears the tenant's default",
+      "extractionConfidenceThreshold (0.65), so it never trips the intended failure mode.",
+      "Captured here for reference; revisit once the fixture is regenerated with lower-",
+      "confidence (messier/less legible) handwriting."
+    ],
+    "bdaMatchedDocumentClass": "Invoices",
+    "content_type": "image/jpeg",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-expense-utility-electricity-bill-handwritten.jpg": {
+    "//": [
+      "Disabled pending follow-up: after the preclassification-based-routing flag went live,",
+      "this now succeeds (000, matches 'Invoices') instead of the previously-verified no-match",
+      "(002) - avgConfidence (~0.792, verified live 2x) clears the tenant's default",
+      "extractionConfidenceThreshold (0.65), so it never trips the intended failure mode.",
+      "Captured here for reference; revisit once the fixture is regenerated with lower-",
+      "confidence (messier/less legible) handwriting."
+    ],
+    "bdaMatchedDocumentClass": "Invoices",
+    "content_type": "image/jpeg",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-expense-utility-water-sewer-bill-handwritten.jpg": {
+    "//": [
+      "Disabled pending follow-up: after the preclassification-based-routing flag went live,",
+      "this now succeeds (000, matches 'Invoices') instead of the previously-verified no-match",
+      "(002) - avgConfidence (~0.717-0.770, verified live 2x) clears the tenant's default",
+      "extractionConfidenceThreshold (0.65), so it never trips the intended failure mode.",
+      "Captured here for reference; revisit once the fixture is regenerated with lower-",
+      "confidence (messier/less legible) handwriting."
+    ],
+    "bdaMatchedDocumentClass": "Invoices",
+    "content_type": "image/jpeg",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-assets-vehicles-handwritten.jpg": {
+    "//": [
+      "Verified live (2x, consistent). Handwriting degrades legibility enough that",
+      "preclassification returns 'unknown' but no blueprint matches at all - the intended",
+      "failure mode for this fixture."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/jpeg",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "002"
+  },
+  "unhappy-path/synthetic-assets-bank-statement-bad-scan.png": {
+    "//": [
+      "Disabled pending follow-up: succeeds (000, matches 'Bank-Statement') despite being a",
+      "bad/degraded scan - avgConfidence (~0.659) still clears the tenant's default",
+      "extractionConfidenceThreshold (0.65), so it never trips the LOW_EXTRACTION_CONFIDENCE",
+      "(105) path this fixture is meant to exercise. Verified live (2x, consistent). Captured",
+      "here for reference; revisit once the fixture is regenerated with a",
+      "noisier/lower-confidence scan."
+    ],
+    "bdaMatchedDocumentClass": "Bank-Statement",
+    "content_type": "image/png",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-assets-life-insurance-policy-bad-scan.png": {
+    "//": [
+      "Disabled pending follow-up: succeeds (000, matches 'Insurance-Company-Letter') despite",
+      "being a bad/degraded scan - avgConfidence (~0.841) still clears the tenant's default",
+      "extractionConfidenceThreshold (0.65), so it never trips the LOW_EXTRACTION_CONFIDENCE",
+      "(105) path this fixture is meant to exercise. Verified live (2x, consistent). Captured",
+      "here for reference; revisit once the fixture is regenerated with a",
+      "noisier/lower-confidence scan."
+    ],
+    "bdaMatchedDocumentClass": "Insurance-Company-Letter",
+    "content_type": "image/png",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-assets-misc-assets-bad-scan.png": {
+    "//": [
+      "Verified live (2x, consistent). The degraded scan quality is enough that",
+      "preclassification still identifies a category but no blueprint matches at all - the",
+      "intended failure mode for this fixture."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/png",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "002"
+  },
+  "unhappy-path/synthetic-assets-real-estate-bad-scan.png": {
+    "//": [
+      "Verified live (2x, consistent). The degraded scan quality is enough that",
+      "preclassification still identifies a category but no blueprint matches at all - the",
+      "intended failure mode for this fixture."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/png",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "002"
+  },
+  "unhappy-path/synthetic-assets-trust-funds-investment-accounts-bad-scan.png": {
+    "//": [
+      "Disabled pending follow-up: succeeds (000, matches 'Investment-Account-Statement')",
+      "despite being a bad/degraded scan - avgConfidence (~0.871) still clears the tenant's",
+      "default extractionConfidenceThreshold (0.65), so it never trips the",
+      "LOW_EXTRACTION_CONFIDENCE (105) path this fixture is meant to exercise. Verified live",
+      "(2x, consistent). Captured here for reference; revisit once the fixture is regenerated",
+      "with a noisier/lower-confidence scan."
+    ],
+    "bdaMatchedDocumentClass": "Investment-Account-Statement",
+    "content_type": "image/png",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-assets-vehicles-bad-scan.png": {
+    "//": [
+      "Verified live (2x, consistent). The degraded scan quality is enough that",
+      "preclassification still identifies a category but no blueprint matches at all - the",
+      "intended failure mode for this fixture."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/png",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "002"
+  },
+  "unhappy-path/synthetic-expense-burial-bad-scan.png": {
+    "//": [
+      "Disabled pending follow-up: succeeds (000, matches 'Invoices') despite being a",
+      "bad/degraded scan - avgConfidence (~0.68) still clears the tenant's default",
+      "extractionConfidenceThreshold (0.65), so it never trips the LOW_EXTRACTION_CONFIDENCE",
+      "(105) path this fixture is meant to exercise. Verified live (2x, consistent). Captured",
+      "here for reference; revisit once the fixture is regenerated with a",
+      "noisier/lower-confidence scan."
+    ],
+    "bdaMatchedDocumentClass": "Invoices",
+    "content_type": "image/png",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-expense-child-support-or-alimony-bad-scan.png": {
+    "//": [
+      "Disabled pending follow-up: succeeds (000, matches 'Child-Support-Document') despite",
+      "being a bad/degraded scan - avgConfidence (~0.890) still clears the tenant's default",
+      "extractionConfidenceThreshold (0.65), so it never trips the LOW_EXTRACTION_CONFIDENCE",
+      "(105) path this fixture is meant to exercise. Verified live (2x, consistent). Captured",
+      "here for reference; revisit once the fixture is regenerated with a",
+      "noisier/lower-confidence scan."
+    ],
+    "bdaMatchedDocumentClass": "Child-Support-Document",
+    "content_type": "image/png",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-expense-dependent-care-bad-scan.png": {
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/png",
+    "e2e_enabled": true,
+    "isDocumentBlurry": true,
+    "isPasswordProtected": false,
+    "preclassificationCategory": null,
+    "responseCode": "104"
+  },
+  "unhappy-path/synthetic-expense-utility-cable-bill-bad-scan.png": {
+    "//": [
+      "Disabled pending follow-up: succeeds (000, matches 'Invoices') despite being a",
+      "bad/degraded scan - avgConfidence (~0.69) still clears the tenant's default",
+      "extractionConfidenceThreshold (0.65), so it never trips the LOW_EXTRACTION_CONFIDENCE",
+      "(105) path this fixture is meant to exercise. Verified live (2x, consistent). Captured",
+      "here for reference; revisit once the fixture is regenerated with a",
+      "noisier/lower-confidence scan."
+    ],
+    "bdaMatchedDocumentClass": "Invoices",
+    "content_type": "image/png",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-expense-utility-electricity-bill-bad-scan.png": {
+    "//": [
+      "Disabled pending follow-up: succeeds (000, matches 'Invoices') despite being a",
+      "bad/degraded scan - avgConfidence (~0.71-0.72) still clears the tenant's default",
+      "extractionConfidenceThreshold (0.65), so it never trips the LOW_EXTRACTION_CONFIDENCE",
+      "(105) path this fixture is meant to exercise. Verified live (2x, consistent). Captured",
+      "here for reference; revisit once the fixture is regenerated with a",
+      "noisier/lower-confidence scan."
+    ],
+    "bdaMatchedDocumentClass": "Invoices",
+    "content_type": "image/png",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-expense-utility-water-sewer-bill-bad-scan.png": {
+    "//": [
+      "Verified live (2x, consistent). Matches 'Invoices' but avgConfidence (~0.6286) falls",
+      "just below the tenant's default extractionConfidenceThreshold (0.65), tripping",
+      "LOW_EXTRACTION_CONFIDENCE - the intended failure mode for this fixture."
+    ],
+    "bdaMatchedDocumentClass": "Invoices",
+    "content_type": "image/png",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "105"
+  },
+  "unhappy-path/synthetic-insurance-health-insurance-premiums-bad-scan.png": {
+    "//": [
+      "Disabled pending follow-up: succeeds (000, matches 'Health-Insurance-Premium-Statement')",
+      "despite being a bad/degraded scan - avgConfidence (~0.87-0.87) still clears the tenant's",
+      "default extractionConfidenceThreshold (0.65), so it never trips the",
+      "LOW_EXTRACTION_CONFIDENCE (105) path this fixture is meant to exercise. Verified live",
+      "(2x, consistent). Captured here for reference; revisit once the fixture is regenerated",
+      "with a noisier/lower-confidence scan."
+    ],
+    "bdaMatchedDocumentClass": "Health-Insurance-Premium-Statement",
+    "content_type": "image/png",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-investment-and-royalty-income-investments-bad-scan.png": {
+    "//": [
+      "Disabled pending follow-up: succeeds (000, matches 'Investment-Account-Statement')",
+      "despite being a bad/degraded scan - avgConfidence (~0.76-0.77) still clears the tenant's",
+      "default extractionConfidenceThreshold (0.65), so it never trips the",
+      "LOW_EXTRACTION_CONFIDENCE (105) path this fixture is meant to exercise. Verified live",
+      "(2x, consistent). Captured here for reference; revisit once the fixture is regenerated",
+      "with a noisier/lower-confidence scan. Note: bdaMatchedDocumentClass is itself flaky",
+      "between 'Investment-Account-Statement' and 'Bank-Statement' across runs (both plausible",
+      "for this content); pinned to the former here, but since the whole entry is disabled",
+      "pending a better scan, this doesn't matter for now."
+    ],
+    "bdaMatchedDocumentClass": "Investment-Account-Statement",
+    "content_type": "image/png",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-shelter-shelter-bad-scan.png": {
+    "//": [
+      "Disabled pending follow-up: succeeds (000, matches 'Shelter-Verification-Letter')",
+      "despite being a bad/degraded scan - avgConfidence (~0.819) still clears the tenant's",
+      "default extractionConfidenceThreshold (0.65), so it never trips the",
+      "LOW_EXTRACTION_CONFIDENCE (105) path this fixture is meant to exercise. Verified live",
+      "(2x, consistent). Captured here for reference; revisit once the fixture is regenerated",
+      "with a noisier/lower-confidence scan."
+    ],
+    "bdaMatchedDocumentClass": "Shelter-Verification-Letter",
+    "content_type": "image/png",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-assets-bank-statement-blank-form.pdf": {
+    "//": [
+      "Disabled pending follow-up: succeeds (000, matches 'Bank-Statement') despite being a",
+      "blank form - avgConfidence (~0.90) still clears the tenant's default",
+      "extractionConfidenceThreshold (0.65) and no required fields are flagged missing for this",
+      "document type, so it never trips LOW_EXTRACTION_CONFIDENCE (105) or MISSING_FIELDS",
+      "(101), the failure modes this fixture is meant to exercise. Verified live (2x,",
+      "consistent). Captured here for reference; revisit once required-field extraction rules",
+      "are configured for this document type, or the fixture is regenerated to omit more",
+      "content."
+    ],
+    "bdaMatchedDocumentClass": "Bank-Statement",
+    "content_type": "application/pdf",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-assets-life-insurance-policy-blank-form.pdf": {
+    "//": [
+      "Disabled pending follow-up: succeeds (000, matches 'Insurance-Company-Letter') despite",
+      "being a blank form - avgConfidence (~0.87) still clears the tenant's default",
+      "extractionConfidenceThreshold (0.65) and no required fields are flagged missing for this",
+      "document type, so it never trips LOW_EXTRACTION_CONFIDENCE (105) or MISSING_FIELDS",
+      "(101), the failure modes this fixture is meant to exercise. Verified live (2x,",
+      "consistent). Captured here for reference; revisit once required-field extraction rules",
+      "are configured for this document type, or the fixture is regenerated to omit more",
+      "content."
+    ],
+    "bdaMatchedDocumentClass": "Insurance-Company-Letter",
+    "content_type": "application/pdf",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-assets-misc-assets-blank-form.pdf": {
+    "//": [
+      "Verified live (2x, consistent). Blank form has too little content for preclassification",
+      "to identify a category but no blueprint matches at all - the intended failure mode for",
+      "this fixture."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "application/pdf",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "002"
+  },
+  "unhappy-path/synthetic-assets-real-estate-blank-form.pdf": {
+    "//": [
+      "Verified live (2x, consistent). Blank form has too little content for preclassification",
+      "to identify a category but no blueprint matches at all - the intended failure mode for",
+      "this fixture."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "application/pdf",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "002"
+  },
+  "unhappy-path/synthetic-assets-trust-funds-investment-accounts-blank-form.pdf": {
+    "//": [
+      "Disabled pending follow-up: succeeds (000, matches 'Investment-Account-Statement')",
+      "despite being a blank form - avgConfidence (~0.95) still clears the tenant's default",
+      "extractionConfidenceThreshold (0.65) and no required fields are flagged missing for this",
+      "document type, so it never trips LOW_EXTRACTION_CONFIDENCE (105) or MISSING_FIELDS",
+      "(101), the failure modes this fixture is meant to exercise. Verified live (2x,",
+      "consistent). Captured here for reference; revisit once required-field extraction rules",
+      "are configured for this document type, or the fixture is regenerated to omit more",
+      "content."
+    ],
+    "bdaMatchedDocumentClass": "Investment-Account-Statement",
+    "content_type": "application/pdf",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-assets-vehicles-blank-form.pdf": {
+    "//": [
+      "Verified live (2x, consistent). Blank form has too little content for preclassification",
+      "to identify a category but no blueprint matches at all - the intended failure mode for",
+      "this fixture."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "application/pdf",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "002"
+  },
+  "unhappy-path/synthetic-expense-burial-blank-form.pdf": {
+    "//": [
+      "Disabled pending follow-up: succeeds (000, matches 'Invoices') despite being a blank",
+      "form - avgConfidence (~0.68) still clears the tenant's default",
+      "extractionConfidenceThreshold (0.65) and no required fields are flagged missing for this",
+      "document type, so it never trips LOW_EXTRACTION_CONFIDENCE (105) or MISSING_FIELDS",
+      "(101), the failure modes this fixture is meant to exercise. Verified live (2x,",
+      "consistent). Captured here for reference; revisit once required-field extraction rules",
+      "are configured for this document type, or the fixture is regenerated to omit more",
+      "content."
+    ],
+    "bdaMatchedDocumentClass": "Invoices",
+    "content_type": "application/pdf",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-expense-child-support-or-alimony-blank-form.pdf": {
+    "//": [
+      "Disabled pending follow-up: succeeds (000, matches 'Child-Support-Document') despite",
+      "being a blank form - avgConfidence (null - no fields extracted at all, but no",
+      "required-field rule configured for this type so it isn't flagged MISSING_FIELDS either)",
+      "still clears the tenant's default extractionConfidenceThreshold (0.65) and no required",
+      "fields are flagged missing for this document type, so it never trips",
+      "LOW_EXTRACTION_CONFIDENCE (105) or MISSING_FIELDS (101), the failure modes this fixture",
+      "is meant to exercise. Verified live (2x, consistent). Captured here for reference;",
+      "revisit once required-field extraction rules are configured for this document type, or",
+      "the fixture is regenerated to omit more content."
+    ],
+    "bdaMatchedDocumentClass": "Child-Support-Document",
+    "content_type": "application/pdf",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-expense-dependent-care-blank-form.pdf": {
+    "//": [
+      "Disabled pending follow-up: succeeds (000, matches 'Invoices') despite being a blank",
+      "form - avgConfidence (~0.84) still clears the tenant's default",
+      "extractionConfidenceThreshold (0.65) and no required fields are flagged missing for this",
+      "document type, so it never trips LOW_EXTRACTION_CONFIDENCE (105) or MISSING_FIELDS",
+      "(101), the failure modes this fixture is meant to exercise. Verified live (2x,",
+      "consistent). Captured here for reference; revisit once required-field extraction rules",
+      "are configured for this document type, or the fixture is regenerated to omit more",
+      "content."
+    ],
+    "bdaMatchedDocumentClass": "Invoices",
+    "content_type": "application/pdf",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-expense-utility-cable-bill-blank-form.pdf": {
+    "//": [
+      "Disabled pending follow-up: succeeds (000, matches 'Invoices') despite being a blank",
+      "form - avgConfidence (~0.73-0.89 (varied between runs, both above threshold)) still",
+      "clears the tenant's default extractionConfidenceThreshold (0.65) and no required fields",
+      "are flagged missing for this document type, so it never trips LOW_EXTRACTION_CONFIDENCE",
+      "(105) or MISSING_FIELDS (101), the failure modes this fixture is meant to exercise.",
+      "Verified live (2x, consistent). Captured here for reference; revisit once required-field",
+      "extraction rules are configured for this document type, or the fixture is regenerated to",
+      "omit more content."
+    ],
+    "bdaMatchedDocumentClass": "Invoices",
+    "content_type": "application/pdf",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-expense-utility-electricity-bill-blank-form.pdf": {
+    "//": [
+      "Verified live (2x, consistent). Matches 'Invoices' but avgConfidence (~0.551) falls",
+      "below the tenant's default extractionConfidenceThreshold (0.65), tripping",
+      "LOW_EXTRACTION_CONFIDENCE - the intended failure mode for this fixture."
+    ],
+    "bdaMatchedDocumentClass": "Invoices",
+    "content_type": "application/pdf",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "105"
+  },
+  "unhappy-path/synthetic-expense-utility-water-sewer-bill-blank-form.pdf": {
+    "//": [
+      "Disabled pending follow-up: succeeds (000, matches 'Invoices') despite being a blank",
+      "form - avgConfidence (~0.68) still clears the tenant's default",
+      "extractionConfidenceThreshold (0.65) and no required fields are flagged missing for this",
+      "document type, so it never trips LOW_EXTRACTION_CONFIDENCE (105) or MISSING_FIELDS",
+      "(101), the failure modes this fixture is meant to exercise. Verified live (2x,",
+      "consistent). Captured here for reference; revisit once required-field extraction rules",
+      "are configured for this document type, or the fixture is regenerated to omit more",
+      "content."
+    ],
+    "bdaMatchedDocumentClass": "Invoices",
+    "content_type": "application/pdf",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-insurance-health-insurance-premiums-blank-form.pdf": {
+    "//": [
+      "Disabled pending follow-up: succeeds (000, matches 'Health-Insurance-Premium-Statement')",
+      "despite being a blank form - avgConfidence (~0.88) still clears the tenant's default",
+      "extractionConfidenceThreshold (0.65) and no required fields are flagged missing for this",
+      "document type, so it never trips LOW_EXTRACTION_CONFIDENCE (105) or MISSING_FIELDS",
+      "(101), the failure modes this fixture is meant to exercise. Verified live (2x,",
+      "consistent). Captured here for reference; revisit once required-field extraction rules",
+      "are configured for this document type, or the fixture is regenerated to omit more",
+      "content."
+    ],
+    "bdaMatchedDocumentClass": "Health-Insurance-Premium-Statement",
+    "content_type": "application/pdf",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-investment-and-royalty-income-investments-blank-form.pdf": {
+    "//": [
+      "Disabled pending follow-up: succeeds (000, matches 'Investment-Account-Statement')",
+      "despite being a blank form - avgConfidence (~0.70) still clears the tenant's default",
+      "extractionConfidenceThreshold (0.65) and no required fields are flagged missing for this",
+      "document type, so it never trips LOW_EXTRACTION_CONFIDENCE (105) or MISSING_FIELDS",
+      "(101), the failure modes this fixture is meant to exercise. Verified live (2x,",
+      "consistent). Captured here for reference; revisit once required-field extraction rules",
+      "are configured for this document type, or the fixture is regenerated to omit more",
+      "content."
+    ],
+    "bdaMatchedDocumentClass": "Investment-Account-Statement",
+    "content_type": "application/pdf",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
+  },
+  "unhappy-path/synthetic-shelter-shelter-blank-form.pdf": {
+    "//": [
+      "Disabled pending follow-up: succeeds (000, matches 'Shelter-Verification-Letter')",
+      "despite being a blank form - avgConfidence (~0.83) still clears the tenant's default",
+      "extractionConfidenceThreshold (0.65) and no required fields are flagged missing for this",
+      "document type, so it never trips LOW_EXTRACTION_CONFIDENCE (105) or MISSING_FIELDS",
+      "(101), the failure modes this fixture is meant to exercise. Verified live (2x,",
+      "consistent). Captured here for reference; revisit once required-field extraction rules",
+      "are configured for this document type, or the fixture is regenerated to omit more",
+      "content."
+    ],
+    "bdaMatchedDocumentClass": "Shelter-Verification-Letter",
+    "content_type": "application/pdf",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "000"
   }
 }
