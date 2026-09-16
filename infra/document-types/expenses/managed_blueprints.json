@@ -1,0 +1,5 @@
+[
+  { "name": "electricity-bill", "arn": "arn:aws:bedrock:us-east-1:aws:blueprint/bedrock-data-automation-public-electricity-bill" },
+  { "name": "cable-bill", "arn": "arn:aws:bedrock:us-east-1:aws:blueprint/bedrock-data-automation-public-cable-bill" },
+  { "name": "water-and-sewer-bill", "arn": "arn:aws:bedrock:us-east-1:aws:blueprint/bedrock-data-automation-public-water-and-sewer-bill" }
+]

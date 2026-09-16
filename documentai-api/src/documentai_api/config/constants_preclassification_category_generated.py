@@ -5,10 +5,12 @@ from enum import StrEnum
 
 class PreclassificationCategory(StrEnum):
     ACCOUNT_STATEMENTS = "account_statements"
+    ASSETS = "assets"
     DEPENDENT_INCOME = "dependent_income"
     EDUCATION = "education"
     EMPLOYER_INCOME = "employer_income"
     EMPLOYMENT_RECORDS = "employment_records"
+    EXPENSES = "expenses"
     GOVERNMENT_BENEFIT_INCOME = "government_benefit_income"
     IDENTITY = "identity"
     INSURANCE = "insurance"

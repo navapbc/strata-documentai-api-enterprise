@@ -1,0 +1,69 @@
+{
+  "description": "A health insurance premium invoice, billing statement, or payment confirmation from an insurer or marketplace, showing the recurring premium amount and billing period. Used to verify health-insurance-premium expenses, distinct from a one-time insurer notice letter.",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "class": "Health-Insurance-Premium-Statement",
+  "definitions": {},
+  "properties": {
+    "insurer_or_marketplace_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The name of the insurance company or health insurance marketplace issuing the statement."
+    },
+    "policyholder_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The full name of the policyholder."
+    },
+    "employer_name": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The name of the employer sponsoring the health plan, if this is an employer-sponsored premium statement."
+    },
+    "policy_or_member_id": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The policy or member identification number referenced on the statement."
+    },
+    "coverage_start_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "Start of the billing or coverage period. YYYY-MM-DD format."
+    },
+    "coverage_end_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "End of the billing or coverage period. YYYY-MM-DD format."
+    },
+    "premium_amount": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "The premium amount billed or due for the period."
+    },
+    "payment_frequency": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "How often the premium is billed, such as monthly, quarterly, or annually."
+    },
+    "payment_due_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The date the premium payment is due. YYYY-MM-DD format."
+    },
+    "payment_status": {
+      "type": "string",
+      "inferenceType": "inferred",
+      "instruction": "Determine the payment status of the statement based on context, such as amounts due, payment confirmations, or due dates. Normalize to one of: Paid, Due, or Past Due."
+    },
+    "subsidy_or_tax_credit_amount": {
+      "type": "number",
+      "inferenceType": "explicit",
+      "instruction": "The amount of any premium subsidy or tax credit applied, if shown."
+    },
+    "statement_date": {
+      "type": "string",
+      "inferenceType": "explicit",
+      "instruction": "The date the statement was issued. YYYY-MM-DD format."
+    }
+  }
+}
