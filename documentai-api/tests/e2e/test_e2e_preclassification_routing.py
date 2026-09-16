@@ -22,26 +22,24 @@ from documentai_api.config.constants_preclassification_category_generated import
 from documentai_api.schemas.document_metadata import DocumentMetadata
 
 TEST_DOCS_DIR = Path(__file__).parent.parent / "helpers" / "fixtures" / "test-documents"
+TEST_DOCS_DIR_HAPPY_PATH = TEST_DOCS_DIR / "happy-path"
 
 # Documents with stable BDA blueprint matches and known categories.
 # File -> expected preclassificationBlueprintMatchCategory value.
 ROUTING_CASES = [
     pytest.param(
-        TEST_DOCS_DIR / "happy-path" / "synthetic-public-benefits-income-proof-pay-stub.jpg",
+        TEST_DOCS_DIR_HAPPY_PATH / "synthetic-public-benefits-income-proof-pay-stub.jpg",
         PreclassificationCategory.EMPLOYER_INCOME,
         id="pay-stub -> employer_income",
     ),
     pytest.param(
-        TEST_DOCS_DIR
-        / "happy-path"
+        TEST_DOCS_DIR_HAPPY_PATH
         / "synthetic-snap-income-proof-employment-wage-verification-letter-photo.png",
         PreclassificationCategory.EMPLOYMENT_RECORDS,
         id="wage-verification-letter -> employment_records",
     ),
     pytest.param(
-        TEST_DOCS_DIR
-        / "happy-path"
-        / "synthetic-public-benefits-identity-proof-state-photo-id.jpg",
+        TEST_DOCS_DIR_HAPPY_PATH / "synthetic-public-benefits-identity-proof-state-photo-id.jpg",
         PreclassificationCategory.IDENTITY,
         id="state-id -> identity",
     ),
