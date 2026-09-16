@@ -316,6 +316,7 @@ module "metrics_bucket" {
 }
 
 module "analytics" {
+  count               = var.enable_analytics ? 1 : 0
   source              = "../../modules/analytics"
   name                = "${local.service_name}-analytics"
   results_bucket_name = "${local.service_name}-athena-results"
@@ -367,33 +368,40 @@ module "config" {
 # --- Identity Provider (Cognito) ---
 
 module "admin_ui" {
+  count       = var.enable_identity_provider ? 1 : 0
   source      = "../../modules/static-site"
   name        = "${local.service_name}-admin-ui"
   description = "DocumentAI Admin Console (${var.environment})"
 }
 
 module "demo_ui" {
+  count       = var.enable_demo_ui ? 1 : 0
   source      = "../../modules/static-site"
   name        = "${local.service_name}-demo-ui"
   description = "DocumentAI Demo (${var.environment})"
 }
 
 module "identity_provider" {
+  count  = var.enable_identity_provider ? 1 : 0
   source = "../../modules/identity-provider"
   name   = "${local.service_name}-console"
 
-  callback_urls = [
-    "http://localhost:3000/callback",
-    "http://localhost:3001/callback",
-    "https://${module.admin_ui.distribution_domain}/callback",
-    "https://${module.demo_ui.distribution_domain}/callback",
-  ]
-  logout_urls = [
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "https://${module.admin_ui.distribution_domain}",
-    "https://${module.demo_ui.distribution_domain}",
-  ]
+  callback_urls = concat(
+    [
+      "http://localhost:3000/callback",
+      "http://localhost:3001/callback",
+      "https://${module.admin_ui[0].distribution_domain}/callback",
+    ],
+    var.enable_demo_ui ? ["https://${module.demo_ui[0].distribution_domain}/callback"] : [],
+  )
+  logout_urls = concat(
+    [
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "https://${module.admin_ui[0].distribution_domain}",
+    ],
+    var.enable_demo_ui ? ["https://${module.demo_ui[0].distribution_domain}"] : [],
+  )
 
   # Google SSO: credentials stored in SSM SecureString parameters (created
   # manually via console/CLI, never committed to the repo). Set to null to
@@ -435,7 +443,7 @@ locals {
 }
 
 module "bedrock_data_automation" {
-  for_each = local.document_type_folders
+  for_each = var.enable_bedrock_data_automation ? local.document_type_folders : toset([])
   source   = "../../modules/document-data-extraction"
 
   providers = {
@@ -480,6 +488,7 @@ module "bedrock_data_automation" {
 }
 
 module "bedrock_data_automation_all" {
+  count  = var.enable_bedrock_data_automation ? 1 : 0
   source = "../../modules/document-data-extraction"
 
   providers = {
@@ -490,7 +499,7 @@ module "bedrock_data_automation_all" {
   name        = "${local.service_name}-all"
   description = "BDA project for all document types"
   blueprints = concat(
-    flatten([for k, v in module.bedrock_data_automation : v.blueprint_arns if !contains(local.all_project_excluded_folders, k)]),
+    flatten([for k, v in module.bedrock_data_automation : v.blueprint_arns if !contains(tolist(local.all_project_excluded_folders), k)]),
     local.all_managed_blueprint_arns,
   )
 
@@ -552,17 +561,15 @@ locals {
   # is the only layer that can answer it. Passed only to the API Lambda via
   # api_lambda_env_vars below.
   cors_allowed_origins = concat(
-    [module.admin_ui.url, module.demo_ui.url],
+    var.enable_identity_provider ? [module.admin_ui[0].url] : [],
+    var.enable_demo_ui ? [module.demo_ui[0].url] : [],
     var.extra_cors_allowed_origins,
   )
 
   lambda_env_vars = merge(
-    {
-      # Per-category project IDs - prefix stripped to save env space. App reconstructs
-      # full ARN via BDA_PROJECT_ARN_PREFIX + BDA_PROJECT_ID_{CATEGORY}.
-      # Adding/removing a folder in infra/document-types automatically injects/removes its entry.
+    var.enable_bedrock_data_automation ? {
       for k, v in module.bedrock_data_automation : "BDA_PROJECT_ID_${upper(k)}" => regex("^.*/(.+)$", v.project_arn)[0]
-    },
+    } : {},
     {
       ENVIRONMENT                                               = var.environment
       DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME                   = module.document_metadata.table_name
@@ -586,12 +593,12 @@ locals {
       DOCUMENTAI_OUTPUT_LOCATION                                = "s3://${module.output_bucket.bucket_name}/processed"
       DDB_METRICS_INPUT_QUEUE_URL                               = module.metrics_queue.queue_url
       DDB_EXPORT_BUCKET_NAME                                    = module.metrics_bucket.bucket_name
-      DDB_RAW_DATA_TABLE_NAME                                   = module.analytics.raw_metrics_table_name
-      GLUE_DATABASE_NAME                                        = module.analytics.database_name
-      ATHENA_WORKGROUP_NAME                                     = module.analytics.workgroup_name
-      BDA_PROJECT_ARN_PREFIX                                    = regex("^(.*)/", module.bedrock_data_automation_all.project_arn)[0]
-      BDA_PROJECT_ARN_ALL                                       = module.bedrock_data_automation_all.project_arn
-      BDA_PROFILE_ARN                                           = module.bedrock_data_automation_all.profile_arn
+      DDB_RAW_DATA_TABLE_NAME                                   = var.enable_analytics ? module.analytics[0].raw_metrics_table_name : ""
+      GLUE_DATABASE_NAME                                        = var.enable_analytics ? module.analytics[0].database_name : ""
+      ATHENA_WORKGROUP_NAME                                     = var.enable_analytics ? module.analytics[0].workgroup_name : ""
+      BDA_PROJECT_ARN_PREFIX                                    = var.enable_bedrock_data_automation ? regex("^(.*)/", module.bedrock_data_automation_all[0].project_arn)[0] : ""
+      BDA_PROJECT_ARN_ALL                                       = var.enable_bedrock_data_automation ? module.bedrock_data_automation_all[0].project_arn : ""
+      BDA_PROFILE_ARN                                           = var.enable_bedrock_data_automation ? module.bedrock_data_automation_all[0].profile_arn : ""
       BDA_REGION                                                = var.bda_region
       BEDROCK_CLASSIFICATION_MODEL_ID_PARAM                     = "${local.ssm_prefix}/models/classification-model-id"
       BEDROCK_BOUNDING_BOX_MODEL_ID_PARAM                       = "${local.ssm_prefix}/models/bounding-box-model-id"
@@ -602,8 +609,8 @@ locals {
       API_AUTH_ENABLED                                          = local.api_auth_enabled
       API_AUTH_CACHE_TTL                                        = local.api_auth_cache_ttl
       API_AUTH_INSECURE_SHARED_KEY_PARAM                        = "/${var.project_name}/${var.environment}/api-auth-insecure-shared-key"
-      COGNITO_USER_POOL_ID                                      = module.identity_provider.user_pool_id
-      COGNITO_CLIENT_ID                                         = module.identity_provider.client_id
+      COGNITO_USER_POOL_ID                                      = var.enable_identity_provider ? module.identity_provider[0].user_pool_id : ""
+      COGNITO_CLIENT_ID                                         = var.enable_identity_provider ? module.identity_provider[0].client_id : ""
       OTEL_SDK_DISABLED                                         = tostring(!var.otel_enabled)
       OTEL_SERVICE_NAME                                         = var.otel_service_name
       OTEL_EXPORTER_OTLP_ENDPOINT                               = var.otel_exporter_otlp_endpoint
@@ -642,6 +649,7 @@ locals {
 # --- Monitoring (CloudWatch dashboard + alarms + SNS) ---
 
 module "monitoring" {
+  count  = var.enable_monitoring ? 1 : 0
   source = "../../modules/monitoring"
 
   name_prefix  = local.service_name
@@ -771,16 +779,20 @@ data "aws_iam_policy_document" "storage_access" {
       "s3:ListBucket",
       "s3:GetBucketLocation",
     ]
-    resources = [
-      module.input_bucket.bucket_arn,
-      "${module.input_bucket.bucket_arn}/*",
-      module.output_bucket.bucket_arn,
-      "${module.output_bucket.bucket_arn}/*",
-      module.metrics_bucket.bucket_arn,
-      "${module.metrics_bucket.bucket_arn}/*",
-      module.analytics.results_bucket_arn,
-      "${module.analytics.results_bucket_arn}/*",
-    ]
+    resources = concat(
+      [
+        module.input_bucket.bucket_arn,
+        "${module.input_bucket.bucket_arn}/*",
+        module.output_bucket.bucket_arn,
+        "${module.output_bucket.bucket_arn}/*",
+        module.metrics_bucket.bucket_arn,
+        "${module.metrics_bucket.bucket_arn}/*",
+      ],
+      var.enable_analytics ? [
+        module.analytics[0].results_bucket_arn,
+        "${module.analytics[0].results_bucket_arn}/*",
+      ] : [],
+    )
   }
 }
 

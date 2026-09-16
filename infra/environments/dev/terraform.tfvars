@@ -18,3 +18,10 @@ extra_cors_allowed_origins = [
   "http://127.0.0.1:3000",
   "http://127.0.0.1:3001",
 ]
+
+# Optional module toggles — all enabled by default so existing deployments are unchanged.
+enable_identity_provider       = true
+enable_demo_ui                 = true
+enable_analytics               = true
+enable_monitoring              = true
+enable_bedrock_data_automation = true

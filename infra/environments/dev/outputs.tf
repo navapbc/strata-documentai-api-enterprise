@@ -47,58 +47,58 @@ output "output_bucket" {
 }
 
 output "bda_project_arns" {
-  value = { for k, v in module.bedrock_data_automation : k => v.project_arn }
+  value = var.enable_bedrock_data_automation ? { for k, v in module.bedrock_data_automation : k => v.project_arn } : {}
 }
 
 output "bda_profile_arn" {
-  value = module.bedrock_data_automation_all.profile_arn
+  value = var.enable_bedrock_data_automation ? module.bedrock_data_automation_all[0].profile_arn : null
 }
 
 output "blueprint_arns" {
   description = "ARNs for all custom blueprints created by this project"
-  value = distinct(flatten(concat(
+  value = var.enable_bedrock_data_automation ? distinct(flatten(concat(
     [for k, v in module.bedrock_data_automation : v.blueprint_arns],
-    [module.bedrock_data_automation_all.blueprint_arns],
-  )))
+    [module.bedrock_data_automation_all[0].blueprint_arns],
+  ))) : []
 }
 
 output "cognito_user_pool_id" {
-  value = module.identity_provider.user_pool_id
+  value = var.enable_identity_provider ? module.identity_provider[0].user_pool_id : null
 }
 
 output "cognito_client_id" {
-  value = module.identity_provider.client_id
+  value = var.enable_identity_provider ? module.identity_provider[0].client_id : null
 }
 
 output "admin_ui_bucket" {
-  value = module.admin_ui.bucket_name
+  value = var.enable_identity_provider ? module.admin_ui[0].bucket_name : null
 }
 
 output "admin_ui_distribution_id" {
-  value = module.admin_ui.distribution_id
+  value = var.enable_identity_provider ? module.admin_ui[0].distribution_id : null
 }
 
 output "admin_ui_url" {
-  value = module.admin_ui.url
+  value = var.enable_identity_provider ? module.admin_ui[0].url : null
 }
 
 output "demo_ui_bucket" {
-  value = module.demo_ui.bucket_name
+  value = var.enable_demo_ui ? module.demo_ui[0].bucket_name : null
 }
 
 output "demo_ui_distribution_id" {
-  value = module.demo_ui.distribution_id
+  value = var.enable_demo_ui ? module.demo_ui[0].distribution_id : null
 }
 
 output "demo_ui_url" {
-  value = module.demo_ui.url
+  value = var.enable_demo_ui ? module.demo_ui[0].url : null
 }
 
 
 output "cognito_domain" {
-  value = nonsensitive(module.identity_provider.user_pool_domain)
+  value = var.enable_identity_provider ? nonsensitive(module.identity_provider[0].user_pool_domain) : null
 }
 
 output "cognito_google_enabled" {
-  value = nonsensitive(module.identity_provider.google_enabled)
+  value = var.enable_identity_provider ? nonsensitive(module.identity_provider[0].google_enabled) : null
 }

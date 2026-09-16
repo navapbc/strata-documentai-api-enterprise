@@ -79,3 +79,33 @@ variable "extra_cors_allowed_origins" {
   description = "Additional CORS origins beyond the managed admin/demo CloudFront URLs (e.g. ['http://localhost:3000'] for local UI dev). Inject at plan/apply via -var or TF_VAR_extra_cors_allowed_origins; the CloudFront origins are always included automatically."
   default     = []
 }
+
+variable "enable_identity_provider" {
+  type        = bool
+  description = "Deploy Cognito user pool, admin UI, and associated CloudFront distribution."
+  default     = true
+}
+
+variable "enable_demo_ui" {
+  type        = bool
+  description = "Deploy the demo UI CloudFront distribution and S3 bucket."
+  default     = true
+}
+
+variable "enable_analytics" {
+  type        = bool
+  description = "Deploy Athena workgroup, Glue database, and results bucket."
+  default     = true
+}
+
+variable "enable_monitoring" {
+  type        = bool
+  description = "Deploy CloudWatch dashboard, alarms, and SNS topic."
+  default     = true
+}
+
+variable "enable_bedrock_data_automation" {
+  type        = bool
+  description = "Deploy Bedrock Data Automation projects (per-category and all)."
+  default     = true
+}
