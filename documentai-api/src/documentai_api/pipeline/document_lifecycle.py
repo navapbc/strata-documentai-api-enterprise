@@ -25,8 +25,8 @@ from documentai_api.services import cloudwatch as cloudwatch_service
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils.bbox_detection import BboxResult
 from documentai_api.utils.blur_detection import BlurResult, detect_blur
+from documentai_api.utils.checks import BlurSkipReason
 from documentai_api.utils.ddb import update_ddb, upsert_ddb
-from documentai_api.utils.evaluations import BlurSkipReason
 from documentai_api.utils.image_optimization import get_bbox_if_enabled
 from documentai_api.utils.otel_context import submit_with_otel_context
 from documentai_api.utils.preclassification import find_matching_blueprint, preclassify_document
@@ -176,6 +176,7 @@ def insert_minimal_ddb_record(record: DocumentRecord) -> None:
             tenant_id=record.tenant_id,
             api_key_name=record.api_key_name,
             is_demo=record.is_demo,
+            is_eval=record.is_eval,
             ttl_days=record.ttl_days,
         )
     )

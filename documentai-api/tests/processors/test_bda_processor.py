@@ -115,6 +115,10 @@ def test_classify_extraction_result_below_floor(
 
     with (
         patch(
+            "documentai_api.classifiers.document_classification.get_ddb_record",
+            return_value={},
+        ),
+        patch(
             "documentai_api.classifiers.document_classification.classify_as_success"
         ) as mock_classify,
         patch(

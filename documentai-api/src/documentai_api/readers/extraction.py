@@ -22,6 +22,8 @@ def read_output(
     ddb_record: dict[str, Any],
     include_extracted_data: bool,
     include_bounding_box: bool = False,
+    output_uri: str | None = None,
+    extract_method: str | None = None,
 ) -> ReaderResult:
     """Fetch stored extraction result from S3 and dispatch to the appropriate reader."""
     if not include_extracted_data:
@@ -32,7 +34,7 @@ def read_output(
             field_confidence_map_list=field_confidence_map_list, field_values={}, field_geometry={}
         )
 
-    s3_uri = ddb_record.get(DocumentMetadata.BDA_OUTPUT_S3_URI)
+    s3_uri = output_uri or ddb_record.get(DocumentMetadata.BDA_OUTPUT_S3_URI)
     if not s3_uri:
         return ReaderResult.empty()
 
@@ -40,7 +42,7 @@ def read_output(
     if not raw:
         return ReaderResult.empty()
 
-    extract_method = ddb_record.get(DocumentMetadata.EXTRACT_METHOD, ExtractMethod.BDA)
-    reader: Any = _READERS.get(extract_method, read_bda_output)
+    method = extract_method or ddb_record.get(DocumentMetadata.EXTRACT_METHOD, ExtractMethod.BDA)
+    reader: Any = _READERS.get(method, read_bda_output)
     result: ReaderResult = reader(raw, include_bounding_box)
     return result

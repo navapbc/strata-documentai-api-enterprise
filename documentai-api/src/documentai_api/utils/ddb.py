@@ -312,8 +312,10 @@ def _send_record_to_metrics_queue(object_key: str) -> None:
 
         if not ddb_record:
             logger.warning(f"DDB record not found for {object_key}, skipping metrics")
-            # do not raise an exception here. metrics are optional and shouldn't
-            # prevent process from completing successfully
+            return
+
+        if ddb_record.get(DocumentMetadata.IS_EVAL):
+            logger.info(f"Skipping metrics queue for eval document {object_key}")
             return
 
         # Inject traceparent into SQS MessageAttributes so metrics-processor can
@@ -545,6 +547,12 @@ def upsert_ddb(data: InitialDdbRecord) -> None:
         if data.user_provided_document_category:
             expr_fields.append(f"{DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY} = :category")
             expr_values[":category"] = data.user_provided_document_category
+
+        if data.is_eval:
+            expr_fields.append(
+                f"{DocumentMetadata.EVAL_V1_RESPONSES} = if_not_exists({DocumentMetadata.EVAL_V1_RESPONSES}, :emptyMap)"
+            )
+            expr_values[":emptyMap"] = {}
 
         # internal_api_response and pre_classification are handled by dedicated
         # paths below, so exclude them here - dumping them is dead work and would

@@ -295,7 +295,7 @@ src/documentai_api/
 │   ├── metrics.py                  # Metrics query endpoints
 │   ├── demo.py                     # Demo endpoints
 │   ├── search.py                   # Document search endpoints
-│   ├── evaluation.py               # Evaluation endpoints
+│   ├── checks.py                   # Document quality checklist endpoints
 │   ├── auth_events.py              # Auth event endpoints
 │   ├── me.py                       # Current user endpoint
 │   └── admin_usage.py              # Admin usage endpoints

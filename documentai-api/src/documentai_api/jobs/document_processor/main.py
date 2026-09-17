@@ -300,13 +300,14 @@ def _invoke_llm_path(
     """Write OCR blocks to S3 and enqueue an LLM extraction request.
 
     No-ops when the feature flag is off or no blueprint type was matched.
-    Errors are logged and swallowed — BDA is the authoritative extraction path.
+    Errors are logged and swallowed - BDA is the authoritative extraction path.
     """
     import json
 
     document_type = existing_record.get(DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCHED_TYPE)
+    is_eval = existing_record.get(DocumentMetadata.IS_EVAL, False)
 
-    if not document_type or not is_llm_extraction_enabled():
+    if not document_type or (not is_llm_extraction_enabled() and not is_eval):
         return
 
     try:

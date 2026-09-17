@@ -1,14 +1,14 @@
 from documentai_api.models.base import BaseApiResponse
 
 
-class EvaluationEntry(BaseApiResponse):
+class CheckEntry(BaseApiResponse):
     status: str
     reason: str | None = None
 
 
-class EvaluationResponse(BaseApiResponse):
+class CheckResponse(BaseApiResponse):
     job_id: str
     created_at: str | None
     response_code: str | None
     response_code_description: str | None
-    evaluations: dict[str, EvaluationEntry]
+    checks: dict[str, CheckEntry]

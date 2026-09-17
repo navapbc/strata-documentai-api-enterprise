@@ -1,28 +1,28 @@
-"""Tests for the /evaluation endpoint."""
+"""Tests for the /check endpoint."""
 
 import pytest
 
 from documentai_api.schemas.document_metadata import DocumentMetadata
-from documentai_api.utils.evaluations import EvaluationKey, EvaluationStatus, NotEvaluatedReason
+from documentai_api.utils.checks import CheckKey, CheckStatus, NotEvaluatedReason
 from documentai_api.utils.jobs import JobStatus
 from documentai_api.utils.response_codes import ResponseCodes
 
 TEST_JOB_ID = "00000000-0000-4000-8000-000000000001"
-EVALUATION_URL = f"/v1/documents/{TEST_JOB_ID}/evaluation"
+CHECK_URL = f"/v1/documents/{TEST_JOB_ID}/check"
 
-_PASS = EvaluationStatus.PASS
-_FAIL = EvaluationStatus.FAIL
-_NOT_EVALUATED = EvaluationStatus.NOT_EVALUATED
+_PASS = CheckStatus.PASS
+_FAIL = CheckStatus.FAIL
+_NOT_EVALUATED = CheckStatus.NOT_EVALUATED
 
 _ALL_KEYS = {
-    EvaluationKey.PASSWORD_PROTECTED,
-    EvaluationKey.DOCUMENT_DETECTED,
-    EvaluationKey.BLUR,
-    EvaluationKey.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
-    EvaluationKey.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
-    EvaluationKey.MISCATEGORIZATION,
-    EvaluationKey.MISSING_FIELDS,
-    EvaluationKey.EXTRACTION_CONFIDENCE,
+    CheckKey.PASSWORD_PROTECTED,
+    CheckKey.DOCUMENT_DETECTED,
+    CheckKey.BLUR,
+    CheckKey.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
+    CheckKey.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
+    CheckKey.MISCATEGORIZATION,
+    CheckKey.MISSING_FIELDS,
+    CheckKey.EXTRACTION_CONFIDENCE,
 }
 
 
@@ -53,34 +53,34 @@ def _job(response_code: str, extra_ddb: dict[str, object] | None = None) -> JobS
 
 
 def test_evaluation_not_found(api_client, mocker):
-    mocker.patch("documentai_api.routers.evaluation.get_job_status").return_value = JobStatus(
+    mocker.patch("documentai_api.routers.checks.get_job_status").return_value = JobStatus(
         ddb_record=None, object_key=None, process_status=None, v1_response_json=None
     )
-    assert api_client.get(EVALUATION_URL).status_code == 404
+    assert api_client.get(CHECK_URL).status_code == 404
 
 
 def test_evaluation_still_processing(api_client, mocker):
-    mocker.patch("documentai_api.routers.evaluation.get_job_status").return_value = JobStatus(
+    mocker.patch("documentai_api.routers.checks.get_job_status").return_value = JobStatus(
         ddb_record={DocumentMetadata.TENANT_ID: "test-tenant"},
         object_key="test.pdf",
         process_status="started",
         v1_response_json=None,
     )
-    assert api_client.get(EVALUATION_URL).status_code == 400
+    assert api_client.get(CHECK_URL).status_code == 400
 
 
 def test_evaluation_wrong_tenant(api_client, mocker):
-    mocker.patch("documentai_api.routers.evaluation.get_job_status").return_value = JobStatus(
+    mocker.patch("documentai_api.routers.checks.get_job_status").return_value = JobStatus(
         ddb_record={DocumentMetadata.TENANT_ID: "other-tenant"},
         object_key="test.pdf",
         process_status="success",
         v1_response_json='{"jobId": "test"}',
     )
-    assert api_client.get(EVALUATION_URL).status_code == 404
+    assert api_client.get(CHECK_URL).status_code == 404
 
 
 def test_evaluation_invalid_uuid(api_client):
-    assert api_client.get("/v1/documents/not-a-uuid/evaluation").status_code == 422
+    assert api_client.get("/v1/documents/not-a-uuid/check").status_code == 422
 
 
 # =============================================================================
@@ -89,14 +89,14 @@ def test_evaluation_invalid_uuid(api_client):
 
 
 def test_evaluation_response_shape(api_client, mocker):
-    mocker.patch("documentai_api.routers.evaluation.get_job_status").return_value = _job(
+    mocker.patch("documentai_api.routers.checks.get_job_status").return_value = _job(
         ResponseCodes.SUCCESS
     )
-    data = api_client.get(EVALUATION_URL).json()
+    data = api_client.get(CHECK_URL).json()
     assert data["jobId"] == TEST_JOB_ID
     assert data["responseCode"] == ResponseCodes.SUCCESS
     assert data["createdAt"] == "2024-01-01T00:00:00Z"
-    assert set(data["evaluations"].keys()) == _ALL_KEYS
+    assert set(data["checks"].keys()) == _ALL_KEYS
 
 
 # =============================================================================
@@ -119,10 +119,8 @@ def test_evaluation_response_shape(api_client, mocker):
 def test_evaluation_safe_default_codes_all_not_evaluated(
     api_client, mocker, response_code, expected_reason
 ):
-    mocker.patch("documentai_api.routers.evaluation.get_job_status").return_value = _job(
-        response_code
-    )
-    evals = api_client.get(EVALUATION_URL).json()["evaluations"]
+    mocker.patch("documentai_api.routers.checks.get_job_status").return_value = _job(response_code)
+    evals = api_client.get(CHECK_URL).json()["checks"]
     assert all(e["status"] == _NOT_EVALUATED for e in evals.values())
     assert all(e["reason"] == expected_reason for e in evals.values())
 
@@ -133,7 +131,7 @@ def test_evaluation_safe_default_codes_all_not_evaluated(
 
 
 def test_evaluation_success_clean_document_all_pass(api_client, mocker):
-    mocker.patch("documentai_api.routers.evaluation.get_job_status").return_value = _job(
+    mocker.patch("documentai_api.routers.checks.get_job_status").return_value = _job(
         ResponseCodes.SUCCESS,
         extra_ddb={
             DocumentMetadata.IS_PASSWORD_PROTECTED: False,
@@ -144,116 +142,112 @@ def test_evaluation_success_clean_document_all_pass(api_client, mocker):
             DocumentMetadata.EXTRACTION_CONFIDENCE_THRESHOLD: 0.65,
         },
     )
-    evals = api_client.get(EVALUATION_URL).json()["evaluations"]
+    evals = api_client.get(CHECK_URL).json()["checks"]
     assert all(e["status"] == _PASS for e in evals.values())
 
 
 def test_evaluation_success_password_protected_signal(api_client, mocker):
     """IS_PASSWORD_PROTECTED=True on a success code still reports fail for that key."""
-    mocker.patch("documentai_api.routers.evaluation.get_job_status").return_value = _job(
+    mocker.patch("documentai_api.routers.checks.get_job_status").return_value = _job(
         ResponseCodes.SUCCESS,
         extra_ddb={DocumentMetadata.IS_PASSWORD_PROTECTED: True},
     )
-    evals = api_client.get(EVALUATION_URL).json()["evaluations"]
-    assert evals[EvaluationKey.PASSWORD_PROTECTED]["status"] == _FAIL
+    evals = api_client.get(CHECK_URL).json()["checks"]
+    assert evals[CheckKey.PASSWORD_PROTECTED]["status"] == _FAIL
 
 
 def test_evaluation_success_blur_detected_not_enforced(api_client, mocker):
     """blur_enabled=True, blur_enforced=False: code 000 but IS_DOCUMENT_BLURRY=True."""
     blur_reason = "Low average sharpness detected across all quadrants."
-    mocker.patch("documentai_api.routers.evaluation.get_job_status").return_value = _job(
+    mocker.patch("documentai_api.routers.checks.get_job_status").return_value = _job(
         ResponseCodes.SUCCESS,
         extra_ddb={
             DocumentMetadata.IS_DOCUMENT_BLURRY: True,
             DocumentMetadata.IS_DOCUMENT_BLURRY_REASON: blur_reason,
         },
     )
-    evals = api_client.get(EVALUATION_URL).json()["evaluations"]
-    assert evals[EvaluationKey.BLUR]["status"] == _FAIL
-    assert evals[EvaluationKey.BLUR]["reason"] == blur_reason
+    evals = api_client.get(CHECK_URL).json()["checks"]
+    assert evals[CheckKey.BLUR]["status"] == _FAIL
+    assert evals[CheckKey.BLUR]["reason"] == blur_reason
 
 
 def test_evaluation_success_blur_pass_reason_surfaced(api_client, mocker):
     """Blur skip reason (e.g. not a document) is surfaced on pass."""
     skip_reason = "Blur check was skipped - insufficient text detected to evaluate."
-    mocker.patch("documentai_api.routers.evaluation.get_job_status").return_value = _job(
+    mocker.patch("documentai_api.routers.checks.get_job_status").return_value = _job(
         ResponseCodes.SUCCESS,
         extra_ddb={
             DocumentMetadata.IS_DOCUMENT_BLURRY: False,
             DocumentMetadata.IS_DOCUMENT_BLURRY_REASON: skip_reason,
         },
     )
-    evals = api_client.get(EVALUATION_URL).json()["evaluations"]
-    assert evals[EvaluationKey.BLUR]["status"] == _PASS
-    assert evals[EvaluationKey.BLUR]["reason"] == skip_reason
+    evals = api_client.get(CHECK_URL).json()["checks"]
+    assert evals[CheckKey.BLUR]["status"] == _PASS
+    assert evals[CheckKey.BLUR]["reason"] == skip_reason
 
 
 def test_evaluation_success_miscategorization_from_signal(api_client, mocker):
     """PRECLASSIFICATION_CATEGORY_MATCH=False reports fail even without a 102 code."""
-    mocker.patch("documentai_api.routers.evaluation.get_job_status").return_value = _job(
+    mocker.patch("documentai_api.routers.checks.get_job_status").return_value = _job(
         ResponseCodes.SUCCESS,
         extra_ddb={DocumentMetadata.PRECLASSIFICATION_CATEGORY_MATCH: False},
     )
-    evals = api_client.get(EVALUATION_URL).json()["evaluations"]
-    assert evals[EvaluationKey.MISCATEGORIZATION]["status"] == _FAIL
+    evals = api_client.get(CHECK_URL).json()["checks"]
+    assert evals[CheckKey.MISCATEGORIZATION]["status"] == _FAIL
 
 
 def test_evaluation_success_missing_fields_from_signal(api_client, mocker):
-    mocker.patch("documentai_api.routers.evaluation.get_job_status").return_value = _job(
+    mocker.patch("documentai_api.routers.checks.get_job_status").return_value = _job(
         ResponseCodes.SUCCESS,
         extra_ddb={
             DocumentMetadata.MISSING_REQUIRED_FIELD_LIST: ["field_a", "field_b"],
             DocumentMetadata.EXTRACTION_RULES_CONFIGURED: True,
         },
     )
-    evals = api_client.get(EVALUATION_URL).json()["evaluations"]
-    assert evals[EvaluationKey.MISSING_FIELDS]["status"] == _FAIL
+    evals = api_client.get(CHECK_URL).json()["checks"]
+    assert evals[CheckKey.MISSING_FIELDS]["status"] == _FAIL
 
 
 def test_evaluation_legacy_document_missing_fields_and_confidence_not_evaluated(api_client, mocker):
     """Docs processed before enrichment lack sentinel fields - both keys report not_evaluated."""
-    mocker.patch("documentai_api.routers.evaluation.get_job_status").return_value = _job(
+    mocker.patch("documentai_api.routers.checks.get_job_status").return_value = _job(
         ResponseCodes.SUCCESS,
         extra_ddb={},  # no EXTRACTION_RULES_CONFIGURED, no EXTRACTION_CONFIDENCE_THRESHOLD
     )
-    evals = api_client.get(EVALUATION_URL).json()["evaluations"]
-    assert evals[EvaluationKey.MISSING_FIELDS]["status"] == _NOT_EVALUATED
-    assert evals[EvaluationKey.MISSING_FIELDS]["reason"] == NotEvaluatedReason.LEGACY_DOCUMENT
-    assert evals[EvaluationKey.EXTRACTION_CONFIDENCE]["status"] == _NOT_EVALUATED
-    assert (
-        evals[EvaluationKey.EXTRACTION_CONFIDENCE]["reason"] == NotEvaluatedReason.LEGACY_DOCUMENT
-    )
+    evals = api_client.get(CHECK_URL).json()["checks"]
+    assert evals[CheckKey.MISSING_FIELDS]["status"] == _NOT_EVALUATED
+    assert evals[CheckKey.MISSING_FIELDS]["reason"] == NotEvaluatedReason.LEGACY_DOCUMENT
+    assert evals[CheckKey.EXTRACTION_CONFIDENCE]["status"] == _NOT_EVALUATED
+    assert evals[CheckKey.EXTRACTION_CONFIDENCE]["reason"] == NotEvaluatedReason.LEGACY_DOCUMENT
 
 
 def test_evaluation_success_extraction_confidence_from_signal(api_client, mocker):
-    mocker.patch("documentai_api.routers.evaluation.get_job_status").return_value = _job(
+    mocker.patch("documentai_api.routers.checks.get_job_status").return_value = _job(
         ResponseCodes.SUCCESS,
         extra_ddb={
             DocumentMetadata.BELOW_EXTRACTION_CONFIDENCE_FLOOR: True,
             DocumentMetadata.EXTRACTION_CONFIDENCE_THRESHOLD: 0.65,
         },
     )
-    evals = api_client.get(EVALUATION_URL).json()["evaluations"]
-    assert evals[EvaluationKey.EXTRACTION_CONFIDENCE]["status"] == _FAIL
+    evals = api_client.get(CHECK_URL).json()["checks"]
+    assert evals[CheckKey.EXTRACTION_CONFIDENCE]["status"] == _FAIL
 
 
 def test_evaluation_success_document_detected_reason(api_client, mocker):
-    mocker.patch("documentai_api.routers.evaluation.get_job_status").return_value = _job(
+    mocker.patch("documentai_api.routers.checks.get_job_status").return_value = _job(
         ResponseCodes.SUCCESS
     )
-    evals = api_client.get(EVALUATION_URL).json()["evaluations"]
-    assert evals[EvaluationKey.DOCUMENT_DETECTED]["reason"] == "Sufficient text detected."
+    evals = api_client.get(CHECK_URL).json()["checks"]
+    assert evals[CheckKey.DOCUMENT_DETECTED]["reason"] == "Sufficient text detected."
 
 
 def test_evaluation_success_password_protected_pass_reason(api_client, mocker):
-    mocker.patch("documentai_api.routers.evaluation.get_job_status").return_value = _job(
+    mocker.patch("documentai_api.routers.checks.get_job_status").return_value = _job(
         ResponseCodes.SUCCESS,
         extra_ddb={DocumentMetadata.IS_PASSWORD_PROTECTED: False},
     )
-    evals = api_client.get(EVALUATION_URL).json()["evaluations"]
-    assert (
-        evals[EvaluationKey.PASSWORD_PROTECTED]["reason"] == "Document is not password protected."
-    )
+    evals = api_client.get(CHECK_URL).json()["checks"]
+    assert evals[CheckKey.PASSWORD_PROTECTED]["reason"] == "Document is not password protected."
 
 
 # =============================================================================
@@ -266,27 +260,27 @@ def test_evaluation_success_password_protected_pass_reason(api_client, mocker):
     [
         (
             ResponseCodes.PASSWORD_PROTECTED,
-            EvaluationKey.PASSWORD_PROTECTED,
+            CheckKey.PASSWORD_PROTECTED,
             NotEvaluatedReason.STOPPED_PASSWORD_PROTECTED,
         ),
         (
             ResponseCodes.NO_DOCUMENT_DETECTED,
-            EvaluationKey.DOCUMENT_DETECTED,
+            CheckKey.DOCUMENT_DETECTED,
             NotEvaluatedReason.STOPPED_NO_DOCUMENT,
         ),
         (
             ResponseCodes.BLURRY_DOCUMENT_DETECTED,
-            EvaluationKey.BLUR,
+            CheckKey.BLUR,
             NotEvaluatedReason.STOPPED_BLURRY,
         ),
         (
             ResponseCodes.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
-            EvaluationKey.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
+            CheckKey.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
             NotEvaluatedReason.STOPPED_MULTIPLE_DOCUMENTS,
         ),
         (
             ResponseCodes.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
-            EvaluationKey.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
+            CheckKey.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
             NotEvaluatedReason.STOPPED_MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
         ),
     ],
@@ -294,15 +288,13 @@ def test_evaluation_success_password_protected_pass_reason(api_client, mocker):
 def test_evaluation_stop_code_structure(
     api_client, mocker, response_code, stop_key, not_evaluated_reason
 ):
-    from documentai_api.utils.evaluations import EVALUATION_PIPELINE
+    from documentai_api.utils.checks import CHECKLIST
 
-    mocker.patch("documentai_api.routers.evaluation.get_job_status").return_value = _job(
-        response_code
-    )
-    evals = api_client.get(EVALUATION_URL).json()["evaluations"]
+    mocker.patch("documentai_api.routers.checks.get_job_status").return_value = _job(response_code)
+    evals = api_client.get(CHECK_URL).json()["checks"]
 
-    stop_index = EVALUATION_PIPELINE.index(stop_key)
-    for i, key in enumerate(EVALUATION_PIPELINE):
+    stop_index = CHECKLIST.index(stop_key)
+    for i, key in enumerate(CHECKLIST):
         if i < stop_index:
             assert evals[key]["status"] == _PASS, f"{key} should be pass"
         elif i == stop_index:
@@ -314,19 +306,19 @@ def test_evaluation_stop_code_structure(
 
 def test_evaluation_stop_code_reached_keys_use_signals(api_client, mocker):
     """For a 400 (multiple docs) stop, blur is reached and reads its own signal."""
-    mocker.patch("documentai_api.routers.evaluation.get_job_status").return_value = _job(
+    mocker.patch("documentai_api.routers.checks.get_job_status").return_value = _job(
         ResponseCodes.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
         extra_ddb={
             DocumentMetadata.IS_DOCUMENT_BLURRY: True,
             DocumentMetadata.IS_DOCUMENT_BLURRY_REASON: "Low sharpness.",
         },
     )
-    evals = api_client.get(EVALUATION_URL).json()["evaluations"]
+    evals = api_client.get(CHECK_URL).json()["checks"]
     # blur is before multipleDocuments in the pipeline - it was reached
-    assert evals[EvaluationKey.BLUR]["status"] == _FAIL
-    assert evals[EvaluationKey.BLUR]["reason"] == "Low sharpness."
+    assert evals[CheckKey.BLUR]["status"] == _FAIL
+    assert evals[CheckKey.BLUR]["reason"] == "Low sharpness."
     # multipleDocumentsOnSinglePage is the stop key
-    assert evals[EvaluationKey.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE]["status"] == _FAIL
+    assert evals[CheckKey.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE]["status"] == _FAIL
 
 
 # =============================================================================
@@ -336,7 +328,7 @@ def test_evaluation_stop_code_reached_keys_use_signals(api_client, mocker):
 
 def test_evaluation_extraction_trio_all_evaluated_independently(api_client, mocker):
     """101/102/105 all route through signal path - all three keys are evaluated."""
-    mocker.patch("documentai_api.routers.evaluation.get_job_status").return_value = _job(
+    mocker.patch("documentai_api.routers.checks.get_job_status").return_value = _job(
         ResponseCodes.MISSING_FIELDS,
         extra_ddb={
             DocumentMetadata.PRECLASSIFICATION_CATEGORY_MATCH: False,
@@ -346,23 +338,23 @@ def test_evaluation_extraction_trio_all_evaluated_independently(api_client, mock
             DocumentMetadata.EXTRACTION_CONFIDENCE_THRESHOLD: 0.65,
         },
     )
-    evals = api_client.get(EVALUATION_URL).json()["evaluations"]
-    assert evals[EvaluationKey.MISCATEGORIZATION]["status"] == _FAIL
-    assert evals[EvaluationKey.MISSING_FIELDS]["status"] == _FAIL
-    assert evals[EvaluationKey.EXTRACTION_CONFIDENCE]["status"] == _FAIL
+    evals = api_client.get(CHECK_URL).json()["checks"]
+    assert evals[CheckKey.MISCATEGORIZATION]["status"] == _FAIL
+    assert evals[CheckKey.MISSING_FIELDS]["status"] == _FAIL
+    assert evals[CheckKey.EXTRACTION_CONFIDENCE]["status"] == _FAIL
 
 
 def test_evaluation_extraction_trio_no_not_evaluated(api_client, mocker):
     """For 101/102/105, extractionConfidence is never not_evaluated - it has a stored signal."""
-    mocker.patch("documentai_api.routers.evaluation.get_job_status").return_value = _job(
+    mocker.patch("documentai_api.routers.checks.get_job_status").return_value = _job(
         ResponseCodes.MISCATEGORIZED,
         extra_ddb={
             DocumentMetadata.PRECLASSIFICATION_CATEGORY_MATCH: False,
             DocumentMetadata.EXTRACTION_CONFIDENCE_THRESHOLD: 0.65,
         },
     )
-    evals = api_client.get(EVALUATION_URL).json()["evaluations"]
-    assert evals[EvaluationKey.EXTRACTION_CONFIDENCE]["status"] != _NOT_EVALUATED
+    evals = api_client.get(CHECK_URL).json()["checks"]
+    assert evals[CheckKey.EXTRACTION_CONFIDENCE]["status"] != _NOT_EVALUATED
 
 
 # =============================================================================
@@ -372,16 +364,16 @@ def test_evaluation_extraction_trio_no_not_evaluated(api_client, mocker):
 
 def test_evaluation_blurry_enforced_is_fail(api_client, mocker):
     blur_reason = "Low average sharpness detected across all quadrants."
-    mocker.patch("documentai_api.routers.evaluation.get_job_status").return_value = _job(
+    mocker.patch("documentai_api.routers.checks.get_job_status").return_value = _job(
         ResponseCodes.BLURRY_DOCUMENT_DETECTED,
         extra_ddb={
             DocumentMetadata.IS_DOCUMENT_BLURRY: True,
             DocumentMetadata.IS_DOCUMENT_BLURRY_REASON: blur_reason,
         },
     )
-    evals = api_client.get(EVALUATION_URL).json()["evaluations"]
-    assert evals[EvaluationKey.BLUR]["status"] == _FAIL
-    assert evals[EvaluationKey.BLUR]["reason"] == blur_reason
+    evals = api_client.get(CHECK_URL).json()["checks"]
+    assert evals[CheckKey.BLUR]["status"] == _FAIL
+    assert evals[CheckKey.BLUR]["reason"] == blur_reason
 
 
 # =============================================================================
@@ -391,7 +383,7 @@ def test_evaluation_blurry_enforced_is_fail(api_client, mocker):
 
 def test_evaluation_no_blueprint_matched_with_arn_evaluates_from_signals(api_client, mocker):
     """002 + BDA_INVOCATION_ARN present -> BDA ran, evaluate all keys from signals."""
-    mocker.patch("documentai_api.routers.evaluation.get_job_status").return_value = _job(
+    mocker.patch("documentai_api.routers.checks.get_job_status").return_value = _job(
         ResponseCodes.NO_BLUEPRINT_MATCHED,
         extra_ddb={
             DocumentMetadata.BDA_INVOCATION_ARN: "arn:aws:bda:us-east-1:123:job/1",
@@ -399,17 +391,17 @@ def test_evaluation_no_blueprint_matched_with_arn_evaluates_from_signals(api_cli
             DocumentMetadata.EXTRACTION_CONFIDENCE_THRESHOLD: 0.65,
         },
     )
-    evals = api_client.get(EVALUATION_URL).json()["evaluations"]
+    evals = api_client.get(CHECK_URL).json()["checks"]
     assert set(evals.keys()) == _ALL_KEYS
     assert all(e["status"] != _NOT_EVALUATED for e in evals.values())
 
 
 def test_evaluation_no_blueprint_matched_without_arn_all_not_evaluated(api_client, mocker):
     """002 + no BDA_INVOCATION_ARN -> BDA never ran -> all not_evaluated."""
-    mocker.patch("documentai_api.routers.evaluation.get_job_status").return_value = _job(
+    mocker.patch("documentai_api.routers.checks.get_job_status").return_value = _job(
         ResponseCodes.NO_BLUEPRINT_MATCHED,
     )
-    evals = api_client.get(EVALUATION_URL).json()["evaluations"]
+    evals = api_client.get(CHECK_URL).json()["checks"]
     assert all(e["status"] == _NOT_EVALUATED for e in evals.values())
 
 
@@ -420,6 +412,6 @@ def test_evaluation_no_blueprint_matched_without_arn_all_not_evaluated(api_clien
 
 def test_evaluation_unknown_code_defaults_to_not_evaluated(api_client, mocker):
     """Unrecognized response code falls to not_evaluated rather than silently passing."""
-    mocker.patch("documentai_api.routers.evaluation.get_job_status").return_value = _job("999")
-    evals = api_client.get(EVALUATION_URL).json()["evaluations"]
+    mocker.patch("documentai_api.routers.checks.get_job_status").return_value = _job("999")
+    evals = api_client.get(CHECK_URL).json()["checks"]
     assert all(e["status"] == _NOT_EVALUATED for e in evals.values())

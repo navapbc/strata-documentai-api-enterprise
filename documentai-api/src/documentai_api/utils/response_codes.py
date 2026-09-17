@@ -37,8 +37,8 @@ class ResponseCodes:
         return messages.get(code, "")
 
     @classmethod
-    def get_evaluation_key(cls, code: str) -> str | None:
-        """Map a response code to its evaluation bucket key for the /evaluation endpoint."""
+    def get_document_check_key(cls, code: str) -> str | None:
+        """Map a response code to its check bucket key for the /check endpoint."""
         return {
             cls.BLURRY_DOCUMENT_DETECTED: "blur",
             cls.MISSING_FIELDS: "missingFields",

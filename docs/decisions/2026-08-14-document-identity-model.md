@@ -25,7 +25,7 @@ The endpoint is potentially confusing, but not yet an "issue", as a single uploa
 
 Chosen option: write `systemDocumentId` now, defer the remainder. Every document write path (`/v1/documents`, `/wait`, batch, build, presigned) sets `systemDocumentId = job_id` on the DDB record. No GSI, no query path, no new route, and the existing `job_id`-keyed endpoints are untouched.
 
-**Trigger condition to revisit this ADR:** a document gains a second processing run (dual-engine shadow/compare, or reprocessing). At that point, decide `document_id` identity semantics, add the GSI and lookup, and migrate the endpoint - either promote `document_id` to the existing path with `job_id` kept as a thin alias, or a deliberate `/jobs/{id}` split moving all run-scoped endpoints (status, evaluation) together. Do not ship a lone divergent endpoint under an inconsistent scheme.
+**Trigger condition to revisit this ADR:** a document gains a second processing run (dual-engine shadow/compare, or reprocessing). At that point, decide `document_id` identity semantics, add the GSI and lookup, and migrate the endpoint - either promote `document_id` to the existing path with `job_id` kept as a thin alias, or a deliberate `/jobs/{id}` split moving all run-scoped endpoints (status, check) together. Do not ship a lone divergent endpoint under an inconsistent scheme.
 
 ## Pros and Cons of the Options
 

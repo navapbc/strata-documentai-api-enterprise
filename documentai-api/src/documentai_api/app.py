@@ -25,11 +25,12 @@ from documentai_api.routers.auth_events import router as auth_events_router
 from documentai_api.routers.batch import router as batch_router
 from documentai_api.routers.blueprint_test import router as blueprint_test_router
 from documentai_api.routers.build import router as build_router
+from documentai_api.routers.checks import router as checks_router
 from documentai_api.routers.demo import router as demo_router
 from documentai_api.routers.dictionary import router as dictionary_router
 from documentai_api.routers.document_categories import router as document_categories_router
 from documentai_api.routers.documents import router as documents_router
-from documentai_api.routers.evaluation import router as evaluation_router
+from documentai_api.routers.extraction_eval import router as extraction_eval_router
 from documentai_api.routers.extraction_rules import router as extraction_rules_router
 from documentai_api.routers.me import router as me_router
 from documentai_api.routers.metrics import router as metrics_router
@@ -67,7 +68,8 @@ app.include_router(demo_router)
 app.include_router(me_router)
 app.include_router(metrics_router)
 app.include_router(auth_events_router)
-app.include_router(evaluation_router)
+app.include_router(extraction_eval_router)
+app.include_router(checks_router)
 app.include_router(search_router)
 
 app.add_middleware(

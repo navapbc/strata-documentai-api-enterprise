@@ -134,6 +134,10 @@ class DocumentMetadata:
     LLM_INPUT_TOKENS = "llmInputTokens"
     LLM_OUTPUT_TOKENS = "llmOutputTokens"
 
+    # eval flag
+    IS_EVAL = "isEval"
+    EVAL_V1_RESPONSES = "evalV1Responses"
+
     # otel trace propagation
     TRACEPARENT = "traceparent"
 

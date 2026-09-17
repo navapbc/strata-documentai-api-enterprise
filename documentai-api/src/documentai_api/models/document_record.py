@@ -32,4 +32,5 @@ class DocumentRecord(BaseModel):
     external_system_id: str | None = None
     ai_consent_flag: bool | None = None
     is_demo: bool = False
+    is_eval: bool = False
     ttl_days: int | None = None  # override default TTL (e.g. 3 for demo)

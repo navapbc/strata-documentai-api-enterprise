@@ -11,9 +11,10 @@ from documentai_api.dtos.ddb import UpdateDdbRecord
 from documentai_api.dtos.extraction import ExtractionResult
 from documentai_api.dtos.processing import InternalApiResponse
 from documentai_api.logging import get_logger
+from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.batch_operations import increment_resolved_count
 from documentai_api.utils.bda import calculate_average_non_empty_confidence
-from documentai_api.utils.ddb import update_ddb
+from documentai_api.utils.ddb import get_ddb_record, update_ddb
 from documentai_api.utils.extraction_rules import get_missing_required_fields
 from documentai_api.utils.response_builder import get_internal_api_response
 from documentai_api.utils.response_codes import ResponseCodes
@@ -23,6 +24,11 @@ from documentai_api.utils.tenants import (
 )
 
 logger = get_logger(__name__)
+
+
+def _is_eval(object_key: str) -> bool:
+    record = get_ddb_record(object_key)
+    return bool(record and record.get(DocumentMetadata.IS_EVAL))
 
 
 def _write_terminal_status(record: UpdateDdbRecord, batch_id: str | None) -> None:
@@ -39,7 +45,7 @@ def _write_terminal_status(record: UpdateDdbRecord, batch_id: str | None) -> Non
         update_ddb(record, condition_expression=condition, extra_expression_values=extra_values)
         finalize_v1_response(record.object_key, record.status, record.data, record.error_message)
 
-        if batch_id:
+        if batch_id and not _is_eval(record.object_key):
             increment_resolved_count(batch_id)
     except ClientError as e:
         if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
@@ -302,6 +308,46 @@ def classify_as_multiple_documents_in_multipage(
     return internal_api_response.__dict__
 
 
+def _write_eval_v1_response(
+    ddb_key: str,
+    ddb_record: dict[str, Any],
+    result: ExtractionResult,
+    output_uri: str,
+    extraction_method: ExtractMethod,
+) -> None:
+    """Build and store a v1 response for one eval path into the evalV1Responses map."""
+    import json
+
+    from documentai_api.classifiers.api_response import build_v1_api_response
+    from documentai_api.readers.extraction import read_output
+    from documentai_api.utils.ddb import _execute_ddb_update
+
+    reader_result = read_output(
+        ddb_record,
+        include_extracted_data=True,
+        output_uri=output_uri,
+        extract_method=extraction_method,
+    )
+    v1_response = build_v1_api_response(ddb_key, ProcessStatus.SUCCESS)
+    v1_response["fields"] = {
+        name: {"confidence": round(conf, 2), "value": reader_result.field_values.get(name)}
+        for field_item in reader_result.field_confidence_map_list
+        for name, conf in field_item.items()
+    }
+
+    method_key = (
+        extraction_method.value
+        if isinstance(extraction_method, ExtractMethod)
+        else extraction_method
+    )
+    _execute_ddb_update(
+        ddb_key,
+        f"SET {DocumentMetadata.EVAL_V1_RESPONSES}.#method = :response",
+        {":response": json.dumps(v1_response)},
+        expression_names={"#method": method_key},
+    )
+
+
 def classify_extraction_result(
     ddb_key: str,
     result: ExtractionResult,
@@ -314,6 +360,12 @@ def classify_extraction_result(
     """Apply confidence floor and extraction rules, then call classify_as_success."""
     if output_uri is None:
         raise ValueError(f"output_uri missing for {ddb_key} on success path ({extraction_method})")
+
+    ddb_record = get_ddb_record(ddb_key) or {}
+
+    if ddb_record.get(DocumentMetadata.IS_EVAL):
+        _write_eval_v1_response(ddb_key, ddb_record, result, output_uri, extraction_method)
+        return {}
 
     data = ClassificationData.from_extraction_result(result, output_uri=output_uri)
 

@@ -3672,14 +3672,109 @@
         ]
       }
     },
-    "/v1/documents/{job_id}/evaluation": {
+    "/v1/admin/extraction-eval": {
+      "post": {
+        "tags": [
+          "Admin:Eval"
+        ],
+        "summary": "Run Eval",
+        "description": "Submit a document through the real pipeline with both BDA and LLM extraction.\n\nReturns immediately with a job_id. Poll GET /{job_id} until 200.\n\nUses is_eval=True which:\n- Forces LLM extraction regardless of the feature flag\n- Writes each path's output to evalV1Responses map instead of terminal status\n- Suppresses metrics queue emission and batch counter increments",
+        "operationId": "run_eval_v1_admin_extraction_eval_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_run_eval_v1_admin_extraction_eval_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvalSubmitResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/admin/extraction-eval/{job_id}": {
+      "get": {
+        "tags": [
+          "Admin:Eval"
+        ],
+        "summary": "Get Eval Result",
+        "description": "Poll for eval results. Returns 200 with results when both paths complete, 404 until then.",
+        "operationId": "get_eval_result_v1_admin_extraction_eval__job_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvalResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/documents/{job_id}/check": {
       "get": {
         "tags": [
           "Documents:Query"
         ],
-        "summary": "Get Document Evaluation",
-        "description": "Return a per-check evaluation breakdown for a processed document.",
-        "operationId": "get_document_evaluation_v1_documents__job_id__evaluation_get",
+        "summary": "Get Document Checks",
+        "description": "Return a per-check breakdown for a processed document.",
+        "operationId": "get_document_checks_v1_documents__job_id__check_get",
         "security": [
           {
             "APIKeyHeader": []
@@ -3703,7 +3798,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EvaluationResponse"
+                  "$ref": "#/components/schemas/CheckResponse"
                 }
               }
             }
@@ -4834,6 +4929,20 @@
         ],
         "title": "Body_create_presigned_upload_url_v1_documents_presigned_url_post"
       },
+      "Body_run_eval_v1_admin_extraction_eval_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_run_eval_v1_admin_extraction_eval_post"
+      },
       "Body_start_blueprint_test_v1_admin_blueprints_test_post": {
         "properties": {
           "file": {
@@ -5346,6 +5455,87 @@
         },
         "type": "object",
         "title": "ChangeTenantRequest"
+      },
+      "CheckEntry": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "CheckEntry"
+      },
+      "CheckResponse": {
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "title": "Jobid"
+          },
+          "createdAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Createdat"
+          },
+          "responseCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsecode"
+          },
+          "responseCodeDescription": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsecodedescription"
+          },
+          "checks": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CheckEntry"
+            },
+            "type": "object",
+            "title": "Checks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "jobId",
+          "createdAt",
+          "responseCode",
+          "responseCodeDescription",
+          "checks"
+        ],
+        "title": "CheckResponse"
       },
       "CognitoUserItem": {
         "properties": {
@@ -6153,86 +6343,65 @@
         ],
         "title": "DocumentSearchResponse"
       },
-      "EvaluationEntry": {
+      "EvalFieldResult": {
         "properties": {
-          "status": {
-            "type": "string",
-            "title": "Status"
+          "value": {
+            "title": "Value"
           },
-          "reason": {
+          "confidence": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Reason"
+            "title": "Confidence"
           }
         },
         "type": "object",
-        "required": [
-          "status"
-        ],
-        "title": "EvaluationEntry"
+        "title": "EvalFieldResult"
       },
-      "EvaluationResponse": {
+      "EvalResponse": {
         "properties": {
           "jobId": {
             "type": "string",
             "title": "Jobid"
           },
-          "createdAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Createdat"
-          },
-          "responseCode": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Responsecode"
-          },
-          "responseCodeDescription": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Responsecodedescription"
-          },
-          "evaluations": {
+          "bda": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/EvaluationEntry"
+              "$ref": "#/components/schemas/EvalFieldResult"
             },
             "type": "object",
-            "title": "Evaluations"
+            "title": "Bda"
+          },
+          "llm": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/EvalFieldResult"
+            },
+            "type": "object",
+            "title": "Llm"
           }
         },
         "type": "object",
         "required": [
-          "jobId",
-          "createdAt",
-          "responseCode",
-          "responseCodeDescription",
-          "evaluations"
+          "jobId"
         ],
-        "title": "EvaluationResponse"
+        "title": "EvalResponse"
+      },
+      "EvalSubmitResponse": {
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "title": "Jobid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "jobId"
+        ],
+        "title": "EvalSubmitResponse"
       },
       "ExtractionRuleDeleteResponse": {
         "properties": {

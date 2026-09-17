@@ -91,6 +91,7 @@ async def upload_document(
     external_system_id: ExternalSystemId = None,
     ai_consent_flag: AiConsentFlag = True,
     is_demo: bool = False,
+    is_eval: bool = False,
     upload_source: UploadSourceField = None,
 ) -> _UploadResult:
     """Shared upload logic. Returns an _UploadResult with job_id, status, and message."""
@@ -142,6 +143,7 @@ async def upload_document(
             tenant_id=auth.tenant_id,
             api_key_name=auth.api_key_name,
             is_demo=is_demo,
+            is_eval=is_eval,
             ttl_days=ConfigDefaults.DEMO_DOCUMENT_TTL_DAYS if is_demo else None,
         )
         await asyncio.to_thread(insert_minimal_ddb_record, record)

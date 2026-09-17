@@ -1,0 +1,87 @@
+"""Eval router - run BDA and LLM on the same document through the real pipeline."""
+
+import io
+import json
+from typing import Annotated, Any
+
+from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
+from starlette.datastructures import Headers
+
+from documentai_api.annotations import AdminClaims, verify_jwt_with_role
+from documentai_api.config.constants import ApiVisualizationTag, ExtractMethod
+from documentai_api.logging import get_logger
+from documentai_api.models.extraction_eval import EvalFieldResult, EvalResponse, EvalSubmitResponse
+from documentai_api.routers.documents import upload_document
+from documentai_api.schemas.document_metadata import DocumentMetadata
+from documentai_api.utils.ddb import get_ddb_by_job_id
+
+logger = get_logger(__name__)
+
+router = APIRouter(
+    prefix="/v1/admin/extraction-eval",
+    tags=[ApiVisualizationTag.ADMIN_EVAL],
+    dependencies=[Depends(verify_jwt_with_role)],
+)
+
+_EVAL_METHODS = {ExtractMethod.BDA.value, ExtractMethod.LLM.value}
+
+
+def _extract_fields(v1_response_json: str | dict[str, Any]) -> dict[str, EvalFieldResult]:
+    v1 = json.loads(v1_response_json) if isinstance(v1_response_json, str) else v1_response_json
+    fields = v1.get("fields") or {}
+    return {
+        name: EvalFieldResult(value=data.get("value"), confidence=data.get("confidence"))
+        for name, data in fields.items()
+        if isinstance(data, dict)
+    }
+
+
+@router.post("", status_code=202)
+async def run_eval(
+    claims: AdminClaims,
+    file: Annotated[UploadFile, File(...)],
+) -> EvalSubmitResponse:
+    """Submit a document through the real pipeline with both BDA and LLM extraction.
+
+    Returns immediately with a job_id. Poll GET /{job_id} until 200.
+
+    Uses is_eval=True which:
+    - Forces LLM extraction regardless of the feature flag
+    - Writes each path's output to evalV1Responses map instead of terminal status
+    - Suppresses metrics queue emission and batch counter increments
+    """
+    from documentai_api.utils.auth import UserContext
+
+    file_bytes = await file.read()
+    filename = file.filename or "eval-doc"
+    content_type = file.content_type or "application/octet-stream"
+
+    sub = claims.get("sub", "eval")
+    auth = UserContext(tenant_id=f"eval-{sub}", api_key_name=sub, auth_method="jwt")
+
+    upload_file = UploadFile(
+        filename=filename,
+        file=io.BytesIO(file_bytes),
+        headers=Headers({"content-type": content_type}),
+    )
+    result = await upload_document(response=Response(), file=upload_file, auth=auth, is_eval=True)
+    logger.info(f"Eval submitted: job_id={result.job_id}")
+    return EvalSubmitResponse(job_id=result.job_id)
+
+
+@router.get("/{job_id}")
+def get_eval_result(job_id: str) -> EvalResponse:
+    """Poll for eval results. Returns 200 with results when both paths complete, 404 until then."""
+    record = get_ddb_by_job_id(job_id)
+    if not record:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    responses = record.get(DocumentMetadata.EVAL_V1_RESPONSES) or {}
+    if not _EVAL_METHODS.issubset(responses.keys()):
+        raise HTTPException(status_code=404, detail="Results not ready")
+
+    return EvalResponse(
+        job_id=job_id,
+        bda=_extract_fields(responses[ExtractMethod.BDA.value]),
+        llm=_extract_fields(responses[ExtractMethod.LLM.value]),
+    )

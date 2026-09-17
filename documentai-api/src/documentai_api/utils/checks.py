@@ -1,15 +1,15 @@
-"""Evaluation statuses, keys, pipeline order, and skip reasons for the /evaluation endpoint."""
+"""Check statuses, keys, pipeline order, and skip reasons for the /check endpoint."""
 
 from documentai_api.config.constants import ProcessStatus
 
 
-class EvaluationStatus:
+class CheckStatus:
     PASS = "pass"
     FAIL = "fail"
     NOT_EVALUATED = "not_evaluated"
 
 
-class EvaluationKey:
+class CheckKey:
     PASSWORD_PROTECTED = "passwordProtected"
     DOCUMENT_DETECTED = "documentDetected"
     BLUR = "blurDetection"
@@ -20,15 +20,15 @@ class EvaluationKey:
     EXTRACTION_CONFIDENCE = "extractionConfidence"
 
 
-EVALUATION_PIPELINE: list[str] = [
-    EvaluationKey.PASSWORD_PROTECTED,
-    EvaluationKey.DOCUMENT_DETECTED,
-    EvaluationKey.BLUR,
-    EvaluationKey.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
-    EvaluationKey.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
-    EvaluationKey.MISCATEGORIZATION,
-    EvaluationKey.MISSING_FIELDS,
-    EvaluationKey.EXTRACTION_CONFIDENCE,
+CHECKLIST: list[str] = [
+    CheckKey.PASSWORD_PROTECTED,
+    CheckKey.DOCUMENT_DETECTED,
+    CheckKey.BLUR,
+    CheckKey.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
+    CheckKey.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
+    CheckKey.MISCATEGORIZATION,
+    CheckKey.MISSING_FIELDS,
+    CheckKey.EXTRACTION_CONFIDENCE,
 ]
 
 
@@ -71,5 +71,5 @@ class NotEvaluatedReason:
     EXTRACTION_NOT_EXECUTED = "Not reached - extraction did not run."
     BLUR_NOT_APPLICABLE = "Not evaluated - blur detection does not apply to this document type."
     LEGACY_DOCUMENT = (
-        "Evaluation data not available for documents processed before this feature was enabled."
+        "Check data not available for documents processed before this feature was enabled."
     )
