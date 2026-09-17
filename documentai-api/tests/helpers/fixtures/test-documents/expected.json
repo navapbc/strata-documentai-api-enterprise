@@ -321,15 +321,17 @@
   },
   "happy-path/synthetic-expense-burial-rendered-spanish.jpg": {
     "//": [
-      "Verified live with preclassification-based-routing ON (2x, consistent). Spanish-",
-      "language burial expenses statement - preclassification doesn't match any known",
-      "category here, so it falls back to the 'all' project (which lacks the custom",
-      "'Burial' blueprint) and matches the generic public 'Invoices' blueprint at low",
-      "confidence (105)."
+      "Genuinely non-deterministic: preclassification of this Spanish-language burial",
+      "expenses statement sometimes doesn't match any known category (falls back to the",
+      "'all' project, which lacks the custom 'Burial' blueprint, matches the generic",
+      "public 'Invoices' blueprint at low confidence - 105) and sometimes matches no",
+      "blueprint at all (002). Observed flipping between the two outcomes across",
+      "consecutive live runs on the same day. Marking e2e_enabled: false to avoid",
+      "flaky assertions; revisit if a more deterministic fixture is found."
     ],
     "bdaMatchedDocumentClass": "Invoices",
     "content_type": "image/jpeg",
-    "e2e_enabled": true,
+    "e2e_enabled": false,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
@@ -382,15 +384,17 @@
   },
   "happy-path/synthetic-expense-child-support-spanish-picture.png": {
     "//": [
-      "Was flaky (e2e_enabled: false) prior to preclassification-based-routing: BDA",
-      "classification against the 'all' project was non-deterministic (see git history",
-      "for details). Re-verified live with routing ON (2x, consistent) - now",
-      "deterministically routes to the 'dependent_income' project and matches the custom",
-      "'Child-Support-Document' blueprint directly. Re-enabled."
+      "Genuinely non-deterministic (confirmed via broader live sampling than the",
+      "original 2x check): routes to 'dependent_income' and matches",
+      "'Child-Support-Document' (000) about half the time, but also lands on",
+      "'Bank-Statement' (105 or 000) or no match at all (002) the rest of the time.",
+      "Previously marked re-enabled after only 2 consistent live checks; a larger",
+      "sample (~16 runs) shows a roughly even split across 4 distinct outcomes.",
+      "Marking e2e_enabled: false again."
     ],
     "bdaMatchedDocumentClass": "Child-Support-Document",
     "content_type": "image/png",
-    "e2e_enabled": true,
+    "e2e_enabled": false,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
@@ -588,15 +592,17 @@
   },
   "happy-path/synthetic-insurance-health-insurance-premium-render-spanish.png": {
     "//": [
-      "Was flaky (e2e_enabled: false) prior to preclassification-based-routing: BDA",
-      "classification against the 'all' project was non-deterministic (see git history",
-      "for details). Re-verified live with routing ON (2x, consistent) - now",
-      "deterministically routes to the 'insurance' project and matches the custom",
-      "'Health-Insurance-Premium-Statement' blueprint directly. Re-enabled."
+      "Genuinely non-deterministic (confirmed via broader live sampling than the",
+      "original 2x check): routes to 'insurance' and matches",
+      "'Health-Insurance-Premium-Statement' (000) less than half the time, but also",
+      "falls back to the 'all' project's generic 'Invoices' blueprint or finds no",
+      "match at all (002) the rest of the time. Previously marked re-enabled after",
+      "only 2 consistent live checks; a larger sample (~17 runs) shows roughly a 3-way",
+      "split. Marking e2e_enabled: false again."
     ],
     "bdaMatchedDocumentClass": "Health-Insurance-Premium-Statement",
     "content_type": "image/png",
-    "e2e_enabled": true,
+    "e2e_enabled": false,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
@@ -648,14 +654,18 @@
   },
   "happy-path/synthetic-investment-and-royalty-income-render.pdf": {
     "//": [
-      "Verified live with preclassification-based-routing ON (permanently enabled in dev,",
-      "2x consistent). Correctly routed to the 'investment_and_royalty_income' per-category",
-      "project, which has the custom 'Investment-Account-Statement' blueprint (among others",
-      "in the same project), and matches it directly."
+      "Genuinely non-deterministic: correctly routed to the",
+      "'investment_and_royalty_income' per-category project every time (always a",
+      "successful match, responseCode 000), but the custom blueprint it lands on",
+      "within that project varies between two closely-related IRA/investment",
+      "blueprints - 'Investment-Account-Statement' and 'IRA-Account-Document'.",
+      "Observed both outcomes recurring across multiple days (roughly 7:4 split over",
+      "11 live runs). Marking e2e_enabled: false since the exact matched class isn't",
+      "stable, even though the underlying success/routing behavior is."
     ],
     "bdaMatchedDocumentClass": "Investment-Account-Statement",
     "content_type": "application/pdf",
-    "e2e_enabled": true,
+    "e2e_enabled": false,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
@@ -777,34 +787,38 @@
   },
   "happy-path/synthetic-public-benefits-residency-proof-utility-bill.jpg": {
     "//": [
-      "Bedrock Data Automation is unable to classify this document using existing blueprints. ",
-      "Additional investigation is needed to determine why. ",
-      "Including in tests as-is to avoid blocking other work. ",
-      "Marking e2e_enabled: true to flag for follow-up and prevent accidental regressions."
+      "Re-verified live with preclassification-based-routing ON (4x, consistent).",
+      "Preclassification doesn't match any known category here, so it falls back to the",
+      "'all' project and matches the generic public 'Invoices' blueprint successfully",
+      "(000). Previously recorded as an unresolved no-match (002) based on a one-off",
+      "outlier result; the stable, repeated live behavior is a successful Invoices match."
     ],
-    "bdaMatchedDocumentClass": null,
+    "bdaMatchedDocumentClass": "Invoices",
     "content_type": "image/jpeg",
     "e2e_enabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "002"
+    "responseCode": "000"
   },
   "happy-path/synthetic-shelter-shelter-verification-render-spanish.png": {
     "//": [
-      "Verified live with preclassification-based-routing ON (2x, consistent). Spanish-",
-      "language shelter verification letter - preclassification doesn't match any known",
-      "category here, so it falls back to the 'all' project (no custom",
-      "'Shelter-Verification-Letter' blueprint there) and finds no matching blueprint at",
-      "all."
+      "Genuinely non-deterministic: preclassification of this Spanish-language shelter",
+      "verification letter sometimes correctly identifies the shelter category and",
+      "routes to the shelter-specific BDA project, matching the custom",
+      "'Shelter-Verification-Letter' blueprint (000), and sometimes falls back to the",
+      "'all' project and finds no match (002). Observed flipping between the two",
+      "outcomes across runs on different days (6x 000 on one day, then back to 002 on",
+      "another). Marking e2e_enabled: false to avoid flaky assertions; revisit if a",
+      "more deterministic fixture is found."
     ],
-    "bdaMatchedDocumentClass": null,
+    "bdaMatchedDocumentClass": "Shelter-Verification-Letter",
     "content_type": "image/png",
-    "e2e_enabled": true,
+    "e2e_enabled": false,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "002"
+    "responseCode": "000"
   },
   "happy-path/synthetic-shelter-shelter-verification-render.pdf": {
     "//": [
