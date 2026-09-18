@@ -701,23 +701,6 @@
     "reruns_override": 2,
     "responseCode": "401"
   },
-  "happy-path/synthetic-multipage-mixed-state-id-paystub.pdf": {
-    "//": [
-      "Multipage PDF combining a state photo ID and a pay stub - two distinct document types.",
-      "Preclassification consistently returns has_multipage_inconsistency: true.",
-      "Requires FLAG_MULTIPLE_DOCUMENTS_IN_MULTIPAGE, which defaults to true.",
-      "Same-type/different-individual detection is best-effort at temp=0.",
-      "reruns=2 gives 3 attempts, matching synthetic-multipage-mixed-paystub-photo.pdf."
-    ],
-    "bdaMatchedDocumentClass": null,
-    "content_type": "application/pdf",
-    "e2e_enabled": true,
-    "isDocumentBlurry": false,
-    "isPasswordProtected": false,
-    "preclassificationCategory": "present",
-    "reruns_override": 2,
-    "responseCode": "401"
-  },
   "happy-path/synthetic-password-protected.pdf": {
     "//": [
       "Encrypted PDF. Detected as password protected before preclassification, so it ",
@@ -947,6 +930,24 @@
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
     "responseCode": "105"
+  },
+  "unhappy-path/synthetic-multiple-documents.pdf": {
+    "//": [
+      "Multipage PDF combining a state photo ID and a pay stub - two distinct document types.",
+      "Preclassification consistently returns has_multipage_inconsistency: true.",
+      "Requires FLAG_MULTIPLE_DOCUMENTS_IN_MULTIPAGE, which defaults to true.",
+      "Verified live (2x, consistent) - trips MULTIPLE_DOCUMENTS_IN_MULTIPAGE (401), the",
+      "intended failure mode for this fixture. reruns=2 gives 3 attempts to absorb the",
+      "best-effort same-type/different-individual detection variance at temp=0."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "application/pdf",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "reruns_override": 2,
+    "responseCode": "401"
   },
   "unhappy-path/synthetic-bad-scan.png": {
     "//": [
