@@ -976,5 +976,21 @@
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
     "responseCode": "105"
+  },
+  "unhappy-path/synthetic-crumpled.png": {
+    "//": [
+      "Verified live (2x, consistent). Real physically crumpled/photographed utility",
+      "bill (heavy creasing, uneven lighting, cluttered background). Preclassification",
+      "loosely detects the 'invoices' category but the crumpling degrades legibility",
+      "enough that no blueprint matches at all - the intended failure mode for this",
+      "fixture."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/png",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "002"
   }
 }
