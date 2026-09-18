@@ -28,8 +28,8 @@ correctly flags the defect.
 | Missing data fields | ✅ Added | `synthetic-missing-data-fields.pdf` |
 | Unclear handwriting | ✅ Added | `synthetic-unclear-handwriting.jpg` |
 | Multiple documents included in one file | ✅ Added | `synthetic-multiple-documents.pdf` |
+| Crumpled paper | ✅ Added | `synthetic-crumpled.png` |
 | Cut off | 🔜 Coming soon | - |
-| Crumpled paper | 🔜 Coming soon | - |
 
 `synthetic-multiple-documents.pdf` was moved here from `happy-path/` (where
 it predated this folder's existence) rather than regenerated - it already
@@ -40,8 +40,13 @@ different people, same document type), stays in `happy-path/` since it
 exercises the separate same-type/different-individual detection path rather
 than the "multiple documents" defect itself.
 
-Still needed: **cut off** and **crumpled paper**. Notes for whoever picks
-these up:
+`synthetic-crumpled.png` is a real physically crumpled/photographed utility
+bill (not a synthetic wrinkle filter) - verified live (2x, consistent):
+preclassification loosely detects the "invoices" category but the
+crumpling degrades legibility enough that no blueprint matches at all
+(`002`).
+
+Still needed: **cut off**. Notes for whoever picks this up:
 
 - **Cut off** should map to `101 MISSING_FIELDS` per the table below, but
   that code only fires when the tenant has extraction rules with required
@@ -51,12 +56,6 @@ these up:
   will more realistically land on `105` (matched but low confidence) or
   `002` (unrecognizable); target `105` and treat `101` as a follow-up once
   required-field rules exist for the e2e tenant.
-- **Crumpled paper**: a previous attempt (heavier wrinkles, stains, fold
-  shadow, glare, uneven exposure on a handwritten fixture) still succeeded
-  (`000`) twice in a row - BDA read through synthetic wrinkle filters just
-  fine. A real print → crumple → flatten → rescan cycle, or warping/occluding
-  actual field text rather than just adding background texture, is more
-  likely to produce a reliable failure.
 
 ## Choosing the right expected `responseCode`
 
@@ -81,11 +80,10 @@ fail, so the suite exercises the full failure taxonomy instead of one path.
 ## Adding a new unhappy-path document
 
 1. Drop the synthetic file in this folder, named for the *defect* it
-   exercises rather than the document type (e.g. `synthetic-cut-off.pdf`,
-   `synthetic-multiple-documents.pdf`, `synthetic-crumpled-paper.jpg`) -
+   exercises rather than the document type (e.g. `synthetic-cut-off.pdf`) -
    follow the watermarking conventions in the parent `README.md`.
 2. Add an entry to `../expected.json` keyed by the file's path relative to
-   `test-documents/`, e.g. `"unhappy-path/synthetic-crumpled-paper.jpg"`.
+   `test-documents/`, e.g. `"unhappy-path/synthetic-cut-off.pdf"`.
 3. Set `"e2e_enabled": true` and fill in the expected DDB fields
    (`responseCode`, `isDocumentBlurry`, `isPasswordProtected`,
    `preclassificationCategory`, `bdaMatchedDocumentClass`, `content_type`)
