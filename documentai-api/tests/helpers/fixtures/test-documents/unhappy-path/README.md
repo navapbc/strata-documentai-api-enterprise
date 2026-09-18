@@ -29,7 +29,7 @@ correctly flags the defect.
 | Unclear handwriting | ✅ Added | `synthetic-unclear-handwriting.jpg` |
 | Multiple documents included in one file | ✅ Added | `synthetic-multiple-documents.pdf` |
 | Crumpled paper | ✅ Added | `synthetic-crumpled.png` |
-| Cut off | 🔜 Coming soon | - |
+| Cut off | ✅ Added | `synthetic-cut-off.jpg` |
 
 `synthetic-multiple-documents.pdf` was moved here from `happy-path/` (where
 it predated this folder's existence) rather than regenerated - it already
@@ -46,16 +46,21 @@ preclassification loosely detects the "invoices" category but the
 crumpling degrades legibility enough that no blueprint matches at all
 (`002`).
 
-Still needed: **cut off**. Notes for whoever picks this up:
-
-- **Cut off** should map to `101 MISSING_FIELDS` per the table below, but
-  that code only fires when the tenant has extraction rules with required
-  fields configured for the matched document type (see
-  `src/documentai_api/utils/extraction_rules.py`) - the e2e test tenant has
-  none configured today. Until that's set up, a cropped/truncated document
-  will more realistically land on `105` (matched but low confidence) or
-  `002` (unrecognizable); target `105` and treat `101` as a follow-up once
-  required-field rules exist for the e2e tenant.
+`synthetic-cut-off.jpg` crops the right side off the
+`happy-path/synthetic-public-benefits-identity-proof-state-photo-id.jpg`
+driver's-license fixture, truncating the `ID_NUMBER` and `DATE_OF_BIRTH`
+fields before any value is legible while leaving the rest of the card
+(name, address, issue/expiration dates, class, restrictions) intact. `101
+MISSING_FIELDS` only fires when the tenant has an extraction rule
+configured with required fields for the matched document type (see
+`src/documentai_api/utils/extraction_rules.py`); the session-scoped
+`_seed_extraction_rules` autouse fixture in `tests/e2e/conftest.py` seeds
+one rule per unique `bdaMatchedDocumentClass` found among
+`requiredFieldsForExtraction` entries in `expected.json` (here,
+`US-drivers-licenses` requiring `ID_NUMBER`/`DATE_OF_BIRTH`) before tests
+run, and tears it down afterward - verified live (2x, consistent) at
+`101`, with the untouched happy-path fixture for the same document type
+still passing at `000`.
 
 ## Choosing the right expected `responseCode`
 
@@ -87,7 +92,12 @@ fail, so the suite exercises the full failure taxonomy instead of one path.
 3. Set `"e2e_enabled": true` and fill in the expected DDB fields
    (`responseCode`, `isDocumentBlurry`, `isPasswordProtected`,
    `preclassificationCategory`, `bdaMatchedDocumentClass`, `content_type`)
-   using the table above to pick `responseCode`.
+   using the table above to pick `responseCode`. If the fixture needs
+   `101 MISSING_FIELDS`, also add `"requiredFieldsForExtraction": [...]`
+   (field names from `src/documentai_api/config/field_labels/<doctype>.json`)
+   - the `_seed_extraction_rules` fixture in `tests/e2e/conftest.py` seeds a
+   matching extraction rule for the e2e tenant automatically, no other
+   setup required.
 4. Update the defect coverage table above to point at the new fixture.
 5. `test_app_documents.py::test_post_document` picks up every `e2e_enabled`
    entry in `expected.json` automatically - no code changes needed to add
