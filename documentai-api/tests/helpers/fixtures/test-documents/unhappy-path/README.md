@@ -27,9 +27,36 @@ correctly flags the defect.
 | Scans (poor scan quality) | ✅ Added | `synthetic-bad-scan.png` |
 | Missing data fields | ✅ Added | `synthetic-missing-data-fields.pdf` |
 | Unclear handwriting | ✅ Added | `synthetic-unclear-handwriting.jpg` |
+| Multiple documents included in one file | ✅ Added | `synthetic-multiple-documents.pdf` |
 | Cut off | 🔜 Coming soon | - |
-| Multiple documents included in one file | 🔜 Coming soon | - |
 | Crumpled paper | 🔜 Coming soon | - |
+
+`synthetic-multiple-documents.pdf` was moved here from `happy-path/` (where
+it predated this folder's existence) rather than regenerated - it already
+consistently trips `401 MULTIPLE_DOCUMENTS_IN_MULTIPAGE`, the correct
+failure mode for this defect. A sibling fixture,
+`happy-path/synthetic-multipage-mixed-paystub-photo.pdf` (two pay stubs for
+different people, same document type), stays in `happy-path/` since it
+exercises the separate same-type/different-individual detection path rather
+than the "multiple documents" defect itself.
+
+Still needed: **cut off** and **crumpled paper**. Notes for whoever picks
+these up:
+
+- **Cut off** should map to `101 MISSING_FIELDS` per the table below, but
+  that code only fires when the tenant has extraction rules with required
+  fields configured for the matched document type (see
+  `src/documentai_api/utils/extraction_rules.py`) - the e2e test tenant has
+  none configured today. Until that's set up, a cropped/truncated document
+  will more realistically land on `105` (matched but low confidence) or
+  `002` (unrecognizable); target `105` and treat `101` as a follow-up once
+  required-field rules exist for the e2e tenant.
+- **Crumpled paper**: a previous attempt (heavier wrinkles, stains, fold
+  shadow, glare, uneven exposure on a handwritten fixture) still succeeded
+  (`000`) twice in a row - BDA read through synthetic wrinkle filters just
+  fine. A real print → crumple → flatten → rescan cycle, or warping/occluding
+  actual field text rather than just adding background texture, is more
+  likely to produce a reliable failure.
 
 ## Choosing the right expected `responseCode`
 
