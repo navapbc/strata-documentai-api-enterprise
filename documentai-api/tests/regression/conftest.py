@@ -18,6 +18,8 @@ import pytest
 from documentai_api.config.env_var_names_generated import EnvVarNames
 
 MANIFEST_PATH = Path(__file__).parent / "document_type_manifest.json"
+# tests/regression/conftest.py -> tests -> documentai-api -> repo root
+INFRA_DOCUMENT_TYPES_DIR = Path(__file__).resolve().parents[3] / "infra" / "document-types"
 REGRESSION_TENANT_ID = "regression-test-tenant"
 
 # Populated by each test via the `regression_report` fixture, written to disk
@@ -104,6 +106,48 @@ def flatten_expected_fields(fields: dict[str, Any], prefix: str = "") -> dict[st
         else:
             flat.update(flatten_expected_fields(field_data, full_name))
     return flat
+
+
+def flatten_expected_field_types(fields: dict[str, Any], prefix: str = "") -> dict[str, str]:
+    """Flatten RegressionCase.fields into {dotted.path: type}.
+
+    Defaults a leaf's type to "string" - the same default `build_explainability_info`
+    applies - so a manifest leaf with no explicit "type" is checked against the
+    schema as a string field.
+    """
+    flat: dict[str, str] = {}
+    for field_name, field_data in fields.items():
+        full_name = f"{prefix}.{field_name}" if prefix else field_name
+        if _is_leaf(field_data):
+            flat[full_name] = field_data.get("type", "string")
+        else:
+            flat.update(flatten_expected_field_types(field_data, full_name))
+    return flat
+
+
+def get_registered_blueprint_names(category: str) -> set[str]:
+    """Blueprint names registered under infra/document-types/<category>/.
+
+    This is the configuration production actually deploys against (see
+    infra/document-types/README.md), independent of blueprint_schemas.json -
+    a manifest case's canned BDA result is manufactured directly from
+    `case.blueprint`/`case.document_class` and never consults this
+    configuration, so a renamed/removed/miscategorized blueprint would
+    otherwise still "match" and pass here.
+
+    Managed blueprint names come from managed_blueprints.json's "name" field
+    (the identifier used to request the blueprint); custom blueprint names
+    are inferred from each category's custom-<blueprint-name>.json files.
+    """
+    category_dir = INFRA_DOCUMENT_TYPES_DIR / category
+    assert category_dir.is_dir(), f"no infra/document-types/{category} directory"
+
+    names: set[str] = set()
+    managed_file = category_dir / "managed_blueprints.json"
+    if managed_file.exists():
+        names.update(entry["name"] for entry in json.loads(managed_file.read_text()))
+    names.update(f.stem.removeprefix("custom-") for f in category_dir.glob("custom-*.json"))
+    return names
 
 
 @pytest.fixture

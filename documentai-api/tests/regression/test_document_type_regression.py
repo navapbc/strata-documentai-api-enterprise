@@ -20,8 +20,15 @@ import pytest
 from documentai_api.pipeline.bda import run_bda_result_pipeline
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.response_codes import ResponseCodes
+from documentai_api.utils.schemas import get_document_schema
 
-from .conftest import RegressionCase, flatten_expected_fields, load_regression_cases
+from .conftest import (
+    RegressionCase,
+    flatten_expected_field_types,
+    flatten_expected_fields,
+    get_registered_blueprint_names,
+    load_regression_cases,
+)
 
 pytestmark = pytest.mark.regression
 
@@ -59,18 +66,95 @@ def _extracted_fields(record: dict[str, Any]) -> dict[str, float]:
 @pytest.mark.parametrize(
     "case", load_regression_cases(), ids=lambda c: f"{c.category}/{c.blueprint}"
 )
+def test_manifest_field_types_match_blueprint_schema(
+    case: RegressionCase, regression_report: Any
+) -> None:
+    """A manifest leaf's declared type must match the authoritative blueprint schema.
+
+    Guards against schema type drift in the manifest itself (e.g. a leaf
+    marked "number" for a field the real blueprint declares as "string") -
+    the extracted-fields assertion in test_document_type_regression only
+    compares confidence, so an incorrect type there would otherwise pass
+    silently. Uses `get_document_schema`, the same lookup production code
+    uses, rather than re-reading blueprint_schemas.json by hand.
+
+    Also validates that every `required_fields`/`optional_fields` entry (the
+    extraction-rule field names `seed_bda_case` seeds via `upsert_rule`)
+    names a real schema field. Those rule field names are otherwise never
+    checked against the schema: `get_missing_required_fields` only
+    intersects rule fields against whatever fields were actually returned,
+    so a typo'd or stale rule field name would silently do nothing instead
+    of failing - especially for a case expected to have no missing required
+    fields.
+
+    Also validates that `case.blueprint` is actually registered under
+    infra/document-types/<category>/ (a managed_blueprints.json entry or a
+    custom-<blueprint>.json file). `seed_bda_case` manufactures its canned
+    BDA result directly from `case.blueprint`/`case.document_class` and
+    production never consults infra/document-types/ for the mocked result,
+    so a renamed, removed, or wrong-category blueprint would otherwise still
+    "match" and pass here.
+
+    Recorded via `regression_report`, same as test_document_type_regression,
+    so a manifest/schema drift here shows up in .regression_report.json
+    instead of being omitted while the pipeline case for the same document
+    type is still reported as passed.
+    """
+    details: dict[str, Any] = {"check": "schema_type_match"}
+    try:
+        schema = get_document_schema(case.document_class)
+        assert schema is not None, f"no blueprint schema found for {case.document_class}"
+
+        schema_types = {f.name: f.type for f in schema.fields}
+        manifest_types = flatten_expected_field_types(case.fields)
+
+        for field_name, manifest_type in manifest_types.items():
+            assert field_name in schema_types, (
+                f"{case.document_class}.{field_name} is not a field in the blueprint schema"
+            )
+            assert manifest_type == schema_types[field_name], (
+                f"{case.document_class}.{field_name}: manifest declares type "
+                f"{manifest_type!r}, blueprint schema declares {schema_types[field_name]!r}"
+            )
+
+        rule_fields = set(case.required_fields) | set(case.optional_fields)
+        for field_name in rule_fields:
+            assert field_name in schema_types, (
+                f"{case.document_class}: extraction-rule field {field_name!r} "
+                "(required_fields/optional_fields) is not a field in the blueprint schema"
+            )
+
+        registered_blueprints = get_registered_blueprint_names(case.category)
+        assert case.blueprint in registered_blueprints, (
+            f"{case.category}/{case.blueprint}: not registered under "
+            f"infra/document-types/{case.category}/ (found: {sorted(registered_blueprints)})"
+        )
+    except AssertionError as e:
+        regression_report(case, passed=False, details={**details, "error": str(e)})
+        raise
+    except Exception as e:
+        regression_report(case, passed=False, details={**details, "error": repr(e)})
+        raise
+    else:
+        regression_report(case, passed=True, details=details)
+
+
+@pytest.mark.parametrize(
+    "case", load_regression_cases(), ids=lambda c: f"{c.category}/{c.blueprint}"
+)
 def test_document_type_regression(
     case: RegressionCase, seed_bda_case: Any, regression_report: Any, regression_env: Any
 ) -> None:
     """A canned BDA result for this document type classifies/extracts as expected."""
     bucket_name, job_metadata_key, file_name = seed_bda_case(case)
 
-    details: dict[str, Any] = {}
+    details: dict[str, Any] = {"check": "pipeline"}
     try:
         response = run_bda_result_pipeline(bucket_name, job_metadata_key)
         record = _get_ddb_record(regression_env["metadata_table"], file_name)
 
         details = {
+            "check": "pipeline",
             "response_code": record.get(DocumentMetadata.RESPONSE_CODE),
             "matched_document_class": response.get("matched_document_class"),
             "missing_required_field_list": _missing_required_field_list(record),

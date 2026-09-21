@@ -298,8 +298,7 @@
                 },
                 "account_balance": {
                     "value": "12000.00",
-                    "confidence": 0.95,
-                    "type": "number"
+                    "confidence": 0.95
                 },
                 "financial_institution": {
                     "value": "Acme Financial",
@@ -431,13 +430,11 @@
                 },
                 "dividend_income": {
                     "value": "1500.00",
-                    "confidence": 0.95,
-                    "type": "number"
+                    "confidence": 0.95
                 },
                 "interest_income": {
                     "value": "200.00",
-                    "confidence": 0.94,
-                    "type": "number"
+                    "confidence": 0.94
                 }
             },
             "required_fields": [
@@ -465,8 +462,7 @@
                 "payment_details": {
                     "total_monthly_payment": {
                         "value": "",
-                        "confidence": 0.3,
-                        "type": "number"
+                        "confidence": 0.3
                     }
                 },
                 "lease_start_date": {
@@ -492,7 +488,8 @@
             "fields": {
                 "Account Number": {
                     "value": "AC-12345",
-                    "confidence": 0.96
+                    "confidence": 0.96,
+                    "type": "array"
                 },
                 "Total Balance Due": {
                     "value": "120.00",
