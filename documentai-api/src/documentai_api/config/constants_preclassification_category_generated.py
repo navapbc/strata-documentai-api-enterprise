@@ -4,19 +4,8 @@ from enum import StrEnum
 
 
 class PreclassificationCategory(StrEnum):
-    ACCOUNT_STATEMENTS = "account_statements"
     ASSETS = "assets"
-    DEPENDENT_INCOME = "dependent_income"
-    EDUCATION = "education"
-    EMPLOYER_INCOME = "employer_income"
-    EMPLOYMENT_RECORDS = "employment_records"
     EXPENSES = "expenses"
-    GOVERNMENT_BENEFIT_INCOME = "government_benefit_income"
     IDENTITY = "identity"
-    INSURANCE = "insurance"
-    INVESTMENT_AND_ROYALTY_INCOME = "investment_and_royalty_income"
-    INVOICES = "invoices"
-    RECEIPTS = "receipts"
-    RETIREMENT_INCOME = "retirement_income"
-    SELF_EMPLOYMENT_INCOME = "self_employment_income"
-    SHELTER = "shelter"
+    INCOME = "income"
+    SUPPORTING_RECORDS = "supporting_records"

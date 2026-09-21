@@ -87,16 +87,6 @@ def is_missing_geo_included_with_missing_fields() -> bool:
     return _get_flag(FeatureFlags.INCLUDE_MISSING_GEO_WITH_MISSING_FIELDS, default=True)
 
 
-def is_preclassification_routing_enabled() -> bool:
-    """Whether documents are routed to a category-specific BDA project ARN.
-
-    When enabled, documents with a matched preclassification category are sent to
-    the corresponding per-category BDA project instead of the default "all" project.
-    Default: false.
-    """
-    return _get_flag(FeatureFlags.PRECLASSIFICATION_BASED_ROUTING, default=False)
-
-
 def is_skip_bda_if_unclassified() -> bool:
     """Whether BDA is skipped when preclassification returns "other_document".
 
@@ -112,8 +102,8 @@ def is_preclassification_blueprint_matching_enabled() -> bool:
     """Whether blueprint matching runs after preclassification.
 
     When enabled, documents are matched against available BDA blueprints after
-    preclassification. The matched category drives BDA project routing when
-    is_preclassification_routing_enabled() is also true. Default: true.
+    preclassification. The matched category drives which category-specific BDA
+    project a document is routed to. Default: true.
     """
     return _get_flag(FeatureFlags.ENABLE_PRECLASSIFICATION_BLUEPRINT_MATCHING, default=True)
 

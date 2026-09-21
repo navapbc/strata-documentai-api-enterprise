@@ -83,7 +83,11 @@ def check() -> None:
         category = category_dir.name
         custom_document_types: set[str] = set()
 
-        for custom_file in sorted(category_dir.glob("custom-*.json")):
+        # Some categories (e.g. income, supporting_records) nest the old leaf-category
+        # folders as subdirectories, while others (identity, expenses, assets) keep
+        # custom-*.json/managed_blueprints.json directly under the category dir - glob
+        # recursively so both layouts are covered.
+        for custom_file in sorted(category_dir.glob("**/custom-*.json")):
             schema = json.loads(custom_file.read_text())
             document_type = schema.get("class")
             if not document_type:
@@ -121,9 +125,9 @@ def check() -> None:
                     f"{document_type} ({custom_file}): out of sync with {SCHEMAS_FILE.name}"
                 )
 
-        managed_file = category_dir / "managed_blueprints.json"
-        expected_managed_count = (
-            len(json.loads(managed_file.read_text())) if managed_file.exists() else 0
+        expected_managed_count = sum(
+            len(json.loads(managed_file.read_text()))
+            for managed_file in category_dir.glob("**/managed_blueprints.json")
         )
         actual_managed_count = sum(
             1

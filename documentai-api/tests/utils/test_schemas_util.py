@@ -12,9 +12,7 @@ from documentai_api.utils.schemas import DocumentSchema, SchemaField
 
 @pytest.fixture(autouse=True)
 def mock_env(monkeypatch):
-    monkeypatch.setenv(
-        EnvVarNames.BDA_PROJECT_ARN_ALL, "arn:aws:bedrock:us-east-1:123:project/test"
-    )
+    monkeypatch.setenv(EnvVarNames.BDA_PROJECT_ARN, "arn:aws:bedrock:us-east-1:123:project/test")
 
 
 @pytest.fixture(autouse=True)
@@ -134,37 +132,6 @@ def test_fetch_schemas_from_bda(mock_bda_services):
 
     assert "Invoice" in result
     assert result["Invoice"].category == "invoices"
-
-
-def test_fetch_schemas_skips_all_project(mock_bda_services):
-    """'all' is a superset of every category project, so it's skipped.
-
-    The union of the category projects covers everything without duplicate
-    entries or a fake "all" category tag.
-    """
-    mock_bda_services["project"].return_value = {
-        "project": {
-            "customOutputConfiguration": {
-                "blueprints": [{"blueprintArn": "arn:aws:bedrock:us-east-1:123:blueprint/w2"}]
-            }
-        }
-    }
-    mock_bda_services["blueprint"].return_value = {
-        "blueprint": {"schema": '{"class": "W2", "properties": {}}'}
-    }
-
-    with patch("documentai_api.utils.schemas.get_env_config") as mock_cfg:
-        mock_cfg.return_value.get_bda_project_arns.return_value = {
-            "employer_income": "arn:aws:bedrock:us-east-1:123:project/employer",
-            "all": "arn:aws:bedrock:us-east-1:123:project/all",
-        }
-        result = schemas.fetch_schemas_from_bda()
-
-    assert result["W2"].category == "employer_income"
-    # project was fetched exactly once - for employer_income, not for 'all'
-    mock_bda_services["project"].assert_called_once_with(
-        "arn:aws:bedrock:us-east-1:123:project/employer"
-    )
 
 
 def test_get_all_schemas_reads_from_static_file(schemas_file):
