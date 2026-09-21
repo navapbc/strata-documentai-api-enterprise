@@ -1,0 +1,181 @@
+"""Fixtures for the document-type regression suite.
+
+Seeds a canned BDA result at the S3-JSON boundary and runs it through the
+real `documentai_api.pipeline.bda.run_bda_result_pipeline`.
+
+See docs/documentai-api/qa-and-troubleshooting.md for how to triage a
+failure and re-test after a blueprint/configuration change.
+"""
+
+import json
+import uuid
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
+
+import pytest
+
+from documentai_api.config.env_var_names_generated import EnvVarNames
+
+MANIFEST_PATH = Path(__file__).parent / "document_type_manifest.json"
+REGRESSION_TENANT_ID = "regression-test-tenant"
+
+# Populated by each test via the `regression_report` fixture, written to disk
+# once at the end of the session for QA triage (make test-regression prints
+# the path). Module-level so it survives across the whole pytest session
+# regardless of how tests are parametrized/collected.
+_report_results: list[dict[str, Any]] = []
+
+REPORT_PATH = Path(__file__).parent / ".regression_report.json"
+
+
+@dataclass
+class RegressionCase:
+    category: str
+    blueprint: str
+    document_class: str
+    fields: dict[str, dict[str, Any]]
+    required_fields: list[str] = field(default_factory=list)
+    optional_fields: list[str] = field(default_factory=list)
+    expected_missing_required_fields: list[str] = field(default_factory=list)
+    expected_response_code: str = "000"
+    notes: list[str] | None = None
+
+
+def load_regression_cases() -> list[RegressionCase]:
+    manifest = json.loads(MANIFEST_PATH.read_text())
+    return [
+        RegressionCase(
+            category=case["category"],
+            blueprint=case["blueprint"],
+            document_class=case["document_class"],
+            fields=case["fields"],
+            required_fields=case.get("required_fields", []),
+            optional_fields=case.get("optional_fields", []),
+            expected_missing_required_fields=case.get("expected_missing_required_fields", []),
+            expected_response_code=case.get("expected_response_code", "000"),
+            notes=case.get("notes"),
+        )
+        for case in manifest["cases"]
+    ]
+
+
+@pytest.fixture
+def regression_env(
+    monkeypatch,
+    s3_bucket,
+    ddb_doc_metadata_table,
+    extraction_rules_table,
+    tenants_table,
+):
+    """Mock AWS environment (moto S3 + DynamoDB) for a regression case.
+
+    Repoints DOCUMENTAI_OUTPUT_LOCATION at the moto S3 bucket created by
+    `s3_bucket` (`ddb_doc_metadata_table` defaults it to a differently-named
+    bucket) so `get_bda_result_json`'s output-bucket check passes.
+    """
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_OUTPUT_LOCATION, f"s3://{s3_bucket.name}/output")
+    return {
+        "bucket": s3_bucket,
+        "metadata_table": ddb_doc_metadata_table,
+        "extraction_rules_table": extraction_rules_table,
+    }
+
+
+@pytest.fixture
+def seed_bda_case(regression_env):
+    """Factory to seed a canned BDA result + DDB record for a regression case.
+
+    Returns (bucket_name, job_metadata_key, file_name) - the args
+    `run_bda_result_pipeline` expects, plus the DDB key to look up the result.
+    """
+    bucket = regression_env["bucket"]
+
+    def _seed(
+        case: RegressionCase, *, tenant_id: str = REGRESSION_TENANT_ID
+    ) -> tuple[str, str, str]:
+        from documentai_api.utils.extraction_rules import upsert_rule
+
+        if case.required_fields or case.optional_fields:
+            upsert_rule(tenant_id, case.document_class, case.required_fields, case.optional_fields)
+
+        invocation_id = str(uuid.uuid4())
+        file_name = f"input/{tenant_id}/{case.blueprint}.pdf"
+
+        result_key = (
+            f"output/{tenant_id}/{case.blueprint}/{invocation_id}/0/custom_output/0/result.json"
+        )
+        job_metadata_key = (
+            f"output/{tenant_id}/{case.blueprint}/{invocation_id}/0/custom_output/job_metadata.json"
+        )
+
+        explainability_info = {
+            field_name: {
+                "confidence": field_data["confidence"],
+                "value": field_data["value"],
+                "type": "string",
+            }
+            for field_name, field_data in case.fields.items()
+        }
+
+        result_json = {
+            "matched_blueprint": {"name": case.blueprint, "confidence": "0.97"},
+            "document_class": {"type": case.document_class},
+            "explainability_info": [explainability_info],
+        }
+        bucket.put_object(Key=result_key, Body=json.dumps(result_json).encode())
+
+        job_metadata_json = {
+            "output_metadata": [
+                {"segment_metadata": [{"custom_output_path": f"s3://{bucket.name}/{result_key}"}]}
+            ]
+        }
+        bucket.put_object(Key=job_metadata_key, Body=json.dumps(job_metadata_json).encode())
+
+        regression_env["metadata_table"].put_item(
+            Item={
+                "fileName": file_name,
+                "tenantId": tenant_id,
+                "bdaInvocationId": invocation_id,
+            }
+        )
+
+        return bucket.name, job_metadata_key, file_name
+
+    return _seed
+
+
+@pytest.fixture
+def regression_report():
+    """Record a case's outcome for the end-of-session triage report."""
+
+    def _record(case: RegressionCase, *, passed: bool, details: dict[str, Any]) -> None:
+        _report_results.append(
+            {
+                "category": case.category,
+                "blueprint": case.blueprint,
+                "document_class": case.document_class,
+                "passed": passed,
+                "details": details,
+            }
+        )
+
+    return _record
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """Write the collected regression results to disk for QA triage.
+
+    Only writes a report if this session actually ran regression cases -
+    leaves any previous report untouched otherwise (e.g. running an unrelated
+    subset of the suite shouldn't blank out the last real regression run).
+    """
+    if not _report_results:
+        return
+
+    REPORT_PATH.write_text(json.dumps(_report_results, indent=2, sort_keys=True))
+    failed = [r for r in _report_results if not r["passed"]]
+    print(f"\nregression report written to {REPORT_PATH}")
+    print(f"{len(_report_results)} case(s), {len(failed)} unexpected result(s)")
+    for r in failed:
+        print(f"  UNEXPECTED: {r['category']}/{r['blueprint']} - {r['details']}")

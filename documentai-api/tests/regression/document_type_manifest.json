@@ -1,0 +1,412 @@
+{
+    "//": [
+        "Manifest driving the document-type regression suite (tests/regression/).",
+        "One representative blueprint per infra/document-types/ category today.",
+        "Known coverage gaps: only one blueprint per category is tested (not the",
+        "full blueprint matrix), and there are no negative/adversarial documents.",
+        "",
+        "Each case simulates a canned Bedrock Data Automation (BDA) result for the",
+        "given blueprint/category and asserts our pipeline's classification,",
+        "extraction-rule, and response-code behavior against it end to end (mocked",
+        "AWS via moto; BDA itself cannot be moto-mocked, so its output is canned).",
+        "",
+        "'fields' simulates the explainability_info BDA would return: value \"\" means",
+        "BDA returned the field but with an empty value (as opposed to omitting it).",
+        "'required_fields' is seeded into the extraction-rules table for the tenant",
+        "before the case runs. 'expected_missing_required_fields' is what the",
+        "resulting DDB record's missingRequiredFieldList should contain."
+    ],
+    "cases": [
+        {
+            "category": "account_statements",
+            "blueprint": "bank-statement",
+            "document_class": "Bank-Statement",
+            "fields": {
+                "account_holder_name": {
+                    "value": "Jane Smith",
+                    "confidence": 0.97
+                },
+                "account_number": {
+                    "value": "1234567890",
+                    "confidence": 0.96
+                },
+                "statement_period": {
+                    "value": "2026-08-01 to 2026-08-31",
+                    "confidence": 0.95
+                }
+            },
+            "required_fields": [
+                "account_holder_name",
+                "account_number",
+                "statement_period"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": []
+        },
+        {
+            "category": "dependent_income",
+            "blueprint": "alimony-decree",
+            "document_class": "Alimony-Decree",
+            "fields": {
+                "payor_name": {
+                    "value": "John Doe",
+                    "confidence": 0.96
+                },
+                "payee_name": {
+                    "value": "Jane Doe",
+                    "confidence": 0.96
+                },
+                "monthly_amount": {
+                    "value": "800.00",
+                    "confidence": 0.95
+                }
+            },
+            "required_fields": [
+                "payor_name",
+                "payee_name",
+                "monthly_amount"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": []
+        },
+        {
+            "category": "education",
+            "blueprint": "school-financial-aid-award",
+            "document_class": "School-Financial-Aid-Award",
+            "fields": {
+                "student_name": {
+                    "value": "Alex Kim",
+                    "confidence": 0.97
+                },
+                "award_amount": {
+                    "value": "5000.00",
+                    "confidence": 0.95
+                },
+                "award_year": {
+                    "value": "2026-2027",
+                    "confidence": 0.94
+                }
+            },
+            "required_fields": [
+                "student_name",
+                "award_amount",
+                "award_year"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": []
+        },
+        {
+            "category": "employer_income",
+            "blueprint": "w2-form",
+            "document_class": "W2",
+            "notes": [
+                "Intentionally leaves employee_ssn empty to regression-test that a",
+                "required field BDA returns with an empty value is correctly reported",
+                "as missing, rather than silently passing."
+            ],
+            "fields": {
+                "employer_name": {
+                    "value": "Acme Corp",
+                    "confidence": 0.97
+                },
+                "employee_ssn": {
+                    "value": "",
+                    "confidence": 0.4
+                },
+                "wages": {
+                    "value": "50000.00",
+                    "confidence": 0.95
+                }
+            },
+            "required_fields": [
+                "employer_name",
+                "employee_ssn",
+                "wages"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": [
+                "employee_ssn"
+            ],
+            "expected_response_code": "101"
+        },
+        {
+            "category": "employment_records",
+            "blueprint": "employment-verification-letter",
+            "document_class": "Employment-Verification-Letter",
+            "fields": {
+                "employee_name": {
+                    "value": "Jane Smith",
+                    "confidence": 0.97
+                },
+                "employer_name": {
+                    "value": "Acme Corp",
+                    "confidence": 0.96
+                },
+                "hire_date": {
+                    "value": "2020-05-01",
+                    "confidence": 0.94
+                }
+            },
+            "required_fields": [
+                "employee_name",
+                "employer_name",
+                "hire_date"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": []
+        },
+        {
+            "category": "government_benefit_income",
+            "blueprint": "unemployment-insurance-claim",
+            "document_class": "Unemployment-Insurance-Claim",
+            "fields": {
+                "claimant_name": {
+                    "value": "Jane Smith",
+                    "confidence": 0.96
+                },
+                "weekly_benefit_amount": {
+                    "value": "450.00",
+                    "confidence": 0.95
+                }
+            },
+            "required_fields": [
+                "claimant_name",
+                "weekly_benefit_amount"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": []
+        },
+        {
+            "category": "identity",
+            "blueprint": "us-driver-license",
+            "document_class": "US-Driver-License",
+            "fields": {
+                "full_name": {
+                    "value": "Jane Smith",
+                    "confidence": 0.98
+                },
+                "license_number": {
+                    "value": "D1234567",
+                    "confidence": 0.97
+                },
+                "expiration_date": {
+                    "value": "2030-01-01",
+                    "confidence": 0.96
+                }
+            },
+            "required_fields": [
+                "full_name",
+                "license_number",
+                "expiration_date"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": []
+        },
+        {
+            "category": "insurance",
+            "blueprint": "insurance-company-letter",
+            "document_class": "Insurance-Company-Letter",
+            "fields": {
+                "policy_holder_name": {
+                    "value": "Jane Smith",
+                    "confidence": 0.96
+                },
+                "policy_number": {
+                    "value": "POL-9988",
+                    "confidence": 0.95
+                }
+            },
+            "required_fields": [
+                "policy_holder_name",
+                "policy_number"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": []
+        },
+        {
+            "category": "investment_and_royalty_income",
+            "blueprint": "ira-account-document",
+            "document_class": "IRA-Account-Document",
+            "fields": {
+                "account_holder_name": {
+                    "value": "Jane Smith",
+                    "confidence": 0.96
+                },
+                "account_balance": {
+                    "value": "12000.00",
+                    "confidence": 0.95
+                }
+            },
+            "required_fields": [
+                "account_holder_name",
+                "account_balance"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": []
+        },
+        {
+            "category": "invoices",
+            "blueprint": "invoice",
+            "document_class": "Invoice",
+            "fields": {
+                "vendor_name": {
+                    "value": "Acme Corp",
+                    "confidence": 0.97
+                },
+                "total_amount": {
+                    "value": "250.00",
+                    "confidence": 0.96
+                },
+                "invoice_date": {
+                    "value": "2026-08-15",
+                    "confidence": 0.95
+                }
+            },
+            "required_fields": [
+                "vendor_name",
+                "total_amount",
+                "invoice_date"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": []
+        },
+        {
+            "category": "receipts",
+            "blueprint": "receipt",
+            "document_class": "Receipt",
+            "fields": {
+                "merchant_name": {
+                    "value": "Acme Store",
+                    "confidence": 0.96
+                },
+                "total_amount": {
+                    "value": "42.50",
+                    "confidence": 0.95
+                }
+            },
+            "required_fields": [
+                "merchant_name",
+                "total_amount"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": []
+        },
+        {
+            "category": "retirement_income",
+            "blueprint": "annuity-statement",
+            "document_class": "Annuity-Statement",
+            "fields": {
+                "account_holder_name": {
+                    "value": "Jane Smith",
+                    "confidence": 0.96
+                },
+                "monthly_payment": {
+                    "value": "1200.00",
+                    "confidence": 0.95
+                }
+            },
+            "required_fields": [
+                "account_holder_name",
+                "monthly_payment"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": []
+        },
+        {
+            "category": "self_employment_income",
+            "blueprint": "1099-consolidated-summary",
+            "document_class": "1099-Consolidated-Summary",
+            "fields": {
+                "recipient_name": {
+                    "value": "Jane Smith",
+                    "confidence": 0.96
+                },
+                "total_income": {
+                    "value": "35000.00",
+                    "confidence": 0.95
+                }
+            },
+            "required_fields": [
+                "recipient_name",
+                "total_income"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": []
+        },
+        {
+            "category": "shelter",
+            "blueprint": "rent-lease-statement",
+            "document_class": "Rent-Lease-Statement",
+            "notes": [
+                "Intentionally leaves monthly_rent empty to regression-test the",
+                "required-field-missing path for a second, differently-shaped blueprint."
+            ],
+            "fields": {
+                "tenant_name": {
+                    "value": "Jane Smith",
+                    "confidence": 0.96
+                },
+                "monthly_rent": {
+                    "value": "",
+                    "confidence": 0.3
+                },
+                "lease_start_date": {
+                    "value": "2026-01-01",
+                    "confidence": 0.94
+                }
+            },
+            "required_fields": [
+                "tenant_name",
+                "monthly_rent",
+                "lease_start_date"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": [
+                "monthly_rent"
+            ],
+            "expected_response_code": "101"
+        },
+        {
+            "category": "expenses",
+            "blueprint": "electricity-bill",
+            "document_class": "Electricity-Bill",
+            "fields": {
+                "account_holder_name": {
+                    "value": "Jane Smith",
+                    "confidence": 0.96
+                },
+                "amount_due": {
+                    "value": "120.00",
+                    "confidence": 0.95
+                }
+            },
+            "required_fields": [
+                "account_holder_name",
+                "amount_due"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": []
+        },
+        {
+            "category": "assets",
+            "blueprint": "real-estate",
+            "document_class": "Real-Estate",
+            "fields": {
+                "owner_name": {
+                    "value": "Jane Smith",
+                    "confidence": 0.96
+                },
+                "property_value": {
+                    "value": "300000.00",
+                    "confidence": 0.95
+                }
+            },
+            "required_fields": [
+                "owner_name",
+                "property_value"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": []
+        }
+    ]
+}
