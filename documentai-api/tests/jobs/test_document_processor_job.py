@@ -60,7 +60,7 @@ def mock_find_matching_blueprint(mocker):
         return_value=PreclassificationMatchResult(
             matched_document_type="w2-form",
             confidence=0.95,
-            category=PreclassificationCategory.EMPLOYER_INCOME,
+            category=PreclassificationCategory.INCOME,
         ),
     )
 
@@ -224,7 +224,7 @@ def test_main_first_time_pdf(input_pdf, mocker, ddb_doc_metadata_table, mock_inv
         input_pdf.key,
         expected_object_key,
         "test-tenant-id",
-        PreclassificationCategory.EMPLOYER_INCOME,
+        PreclassificationCategory.INCOME,
         None,
     )
 
@@ -272,7 +272,7 @@ def test_main_strips_tenant_prefix_for_ddb_key(s3_bucket, ddb_doc_metadata_table
         tenant_key,
         expected_ddb_key,
         "test-tenant-id",
-        PreclassificationCategory.EMPLOYER_INCOME,
+        PreclassificationCategory.INCOME,
         None,
     )
 
@@ -305,7 +305,7 @@ def test_main_first_time_image(input_image, mocker, ddb_doc_metadata_table, mock
         input_image.key,
         expected_object_key,
         "test-tenant-id",
-        PreclassificationCategory.EMPLOYER_INCOME,
+        PreclassificationCategory.INCOME,
         None,
     )
 
@@ -407,7 +407,7 @@ def test_main_uses_env_bucket_when_not_provided(input_pdf, mocker, mock_invoke_b
         input_pdf.key,
         "test.pdf",
         "test-tenant-id",
-        PreclassificationCategory.EMPLOYER_INCOME,
+        PreclassificationCategory.INCOME,
         None,
     )
 
@@ -677,7 +677,7 @@ def test_main_invokes_bda_when_match_found(input_pdf, mocker, mock_invoke_bda):
         DocumentMetadata.TENANT_ID: "test-tenant-id",
         DocumentMetadata.PROCESS_STATUS: ProcessStatus.NOT_STARTED.value,
         DocumentMetadata.PRECLASSIFICATION_CATEGORY: "w2-form",
-        DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_CATEGORY: PreclassificationCategory.EMPLOYER_INCOME,
+        DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_CATEGORY: PreclassificationCategory.INCOME,
     }
     mocker.patch("documentai_api.jobs.document_processor.main.upsert_initial_ddb_record")
     mocker.patch(
@@ -698,7 +698,7 @@ def test_main_invokes_bda_when_match_found(input_pdf, mocker, mock_invoke_bda):
         input_pdf.key,
         "test.pdf",
         "test-tenant-id",
-        PreclassificationCategory.EMPLOYER_INCOME,
+        PreclassificationCategory.INCOME,
         None,
     )
 

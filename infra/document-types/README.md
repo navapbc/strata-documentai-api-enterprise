@@ -1,53 +1,12 @@
 # Document Types
 
-Each folder is a Bedrock Data Automation  (BDA) project category. `managed_blueprints.json` lists AWS-managed blueprint ARNs for that category. Custom blueprint schemas are the remaining `*.json` files.
+Each top-level folder is a Bedrock Data Automation (BDA) project category, also referred to as a **parent category** (or higher-level project). `managed_blueprints.json` lists AWS-managed blueprint ARNs for that category; custom blueprint schemas are the remaining `*.json` files.
 
-The `all` project (defined separately in Terraform) unions most folders' custom and managed blueprints. `expenses` and `assets` are currently excluded from the `all` project to stay under AWS's 40-blueprint-per-project limit; see the `TODO` on `module.bedrock_data_automation_all` in `infra/environments/dev/main.tf`.
+Some parent categories hold their blueprints directly (`identity`, `expenses`, `assets`). Others group several leaf document-type folders underneath them (`income`, `supporting_records`) so that related-but-numerous document types can share one BDA project without any single project exceeding AWS's per-project blueprint limit. Terraform (`infra/environments/dev/main.tf`) walks both shapes recursively and creates exactly one BDA project per parent category.
 
-> **Note:** AWS (BDA) has a limit of 40 blueprints per project. This structure is designed to accommodate the limit and inform application preclassification, project-based routing.
+> **Note:** AWS (BDA) has a limit of 40 blueprints per project. Grouping leaf document types under a handful of parent categories keeps every project comfortably under that limit while leaving room to grow - see `document_type_folders` in `infra/environments/dev/main.tf`.
 
 ---
-
-## account_statements
-| Type | Blueprint |
-|------|-----------|
-| AWS-Managed | bank-statement |
-
-## dependent_income
-| Type | Blueprint |
-|------|-----------|
-| Custom | alimony-decree |
-| Custom | child-support-document |
-
-## education
-| Type | Blueprint |
-|------|-----------|
-| Custom | school-financial-aid-award |
-
-## employer_income
-| Type | Blueprint |
-|------|-----------|
-| AWS-Managed | w2-form |
-| AWS-Managed | form-1040 |
-| AWS-Managed | form-1099-int |
-| AWS-Managed | form-1099-misc |
-| AWS-Managed | payslip |
-| AWS-Managed | form-1040-schedule-c |
-
-## employment_records
-| Type | Blueprint |
-|------|-----------|
-| AWS-Managed | workers-compensation-form |
-| Custom | employment-termination-letter |
-| Custom | employment-verification-letter |
-| Custom | new-hire-form |
-| Custom | proof-of-lost-health-coverage |
-
-## government_benefit_income
-| Type | Blueprint |
-|------|-----------|
-| Custom | unemployment-insurance-claim |
-| Custom | va-benefit-letter |
 
 ## identity
 | Type | Blueprint |
@@ -59,49 +18,6 @@ The `all` project (defined separately in Terraform) unions most folders' custom 
 | Custom | i20-student-visa |
 | Custom | i94-arrival-and-departure |
 | Custom | social-security-card |
-
-## insurance
-| Type | Blueprint |
-|------|-----------|
-| Custom | insurance-company-letter |
-| Custom | health-insurance-premium-statement |
-
-## investment_and_royalty_income
-| Type | Blueprint |
-|------|-----------|
-| Custom | ira-account-document |
-| Custom | royalty-statement |
-
-## invoices
-| Type | Blueprint |
-|------|-----------|
-| AWS-Managed | invoice |
-
-## receipts
-| Type | Blueprint |
-|------|-----------|
-| AWS-Managed | receipt |
-
-## retirement_income
-| Type | Blueprint |
-|------|-----------|
-| Custom | annuity-statement |
-| Custom | pension-verification |
-| Custom | social-security-verification |
-
-## self_employment_income
-| Type | Blueprint |
-|------|-----------|
-| Custom | 1099-consolidated-summary |
-
-## shelter
-| Type | Blueprint |
-|------|-----------|
-| Custom | household-contribution-statement |
-| Custom | mortgage-statement |
-| Custom | rent-lease-statement |
-| Custom | shelter-verification-letter |
-| Custom | shelter-payment-receipt |
 
 ## expenses
 | Type | Blueprint |
@@ -120,3 +36,93 @@ The `all` project (defined separately in Terraform) unions most folders' custom 
 | Custom | miscellaneous-assets |
 | Custom | real-estate |
 | Custom | trust-fund |
+
+## income
+Groups every income-related leaf document type into a single BDA project.
+
+### income/dependent_income
+| Type | Blueprint |
+|------|-----------|
+| Custom | alimony-decree |
+| Custom | child-support-document |
+
+### income/employer_income
+| Type | Blueprint |
+|------|-----------|
+| AWS-Managed | w2-form |
+| AWS-Managed | form-1040 |
+| AWS-Managed | form-1099-int |
+| AWS-Managed | form-1099-misc |
+| AWS-Managed | payslip |
+| AWS-Managed | form-1040-schedule-c |
+
+### income/employment_records
+| Type | Blueprint |
+|------|-----------|
+| AWS-Managed | workers-compensation-form |
+| Custom | employment-termination-letter |
+| Custom | employment-verification-letter |
+| Custom | new-hire-form |
+| Custom | proof-of-lost-health-coverage |
+
+### income/government_benefit_income
+| Type | Blueprint |
+|------|-----------|
+| Custom | unemployment-insurance-claim |
+| Custom | va-benefit-letter |
+
+### income/investment_and_royalty_income
+| Type | Blueprint |
+|------|-----------|
+| Custom | ira-account-document |
+| Custom | royalty-statement |
+
+### income/retirement_income
+| Type | Blueprint |
+|------|-----------|
+| Custom | annuity-statement |
+| Custom | pension-verification |
+| Custom | social-security-verification |
+
+### income/self_employment_income
+| Type | Blueprint |
+|------|-----------|
+| Custom | 1099-consolidated-summary |
+
+## supporting_records
+Groups the remaining lower-volume leaf document types into a single BDA project.
+
+### supporting_records/account_statements
+| Type | Blueprint |
+|------|-----------|
+| AWS-Managed | bank-statement |
+
+### supporting_records/education
+| Type | Blueprint |
+|------|-----------|
+| Custom | school-financial-aid-award |
+
+### supporting_records/insurance
+| Type | Blueprint |
+|------|-----------|
+| Custom | insurance-company-letter |
+| Custom | health-insurance-premium-statement |
+
+### supporting_records/invoices
+| Type | Blueprint |
+|------|-----------|
+| AWS-Managed | invoice |
+
+### supporting_records/receipts
+| Type | Blueprint |
+|------|-----------|
+| AWS-Managed | receipt |
+
+### supporting_records/shelter
+| Type | Blueprint |
+|------|-----------|
+| Custom | household-contribution-statement |
+| Custom | mortgage-statement |
+| Custom | rent-lease-statement |
+| Custom | shelter-verification-letter |
+| Custom | shelter-payment-receipt |

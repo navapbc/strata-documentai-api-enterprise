@@ -9,10 +9,7 @@ from documentai_api.logging import get_logger
 from documentai_api.services import s3 as s3_service
 from documentai_api.services.aws_client_factory import AWSClientFactory
 from documentai_api.utils.s3 import generate_s3_uri
-from documentai_api.utils.ssm import (
-    is_preclassification_routing_enabled,
-    is_skip_bda_if_unclassified,
-)
+from documentai_api.utils.ssm import is_skip_bda_if_unclassified
 
 logger = get_logger(__name__)
 tracer = trace.get_tracer(__name__)
@@ -41,16 +38,32 @@ def skip_bda_if_unclassified() -> bool:
 def resolve_project_arn(category: str | None) -> tuple[str, bool]:
     """Resolve BDA project ARN for a preclassification category.
 
-    Returns (arn, used_category_specific_project) where the bool is True only
-    when a category-specific ARN was selected (routing enabled + category hit).
+    When a category is matched, it must have a configured BDA project - if not,
+    that's a deploy misconfiguration and this raises. Blueprint matching often
+    yields no category for perfectly valid documents (low confidence, "OTHER",
+    the matching flag disabled, or a model error), so a None/unmatched category
+    is not an error: it falls back to the single default project (bda_project_arn),
+    if one is configured.
+
+    Returns (arn, used_category_specific_project); the bool is True only when a
+    category-specific project was used.
     """
     arns = _get_project_arns()
 
-    if category and is_preclassification_routing_enabled() and category in arns:
+    if category:
+        if category not in arns:
+            raise ValueError(
+                f"No BDA project configured for preclassification category: {category!r}"
+            )
         return arns[category], True
 
-    # Routing disabled or category not found - use "all" project
-    return arns["all"], False
+    default_arn = get_env_config().bda_project_arn
+    if not default_arn:
+        raise ValueError(
+            "No preclassification category matched and no default BDA project "
+            "(BDA_PROJECT_ARN) is configured"
+        )
+    return default_arn, False
 
 
 def invoke_bedrock_data_automation(

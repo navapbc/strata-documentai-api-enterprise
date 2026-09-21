@@ -76,14 +76,12 @@ def test_get_bda_project_arns_builds_from_prefix_and_ids(monkeypatch):
 
     prefix = "arn:aws:bedrock:us-east-1:123456789012:data-automation-project"
     monkeypatch.setenv("BDA_PROJECT_ARN_PREFIX", prefix)
-    monkeypatch.setenv("BDA_PROJECT_ID_EMPLOYER_INCOME", "abc-123")
-    monkeypatch.setenv("BDA_PROJECT_ARN_ALL", f"{prefix}/all-456")
+    monkeypatch.setenv("BDA_PROJECT_ID_INCOME", "abc-123")
 
-    config = EnvConfig(bda_project_arn_all=f"{prefix}/all-456")
+    config = EnvConfig()
     arns = config.get_bda_project_arns()
 
-    assert arns[PreclassificationCategory.EMPLOYER_INCOME] == f"{prefix}/abc-123"
-    assert arns["all"] == f"{prefix}/all-456"
+    assert arns[PreclassificationCategory.INCOME] == f"{prefix}/abc-123"
 
 
 def test_get_bda_project_arns_omits_unconfigured_categories(monkeypatch):
@@ -97,16 +95,17 @@ def test_get_bda_project_arns_omits_unconfigured_categories(monkeypatch):
     arns = config.get_bda_project_arns()
 
     assert "identity" in arns
-    assert "employer_income" not in arns
+    assert "income" not in arns
     assert "all" not in arns
 
 
 def test_get_bda_project_arns_falls_back_to_bda_project_arn(monkeypatch):
-    """Falls back to bda_project_arn when bda_project_arn_all is not set."""
+    """Falls back to bda_project_arn for any category missing BDA_PROJECT_ID_{CATEGORY}."""
     prefix = "arn:aws:bedrock:us-east-1:123:data-automation-project"
     monkeypatch.setenv("BDA_PROJECT_ARN_PREFIX", prefix)
 
     config = EnvConfig(bda_project_arn=f"{prefix}/fallback-arn")
     arns = config.get_bda_project_arns()
 
-    assert arns["all"] == f"{prefix}/fallback-arn"
+    assert arns["identity"] == f"{prefix}/fallback-arn"
+    assert arns["income"] == f"{prefix}/fallback-arn"

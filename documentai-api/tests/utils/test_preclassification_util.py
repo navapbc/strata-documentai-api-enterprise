@@ -661,10 +661,10 @@ _BLUEPRINT_MATCH_EXPECTATIONS = [
 @pytest.fixture
 def bda_env(reset_env, monkeypatch):
     """Restore BDA env vars needed for integration tests that call BDA directly."""
-    arn = reset_env.get("BDA_PROJECT_ARN_ALL")
+    arn = reset_env.get("BDA_PROJECT_ARN")
     if not arn:
-        pytest.skip("BDA_PROJECT_ARN_ALL not set in environment")
-    monkeypatch.setenv("BDA_PROJECT_ARN_ALL", arn)
+        pytest.skip("BDA_PROJECT_ARN not set in environment")
+    monkeypatch.setenv("BDA_PROJECT_ARN", arn)
     if "BDA_REGION" in reset_env:
         monkeypatch.setenv("BDA_REGION", reset_env["BDA_REGION"])
 
