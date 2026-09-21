@@ -13,6 +13,7 @@ coverage gaps.
 
 import json
 import unittest.mock
+from typing import Any
 
 import pytest
 
@@ -25,22 +26,23 @@ from .conftest import RegressionCase, flatten_expected_fields, load_regression_c
 pytestmark = pytest.mark.regression
 
 
-def _get_ddb_record(metadata_table, file_name: str) -> dict:
+def _get_ddb_record(metadata_table: Any, file_name: str) -> dict[str, Any]:
     response = metadata_table.get_item(Key={"fileName": file_name})
-    record = response.get("Item")
+    record: dict[str, Any] | None = response.get("Item")
     assert record is not None, f"no DDB record written for {file_name}"
     return record
 
 
-def _missing_required_field_list(record: dict) -> list[str]:
+def _missing_required_field_list(record: dict[str, Any]) -> list[str]:
     """MissingRequiredFieldList is persisted as a JSON-encoded string, not a native list."""
     raw = record.get(DocumentMetadata.MISSING_REQUIRED_FIELD_LIST)
     if raw is None:
         return []
-    return json.loads(raw) if isinstance(raw, str) else raw
+    result: list[str] = json.loads(raw) if isinstance(raw, str) else raw
+    return result
 
 
-def _extracted_fields(record: dict) -> dict[str, float]:
+def _extracted_fields(record: dict[str, Any]) -> dict[str, float]:
     """Fetch the raw, unfiltered per-field confidence map from the DDB record.
 
     fieldConfidenceScores is written from the recursive BDA reader
@@ -48,7 +50,9 @@ def _extracted_fields(record: dict) -> dict[str, float]:
     signal that every field BDA returned (including nested/table fields) was
     read out correctly.
     """
-    raw = json.loads(record.get(DocumentMetadata.FIELD_CONFIDENCE_SCORES, "[]"))
+    raw: list[dict[str, float]] = json.loads(
+        record.get(DocumentMetadata.FIELD_CONFIDENCE_SCORES, "[]")
+    )
     return {name: confidence for entry in raw for name, confidence in entry.items()}
 
 
@@ -56,12 +60,12 @@ def _extracted_fields(record: dict) -> dict[str, float]:
     "case", load_regression_cases(), ids=lambda c: f"{c.category}/{c.blueprint}"
 )
 def test_document_type_regression(
-    case: RegressionCase, seed_bda_case, regression_report, regression_env
-):
+    case: RegressionCase, seed_bda_case: Any, regression_report: Any, regression_env: Any
+) -> None:
     """A canned BDA result for this document type classifies/extracts as expected."""
     bucket_name, job_metadata_key, file_name = seed_bda_case(case)
 
-    details: dict = {}
+    details: dict[str, Any] = {}
     try:
         response = run_bda_result_pipeline(bucket_name, job_metadata_key)
         record = _get_ddb_record(regression_env["metadata_table"], file_name)
@@ -107,8 +111,8 @@ def test_document_type_regression(
 
 
 def test_no_matching_blueprint_is_reported_not_silently_dropped(
-    seed_bda_case, regression_report, regression_env
-):
+    seed_bda_case: Any, regression_report: Any, regression_env: Any
+) -> None:
     """A document BDA couldn't match to any blueprint surfaces as NO_CUSTOM_BLUEPRINT_MATCHED.
 
     Regression-guards the "unexpected blueprint result" triage path itself -
@@ -124,7 +128,7 @@ def test_no_matching_blueprint_is_reported_not_silently_dropped(
     )
     bucket_name, job_metadata_key, file_name = seed_bda_case(case)
 
-    details: dict = {}
+    details: dict[str, Any] = {}
     try:
         # Overwrite the canned result with one that has no matched_blueprint but
         # does contain enough extractable text to be considered "a real document".
