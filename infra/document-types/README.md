@@ -6,6 +6,8 @@ The `all` project (defined separately in Terraform) unions most folders' custom 
 
 > **Note:** AWS (BDA) has a limit of 40 blueprints per project. This structure is designed to accommodate the limit and inform application preclassification, project-based routing.
 
+Adding or changing a blueprint here? Follow the [blueprint QA workflow](../../docs/documentai-api/blueprint-qa-workflow.md) to configure, test, and leave behind reusable regression coverage for it.
+
 ---
 
 ## account_statements

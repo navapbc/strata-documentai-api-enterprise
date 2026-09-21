@@ -4,6 +4,8 @@ This guide covers testing and troubleshooting DocumentAI behavior against bluepr
 
 If you're unfamiliar with the overall pipeline (preclassification, BDA blueprint matching, extraction), see the [architecture diagram](media/architecture.svg) first.
 
+Adding or configuring a new blueprint? See [blueprint-qa-workflow.md](blueprint-qa-workflow.md) for the step-by-step process, from configuring the blueprint through leaving behind automated regression coverage.
+
 ## Before you test
 
 1\. Use a reference or synthetic document with a known expected result  
