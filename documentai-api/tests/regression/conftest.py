@@ -60,6 +60,52 @@ def load_regression_cases() -> list[RegressionCase]:
     ]
 
 
+def _is_leaf(field_data: Any) -> bool:
+    """Whether a canned field spec is a leaf (has a value/confidence).
+
+    Anything else is a nested object, matching how BDA nests composite
+    fields (e.g. a driver's license's NAME_DETAILS.FIRST_NAME).
+    """
+    return isinstance(field_data, dict) and ("value" in field_data or "confidence" in field_data)
+
+
+def build_explainability_info(fields: dict[str, Any]) -> dict[str, Any]:
+    """Recursively build a canned explainability_info payload from RegressionCase.fields.
+
+    Preserves nesting and per-field type so the suite exercises the same
+    recursive/nested BDA reader path (`readers/bda.py::_extract_fields_recursive`)
+    production traffic does.
+    """
+    result: dict[str, Any] = {}
+    for field_name, field_data in fields.items():
+        if _is_leaf(field_data):
+            result[field_name] = {
+                "confidence": field_data["confidence"],
+                "value": field_data["value"],
+                "type": field_data.get("type", "string"),
+            }
+        else:
+            result[field_name] = build_explainability_info(field_data)
+    return result
+
+
+def flatten_expected_fields(fields: dict[str, Any], prefix: str = "") -> dict[str, float]:
+    """Flatten RegressionCase.fields into {dotted.path: confidence}.
+
+    Matches the dotted field names `_extract_fields_recursive` produces for
+    nested fields (e.g. {"recipient_name": {"first_name": {...}}} ->
+    "recipient_name.first_name").
+    """
+    flat: dict[str, float] = {}
+    for field_name, field_data in fields.items():
+        full_name = f"{prefix}.{field_name}" if prefix else field_name
+        if _is_leaf(field_data):
+            flat[full_name] = field_data["confidence"]
+        else:
+            flat.update(flatten_expected_fields(field_data, full_name))
+    return flat
+
+
 @pytest.fixture
 def regression_env(
     monkeypatch,
@@ -109,14 +155,7 @@ def seed_bda_case(regression_env):
             f"output/{tenant_id}/{case.blueprint}/{invocation_id}/0/custom_output/job_metadata.json"
         )
 
-        explainability_info = {
-            field_name: {
-                "confidence": field_data["confidence"],
-                "value": field_data["value"],
-                "type": "string",
-            }
-            for field_name, field_data in case.fields.items()
-        }
+        explainability_info = build_explainability_info(case.fields)
 
         result_json = {
             "matched_blueprint": {"name": case.blueprint, "confidence": "0.97"},
