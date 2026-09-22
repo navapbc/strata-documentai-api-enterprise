@@ -104,7 +104,10 @@ def test_manifest_field_types_match_blueprint_schema(
     try:
         schema = get_document_schema(case.document_class)
         assert schema is not None, f"no blueprint schema found for {case.document_class}"
-
+        assert schema.category == case.category, (
+            f"{case.document_class}: schema category {schema.category!r} != manifest category "
+            f"{case.category!r}"
+        )
         schema_types = {f.name: f.type for f in schema.fields}
         manifest_types = flatten_expected_field_types(case.fields)
 
