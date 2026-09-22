@@ -1,4 +1,4 @@
-"""Dictionary endpoints (schemas, fields, response codes, document categories)."""
+"""Dictionary endpoints (schemas, fields, response codes)."""
 
 from dataclasses import asdict
 from typing import Any
@@ -14,7 +14,6 @@ from documentai_api.config.constants import (
 )
 from documentai_api.logging import get_logger
 from documentai_api.models.dictionary import (
-    DictionaryDocumentCategoriesResponse,
     DictionaryFieldsResponse,
     DictionaryResponseCodesResponse,
     DictionarySchemaDetailResponse,
@@ -176,30 +175,3 @@ async def get_response_codes(
         return build_csv_response(data)
 
     return DictionaryResponseCodesResponse(response_codes=data)
-
-
-@router.get(
-    "/v1/dictionary/document-categories",
-    response_model=None,
-    responses=_CSV_RESPONSES,
-    tags=[ApiVisualizationTag.DICTIONARY_REFERENCE],
-)
-async def get_document_categories(
-    user: AuthUserWithFallback,
-    output_format: OutputFormat = OutputFormatType.JSON,
-) -> DictionaryDocumentCategoriesResponse | Response:
-    """Get list of supported document categories (derived from BDA project config)."""
-    import json
-    import os
-
-    project_arns_json = os.environ.get("BDA_PROJECT_ARNS")
-    if not project_arns_json:
-        raise HTTPException(status_code=503, detail="BDA_PROJECT_ARNS not configured")
-
-    categories = sorted(json.loads(project_arns_json).keys())
-    data = [{"category": c} for c in categories]
-
-    if output_format == OutputFormatType.CSV:
-        return build_csv_response(data)
-
-    return DictionaryDocumentCategoriesResponse(document_categories=categories)

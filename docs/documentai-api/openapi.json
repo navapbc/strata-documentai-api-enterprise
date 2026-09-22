@@ -1394,60 +1394,6 @@
         }
       }
     },
-    "/v1/dictionary/document-categories": {
-      "get": {
-        "tags": [
-          "Dictionary:Reference"
-        ],
-        "summary": "Get Document Categories",
-        "description": "Get list of supported document categories (derived from BDA project config).",
-        "operationId": "get_document_categories_v1_dictionary_document_categories_get",
-        "security": [
-          {
-            "APIKeyHeader": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "format",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "$ref": "#/components/schemas/OutputFormatType",
-              "default": "json"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              },
-              "text/csv": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/v1/config/extraction-rules": {
       "get": {
         "tags": [

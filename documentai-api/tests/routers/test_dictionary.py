@@ -9,11 +9,6 @@ from documentai_api.utils.schemas import DocumentSchema, SchemaField
 client = TestClient(app)
 
 
-@pytest.fixture(autouse=True)
-def _set_bda_env(bda_project_arns):
-    pass
-
-
 MOCK_SCHEMAS = {
     "W2": DocumentSchema(
         document_type="W2",
@@ -209,16 +204,6 @@ def test_response_codes():
     assert all(isinstance(c["message"], str) for c in codes)
 
 
-def test_document_categories():
-    response = client.get("/v1/dictionary/document-categories")
-    assert response.status_code == 200
-    data = response.json()
-    assert "documentCategories" in data
-    categories = data["documentCategories"]
-    assert len(categories) > 0
-    assert all(isinstance(c, str) for c in categories)
-
-
 # ==============================================================================
 # csv
 # ==============================================================================
@@ -305,15 +290,6 @@ def test_response_codes_csv():
     assert lines[0] == '"code","message"'
     assert any("000" in line for line in lines)
     assert any("999" in line for line in lines)
-
-
-def test_document_categories_csv():
-    response = client.get("/v1/dictionary/document-categories?format=csv")
-    assert response.status_code == 200
-    assert "text/csv" in response.headers["content-type"]
-    lines = [line for line in response.text.splitlines() if line]
-    assert lines[0] == '"category"'
-    assert any("income" in line for line in lines)
 
 
 def test_list_schemas_503_on_failure(mocker):
