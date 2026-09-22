@@ -9,9 +9,15 @@ variable "description" {
   default     = null
 }
 
-variable "blueprints" {
+variable "blueprint_file_paths" {
   type        = list(string)
-  description = "List of blueprint file paths or ARNs to attach to the project."
+  description = "Local file paths of custom blueprint schemas to create and attach to the project."
+  default     = []
+}
+
+variable "blueprint_arns" {
+  type        = list(string)
+  description = "ARNs of existing blueprints to attach to the project."
   default     = []
 }
 

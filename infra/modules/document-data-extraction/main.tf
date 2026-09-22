@@ -6,18 +6,8 @@ locals {
     }
   ]
 
-  blueprint_arns = [
-    for bp in var.blueprints : bp
-    if startswith(bp, "arn:")
-  ]
-
-  blueprint_files = [
-    for bp in var.blueprints : bp
-    if !startswith(bp, "arn:")
-  ]
-
   custom_blueprints_map = {
-    for file_path in local.blueprint_files :
+    for file_path in var.blueprint_file_paths :
     replace(basename(file_path), ".json", "") => {
       schema = file(file_path)
       type   = "DOCUMENT"
@@ -29,10 +19,10 @@ locals {
       blueprint_arn   = v.blueprint_arn
       blueprint_stage = v.blueprint_stage
     }],
-    [for arn in local.blueprint_arns : {
+    [for arn in var.blueprint_arns : {
       blueprint_arn   = arn
       blueprint_stage = "LIVE"
-    }]
+    }],
   )
 }
 

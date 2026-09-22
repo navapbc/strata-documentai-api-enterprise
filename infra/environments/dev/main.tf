@@ -419,7 +419,8 @@ module "secrets" {
 # --- Bedrock Data Automation (one project per category) ---
 
 locals {
-  document_type_folders = toset([for f in fileset("${path.module}/../../document-types", "*/managed_blueprints.json") : dirname(f)])
+  document_types_dir    = "${path.module}/../../document-types"
+  document_type_folders = toset([for f in fileset(local.document_types_dir, "*/managed_blueprints.json") : dirname(f)])
 
   # TODO: AWS BDA enforces a 40-blueprint-per-project limit. Adding the
   # `expenses` (5) and `assets` (5) folders pushed the `all` project's would-be
@@ -431,7 +432,7 @@ locals {
   all_project_excluded_folders = toset(["expenses", "assets"])
   all_project_folders          = setsubtract(local.document_type_folders, local.all_project_excluded_folders)
 
-  all_managed_blueprint_arns = distinct(flatten([for folder in local.all_project_folders : [for bp in jsondecode(file("${path.module}/../../document-types/${folder}/managed_blueprints.json")) : bp.arn]]))
+  all_managed_blueprint_arns = distinct(flatten([for folder in local.all_project_folders : [for bp in jsondecode(file("${local.document_types_dir}/${folder}/managed_blueprints.json")) : bp.arn]]))
 }
 
 module "bedrock_data_automation" {
@@ -446,11 +447,10 @@ module "bedrock_data_automation" {
   name        = "${local.service_name}-${each.key}"
   description = "BDA project for ${replace(each.key, "_", " ")} documents"
 
-  blueprints = concat(
-    [for f in fileset("${path.module}/../../document-types/${each.key}", "*.json") : "${path.module}/../../document-types/${each.key}/${f}"
-    if f != "managed_blueprints.json"],
-    [for bp in jsondecode(file("${path.module}/../../document-types/${each.key}/managed_blueprints.json")) : bp.arn],
-  )
+  blueprint_file_paths = [for f in fileset("${local.document_types_dir}/${each.key}", "*.json") : "${local.document_types_dir}/${each.key}/${f}"
+  if f != "managed_blueprints.json"]
+
+  blueprint_arns = [for bp in jsondecode(file("${local.document_types_dir}/${each.key}/managed_blueprints.json")) : bp.arn]
 
   standard_output_configuration = {
     document = {
@@ -489,7 +489,7 @@ module "bedrock_data_automation_all" {
 
   name        = "${local.service_name}-all"
   description = "BDA project for all document types"
-  blueprints = concat(
+  blueprint_arns = concat(
     flatten([for k, v in module.bedrock_data_automation : v.blueprint_arns if !contains(local.all_project_excluded_folders, k)]),
     local.all_managed_blueprint_arns,
   )
@@ -630,6 +630,14 @@ locals {
       CORS_ALLOWED_ORIGINS = jsonencode(local.cors_allowed_origins)
     },
   )
+
+  # Worker env, minus BDA_PROJECT_ID_*: only document-processor (via bda_invoker.py)
+  # calls get_bda_project_arns() among the worker Lambdas below, same reasoning as
+  # api_lambda_env_vars above.
+  worker_env_vars_without_bda_project_ids = {
+    for k, v in local.lambda_env_vars : k => v
+    if !startswith(k, "BDA_PROJECT_ID_")
+  }
 
   lambda_policy_arns = {
     data_access         = aws_iam_policy.data_access.arn
@@ -939,7 +947,7 @@ module "workers" {
   command               = each.value
   timeout               = 300
   memory_size           = 1024
-  environment_variables = local.lambda_env_vars
+  environment_variables = each.key == "document-processor" ? local.lambda_env_vars : local.worker_env_vars_without_bda_project_ids
   policy_arns           = local.lambda_policy_arns
 
   s3_trigger = lookup({
