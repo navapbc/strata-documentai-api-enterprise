@@ -95,7 +95,7 @@ def base_url(reset_env):
     return reset_env.get("BASE_URL", "http://localhost:8000")
 
 
-def _wipe_e2e_tenant(tenant_id: str) -> None:
+def _wipe_test_tenant(tenant_id: str) -> None:
     """Delete every document and S3 object owned by the given e2e tenant.
 
     Best-effort: logs warnings on individual failures rather than raising,
@@ -163,7 +163,7 @@ def _sweep_stale_e2e_documents(_sweep_stale_e2e_keys, e2e_tenant_id):
     Belt-and-suspenders - `cleanup_e2e_tenant` handles the happy path; this
     handles 'previous run crashed and left documents behind.'
     """
-    _wipe_e2e_tenant(e2e_tenant_id)
+    _wipe_test_tenant(e2e_tenant_id)
     return
 
 
@@ -175,7 +175,40 @@ def cleanup_e2e_tenant(api_key, e2e_tenant_id):
     we ever want to use the API for cleanup instead of going direct to DDB/S3.
     """
     yield
-    _wipe_e2e_tenant(e2e_tenant_id)
+    _wipe_test_tenant(e2e_tenant_id)
+
+
+@pytest.fixture(scope="session")
+def eval_tenant_id() -> str | None:
+    """The eval-{sub} tenant /v1/admin/extraction-eval writes to for this EVAL_JWT.
+
+    None when EVAL_JWT isn't set - the extraction-eval e2e tests are skipped
+    in that case, so there's nothing to clean up.
+    """
+    token = os.environ.get("EVAL_JWT")
+    if not token:
+        return None
+
+    import jwt
+
+    claims = jwt.decode(token, options={"verify_signature": False})
+    return f"eval-{claims.get('sub', 'unknown')}"
+
+
+@pytest.fixture(scope="session", autouse=True)
+def cleanup_eval_tenant(eval_tenant_id):
+    """Wipe the eval-{sub} tenant used by /v1/admin/extraction-eval e2e tests.
+
+    Sweeps before the run too (belt-and-suspenders for a previous run that
+    crashed mid-session) and is a no-op when EVAL_JWT isn't set.
+    """
+    if not eval_tenant_id:
+        yield
+        return
+
+    _wipe_test_tenant(eval_tenant_id)
+    yield
+    _wipe_test_tenant(eval_tenant_id)
 
 
 @pytest.fixture(scope="session", autouse=True)
