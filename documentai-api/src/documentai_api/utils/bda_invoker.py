@@ -100,7 +100,11 @@ def invoke_bedrock_data_automation(
             s3_service.put_object(
                 bucket=source_bucket_name, key=source_object_name, body=truncated_bytes
             )
+    except Exception as e:
+        logger.error(f"BDA pre-invoke preparation failed for {source_object_name}: {e}")
+        raise
 
+    try:
         # considered moving to services/bda.py instead of calling runtime client
         # directly. ultimately decided not to. services/bda.py does not have
         # tracing/span. moving the call would mean either introducing
@@ -118,16 +122,16 @@ def invoke_bedrock_data_automation(
                 outputConfiguration={"s3Uri": output_uri},
             )
         logger.info(f"BDA response: {response}")
-
-        return (
-            str(response.get("invocationArn")),
-            bda_project_arn,
-            pages_sent,
-            used_category_specific_project,
-        )
     except Exception as e:
-        logger.error(f"BDA API call failed: {e}")
+        logger.error(f"BDA API call failed for {source_object_name}: {e}")
         raise
+
+    return (
+        str(response.get("invocationArn")),
+        bda_project_arn,
+        pages_sent,
+        used_category_specific_project,
+    )
 
 
 __all__ = ["invoke_bedrock_data_automation", "skip_bda_if_unclassified"]
