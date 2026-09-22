@@ -156,7 +156,10 @@ def test_invocation_failure_returns_default(monkeypatch):
 def test_invalid_json_response_returns_default(monkeypatch):
     monkeypatch.setattr(
         "documentai_api.utils.preclassification.invoke_model",
-        lambda **kwargs: {"content": [{"text": "not valid json"}]},
+        lambda **kwargs: {
+            "output": {"message": {"content": [{"text": "not valid json"}]}},
+            "usage": {"inputTokens": 1, "outputTokens": 1},
+        },
     )
 
     result = preclassify_document(SAMPLE_IMAGE, "image/png")
@@ -400,11 +403,16 @@ def test_invoke_uses_max_tokens(monkeypatch):
         captured["model_id"] = model_id
         captured["temperature"] = temperature
         return {
-            "content": [
-                {
-                    "text": '{"document_type": "tax_documents", "confidence": 0.9, "max_document_count_on_page": 1}'
+            "output": {
+                "message": {
+                    "content": [
+                        {
+                            "text": '{"document_type": "tax_documents", "confidence": 0.9, "max_document_count_on_page": 1}'
+                        }
+                    ]
                 }
-            ]
+            },
+            "usage": {"inputTokens": 1, "outputTokens": 1},
         }
 
     monkeypatch.setattr("documentai_api.utils.preclassification.invoke_model", mock_invoke_model)

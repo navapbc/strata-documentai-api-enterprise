@@ -47,63 +47,66 @@ def extract_textract_identity(
             span.set_attribute("document.content_type", content_type)
             span.set_attribute("document.key", ddb_key)
             textract_response = analyze_id(file_bytes)
-
         extract_completed_at = datetime.now(UTC)
-        id_type = get_id_type(textract_response)
-        matched_document_class = get_document_class(id_type)
-        field_map = get_bda_field_map(matched_document_class) if matched_document_class else {}
+    except Exception as e:
+        logger.warning(f"Textract AnalyzeID failed for {ddb_key}, falling back to BDA: {e}")
+        return None
 
-        fields = extract_fields_from_analyze_id(textract_response, field_map)
+    id_type = get_id_type(textract_response)
+    matched_document_class = get_document_class(id_type)
+    field_map = get_bda_field_map(matched_document_class) if matched_document_class else {}
+    fields = extract_fields_from_analyze_id(textract_response, field_map)
 
-        if not matched_document_class or not fields:
-            logger.info(
-                f"Textract could not map document for {ddb_key} "
-                f"(id_type={id_type}, class={matched_document_class}, fields={len(fields)}), "
-                f"falling back to BDA"
-            )
-            return None
-
-        supplemental_config = (
-            get_supplemental_config(matched_document_class) if matched_document_class else None
+    if not matched_document_class or not fields:
+        logger.info(
+            f"Textract could not map document for {ddb_key} "
+            f"(id_type={id_type}, class={matched_document_class}, fields={len(fields)}), "
+            f"falling back to BDA"
         )
+        return None
 
-        if supplemental_config:
-            all_blocks = []
+    supplemental_config = (
+        get_supplemental_config(matched_document_class) if matched_document_class else None
+    )
 
-            for doc in textract_response.get("IdentityDocuments", []):
-                all_blocks.extend(doc.get("Blocks", []))
+    if supplemental_config:
+        all_blocks = []
 
-            if all_blocks:
+        for doc in textract_response.get("IdentityDocuments", []):
+            all_blocks.extend(doc.get("Blocks", []))
+
+        if all_blocks:
+            try:
                 with tracer.start_as_current_span("bedrock.supplemental_extraction") as span:
                     span.set_attribute("document.key", ddb_key)
                     supplemental = extract_supplemental_fields_via_nova(
                         all_blocks, *supplemental_config
                     )
                 fields.update(supplemental)
+            except Exception as e:
+                logger.warning(
+                    f"Supplemental Nova extraction failed for {ddb_key}, continuing without supplemental fields: {e}"
+                )
 
-        set_extract_method(ddb_key, ExtractMethod.TEXTRACT, extract_started_at.isoformat())
+    set_extract_method(ddb_key, ExtractMethod.TEXTRACT, extract_started_at.isoformat())
 
-        field_confidence_scores = [{name: data["confidence"]} for name, data in fields.items()]
-        field_empty_list = [name for name, data in fields.items() if not data.get("value")]
-        extract_time = get_elapsed_time_seconds(extract_started_at, extract_completed_at)
+    field_confidence_scores = [{name: data["confidence"]} for name, data in fields.items()]
+    field_empty_list = [name for name, data in fields.items() if not data.get("value")]
+    extract_time = get_elapsed_time_seconds(extract_started_at, extract_completed_at)
 
-        logger.info(
-            f"Textract identified document as {matched_document_class} "
-            f"with {len(field_confidence_scores)} fields in {extract_time}s"
-        )
+    logger.info(
+        f"Textract identified document as {matched_document_class} "
+        f"with {len(field_confidence_scores)} fields in {extract_time}s"
+    )
 
-        body = json.dumps({"source": "textract", "fields": fields}).encode()
+    body = json.dumps({"source": "textract", "fields": fields}).encode()
 
-        return ExtractionResult(
-            document_type=matched_document_class,
-            body=body,
-            extract_started_at=extract_started_at,
-            extract_completed_at=extract_completed_at,
-            extract_time=extract_time,
-            field_confidence_scores=field_confidence_scores,
-            field_empty_list=field_empty_list,
-        )
-
-    except Exception as e:
-        logger.warning(f"Textract AnalyzeID failed for {ddb_key}, falling back to BDA: {e}")
-        return None
+    return ExtractionResult(
+        document_type=matched_document_class,
+        body=body,
+        extract_started_at=extract_started_at,
+        extract_completed_at=extract_completed_at,
+        extract_time=extract_time,
+        field_confidence_scores=field_confidence_scores,
+        field_empty_list=field_empty_list,
+    )

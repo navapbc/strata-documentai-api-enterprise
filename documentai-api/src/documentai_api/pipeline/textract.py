@@ -30,13 +30,18 @@ def run_textract_pipeline(
     if processor_result.extraction_result is None:
         return False
 
-    classify_extraction_result(
-        ddb_key=processor_result.object_key,
-        result=processor_result.extraction_result,
-        output_uri=processor_result.output_uri,
-        tenant_id=processor_result.tenant_id,
-        batch_id=processor_result.batch_id,
-        extraction_method=ExtractMethod.TEXTRACT,
-    )
+    try:
+        classify_extraction_result(
+            ddb_key=processor_result.object_key,
+            result=processor_result.extraction_result,
+            output_uri=processor_result.output_uri,
+            tenant_id=processor_result.tenant_id,
+            batch_id=processor_result.batch_id,
+            extraction_method=ExtractMethod.TEXTRACT,
+        )
+    except Exception as e:
+        raise RuntimeError(
+            f"Extraction succeeded for {ddb_key} but failed to persist result: {e}"
+        ) from e
 
     return True

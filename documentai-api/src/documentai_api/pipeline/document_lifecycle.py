@@ -250,9 +250,24 @@ def _run_preclassification(
             blueprint_future: Future[PreclassificationMatchResult] = submit_with_otel_context(
                 executor, find_matching_blueprint, file_bytes, content_type
             )
-            preclassification = preclassify_document(
-                file_bytes, content_type, user_provided_document_category or None
-            )
+
+            try:
+                preclassification = preclassify_document(
+                    file_bytes, content_type, user_provided_document_category or None
+                )
+            except Exception as e:
+                logger.error(f"Preclassification failed for {ddb_key}, falling through to BDA: {e}")
+                process_status = (
+                    ProcessStatus.PENDING_IMAGE_OPTIMIZATION
+                    if content_type in FileValidation.GRAYSCALE_CONVERTIBLE
+                    else ProcessStatus.NOT_STARTED
+                )
+                return _PreclassificationOutcome(
+                    process_status,
+                    ResponseCodes.SUCCESS,
+                    pre_classification=None,
+                    is_identity_document=False,
+                )
 
     if preclassification.max_document_count_on_page > 1:
         return _PreclassificationOutcome(
@@ -275,7 +290,12 @@ def _run_preclassification(
             is_identity_document=False,
         )
 
-    blueprint_match = blueprint_future.result()
+    try:
+        blueprint_match = blueprint_future.result()
+    except Exception as e:
+        logger.error(f"Blueprint matching failed for {ddb_key}, continuing without match: {e}")
+        blueprint_match = PreclassificationMatchResult()
+
     pre_classification = PreClassificationDdbFields.from_results(preclassification, blueprint_match)
     logger.info(
         "Blueprint match result",
