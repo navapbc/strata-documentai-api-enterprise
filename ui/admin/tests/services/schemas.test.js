@@ -34,11 +34,6 @@ describe("schemas service", () => {
     expect(result.fields).toHaveLength(1);
   });
 
-  it("getCategories calls GET /v1/dictionary/document-categories", async () => {
-    await SchemasService.getCategories();
-    expect(mockRequest).toHaveBeenCalledWith("GET", "/v1/dictionary/document-categories");
-  });
-
   it("groupFieldsByDocType groups fields by documentType", () => {
     const w2a = { name: "ssn", documentType: "W2" };
     const w2b = { name: "wages", documentType: "W2" };

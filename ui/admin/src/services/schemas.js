@@ -21,7 +21,3 @@ export function groupFieldsByDocType(data) {
   }
   return schemas;
 }
-
-export async function getCategories() {
-  return adminClient.request("GET", "/v1/dictionary/document-categories");
-}

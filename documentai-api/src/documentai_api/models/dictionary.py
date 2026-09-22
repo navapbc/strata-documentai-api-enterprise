@@ -41,7 +41,3 @@ class DictionaryResponseCodeItem(BaseApiResponse):
 
 class DictionaryResponseCodesResponse(BaseApiResponse):
     response_codes: list[DictionaryResponseCodeItem]
-
-
-class DictionaryDocumentCategoriesResponse(BaseApiResponse):
-    document_categories: list[str]
