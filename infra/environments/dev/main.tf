@@ -410,6 +410,39 @@ module "identity_provider" {
   google_allowed_domains         = var.google_allowed_domains
 }
 
+# --- Extract Evaluator (dev-only Cognito user for e2e eval tests) ---
+
+resource "random_password" "extract_eval_admin" {
+  length           = 24
+  special          = true
+  override_special = "!@#$%^&*()_+-=" # Cognito-safe subset
+}
+
+resource "aws_ssm_parameter" "extract_eval_admin_password" {
+  name  = "${local.ssm_prefix}/extract-eval-admin-password"
+  type  = "SecureString"
+  value = random_password.extract_eval_admin.result
+}
+
+resource "aws_cognito_user" "extract_eval_admin" {
+  user_pool_id = module.identity_provider.user_pool_id
+  username     = "extract-eval-admin@internal.invalid"
+
+  attributes = {
+    email          = "extract-eval-admin@internal.invalid"
+    email_verified = "true"
+  }
+
+  message_action = "SUPPRESS"
+  password       = random_password.extract_eval_admin.result
+}
+
+resource "aws_cognito_user_in_group" "extract_eval_admin_super_admin" {
+  user_pool_id = module.identity_provider.user_pool_id
+  group_name   = "super-admin"
+  username     = aws_cognito_user.extract_eval_admin.username
+}
+
 # --- Secrets ---
 
 module "secrets" {

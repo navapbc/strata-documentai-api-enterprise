@@ -224,6 +224,7 @@ def _ensure_multipage_flagging_enabled(monkeypatch_session):
     from documentai_api.services import ssm as ssm_service
     from documentai_api.utils.cache import get_cache
 
+    get_env_config.cache_clear()
     config = get_env_config()
 
     if not config.ssm_prefix:
