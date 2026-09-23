@@ -23,7 +23,7 @@ router = APIRouter(
     dependencies=[Depends(verify_jwt_with_role)],
 )
 
-_EVAL_METHODS = {ExtractMethod.BDA.value, ExtractMethod.LLM.value}
+_LLM = ExtractMethod.LLM.value
 
 
 def _extract_fields(v1_response_json: str | dict[str, Any]) -> dict[str, EvalFieldResult]:
@@ -76,12 +76,14 @@ def get_eval_result(job_id: str) -> EvalResponse:
     if not record:
         raise HTTPException(status_code=404, detail="Job not found")
 
+    primary_method = record.get(DocumentMetadata.EXTRACT_METHOD) or ExtractMethod.BDA.value
     responses = record.get(DocumentMetadata.EVAL_V1_RESPONSES) or {}
-    if not _EVAL_METHODS.issubset(responses.keys()):
+    if not {primary_method, _LLM}.issubset(responses.keys()):
         raise HTTPException(status_code=404, detail="Results not ready")
 
     return EvalResponse(
         job_id=job_id,
-        bda=_extract_fields(responses[ExtractMethod.BDA.value]),
-        llm=_extract_fields(responses[ExtractMethod.LLM.value]),
+        primary_method=primary_method,
+        primary=_extract_fields(responses[primary_method]),
+        llm=_extract_fields(responses[_LLM]),
     )

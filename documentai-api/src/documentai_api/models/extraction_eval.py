@@ -16,5 +16,6 @@ class EvalSubmitResponse(BaseApiResponse):
 
 class EvalResponse(BaseApiResponse):
     job_id: str
-    bda: dict[str, EvalFieldResult] = Field(default_factory=dict)
+    primary_method: str
+    primary: dict[str, EvalFieldResult] = Field(default_factory=dict)
     llm: dict[str, EvalFieldResult] = Field(default_factory=dict)

@@ -100,22 +100,24 @@ def test_extraction_eval(filename, eval_jwt):
     result = _submit_and_poll(TEST_DOCS_DIR / filename, eval_jwt)
 
     assert result["jobId"]
-    assert isinstance(result["bda"], dict)
+    assert isinstance(result["primary"], dict)
     assert isinstance(result["llm"], dict)
-    assert result["bda"], "BDA returned no fields"
+    assert result["primary"], "Primary extraction returned no fields"
     assert result["llm"], "LLM returned no fields"
 
     _print_comparison(filename, result)
 
 
 def _print_comparison(filename: str, data: dict[str, Any]) -> None:
-    bda = data.get("bda", {})
+    primary_method = data.get("primaryMethod", "primary")
+    primary = data.get("primary", {})
     llm = data.get("llm", {})
-    all_fields = sorted(set(bda) | set(llm))
+    all_fields = sorted(set(primary) | set(llm))
 
     col = 32
+    p_label = f"{primary_method.upper()} Value"
     header = (
-        f"{'Field':<{col}} {'BDA Value':<25} {'BDA Conf':>8}   {'LLM Value':<25} {'LLM Conf':>8}"
+        f"{'Field':<{col}} {p_label:<25} {'Conf':>8}   {'LLM Value':<25} {'LLM Conf':>8}"
     )
     sep = "=" * len(header)
 
@@ -123,12 +125,12 @@ def _print_comparison(filename: str, data: dict[str, Any]) -> None:
     print(f"{sep}\n{header}\n{sep}")
 
     for field in all_fields:
-        b = bda.get(field, {})
+        p = primary.get(field, {})
         lm = llm.get(field, {})
-        bda_val = str(b.get("value") or "—")[:24]
+        p_val = str(p.get("value") or "—")[:24]
         llm_val = str(lm.get("value") or "—")[:24]
-        bda_conf = f"{b['confidence']:.2f}" if b.get("confidence") is not None else "—"
+        p_conf = f"{p['confidence']:.2f}" if p.get("confidence") is not None else "—"
         llm_conf = f"{lm['confidence']:.4f}" if lm.get("confidence") is not None else "—"
-        print(f"{field:<{col}} {bda_val:<25} {bda_conf:>8}   {llm_val:<25} {llm_conf:>8}")
+        print(f"{field:<{col}} {p_val:<25} {p_conf:>8}   {llm_val:<25} {llm_conf:>8}")
 
     print(sep)

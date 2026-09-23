@@ -476,12 +476,6 @@ def _dispatch_document_processor(
     # Textract identity and BDA are mutually exclusive. Textract identity is
     # optimized for identity documents (driver's licenses, passports), and
     # is 5x to 20x faster than BDA.
-    if _invoke_textract_if_identity_path(
-        pre_extraction_result, ddb_key, s3_content_type, s3_file_bytes, tenant_id, batch_id
-    ):
-        # Exit early - Textract handled the document.
-        return
-
     _invoke_llm_path(
         ddb_key,
         existing_record,
@@ -490,6 +484,12 @@ def _dispatch_document_processor(
         tenant_id,
         batch_id,
     )
+
+    if _invoke_textract_if_identity_path(
+        pre_extraction_result, ddb_key, s3_content_type, s3_file_bytes, tenant_id, batch_id
+    ):
+        # Exit early - Textract handled the document.
+        return
 
     _invoke_bda_path(
         bucket_name,
