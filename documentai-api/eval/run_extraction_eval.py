@@ -19,9 +19,7 @@ def _print_comparison(data: dict) -> None:
 
     col = 32
     p_label = f"{primary_method.upper()} Value"
-    header = (
-        f"{'Field':<{col}} {p_label:<25} {'Conf':>8}   {'LLM Value':<25} {'LLM Conf':>8}"
-    )
+    header = f"{'Field':<{col}} {p_label:<25} {'Conf':>8}   {'LLM Value':<25} {'LLM Conf':>8}"
     sep = "=" * len(header)
 
     typer.echo(f"\n{sep}\n{header}\n{sep}")

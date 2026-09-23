@@ -116,9 +116,7 @@ def _print_comparison(filename: str, data: dict[str, Any]) -> None:
 
     col = 32
     p_label = f"{primary_method.upper()} Value"
-    header = (
-        f"{'Field':<{col}} {p_label:<25} {'Conf':>8}   {'LLM Value':<25} {'LLM Conf':>8}"
-    )
+    header = f"{'Field':<{col}} {p_label:<25} {'Conf':>8}   {'LLM Value':<25} {'LLM Conf':>8}"
     sep = "=" * len(header)
 
     print(f"\n{filename}")

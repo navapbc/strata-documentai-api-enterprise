@@ -151,6 +151,63 @@ def test_run_llm_extraction_success(mocker):
     mock_telemetry.assert_called_once()
 
 
+def test_run_llm_extraction_uses_dotted_field_names(mocker):
+    """Dotted field names (e.g. "CompanyAddress.City") must round-trip correctly.
+
+    The mangled Pydantic attribute name (CompanyAddress_City) should map back to the
+    dotted name in the extraction output - both as the field_confidence_scores
+    key and the fields dict key, and fieldType must resolve from the schema
+    rather than silently defaulting to "string".
+    """
+    import json
+
+    from documentai_api.utils.schemas import DocumentSchema, SchemaField
+
+    schema = DocumentSchema(
+        document_type="payslip",
+        description="Payslip",
+        fields=[SchemaField(name="CompanyAddress.City", type="address", description="City")],
+    )
+
+    mock_response = MagicMock()
+    mock_response.CompanyAddress_City = _make_field_response("Hartford", "Hartford")
+
+    mock_completion = MagicMock()
+    mock_completion.usage.input_tokens = 100
+    mock_completion.usage.output_tokens = 50
+
+    mocker.patch(
+        "documentai_api.utils.ssm.get_llm_extractor_model_id",
+        return_value="us.amazon.nova-pro-v1:0",
+    )
+    mocker.patch("documentai_api.utils.schemas.get_document_schema", return_value=schema)
+
+    mock_client = MagicMock()
+    mock_client.chat.completions.create_with_completion.return_value = (
+        mock_response,
+        mock_completion,
+    )
+    mocker.patch("instructor.from_bedrock", return_value=mock_client)
+    mocker.patch(
+        "documentai_api.services.aws_client_factory.AWSClientFactory.get_bedrock_runtime_client",
+        return_value=MagicMock(),
+    )
+    mocker.patch("documentai_api.extractors.llm._write_llm_telemetry")
+
+    result = run_llm_extraction(
+        ddb_key="doc.json",
+        document_type="payslip",
+        ocr_blocks=OCR_BLOCKS,
+    )
+
+    assert result.field_confidence_scores == [{"CompanyAddress.City": pytest.approx(0.0)}]
+    assert result.body is not None
+    fields = json.loads(result.body)["fields"]
+    assert "CompanyAddress.City" in fields
+    assert "CompanyAddress_City" not in fields
+    assert fields["CompanyAddress.City"]["fieldType"] == "address"
+
+
 def test_run_llm_extraction_raises_on_missing_schema(mocker):
     mocker.patch(
         "documentai_api.utils.ssm.get_llm_extractor_model_id",

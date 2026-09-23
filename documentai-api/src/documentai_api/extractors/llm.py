@@ -30,8 +30,10 @@ def compute_confidence(
 
     best_ratio = 0.0
     best_line: dict[str, Any] | None = None
+
     for block in line_blocks:
         ratio = difflib.SequenceMatcher(None, citation.lower(), block["Text"].lower()).ratio()
+
         if ratio > best_ratio:
             best_ratio = ratio
             best_line = block
@@ -40,6 +42,7 @@ def compute_confidence(
         return 0.0
 
     line_bb = best_line.get("Geometry", {}).get("BoundingBox", {})
+
     if not line_bb:
         return round(best_ratio, 2)
 
@@ -48,12 +51,16 @@ def compute_confidence(
     bottom = top + line_bb.get("Height", 0)
 
     word_confidences: list[float] = []
+
     for w in word_blocks:
         w_bb = w.get("Geometry", {}).get("BoundingBox", {})
+
         if not w_bb:
             continue
+
         cx = w_bb.get("Left", 0) + w_bb.get("Width", 0) / 2
         cy = w_bb.get("Top", 0) + w_bb.get("Height", 0) / 2
+
         if left <= cx <= right and top <= cy <= bottom:
             word_confidences.append(w.get("Confidence", 0.0))
 
@@ -84,15 +91,17 @@ def _extract(
     from documentai_api.utils.textract import build_citation_index, match_citation_to_geometry
 
     schema = get_document_schema(document_type)
+
     if not schema:
         raise ValueError(f"No schema found for document type '{document_type}'")
 
     ocr_text = ocr_blocks_to_text(ocr_blocks)
+
     if not ocr_text.strip():
         raise ValueError(f"No OCR text available for {ddb_key}")
 
     model_id = get_llm_extractor_model_id()
-    blueprint_model = build_blueprint_model(schema)
+    blueprint_model, field_name_map = build_blueprint_model(schema)
 
     bedrock_client = AWSClientFactory.get_bedrock_runtime_client()
     client = instructor.from_bedrock(bedrock_client, mode=instructor.Mode.BEDROCK_JSON)
@@ -100,6 +109,7 @@ def _extract(
     started_at = datetime.now(UTC)
     input_tokens: int | None = None
     output_tokens: int | None = None
+
     with tracer.start_as_current_span("llm.extraction") as span:
         span.set_attribute("document.key", ddb_key)
         span.set_attribute("document.type", document_type)
@@ -108,30 +118,36 @@ def _extract(
             model=model_id,
             response_model=blueprint_model,
             messages=[{"role": "user", "content": ocr_text}],
+            temperature=0.0,
         )
         usage = completion.usage if hasattr(completion, "usage") and completion.usage else None
         input_tokens = usage.input_tokens if usage and hasattr(usage, "input_tokens") else None
         output_tokens = usage.output_tokens if usage and hasattr(usage, "output_tokens") else None
+
         if input_tokens is not None:
             span.set_attribute("llm.input_tokens", input_tokens)
+
         if output_tokens is not None:
             span.set_attribute("llm.output_tokens", output_tokens)
 
     duration = Decimal(str(round((datetime.now(UTC) - started_at).total_seconds(), 3)))
-
     block_index, word_blocks = build_citation_index(ocr_blocks)
     field_type_map = {f.name: f.type for f in schema.fields}
     field_confidence_scores: list[dict[str, float]] = []
     field_empty_list: list[str] = []
     fields_output: dict[str, Any] = {}
 
-    for field_name in blueprint_model.model_fields:
-        extracted = getattr(response, field_name, None)
+    for field_name_underscored in blueprint_model.model_fields:
+        extracted = getattr(response, field_name_underscored, None)
+
         if extracted is None:
             continue
+
+        field_name = field_name_map.get(field_name_underscored, field_name_underscored)
         value = extracted.value if extracted.value is not None else ""
         conf = compute_confidence(extracted.text_citation, ocr_blocks)
         field_confidence_scores.append({field_name: conf})
+
         if not value:
             field_empty_list.append(field_name)
 
@@ -141,10 +157,13 @@ def _extract(
             "text_citation": extracted.text_citation,
             "fieldType": field_type_map.get(field_name, "string"),
         }
+
         if extracted.text_citation:
             geometry = match_citation_to_geometry(extracted.text_citation, block_index, word_blocks)
+
             if geometry:
                 field_entry["geometry"] = geometry
+
         fields_output[field_name] = field_entry
 
     body = json.dumps(
@@ -183,8 +202,10 @@ def _write_llm_telemetry(
         DocumentMetadata.LLM_MODEL_ID: model_id,
         DocumentMetadata.LLM_DURATION_SECONDS: duration,
     }
+
     if input_tokens is not None:
         updates[DocumentMetadata.LLM_INPUT_TOKENS] = input_tokens
+
     if output_tokens is not None:
         updates[DocumentMetadata.LLM_OUTPUT_TOKENS] = output_tokens
 
