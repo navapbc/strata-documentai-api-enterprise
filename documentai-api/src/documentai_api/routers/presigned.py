@@ -7,6 +7,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Form, HTTPException, Response
 
 from documentai_api.annotations import (
+    AiConsentFlag,
     AuthUser,
     DocumentCategoryField,
     ExternalDocumentId,
@@ -62,10 +63,7 @@ async def create_presigned_upload_url(
     category: DocumentCategoryField = None,
     trace_id: TraceId = None,
     external_document_id: ExternalDocumentId = None,
-    # ai_consent_flag is not accepted here - presigned URLs are only generated
-    # when the caller intends to upload for processing. If consent is declined,
-    # use POST /v1/documents with ai_consent_flag=false instead (stores metadata
-    # without uploading to S3).
+    ai_consent_flag: AiConsentFlag = True,
     external_system_id: ExternalSystemId = None,
     upload_source: UploadSourceField = None,
 ) -> PresignedUploadResponse:
@@ -85,13 +83,18 @@ async def create_presigned_upload_url(
             ),
         )
 
+    if ai_consent_flag is False:
+        raise HTTPException(
+            status_code=400,
+            detail="AI consent declined. Presigned upload requires AI processing consent.",
+        )
+
     trace_id = _validate_trace_id(trace_id)
-
     increment_and_check(auth.tenant_id)
-
     expiry = get_app_config().presigned_url_expiry_seconds
 
     input_location = get_env_config().documentai_input_location
+
     if not input_location:
         raise HTTPException(status_code=500, detail="Upload location not configured")
 
@@ -113,6 +116,7 @@ async def create_presigned_upload_url(
         "trace-id": trace_id,
         "original-file-name": safe_filename,
     }
+
     if category:
         metadata["user-provided-document-category"] = category
 
@@ -148,6 +152,7 @@ async def create_presigned_upload_url(
             upload_source=upload_source,
             tenant_id=auth.tenant_id,
             api_key_name=auth.api_key_name,
+            ai_consent_flag=ai_consent_flag,
         )
         await asyncio.to_thread(insert_minimal_ddb_record, record)
     except Exception:

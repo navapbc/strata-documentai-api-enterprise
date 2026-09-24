@@ -161,3 +161,17 @@ def test_write_extraction_output_raises_without_tenant(monkeypatch, mocker):
 
     with pytest.raises(ValueError, match="tenant_id is required"):
         s3_util.write_extraction_output("", "textract", "doc-uuid.json", b"data")
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("Aug\xe2\x80\x94Sep.pdf", "Aug___Sep.pdf"),
+        ("Any Questions?.pdf", "Any Questions?.pdf"),
+        ("hello-world_2026.pdf", "hello-world_2026.pdf"),
+        ("invoice-hyphen-final.PDF—copy", "invoice-hyphen-final.PDF_copy"),
+        ("invoice—emdash-final.PDF—copy", "invoice_emdash-final.PDF_copy"),
+    ],
+)
+def test_sanitize_for_s3_key(value, expected):
+    assert s3_util.sanitize_for_s3_key(value) == expected

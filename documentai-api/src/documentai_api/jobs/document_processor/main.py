@@ -19,6 +19,7 @@ from tenacity import (
 
 import documentai_api.logging
 from documentai_api.classifiers.document_classification import (
+    classify_as_ai_consent_declined,
     classify_as_extraction_not_configured,
     classify_as_failed,
     classify_as_not_implemented,
@@ -359,6 +360,14 @@ def _dispatch_document_processor(
     batch_id: str | None,
 ) -> None:
     """Validate content and dispatch to the appropriate extraction path."""
+    # upload paths with ai consent false should never make it this far, but
+    # handle it defensively if it occurs. this should never happen in theory,
+    # but if it does, we don't want to process the file
+    if existing_record.get(DocumentMetadata.AI_CONSENT_FLAG) is False:
+        logger.info(f"AI consent declined for {ddb_key}, skipping processing")
+        classify_as_ai_consent_declined(object_key=ddb_key, batch_id=batch_id)
+        return
+
     if status == ProcessStatus.PENDING_IMAGE_OPTIMIZATION:
         apply_grayscale = True
     elif status and ProcessStatus.is_awaiting_processing(status):
