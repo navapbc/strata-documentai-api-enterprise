@@ -4795,6 +4795,12 @@
             "title": "External Document Id",
             "description": "External document identifier"
           },
+          "ai_consent_flag": {
+            "type": "boolean",
+            "title": "Ai Consent Flag",
+            "description": "Explicit AI processing consent. True = consent granted, processing proceeds normally. False = consent denied, document is stored but not processed.",
+            "default": true
+          },
           "external_system_id": {
             "anyOf": [
               {
