@@ -70,7 +70,7 @@ define get_api_lambda_env_vars
 	test -n "$$FN" || (echo "No deployed docai *-api Lambda found" && exit 1); \
 	aws lambda get-function-configuration --function-name "$$FN" \
 	  --query "Environment.Variables" --output json | \
-	jq -r 'to_entries[] | "\(.key)=\(.value)"'
+	jq -r 'to_entries[] | "\(.key)=\(.value | @sh)"'
 endef
 
 define get_worker_lambda_env_vars
@@ -78,7 +78,7 @@ define get_worker_lambda_env_vars
 	test -n "$$FN" || (echo "No deployed docai *-document-processor Lambda found" && exit 1); \
 	aws lambda get-function-configuration --function-name "$$FN" \
 	  --query "Environment.Variables" --output json | \
-	jq -r 'to_entries[] | "\(.key)=\(.value)"'
+	jq -r 'to_entries[] | "\(.key)=\(.value | @sh)"'
 endef
 
 ##################################################

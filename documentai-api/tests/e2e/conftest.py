@@ -168,12 +168,8 @@ def _sweep_stale_e2e_documents(_sweep_stale_e2e_keys, e2e_tenant_id):
 
 
 @pytest.fixture(scope="session", autouse=True)
-def cleanup_e2e_tenant(api_key, e2e_tenant_id):
-    """Delete every document this worker created in its e2e tenant.
-
-    Runs after api_key teardown - depends on it so the key still exists if
-    we ever want to use the API for cleanup instead of going direct to DDB/S3.
-    """
+def cleanup_e2e_tenant(e2e_tenant_id):
+    """Delete every document this worker created in its e2e tenant."""
     yield
     _wipe_test_tenant(e2e_tenant_id)
 

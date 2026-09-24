@@ -43,12 +43,8 @@ _EVAL_FILES = [
 
 
 @pytest.fixture(scope="module")
-def eval_jwt(reset_env, monkeypatch_session):
+def eval_jwt():
     """Fetch extraction evaluator admin password from SSM and exchange for a Cognito JWT."""
-    for k, v in reset_env.items():
-        monkeypatch_session.setenv(k, v)
-
-    get_env_config.cache_clear()
     cfg = get_env_config()
     assert cfg.cognito_client_id
     password_param = f"{cfg.ssm_prefix}/extract-eval-admin-password"
