@@ -10,6 +10,8 @@ A processor picks up the job and sends the document to Bedrock Data Automation, 
 
 The whole pipeline runs without any human involvement. A client can upload a document and either wait for the result synchronously or check back later using the job ID.
 
+For the DynamoDB tables that track documents through this pipeline, see [data-model.md](data-model.md).
+
 ## Blueprints
 
 A blueprint tells BDA what to look for in a document - which fields to extract, how to identify them, and what format to expect. Each tenant can have blueprints configured for the document types they process. The platform routes each document to the right blueprint based on the category the client specifies at upload time.
