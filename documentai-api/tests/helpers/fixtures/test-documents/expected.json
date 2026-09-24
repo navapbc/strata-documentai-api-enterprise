@@ -26,7 +26,7 @@
     "preclassificationCategory": null,
     "responseCode": "104"
   },
-  "happy-path/synthetic-assests-bank-statement-render-spanish.png": {
+  "happy-path/synthetic-assets-bank-statement-render-spanish.png": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev,",
       "2x consistent). Correctly routed to the 'account_statements' per-category project,",
@@ -40,7 +40,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "happy-path/synthetic-assests-bank-statement-render.pdf": {
+  "happy-path/synthetic-assets-bank-statement-render.pdf": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev,",
       "2x consistent). Correctly routed to the 'account_statements' per-category project,",
@@ -54,7 +54,7 @@
     "preclassificationCategory": "present",
     "responseCode": "000"
   },
-  "happy-path/synthetic-assests-bank-statement-scan.jpg": {
+  "happy-path/synthetic-assets-bank-statement-scan.jpg": {
     "//": [
       "Verified live with preclassification-based-routing ON (permanently enabled in dev,",
       "2x consistent). Correctly routed to the 'account_statements' per-category project,",
