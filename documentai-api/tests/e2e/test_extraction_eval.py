@@ -10,6 +10,7 @@ environment.
 
 import os
 import time
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -34,6 +35,8 @@ pytestmark = pytest.mark.skipif(
     _eval_prereqs_missing(),
     reason="COGNITO_CLIENT_ID and SSM_PREFIX must be set",
 )
+
+_RESULTS_DIR = Path(__file__).parent / "results" / "extraction_evaluation"
 
 _EVAL_FILES = [
     "synthetic-public-benefits-identity-proof-state-photo-id.jpg",
@@ -104,12 +107,51 @@ def test_extraction_eval(filename, eval_jwt):
     assert result["llm"], "LLM returned no fields"
 
     _print_comparison(filename, result)
+    _write_comparison_md(filename, result)
+
+
+def _write_comparison_md(filename: str, data: dict[str, Any]) -> None:
+    primary_method = data.get("primaryMethod", "primary")
+    primary = data.get("primary", {})
+    llm = data.get("llm", {})
+    durations = data.get("durations", {})
+    all_fields = sorted(set(primary) | set(llm))
+
+    results_file = _RESULTS_DIR / f"{Path(filename).stem}.md"
+
+    lines = [f"_Run: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')}_\n", f"\n## {filename}\n"]
+
+    if durations:
+        lines.append("**Durations**\n")
+        for method, d in durations.items():
+            extraction = d.get("extractionDurationSeconds", "—")
+            bda_invoke = d.get("bdaInvocationDurationSeconds")
+            line = f"- {method}: {extraction}s extraction"
+            if bda_invoke is not None:
+                line += f", {bda_invoke}s BDA invocation"
+            lines.append(line)
+        lines.append("")
+
+    lines.append(f"| Field | {primary_method.upper()} Value | Conf | LLM Value | LLM Conf |")
+    lines.append("|---|---|---|---|---|")
+    for field in all_fields:
+        p = primary.get(field, {})
+        lm = llm.get(field, {})
+        p_val = str(p.get("value") or "—")[:24]
+        llm_val = str(lm.get("value") or "—")[:24]
+        p_conf = f"{p['confidence']:.2f}" if p.get("confidence") is not None else "—"
+        llm_conf = f"{lm['confidence']:.4f}" if lm.get("confidence") is not None else "—"
+        lines.append(f"| {field} | {p_val} | {p_conf} | {llm_val} | {llm_conf} |")
+
+    _RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    results_file.write_text("\n".join(lines) + "\n")
 
 
 def _print_comparison(filename: str, data: dict[str, Any]) -> None:
     primary_method = data.get("primaryMethod", "primary")
     primary = data.get("primary", {})
     llm = data.get("llm", {})
+    durations = data.get("durations", {})
     all_fields = sorted(set(primary) | set(llm))
 
     col = 32
@@ -119,6 +161,16 @@ def _print_comparison(filename: str, data: dict[str, Any]) -> None:
 
     print(f"\n{filename}")
     print(f"{sep}\n{header}\n{sep}")
+
+    if durations:
+        for method, d in durations.items():
+            extraction = d.get("extractionDurationSeconds", "—")
+            bda_invoke = d.get("bdaInvocationDurationSeconds")
+            line = f"  {method}: {extraction}s extraction"
+            if bda_invoke is not None:
+                line += f", {bda_invoke}s BDA invocation"
+            print(line)
+        print()
 
     for field in all_fields:
         p = primary.get(field, {})

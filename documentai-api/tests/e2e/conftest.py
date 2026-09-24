@@ -1,6 +1,7 @@
 # tests/e2e/conftest.py
 import os
 import secrets
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -24,6 +25,35 @@ def e2e_tenant_id(worker_id):
     Each worker creates its key + documents under this tenant and wipes only it.
     """
     return f"{E2E_TENANT_BASE}-{worker_id}"
+
+
+_EVAL_RESULTS_DIR = _E2E_DIR / "results" / "extraction_evaluation"
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """Aggregate per-worker eval result files into a single summary.
+
+    Only runs on the controller process (not on xdist workers).
+    """
+    if hasattr(session.config, "workerinput"):
+        return
+
+    worker_files = sorted(
+        (f for f in _EVAL_RESULTS_DIR.glob("*.md") if f.name != "extraction_eval_summary.md"),
+        key=lambda f: f.name,
+    )
+    if not worker_files:
+        return
+
+    summary = _EVAL_RESULTS_DIR / "extraction_eval_summary.md"
+    header = (
+        f"# Extraction Eval Results\n\n_Run: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')}_\n"
+    )
+    sections = []
+    for f in worker_files:
+        file_lines = f.read_text().splitlines(keepends=True)
+        sections.append("".join(file_lines[1:]))  # skip "_Run: ..." line
+    summary.write_text(header + "".join(sections))
 
 
 def pytest_collection_modifyitems(items):

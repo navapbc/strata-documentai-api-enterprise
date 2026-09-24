@@ -19,3 +19,4 @@ class EvalResponse(BaseApiResponse):
     primary_method: str
     primary: dict[str, EvalFieldResult] = Field(default_factory=dict)
     llm: dict[str, EvalFieldResult] = Field(default_factory=dict)
+    durations: dict[str, Any] = Field(default_factory=dict)

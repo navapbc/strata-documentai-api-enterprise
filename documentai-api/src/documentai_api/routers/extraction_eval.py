@@ -86,4 +86,5 @@ def get_eval_result(job_id: str) -> EvalResponse:
         primary_method=primary_method,
         primary=_extract_fields(responses[primary_method]),
         llm=_extract_fields(responses[_LLM]),
+        durations=record.get(DocumentMetadata.DURATIONS_BY_METHOD) or {},
     )

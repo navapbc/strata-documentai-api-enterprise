@@ -189,7 +189,7 @@ test-e2e-routing: ## Run e2e routing tests
 
 test-extraction-eval: .env.e2e
 test-extraction-eval: ## Run the BDA vs LLM extraction-eval e2e test
-	@set -a && . ./.env.e2e && set +a && uv run --frozen pytest tests/e2e/test_extraction_eval.py -m e2e $(args)
+	@set -a && . ./.env.e2e && set +a && uv run --frozen pytest tests/e2e/test_extraction_eval.py -m e2e -n 4 $(args)
 
 .env.e2e: _require-jq ## Generate .env.e2e from deployed Lambda env vars + API Gateway endpoint
 # BASE_URL/AWS_REGION aren't in the Lambda's own env (that's API Gateway infra
