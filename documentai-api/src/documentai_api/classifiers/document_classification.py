@@ -1,20 +1,22 @@
 """Terminal classification state transitions for processed documents."""
 
+import json
 from typing import Any
 
 from botocore.exceptions import ClientError
 
-from documentai_api.classifiers.api_response import finalize_v1_response
+from documentai_api.classifiers.api_response import build_v1_api_response, finalize_v1_response
 from documentai_api.config.constants import ExtractMethod, ProcessStatus
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.dtos.ddb import UpdateDdbRecord
 from documentai_api.dtos.extraction import ExtractionResult
 from documentai_api.dtos.processing import InternalApiResponse
 from documentai_api.logging import get_logger
+from documentai_api.readers.extraction import read_output
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.batch_operations import increment_resolved_count
 from documentai_api.utils.bda import calculate_average_non_empty_confidence
-from documentai_api.utils.ddb import get_ddb_record, update_ddb
+from documentai_api.utils.ddb import _execute_ddb_update, get_ddb_record, update_ddb
 from documentai_api.utils.extraction_rules import get_missing_required_fields
 from documentai_api.utils.response_builder import get_internal_api_response
 from documentai_api.utils.response_codes import ResponseCodes
@@ -315,19 +317,14 @@ def _write_eval_v1_response(
     output_uri: str,
     extraction_method: ExtractMethod,
 ) -> None:
-    """Build and store a v1 response for one eval path into the evalV1Responses map."""
-    import json
-
-    from documentai_api.classifiers.api_response import build_v1_api_response
-    from documentai_api.readers.extraction import read_output
-    from documentai_api.utils.ddb import _execute_ddb_update
-
+    """Build and store a v1 response for one extraction method into apiResponsesByMethod."""
     reader_result = read_output(
         ddb_record,
         include_extracted_data=True,
         output_uri=output_uri,
         extract_method=extraction_method,
     )
+
     v1_response = build_v1_api_response(ddb_key, ProcessStatus.SUCCESS)
     v1_response["fields"] = {
         name: {"confidence": round(conf, 2), "value": reader_result.field_values.get(name)}
@@ -340,12 +337,25 @@ def _write_eval_v1_response(
         if isinstance(extraction_method, ExtractMethod)
         else extraction_method
     )
+
     _execute_ddb_update(
         ddb_key,
-        f"SET {DocumentMetadata.EVAL_V1_RESPONSES}.#method = :response",
+        f"SET {DocumentMetadata.API_RESPONSES_BY_METHOD}.#method = :response",
         {":response": json.dumps(v1_response)},
         expression_names={"#method": method_key},
     )
+
+    if result.extract_duration_seconds is not None:
+        _execute_ddb_update(
+            ddb_key,
+            f"SET {DocumentMetadata.DURATIONS_BY_METHOD}.#method = :durationEntry",
+            {
+                ":durationEntry": {
+                    DocumentMetadata.EXTRACTION_DURATION_SECONDS: result.extract_duration_seconds
+                }
+            },
+            expression_names={"#method": method_key},
+        )
 
 
 def classify_extraction_result(

@@ -85,11 +85,13 @@ def extract_textract_identity(
 
         field_confidence_scores = [{name: data["confidence"]} for name, data in fields.items()]
         field_empty_list = [name for name, data in fields.items() if not data.get("value")]
-        extract_time = get_elapsed_time_seconds(extract_started_at, extract_completed_at)
+        extract_duration_seconds = get_elapsed_time_seconds(
+            extract_started_at, extract_completed_at
+        )
 
         logger.info(
             f"Textract identified document as {matched_document_class} "
-            f"with {len(field_confidence_scores)} fields in {extract_time}s"
+            f"with {len(field_confidence_scores)} fields in {extract_duration_seconds}s"
         )
 
         body = json.dumps({"source": "textract", "fields": fields}).encode()
@@ -99,7 +101,7 @@ def extract_textract_identity(
             body=body,
             extract_started_at=extract_started_at,
             extract_completed_at=extract_completed_at,
-            extract_time=extract_time,
+            extract_duration_seconds=extract_duration_seconds,
             field_confidence_scores=field_confidence_scores,
             field_empty_list=field_empty_list,
         )

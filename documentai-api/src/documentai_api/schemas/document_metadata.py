@@ -136,7 +136,13 @@ class DocumentMetadata:
 
     # eval flag
     IS_EVAL = "isEval"
-    EVAL_V1_RESPONSES = "evalV1Responses"
+
+    # per-extraction method fields - stored as maps keyed by method name
+    API_RESPONSES_BY_METHOD = "apiResponsesByMethod"
+    DURATIONS_BY_METHOD = "durationsByMethod"
+    # nested fields within durationsByMethod map
+    EXTRACTION_DURATION_SECONDS = "extractionDurationSeconds"
+    BDA_INVOCATION_DURATION_SECONDS = "bdaInvocationDurationSeconds"
 
     # otel trace propagation
     TRACEPARENT = "traceparent"

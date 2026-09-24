@@ -47,7 +47,7 @@ async def run_eval(
 
     Uses is_eval=True which:
     - Forces LLM extraction regardless of the feature flag
-    - Writes each path's output to evalV1Responses map instead of terminal status
+    - Writes each path's output to apiResponsesByMethod map instead of terminal status
     - Suppresses metrics queue emission and batch counter increments
     """
     from documentai_api.utils.auth import UserContext
@@ -77,7 +77,7 @@ def get_eval_result(job_id: str) -> EvalResponse:
         raise HTTPException(status_code=404, detail="Job not found")
 
     primary_method = record.get(DocumentMetadata.EXTRACT_METHOD) or ExtractMethod.BDA.value
-    responses = record.get(DocumentMetadata.EVAL_V1_RESPONSES) or {}
+    responses = record.get(DocumentMetadata.API_RESPONSES_BY_METHOD) or {}
     if not {primary_method, _LLM}.issubset(responses.keys()):
         raise HTTPException(status_code=404, detail="Results not ready")
 

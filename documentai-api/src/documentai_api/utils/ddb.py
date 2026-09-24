@@ -550,7 +550,10 @@ def upsert_ddb(data: InitialDdbRecord) -> None:
 
         if data.is_eval:
             expr_fields.append(
-                f"{DocumentMetadata.EVAL_V1_RESPONSES} = if_not_exists({DocumentMetadata.EVAL_V1_RESPONSES}, :emptyMap)"
+                f"{DocumentMetadata.API_RESPONSES_BY_METHOD} = if_not_exists({DocumentMetadata.API_RESPONSES_BY_METHOD}, :emptyMap)"
+            )
+            expr_fields.append(
+                f"{DocumentMetadata.DURATIONS_BY_METHOD} = if_not_exists({DocumentMetadata.DURATIONS_BY_METHOD}, :emptyMap)"
             )
             expr_values[":emptyMap"] = {}
 

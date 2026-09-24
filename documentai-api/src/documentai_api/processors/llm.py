@@ -20,7 +20,9 @@ def process_llm_result(msg: LlmExtractionMessage) -> ProcessorResult:
         result.body or b"",
         content_type="application/json",
     )
+
     result.output_uri = output_uri
+
     return ProcessorResult(
         object_key=msg.ddb_key,
         tenant_id=msg.tenant_id,

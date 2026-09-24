@@ -19,7 +19,7 @@ class ExtractionResult:
     field_confidence_scores: list[dict[str, float]] = field(default_factory=list)
     extract_started_at: datetime | None = None
     extract_completed_at: datetime | None = None
-    extract_time: Decimal | None = None
+    extract_duration_seconds: Decimal | None = None
     field_empty_list: list[str] = field(default_factory=list)
     field_missing_geometry_list: list[str] = field(default_factory=list)
     # BDA-only

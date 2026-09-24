@@ -210,9 +210,8 @@ def _write_llm_telemetry(
         updates[DocumentMetadata.LLM_OUTPUT_TOKENS] = output_tokens
 
     set_expr = "SET " + ", ".join(f"{k} = :{k}" for k in updates)
-    ddb_service.update_item(
-        table_name, {"fileName": ddb_key}, set_expr, {f":{k}": v for k, v in updates.items()}
-    )
+    expr_values = {f":{k}": v for k, v in updates.items()}
+    ddb_service.update_item(table_name, {"fileName": ddb_key}, set_expr, expr_values)
 
 
 def run_llm_extraction(
@@ -226,6 +225,7 @@ def run_llm_extraction(
         span.set_attribute("document.type", document_type)
 
         result, duration, input_tokens, output_tokens = _extract(ddb_key, document_type, ocr_blocks)
+        result.extract_duration_seconds = duration
         _write_llm_telemetry(ddb_key, document_type, duration, input_tokens, output_tokens)
 
         span.set_attribute("llm.field_count", len(result.field_confidence_scores))
