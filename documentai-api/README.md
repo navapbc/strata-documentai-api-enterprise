@@ -29,6 +29,8 @@ The request lifecycle across these components:
 
 The diagram source lives in [`request-lifecycle.mmd`](../docs/documentai-api/diagrams/request-lifecycle.mmd).
 
+For the DynamoDB table structure behind the pipeline, see [data-model.md](../docs/documentai-api/data-model.md).
+
 ## Features
 
 - **Bedrock Data Automation** - Multi-project BDA with per-category blueprint routing

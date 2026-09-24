@@ -1,0 +1,67 @@
+%% DynamoDB entity relationships. Dotted lines = non-identifying relationships:
+%% these are logical links enforced in application code (mostly via tenantId),
+%% not real foreign keys - DynamoDB itself has no FK constraints.
+erDiagram
+    TENANTS ||..o{ API_KEYS : "scopes"
+    TENANTS ||..o{ DOCUMENT_METADATA : "owns documents"
+    TENANTS ||..o{ TENANT_REQUEST_COUNTS : "tracks writes/day"
+    TENANTS ||..o{ AUDIT_EVENTS : "logs actions for"
+    TENANTS ||..o{ EXTRACTION_RULES : "configures per doc type"
+    TENANTS ||..o{ DOCUMENT_CATEGORIES : "defines categories for"
+    TENANTS ||..o{ DOCUMENT_BATCHES : "owns"
+    TENANTS ||..o{ DOCUMENT_BUILDS : "owns"
+    DOCUMENT_BATCHES ||..o{ DOCUMENT_METADATA : "batchId groups"
+    DOCUMENT_BUILDS ||..o| DOCUMENT_METADATA : "submitted build becomes one job"
+    EXTRACTION_RULES }o..|| DOCUMENT_CATEGORIES : "documentType convention-matches categoryName"
+
+    TENANTS {
+        string tenantId PK
+        string displayName
+        bool isActive
+        float extractionConfidenceFloor
+    }
+    API_KEYS {
+        string keyHash PK
+        string tenantId "GSI hash"
+        string apiKeyName "GSI sort"
+    }
+    DOCUMENT_METADATA {
+        string fileName PK
+        string jobId "GSI"
+        string tenantId "GSI hash"
+        string createdAt "GSI sort"
+        string processStatus "GSI hash"
+        string batchId
+        string externalDocumentId "GSI"
+        string bdaInvocationId "GSI"
+    }
+    TENANT_REQUEST_COUNTS {
+        string tenantId PK
+        string date SK
+        number count
+    }
+    AUDIT_EVENTS {
+        string tenantId PK
+        string timestampEventId SK
+        string action "GSI hash"
+        string actorEmail "GSI hash"
+    }
+    EXTRACTION_RULES {
+        string tenantId PK
+        string documentType SK
+    }
+    DOCUMENT_CATEGORIES {
+        string tenantId PK
+        string categoryName SK
+    }
+    DOCUMENT_BATCHES {
+        string batchId PK
+        string tenantId "GSI hash"
+        string batchStatus "GSI hash"
+    }
+    DOCUMENT_BUILDS {
+        string buildId PK
+        number pageNumber SK
+        string tenantId "GSI hash"
+        string externalReferenceId "GSI"
+    }
