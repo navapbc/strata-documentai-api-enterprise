@@ -38,6 +38,14 @@ def test_generate_unique_filename_strips_path():
     assert result == "foo-test-job-id.pdf"
 
 
+def test_generate_unique_filename_non_ascii_replaced():
+    # Non-ASCII characters (e.g. mangled em-dash) are replaced with underscores
+    # so the S3 key round-trips cleanly through URL-encoding in event notifications.
+    result = generate_unique_filename("Aug 3â\x80\x94Aug 16 - Infusion, Inc.pdf", "test-job-id")
+    assert result.endswith("-test-job-id.pdf")
+    assert result.isascii()
+
+
 @pytest.mark.asyncio
 async def test_validate_file_type_supported(runtime_required_env, blank_pdf_bytes):
     from documentai_api.utils.uploads import validate_file_type
@@ -288,3 +296,52 @@ def test_purge_textract_output_deletes_write_extraction_output(s3_bucket, monkey
 
     remaining = [o.key for o in s3_bucket.objects.filter(Prefix="output/test-tenant/id.jpg/")]
     assert remaining == []
+
+
+def test_generate_unique_filename_survives_s3_url_encoding_round_trip():
+    """The generated key must survive S3's URL-encoding round-trip unchanged.
+
+    S3 URL-encodes object keys in event notifications; the processor decodes them
+    with unquote_plus. A non-ASCII key decodes to a different string, causing a
+    DDB key mismatch and a duplicate row.
+    """
+    import os
+    from urllib.parse import quote, unquote_plus
+
+    filename = "Aug 3, 2026\xe2\x80\x94Aug 16, 2026 - Local Infusion, Inc.pdf"
+    key = generate_unique_filename(filename, "test-job-id")
+    round_tripped = os.path.basename(unquote_plus(quote(key, safe="")))
+    assert round_tripped == key
+
+
+def test_generate_unique_filename_ddb_key_matches_after_s3_event_round_trip(s3_bucket):
+    """The ddb_key derived from an S3 event must match the key written at upload time.
+
+    Regression: filenames with non-ASCII characters (e.g. em-dash) produced a
+    URL-encoded key in the S3 event that decoded to a different string, causing
+    get_ddb_record to miss and upsert_initial_ddb_record to create a second row.
+    """
+    import os
+    from urllib.parse import quote
+
+    from documentai_api.utils.s3 import extract_s3_info_from_event
+    from documentai_api.utils.uploads import generate_unique_filename
+
+    filename = "Aug 3, 2026\xe2\x80\x94Aug 16, 2026 - Local Infusion, Inc.pdf"
+    job_id = "test-job-id"
+
+    ddb_key = generate_unique_filename(filename, job_id)
+    object_key = f"input/test-tenant/{ddb_key}"
+
+    s3_bucket.put_object(Key=object_key, Body=b"%PDF-1.4", ContentType="application/pdf")
+
+    # EventBridge S3 event URL-encodes the key the same way S3 does
+    event = {
+        "detail": {
+            "object": {"key": quote(object_key, safe="")},
+            "bucket": {"name": s3_bucket.name},
+        }
+    }
+
+    returned_key, *_ = extract_s3_info_from_event(event)
+    assert os.path.basename(returned_key) == ddb_key

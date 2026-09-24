@@ -419,3 +419,22 @@ def test_create_presigned_url_passes_upload_source(api_client, mocker, upload_so
 
     record = mock_insert.call_args[0][0]
     assert record.upload_source == upload_source
+
+
+def test_ai_consent_flag_false_returns_400(api_client):
+    """ai_consent_flag=False is rejected before generating a URL or writing to DDB."""
+    data = {"filename": "test.pdf", "content_type": "application/pdf", "ai_consent_flag": "false"}
+    response = api_client.post("/v1/documents/presigned-url", data=data)
+
+    assert response.status_code == 400
+    assert "consent" in response.json()["detail"].lower()
+
+
+def test_ai_consent_flag_false_does_not_write_ddb(api_client, mocker):
+    """No DDB record is created when ai_consent_flag=False."""
+    mock_insert = mocker.patch("documentai_api.routers.presigned.insert_minimal_ddb_record")
+
+    data = {"filename": "test.pdf", "content_type": "application/pdf", "ai_consent_flag": "false"}
+    api_client.post("/v1/documents/presigned-url", data=data)
+
+    mock_insert.assert_not_called()

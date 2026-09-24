@@ -20,7 +20,7 @@ from documentai_api.logging import get_logger
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils.document_categories import auto_register_category
 from documentai_api.utils.file_conversion import convert_file
-from documentai_api.utils.s3 import get_bucket_and_key, parse_s3_uri
+from documentai_api.utils.s3 import get_bucket_and_key, parse_s3_uri, sanitize_for_s3_key
 
 logger = get_logger(__name__)
 
@@ -130,9 +130,12 @@ def generate_unique_filename(filename: str, job_id: str) -> str:
     """Generate a unique filename embedding the job_id."""
     if not filename:
         raise ValueError("Invalid filename")
+
     # Strip path components to prevent traversal or unintended S3 prefixes
+    filename = sanitize_for_s3_key(filename)
     filename = os.path.basename(filename)
     name, ext = os.path.splitext(filename)
+
     return f"{name}-{job_id}{ext}"
 
 

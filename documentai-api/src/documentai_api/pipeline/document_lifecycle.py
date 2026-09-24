@@ -170,7 +170,7 @@ def insert_minimal_ddb_record(record: DocumentRecord) -> None:
             batch_id=record.batch_id,
             external_document_id=record.external_document_id,
             external_system_id=record.external_system_id,
-            ai_consent_flag=record.ai_consent_flag,
+            ai_consent_flag=record.ai_consent_flag if record.ai_consent_flag is not None else True,
             upload_method=record.upload_method,
             upload_source=record.upload_source,
             tenant_id=record.tenant_id,

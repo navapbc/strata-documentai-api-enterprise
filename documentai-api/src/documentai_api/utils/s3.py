@@ -150,3 +150,12 @@ def sanitize_for_s3_metadata(value: str, max_length: int = 512) -> str:
     user metadata is capped at 2 KB.
     """
     return quote(value[:max_length], safe="")
+
+
+def sanitize_for_s3_key(value: str) -> str:
+    """Replace non-ASCII characters with underscores for use in S3 object keys.
+
+    Non-ASCII bytes in keys cause URL-encoding round-trip mismatches in S3 event
+    notifications, producing a different string after unquote_plus than the original.
+    """
+    return "".join("_" if ord(c) > 127 else c for c in value)
