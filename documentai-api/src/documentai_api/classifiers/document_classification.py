@@ -345,15 +345,25 @@ def _write_eval_v1_response(
         expression_names={"#method": method_key},
     )
 
-    if result.extract_duration_seconds is not None:
+    if result.processing_duration_seconds is not None:
+        duration_entry: dict[str, Any] = {
+            DocumentMetadata.EXTRACTION_DURATION_SECONDS: result.processing_duration_seconds
+        }
+
+        if result.processing_started_at is not None:
+            duration_entry[DocumentMetadata.PROCESSING_STARTED_AT] = (
+                result.processing_started_at.isoformat()
+            )
+
+        if result.processing_completed_at is not None:
+            duration_entry[DocumentMetadata.PROCESSING_COMPLETED_AT] = (
+                result.processing_completed_at.isoformat()
+            )
+
         _execute_ddb_update(
             ddb_key,
             f"SET {DocumentMetadata.DURATIONS_BY_METHOD}.#method = :durationEntry",
-            {
-                ":durationEntry": {
-                    DocumentMetadata.EXTRACTION_DURATION_SECONDS: result.extract_duration_seconds
-                }
-            },
+            {":durationEntry": duration_entry},
             expression_names={"#method": method_key},
         )
 

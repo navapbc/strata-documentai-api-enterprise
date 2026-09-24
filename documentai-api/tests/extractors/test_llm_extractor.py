@@ -126,6 +126,7 @@ def test_run_llm_extraction_success(mocker):
         return_value="us.amazon.nova-pro-v1:0",
     )
     mocker.patch("documentai_api.utils.schemas.get_document_schema", return_value=schema)
+    mocker.patch("documentai_api.extractors.llm.get_ddb_record", return_value={})
 
     mock_client = MagicMock()
     mock_client.chat.completions.create_with_completion.return_value = (
@@ -192,6 +193,7 @@ def test_run_llm_extraction_uses_dotted_field_names(mocker):
         "documentai_api.services.aws_client_factory.AWSClientFactory.get_bedrock_runtime_client",
         return_value=MagicMock(),
     )
+    mocker.patch("documentai_api.extractors.llm.get_ddb_record", return_value={})
     mocker.patch("documentai_api.extractors.llm._write_llm_telemetry")
 
     result = run_llm_extraction(
@@ -219,6 +221,7 @@ def test_run_llm_extraction_raises_on_missing_schema(mocker):
         return_value=MagicMock(),
     )
     mocker.patch("instructor.from_bedrock", return_value=MagicMock())
+    mocker.patch("documentai_api.extractors.llm.get_ddb_record", return_value={})
 
     with pytest.raises(ValueError, match="No schema found"):
         run_llm_extraction(
@@ -246,6 +249,7 @@ def test_run_llm_extraction_raises_on_empty_ocr(mocker):
         return_value=MagicMock(),
     )
     mocker.patch("instructor.from_bedrock", return_value=MagicMock())
+    mocker.patch("documentai_api.extractors.llm.get_ddb_record", return_value={})
 
     with pytest.raises(ValueError, match="No OCR text available"):
         run_llm_extraction(

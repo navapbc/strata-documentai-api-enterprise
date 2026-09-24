@@ -1,12 +1,12 @@
-_Run: 2026-09-24 03:06 UTC_
+_Run: 2026-09-24 03:42 UTC_
 
 
 ## synthetic-public-benefits-identity-proof-state-photo-id.jpg
 
 **Durations**
 
-- llm: 5.762s extraction
-- textract: 1.05s extraction
+- llm: 2.611s extraction
+- textract: 2.68s extraction
 
 | Field | TEXTRACT Value | Conf | LLM Value | LLM Conf |
 |---|---|---|---|---|

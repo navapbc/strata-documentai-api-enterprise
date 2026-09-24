@@ -42,6 +42,7 @@ def test_extract_textract_identity_returns_result_on_success(mocker):
             (FIXTURE_DIR / "analyze_id_drivers_license_fields_only.json").read_text()
         ),
     )
+    mocker.patch("documentai_api.extractors.textract.get_ddb_record", return_value={})
     mock_set_method = mocker.patch("documentai_api.extractors.textract.set_extract_method")
 
     result = extract_textract_identity("image/jpeg", b"bytes", "test-key")
@@ -50,8 +51,8 @@ def test_extract_textract_identity_returns_result_on_success(mocker):
     assert result.document_type == "US-drivers-licenses"
     assert result.body is not None
     assert len(result.field_confidence_scores) > 0
-    assert result.extract_started_at is not None
-    assert result.extract_completed_at is not None
+    assert result.processing_started_at is not None
+    assert result.processing_completed_at is not None
 
     mock_set_method.assert_called_once()
     call_args = mock_set_method.call_args[0]

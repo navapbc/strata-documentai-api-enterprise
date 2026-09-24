@@ -10,8 +10,9 @@ from documentai_api.dtos.extraction import ExtractionResult
 from documentai_api.logging import get_logger
 from documentai_api.mappings import get_bda_field_map, get_document_class
 from documentai_api.mappings.textract import get_supplemental_config
+from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services.textract import analyze_id
-from documentai_api.utils.ddb import set_extract_method
+from documentai_api.utils.ddb import get_ddb_record, set_extract_method
 from documentai_api.utils.extraction_timing import get_elapsed_time_seconds
 from documentai_api.utils.ssm import is_textract_identity_enabled
 from documentai_api.utils.textract import (
@@ -42,13 +43,17 @@ def extract_textract_identity(
         return None
 
     try:
-        extract_started_at = datetime.now(UTC)
+        ddb_record = get_ddb_record(ddb_key) or {}
+        started_at_str = ddb_record.get(DocumentMetadata.EXTRACTION_STARTED_AT)
+        extract_started_at = (
+            datetime.fromisoformat(started_at_str) if started_at_str else datetime.now(UTC)
+        )
+
         with tracer.start_as_current_span("textract.analyze_id") as span:
             span.set_attribute("document.content_type", content_type)
             span.set_attribute("document.key", ddb_key)
             textract_response = analyze_id(file_bytes)
 
-        extract_completed_at = datetime.now(UTC)
         id_type = get_id_type(textract_response)
         matched_document_class = get_document_class(id_type)
         field_map = get_bda_field_map(matched_document_class) if matched_document_class else {}
@@ -85,13 +90,14 @@ def extract_textract_identity(
 
         field_confidence_scores = [{name: data["confidence"]} for name, data in fields.items()]
         field_empty_list = [name for name, data in fields.items() if not data.get("value")]
-        extract_duration_seconds = get_elapsed_time_seconds(
+        extract_completed_at = datetime.now(UTC)
+        processing_duration_seconds = get_elapsed_time_seconds(
             extract_started_at, extract_completed_at
         )
 
         logger.info(
             f"Textract identified document as {matched_document_class} "
-            f"with {len(field_confidence_scores)} fields in {extract_duration_seconds}s"
+            f"with {len(field_confidence_scores)} fields in {processing_duration_seconds}s"
         )
 
         body = json.dumps({"source": "textract", "fields": fields}).encode()
@@ -99,9 +105,9 @@ def extract_textract_identity(
         return ExtractionResult(
             document_type=matched_document_class,
             body=body,
-            extract_started_at=extract_started_at,
-            extract_completed_at=extract_completed_at,
-            extract_duration_seconds=extract_duration_seconds,
+            processing_started_at=extract_started_at,
+            processing_completed_at=extract_completed_at,
+            processing_duration_seconds=processing_duration_seconds,
             field_confidence_scores=field_confidence_scores,
             field_empty_list=field_empty_list,
         )

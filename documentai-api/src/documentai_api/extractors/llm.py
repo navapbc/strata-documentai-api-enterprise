@@ -10,6 +10,7 @@ from opentelemetry import trace
 from documentai_api.dtos.extraction import ExtractionResult
 from documentai_api.logging import get_logger
 from documentai_api.schemas.document_metadata import DocumentMetadata
+from documentai_api.utils.ddb import get_ddb_record
 
 logger = get_logger(__name__)
 tracer = trace.get_tracer(__name__)
@@ -79,6 +80,7 @@ def _extract(
     ddb_key: str,
     document_type: str,
     ocr_blocks: list[dict[str, Any]],
+    processing_started_at: datetime,
 ) -> tuple[ExtractionResult, Decimal, int | None, int | None]:
     """Run instructor extraction and return (ExtractionResult, duration, input_tokens, output_tokens)."""
     import instructor
@@ -106,7 +108,7 @@ def _extract(
     bedrock_client = AWSClientFactory.get_bedrock_runtime_client()
     client = instructor.from_bedrock(bedrock_client, mode=instructor.Mode.BEDROCK_JSON)
 
-    started_at = datetime.now(UTC)
+    started_at = processing_started_at
     input_tokens: int | None = None
     output_tokens: int | None = None
 
@@ -130,7 +132,6 @@ def _extract(
         if output_tokens is not None:
             span.set_attribute("llm.output_tokens", output_tokens)
 
-    duration = Decimal(str(round((datetime.now(UTC) - started_at).total_seconds(), 3)))
     block_index, word_blocks = build_citation_index(ocr_blocks)
     field_type_map = {f.name: f.type for f in schema.fields}
     field_confidence_scores: list[dict[str, float]] = []
@@ -166,6 +167,8 @@ def _extract(
 
         fields_output[field_name] = field_entry
 
+    completed_at = datetime.now(UTC)
+    duration = Decimal(str(round((completed_at - started_at).total_seconds(), 3)))
     body = json.dumps(
         {
             "source": ExtractMethod.LLM,
@@ -178,6 +181,8 @@ def _extract(
     result = ExtractionResult(
         document_type=document_type,
         body=body,
+        processing_started_at=started_at,
+        processing_completed_at=completed_at,
         field_confidence_scores=field_confidence_scores,
         field_empty_list=field_empty_list,
     )
@@ -220,12 +225,20 @@ def run_llm_extraction(
     ocr_blocks: list[dict[str, Any]],
 ) -> ExtractionResult:
     """Primary LLM extraction path. Raises on failure."""
+    ddb_record = get_ddb_record(ddb_key) or {}
+    started_at_str = ddb_record.get(DocumentMetadata.EXTRACTION_STARTED_AT)
+    processing_started_at = (
+        datetime.fromisoformat(started_at_str) if started_at_str else datetime.now(UTC)
+    )
+
     with tracer.start_as_current_span("llm.run_extraction") as span:
         span.set_attribute("document.key", ddb_key)
         span.set_attribute("document.type", document_type)
 
-        result, duration, input_tokens, output_tokens = _extract(ddb_key, document_type, ocr_blocks)
-        result.extract_duration_seconds = duration
+        result, duration, input_tokens, output_tokens = _extract(
+            ddb_key, document_type, ocr_blocks, processing_started_at
+        )
+        result.processing_duration_seconds = duration
         _write_llm_telemetry(ddb_key, document_type, duration, input_tokens, output_tokens)
 
         span.set_attribute("llm.field_count", len(result.field_confidence_scores))

@@ -142,6 +142,8 @@ class DocumentMetadata:
     DURATIONS_BY_METHOD = "durationsByMethod"
     # nested fields within durationsByMethod map
     EXTRACTION_DURATION_SECONDS = "extractionDurationSeconds"
+    PROCESSING_STARTED_AT = "processingStartedAt"
+    PROCESSING_COMPLETED_AT = "processingCompletedAt"
     BDA_INVOCATION_DURATION_SECONDS = "bdaInvocationDurationSeconds"
 
     # otel trace propagation

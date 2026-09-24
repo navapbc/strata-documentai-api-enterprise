@@ -1,12 +1,12 @@
-_Run: 2026-09-24 03:06 UTC_
+_Run: 2026-09-24 03:42 UTC_
 
 
 ## synthetic-public-benefits-income-proof-pay-stub.jpg
 
 **Durations**
 
-- bda: 29.04s extraction
-- llm: 14.587s extraction
+- bda: 26.6s extraction
+- llm: 10.305s extraction
 
 | Field | BDA Value | Conf | LLM Value | LLM Conf |
 |---|---|---|---|---|

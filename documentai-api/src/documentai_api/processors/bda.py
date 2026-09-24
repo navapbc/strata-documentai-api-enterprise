@@ -68,9 +68,11 @@ def _process_bda_result(
         started_at_str = ddb_record.get(DocumentMetadata.EXTRACTION_STARTED_AT)
 
         if started_at_str:
-            result.extract_duration_seconds = get_elapsed_time_seconds(
-                datetime.fromisoformat(started_at_str), datetime.now(UTC)
-            )
+            started = datetime.fromisoformat(started_at_str)
+            completed = datetime.now(UTC)
+            result.processing_started_at = started
+            result.processing_completed_at = completed
+            result.processing_duration_seconds = get_elapsed_time_seconds(started, completed)
 
         logger.info("Custom matching blueprint found, and document type matches. Success.")
         return ProcessorResult(
