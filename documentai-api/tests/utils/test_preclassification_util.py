@@ -570,6 +570,7 @@ def test_find_matching_blueprint_uses_pdf_document_block(monkeypatch):
 # =============================================================================
 
 FIXTURES_DIR = Path(__file__).parent.parent / "helpers" / "fixtures" / "test-documents"
+FIXTURES_DIR_HAPPY_PATH = FIXTURES_DIR / "happy-path"
 EXPECTED_FILE = FIXTURES_DIR / "expected.json"
 
 CONTENT_TYPE_MAP = {
@@ -712,7 +713,7 @@ def test_find_matching_blueprint_real(
         lambda: "us.amazon.nova-lite-v1:0",
     )
 
-    filepath = FIXTURES_DIR / filename
+    filepath = FIXTURES_DIR_HAPPY_PATH / filename
     if not filepath.exists():
         pytest.skip(f"Test fixture not found: {filepath}")
 

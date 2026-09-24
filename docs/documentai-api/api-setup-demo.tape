@@ -114,7 +114,7 @@ Wait
 Sleep 2500ms
 
 # --- 8. real upload - stored in S3, tracked in DynamoDB, queued for BDA ---
-Type 'resp=$(curl -s -H "API-Key: local-dev-key" -F "file=@tests/helpers/fixtures/test-documents/synthetic-tax-w2-wage-statement.png" -F "category=tax_documents" localhost:8000/v1/documents)'
+Type 'resp=$(curl -s -H "API-Key: local-dev-key" -F "file=@tests/helpers/fixtures/test-documents/happy-path/synthetic-tax-w2-wage-statement.png" -F "category=tax_documents" localhost:8000/v1/documents)'
 Sleep 400ms
 Enter
 Wait

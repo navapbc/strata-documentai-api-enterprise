@@ -109,4 +109,4 @@ uv run pytest tests/utils/test_blur_detection.py -k "not integration" -v
 uv run pytest tests/utils/test_blur_detection.py -m integration -v -s
 ```
 
-Unit tests cover all branches via mocked Textract/LLM (30 tests). Integration tests run against real AWS with fixture images: 7 blurry in `tests/helpers/fixtures/test-documents/blur/`, 5 sharp in `tests/helpers/fixtures/test-documents/`.
+Unit tests cover all branches via mocked Textract/LLM (30 tests). Integration tests run against real AWS with fixture images: 7 blurry in `tests/helpers/fixtures/test-documents/blur/`, 5 sharp in `tests/helpers/fixtures/test-documents/happy-path/`.

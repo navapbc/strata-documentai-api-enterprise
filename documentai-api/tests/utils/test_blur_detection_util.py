@@ -24,6 +24,7 @@ from documentai_api.utils.blur_detection import (
 
 
 FIXTURES_DIR = Path(__file__).parent.parent / "helpers" / "fixtures" / "test-documents"
+FIXTURES_DIR_HAPPY_PATH = FIXTURES_DIR / "happy-path"
 BLURRY_FIXTURES_DIR = FIXTURES_DIR / "blur"
 
 CONTENT_TYPE_MAP = {
@@ -433,7 +434,7 @@ def test_blur_detects_blurry(filename, real_aws_credentials):
 @pytest.mark.parametrize("filename", _SHARP_SAMPLES)
 def test_blur_passes_sharp(filename, real_aws_credentials):
     """Sharp images should NOT be flagged as blurry."""
-    filepath = FIXTURES_DIR / filename
+    filepath = FIXTURES_DIR_HAPPY_PATH / filename
     if not filepath.exists():
         pytest.skip(f"Fixture not found: {filepath}")
 
