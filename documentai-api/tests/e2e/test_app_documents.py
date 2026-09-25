@@ -43,7 +43,7 @@ def load_test_cases() -> list[Any]:
                     is_blurry=expected.get("isDocumentBlurry", False),
                     is_password_protected=expected.get("isPasswordProtected", False),
                     bda_matched_document_class=expected.get("bdaMatchedDocumentClass"),
-                    content_type=expected.get("content_type"),
+                    content_type=expected.get("contentType"),
                 ),
             ),
             marks=(
@@ -54,7 +54,7 @@ def load_test_cases() -> list[Any]:
             id=filename,
         )
         for filename, expected in cases.items()
-        if expected.get("e2e_enabled", False)
+        if expected.get("e2eEnabled", False)
     ]
 
 

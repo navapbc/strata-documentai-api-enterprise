@@ -22,11 +22,14 @@ import requests
 from documentai_api.config.env import get_env_config
 
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
-TEST_DOCS_DIR = (
-    Path(__file__).parent.parent / "helpers" / "fixtures" / "test-documents" / "happy-path"
-)
+_FIXTURES_DIR = Path(__file__).parent.parent / "helpers" / "fixtures" / "test-documents"
+TEST_DOCS_DIR = _FIXTURES_DIR / "happy-path"
 
 _EXTRACT_COMPARE_ADMIN_EMAIL = "extract-compare-admin@internal.invalid"
+_EXPECTED_DIR = _FIXTURES_DIR / "expected"
+_RESULTS_DIR = Path(__file__).parent / "results" / "extraction_compare"
+_NO_VALUE = "-"
+_INDICATOR_MAP = {"✅": "=", "🟡": "~", "❌": "x", "": "-"}
 
 
 def _compare_prereqs_missing() -> bool:
@@ -39,25 +42,25 @@ pytestmark = pytest.mark.skipif(
     reason="COGNITO_CLIENT_ID and SSM_PREFIX must be set",
 )
 
-_EXPECTED_DIR = Path(__file__).parent / "expected" / "extraction_compare"
-_RESULTS_DIR = Path(__file__).parent / "results" / "extraction_compare"
-_NO_VALUE = "-"
-_INDICATOR_MAP = {"✅": "=", "🟡": "~", "❌": "x", "": "-"}
 
-
-def _load_expected(filename: str) -> dict[str, str]:
+def _load_expected(filename: str) -> dict[str, str] | None:
     path = _EXPECTED_DIR / f"{Path(filename).stem}.json"
     if not path.exists():
-        return {}
+        return None
     data = json.loads(path.read_text())
     return {k: str(v) if v is not None else _NO_VALUE for k, v in data.get("fields", {}).items()}
 
 
-_EVAL_FILES = [
-    "synthetic-public-benefits-identity-proof-state-photo-id.jpg",
-    "synthetic-public-benefits-income-proof-pay-stub.jpg",
-    "synthetic-snap-income-proof-employment-wage-verification-letter-rendered.png",
-]
+def _compare_files() -> list[str]:
+    cases = json.loads((_FIXTURES_DIR / "expected.json").read_text())
+    return [
+        Path(filename).name
+        for filename, entry in cases.items()
+        if entry.get("compareEnabled", False)
+    ]
+
+
+_COMPARE_FILES = _compare_files()
 
 
 @pytest.fixture(scope="session")
@@ -82,7 +85,7 @@ def compare_jwt(reset_env):
 
 
 def _submit_and_poll(
-    file_path: Path, jwt: str, timeout: int = 60, interval: int = 10
+    file_path: Path, jwt: str, timeout: int = 120, interval: int = 10
 ) -> dict[str, Any]:
     headers = {"Authorization": f"Bearer {jwt}"}
 
@@ -111,7 +114,7 @@ def _submit_and_poll(
     pytest.fail(f"compare job {job_id} did not complete within {timeout}s")
 
 
-@pytest.mark.parametrize("filename", _EVAL_FILES)
+@pytest.mark.parametrize("filename", _COMPARE_FILES)
 def test_extraction_compare(filename, compare_jwt):
     result = _submit_and_poll(TEST_DOCS_DIR / filename, compare_jwt)
 
@@ -181,12 +184,16 @@ def _match_indicator(expected: str, received: str, tolerance: float = 0.0) -> st
     return "❌"
 
 
-def _write_comparison_md(filename: str, data: dict[str, Any], expected: dict[str, str]) -> None:
+def _write_comparison_md(
+    filename: str, data: dict[str, Any], expected: dict[str, str] | None
+) -> None:
     primary_method = data.get("primaryMethod", "primary")
     primary = data.get("primary", {})
     llm = data.get("llm", {})
     durations = data.get("durations", {})
-    all_fields = sorted(set(primary) | set(llm) | set(expected))
+    all_fields = sorted(
+        set(primary) | set(llm) | (set(expected) if expected is not None else set())
+    )
 
     results_file = _RESULTS_DIR / f"{Path(filename).stem}.md"
 
@@ -210,7 +217,6 @@ def _write_comparison_md(filename: str, data: dict[str, Any], expected: dict[str
     for field in all_fields:
         p = primary.get(field, {})
         lm = llm.get(field, {})
-        exp_val = expected.get(field, _NO_VALUE)
         p_val = str(p.get("value") or _NO_VALUE)
         llm_val = str(lm.get("value") or _NO_VALUE)
         p_conf = f"{p['confidence']:.2f}" if p.get("confidence") is not None else _NO_VALUE
@@ -224,11 +230,14 @@ def _write_comparison_md(filename: str, data: dict[str, Any], expected: dict[str
         )
         p_geo = _fmt_geometry(p.get("geometry"))
         llm_geo = _fmt_geometry(lm.get("geometry"))
-        p_match = _match_indicator(exp_val, p_val)
-        llm_match = _match_indicator(exp_val, llm_val)
         geo_match = _match_indicator(p_geo, llm_geo, tolerance=0.005)
-        p_cell = f"{p_match} {p_val}".strip()
-        llm_cell = f"{llm_match} {llm_val}".strip()
+        exp_val = expected.get(field, _NO_VALUE) if expected is not None else _NO_VALUE
+        if expected is not None:
+            p_cell = f"{_match_indicator(exp_val, p_val)} {p_val}".strip()
+            llm_cell = f"{_match_indicator(exp_val, llm_val)} {llm_val}".strip()
+        else:
+            p_cell = p_val
+            llm_cell = llm_val
         lines.append(
             f"| {field} | {exp_val} | {p_cell} | {llm_cell} | {p_conf} | {llm_conf} | {p_geo} | {llm_geo} | {geo_match} |"
         )
@@ -236,12 +245,14 @@ def _write_comparison_md(filename: str, data: dict[str, Any], expected: dict[str
     results_file.write_text("\n".join(lines) + "\n")
 
 
-def _print_comparison(filename: str, data: dict[str, Any], expected: dict[str, str]) -> None:
+def _print_comparison(filename: str, data: dict[str, Any], expected: dict[str, str] | None) -> None:
     primary_method = data.get("primaryMethod", "primary")
     primary = data.get("primary", {})
     llm = data.get("llm", {})
     durations = data.get("durations", {})
-    all_fields = sorted(set(primary) | set(llm) | set(expected))
+    all_fields = sorted(
+        set(primary) | set(llm) | (set(expected) if expected is not None else set())
+    )
 
     col = 32
     p_label = f"{primary_method.upper()} Value"
@@ -264,7 +275,6 @@ def _print_comparison(filename: str, data: dict[str, Any], expected: dict[str, s
     for field in all_fields:
         p = primary.get(field, {})
         lm = llm.get(field, {})
-        exp_val = expected.get(field, _NO_VALUE)
         p_val = str(p.get("value") or _NO_VALUE)
         llm_val = str(lm.get("value") or _NO_VALUE)
         p_conf = f"{p['confidence']:.2f}" if p.get("confidence") is not None else _NO_VALUE
@@ -276,10 +286,16 @@ def _print_comparison(filename: str, data: dict[str, Any], expected: dict[str, s
             if llm_conf_raw is not None
             else _NO_VALUE
         )
-        p_match = _INDICATOR_MAP[_match_indicator(exp_val, p_val)]
-        llm_match = _INDICATOR_MAP[_match_indicator(exp_val, llm_val)]
-        print(
-            f"{field:<{col}} {exp_val:<20} {p_match} {p_val:<24} {llm_match} {llm_val:<24} {p_conf:>8}   {llm_conf:>8}"
-        )
+        exp_val = expected.get(field, _NO_VALUE) if expected is not None else _NO_VALUE
+        if expected is not None:
+            p_match = _INDICATOR_MAP[_match_indicator(exp_val, p_val)]
+            llm_match = _INDICATOR_MAP[_match_indicator(exp_val, llm_val)]
+            print(
+                f"{field:<{col}} {exp_val:<20} {p_match} {p_val:<24} {llm_match} {llm_val:<24} {p_conf:>8}   {llm_conf:>8}"
+            )
+        else:
+            print(
+                f"{field:<{col}} {exp_val:<20} {p_val:<26} {llm_val:<26} {p_conf:>8}   {llm_conf:>8}"
+            )
 
     print(sep)

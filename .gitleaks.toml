@@ -38,6 +38,15 @@ regexes = [
   '''local-dev-key''',
 ]
 
+# routers/extraction_compare.py - generic-api-key false positive: the
+# `auth=auth, is_compare=True` kwarg trips the heuristic. Scoped to BOTH
+# this path AND the token.
+[[allowlists]]
+condition = "AND"
+regexTarget = "match"
+paths = ['''documentai-api/src/documentai_api/routers/extraction_compare\.py''']
+regexes = ['''auth=auth, is_compare=True''']
+
 # tests/jobs/test_document_processor_job.py - generic-api-key false positive: the
 # `.key,` attribute access adjacent to the `apply_grayscale=True` kwarg trips the
 # heuristic. Scoped to BOTH this path AND the token, so the kwarg elsewhere - or a
@@ -47,3 +56,4 @@ condition = "AND"
 regexTarget = "match"
 paths = ['''documentai-api/tests/jobs/test_document_processor_job\.py''']
 regexes = ['''\.key,.*apply_grayscale=True''']
+

@@ -162,6 +162,9 @@ def classify_as_no_document_detected(
         matched_document_class=None,
     )
 
+    if _is_compare(object_key):
+        _write_compare_empty_response(object_key, ProcessStatus.NO_DOCUMENT_DETECTED)
+
     _write_terminal_status(
         UpdateDdbRecord(
             object_key=object_key,
@@ -228,6 +231,9 @@ def classify_as_no_custom_blueprint_matched(
         response_code=ResponseCodes.NO_BLUEPRINT_MATCHED,
         matched_document_class=None,
     )
+
+    if _is_compare(object_key):
+        _write_compare_empty_response(object_key, ProcessStatus.NO_CUSTOM_BLUEPRINT_MATCHED)
 
     _write_terminal_status(
         UpdateDdbRecord(
@@ -377,6 +383,34 @@ def _write_compare_v1_response(
         )
 
 
+def _write_compare_empty_response(
+    ddb_key: str,
+    status: ProcessStatus,
+    extraction_method: ExtractMethod = ExtractMethod.BDA,
+) -> None:
+    """Record an empty (no-fields) v1 response for a non-success outcome under compare mode.
+
+    Lets the compare poll see this method's key populated even when nothing was
+    extracted (e.g. BDA found no matching blueprint), instead of waiting forever
+    for a "bda"/"llm" key that a success-only write would never produce.
+    """
+    v1_response = build_v1_api_response(ddb_key, status)
+    v1_response["fields"] = {}
+
+    method_key = (
+        extraction_method.value
+        if isinstance(extraction_method, ExtractMethod)
+        else extraction_method
+    )
+
+    _execute_ddb_update(
+        ddb_key,
+        f"SET {DocumentMetadata.API_RESPONSES_BY_METHOD}.#method = :response",
+        {":response": json.dumps(v1_response)},
+        expression_names={"#method": method_key},
+    )
+
+
 def classify_extraction_result(
     ddb_key: str,
     result: ExtractionResult,
@@ -394,7 +428,6 @@ def classify_extraction_result(
 
     if ddb_record.get(DocumentMetadata.IS_COMPARE):
         _write_compare_v1_response(ddb_key, ddb_record, result, output_uri, extraction_method)
-        return {}
 
     data = ClassificationData.from_extraction_result(result, output_uri=output_uri)
 

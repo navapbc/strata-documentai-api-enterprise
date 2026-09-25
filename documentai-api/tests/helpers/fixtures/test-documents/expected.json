@@ -1,30 +1,33 @@
 {
   "blur/synthetic-disk-defocus.jpeg": {
     "bdaMatchedDocumentClass": null,
-    "content_type": "image/jpeg",
-    "e2e_enabled": true,
+    "contentType": "image/jpeg",
+    "e2eEnabled": true,
     "isDocumentBlurry": true,
     "isPasswordProtected": false,
     "preclassificationCategory": null,
-    "responseCode": "104"
+    "responseCode": "104",
+    "compareEnabled": false
   },
   "blur/synthetic-ghost-linear.jpeg": {
     "bdaMatchedDocumentClass": null,
-    "content_type": "image/jpeg",
-    "e2e_enabled": true,
+    "contentType": "image/jpeg",
+    "e2eEnabled": true,
     "isDocumentBlurry": true,
     "isPasswordProtected": false,
     "preclassificationCategory": null,
-    "responseCode": "104"
+    "responseCode": "104",
+    "compareEnabled": false
   },
   "blur/synthetic-low-light.jpeg": {
     "bdaMatchedDocumentClass": null,
-    "content_type": "image/jpeg",
-    "e2e_enabled": true,
+    "contentType": "image/jpeg",
+    "e2eEnabled": true,
     "isDocumentBlurry": true,
     "isPasswordProtected": false,
     "preclassificationCategory": null,
-    "responseCode": "104"
+    "responseCode": "104",
+    "compareEnabled": false
   },
   "happy-path/synthetic-assets-bank-statement-render-spanish.png": {
     "//": [
@@ -33,12 +36,13 @@
       "which has the generic public 'Bank-Statement' blueprint, and matches it directly."
     ],
     "bdaMatchedDocumentClass": "Bank-Statement",
-    "content_type": "image/png",
-    "e2e_enabled": true,
+    "contentType": "image/png",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-assets-bank-statement-render.pdf": {
     "//": [
@@ -47,12 +51,13 @@
       "which has the generic public 'Bank-Statement' blueprint, and matches it directly."
     ],
     "bdaMatchedDocumentClass": "Bank-Statement",
-    "content_type": "application/pdf",
-    "e2e_enabled": true,
+    "contentType": "application/pdf",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-assets-bank-statement-scan.jpg": {
     "//": [
@@ -61,12 +66,13 @@
       "which has the generic public 'Bank-Statement' blueprint, and matches it directly."
     ],
     "bdaMatchedDocumentClass": "Bank-Statement",
-    "content_type": "image/jpeg",
-    "e2e_enabled": true,
+    "contentType": "image/jpeg",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-assets-life-insurance-policy-render-spanish.png": {
     "//": [
@@ -78,12 +84,13 @@
       "blueprint at low confidence (105)."
     ],
     "bdaMatchedDocumentClass": "Insurance-Company-Letter",
-    "content_type": "image/png",
-    "e2e_enabled": true,
+    "contentType": "image/png",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "105"
+    "responseCode": "105",
+    "compareEnabled": false
   },
   "happy-path/synthetic-assets-life-insurance-policy-render.pdf": {
     "//": [
@@ -94,12 +101,13 @@
       "blueprint on that project)."
     ],
     "bdaMatchedDocumentClass": "Insurance-Company-Letter",
-    "content_type": "application/pdf",
-    "e2e_enabled": true,
+    "contentType": "application/pdf",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-assets-life-insurance-policy-scan.jpg": {
     "//": [
@@ -109,12 +117,13 @@
       "blueprint there (no dedicated life-insurance-policy blueprint on that project)."
     ],
     "bdaMatchedDocumentClass": "Health-Insurance-Premium-Statement",
-    "content_type": "image/jpeg",
-    "e2e_enabled": true,
+    "contentType": "image/jpeg",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-assets-misc-assets-render-spanish.png": {
     "//": [
@@ -124,12 +133,13 @@
       "matching blueprint at all."
     ],
     "bdaMatchedDocumentClass": null,
-    "content_type": "image/png",
-    "e2e_enabled": true,
+    "contentType": "image/png",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "002"
+    "responseCode": "002",
+    "compareEnabled": false
   },
   "happy-path/synthetic-assets-misc-assets-render.pdf": {
     "//": [
@@ -140,12 +150,13 @@
       "all."
     ],
     "bdaMatchedDocumentClass": null,
-    "content_type": "application/pdf",
-    "e2e_enabled": true,
+    "contentType": "application/pdf",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "002"
+    "responseCode": "002",
+    "compareEnabled": false
   },
   "happy-path/synthetic-assets-misc-assets-scan.jpg": {
     "//": [
@@ -155,12 +166,13 @@
       "matching blueprint at all."
     ],
     "bdaMatchedDocumentClass": null,
-    "content_type": "image/jpeg",
-    "e2e_enabled": true,
+    "contentType": "image/jpeg",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "002"
+    "responseCode": "002",
+    "compareEnabled": false
   },
   "happy-path/synthetic-assets-real-estate-render-spanish.png": {
     "//": [
@@ -170,12 +182,13 @@
       "blueprint at all."
     ],
     "bdaMatchedDocumentClass": null,
-    "content_type": "image/png",
-    "e2e_enabled": true,
+    "contentType": "image/png",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "002"
+    "responseCode": "002",
+    "compareEnabled": false
   },
   "happy-path/synthetic-assets-real-estate-render.pdf": {
     "//": [
@@ -185,12 +198,13 @@
       "blueprint at all."
     ],
     "bdaMatchedDocumentClass": null,
-    "content_type": "application/pdf",
-    "e2e_enabled": true,
+    "contentType": "application/pdf",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "002"
+    "responseCode": "002",
+    "compareEnabled": false
   },
   "happy-path/synthetic-assets-real-estate-scan.jpg": {
     "//": [
@@ -200,12 +214,13 @@
       "blueprint at all."
     ],
     "bdaMatchedDocumentClass": null,
-    "content_type": "image/jpeg",
-    "e2e_enabled": true,
+    "contentType": "image/jpeg",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "002"
+    "responseCode": "002",
+    "compareEnabled": false
   },
   "happy-path/synthetic-assets-trust-funds-investment-accounts-render-spanish.png": {
     "//": [
@@ -220,12 +235,13 @@
       "specific language to stop it drifting toward the bank-statement bucket."
     ],
     "bdaMatchedDocumentClass": "Investment-Account-Statement",
-    "content_type": "image/png",
-    "e2e_enabled": false,
+    "contentType": "image/png",
+    "e2eEnabled": false,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-assets-trust-funds-investment-accounts-render.pdf": {
     "//": [
@@ -235,12 +251,13 @@
       "it directly."
     ],
     "bdaMatchedDocumentClass": "Investment-Account-Statement",
-    "content_type": "application/pdf",
-    "e2e_enabled": true,
+    "contentType": "application/pdf",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-assets-trust-funds-investment-accounts-scan.jpg": {
     "//": [
@@ -250,12 +267,13 @@
       "'Investment-Account-Statement' blueprint directly."
     ],
     "bdaMatchedDocumentClass": "Investment-Account-Statement",
-    "content_type": "image/jpeg",
-    "e2e_enabled": true,
+    "contentType": "image/jpeg",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-assets-vehicles-render-spanish.png": {
     "//": [
@@ -265,12 +283,13 @@
       "'Vehicles' blueprint, so it finds no matching blueprint at all."
     ],
     "bdaMatchedDocumentClass": null,
-    "content_type": "image/png",
-    "e2e_enabled": true,
+    "contentType": "image/png",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "002"
+    "responseCode": "002",
+    "compareEnabled": false
   },
   "happy-path/synthetic-assets-vehicles-render.pdf": {
     "//": [
@@ -280,12 +299,13 @@
       "'Vehicles' blueprint, so it finds no matching blueprint at all."
     ],
     "bdaMatchedDocumentClass": null,
-    "content_type": "application/pdf",
-    "e2e_enabled": true,
+    "contentType": "application/pdf",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "002"
+    "responseCode": "002",
+    "compareEnabled": false
   },
   "happy-path/synthetic-assets-vehicles-scan.jpg": {
     "//": [
@@ -295,12 +315,13 @@
       "'Vehicles' blueprint, so it finds no matching blueprint at all."
     ],
     "bdaMatchedDocumentClass": null,
-    "content_type": "image/jpeg",
-    "e2e_enabled": true,
+    "contentType": "image/jpeg",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "002"
+    "responseCode": "002",
+    "compareEnabled": false
   },
   "happy-path/synthetic-expense-burial-picture.png": {
     "//": [
@@ -312,12 +333,13 @@
       "this doc - revisit if so."
     ],
     "bdaMatchedDocumentClass": "Invoices",
-    "content_type": "image/png",
-    "e2e_enabled": true,
+    "contentType": "image/png",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "105"
+    "responseCode": "105",
+    "compareEnabled": false
   },
   "happy-path/synthetic-expense-burial-rendered-spanish.jpg": {
     "//": [
@@ -330,12 +352,13 @@
       "flaky assertions; revisit if a more deterministic fixture is found."
     ],
     "bdaMatchedDocumentClass": "Invoices",
-    "content_type": "image/jpeg",
-    "e2e_enabled": false,
+    "contentType": "image/jpeg",
+    "e2eEnabled": false,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "105"
+    "responseCode": "105",
+    "compareEnabled": false
   },
   "happy-path/synthetic-expense-burial-scan-corner-torn.jpg": {
     "//": [
@@ -346,12 +369,13 @@
       "not trip the blur detector."
     ],
     "bdaMatchedDocumentClass": "Bank-Statement",
-    "content_type": "image/jpeg",
-    "e2e_enabled": true,
+    "contentType": "image/jpeg",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-expense-child-support-rendered.pdf": {
     "//": [
@@ -360,12 +384,13 @@
       "'Child-Support-Document' blueprint attached, and matches it directly."
     ],
     "bdaMatchedDocumentClass": "Child-Support-Document",
-    "content_type": "application/pdf",
-    "e2e_enabled": true,
+    "contentType": "application/pdf",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-expense-child-support-scan.jpg": {
     "//": [
@@ -375,12 +400,13 @@
       "blueprint directly."
     ],
     "bdaMatchedDocumentClass": "Child-Support-Document",
-    "content_type": "image/jpeg",
-    "e2e_enabled": true,
+    "contentType": "image/jpeg",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-expense-child-support-spanish-picture.png": {
     "//": [
@@ -393,12 +419,13 @@
       "Marking e2e_enabled: false again."
     ],
     "bdaMatchedDocumentClass": "Child-Support-Document",
-    "content_type": "image/png",
-    "e2e_enabled": false,
+    "contentType": "image/png",
+    "e2eEnabled": false,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-expense-dependent-care-render-spanish.png": {
     "//": [
@@ -409,12 +436,13 @@
       "blueprint."
     ],
     "bdaMatchedDocumentClass": "Invoices",
-    "content_type": "image/png",
-    "e2e_enabled": true,
+    "contentType": "image/png",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-expense-dependent-care-render.pdf": {
     "//": [
@@ -424,12 +452,13 @@
       "matches the generic public 'Invoices' blueprint."
     ],
     "bdaMatchedDocumentClass": "Invoices",
-    "content_type": "application/pdf",
-    "e2e_enabled": true,
+    "contentType": "application/pdf",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-expense-dependent-care-scan.png": {
     "//": [
@@ -439,12 +468,13 @@
       "generic public 'Invoices' blueprint."
     ],
     "bdaMatchedDocumentClass": "Invoices",
-    "content_type": "image/png",
-    "e2e_enabled": true,
+    "contentType": "image/png",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-expense-utility-cable-bill-render-spanish.png": {
     "//": [
@@ -455,12 +485,13 @@
       "directly."
     ],
     "bdaMatchedDocumentClass": "Invoices",
-    "content_type": "image/png",
-    "e2e_enabled": true,
+    "contentType": "image/png",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-expense-utility-cable-bill-render.pdf": {
     "//": [
@@ -471,12 +502,13 @@
       "directly."
     ],
     "bdaMatchedDocumentClass": "Invoices",
-    "content_type": "application/pdf",
-    "e2e_enabled": true,
+    "contentType": "application/pdf",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-expense-utility-cable-bill-scan.jpg": {
     "//": [
@@ -487,12 +519,13 @@
       "at low confidence (105)."
     ],
     "bdaMatchedDocumentClass": "Invoices",
-    "content_type": "image/jpeg",
-    "e2e_enabled": true,
+    "contentType": "image/jpeg",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "105"
+    "responseCode": "105",
+    "compareEnabled": false
   },
   "happy-path/synthetic-expense-utility-electric-bill-render-spanish.png": {
     "//": [
@@ -503,12 +536,13 @@
       "directly."
     ],
     "bdaMatchedDocumentClass": "Invoices",
-    "content_type": "image/png",
-    "e2e_enabled": true,
+    "contentType": "image/png",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-expense-utility-electric-bill-render.pdf": {
     "//": [
@@ -519,12 +553,13 @@
       "directly."
     ],
     "bdaMatchedDocumentClass": "Invoices",
-    "content_type": "application/pdf",
-    "e2e_enabled": true,
+    "contentType": "application/pdf",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-expense-utility-electric-bill-scan.jpg": {
     "//": [
@@ -535,12 +570,13 @@
       "directly."
     ],
     "bdaMatchedDocumentClass": "Invoices",
-    "content_type": "image/jpeg",
-    "e2e_enabled": true,
+    "contentType": "image/jpeg",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-expense-utility-water-sewer-bill-render-spanish.png": {
     "//": [
@@ -551,12 +587,13 @@
       "directly."
     ],
     "bdaMatchedDocumentClass": "Invoices",
-    "content_type": "image/png",
-    "e2e_enabled": true,
+    "contentType": "image/png",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-expense-utility-water-sewer-bill-render.pdf": {
     "//": [
@@ -567,12 +604,13 @@
       "directly."
     ],
     "bdaMatchedDocumentClass": "Invoices",
-    "content_type": "application/pdf",
-    "e2e_enabled": true,
+    "contentType": "application/pdf",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-expense-utility-water-sewer-bill-scan.jpg": {
     "//": [
@@ -583,12 +621,13 @@
       "directly."
     ],
     "bdaMatchedDocumentClass": "Invoices",
-    "content_type": "image/jpeg",
-    "e2e_enabled": true,
+    "contentType": "image/jpeg",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-insurance-health-insurance-premium-render-spanish.png": {
     "//": [
@@ -601,12 +640,13 @@
       "split. Marking e2e_enabled: false again."
     ],
     "bdaMatchedDocumentClass": "Health-Insurance-Premium-Statement",
-    "content_type": "image/png",
-    "e2e_enabled": false,
+    "contentType": "image/png",
+    "e2eEnabled": false,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-insurance-health-insurance-premium-render.pdf": {
     "//": [
@@ -615,12 +655,13 @@
       "'Health-Insurance-Premium-Statement' blueprint attached, and matches it directly."
     ],
     "bdaMatchedDocumentClass": "Health-Insurance-Premium-Statement",
-    "content_type": "application/pdf",
-    "e2e_enabled": true,
+    "contentType": "application/pdf",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-insurance-health-insurance-premium-scan.jpg": {
     "//": [
@@ -630,12 +671,13 @@
       "blueprint directly."
     ],
     "bdaMatchedDocumentClass": "Health-Insurance-Premium-Statement",
-    "content_type": "image/jpeg",
-    "e2e_enabled": true,
+    "contentType": "image/jpeg",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-investment-and-royalty-income-render-spanish.png": {
     "//": [
@@ -645,12 +687,13 @@
       "in the same project), and matches it directly."
     ],
     "bdaMatchedDocumentClass": "Investment-Account-Statement",
-    "content_type": "image/png",
-    "e2e_enabled": true,
+    "contentType": "image/png",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-investment-and-royalty-income-render.pdf": {
     "//": [
@@ -664,12 +707,13 @@
       "stable, even though the underlying success/routing behavior is."
     ],
     "bdaMatchedDocumentClass": "Investment-Account-Statement",
-    "content_type": "application/pdf",
-    "e2e_enabled": false,
+    "contentType": "application/pdf",
+    "e2eEnabled": false,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-investment-and-royalty-income-scan.jpg": {
     "//": [
@@ -679,12 +723,13 @@
       "in the same project), and matches it directly."
     ],
     "bdaMatchedDocumentClass": "Investment-Account-Statement",
-    "content_type": "image/jpeg",
-    "e2e_enabled": true,
+    "contentType": "image/jpeg",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-multipage-mixed-paystub-photo.pdf": {
     "//": [
@@ -693,13 +738,14 @@
       "reruns=2 gives 3 attempts, reducing CI flake rate to ~1%."
     ],
     "bdaMatchedDocumentClass": null,
-    "content_type": "application/pdf",
-    "e2e_enabled": true,
+    "contentType": "application/pdf",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
     "reruns_override": 2,
-    "responseCode": "401"
+    "responseCode": "401",
+    "compareEnabled": false
   },
   "happy-path/synthetic-multipage-mixed-state-id-paystub.pdf": {
     "//": [
@@ -710,13 +756,14 @@
       "reruns=2 gives 3 attempts, matching synthetic-multipage-mixed-paystub-photo.pdf."
     ],
     "bdaMatchedDocumentClass": null,
-    "content_type": "application/pdf",
-    "e2e_enabled": true,
+    "contentType": "application/pdf",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
     "reruns_override": 2,
-    "responseCode": "401"
+    "responseCode": "401",
+    "compareEnabled": false
   },
   "happy-path/synthetic-password-protected.pdf": {
     "//": [
@@ -727,12 +774,13 @@
       "state as done."
     ],
     "bdaMatchedDocumentClass": null,
-    "content_type": "application/pdf",
-    "e2e_enabled": true,
+    "contentType": "application/pdf",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": true,
     "preclassificationCategory": null,
-    "responseCode": "106"
+    "responseCode": "106",
+    "compareEnabled": false
   },
   "happy-path/synthetic-public-benefits-identity-coverage-medicaid-card.jpg": {
     "//": [
@@ -742,48 +790,53 @@
       "Marking e2e_enabled: true to flag for follow-up and prevent accidental regressions."
     ],
     "bdaMatchedDocumentClass": null,
-    "content_type": "image/jpeg",
-    "e2e_enabled": true,
+    "contentType": "image/jpeg",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "002"
+    "responseCode": "002",
+    "compareEnabled": false
   },
   "happy-path/synthetic-public-benefits-identity-proof-state-photo-id.jpg": {
     "bdaMatchedDocumentClass": "US-drivers-licenses",
-    "content_type": "image/jpeg",
-    "e2e_enabled": true,
+    "contentType": "image/jpeg",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-public-benefits-income-proof-pay-statement-photo.png": {
     "bdaMatchedDocumentClass": "Payslip",
-    "content_type": "image/png",
-    "e2e_enabled": true,
+    "contentType": "image/png",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-public-benefits-income-proof-pay-statement-rendered.png": {
     "bdaMatchedDocumentClass": "Payslip",
-    "content_type": "image/png",
-    "e2e_enabled": true,
+    "contentType": "image/png",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-public-benefits-income-proof-pay-stub.jpg": {
     "bdaMatchedDocumentClass": "Payslip",
-    "content_type": "image/jpeg",
-    "e2e_enabled": true,
+    "contentType": "image/jpeg",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-public-benefits-residency-proof-utility-bill.jpg": {
     "//": [
@@ -794,12 +847,13 @@
       "outlier result; the stable, repeated live behavior is a successful Invoices match."
     ],
     "bdaMatchedDocumentClass": "Invoices",
-    "content_type": "image/jpeg",
-    "e2e_enabled": true,
+    "contentType": "image/jpeg",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-shelter-shelter-verification-render-spanish.png": {
     "//": [
@@ -813,12 +867,13 @@
       "more deterministic fixture is found."
     ],
     "bdaMatchedDocumentClass": "Shelter-Verification-Letter",
-    "content_type": "image/png",
-    "e2e_enabled": false,
+    "contentType": "image/png",
+    "e2eEnabled": false,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-shelter-shelter-verification-render.pdf": {
     "//": [
@@ -827,12 +882,13 @@
       "'Shelter-Verification-Letter' blueprint attached, and matches it directly."
     ],
     "bdaMatchedDocumentClass": "Shelter-Verification-Letter",
-    "content_type": "application/pdf",
-    "e2e_enabled": true,
+    "contentType": "application/pdf",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-shelter-shelter-verification-scan.jpg": {
     "//": [
@@ -842,21 +898,23 @@
       "blueprint, so it matches the generic public 'Receipts' blueprint."
     ],
     "bdaMatchedDocumentClass": "Receipts",
-    "content_type": "image/jpeg",
-    "e2e_enabled": true,
+    "contentType": "image/jpeg",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-snap-income-proof-employment-wage-verification-letter-photo.png": {
     "bdaMatchedDocumentClass": "Employment-Verification-Letter",
-    "content_type": "image/png",
-    "e2e_enabled": true,
+    "contentType": "image/png",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-snap-income-proof-employment-wage-verification-letter-rendered.png": {
     "//": [
@@ -865,13 +923,14 @@
       "reruns=2 gives 3 attempts."
     ],
     "bdaMatchedDocumentClass": "Employment-Verification-Letter",
-    "content_type": "image/png",
-    "e2e_enabled": true,
+    "contentType": "image/png",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
     "reruns_override": 2,
-    "responseCode": "000"
+    "responseCode": "000",
+    "compareEnabled": true
   },
   "happy-path/synthetic-snap-income-proof-self-employment-ledger-photo.png": {
     "//": [
@@ -882,12 +941,13 @@
       "classification stabilizes or the test can accept 'either a match or none'."
     ],
     "bdaMatchedDocumentClass": null,
-    "content_type": "image/png",
-    "e2e_enabled": false,
+    "contentType": "image/png",
+    "e2eEnabled": false,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "002"
+    "responseCode": "002",
+    "compareEnabled": false
   },
   "happy-path/synthetic-snap-income-proof-self-employment-ledger-rendered.png": {
     "//": [
@@ -898,21 +958,23 @@
       "classification stabilizes or the test can accept 'either a match or none'."
     ],
     "bdaMatchedDocumentClass": null,
-    "content_type": "image/png",
-    "e2e_enabled": false,
+    "contentType": "image/png",
+    "e2eEnabled": false,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "002"
+    "responseCode": "002",
+    "compareEnabled": false
   },
   "happy-path/synthetic-wic-adjunctive-eligibility-snap-benefits-letter.jpg": {
     "bdaMatchedDocumentClass": null,
-    "content_type": "image/jpeg",
-    "e2e_enabled": true,
+    "contentType": "image/jpeg",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "002"
+    "responseCode": "002",
+    "compareEnabled": false
   },
   "happy-path/synthetic-wic-certification-pregnancy-verification-clinic-note.jpg": {
     "//": [
@@ -925,12 +987,13 @@
       "reruns=2 gives 3 attempts."
     ],
     "bdaMatchedDocumentClass": null,
-    "content_type": "image/jpeg",
-    "e2e_enabled": true,
+    "contentType": "image/jpeg",
+    "e2eEnabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
     "reruns_override": 2,
-    "responseCode": "002"
+    "responseCode": "002",
+    "compareEnabled": false
   }
 }

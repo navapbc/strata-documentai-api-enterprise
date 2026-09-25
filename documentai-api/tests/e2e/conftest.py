@@ -46,9 +46,7 @@ def pytest_sessionfinish(session, exitstatus):
         return
 
     summary = _COMPARE_RESULTS_DIR / "extraction_compare_summary.md"
-    header = (
-        f"# Extraction Compare Results\n\n_Run: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')}_\n"
-    )
+    header = f"# Extraction Compare Results\n\n_Run: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')}_\n"
     sections = []
     for f in worker_files:
         file_lines = f.read_text().splitlines(keepends=True)

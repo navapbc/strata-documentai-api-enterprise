@@ -246,7 +246,11 @@ def _extract(
         field_type = field_type_map.get(field_name, "string")
 
         if field_type == "number" and value:
-            value = re.sub(r"[\$,\s]", "", value)
+            # Some "number" fields are really a rolled-up list of amounts (e.g. a bank
+            # statement's per-transaction balances), joined by the model as ", ".
+            # Strip $/thousands-separators within each item, but split on ", " first
+            # so the list separators themselves aren't stripped along with them.
+            value = ", ".join(re.sub(r"[\$,\s]", "", item) for item in value.split(", "))
 
         conf, best_line = compute_confidence(extracted.text_citation, ocr_blocks)
         field_confidence_scores.append({field_name: conf})

@@ -10,7 +10,11 @@ from starlette.datastructures import Headers
 from documentai_api.annotations import AdminClaims, verify_jwt_with_role
 from documentai_api.config.constants import ApiVisualizationTag, ExtractMethod
 from documentai_api.logging import get_logger
-from documentai_api.models.extraction_compare import CompareFieldResult, CompareResponse, CompareSubmitResponse
+from documentai_api.models.extraction_compare import (
+    CompareFieldResult,
+    CompareResponse,
+    CompareSubmitResponse,
+)
 from documentai_api.routers.documents import upload_document
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.ddb import get_ddb_by_job_id
@@ -68,7 +72,12 @@ async def run_compare(
         file=io.BytesIO(file_bytes),
         headers=Headers({"content-type": content_type}),
     )
-    result = await upload_document(response=Response(), file=upload_file, auth=auth, is_compare=True)
+    result = await upload_document(
+        response=Response(),
+        file=upload_file,
+        auth=auth,
+        is_compare=True,
+    )
     logger.info(f"Compare submitted: job_id={result.job_id}")
     return CompareSubmitResponse(job_id=result.job_id)
 
