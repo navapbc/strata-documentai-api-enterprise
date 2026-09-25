@@ -900,7 +900,7 @@ def test_main_invokes_llm_when_flag_on_and_blueprint_matched(
     """When LLM flag is on and a blueprint type is matched, LLM enqueues and BDA runs."""
     monkeypatch.setenv("LLM_INPUT_QUEUE_URL", "https://sqs/llm-queue")
     mocker.patch(f"{_MAIN_MODULE}.is_llm_extraction_enabled", return_value=True)
-    mock_get_ocr = mocker.patch(f"{_MAIN_MODULE}.get_ocr_blocks", return_value=[])
+    mock_get_ocr = mocker.patch(f"{_MAIN_MODULE}.get_layout_ocr_blocks", return_value=[])
     mock_put = mocker.patch(f"{_MAIN_MODULE}.s3_service.put_object")
     mock_send = mocker.patch(f"{_MAIN_MODULE}.sqs_service.send_message")
 
@@ -916,7 +916,7 @@ def test_main_invokes_llm_when_flag_on_and_blueprint_matched(
 def test_main_bda_still_runs_when_llm_fails(input_pdf, mocker, mock_invoke_bda, llm_ddb_record):
     """When LLM enqueue raises, BDA still runs."""
     mocker.patch(f"{_MAIN_MODULE}.is_llm_extraction_enabled", return_value=True)
-    mocker.patch(f"{_MAIN_MODULE}.get_ocr_blocks", side_effect=RuntimeError("OCR down"))
+    mocker.patch(f"{_MAIN_MODULE}.get_layout_ocr_blocks", side_effect=RuntimeError("OCR down"))
 
     main(input_pdf.key, input_pdf.bucket_name)
 
@@ -939,7 +939,7 @@ def test_main_skips_llm_when_queue_url_not_configured(
 ):
     """When LLM_INPUT_QUEUE_URL is not set, nothing is enqueued and BDA still runs."""
     mocker.patch(f"{_MAIN_MODULE}.is_llm_extraction_enabled", return_value=True)
-    mocker.patch(f"{_MAIN_MODULE}.get_ocr_blocks", return_value=[])
+    mocker.patch(f"{_MAIN_MODULE}.get_layout_ocr_blocks", return_value=[])
     mocker.patch(f"{_MAIN_MODULE}.s3_service.put_object")
     mock_send = mocker.patch(f"{_MAIN_MODULE}.sqs_service.send_message")
 

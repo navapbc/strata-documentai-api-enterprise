@@ -30,7 +30,11 @@ def _extract_fields(v1_response_json: str | dict[str, Any]) -> dict[str, EvalFie
     v1 = json.loads(v1_response_json) if isinstance(v1_response_json, str) else v1_response_json
     fields = v1.get("fields") or {}
     return {
-        name: EvalFieldResult(value=data.get("value"), confidence=data.get("confidence"))
+        name: EvalFieldResult(
+            value=data.get("value"),
+            confidence=data.get("confidence"),
+            geometry=data.get("geometry"),
+        )
         for name, data in fields.items()
         if isinstance(data, dict)
     }

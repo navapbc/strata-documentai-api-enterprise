@@ -6,6 +6,31 @@ from pydantic import BaseModel, Field
 
 from documentai_api.utils.schemas import DocumentSchema
 
+# AWS Bedrock blueprint descriptions are sometimes too generic to disambiguate
+# similarly-named field groups (e.g. CompanyAddress vs EmployeeAddress both
+# describe themselves as just "the address"). Since blueprint_schemas.json is
+# pulled from Bedrock and can't be edited directly, clarifications are appended
+# here instead, scoped to the LLM extraction path only.
+_DESCRIPTION_CLARIFICATIONS: dict[str, str] = {
+    "CompanyAddress.Line1": "This is the employer/company's business address (as shown in the letterhead), not the employee's home address.",
+    "CompanyAddress.Line2": "This is the employer/company's business address (as shown in the letterhead), not the employee's home address.",
+    "CompanyAddress.City": "This is the employer/company's business address (as shown in the letterhead), not the employee's home address.",
+    "CompanyAddress.State": "This is the employer/company's business address (as shown in the letterhead), not the employee's home address.",
+    "CompanyAddress.ZipCode": "This is the employer/company's business address (as shown in the letterhead), not the employee's home address.",
+    "EmployeeAddress.Line1": "This is the employee's personal home address, only if printed separately from the employer's address.",
+    "EmployeeAddress.Line2": "This is the employee's personal home address, only if printed separately from the employer's address.",
+    "EmployeeAddress.City": "This is the employee's personal home address, only if printed separately from the employer's address.",
+    "EmployeeAddress.State": "This is the employee's personal home address, only if printed separately from the employer's address.",
+    "EmployeeAddress.ZipCode": "This is the employee's personal home address, only if printed separately from the employer's address.",
+}
+
+
+def _field_description(schema_field: Any) -> str:
+    clarification = _DESCRIPTION_CLARIFICATIONS.get(schema_field.name)
+    if not clarification:
+        return str(schema_field.description)
+    return f"{schema_field.description} {clarification}".strip()
+
 
 def build_blueprint_model(schema: DocumentSchema) -> tuple[type[BaseModel], dict[str, str]]:
     """Dynamically build a Pydantic response model from a DocumentSchema.
@@ -31,10 +56,10 @@ def build_blueprint_model(schema: DocumentSchema) -> tuple[type[BaseModel], dict
             (BaseModel,),
             {
                 "__annotations__": {"value": str | None, "text_citation": str | None},
-                "value": Field(default=None, description=schema_field.description),
+                "value": Field(default=None, description=_field_description(schema_field)),
                 "text_citation": Field(
                     default=None,
-                    description="Verbatim text from the document that supports this value",
+                    description="The shortest exact verbatim substring from the document that supports only this field's value. Must be a direct quote; do not include text from adjacent fields. Leave null if the field is absent.",
                 ),
             },
         )

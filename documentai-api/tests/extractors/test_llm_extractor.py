@@ -40,31 +40,34 @@ OCR_BLOCKS: list[dict[str, Any]] = [LINE_BLOCK, WORD_BLOCK, WORD_BLOCK_2]
 
 
 def test_compute_confidence_empty_citation():
-    assert compute_confidence(None, OCR_BLOCKS) == 0.0
-    assert compute_confidence("", OCR_BLOCKS) == 0.0
-    assert compute_confidence("   ", OCR_BLOCKS) == 0.0
+    assert compute_confidence(None, OCR_BLOCKS) == (0.0, None)
+    assert compute_confidence("", OCR_BLOCKS) == (0.0, None)
+    assert compute_confidence("   ", OCR_BLOCKS) == (0.0, None)
 
 
 def test_compute_confidence_no_matching_line():
-    assert compute_confidence("zzz totally unrelated", OCR_BLOCKS) == 0.0
+    assert compute_confidence("zzz totally unrelated", OCR_BLOCKS) == (0.0, None)
 
 
 def test_compute_confidence_returns_word_avg_for_match():
-    conf = compute_confidence("John Smith", OCR_BLOCKS)
+    conf, block = compute_confidence("John Smith", OCR_BLOCKS)
     expected = round((99.0 + 95.0) / 2 / 100.0, 4)
     assert conf == expected
+    assert block is not None
 
 
 def test_compute_confidence_falls_back_to_ratio_when_no_word_blocks():
     blocks = [LINE_BLOCK]  # no WORD blocks
-    conf = compute_confidence("John Smith", blocks)
+    conf, block = compute_confidence("John Smith", blocks)
     assert 0.0 < conf <= 1.0
+    assert block is not None
 
 
 def test_compute_confidence_no_bounding_box_falls_back_to_ratio():
     line_no_bb = {"BlockType": "LINE", "Text": "John Smith", "Geometry": {}}
-    conf = compute_confidence("John Smith", [line_no_bb])
+    conf, block = compute_confidence("John Smith", [line_no_bb])
     assert 0.0 < conf <= 1.0
+    assert block is not None
 
 
 # ---------------------------------------------------------------------------

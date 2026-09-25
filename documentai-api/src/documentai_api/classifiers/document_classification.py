@@ -321,13 +321,22 @@ def _write_eval_v1_response(
     reader_result = read_output(
         ddb_record,
         include_extracted_data=True,
+        include_bounding_box=True,
         output_uri=output_uri,
         extract_method=extraction_method,
     )
 
     v1_response = build_v1_api_response(ddb_key, ProcessStatus.SUCCESS)
     v1_response["fields"] = {
-        name: {"confidence": round(conf, 2), "value": reader_result.field_values.get(name)}
+        name: {
+            "confidence": round(conf, 2),
+            "value": reader_result.field_values.get(name),
+            **(
+                {"geometry": reader_result.field_geometry[name]["geometry"]}
+                if name in reader_result.field_geometry
+                else {}
+            ),
+        }
         for field_item in reader_result.field_confidence_map_list
         for name, conf in field_item.items()
     }

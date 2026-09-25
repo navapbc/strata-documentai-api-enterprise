@@ -47,7 +47,7 @@ from documentai_api.services import ddb as ddb_service
 from documentai_api.services import s3 as s3_service
 from documentai_api.services import sqs as sqs_service
 from documentai_api.services.exceptions import is_retryable
-from documentai_api.services.textract import get_ocr_blocks
+from documentai_api.services.textract import get_layout_ocr_blocks
 from documentai_api.utils.bda_invoker import (
     invoke_bedrock_data_automation,
     skip_bda_if_unclassified,
@@ -313,7 +313,7 @@ def _invoke_llm_path(
     try:
         output_location = get_env_config().get_output_location
         output_bucket, output_prefix = parse_s3_uri(output_location)
-        ocr_blocks = get_ocr_blocks(file_bytes)
+        ocr_blocks = get_layout_ocr_blocks(file_bytes)
         ocr_key = f"{output_prefix}/llm/ocr/{ddb_key}.json"
         s3_service.put_object(
             output_bucket,

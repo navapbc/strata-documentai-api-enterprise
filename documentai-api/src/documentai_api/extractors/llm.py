@@ -1,6 +1,7 @@
 """LLM extraction: instructor + Bedrock against Textract OCR blocks."""
 
 import json
+import re
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
@@ -19,33 +20,39 @@ tracer = trace.get_tracer(__name__)
 def compute_confidence(
     citation: str | None,
     ocr_blocks: list[dict[str, Any]],
-) -> float:
-    """Derive confidence from Textract word-level scores at the citation span."""
-    if not citation or not citation.strip():
-        return 0.0
+) -> tuple[float, dict[str, Any] | None]:
+    """Derive confidence from Textract word-level scores at the citation span.
 
-    import difflib
+    Line selection uses token overlap (fraction of citation tokens found in the
+    line) so short, exact citations score correctly against longer lines.
+    Returns (confidence, best_line_block).
+    """
+    if not citation or not citation.strip():
+        return 0.0, None
 
     line_blocks = [b for b in ocr_blocks if b.get("BlockType") == "LINE" and b.get("Text")]
     word_blocks = [b for b in ocr_blocks if b.get("BlockType") == "WORD"]
+
+    citation_tokens = set(citation.lower().split())
 
     best_ratio = 0.0
     best_line: dict[str, Any] | None = None
 
     for block in line_blocks:
-        ratio = difflib.SequenceMatcher(None, citation.lower(), block["Text"].lower()).ratio()
-
+        line_tokens = set(block["Text"].lower().split())
+        matched = citation_tokens & line_tokens
+        ratio = len(matched) / len(citation_tokens) if citation_tokens else 0.0
         if ratio > best_ratio:
             best_ratio = ratio
             best_line = block
 
     if best_ratio < 0.6 or best_line is None:
-        return 0.0
+        return 0.0, best_line
 
     line_bb = best_line.get("Geometry", {}).get("BoundingBox", {})
 
     if not line_bb:
-        return round(best_ratio, 2)
+        return round(best_ratio, 2), best_line
 
     left, top = line_bb.get("Left", 0), line_bb.get("Top", 0)
     right = left + line_bb.get("Width", 0)
@@ -66,14 +73,88 @@ def compute_confidence(
             word_confidences.append(w.get("Confidence", 0.0))
 
     if not word_confidences:
-        return round(best_ratio, 2)
+        return round(best_ratio, 2), best_line
 
-    return round(sum(word_confidences) / len(word_confidences) / 100.0, 4)
+    return round(sum(word_confidences) / len(word_confidences) / 100.0, 4), best_line
 
 
 def ocr_blocks_to_text(blocks: list[dict[str, Any]]) -> str:
     """Reconstruct page text from Textract LINE blocks in reading order."""
     return "\n".join(b["Text"] for b in blocks if b.get("BlockType") == "LINE" and b.get("Text"))
+
+
+def layout_ocr_blocks_to_text(blocks: list[dict[str, Any]]) -> str:
+    """Reconstruct page text grouped by Textract LAYOUT blocks, in reading order.
+
+    Plain DetectDocumentText's flat LINE order can interleave side-by-side
+    columns (e.g. a letterhead address next to an employee info block sharing
+    the same vertical band), which confuses citation-based field extraction.
+    LAYOUT_* blocks (from AnalyzeDocument's LAYOUT feature) group lines by
+    their actual visual block and are already given in correct multi-column
+    reading order, so each block's lines are joined together, block by block.
+    Falls back to a flat LINE-block join when no LAYOUT blocks are present.
+    """
+    layout_blocks = [b for b in blocks if b.get("BlockType", "").startswith("LAYOUT_")]
+
+    if not layout_blocks:
+        return ocr_blocks_to_text(blocks)
+
+    by_id = {b["Id"]: b for b in blocks if b.get("Id")}
+    lines: list[str] = []
+
+    for layout_block in layout_blocks:
+        for rel in layout_block.get("Relationships", []):
+            if rel.get("Type") != "CHILD":
+                continue
+            for child_id in rel.get("Ids", []):
+                child = by_id.get(child_id)
+                if child and child.get("BlockType") == "LINE" and child.get("Text"):
+                    lines.append(child["Text"])
+
+    return "\n".join(lines)
+
+
+def _citation_bbox_from_words(
+    citation: str,
+    line_bb: dict[str, Any],
+    word_blocks: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Union the bounding boxes of WORD blocks whose text appears in the citation.
+
+    Candidates are restricted to words whose centre falls within the LINE bbox.
+    Falls back to the full LINE bbox when no matching words are found.
+    """
+    if not citation:
+        return line_bb
+
+    left, top = line_bb.get("Left", 0), line_bb.get("Top", 0)
+    right = left + line_bb.get("Width", 0)
+    bottom = top + line_bb.get("Height", 0)
+
+    citation_tokens = set(citation.lower().split())
+    matched: list[dict[str, Any]] = []
+
+    for w in word_blocks:
+        w_bb = w.get("Geometry", {}).get("BoundingBox", {})
+        if not w_bb:
+            continue
+        cx = w_bb["Left"] + w_bb["Width"] / 2
+        cy = w_bb["Top"] + w_bb["Height"] / 2
+        if (
+            left <= cx <= right
+            and top <= cy <= bottom
+            and w.get("Text", "").lower().strip(".,;:") in citation_tokens
+        ):
+            matched.append(w_bb)
+
+    if not matched:
+        return line_bb
+
+    u_left = min(b["Left"] for b in matched)
+    u_top = min(b["Top"] for b in matched)
+    u_right = max(b["Left"] + b["Width"] for b in matched)
+    u_bottom = max(b["Top"] + b["Height"] for b in matched)
+    return {"Left": u_left, "Top": u_top, "Width": u_right - u_left, "Height": u_bottom - u_top}
 
 
 def _extract(
@@ -90,14 +171,14 @@ def _extract(
     from documentai_api.utils.llm_blueprint_models import build_blueprint_model
     from documentai_api.utils.schemas import get_document_schema
     from documentai_api.utils.ssm import get_llm_extractor_model_id
-    from documentai_api.utils.textract import build_citation_index, match_citation_to_geometry
+    from documentai_api.utils.textract import _build_geometry_entry
 
     schema = get_document_schema(document_type)
 
     if not schema:
         raise ValueError(f"No schema found for document type '{document_type}'")
 
-    ocr_text = ocr_blocks_to_text(ocr_blocks)
+    ocr_text = layout_ocr_blocks_to_text(ocr_blocks)
 
     if not ocr_text.strip():
         raise ValueError(f"No OCR text available for {ddb_key}")
@@ -119,7 +200,23 @@ def _extract(
         response, completion = client.chat.completions.create_with_completion(
             model=model_id,
             response_model=blueprint_model,
-            messages=[{"role": "user", "content": ocr_text}],
+            messages=[
+                {
+                    "role": "user",
+                    "content": (
+                        "Extract the requested fields from the document text below.\n"
+                        "Follow these steps for each field:\n"
+                        "1. Locate the relevant text in the document.\n"
+                        "2. Set value to the extracted field value.\n"
+                        "3. Set text_citation to the shortest exact verbatim substring that supports "
+                        "only this field's value — copy it character-for-character from the document, "
+                        "do not include text belonging to adjacent fields.\n"
+                        "4. If the field is not present in the document, leave both value and "
+                        "text_citation null — do not write placeholder text such as 'N/A' or 'Not applicable'.\n\n"
+                        "Document text:\n" + ocr_text
+                    ),
+                }
+            ],
             temperature=0.0,
         )
         usage = completion.usage if hasattr(completion, "usage") and completion.usage else None
@@ -132,8 +229,8 @@ def _extract(
         if output_tokens is not None:
             span.set_attribute("llm.output_tokens", output_tokens)
 
-    block_index, word_blocks = build_citation_index(ocr_blocks)
     field_type_map = {f.name: f.type for f in schema.fields}
+    word_blocks = [b for b in ocr_blocks if b.get("BlockType") == "WORD"]
     field_confidence_scores: list[dict[str, float]] = []
     field_empty_list: list[str] = []
     fields_output: dict[str, Any] = {}
@@ -146,7 +243,12 @@ def _extract(
 
         field_name = field_name_map.get(field_name_underscored, field_name_underscored)
         value = extracted.value if extracted.value is not None else ""
-        conf = compute_confidence(extracted.text_citation, ocr_blocks)
+        field_type = field_type_map.get(field_name, "string")
+
+        if field_type == "number" and value:
+            value = re.sub(r"[\$,\s]", "", value)
+
+        conf, best_line = compute_confidence(extracted.text_citation, ocr_blocks)
         field_confidence_scores.append({field_name: conf})
 
         if not value:
@@ -156,14 +258,18 @@ def _extract(
             "value": value,
             "confidence": conf,
             "text_citation": extracted.text_citation,
-            "fieldType": field_type_map.get(field_name, "string"),
+            "fieldType": field_type,
         }
 
-        if extracted.text_citation:
-            geometry = match_citation_to_geometry(extracted.text_citation, block_index, word_blocks)
-
-            if geometry:
-                field_entry["geometry"] = geometry
+        if best_line is not None:
+            geom = best_line.get("Geometry", {})
+            line_bb = geom.get("BoundingBox", {})
+            if line_bb:
+                citation_bb = _citation_bbox_from_words(
+                    extracted.text_citation or "", line_bb, word_blocks
+                )
+                fake_geom = {"BoundingBox": citation_bb}
+                field_entry["geometry"] = [_build_geometry_entry(fake_geom)]
 
         fields_output[field_name] = field_entry
 

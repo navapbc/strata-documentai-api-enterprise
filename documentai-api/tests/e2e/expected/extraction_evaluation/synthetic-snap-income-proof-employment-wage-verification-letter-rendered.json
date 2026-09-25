@@ -1,0 +1,16 @@
+{
+  "fields": {
+    "employee_name": "Luis Mendoza",
+    "employer_name": "Harbor Home Care Services",
+    "employment_end_date": null,
+    "employment_start_date": "August 12, 2024",
+    "issuer_name": "Dana Whitfield",
+    "issuer_title": "Human Resources Manager",
+    "job_title": "Home Health Aide",
+    "salary_or_wage": "$19.00 per hour"
+  },
+  "notes": {
+    "employer_name": "Both BDA and LLM currently return 'Harbor Home Care Service' (missing the trailing 's') - the letterhead and signature block both print 'Harbor Home Care Services'. Both methods share this extraction miss, not just one.",
+    "employment_end_date": "Letter describes ongoing employment ('has been employed... since August 12, 2024') with no end date stated - genuinely absent."
+  }
+}

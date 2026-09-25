@@ -1,0 +1,30 @@
+{
+  "fields": {
+    "ADDRESS_DETAILS.CITY": "LAS VEGAS",
+    "ADDRESS_DETAILS.STATE": "NV",
+    "ADDRESS_DETAILS.STREET_ADDRESS": "4821 DESERT BLOOM AVE",
+    "ADDRESS_DETAILS.ZIP_CODE": "89146",
+    "CLASS": "D",
+    "COUNTY": null,
+    "DATE_OF_BIRTH": "1996-05-14",
+    "DATE_OF_ISSUE": "2021-06-18",
+    "ENDORSEMENTS": null,
+    "EXPIRATION_DATE": "2029-06-18",
+    "ID_NUMBER": "DEMO-4821-55",
+    "NAME_DETAILS.FIRST_NAME": "ELENA",
+    "NAME_DETAILS.LAST_NAME": "MARTINEZ",
+    "NAME_DETAILS.MIDDLE_NAME": null,
+    "NAME_DETAILS.SUFFIX": null,
+    "PERSONAL_DETAILS.EYE_COLOR": null,
+    "PERSONAL_DETAILS.HAIR_COLOR": null,
+    "PERSONAL_DETAILS.HEIGHT": null,
+    "PERSONAL_DETAILS.SEX": "F",
+    "PERSONAL_DETAILS.WEIGHT": null,
+    "RESTRICTIONS": "NONE",
+    "STATE_NAME": null
+  },
+  "notes": {
+    "ID_NUMBER": "Printed verbatim as 'DEMO-4821-55'. Textract's AnalyzeID returns a normalized 'DEMO482155' (separators stripped) - both are defensible, this fixture uses the as-printed form as ground truth.",
+    "STATE_NAME": "No distinct state-name field is printed on this card. 'NV' only appears inside the address, and 'SAMPLE STATE ID' is the card's title/product name, not a state identifier - treated as genuinely absent."
+  }
+}

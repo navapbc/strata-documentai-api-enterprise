@@ -355,6 +355,9 @@ module "config" {
     "models/bounding-box-model-id"            = "us.amazon.nova-lite-v1:0"
     "models/blur-quadrant-model-id"           = "us.amazon.nova-pro-v1:0"
     "models/supplemental-extraction-model-id" = "us.amazon.nova-micro-v1:0"
+    # LLM extraction reads this path directly (documentai_api.utils.ssm.get_llm_extractor_model_id),
+    # not via a *_MODEL_ID_PARAM env var like the models/* entries above.
+    "llm-extraction/model-id" = "us.amazon.nova-pro-v1:0"
   }
 
   allowed_patterns = {
@@ -872,11 +875,13 @@ data "aws_iam_policy_document" "bedrock_all" {
     ]
   }
 
-  # Textract (AnalyzeID for identity documents, DetectDocumentText for blur detection)
+  # Textract (AnalyzeID for identity documents, DetectDocumentText for blur detection,
+  # AnalyzeDocument+LAYOUT for LLM extraction's multi-column-aware OCR)
   statement {
     actions = [
       "textract:AnalyzeID",
       "textract:DetectDocumentText",
+      "textract:AnalyzeDocument",
     ]
     resources = ["*"]
   }
