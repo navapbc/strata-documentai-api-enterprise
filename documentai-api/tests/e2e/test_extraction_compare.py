@@ -184,9 +184,25 @@ def _match_indicator(expected: str, received: str, tolerance: float = 0.0) -> st
     return "❌"
 
 
+def _write_comparison_sidecar(filename: str, data: dict[str, Any]) -> None:
+    sidecar = {
+        "filename": filename,
+        "primary_method": data.get("primaryMethod", "bda"),
+        "durations": {
+            method: float(d["extractionDurationSeconds"]) if d.get("extractionDurationSeconds") is not None else None
+            for method, d in (data.get("durations") or {}).items()
+        },
+        "cost": data.get("cost") or {},
+        "cost_by_reason": data.get("costByReason") or {},
+    }
+    (_RESULTS_DIR / f"{Path(filename).stem}.data.json").write_text(json.dumps(sidecar, default=float))
+
+
 def _write_comparison_md(
     filename: str, data: dict[str, Any], expected: dict[str, str] | None
 ) -> None:
+    _write_comparison_sidecar(filename, data)
+
     primary_method = data.get("primaryMethod", "primary")
     primary = data.get("primary", {})
     llm = data.get("llm", {})
@@ -208,6 +224,16 @@ def _write_comparison_md(
             if bda_invoke is not None:
                 line += f", {bda_invoke}s BDA invocation"
             lines.append(line)
+        lines.append("")
+
+    cost = data.get("cost", {})
+    tokens = data.get("tokens", {})
+    if cost or tokens:
+        lines.append("**Cost**\n")
+        for model_id, entry_cost in cost.items():
+            t = tokens.get(model_id, {})
+            lines.append(f"- {model_id}: ${entry_cost:.8f} ({t.get('inputTokens', 0)} in / {t.get('outputTokens', 0)} out)")
+        lines.append(f"- **total: ${sum(cost.values()):.8f}**")
         lines.append("")
 
     lines.append(
@@ -270,6 +296,16 @@ def _print_comparison(filename: str, data: dict[str, Any], expected: dict[str, s
             if bda_invoke is not None:
                 line += f", {bda_invoke}s BDA invocation"
             print(line)
+        print()
+
+    cost = data.get("cost", {})
+    tokens = data.get("tokens", {})
+    if cost or tokens:
+        print("Cost:")
+        for model_id, entry_cost in cost.items():
+            t = tokens.get(model_id, {})
+            print(f"  {model_id}: ${entry_cost:.8f} ({t.get('inputTokens', 0)} in / {t.get('outputTokens', 0)} out)")
+        print(f"  total: ${sum(cost.values()):.8f}")
         print()
 
     for field in all_fields:

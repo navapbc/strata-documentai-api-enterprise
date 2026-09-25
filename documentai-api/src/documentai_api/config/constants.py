@@ -605,6 +605,15 @@ class ExtractMethod(StrEnum):
     LLM = "llm"
 
 
+class LlmUsageReason(StrEnum):
+    """Which pipeline step consumed the tokens."""
+
+    PRECLASSIFICATION = "preclassification"
+    BLUEPRINT_MATCH = "blueprintMatch"
+    LLM_EXTRACTION = "llmExtraction"
+    CROP_DETECTION = "cropDetection"
+
+
 class FeatureFlags:
     DOCUMENT_CROP = "document-crop"
     ENABLE_BLUR_DETECTION = "enable-blur-detection"

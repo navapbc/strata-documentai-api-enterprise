@@ -140,6 +140,7 @@ class DocumentMetadata:
     # per-extraction method fields - stored as maps keyed by method name
     API_RESPONSES_BY_METHOD = "apiResponsesByMethod"
     DURATIONS_BY_METHOD = "durationsByMethod"
+    TOKENS_BY_MODEL = "tokensByModel"
     # nested fields within durationsByMethod map
     EXTRACTION_DURATION_SECONDS = "extractionDurationSeconds"
     PROCESSING_STARTED_AT = "processingStartedAt"

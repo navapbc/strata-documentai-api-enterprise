@@ -44,3 +44,6 @@ lambda-env.json
 
 # Visual-inspection crops written by the bbox integration test
 tests/helpers/fixtures/test-documents/_bbox_output/
+
+# Extraction compare sidecar data files (generated per test run)
+tests/e2e/results/extraction_compare/*.data.json

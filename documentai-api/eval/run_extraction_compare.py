@@ -15,6 +15,8 @@ def _print_comparison(data: dict) -> None:
     primary_method = data.get("primaryMethod", "primary")
     primary = data.get("primary", {})
     llm = data.get("llm", {})
+    cost = data.get("cost", {})
+    tokens = data.get("tokens", {})
     all_fields = sorted(set(primary) | set(llm))
 
     col = 32
@@ -33,7 +35,16 @@ def _print_comparison(data: dict) -> None:
         llm_conf = f"{lm['confidence']:.4f}" if lm.get("confidence") is not None else "—"
         typer.echo(f"{field:<{col}} {p_val:<25} {p_conf:>8}   {llm_val:<25} {llm_conf:>8}")
 
-    typer.echo(sep + "\n")
+    typer.echo(sep)
+
+    if cost or tokens:
+        typer.echo("\nCost:")
+        for model_id, entry_cost in cost.items():
+            t = tokens.get(model_id, {})
+            typer.echo(f"  {model_id}: ${entry_cost:.8f} ({t.get('inputTokens', 0)} in / {t.get('outputTokens', 0)} out)")
+        typer.echo(f"  total: ${sum(cost.values()):.8f}")
+
+    typer.echo("")
 
 
 @app.command()

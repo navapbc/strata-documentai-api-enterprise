@@ -8,10 +8,11 @@ from typing import Any
 
 from opentelemetry import trace
 
+from documentai_api.config.constants import ExtractMethod, LlmUsageReason
 from documentai_api.dtos.extraction import ExtractionResult
 from documentai_api.logging import get_logger
 from documentai_api.schemas.document_metadata import DocumentMetadata
-from documentai_api.utils.ddb import get_ddb_record
+from documentai_api.utils.ddb import get_ddb_record, write_tokens_by_model
 
 logger = get_logger(__name__)
 tracer = trace.get_tracer(__name__)
@@ -166,7 +167,6 @@ def _extract(
     """Run instructor extraction and return (ExtractionResult, duration, input_tokens, output_tokens)."""
     import instructor
 
-    from documentai_api.config.constants import ExtractMethod
     from documentai_api.services.aws_client_factory import AWSClientFactory
     from documentai_api.utils.llm_blueprint_models import build_blueprint_model
     from documentai_api.utils.schemas import get_document_schema
@@ -220,8 +220,16 @@ def _extract(
             temperature=0.0,
         )
         usage = completion.usage if hasattr(completion, "usage") and completion.usage else None
-        input_tokens = usage.input_tokens if usage and hasattr(usage, "input_tokens") else None
-        output_tokens = usage.output_tokens if usage and hasattr(usage, "output_tokens") else None
+        logger.info(f"LLM extraction usage: {usage!r}")
+        input_tokens = (
+            getattr(usage, "input_tokens", None)
+            or getattr(usage, "prompt_tokens", None)
+        ) if usage else None
+
+        output_tokens = (
+            getattr(usage, "output_tokens", None)
+            or getattr(usage, "completion_tokens", None)
+        ) if usage else None
 
         if input_tokens is not None:
             span.set_attribute("llm.input_tokens", input_tokens)
@@ -327,6 +335,9 @@ def _write_llm_telemetry(
     set_expr = "SET " + ", ".join(f"{k} = :{k}" for k in updates)
     expr_values = {f":{k}": v for k, v in updates.items()}
     ddb_service.update_item(table_name, {"fileName": ddb_key}, set_expr, expr_values)
+
+    if input_tokens is not None and output_tokens is not None:
+        write_tokens_by_model(ddb_key, model_id, LlmUsageReason.LLM_EXTRACTION, input_tokens, output_tokens)
 
 
 def run_llm_extraction(

@@ -27,6 +27,7 @@ from documentai_api.classifiers.document_classification import (
 from documentai_api.config.constants import (
     ProcessStatus,
     S3MetadataKeys,
+    LlmUsageReason,
 )
 from documentai_api.config.env import get_env_config
 from documentai_api.dtos.classification import ClassificationData
@@ -53,7 +54,7 @@ from documentai_api.utils.bda_invoker import (
     skip_bda_if_unclassified,
 )
 from documentai_api.utils.dates import strip_time
-from documentai_api.utils.ddb import get_ddb_record
+from documentai_api.utils.ddb import get_ddb_record, write_tokens_by_model
 from documentai_api.utils.image_optimization import optimize_s3_image
 from documentai_api.utils.s3 import parse_s3_uri
 from documentai_api.utils.ssm import is_llm_extraction_enabled
@@ -193,6 +194,15 @@ def _persist_optimization_metrics(
         table_name = get_env_config().get_document_metadata_table_name
         ddb_service.update_item(
             table_name, {"fileName": ddb_key}, "SET " + ", ".join(updates), values
+        )
+
+    if (
+        crop_result.model_id
+        and crop_result.input_tokens is not None
+        and crop_result.output_tokens is not None
+    ):
+        write_tokens_by_model(
+            ddb_key, crop_result.model_id, LlmUsageReason.CROP_DETECTION, crop_result.input_tokens, crop_result.output_tokens
         )
 
 

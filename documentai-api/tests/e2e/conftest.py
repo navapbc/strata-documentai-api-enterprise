@@ -1,6 +1,7 @@
 # tests/e2e/conftest.py
 import os
 import secrets
+import shutil
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -30,11 +31,23 @@ def e2e_tenant_id(worker_id):
 _COMPARE_RESULTS_DIR = _E2E_DIR / "results" / "extraction_compare"
 
 
+def pytest_sessionstart(session):
+    """Delete stale sidecar JSON files before the run so the summary is clean."""
+    if hasattr(session.config, "workerinput"):
+        return
+    if _COMPARE_RESULTS_DIR.exists():
+        shutil.rmtree(_COMPARE_RESULTS_DIR)
+    _COMPARE_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+
+
 def pytest_sessionfinish(session, exitstatus):
     """Aggregate per-worker eval result files into a single summary.
 
     Only runs on the controller process (not on xdist workers).
     """
+    import json
+    from collections import defaultdict
+
     if hasattr(session.config, "workerinput"):
         return
 
@@ -45,12 +58,90 @@ def pytest_sessionfinish(session, exitstatus):
     if not worker_files:
         return
 
-    summary = _COMPARE_RESULTS_DIR / "extraction_compare_summary.md"
-    header = f"# Extraction Compare Results\n\n_Run: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')}_\n"
+    # aggregate sidecar JSONs — bucket by primary_method for cost comparison
+    duration_sums: dict[str, float] = defaultdict(float)
+    duration_counts: dict[str, int] = defaultdict(int)
+    cost_by_type: dict[str, float] = defaultdict(float)
+    # per-primary-method reason totals: {primary_method: {reason: total_cost}}
+    reason_totals: dict[str, dict[str, float]] = defaultdict(lambda: defaultdict(float))
+    rows = []
+    for md_file in worker_files:
+        sidecar = _COMPARE_RESULTS_DIR / md_file.with_suffix(".data.json").name
+        if not sidecar.exists():
+            continue
+        data = json.loads(sidecar.read_text())
+        filename = data["filename"]
+        primary_method = data.get("primary_method", "bda")
+        file_cost = sum(data["cost"].values())
+        for cost_key, amount in data["cost"].items():
+            cost_by_type[cost_key] += amount
+        for reason, amount in (data.get("cost_by_reason") or {}).items():
+            reason_totals[primary_method][reason] += amount
+        for method, secs in data["durations"].items():
+            if secs is not None:
+                duration_sums[method] += secs
+                duration_counts[method] += 1
+        rows.append((filename, data["durations"], file_cost))
+
+    avg_durations = {
+        method: duration_sums[method] / duration_counts[method]
+        for method in duration_sums
+    }
+
+    # build summary header
+    run_ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
+    lines = [f"# Extraction Compare Results\n", f"\n_Run: {run_ts}_\n"]
+
+    if avg_durations:
+        lines.append("\n**Avg Durations**\n")
+        for method, avg in sorted(avg_durations.items()):
+            lines.append(f"- {method}: {avg:.2f}s")
+        lines.append("")
+
+    if cost_by_type:
+        total_cost = sum(cost_by_type.values())
+        lines.append("\n**Total Cost by Model**\n")
+        for cost_key, amount in sorted(cost_by_type.items()):
+            lines.append(f"- {cost_key}: ${amount:.6f}")
+        lines.append(f"- **total: ${total_cost:.6f}**")
+        lines.append("")
+
+    def _cost_compare_section(label: str, primary_method_key: str) -> list[str]:
+        totals = reason_totals.get(primary_method_key)
+        if not totals:
+            return []
+        llm = totals.get("llmExtraction", 0.0)
+        primary = totals.get("primary", 0.0)
+        out = [f"\n**{label}**\n"]
+        out.append(f"- {primary_method_key} extraction total: ${primary:.6f}")
+        out.append(f"- LLM extraction total: ${llm:.6f}")
+        out.append("")
+        return out
+
+    lines += _cost_compare_section("BDA vs LLM Cost (docs where primary=bda)", "bda")
+    lines += _cost_compare_section("Textract vs LLM Cost (docs where primary=textract)", "textract")
+
+    if rows:
+        lines.append("\n| Document | Cost | " + " | ".join(f"{m} duration" for m in sorted(avg_durations)) + " |")
+        lines.append("|---" * (2 + len(avg_durations)) + "|")
+        for filename, durations, file_cost in rows:
+            stem = Path(filename).stem
+            link = f"[{filename}]({stem}.md)"
+            dur_cells = " | ".join(
+                f"{durations.get(m):.2f}s" if durations.get(m) is not None else "-"
+                for m in sorted(avg_durations)
+            )
+            lines.append(f"| {link} | ${file_cost:.6f} | {dur_cells} |")
+        lines.append("")
+
+    header = "".join(f"{l}\n" if not l.endswith("\n") else l for l in lines)
+
     sections = []
     for f in worker_files:
         file_lines = f.read_text().splitlines(keepends=True)
         sections.append("".join(file_lines[1:]))  # skip "_Run: ..." line
+
+    summary = _COMPARE_RESULTS_DIR / "extraction_compare_summary.md"
     summary.write_text(header + "".join(sections))
 
 

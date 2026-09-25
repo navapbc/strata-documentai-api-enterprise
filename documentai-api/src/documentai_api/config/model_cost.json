@@ -1,0 +1,25 @@
+{
+  "bda": {
+    "standard_output_per_page": 0.01,
+    "custom_output_per_page": 0.04
+  },
+  "textract": {
+    "per_page": 0.025
+  },
+  "us.amazon.nova-lite-v1:0": {
+    "input_per_1m": 0.06,
+    "output_per_1m": 0.24
+  },
+  "us.amazon.nova-micro-v1:0": {
+    "input_per_1m": 0.035,
+    "output_per_1m": 0.14
+  },
+  "us.amazon.nova-pro-v1:0": {
+    "input_per_1m": 0.80,
+    "output_per_1m": 3.20
+  },
+  "us.amazon.nova-2-lite-v1:0": {
+    "input_per_1m": 0.33,
+    "output_per_1m": 2.75
+  }
+}
