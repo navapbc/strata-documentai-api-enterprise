@@ -68,6 +68,7 @@ def api_key(reset_env, monkeypatch_session, e2e_tenant_id):
         "DOCUMENTAI_DOCUMENT_METADATA_TENANT_INDEX_NAME",
         "DOCUMENTAI_INPUT_LOCATION",
         "DOCUMENTAI_OUTPUT_LOCATION",
+        "EXTRACTION_RULES_TABLE_NAME",
     ):
         if v := reset_env.get(k):
             monkeypatch_session.setenv(k, v)

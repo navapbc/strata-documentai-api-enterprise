@@ -13,6 +13,20 @@ their test-only purpose clear:
 The documents are intended only to support local development, automated testing, and
 demonstration workflows.
 
+## Folder layout
+
+- `happy-path/` - documents expected to classify and extract successfully.
+- `unhappy-path/` - documents expected to fail, be rejected, or otherwise not
+  classify cleanly (corrupted, illegible, wrong type, etc.). See its
+  [README](unhappy-path/README.md) for how to add new cases.
+- `blur/` - documents specifically exercising blur detection.
+
+`expected.json` keys every fixture by its path relative to this folder (e.g.
+`unhappy-path/synthetic-corrupted-scan.jpg`), and
+`tests/e2e/test_app_documents.py` automatically parametrizes a test for every
+entry with `"e2e_enabled": true` - no code changes are needed to add more
+documents to any of these folders.
+
 ## Why synthetic documents are in this public repository
 
 We include synthetic test documents in this public repository so users can run tests and
