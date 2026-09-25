@@ -570,7 +570,7 @@ class ApiVisualizationTag:
     ADMIN_DOCUMENTS = "Admin:Documents"
     ADMIN_CATEGORIES = "Admin:Categories"
     ADMIN_BLUEPRINTS = "Admin:Blueprints"
-    ADMIN_EVAL = "Admin:Eval"
+    ADMIN_COMPARE = "Admin:Compare"
     IDENTITY = "Identity"
 
 

@@ -30,7 +30,7 @@ from documentai_api.routers.demo import router as demo_router
 from documentai_api.routers.dictionary import router as dictionary_router
 from documentai_api.routers.document_categories import router as document_categories_router
 from documentai_api.routers.documents import router as documents_router
-from documentai_api.routers.extraction_eval import router as extraction_eval_router
+from documentai_api.routers.extraction_compare import router as extraction_compare_router
 from documentai_api.routers.extraction_rules import router as extraction_rules_router
 from documentai_api.routers.me import router as me_router
 from documentai_api.routers.metrics import router as metrics_router
@@ -68,7 +68,7 @@ app.include_router(demo_router)
 app.include_router(me_router)
 app.include_router(metrics_router)
 app.include_router(auth_events_router)
-app.include_router(extraction_eval_router)
+app.include_router(extraction_compare_router)
 app.include_router(checks_router)
 app.include_router(search_router)
 

@@ -305,9 +305,9 @@ def _invoke_llm_path(
     import json
 
     document_type = existing_record.get(DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCHED_TYPE)
-    is_eval = existing_record.get(DocumentMetadata.IS_EVAL, False)
+    is_compare = existing_record.get(DocumentMetadata.IS_COMPARE, False)
 
-    if not document_type or (not is_llm_extraction_enabled() and not is_eval):
+    if not document_type or (not is_llm_extraction_enabled() and not is_compare):
         return
 
     try:

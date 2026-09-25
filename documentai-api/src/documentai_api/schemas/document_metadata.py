@@ -134,8 +134,8 @@ class DocumentMetadata:
     LLM_INPUT_TOKENS = "llmInputTokens"
     LLM_OUTPUT_TOKENS = "llmOutputTokens"
 
-    # eval flag
-    IS_EVAL = "isEval"
+    # compare flag
+    IS_COMPARE = "isCompare"
 
     # per-extraction method fields - stored as maps keyed by method name
     API_RESPONSES_BY_METHOD = "apiResponsesByMethod"

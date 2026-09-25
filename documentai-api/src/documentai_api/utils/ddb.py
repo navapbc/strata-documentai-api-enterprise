@@ -314,8 +314,8 @@ def _send_record_to_metrics_queue(object_key: str) -> None:
             logger.warning(f"DDB record not found for {object_key}, skipping metrics")
             return
 
-        if ddb_record.get(DocumentMetadata.IS_EVAL):
-            logger.info(f"Skipping metrics queue for eval document {object_key}")
+        if ddb_record.get(DocumentMetadata.IS_COMPARE):
+            logger.info(f"Skipping metrics queue for compare document {object_key}")
             return
 
         # Inject traceparent into SQS MessageAttributes so metrics-processor can
@@ -548,7 +548,7 @@ def upsert_ddb(data: InitialDdbRecord) -> None:
             expr_fields.append(f"{DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY} = :category")
             expr_values[":category"] = data.user_provided_document_category
 
-        if data.is_eval:
+        if data.is_compare:
             expr_fields.append(
                 f"{DocumentMetadata.API_RESPONSES_BY_METHOD} = if_not_exists({DocumentMetadata.API_RESPONSES_BY_METHOD}, :emptyMap)"
             )

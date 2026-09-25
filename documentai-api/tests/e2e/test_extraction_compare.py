@@ -1,7 +1,7 @@
-"""E2E tests for /v1/admin/extraction-eval.
+"""E2E tests for /v1/admin/extraction-compare.
 
 Requires a running API (BASE_URL) and AWS credentials with access to the
-Cognito user pool and SSM parameter store. The extraction evaluator admin user and its password
+Cognito user pool and SSM parameter store. The extraction compare admin user and its password
 are provisioned by Terraform (infra/environments/dev/main.tf).
 
 Skipped automatically if COGNITO_CLIENT_ID or SSM_PREFIX are not set in the
@@ -26,21 +26,21 @@ TEST_DOCS_DIR = (
     Path(__file__).parent.parent / "helpers" / "fixtures" / "test-documents" / "happy-path"
 )
 
-_EXTRACT_EVAL_ADMIN_EMAIL = "extract-eval-admin@internal.invalid"
+_EXTRACT_COMPARE_ADMIN_EMAIL = "extract-compare-admin@internal.invalid"
 
 
-def _eval_prereqs_missing() -> bool:
+def _compare_prereqs_missing() -> bool:
     cfg = get_env_config()
     return not (cfg.cognito_client_id and cfg.ssm_prefix)
 
 
 pytestmark = pytest.mark.skipif(
-    _eval_prereqs_missing(),
+    _compare_prereqs_missing(),
     reason="COGNITO_CLIENT_ID and SSM_PREFIX must be set",
 )
 
-_EXPECTED_DIR = Path(__file__).parent / "expected" / "extraction_evaluation"
-_RESULTS_DIR = Path(__file__).parent / "results" / "extraction_evaluation"
+_EXPECTED_DIR = Path(__file__).parent / "expected" / "extraction_compare"
+_RESULTS_DIR = Path(__file__).parent / "results" / "extraction_compare"
 _NO_VALUE = "-"
 _INDICATOR_MAP = {"✅": "=", "🟡": "~", "❌": "x", "": "-"}
 
@@ -61,13 +61,13 @@ _EVAL_FILES = [
 
 
 @pytest.fixture(scope="session")
-def eval_jwt(reset_env):
-    """Fetch extraction evaluator admin password from SSM and exchange for a Cognito JWT."""
+def compare_jwt(reset_env):
+    """Fetch extraction compare admin password from SSM and exchange for a Cognito JWT."""
     os.environ.update(reset_env)
     get_env_config.cache_clear()
     cfg = get_env_config()
     assert cfg.cognito_client_id
-    password_param = f"{cfg.ssm_prefix}/extract-eval-admin-password"
+    password_param = f"{cfg.ssm_prefix}/extract-compare-admin-password"
 
     ssm = boto3.client("ssm")
     password = ssm.get_parameter(Name=password_param, WithDecryption=True)["Parameter"]["Value"]
@@ -76,7 +76,7 @@ def eval_jwt(reset_env):
     response = cognito.initiate_auth(
         ClientId=cfg.cognito_client_id,
         AuthFlow="USER_PASSWORD_AUTH",
-        AuthParameters={"USERNAME": _EXTRACT_EVAL_ADMIN_EMAIL, "PASSWORD": password},
+        AuthParameters={"USERNAME": _EXTRACT_COMPARE_ADMIN_EMAIL, "PASSWORD": password},
     )
     return response["AuthenticationResult"]["AccessToken"]
 
@@ -88,7 +88,7 @@ def _submit_and_poll(
 
     with file_path.open("rb") as f:
         response = requests.post(
-            f"{BASE_URL}/v1/admin/extraction-eval",
+            f"{BASE_URL}/v1/admin/extraction-compare",
             headers=headers,
             files={"file": (file_path.name, f)},
             timeout=30,
@@ -99,7 +99,7 @@ def _submit_and_poll(
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         poll = requests.get(
-            f"{BASE_URL}/v1/admin/extraction-eval/{job_id}",
+            f"{BASE_URL}/v1/admin/extraction-compare/{job_id}",
             headers=headers,
             timeout=30,
         )
@@ -108,12 +108,12 @@ def _submit_and_poll(
         assert poll.status_code == 404, f"unexpected status {poll.status_code}: {poll.text}"
         time.sleep(interval)
 
-    pytest.fail(f"eval job {job_id} did not complete within {timeout}s")
+    pytest.fail(f"compare job {job_id} did not complete within {timeout}s")
 
 
 @pytest.mark.parametrize("filename", _EVAL_FILES)
-def test_extraction_eval(filename, eval_jwt):
-    result = _submit_and_poll(TEST_DOCS_DIR / filename, eval_jwt)
+def test_extraction_compare(filename, compare_jwt):
+    result = _submit_and_poll(TEST_DOCS_DIR / filename, compare_jwt)
 
     assert result["jobId"]
     assert isinstance(result["primary"], dict)
@@ -245,7 +245,7 @@ def _print_comparison(filename: str, data: dict[str, Any], expected: dict[str, s
 
     col = 32
     p_label = f"{primary_method.upper()} Value"
-    header = f"{'Field':<{col}} {'Expected':<20} {p_label:<26} {'LLM Value':<26} {'Conf':>8}   {'LLM Conf':>8}"
+    header = f"{'Field':<{col}} {'Expected':<20} {p_label:<26} {'LLM (via Textract)':<26} {'Conf':>8}   {'LLM Conf':>8}"
     sep = "=" * len(header)
 
     print(f"\n{filename}")

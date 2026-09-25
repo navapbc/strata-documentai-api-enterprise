@@ -1,4 +1,4 @@
-"""Eval CLI: submit a document to /v1/admin/extraction-eval and print a field comparison."""
+"""Compare CLI: submit a document to /v1/admin/extraction-compare and print a field comparison."""
 
 import time
 
@@ -39,7 +39,7 @@ def _print_comparison(data: dict) -> None:
 @app.command()
 def run(
     file: str = typer.Option(..., help="Path to the document file"),
-    token: str = typer.Option(..., envvar="EVAL_JWT", help="Admin JWT token"),
+    token: str = typer.Option(..., envvar="COMPARE_JWT", help="Admin JWT token"),
     base_url: str = typer.Option("http://localhost:8000", envvar="API_BASE_URL"),
 ) -> None:
     """Run BDA and LLM extraction on a document and compare field output."""
@@ -54,7 +54,7 @@ def run(
 
     with httpx.Client(base_url=base_url, timeout=30) as client:
         response = client.post(
-            "/v1/admin/extraction-eval",
+            "/v1/admin/extraction-compare",
             headers=headers,
             files={"file": (filename, file_bytes)},
         )
@@ -70,7 +70,7 @@ def run(
     with httpx.Client(base_url=base_url, timeout=30) as client:
         while time.monotonic() < deadline:
             poll = client.get(
-                f"/v1/admin/extraction-eval/{job_id}",
+                f"/v1/admin/extraction-compare/{job_id}",
                 headers=headers,
             )
 

@@ -28,9 +28,9 @@ from documentai_api.utils.tenants import (
 logger = get_logger(__name__)
 
 
-def _is_eval(object_key: str) -> bool:
+def _is_compare(object_key: str) -> bool:
     record = get_ddb_record(object_key)
-    return bool(record and record.get(DocumentMetadata.IS_EVAL))
+    return bool(record and record.get(DocumentMetadata.IS_COMPARE))
 
 
 def _write_terminal_status(record: UpdateDdbRecord, batch_id: str | None) -> None:
@@ -47,7 +47,7 @@ def _write_terminal_status(record: UpdateDdbRecord, batch_id: str | None) -> Non
         update_ddb(record, condition_expression=condition, extra_expression_values=extra_values)
         finalize_v1_response(record.object_key, record.status, record.data, record.error_message)
 
-        if batch_id and not _is_eval(record.object_key):
+        if batch_id and not _is_compare(record.object_key):
             increment_resolved_count(batch_id)
     except ClientError as e:
         if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
@@ -310,7 +310,7 @@ def classify_as_multiple_documents_in_multipage(
     return internal_api_response.__dict__
 
 
-def _write_eval_v1_response(
+def _write_compare_v1_response(
     ddb_key: str,
     ddb_record: dict[str, Any],
     result: ExtractionResult,
@@ -392,8 +392,8 @@ def classify_extraction_result(
 
     ddb_record = get_ddb_record(ddb_key) or {}
 
-    if ddb_record.get(DocumentMetadata.IS_EVAL):
-        _write_eval_v1_response(ddb_key, ddb_record, result, output_uri, extraction_method)
+    if ddb_record.get(DocumentMetadata.IS_COMPARE):
+        _write_compare_v1_response(ddb_key, ddb_record, result, output_uri, extraction_method)
         return {}
 
     data = ClassificationData.from_extraction_result(result, output_uri=output_uri)

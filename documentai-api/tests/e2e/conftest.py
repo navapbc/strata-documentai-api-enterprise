@@ -27,7 +27,7 @@ def e2e_tenant_id(worker_id):
     return f"{E2E_TENANT_BASE}-{worker_id}"
 
 
-_EVAL_RESULTS_DIR = _E2E_DIR / "results" / "extraction_evaluation"
+_COMPARE_RESULTS_DIR = _E2E_DIR / "results" / "extraction_compare"
 
 
 def pytest_sessionfinish(session, exitstatus):
@@ -39,15 +39,15 @@ def pytest_sessionfinish(session, exitstatus):
         return
 
     worker_files = sorted(
-        (f for f in _EVAL_RESULTS_DIR.glob("*.md") if f.name != "extraction_eval_summary.md"),
+        (f for f in _COMPARE_RESULTS_DIR.glob("*.md") if f.name != "extraction_compare_summary.md"),
         key=lambda f: f.name,
     )
     if not worker_files:
         return
 
-    summary = _EVAL_RESULTS_DIR / "extraction_eval_summary.md"
+    summary = _COMPARE_RESULTS_DIR / "extraction_compare_summary.md"
     header = (
-        f"# Extraction Eval Results\n\n_Run: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')}_\n"
+        f"# Extraction Compare Results\n\n_Run: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')}_\n"
     )
     sections = []
     for f in worker_files:
@@ -205,36 +205,36 @@ def cleanup_e2e_tenant(e2e_tenant_id):
 
 
 @pytest.fixture(scope="session")
-def eval_tenant_id() -> str | None:
-    """The eval-{sub} tenant /v1/admin/extraction-eval writes to for this EVAL_JWT.
+def compare_tenant_id() -> str | None:
+    """The compare-{sub} tenant /v1/admin/extraction-compare writes to for this COMPARE_JWT.
 
-    None when EVAL_JWT isn't set - the extraction-eval e2e tests are skipped
+    None when COMPARE_JWT isn't set - the extraction-compare e2e tests are skipped
     in that case, so there's nothing to clean up.
     """
-    token = os.environ.get("EVAL_JWT")
+    token = os.environ.get("COMPARE_JWT")
     if not token:
         return None
 
     import jwt
 
     claims = jwt.decode(token, options={"verify_signature": False})
-    return f"eval-{claims.get('sub', 'unknown')}"
+    return f"compare-{claims.get('sub', 'unknown')}"
 
 
 @pytest.fixture(scope="session", autouse=True)
-def cleanup_eval_tenant(eval_tenant_id):
-    """Wipe the eval-{sub} tenant used by /v1/admin/extraction-eval e2e tests.
+def cleanup_compare_tenant(compare_tenant_id):
+    """Wipe the compare-{sub} tenant used by /v1/admin/extraction-compare e2e tests.
 
     Sweeps before the run too (belt-and-suspenders for a previous run that
-    crashed mid-session) and is a no-op when EVAL_JWT isn't set.
+    crashed mid-session) and is a no-op when COMPARE_JWT isn't set.
     """
-    if not eval_tenant_id:
+    if not compare_tenant_id:
         yield
         return
 
-    _wipe_test_tenant(eval_tenant_id)
+    _wipe_test_tenant(compare_tenant_id)
     yield
-    _wipe_test_tenant(eval_tenant_id)
+    _wipe_test_tenant(compare_tenant_id)
 
 
 @pytest.fixture(scope="session", autouse=True)
