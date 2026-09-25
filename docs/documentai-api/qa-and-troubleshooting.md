@@ -48,7 +48,7 @@ Follow ["Executing a test"](#executing-a-test) below and use the blueprint test 
      "e2e_enabled": true,
      "isDocumentBlurry": false,
      "isPasswordProtected": false,
-     "preclassificationCategory": "my_category",
+     "preclassificationCategory": "present",
      "responseCode": "000"
    }
    ```
