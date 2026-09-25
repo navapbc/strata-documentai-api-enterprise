@@ -68,6 +68,7 @@ def api_key(reset_env, monkeypatch_session, e2e_tenant_id):
         "DOCUMENTAI_DOCUMENT_METADATA_TENANT_INDEX_NAME",
         "DOCUMENTAI_INPUT_LOCATION",
         "DOCUMENTAI_OUTPUT_LOCATION",
+        "EXTRACTION_RULES_TABLE_NAME",
     ):
         if v := reset_env.get(k):
             monkeypatch_session.setenv(k, v)
@@ -216,44 +217,6 @@ def _ensure_multipage_flagging_enabled(monkeypatch_session):
             AWSClientFactory.get_ssm_client().delete_parameter(Name=param)
 
         get_cache().invalidate(f"ssm:{param}")
-
-
-@pytest.fixture(scope="session", autouse=True)
-def _seed_extraction_rules(e2e_tenant_id):
-    """Seed extraction rules declared in expected.json for this worker's e2e tenant.
-
-    Fixtures that need a specific document type/field combination to trip
-    MISSING_FIELDS (101) declare a "requiredFieldsForExtraction" list next to
-    their "bdaMatchedDocumentClass" in expected.json. This seeds one rule per
-    unique document type before any documents are uploaded, and removes them
-    afterward - no conftest changes needed to add more such fixtures later.
-    """
-    import json
-
-    from documentai_api.utils.extraction_rules import delete_rule, upsert_rule
-
-    expected_path = _E2E_DIR.parent / "helpers" / "fixtures" / "test-documents" / "expected.json"
-    cases = json.loads(expected_path.read_text())
-
-    rules: dict[str, list[str]] = {}
-    for expected in cases.values():
-        if not expected.get("e2e_enabled"):
-            continue
-
-        required_fields = expected.get("requiredFieldsForExtraction")
-        document_type = expected.get("bdaMatchedDocumentClass")
-
-        if required_fields and document_type:
-            rules.setdefault(document_type, required_fields)
-
-    for document_type, required_fields in rules.items():
-        upsert_rule(e2e_tenant_id, document_type, required_fields, optional_fields=[])
-
-    try:
-        yield
-    finally:
-        for document_type in rules:
-            delete_rule(e2e_tenant_id, document_type)
 
 
 @pytest.fixture(scope="session", autouse=True)

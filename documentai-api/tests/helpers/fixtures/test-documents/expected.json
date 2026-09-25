@@ -916,20 +916,19 @@
     "reruns_override": 2,
     "responseCode": "002"
   },
-  "unhappy-path/synthetic-unclear-handwriting.jpg": {
+  "unhappy-path/synthetic-unclear-handwriting.png": {
     "//": [
-      "Verified live (2x, consistent). Handwriting degrades extraction enough that this",
-      "matches the generic 'Invoices' blueprint (no dedicated burial blueprint reachable",
-      "from the 'all' project) but only at low confidence (105) - the intended failure",
-      "mode for this fixture."
+      "Verified live. Handwriting-heavy document that gets categorized by",
+      "preclassification but no BDA blueprint matches, tripping NO_BLUEPRINT_MATCHED",
+      "(002) - the intended failure mode for this fixture."
     ],
-    "bdaMatchedDocumentClass": "Invoices",
-    "content_type": "image/jpeg",
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/png",
     "e2e_enabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "105"
+    "responseCode": "002"
   },
   "unhappy-path/synthetic-multiple-documents.pdf": {
     "//": [
@@ -951,25 +950,26 @@
   },
   "unhappy-path/synthetic-bad-scan.png": {
     "//": [
-      "Verified live (2x, consistent). Matches 'Invoices' but avgConfidence (~0.6286) falls",
-      "just below the tenant's default extractionConfidenceThreshold (0.65), tripping",
-      "LOW_EXTRACTION_CONFIDENCE - the intended failure mode for this fixture."
+      "Verified live. Scan quality is degraded enough that blur detection rejects it",
+      "before preclassification, tripping BLURRY_DOCUMENT_DETECTED (104) - the intended",
+      "failure mode for this fixture."
     ],
-    "bdaMatchedDocumentClass": "Invoices",
+    "bdaMatchedDocumentClass": null,
     "content_type": "image/png",
     "e2e_enabled": true,
-    "isDocumentBlurry": false,
+    "isDocumentBlurry": true,
     "isPasswordProtected": false,
-    "preclassificationCategory": "present",
-    "responseCode": "105"
+    "preclassificationCategory": null,
+    "responseCode": "104"
   },
   "unhappy-path/synthetic-missing-data-fields.pdf": {
     "//": [
-      "Verified live (2x, consistent). Matches 'Invoices' but avgConfidence (~0.551) falls",
-      "below the tenant's default extractionConfidenceThreshold (0.65), tripping",
-      "LOW_EXTRACTION_CONFIDENCE - the intended failure mode for this fixture."
+      "Verified live (2x, consistent). Matches the 'Electricity-Bill' blueprint but",
+      "average extraction confidence falls below the tenant's default threshold (0.65),",
+      "tripping LOW_EXTRACTION_CONFIDENCE (105) - the intended failure mode for this",
+      "fixture."
     ],
-    "bdaMatchedDocumentClass": "Invoices",
+    "bdaMatchedDocumentClass": "Electricity-Bill",
     "content_type": "application/pdf",
     "e2e_enabled": true,
     "isDocumentBlurry": false,
@@ -998,8 +998,10 @@
       "Cut off: right side of the ID card is cropped off, truncating ID_NUMBER",
       "and DATE_OF_BIRTH before any values are legible. A US-drivers-licenses",
       "extraction rule requiring those two fields is seeded for the e2e tenant",
-      "by the _seed_extraction_rules fixture in tests/e2e/conftest.py, so BDA",
-      "still matches the document class but flags the fields as missing."
+      "around this document's upload by the _extraction_rule_for context manager",
+      "in tests/e2e/test_app_documents.py (driven by requiredFieldsForExtraction",
+      "below), so BDA still matches the document class but flags the fields as",
+      "missing."
     ],
     "bdaMatchedDocumentClass": "US-drivers-licenses",
     "content_type": "image/jpeg",

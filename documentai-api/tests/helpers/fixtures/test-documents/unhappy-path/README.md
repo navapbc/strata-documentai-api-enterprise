@@ -26,7 +26,7 @@ correctly flags the defect.
 | --- | --- | --- |
 | Scans (poor scan quality) | ✅ Added | `synthetic-bad-scan.png` |
 | Missing data fields | ✅ Added | `synthetic-missing-data-fields.pdf` |
-| Unclear handwriting | ✅ Added | `synthetic-unclear-handwriting.jpg` |
+| Unclear handwriting | ✅ Added | `synthetic-unclear-handwriting.png` |
 | Multiple documents included in one file | ✅ Added | `synthetic-multiple-documents.pdf` |
 | Crumpled paper | ✅ Added | `synthetic-crumpled.png` |
 | Cut off | ✅ Added | `synthetic-cut-off.jpg` |
@@ -53,14 +53,12 @@ fields before any value is legible while leaving the rest of the card
 (name, address, issue/expiration dates, class, restrictions) intact. `101
 MISSING_FIELDS` only fires when the tenant has an extraction rule
 configured with required fields for the matched document type (see
-`src/documentai_api/utils/extraction_rules.py`); the session-scoped
-`_seed_extraction_rules` autouse fixture in `tests/e2e/conftest.py` seeds
-one rule per unique `bdaMatchedDocumentClass` found among
-`requiredFieldsForExtraction` entries in `expected.json` (here,
-`US-drivers-licenses` requiring `ID_NUMBER`/`DATE_OF_BIRTH`) before tests
-run, and tears it down afterward - verified live (2x, consistent) at
-`101`, with the untouched happy-path fixture for the same document type
-still passing at `000`.
+`src/documentai_api/utils/extraction_rules.py`); the `_extraction_rule_for`
+context manager in `tests/e2e/test_app_documents.py` seeds a rule from the
+case's `requiredFieldsForExtraction` (here, `US-drivers-licenses` requiring
+`ID_NUMBER`/`DATE_OF_BIRTH`) around the upload and tears it down afterward -
+verified live (2x, consistent) at `101`, with the untouched happy-path
+fixture for the same document type still passing at `000`.
 
 ## Choosing the right expected `responseCode`
 
@@ -95,9 +93,9 @@ fail, so the suite exercises the full failure taxonomy instead of one path.
    using the table above to pick `responseCode`. If the fixture needs
    `101 MISSING_FIELDS`, also add `"requiredFieldsForExtraction": [...]`
    (field names from `src/documentai_api/config/field_labels/<doctype>.json`)
-   - the `_seed_extraction_rules` fixture in `tests/e2e/conftest.py` seeds a
-   matching extraction rule for the e2e tenant automatically, no other
-   setup required.
+   - the `_extraction_rule_for` context manager in
+   `tests/e2e/test_app_documents.py` seeds a matching extraction rule for the
+   e2e tenant around that case's upload automatically, no other setup required.
 4. Update the defect coverage table above to point at the new fixture.
 5. `test_app_documents.py::test_post_document` picks up every `e2e_enabled`
    entry in `expected.json` automatically - no code changes needed to add
