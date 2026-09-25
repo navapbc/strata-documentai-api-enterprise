@@ -1,12 +1,12 @@
-_Run: 2026-09-25 16:56 UTC_
+_Run: 2026-09-25 19:27 UTC_
 
 
 ## synthetic-expense-dependent-care-render.pdf
 
 **Durations**
 
-- bda: 22.72s extraction
-- llm: 2s extraction
+- bda: 22.14s extraction
+- llm: 2.226s extraction
 
 | Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | BDA Geometry | LLM Geometry | Geo Match |
 |---|---|---|---|---|---|---|---|---|

@@ -3,14 +3,17 @@
 import json
 from typing import Any
 
-from documentai_api.config.constants import ProcessStatus
+from documentai_api.config.constants import ExtractMethod, ProcessStatus
 from documentai_api.dtos.classification import ClassificationData
+from documentai_api.dtos.extraction import ExtractionResult
 from documentai_api.logging import get_logger
 from documentai_api.readers.extraction import read_output
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.ddb import _execute_ddb_update, get_ddb_record
+from documentai_api.utils.extraction_rules import apply_extraction_rules
 from documentai_api.utils.field_labels import get_field_label
 from documentai_api.utils.response_codes import ResponseCodes
+from documentai_api.utils.ssm import is_missing_geo_included_with_missing_fields
 
 logger = get_logger(__name__)
 
@@ -145,10 +148,8 @@ def _apply_extraction_rules(
     document_type = ddb_record.get(DocumentMetadata.BDA_MATCHED_DOCUMENT_CLASS)
     if not tenant_id or not document_type or not fields:
         return fields, []
-    try:
-        from documentai_api.utils.extraction_rules import apply_extraction_rules
-        from documentai_api.utils.ssm import is_missing_geo_included_with_missing_fields
 
+    try:
         missing_fields: list[str] = []
         if is_missing_geo_included_with_missing_fields():
             for key in (
@@ -198,18 +199,85 @@ def _resolve_response_code(
     return None, False
 
 
+def write_extract_method_response(
+    object_key: str,
+    status: str,
+    extraction_method: ExtractMethod,
+    result: ExtractionResult | None = None,
+    data: ClassificationData | None = None,
+    error_message: str | None = None,
+) -> None:
+    """Write per-method v1 response and duration into API_RESPONSES_BY_METHOD/DURATIONS_BY_METHOD."""
+    v1_response = build_v1_api_response(object_key, status, data, error_message=error_message)
+    method_key = (
+        extraction_method.value
+        if isinstance(extraction_method, ExtractMethod)
+        else extraction_method
+    )
+    status_str = status.value if isinstance(status, ProcessStatus) else status
+
+    if status_str == ProcessStatus.SUCCESS.value and result is not None:
+        ddb_record = get_ddb_record(object_key) or {}
+        reader_result = read_output(
+            ddb_record,
+            include_extracted_data=True,
+            include_bounding_box=True,
+            output_uri=data.bda_output_s3_uri if data else None,
+            extract_method=extraction_method,
+        )
+
+        response = dict(v1_response)
+        response["fields"] = {
+            name: {
+                "confidence": round(conf, 2),
+                "value": reader_result.field_values.get(name),
+                **(
+                    {"geometry": reader_result.field_geometry[name]["geometry"]}
+                    if name in reader_result.field_geometry
+                    else {}
+                ),
+            }
+            for field_item in reader_result.field_confidence_map_list
+            for name, conf in field_item.items()
+        }
+    else:
+        response = dict(v1_response)
+        response["fields"] = {}
+
+    _execute_ddb_update(
+        object_key,
+        f"SET {DocumentMetadata.API_RESPONSES_BY_METHOD}.#method = :response",
+        {":response": json.dumps(response)},
+        expression_names={"#method": method_key},
+    )
+
+    if result is not None and result.processing_duration_seconds is not None:
+        duration_entry: dict[str, Any] = {
+            DocumentMetadata.EXTRACTION_DURATION_SECONDS: result.processing_duration_seconds
+        }
+        if result.processing_started_at is not None:
+            duration_entry[DocumentMetadata.PROCESSING_STARTED_AT] = (
+                result.processing_started_at.isoformat()
+            )
+        if result.processing_completed_at is not None:
+            duration_entry[DocumentMetadata.PROCESSING_COMPLETED_AT] = (
+                result.processing_completed_at.isoformat()
+            )
+        _execute_ddb_update(
+            object_key,
+            f"SET {DocumentMetadata.DURATIONS_BY_METHOD}.#method = :durationEntry",
+            {":durationEntry": duration_entry},
+            expression_names={"#method": method_key},
+        )
+
+
 def finalize_v1_response(
     object_key: str,
     status: str,
     data: ClassificationData | None = None,
     error_message: str | None = None,
 ) -> None:
-    """Build and persist the v1 API response and sync responseCode.
-
-    Single authority for v1 response finalization - called after update_ddb
-    (extraction completion) and upsert_ddb (terminal pre-extraction statuses).
-    Does NOT enqueue metrics; callers own that policy.
-    """
+    """Write v1ApiResponseJson and responseCode to DDB."""
     v1_response = build_v1_api_response(object_key, status, data, error_message=error_message)
 
     update_expr = f"SET {DocumentMetadata.V1_API_RESPONSE_JSON} = :v1ResponseJson"
@@ -317,4 +385,5 @@ __all__ = [
     "build_v1_api_response",
     "extract_field_values",
     "finalize_v1_response",
+    "write_extract_method_response",
 ]

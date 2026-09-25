@@ -1,12 +1,12 @@
-_Run: 2026-09-25 16:58 UTC_
+_Run: 2026-09-25 19:29 UTC_
 
 
 ## synthetic-insurance-health-insurance-premium-scan.jpg
 
 **Durations**
 
-- bda: 19.48s extraction
-- llm: 2.211s extraction
+- bda: 21.05s extraction
+- llm: 1.98s extraction
 
 | Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | BDA Geometry | LLM Geometry | Geo Match |
 |---|---|---|---|---|---|---|---|---|

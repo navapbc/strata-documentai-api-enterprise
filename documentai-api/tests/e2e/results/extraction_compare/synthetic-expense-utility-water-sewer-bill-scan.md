@@ -1,12 +1,12 @@
-_Run: 2026-09-25 16:57 UTC_
+_Run: 2026-09-25 19:29 UTC_
 
 
 ## synthetic-expense-utility-water-sewer-bill-scan.jpg
 
 **Durations**
 
-- bda: 22.41s extraction
-- llm: 3.854s extraction
+- bda: 23.75s extraction
+- llm: 3.469s extraction
 
 | Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | BDA Geometry | LLM Geometry | Geo Match |
 |---|---|---|---|---|---|---|---|---|
@@ -18,8 +18,8 @@ _Run: 2026-09-25 16:57 UTC_
 | Dates.Bill_To_Date | - | 08/24/2026 | Aug 24, 2026 | 0.65 | 0.9800 | 0.288,0.345,0.086,0.010 | 0.242,0.344,0.132,0.009 | ❌ |
 | Dates.Billing_Date | - | 08/25/2026 | Aug 25, 2026 | 0.71 | 1.0000 | 0.824,0.074,0.095,0.012 | 0.824,0.074,0.095,0.012 | ✅ |
 | Dates.Due_Date | - | 09/15/2026 | Sep 15, 2026 | 0.72 | 1.0000 | 0.824,0.090,0.095,0.012 | 0.824,0.090,0.095,0.012 | ✅ |
-| Line_Items.Amount or Value | - | - | $14.45 | - | 1.0000 | - | 0.560,0.539,0.042,0.010 | ❌ |
-| Line_Items.LineItemDescription | - | - | Water Service Charge | - | 1.0000 | - | 0.078,0.537,0.131,0.011 | ❌ |
+| Line_Items.Amount or Value | - | - | - | - | N/A | - | - |  |
+| Line_Items.LineItemDescription | - | - | - | - | N/A | - | - |  |
 | Prev_Bal | - | 48.73 | 48.73 | 0.91 | 1.0000 | 0.431,0.173,0.045,0.011 | 0.431,0.173,0.045,0.011 | ✅ |
 | Prev_Meter_Reading | - | 23,010 | 23,010 | 0.73 | 1.0000 | 0.326,0.431,0.042,0.010 | 0.326,0.431,0.041,0.010 | 🟡 |
 | Provider Name | - | Harbor County Water Service | Harbor County Water Service | 0.89 | 1.0000 | 0.196,0.036,0.354,0.020 | 0.196,0.036,0.354,0.020 | ✅ |
@@ -30,4 +30,4 @@ _Run: 2026-09-25 16:57 UTC_
 | Service_Address.Zip_Code | - | 80538 | 80538 | 0.90 | 0.9800 | 0.793,0.207,0.042,0.009 | 0.793,0.207,0.042,0.009 | ✅ |
 | Tot_Amt | - | 64.86 | 64.86 | 0.90 | 1.0000 | 0.400,0.285,0.067,0.016 | 0.430,0.244,0.046,0.011 | ❌ |
 | Total_Current_Charges | - | 64.86 | 64.86 | 0.91 | 1.0000 | 0.430,0.244,0.046,0.011 | 0.430,0.244,0.046,0.011 | ✅ |
-| is_total_amount_greater_than_equal_to_current_charges | - | True | Yes | 0.89 | 1.0000 | 0.430,0.244,0.046,0.011 | 0.556,0.868,0.077,0.011 | ❌ |
+| is_total_amount_greater_than_equal_to_current_charges | - | True | Yes | 0.89 | N/A | 0.430,0.244,0.046,0.011 | - | ❌ |

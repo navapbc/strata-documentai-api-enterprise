@@ -8,7 +8,6 @@ from documentai_api.dtos.classification import ClassificationData
 from documentai_api.dtos.ddb import UpdateDdbRecord
 from documentai_api.dtos.extraction import ExtractionResult
 from documentai_api.dtos.processing import InternalApiResponse
-from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.response_codes import ResponseCodes
 
 _MODULE = "documentai_api.classifiers.document_classification"
@@ -70,7 +69,7 @@ def test_classify_functions(
     )
     mock_update = mocker.patch(f"{_MODULE}.update_ddb")
     mocker.patch(f"{_MODULE}.finalize_v1_response")
-    mocker.patch(f"{_MODULE}._is_compare", return_value=False)
+    mocker.patch(f"{_MODULE}.write_extract_method_response")
 
     args = ["test-file", data]
     if error_msg:
@@ -130,7 +129,7 @@ def test_classify_as_ai_consent_declined(mocker):
     )
     mock_update = mocker.patch(f"{_MODULE}.update_ddb")
     mocker.patch(f"{_MODULE}.finalize_v1_response")
-    mocker.patch(f"{_MODULE}._is_compare", return_value=False)
+    mocker.patch(f"{_MODULE}.write_extract_method_response")
 
     classification_util.classify_as_ai_consent_declined("test-file")
 
@@ -159,8 +158,8 @@ def test_classify_as_ai_consent_declined(mocker):
         ),
     ],
 )
-def test_classify_as_no_match_writes_compare_response_and_falls_through(function, status, mocker):
-    """Under compare mode the empty-response write is an addition; update_ddb must still run afterward."""
+def test_classify_as_no_match_writes_method_response_and_falls_through(function, status, mocker):
+    """Under compare mode the method-response write is an addition; update_ddb must still run afterward."""
     data = ClassificationData(matched_document_class="paystub")
     fake_response = InternalApiResponse(
         validation_passed=True,
@@ -171,21 +170,19 @@ def test_classify_as_no_match_writes_compare_response_and_falls_through(function
     )
     mocker.patch(f"{_MODULE}.get_internal_api_response", return_value=fake_response)
     mock_update = mocker.patch(f"{_MODULE}.update_ddb")
-    mocker.patch(f"{_MODULE}.finalize_v1_response")
-    mocker.patch(f"{_MODULE}._is_compare", return_value=True)
-    mock_write_empty = mocker.patch(f"{_MODULE}._write_compare_empty_response")
+    mock_finalize = mocker.patch(f"{_MODULE}.finalize_v1_response")
+    mock_write_method = mocker.patch(f"{_MODULE}.write_extract_method_response")
 
-    function("test-file", data)
+    function("test-file", data, extraction_method=ExtractMethod.BDA)
 
-    mock_write_empty.assert_called_once_with("test-file", status)
     mock_update.assert_called_once()
+    mock_finalize.assert_called_once()
+    mock_write_method.assert_called_once()
 
 
-def test_classify_extraction_result_compare_mode_falls_through_to_classify_as_success(mocker):
-    """Under compare mode _write_compare_v1_response is an addition; classify_as_success must still run."""
+def test_classify_extraction_result_passes_result_to_classify_as_success(mocker):
+    """classify_extraction_result passes extraction_result through to classify_as_success."""
     result = ExtractionResult(document_type="paystub")
-    mocker.patch(f"{_MODULE}.get_ddb_record", return_value={DocumentMetadata.IS_COMPARE: True})
-    mock_write_compare = mocker.patch(f"{_MODULE}._write_compare_v1_response")
     mocker.patch(
         f"{_MODULE}.ClassificationData.from_extraction_result",
         return_value=ClassificationData(matched_document_class="paystub"),
@@ -205,6 +202,5 @@ def test_classify_extraction_result_compare_mode_falls_through_to_classify_as_su
         tenant_id="tenant",
     )
 
-    mock_write_compare.assert_called_once()
-    mock_success.assert_called_once()
+    assert mock_success.call_args.kwargs["extraction_result"] is result
     assert response == {"jobStatus": "completed"}

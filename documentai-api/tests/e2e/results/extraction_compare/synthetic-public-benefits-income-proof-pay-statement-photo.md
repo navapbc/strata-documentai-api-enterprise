@@ -1,12 +1,12 @@
-_Run: 2026-09-25 16:58 UTC_
+_Run: 2026-09-25 19:30 UTC_
 
 
 ## synthetic-public-benefits-income-proof-pay-statement-photo.png
 
 **Durations**
 
-- bda: 23.66s extraction
-- llm: 11.64s extraction
+- bda: 23.11s extraction
+- llm: 15.291s extraction
 
 | Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | BDA Geometry | LLM Geometry | Geo Match |
 |---|---|---|---|---|---|---|---|---|
@@ -26,12 +26,12 @@ _Run: 2026-09-25 16:58 UTC_
 | EmployeeAddress.Line2 | - | - | - | 0.93 | N/A | - | - |  |
 | EmployeeAddress.State | - | MD | MD | 0.94 | 1.0000 | 0.354,0.238,0.020,0.010 | 0.236,0.133,0.023,0.011 | ❌ |
 | EmployeeAddress.ZipCode | - | 21213 | 21213 | 0.94 | 1.0000 | 0.379,0.238,0.035,0.010 | 0.379,0.238,0.035,0.010 | ✅ |
-| EmployeeName.FirstName | - | Jasmine | Jasmine | 0.93 | 1.0000 | 0.292,0.202,0.046,0.010 | 0.292,0.201,0.046,0.010 | 🟡 |
+| EmployeeName.FirstName | - | Jasmine | Jasmine | 0.92 | 1.0000 | 0.292,0.202,0.046,0.010 | 0.292,0.201,0.046,0.010 | 🟡 |
 | EmployeeName.LastName | - | Carter | Carter | 0.91 | 1.0000 | 0.341,0.202,0.035,0.010 | 0.341,0.202,0.035,0.010 | ✅ |
 | EmployeeName.MiddleName | - | - | - | 0.93 | N/A | - | - |  |
 | EmployeeName.SuffixName | - | - | - | 0.93 | N/A | - | - |  |
 | EmployeeNumber | - | 10482 | 10482 | 0.94 | 1.0000 | 0.292,0.261,0.035,0.010 | 0.292,0.261,0.035,0.010 | ✅ |
-| FederalFilingStatus | - | Married | Married | 0.72 | 1.0000 | 0.799,0.579,0.045,0.010 | 0.799,0.579,0.044,0.010 | 🟡 |
+| FederalFilingStatus | - | Married | Married | 0.71 | 1.0000 | 0.799,0.579,0.045,0.010 | 0.799,0.579,0.044,0.010 | 🟡 |
 | FederalTaxes.ItemDescription | - | - | Federal Income Tax | - | 1.0000 | - | 0.143,0.584,0.116,0.011 | ❌ |
 | FederalTaxes.Period | - | - | 186.11 | - | 1.0000 | - | 0.495,0.581,0.046,0.012 | ❌ |
 | FederalTaxes.YTD | - | - | 2287.59 | - | 1.0000 | - | 0.637,0.580,0.060,0.012 | ❌ |

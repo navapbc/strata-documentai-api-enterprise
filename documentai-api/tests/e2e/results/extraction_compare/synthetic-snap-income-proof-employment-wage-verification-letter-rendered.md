@@ -1,12 +1,12 @@
-_Run: 2026-09-25 17:00 UTC_
+_Run: 2026-09-25 19:31 UTC_
 
 
 ## synthetic-snap-income-proof-employment-wage-verification-letter-rendered.png
 
 **Durations**
 
-- bda: 16.59s extraction
-- llm: 1.032s extraction
+- bda: 18.15s extraction
+- llm: 1.799s extraction
 
 | Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | BDA Geometry | LLM Geometry | Geo Match |
 |---|---|---|---|---|---|---|---|---|

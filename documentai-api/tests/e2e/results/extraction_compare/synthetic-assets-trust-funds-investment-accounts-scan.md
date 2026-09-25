@@ -1,12 +1,12 @@
-_Run: 2026-09-25 16:54 UTC_
+_Run: 2026-09-25 19:26 UTC_
 
 
 ## synthetic-assets-trust-funds-investment-accounts-scan.jpg
 
 **Durations**
 
-- bda: 20.81s extraction
-- llm: 2.041s extraction
+- bda: 21.05s extraction
+- llm: 2.549s extraction
 
 | Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | BDA Geometry | LLM Geometry | Geo Match |
 |---|---|---|---|---|---|---|---|---|

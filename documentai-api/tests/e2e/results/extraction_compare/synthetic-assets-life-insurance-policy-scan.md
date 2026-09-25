@@ -1,12 +1,12 @@
-_Run: 2026-09-25 16:53 UTC_
+_Run: 2026-09-25 19:25 UTC_
 
 
 ## synthetic-assets-life-insurance-policy-scan.jpg
 
 **Durations**
 
-- bda: 22.83s extraction
-- llm: 5.207s extraction
+- bda: 25.15s extraction
+- llm: 2.399s extraction
 
 | Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | BDA Geometry | LLM Geometry | Geo Match |
 |---|---|---|---|---|---|---|---|---|
