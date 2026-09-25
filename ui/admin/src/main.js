@@ -40,6 +40,7 @@ import * as DocumentsView from "./views/documents/documents.js";
 import * as DocumentSearchView from "./views/document-search/document-search.js";
 import * as UsageView from "./views/usage/usage.js";
 import * as MetricsView from "./views/metrics/metrics.js";
+import * as HomeView from "./views/home/home.js";
 import * as LoginView from "./views/login/login.js";
 import * as Icons from "./utils/icons.js";
 
@@ -73,6 +74,7 @@ let _mainContent = null;
 
 // View registry: name -> { module, lazyLoad }
 const VIEWS = {
+  home: { module: HomeView },
   keys: { module: KeysView },
   users: { module: UsersView },
   tenants: { module: TenantsView },
@@ -200,11 +202,11 @@ function showDashboard(session) {
     app.querySelector("#mobile-menu-admin")?.classList.remove("hidden");
   }
 
-  // Restore view from hash, or default to documents on non-mobile
+  // Restore view from hash, or default to the home page
   const initialHash = location.hash.replace("#", "");
   const initialView = initialHash.split("/")[0];
   if (VIEWS[initialView]) activateNavItem(initialView);
-  else if (window.innerWidth <= 768) activateNavItem("documents");
+  else activateNavItem("home");
 
   // Preload blueprint schemas so extraction-rules view renders instantly
   SchemasService.getAllFields()
