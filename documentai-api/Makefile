@@ -40,6 +40,7 @@
 	test-e2e \
 	test-e2e-routing \
 	test-integration \
+	test-regression \
 	metrics-agg \
 	metrics-agg-last-n-days \
 	usage-report \
@@ -177,6 +178,9 @@ test-pip-audit: ## Run pip-audit dependency vulnerability scan
 
 test-integration: ## Run integration tests
 	$(PY_RUN_CMD) pytest -m "integration" $(args)
+
+test-regression: ## Re-run the document-type regression suite against canned BDA results (mocked AWS via moto)
+	$(PY_RUN_CMD) pytest -m "regression" $(args)
 
 test-e2e: .env.e2e
 test-e2e: ## Run e2e tests

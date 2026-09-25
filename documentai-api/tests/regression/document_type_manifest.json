@@ -1,0 +1,542 @@
+{
+    "//": [
+        "Manifest driving the document-type regression suite (tests/regression/).",
+        "One representative blueprint per infra/document-types/ category today.",
+        "Known coverage gaps: only one blueprint per category is tested (not the",
+        "full blueprint matrix), and there are no negative/adversarial documents.",
+        "",
+        "Each case simulates a canned Bedrock Data Automation (BDA) result for the",
+        "given blueprint/category and asserts our pipeline's classification,",
+        "extraction-rule, and response-code behavior against it end to end (mocked",
+        "AWS via moto; BDA itself cannot be moto-mocked, so its output is canned).",
+        "",
+        "document_class and fields (names, nesting, types) are taken from",
+        "documentai_api/config/blueprint_schemas.json (the preloaded, real BDA",
+        "blueprint schemas - see `make pull-blueprint-schemas`), not invented, so",
+        "the suite exercises the actual field shape BDA returns for each blueprint,",
+        "including nested/table fields (e.g. recipient_name.first_name) and",
+        "non-string types (e.g. payment_amount as a number).",
+        "",
+        "'fields' simulates the explainability_info BDA would return: a leaf is",
+        "{value, confidence[, type]}; anything else is a nested object and is",
+        "recursed into (see conftest.py::build_explainability_info). value \"\"",
+        "means BDA returned the field but with an empty value (as opposed to",
+        "omitting it). 'required_fields'/'optional_fields' use the same dotted",
+        "leaf names as the extracted field names (e.g. \"recipient_name.first_name\")",
+        "and are seeded into the extraction-rules table for the tenant before the",
+        "case runs. 'expected_missing_required_fields' is what the resulting DDB",
+        "record's missingRequiredFieldList should contain."
+    ],
+    "cases": [
+        {
+            "category": "account_statements",
+            "blueprint": "bank-statement",
+            "document_class": "Bank-Statement",
+            "fields": {
+                "account_holder_name": {
+                    "value": "Jane Smith",
+                    "confidence": 0.97
+                },
+                "account_number": {
+                    "value": "1234567890",
+                    "confidence": 0.96
+                },
+                "account_summary": {
+                    "summary_amount": {
+                        "value": "1500.00",
+                        "confidence": 0.95,
+                        "type": "number"
+                    }
+                }
+            },
+            "required_fields": [
+                "account_holder_name",
+                "account_number",
+                "account_summary.summary_amount"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": []
+        },
+        {
+            "category": "dependent_income",
+            "blueprint": "alimony-decree",
+            "document_class": "Alimony-Decree",
+            "fields": {
+                "payer_name": {
+                    "value": "John Doe",
+                    "confidence": 0.96
+                },
+                "recipient_name": {
+                    "first_name": {
+                        "value": "Jane",
+                        "confidence": 0.96
+                    },
+                    "last_name": {
+                        "value": "Doe",
+                        "confidence": 0.96
+                    }
+                },
+                "payment_amount": {
+                    "value": "800.00",
+                    "confidence": 0.95,
+                    "type": "number"
+                }
+            },
+            "required_fields": [
+                "payer_name",
+                "recipient_name.first_name",
+                "recipient_name.last_name",
+                "payment_amount"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": []
+        },
+        {
+            "category": "education",
+            "blueprint": "school-financial-aid-award",
+            "document_class": "Financial-Aid-Award",
+            "fields": {
+                "student_name": {
+                    "first_name": {
+                        "value": "Alex",
+                        "confidence": 0.97
+                    },
+                    "last_name": {
+                        "value": "Kim",
+                        "confidence": 0.97
+                    }
+                },
+                "total_aid_amount": {
+                    "value": "5000.00",
+                    "confidence": 0.95,
+                    "type": "number"
+                },
+                "academic_year": {
+                    "value": "2026-2027",
+                    "confidence": 0.94
+                }
+            },
+            "required_fields": [
+                "student_name.first_name",
+                "student_name.last_name",
+                "total_aid_amount",
+                "academic_year"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": []
+        },
+        {
+            "category": "employer_income",
+            "blueprint": "w2-form",
+            "document_class": "W2",
+            "notes": [
+                "Intentionally leaves employee_general_info.ssn empty to regression-test",
+                "that a required field BDA returns with an empty value is correctly",
+                "reported as missing, rather than silently passing."
+            ],
+            "fields": {
+                "employer_info": {
+                    "employer_name": {
+                        "value": "Acme Corp",
+                        "confidence": 0.97
+                    }
+                },
+                "employee_general_info": {
+                    "ssn": {
+                        "value": "",
+                        "confidence": 0.4
+                    }
+                },
+                "federal_wage_info": {
+                    "wages_tips_other_compensation": {
+                        "value": "50000.00",
+                        "confidence": 0.95,
+                        "type": "number"
+                    }
+                }
+            },
+            "required_fields": [
+                "employer_info.employer_name",
+                "employee_general_info.ssn",
+                "federal_wage_info.wages_tips_other_compensation"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": [
+                "employee_general_info.ssn"
+            ],
+            "expected_response_code": "101"
+        },
+        {
+            "category": "employment_records",
+            "blueprint": "employment-verification-letter",
+            "document_class": "Employment-Verification-Letter",
+            "fields": {
+                "employee_name": {
+                    "value": "Jane Smith",
+                    "confidence": 0.97
+                },
+                "employer_name": {
+                    "value": "Acme Corp",
+                    "confidence": 0.96
+                },
+                "employment_start_date": {
+                    "value": "2020-05-01",
+                    "confidence": 0.94
+                }
+            },
+            "required_fields": [
+                "employee_name",
+                "employer_name",
+                "employment_start_date"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": []
+        },
+        {
+            "category": "government_benefit_income",
+            "blueprint": "unemployment-insurance-claim",
+            "document_class": "Unemployment-Insurance-Claim-Form",
+            "fields": {
+                "claimant_name": {
+                    "first_name": {
+                        "value": "Jane",
+                        "confidence": 0.96
+                    },
+                    "last_name": {
+                        "value": "Smith",
+                        "confidence": 0.96
+                    }
+                },
+                "weekly_benefit_amount": {
+                    "value": "450.00",
+                    "confidence": 0.95,
+                    "type": "number"
+                }
+            },
+            "required_fields": [
+                "claimant_name.first_name",
+                "claimant_name.last_name",
+                "weekly_benefit_amount"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": []
+        },
+        {
+            "category": "identity",
+            "blueprint": "us-driver-license",
+            "document_class": "US-drivers-licenses",
+            "fields": {
+                "NAME_DETAILS": {
+                    "FIRST_NAME": {
+                        "value": "Jane",
+                        "confidence": 0.98
+                    },
+                    "LAST_NAME": {
+                        "value": "Smith",
+                        "confidence": 0.98
+                    }
+                },
+                "ID_NUMBER": {
+                    "value": "D1234567",
+                    "confidence": 0.97
+                },
+                "EXPIRATION_DATE": {
+                    "value": "2030-01-01",
+                    "confidence": 0.96
+                }
+            },
+            "required_fields": [
+                "NAME_DETAILS.FIRST_NAME",
+                "NAME_DETAILS.LAST_NAME",
+                "ID_NUMBER",
+                "EXPIRATION_DATE"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": []
+        },
+        {
+            "category": "insurance",
+            "blueprint": "insurance-company-letter",
+            "document_class": "Insurance-Company-Letter",
+            "fields": {
+                "insurance_company_name": {
+                    "value": "Acme Insurance",
+                    "confidence": 0.96
+                },
+                "policy_number": {
+                    "value": "POL-9988",
+                    "confidence": 0.95
+                },
+                "recipient_name": {
+                    "first_name": {
+                        "value": "Jane",
+                        "confidence": 0.96
+                    },
+                    "last_name": {
+                        "value": "Smith",
+                        "confidence": 0.96
+                    }
+                }
+            },
+            "required_fields": [
+                "insurance_company_name",
+                "policy_number",
+                "recipient_name.first_name",
+                "recipient_name.last_name"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": []
+        },
+        {
+            "category": "investment_and_royalty_income",
+            "blueprint": "ira-account-document",
+            "document_class": "IRA-Account-Document",
+            "fields": {
+                "account_holder_name": {
+                    "value": "Jane Smith",
+                    "confidence": 0.96
+                },
+                "account_balance": {
+                    "value": "12000.00",
+                    "confidence": 0.95
+                },
+                "financial_institution": {
+                    "value": "Acme Financial",
+                    "confidence": 0.94
+                }
+            },
+            "required_fields": [
+                "account_holder_name",
+                "account_balance",
+                "financial_institution"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": []
+        },
+        {
+            "category": "invoices",
+            "blueprint": "invoice",
+            "document_class": "Invoices",
+            "fields": {
+                "VENDORNAME": {
+                    "value": "Acme Corp",
+                    "confidence": 0.97
+                },
+                "TOTAL": {
+                    "value": "250.00",
+                    "confidence": 0.96,
+                    "type": "number"
+                },
+                "DATE": {
+                    "value": "2026-08-15",
+                    "confidence": 0.95
+                },
+                "SERVICES_TABLE": {
+                    "product name": {
+                        "value": "Widget",
+                        "confidence": 0.9
+                    },
+                    "amount": {
+                        "value": "250.00",
+                        "confidence": 0.9,
+                        "type": "number"
+                    }
+                }
+            },
+            "required_fields": [
+                "VENDORNAME",
+                "TOTAL",
+                "DATE"
+            ],
+            "optional_fields": [
+                "SERVICES_TABLE.product name",
+                "SERVICES_TABLE.amount"
+            ],
+            "expected_missing_required_fields": []
+        },
+        {
+            "category": "receipts",
+            "blueprint": "receipt",
+            "document_class": "Receipts",
+            "fields": {
+                "VENDORDETAILS": {
+                    "VENDORNAME": {
+                        "value": "Acme Store",
+                        "confidence": 0.96
+                    }
+                },
+                "PAYMENTDETAILS": {
+                    "TOTAL": {
+                        "value": "42.50",
+                        "confidence": 0.95,
+                        "type": "number"
+                    }
+                },
+                "RECEIPT_DATE": {
+                    "value": "2026-08-20",
+                    "confidence": 0.94
+                }
+            },
+            "required_fields": [
+                "VENDORDETAILS.VENDORNAME",
+                "PAYMENTDETAILS.TOTAL",
+                "RECEIPT_DATE"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": []
+        },
+        {
+            "category": "retirement_income",
+            "blueprint": "annuity-statement",
+            "document_class": "Annuity-Statement",
+            "fields": {
+                "payer_name": {
+                    "value": "Acme Annuities",
+                    "confidence": 0.96
+                },
+                "recipient_name": {
+                    "first_name": {
+                        "value": "Jane",
+                        "confidence": 0.96
+                    },
+                    "last_name": {
+                        "value": "Smith",
+                        "confidence": 0.96
+                    }
+                },
+                "payment_amount": {
+                    "value": "1200.00",
+                    "confidence": 0.95,
+                    "type": "number"
+                }
+            },
+            "required_fields": [
+                "payer_name",
+                "recipient_name.first_name",
+                "recipient_name.last_name",
+                "payment_amount"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": []
+        },
+        {
+            "category": "self_employment_income",
+            "blueprint": "1099-consolidated-summary",
+            "document_class": "1099-Consolidated-Summary-Statement",
+            "fields": {
+                "account_holder_name": {
+                    "value": "Jane Smith",
+                    "confidence": 0.96
+                },
+                "dividend_income": {
+                    "value": "1500.00",
+                    "confidence": 0.95
+                },
+                "interest_income": {
+                    "value": "200.00",
+                    "confidence": 0.94
+                }
+            },
+            "required_fields": [
+                "account_holder_name",
+                "dividend_income",
+                "interest_income"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": []
+        },
+        {
+            "category": "shelter",
+            "blueprint": "rent-lease-statement",
+            "document_class": "Rent-Lease-Statement",
+            "notes": [
+                "Intentionally leaves payment_details.total_monthly_payment empty to",
+                "regression-test the required-field-missing path for a second,",
+                "differently-shaped (nested) blueprint."
+            ],
+            "fields": {
+                "tenant_name": {
+                    "value": "Jane Smith",
+                    "confidence": 0.96
+                },
+                "payment_details": {
+                    "total_monthly_payment": {
+                        "value": "",
+                        "confidence": 0.3
+                    }
+                },
+                "lease_start_date": {
+                    "value": "2026-01-01",
+                    "confidence": 0.94
+                }
+            },
+            "required_fields": [
+                "tenant_name",
+                "payment_details.total_monthly_payment",
+                "lease_start_date"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": [
+                "payment_details.total_monthly_payment"
+            ],
+            "expected_response_code": "101"
+        },
+        {
+            "category": "expenses",
+            "blueprint": "electricity-bill",
+            "document_class": "Electricity-Bill",
+            "fields": {
+                "Account Number": {
+                    "value": "AC-12345",
+                    "confidence": 0.96,
+                    "type": "array"
+                },
+                "Total Balance Due": {
+                    "value": "120.00",
+                    "confidence": 0.95,
+                    "type": "number"
+                },
+                "Address": {
+                    "Service Address": {
+                        "value": "123 Main St",
+                        "confidence": 0.94
+                    }
+                }
+            },
+            "required_fields": [
+                "Account Number",
+                "Total Balance Due",
+                "Address.Service Address"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": []
+        },
+        {
+            "category": "assets",
+            "blueprint": "real-estate",
+            "document_class": "Real-Estate-Ownership-Document",
+            "fields": {
+                "owner_name": {
+                    "value": "Jane Smith",
+                    "confidence": 0.96
+                },
+                "assessed_value": {
+                    "value": "300000.00",
+                    "confidence": 0.95,
+                    "type": "number"
+                },
+                "property_address": {
+                    "value": "123 Main St",
+                    "confidence": 0.94
+                }
+            },
+            "required_fields": [
+                "owner_name",
+                "assessed_value",
+                "property_address"
+            ],
+            "optional_fields": [],
+            "expected_missing_required_fields": []
+        }
+    ]
+}
