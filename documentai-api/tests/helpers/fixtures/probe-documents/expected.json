@@ -1,0 +1,454 @@
+{
+  "//": [
+    "Known-failure (KF) probe catalog. Each case is enumerated by the issue it",
+    "covers - ids follow the tenant edge-case numbering (KF-<n>, letters when",
+    "one edge case has several failures). See README.md for the full KF table",
+    "and provenance.",
+    "Cases with an 'issue' assert the SPEC behavior and are deliberately RED",
+    "against a backend that still exhibits the 2026-07 observed behavior (no",
+    "xfail). 'observed' records that known behavior and is echoed in failure",
+    "messages so a known failure is distinguishable from new drift.",
+    "Cases with issue=null are green controls guarding correct behavior.",
+    "forbiddenResponseCodes is used where the tenant code table has no code",
+    "for the anomaly yet: the spec floor is 'must not validate clean (000)'.",
+    "e2e_enabled=false means the tenant ruled the edge case out of scope for",
+    "the API: the fixture and its spec stay committed for the record but the",
+    "case is not collected. Each disabled case records the decision and date",
+    "in its own comment block. See README.md 'Tenant triage'."
+  ],
+  "synthetic-probe-payslip-clean-scan.jpg": {
+    "//": [
+      "Control: the clean synthetic payslip scan that every blur probe derives",
+      "from. If this stops returning 000/Payslip, the environment itself has",
+      "regressed and the other probe results are not meaningful."
+    ],
+    "issue": null,
+    "e2e_enabled": true,
+    "category": null,
+    "content_type": "image/jpeg",
+    "allowedResponseCodes": ["000"],
+    "matchedDocumentClass": "Payslip"
+  },
+  "synthetic-probe-payslip-blur-gaussian-sigma2.5.jpeg": {
+    "//": [
+      "Control: mild real Gaussian blur (sigma 2.5), still readable. Spec: pass",
+      "(000) or trip the confidence gate (105) - which side of the tenant",
+      "threshold it lands on is legitimately the threshold's call, and it is",
+      "empirically nondeterministic near the boundary (sigma 3.5 returned 105",
+      "while sigma 3.6 returned 000 on the same day). 104 also acceptable now",
+      "that Textract blur detection exists."
+    ],
+    "issue": null,
+    "e2e_enabled": true,
+    "category": null,
+    "content_type": "image/jpeg",
+    "allowedResponseCodes": ["000", "105", "104"],
+    "observed": "000 (2026-07-06)"
+  },
+  "synthetic-probe-payslip-blur-gaussian-sigma3.5.jpeg": {
+    "//": [
+      "Control: heavier Gaussian blur (sigma 3.5), degraded but classifiable.",
+      "Spec: 000/105 boundary call - see sigma2.5 note; 104 also acceptable."
+    ],
+    "issue": null,
+    "e2e_enabled": true,
+    "category": null,
+    "content_type": "image/jpeg",
+    "allowedResponseCodes": ["000", "105", "104"],
+    "observed": "105 (2026-07-06)"
+  },
+  "synthetic-probe-payslip-blur-motion-15px.jpeg": {
+    "//": [
+      "Control: horizontal motion blur, 15px kernel (simulated camera shake),",
+      "degraded but classifiable. Spec: 000/105 boundary call, 104 acceptable."
+    ],
+    "issue": null,
+    "e2e_enabled": true,
+    "category": null,
+    "content_type": "image/jpeg",
+    "allowedResponseCodes": ["000", "105", "104"],
+    "observed": "105 (2026-07-06)"
+  },
+  "synthetic-probe-payslip-blur-low-dpi.jpeg": {
+    "//": [
+      "Control: 200px thumbnail upscaled 8x - soft giant pixels, very low",
+      "effective DPI, but the content survives. Spec: 000 or 105. 104 added",
+      "2026-07-13: the newly-live Textract blur gate claims this capture (104,",
+      "jobStatus not_supported, jobId ed115ab5) - a legitimate boundary call",
+      "consistent with the sigma2.5/3.5/motion controls."
+    ],
+    "issue": null,
+    "e2e_enabled": true,
+    "category": "income",
+    "content_type": "image/jpeg",
+    "allowedResponseCodes": ["000", "105", "104"],
+    "observed": "104 (2026-07-13, blur gate live); 000 twice (2026-07-06)"
+  },
+  "synthetic-probe-pdf-mixed-pages.pdf": {
+    "//": [
+      "Control: two-page PDF, page 1 sharp payslip, page 2 the same payslip",
+      "Gaussian-blurred (sigma 4). Exercises the PDF ingestion path. A",
+      "multi-page PDF is a legitimate single document: spec and observed agree",
+      "on 000 (105 accepted since page 2 sits in the confidence boundary band)."
+    ],
+    "issue": null,
+    "e2e_enabled": true,
+    "category": "income",
+    "content_type": "application/pdf",
+    "allowedResponseCodes": ["000", "105"],
+    "observed": "000 / Payslip (2026-07-06)"
+  },
+  "synthetic-probe-payslip-blur-gaussian-sigma6.jpeg": {
+    "//": [
+      "KF-1a: extreme blur crashes the pipeline. Near-total Gaussian blur",
+      "(sigma 6): unreadable and unclassifiable. Spec: a graceful 104",
+      "BLURRY_DOCUMENT_DETECTED - never an HTTP 5xx (KF-1c)."
+    ],
+    "issue": "KF-1a",
+    "e2e_enabled": true,
+    "category": null,
+    "content_type": "image/jpeg",
+    "allowedResponseCodes": ["104"],
+    "observed": "104 - PASSES since the 2026-07-13 e2e run (blur gate live); previously job crashed with HTTP 500 'Failed to retrieve results' (twice, incl. after service recovery)"
+  },
+  "synthetic-probe-gray-page.jpeg": {
+    "//": [
+      "KF-1b: content-free page crashes the pipeline. Uniform gray page with",
+      "no document content at all. Spec: 103 NO_DOCUMENT_DETECTED - never an",
+      "HTTP 5xx (KF-1c)."
+    ],
+    "issue": "KF-1b",
+    "e2e_enabled": true,
+    "category": null,
+    "content_type": "image/jpeg",
+    "allowedResponseCodes": ["103"],
+    "observed": "103 - PASSES since the 2026-07-13 e2e run (no-document gate live); previously HTTP 500 'Failed to retrieve results', reproduced after service recovery"
+  },
+  "synthetic-probe-password-protected.pdf": {
+    "//": [
+      "KF-11: encrypted PDF hangs forever. Spec: fast 106 PASSWORD_PROTECTED.",
+      "timeoutSeconds is kept short so the known hang does not stall the suite -",
+      "every completing probe finished well within 60s. xfail (the suite's only",
+      "one): the 106 gate fix is scheduled but not prioritized. The xfail is",
+      "honored ONLY when the run reproduces the recorded hang signature (no",
+      "terminal state, jobStatus stuck in xfailWhenHungInStatus); any other",
+      "outcome - a terminal 000, a 5xx, a failed upload - is NEW drift and",
+      "stays plain red. When the 106 gate lands the case passes: drop the two",
+      "xfail keys then. Fixture verified genuinely user-password encrypted",
+      "(pypdf decrypt('') = NOT_DECRYPTED), not owner-password-only, so the",
+      "gate is really exercised (audited 2026-08-13).",
+      "NOTE: if the budget below is ever suspected of masking a slow-but-live",
+      "106 gate, re-run once with timeoutSeconds raised before concluding the",
+      "gate is absent."
+    ],
+    "issue": "KF-11",
+    "e2e_enabled": true,
+    "xfail": "106 PASSWORD_PROTECTED gate not implemented; fix scheduled for a future sprint",
+    "xfailWhenHungInStatus": "processing",
+    "category": null,
+    "content_type": "application/pdf",
+    "allowedResponseCodes": ["106"],
+    "timeoutSeconds": 60,
+    "observed": "stuck in jobStatus 'processing' indefinitely (40+ min, twice, incl. after service recovery); reconfirmed 2026-07-13 - no terminal state within the 60s budget, 106 never fired (jobId bfe652bb)"
+  },
+  "synthetic-probe-payslip-blur-focus-miss.jpeg": {
+    "//": [
+      "KF-1d: blur gate never fires. Model-rendered focus miss: background",
+      "tack sharp, entire document page out of focus with unreadable text. The",
+      "clearest 'a human would call this blurry' asset in the set. Spec: 104."
+    ],
+    "issue": "KF-1d",
+    "e2e_enabled": true,
+    "category": "income",
+    "content_type": "image/jpeg",
+    "allowedResponseCodes": ["104"],
+    "observed": "104 - PASSES since the 2026-07-13 e2e run (blur gate live); previously 000 / Payslip, 104 never fired for any of the 34 probes in synthetic-doc-generator's blur hunt"
+  },
+  "synthetic-probe-payslip-missing-fields.jpeg": {
+    "//": [
+      "KF-8a + KF-8b + KF-8c: missing-required-fields gate cannot fire, and",
+      "absent fields are hallucinated or reported as confident blanks. Payslip",
+      "generated with NO YTD column and NO pay-period range. Spec: 101",
+      "MISSING_FIELDS with the absent fields enumerated in",
+      "missingRequiredFieldList, and no fabricated values for them (KF-8b: BDA",
+      "invented PayPeriodStartDate/EndDate at 0.05/0.04 confidence with no",
+      "bounding box; KF-8c: YTD fields came back as empty strings at 0.93-0.94",
+      "confidence)."
+    ],
+    "issue": "KF-8a",
+    "e2e_enabled": true,
+    "category": "income",
+    "content_type": "image/jpeg",
+    "requiredFields": ["PayPeriodStartDate", "PayPeriodEndDate", "YTDGrossPay", "YTDNetPay"],
+    "allowedResponseCodes": ["101"],
+    "missingRequiredFieldListContains": [
+      "YTDGrossPay",
+      "YTDNetPay",
+      "PayPeriodStartDate",
+      "PayPeriodEndDate"
+    ],
+    "emptyFields": ["PayPeriodStartDate", "PayPeriodEndDate"],
+    "observed": "000, missingRequiredFieldList null; PayPeriodStartDate/EndDate hallucinated as 2026-06-30/2026-07-13 at 0.05/0.04 confidence; YTD fields empty at 0.93-0.94 confidence (2026-07-13, jobId 7509bfda)"
+  },
+  "synthetic-probe-chimera-w2-title-bank-body.jpeg": {
+    "//": [
+      "KF-5: miscategorization gate never fires. Chimera: 'Form W-2' banner",
+      "over a body that is 100% bank statement, declared category=income.",
+      "Spec: 102 MISCATEGORIZED (per PROBE-102-REPORT's re-validation list).",
+      "DISABLED 2026-07-30: the tenant ruled document type mismatches (edge",
+      "case 5) out of scope for the API. Last observed still 000 on 2026-07-30",
+      "(jobId 86cc602f). NOTE: the declared-category leg of KF-5",
+      "(test_miscategorized_declared_category) turned GREEN on 2026-07-30 and is",
+      "deliberately kept enabled as a regression guard - only the content-vs-",
+      "layout chimera legs are disabled here."
+    ],
+    "issue": "KF-5",
+    "e2e_enabled": false,
+    "category": "income",
+    "content_type": "image/jpeg",
+    "allowedResponseCodes": ["102"],
+    "observed": "000 / Bank-Statement across 3 submissions - classification is content-driven and the declared-category check never runs"
+  },
+  "synthetic-probe-chimera-payslip-title-receipt-body.jpeg": {
+    "//": [
+      "KF-5: chimera: 'PAYSLIP / PAY STATEMENT' header over a 100%",
+      "grocery-receipt body, declared category=income. Spec: 102.",
+      "DISABLED 2026-07-30: edge case 5 out of scope (see the w2-title-bank-body",
+      "case for the full decision). Last observed still 000 on 2026-07-30 (jobId",
+      "a25bc672) despite the declared-category check going live the same day."
+    ],
+    "issue": "KF-5",
+    "e2e_enabled": false,
+    "category": "income",
+    "content_type": "image/jpeg",
+    "allowedResponseCodes": ["102"],
+    "observed": "000 / Receipts across 3 submissions"
+  },
+  "synthetic-probe-chimera-receipt-title-payslip-body.jpeg": {
+    "//": [
+      "KF-5: chimera: thermal-receipt layout whose line items are payroll",
+      "content. Spec: 102 - the layout/content contradiction should be flagged.",
+      "DISABLED 2026-07-30: edge case 5 out of scope (see the w2-title-bank-body",
+      "case for the full decision). Last observed still 000 on 2026-07-30 (jobId",
+      "6fd02b87)."
+    ],
+    "issue": "KF-5",
+    "e2e_enabled": false,
+    "category": "income",
+    "content_type": "image/jpeg",
+    "allowedResponseCodes": ["102"],
+    "observed": "000 / Payslip across 3 submissions"
+  },
+  "synthetic-probe-two-docs-one-page.jpeg": {
+    "//": [
+      "KF-2a: multiple-documents gate never fires. Two different documents",
+      "(payslip + W-2) scanned two-up on one page. Spec: 400",
+      "MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE."
+    ],
+    "issue": "KF-2a",
+    "e2e_enabled": true,
+    "category": null,
+    "content_type": "image/jpeg",
+    "allowedResponseCodes": ["400"],
+    "observed": "000 / Payslip - the W-2 half is silently ignored"
+  },
+  "synthetic-probe-payslip-faint-fields.jpg": {
+    "//": [
+      "KF-7: average field confidence does not protect against individual fields",
+      "with extremely low confidence. Payslip with localized faint / smudged",
+      "fields: individual fields populated at 0.06-0.41 confidence while",
+      "the average stays above the tenant floor. Disabled 2026-08-14: decided",
+      "out of scope for now, may revisit in the future for case management purposes."
+    ],
+    "issue": "KF-7",
+    "e2e_enabled": false,
+    "category": "income",
+    "content_type": "image/jpeg",
+    "requiredFields": ["YTDGrossPay", "YTDNetPay"],
+    "allowedResponseCodes": ["105"],
+    "observed": "000 / Payslip with e.g. EmployeeAddress.Line2 at 0.06, CompanyAddress.Line1 at 0.15 confidence - only the average of non-empty fields is checked (2026-07-06, jobId 1d344370)"
+  },
+  "synthetic-probe-receipt-grocery.jpg": {
+    "//": [
+      "KF-2b: out-of-scope document type accepted instead of rejected. Grocery",
+      "store receipt declared as category=income. Spec: 102 MISCATEGORIZED - a",
+      "point-of-sale receipt is not income evidence for this tenant."
+    ],
+    "issue": "KF-2b",
+    "e2e_enabled": true,
+    "category": "income",
+    "content_type": "image/jpeg",
+    "allowedResponseCodes": ["102"],
+    "observed": "000 / Receipts - accepted, not rejected (list item 02 + cat-probe-receipt-as-income)"
+  },
+  "synthetic-probe-payslip-blur-gaussian-sigma4.jpeg": {
+    "//": [
+      "KF-1e: degradation causes silent misclassification. Gaussian sigma 4:",
+      "readable enough to process but classified as the WRONG type with no",
+      "flag. Spec: 104 or 105 - a document this degraded must not validate",
+      "clean, let alone as a different document class."
+    ],
+    "issue": "KF-1e",
+    "e2e_enabled": true,
+    "category": null,
+    "content_type": "image/jpeg",
+    "allowedResponseCodes": ["104", "105"],
+    "observed": "gated - PASSES since the 2026-07-13 e2e run (code within {104,105}); previously 000 / Receipts - payslip misclassified as a receipt with no classification-confidence gate (the low-res variant also misclassified as Receipts with garbage date 17/04/2006)"
+  },
+  "synthetic-probe-payslip-tampered.jpg": {
+    "//": [
+      "KF-3: tampered document accepted clean. Payslip scan with overwritten",
+      "gross/net digits (mismatched font, correction-fluid rectangles,",
+      "hand-rewritten date). No tenant response code exists for tampering yet,",
+      "so the spec floor is: must NOT validate clean with 000.",
+      "DISABLED 2026-07-30: the tenant ruled tampered documents (edge case 3)",
+      "out of scope for the API. Last observed still 000 on 2026-07-30 (jobId",
+      "15c7db5a). Re-enable if document authenticity comes back into scope."
+    ],
+    "issue": "KF-3",
+    "e2e_enabled": false,
+    "category": "income",
+    "content_type": "image/jpeg",
+    "forbiddenResponseCodes": ["000"],
+    "observed": "000 / Payslip - overwritten amounts (gross 2323.50) extracted cleanly, no flag (list item 03)"
+  },
+  "synthetic-probe-letter-fabricated.jpg": {
+    "//": [
+      "KF-4: fabricated document accepted. Home-made employer letter (clipart",
+      "logo, typed 'signature', round numbers). No authenticity code exists",
+      "yet: spec floor is must NOT validate clean with 000.",
+      "DISABLED 2026-07-30: the tenant ruled fabricated documents (edge case 4)",
+      "out of scope for the API. Last observed still 000 on 2026-07-30 (jobId",
+      "eac84c4c). Re-enable if document authenticity comes back into scope."
+    ],
+    "issue": "KF-4",
+    "e2e_enabled": false,
+    "category": "income",
+    "content_type": "image/jpeg",
+    "forbiddenResponseCodes": ["000"],
+    "observed": "000 / Employment-Verification-Letter, 7/8 fields extracted, no authenticity flag (list item 04)"
+  },
+  "synthetic-probe-payslip-name-discrepancy.jpg": {
+    "//": [
+      "KF-6: name discrepancy undetected. Payslip header 'Jordan A. Rivera'",
+      "vs pay-line 'Jordyn Riviera'. No business-rule code exists yet: spec",
+      "floor is must NOT validate clean with 000.",
+      "DISABLED 2026-07-30: name discrepancies (edge case 6) ruled out of scope.",
+      "This one did NOT come from the tenant's 2026-07-30 Slack triage, which",
+      "did not mention edge case 6 either way - it was decided directly in the",
+      "follow-up. Last observed still 000 on 2026-07-30 (jobId a4b84d63)."
+    ],
+    "issue": "KF-6",
+    "e2e_enabled": false,
+    "category": "income",
+    "content_type": "image/jpeg",
+    "forbiddenResponseCodes": ["000"],
+    "observed": "000 - only 'Jordan A. Rivera' surfaced, the variant never flagged (list item 06)"
+  },
+  "synthetic-probe-payslip-stale-income.jpg": {
+    "//": [
+      "KF-14: income outside the eligibility window not flagged. Payslip with",
+      "2023 pay dates. Spec floor: must NOT validate clean with 000.",
+      "DISABLED 2026-07-30: the tenant ruled the date-validation cases (13, 14,",
+      "15) out of scope for the API. Last observed still 000 on 2026-07-30",
+      "(jobId c143e381)."
+    ],
+    "issue": "KF-14",
+    "e2e_enabled": false,
+    "category": "income",
+    "content_type": "image/jpeg",
+    "forbiddenResponseCodes": ["000"],
+    "observed": "000 - 2023 dates extracted accurately, no staleness flag (list item 14)"
+  },
+  "synthetic-probe-payslip-future-dated.jpg": {
+    "//": [
+      "KF-15: future-dated document not flagged. Payslip with PayDate",
+      "2026-11-06 (months in the future). Spec floor: must NOT validate clean",
+      "with 000.",
+      "DISABLED 2026-07-30: the tenant ruled the date-validation cases (13, 14,",
+      "15) out of scope for the API. Last observed still 000 on 2026-07-30",
+      "(jobId 65729f3e)."
+    ],
+    "issue": "KF-15",
+    "e2e_enabled": false,
+    "category": "income",
+    "content_type": "image/jpeg",
+    "forbiddenResponseCodes": ["000"],
+    "observed": "000 - future PayDate extracted, no future-date flag (list item 15)"
+  },
+  "synthetic-probe-payslip-implausible-employer.jpg": {
+    "//": [
+      "KF-16: implausible employer not flagged. Payslip with employer at",
+      "'P.O. Box 0000', ZIP '00000', city 'Nowhere'. Spec floor: must NOT",
+      "validate clean with 000.",
+      "DISABLED 2026-07-30: the tenant ruled invalid employer (edge case 16) out",
+      "of scope for the API. Last observed still 000 on 2026-07-30 (jobId",
+      "adabcb17)."
+    ],
+    "issue": "KF-16",
+    "e2e_enabled": false,
+    "category": "income",
+    "content_type": "image/jpeg",
+    "forbiddenResponseCodes": ["000"],
+    "observed": "000 - placeholder address extracted verbatim, no plausibility check (list item 16)"
+  },
+  "synthetic-probe-1040-two-pages.pdf": {
+    "//": [
+      "KF-9: multi-page extraction regression guard (PASSES today). Genuine",
+      "two-page 2025 Form 1040 (Rodriguez household); the asserted fields only",
+      "exist on page 2, so this fails if extraction ever becomes",
+      "page-1-dominant. The stronger 'conflicting pages' probe was",
+      "inconclusive (every schema field also appears on page 1), so this",
+      "encodes the verified page-2 contract instead of a red spec test."
+    ],
+    "issue": "KF-9",
+    "e2e_enabled": true,
+    "category": "income",
+    "content_type": "application/pdf",
+    "allowedResponseCodes": ["000"],
+    "matchedDocumentClass": "Form-1040",
+    "fieldEquals": {
+      "total_refund": 2977,
+      "is_signed": true
+    },
+    "observed": "DRIFT: 2026-07-13 e2e run returned 000 / Form-1040 but total_refund and is_signed did NOT match the page-2 values (jobId e1c77357), after the same fixture passed earlier that day (000 / Form-1040, total_refund 2977, is_signed true, jobId 1674a5ba) - page-2 extraction is nondeterministic or regressed"
+  },
+  "synthetic-probe-payslip-fiscal-year-ytd.jpeg": {
+    "//": [
+      "KF-13: fiscal-vs-calendar-year reporting difference not flagged.",
+      "Payslip whose YTD column is FISCAL-year-to-date: 'Fiscal Year 2027:",
+      "July 1, 2026 - June 30, 2027' note, pay period July 1-10 2026 is the",
+      "first period so FYTD equals the current period despite a 2019 hire",
+      "date. A consumer reading YTD as calendar-year-to-date underestimates",
+      "annual income by an order of magnitude. No tenant code exists for",
+      "reporting-basis anomalies: spec floor is must NOT validate clean with",
+      "000.",
+      "DISABLED 2026-07-30: the tenant grouped this with the date-validation",
+      "cases (13, 14, 15) and ruled them out of scope for the API. Last observed",
+      "still 000 on 2026-07-30 (jobId 17c6e344)."
+    ],
+    "issue": "KF-13",
+    "e2e_enabled": false,
+    "category": "income",
+    "content_type": "image/jpeg",
+    "forbiddenResponseCodes": ["000"],
+    "observed": "000 - fiscal-year FYTD figures accepted clean, no reporting-basis flag (2026-07-13, jobId cd2dd049)"
+  },
+  "synthetic-probe-payslip-spanish.jpg": {
+    "//": [
+      "KF-17: multi-language document. Bilingual Spanish/English payslip,",
+      "phone photo, Maryland. The tenant serves Spanish-speaking applicants:",
+      "spec is graceful correct handling - classify as Payslip and extract,",
+      "105 tolerated for phone-photo capture confidence - never a crash, 002,",
+      "or misclassification. Fixture from synthetic-doc-generator",
+      "out/from-existing/17-multi-language."
+    ],
+    "issue": "KF-17",
+    "e2e_enabled": true,
+    "category": "income",
+    "content_type": "image/jpeg",
+    "allowedResponseCodes": ["000", "105"],
+    "matchedDocumentClass": "Payslip",
+    "observed": "PASSES - classified Payslip with responseCode within {000,105} (2026-07-13 e2e run); green regression guard"
+  }
+}
