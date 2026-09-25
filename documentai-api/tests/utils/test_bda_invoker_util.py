@@ -257,8 +257,8 @@ def test_resolve_project_arn_falls_back_to_default_when_no_category():
         assert used_category is False
 
 
-def test_resolve_project_arn_raises_when_no_category_and_no_default_configured():
-    """Raises when category is None and no default project (bda_project_arn) is configured."""
+def test_resolve_project_arn_returns_none_when_no_category_and_no_default_configured():
+    """Returns (None, False) when category is None and no default project is configured."""
     prefix = "arn:aws:bedrock:us-east-1:123:data-automation-project"
     with (
         patch.object(bda_invoker_util, "_project_arns_cache", None),
@@ -268,5 +268,25 @@ def test_resolve_project_arn_raises_when_no_category_and_no_default_configured()
             "employer_income": f"{prefix}/emp-arn",
         }
         mock_config.return_value.bda_project_arn = None
+        result, used_category = bda_invoker_util.resolve_project_arn(None)
+        assert result is None
+        assert used_category is False
+
+
+def test_invoke_bedrock_data_automation_raises_when_no_project_resolved():
+    """Raises when resolve_project_arn returns None (no category, no default).
+
+    Defensive guard for direct callers that skip the pre-check - the pipeline
+    (document_processor/main.py) checks resolve_project_arn's return value
+    upfront and never reaches this call in that case.
+    """
+    with (
+        patch.object(bda_invoker_util, "_project_arns_cache", None),
+        patch("documentai_api.utils.bda_invoker.get_env_config") as mock_config,
+    ):
+        mock_config.return_value.get_bda_project_arns.return_value = {}
+        mock_config.return_value.bda_project_arn = None
         with pytest.raises(ValueError, match="No preclassification category matched"):
-            bda_invoker_util.resolve_project_arn(None)
+            bda_invoker_util.invoke_bedrock_data_automation(
+                "test-bucket", "test.pdf", "test-tenant-id", "test.pdf"
+            )
