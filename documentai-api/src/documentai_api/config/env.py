@@ -6,7 +6,6 @@ from functools import lru_cache
 import boto3
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from documentai_api.config.constants import BDA_PROJECT_KEY_ALL
 from documentai_api.config.env_var_names_generated import EnvVarNames
 
 
@@ -40,7 +39,6 @@ class EnvConfig(PydanticBaseEnvConfig):
     # BDA project ARNs (per preclassification category)
     # Resolved dynamically from PreclassificationCategory rather than hand-maintained.
     bda_project_arn_prefix: str | None = None
-    bda_project_arn_all: str | None = None
 
     # Cognito
     cognito_user_pool_id: str | None = None
@@ -82,7 +80,14 @@ class EnvConfig(PydanticBaseEnvConfig):
     # Accessor methods
     # =========================================================================
     def get_bda_project_arns(self) -> dict[str, str]:
-        """Return a mapping of category slug -> project ARN for all configured categories."""
+        """Return a mapping of category slug -> project ARN for all configured categories.
+
+        There is no catch-all/default project: every PreclassificationCategory
+        without a matching env var is simply omitted. bda_project_arn (if set)
+        is used as a fallback for any category missing its own
+        BDA_PROJECT_ID_{CATEGORY} - a local-dev convenience for testing against
+        a single BDA project instead of standing up all per-category projects.
+        """
         from documentai_api.config.constants_preclassification_category_generated import (
             PreclassificationCategory,
         )
@@ -93,10 +98,8 @@ class EnvConfig(PydanticBaseEnvConfig):
             project_id = os.getenv(f"BDA_PROJECT_ID_{category.upper()}")
             if project_id:
                 arns[category.value] = f"{prefix}/{project_id}" if prefix else project_id
-        if self.bda_project_arn_all:
-            arns[BDA_PROJECT_KEY_ALL] = self.bda_project_arn_all
-        elif self.bda_project_arn:
-            arns[BDA_PROJECT_KEY_ALL] = self.bda_project_arn
+            elif self.bda_project_arn:
+                arns[category.value] = self.bda_project_arn
 
         return arns
 
@@ -161,15 +164,6 @@ class EnvConfig(PydanticBaseEnvConfig):
     @property
     def get_bda_profile_arn(self) -> str:
         return self._require(self.bda_profile_arn, EnvVarNames.BDA_PROFILE_ARN)
-
-    @property
-    def get_bda_project_arn_all(self) -> str:
-        return self._require(
-            self.bda_project_arn_all or self.bda_project_arn,
-            EnvVarNames.BDA_PROJECT_ARN_ALL
-            if self.bda_project_arn_all
-            else EnvVarNames.BDA_PROJECT_ARN,
-        )
 
 
 class AppConfig(PydanticBaseEnvConfig):

@@ -3,7 +3,6 @@
 Async approach: POST starts the test, GET polls for results.
 """
 
-import os
 import uuid
 from typing import Annotated, Any
 
@@ -83,23 +82,18 @@ async def start_blueprint_test(
 
     # Invoke BDA with category-specific project
     try:
-        import json as json_mod
-
         bda_runtime = AWSClientFactory.get_bda_runtime_client()
         output_location = get_env_config().get_output_location.replace("s3://", "")
 
-        # Look up project ARN for the category
-        project_arns_json = os.environ.get("BDA_PROJECT_ARNS")
-        if project_arns_json:
-            project_arns = json_mod.loads(project_arns_json)
-            bda_project_arn = project_arns.get(document_category)
-            if not bda_project_arn:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Unknown document category: {document_category}",
-                )
-        else:
-            bda_project_arn = get_env_config().get_bda_project_arn_all
+        # Look up project ARN for the category - there is no default/catch-all
+        # project, so an unrecognized category is rejected outright.
+        project_arns = get_env_config().get_bda_project_arns()
+        bda_project_arn = project_arns.get(document_category)
+        if not bda_project_arn:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unknown document category: {document_category}",
+            )
 
         bda_profile_arn = get_env_config().get_bda_profile_arn
 

@@ -6,7 +6,8 @@ Environment variables are set at deploy time via Terraform. Unlike [feature flag
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `BDA_PROJECT_ARN_ALL` | Yes | - | ARN of the default BDA project used when no per-category project is configured. |
+| `BDA_PROJECT_ID_{CATEGORY}` | Yes (one per category) | - | BDA project ID for a preclassification category (e.g. `BDA_PROJECT_ID_IDENTITY`, `BDA_PROJECT_ID_INCOME`). Injected automatically per parent category in `infra/document-types/`. Every category must have one configured - there is no default/catch-all project; a document whose category has none configured fails BDA invocation. |
+| `BDA_PROJECT_ARN_PREFIX` | Yes | - | Common ARN prefix combined with each `BDA_PROJECT_ID_{CATEGORY}` to build the full project ARN. |
 | `BDA_PROFILE_ARN` | Yes | - | ARN of the BDA output profile. |
 | `BDA_REGION` | No | `us-east-1` | AWS region where BDA is invoked. |
 | `MAX_BDA_INVOKE_RETRY_ATTEMPTS` | No | `3` | Maximum retries on BDA invocation failures. |
