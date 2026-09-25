@@ -187,19 +187,12 @@
   },
   "happy-path/synthetic-assets-trust-funds-investment-accounts-render-spanish.png": {
     "//": [
-      "Flaky under preclassification-based-routing (permanently enabled in dev): re-tested",
-      "11x total. Preclassification text always identifies a trust/fideicomiso document, but",
-      "the category mapping is non-deterministic - 7/11 runs mapped to an 'account_statements'-",
-      "like category (routes to the account_statements project -> matches generic",
-      "'Bank-Statement'), 4/11 mapped to an 'investment_and_royalty_income'-like category",
-      "(routes to that project -> matches the custom 'Investment-Account-Statement'",
-      "blueprint). Disabling rather than asserting either value. Likely needs either sharper",
-      "category-mapping keywords or regenerating this doc with clearer investment-account-",
-      "specific language to stop it drifting toward the bank-statement bucket."
+      "Verified live. Routes to the 'assets' per-category project and matches the custom",
+      "'Trust-Fund-Statement' blueprint directly."
     ],
-    "bdaMatchedDocumentClass": "Investment-Account-Statement",
+    "bdaMatchedDocumentClass": "Trust-Fund-Statement",
     "content_type": "image/png",
-    "e2e_enabled": false,
+    "e2e_enabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
@@ -285,21 +278,16 @@
   },
   "happy-path/synthetic-expense-burial-rendered-spanish.jpg": {
     "//": [
-      "Genuinely non-deterministic: preclassification of this Spanish-language burial",
-      "expenses statement sometimes doesn't match any known category (falls back to the",
-      "'all' project, which lacks the custom 'Burial' blueprint, matches the generic",
-      "public 'Invoices' blueprint at low confidence - 105) and sometimes matches no",
-      "blueprint at all (002). Observed flipping between the two outcomes across",
-      "consecutive live runs on the same day. Marking e2e_enabled: false to avoid",
-      "flaky assertions; revisit if a more deterministic fixture is found."
+      "Verified live (2x, consistent). Routes to the 'expenses' per-category project and",
+      "matches the custom 'Burial' blueprint directly."
     ],
-    "bdaMatchedDocumentClass": "Invoices",
+    "bdaMatchedDocumentClass": "Burial",
     "content_type": "image/jpeg",
-    "e2e_enabled": false,
+    "e2e_enabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "105"
+    "responseCode": "000"
   },
   "happy-path/synthetic-expense-burial-scan-corner-torn.jpg": {
     "//": [
@@ -531,17 +519,13 @@
   },
   "happy-path/synthetic-insurance-health-insurance-premium-render-spanish.png": {
     "//": [
-      "Genuinely non-deterministic (confirmed via broader live sampling than the",
-      "original 2x check): routes to 'insurance' and matches",
-      "'Health-Insurance-Premium-Statement' (000) less than half the time, but also",
-      "falls back to the 'all' project's generic 'Invoices' blueprint or finds no",
-      "match at all (002) the rest of the time. Previously marked re-enabled after",
-      "only 2 consistent live checks; a larger sample (~17 runs) shows roughly a 3-way",
-      "split. Marking e2e_enabled: false again."
+      "Verified live (2x, consistent). Routes to the 'supporting_records' per-category",
+      "project and matches the custom 'Health-Insurance-Premium-Statement' blueprint",
+      "directly."
     ],
     "bdaMatchedDocumentClass": "Health-Insurance-Premium-Statement",
     "content_type": "image/png",
-    "e2e_enabled": false,
+    "e2e_enabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
@@ -744,18 +728,12 @@
   },
   "happy-path/synthetic-shelter-shelter-verification-render-spanish.png": {
     "//": [
-      "Genuinely non-deterministic: preclassification of this Spanish-language shelter",
-      "verification letter sometimes correctly identifies the shelter category and",
-      "routes to the shelter-specific BDA project, matching the custom",
-      "'Shelter-Verification-Letter' blueprint (000), and sometimes falls back to the",
-      "'all' project and finds no match (002). Observed flipping between the two",
-      "outcomes across runs on different days (6x 000 on one day, then back to 002 on",
-      "another). Marking e2e_enabled: false to avoid flaky assertions; revisit if a",
-      "more deterministic fixture is found."
+      "Verified live (2x). Routes to the 'supporting_records' per-category project and",
+      "matches the custom 'Shelter-Verification-Letter' blueprint directly."
     ],
     "bdaMatchedDocumentClass": "Shelter-Verification-Letter",
     "content_type": "image/png",
-    "e2e_enabled": false,
+    "e2e_enabled": true,
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
@@ -848,7 +826,8 @@
   "happy-path/synthetic-wic-adjunctive-eligibility-snap-benefits-letter.jpg": {
     "//": [
       "Preclassification doesn't match any known category for this doc, and there is no",
-      "default/catch-all BDA project configured - fails before BDA is invoked (999)."
+      "default/catch-all BDA project configured, so BDA is skipped entirely (see",
+      "resolve_project_arn)."
     ],
     "bdaMatchedDocumentClass": null,
     "content_type": "image/jpeg",
@@ -856,7 +835,8 @@
     "isDocumentBlurry": false,
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
-    "responseCode": "999"
+    "responseCode": "002",
+    "skip_bda": true
   },
   "happy-path/synthetic-wic-certification-pregnancy-verification-clinic-note.jpg": {
     "//": [
