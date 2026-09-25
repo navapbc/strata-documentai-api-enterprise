@@ -123,11 +123,13 @@ def test_post_document(test_case, base_url, api_key):
         expect_not_none.append(DocumentMetadata.PRECLASSIFICATION_CATEGORY)
 
     # Password-protected, blurry, and multi-document docs short-circuit before BDA, so BDA
-    # output and the processed-date timestamp are never written.
+    # output and the processed-date timestamp are never written. Same for "999" - an
+    # unmatched preclassification category with no BDA_PROJECT_ARN fallback configured
+    # fails before BDA is ever invoked (see resolve_project_arn).
     short_circuits_before_bda = (
         expected_result.is_blurry
         or expected_result.is_password_protected
-        or expected_result.response_code in {"400", "401"}
+        or expected_result.response_code in {"400", "401", "999"}
     )
     if not short_circuits_before_bda:
         expect_not_none += [
