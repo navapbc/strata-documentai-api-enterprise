@@ -1,12 +1,26 @@
-_Run: 2026-09-25 19:30 UTC_
+_Run: 2026-09-26 22:38 UTC_
 
 
 ## synthetic-public-benefits-income-proof-pay-statement-photo.png
 
 **Durations**
 
-- bda: 23.11s extraction
-- llm: 15.291s extraction
+- bda: 23.09s extraction
+- llm: 11.41s extraction
+
+**Cost**
+
+_By Service_
+- us.amazon.nova-lite-v1:0: $0.00011394 (1791 in / 27 out)
+- us.amazon.nova-pro-v1:0: $0.02347520 (22984 in / 1590 out)
+- bda: $0.04000000 (1 page(s))
+- **total: $0.06358914**
+
+_By Extraction Method_
+- shared (preclassification): $0.00898914
+- llm extraction: $0.01460000
+- primary (bda): $0.04000000
+- **total: $0.06358914**
 
 | Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | BDA Geometry | LLM Geometry | Geo Match |
 |---|---|---|---|---|---|---|---|---|

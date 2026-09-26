@@ -1,12 +1,26 @@
-_Run: 2026-09-25 19:28 UTC_
+_Run: 2026-09-26 22:37 UTC_
 
 
 ## synthetic-expense-utility-water-sewer-bill-render-spanish.png
 
 **Durations**
 
-- bda: 30.83s extraction
-- llm: 6.045s extraction
+- bda: 28.78s extraction
+- llm: 3.805s extraction
+
+**Cost**
+
+_By Service_
+- us.amazon.nova-lite-v1:0: $0.00012432 (1956 in / 29 out)
+- us.amazon.nova-pro-v1:0: $0.01783920 (17819 in / 1120 out)
+- bda: $0.04000000 (1 page(s))
+- **total: $0.05796352**
+
+_By Extraction Method_
+- shared (preclassification): $0.00927312
+- llm extraction: $0.00869040
+- primary (bda): $0.04000000
+- **total: $0.05796352**
 
 | Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | BDA Geometry | LLM Geometry | Geo Match |
 |---|---|---|---|---|---|---|---|---|
@@ -19,7 +33,7 @@ _Run: 2026-09-25 19:28 UTC_
 | Dates.Billing_Date | - | 08/28/2026 | 08/28/2026 | 0.86 | 1.0000 | 0.848,0.087,0.087,0.011 | 0.849,0.087,0.087,0.010 | 🟡 |
 | Dates.Due_Date | - | 09/18/2026 | 09/18/2026 | 0.82 | 1.0000 | 0.844,0.129,0.092,0.011 | 0.843,0.129,0.093,0.011 | 🟡 |
 | Line_Items.Amount or Value | - | - | $22.50, $45.00, $12.75, $19.20, $4.50, $6.24 | - | N/A | - | 0.579,0.463,0.035,0.010 | ❌ |
-| Line_Items.LineItemDescription | - | - | Cargo base de agua, Uso de agua, Cargo base de alcantarillado, Cargo de alcantarillado, Tarifa de aguas pluviales, Impuesto local sobre servicios públicos (6%) | - | N/A | - | 0.051,0.463,0.239,0.010 | ❌ |
+| Line_Items.LineItemDescription | - | - | Cargo base de agua, Uso de agua, Cargo base de alcantarillado, Cargo de alcantarillado, Tarifa de aguas pluviales, Impuesto local sobre servicios públicos | - | N/A | - | 0.051,0.463,0.212,0.010 | ❌ |
 | Prev_Bal | - | 88.03 | 0.00 | 0.90 | 1.0000 | 0.896,0.352,0.049,0.011 | 0.905,0.431,0.040,0.010 | ❌ |
 | Prev_Meter_Reading | - | 62,200 | 62,200 | 0.65 | 1.0000 | 0.806,0.653,0.045,0.010 | 0.806,0.653,0.046,0.010 | 🟡 |
 | Provider Name | - | SERVICIO DE AGUA DEL CONDADO DE HARBOR | SERVICIO DE AGUA DEL CONDADO DE HARBOR | 0.88 | 0.9800 | 0.146,0.045,0.356,0.038 | 0.442,0.798,0.254,0.010 | ❌ |

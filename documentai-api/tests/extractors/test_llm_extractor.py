@@ -120,9 +120,7 @@ def test_run_llm_extraction_success(mocker):
     mock_response = MagicMock()
     mock_response.employee_name = _make_field_response("John Smith", "John Smith")
 
-    mock_completion = MagicMock()
-    mock_completion.usage.input_tokens = 100
-    mock_completion.usage.output_tokens = 50
+    mock_completion = {"usage": {"inputTokens": 100, "outputTokens": 50}}
 
     mocker.patch(
         "documentai_api.utils.ssm.get_llm_extractor_model_id",
@@ -176,9 +174,7 @@ def test_run_llm_extraction_uses_dotted_field_names(mocker):
     mock_response = MagicMock()
     mock_response.CompanyAddress_City = _make_field_response("Hartford", "Hartford")
 
-    mock_completion = MagicMock()
-    mock_completion.usage.input_tokens = 100
-    mock_completion.usage.output_tokens = 50
+    mock_completion = {"usage": {"inputTokens": 100, "outputTokens": 50}}
 
     mocker.patch(
         "documentai_api.utils.ssm.get_llm_extractor_model_id",

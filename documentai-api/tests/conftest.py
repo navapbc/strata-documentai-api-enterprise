@@ -2,6 +2,7 @@
 
 import os
 from collections.abc import Generator
+from pathlib import Path
 
 import pytest
 
@@ -236,6 +237,38 @@ def clear_env_vars():
 
     with patch.dict(os.environ, {}, clear=True):
         yield
+
+
+######################
+# Extraction compare #
+######################
+
+_COMPARE_RESULTS_DIR = Path(__file__).parent / "e2e" / "results" / "extraction_compare"
+
+
+def pytest_collection_finish(session):
+    import shutil
+
+    session.config._extraction_compare_controller = has_compare = any(
+        Path(item.fspath).name == "test_extraction_compare.py" for item in session.items
+    )
+
+    if not has_compare or hasattr(session.config, "workerinput"):
+        return
+
+    if _COMPARE_RESULTS_DIR.exists():
+        shutil.rmtree(_COMPARE_RESULTS_DIR)
+
+    _COMPARE_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def pytest_sessionfinish(session, exitstatus):
+    if not getattr(session.config, "_extraction_compare_controller", False):
+        return
+
+    from tests.e2e.test_extraction_compare import write_extraction_compare_summary
+
+    write_extraction_compare_summary(_COMPARE_RESULTS_DIR)
 
 
 ######################

@@ -1,16 +1,29 @@
-_Run: 2026-09-25 19:31 UTC_
+_Run: 2026-09-26 22:40 UTC_
 
 
 ## synthetic-shelter-shelter-verification-render.pdf
 
 **Durations**
 
-- bda: 28.8s extraction
-- llm: 2.415s extraction
+- bda: 28.07s extraction
+- llm: 1.984s extraction
+
+**Cost**
+
+_By Service_
+- us.amazon.nova-pro-v1:0: $0.01197840 (12885 in / 522 out)
+- bda: $0.04000000 (1 page(s))
+- **total: $0.05197840**
+
+_By Extraction Method_
+- shared (preclassification): $0.00881760
+- llm extraction: $0.00316080
+- primary (bda): $0.04000000
+- **total: $0.05197840**
 
 | Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | BDA Geometry | LLM Geometry | Geo Match |
 |---|---|---|---|---|---|---|---|---|
-| assertion_text | - | Jordan Rivera has been residing at 1234 Cedar Lane, Apt 7B, New Haven, CT throughout the period of January 1, 2026, to August 31, 2026. Jordan Rivera is a tenant in good standing and has consistently paid rent in the amount of $1,120.00 each month during this period. | Jordan Rivera has been residing at 1234 Cedar Lane, Apt 7B, New Haven, CT throughout the period of January 1, 2026, to August 31, 2026. | 0.64 | N/A | 0.125,0.526,0.703,0.071 | 0.161,0.526,0.632,0.015 | ❌ |
+| assertion_text | - | Jordan Rivera has been residing at 1234 Cedar Lane, Apt 7B, New Haven, CT throughout the period of January 1, 2026, to August 31, 2026. Jordan Rivera is a tenant in good standing and has consistently paid rent in the amount of $1,120.00 each month during this period. | Jordan Rivera has been residing at 1234 Cedar Lane, Apt 7B, New Haven, CT throughout the period of January 1, 2026, to August 31, 2026. | 0.63 | N/A | 0.125,0.526,0.703,0.071 | 0.161,0.526,0.632,0.015 | ❌ |
 | author_name | - | Cynthia Marshall | Cynthia Marshall | 0.93 | 0.8700 | 0.141,0.508,0.140,0.015 | 0.160,0.739,0.158,0.019 | ❌ |
 | author_relationship | - | Property Manager | Property Manager | 0.70 | 1.0000 | 0.287,0.508,0.145,0.015 | 0.287,0.508,0.145,0.015 | ✅ |
 | contact_information | - | Phone: (860) 555-0199 Email: cynthia.marshall@elmviewhomes.org | (860) 555-0199, cynthia.marshall@elmviewhomes.org | 0.85 | 0.9800 | 0.656,0.097,0.081,0.012 | 0.190,0.828,0.126,0.014 | ❌ |

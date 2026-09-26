@@ -1,12 +1,26 @@
-_Run: 2026-09-25 19:30 UTC_
+_Run: 2026-09-26 22:38 UTC_
 
 
 ## synthetic-investment-and-royalty-income-scan.jpg
 
 **Durations**
 
-- bda: 21.53s extraction
-- llm: 1.885s extraction
+- bda: 20.11s extraction
+- llm: 1.558s extraction
+
+**Cost**
+
+_By Service_
+- us.amazon.nova-lite-v1:0: $0.00012384 (1956 in / 27 out)
+- us.amazon.nova-pro-v1:0: $0.01290480 (14203 in / 482 out)
+- bda: $0.04000000 (1 page(s))
+- **total: $0.05302864**
+
+_By Extraction Method_
+- shared (preclassification): $0.00928544
+- llm extraction: $0.00374320
+- primary (bda): $0.04000000
+- **total: $0.05302864**
 
 | Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | BDA Geometry | LLM Geometry | Geo Match |
 |---|---|---|---|---|---|---|---|---|

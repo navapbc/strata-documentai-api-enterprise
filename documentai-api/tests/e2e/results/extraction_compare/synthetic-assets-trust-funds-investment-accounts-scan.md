@@ -1,12 +1,26 @@
-_Run: 2026-09-25 19:26 UTC_
+_Run: 2026-09-26 22:34 UTC_
 
 
 ## synthetic-assets-trust-funds-investment-accounts-scan.jpg
 
 **Durations**
 
-- bda: 21.05s extraction
-- llm: 2.549s extraction
+- bda: 23.14s extraction
+- llm: 2.139s extraction
+
+**Cost**
+
+_By Service_
+- us.amazon.nova-lite-v1:0: $0.00012360 (1956 in / 26 out)
+- us.amazon.nova-pro-v1:0: $0.01360080 (14733 in / 567 out)
+- bda: $0.04000000 (1 page(s))
+- **total: $0.05372440**
+
+_By Extraction Method_
+- shared (preclassification): $0.00927880
+- llm extraction: $0.00444560
+- primary (bda): $0.04000000
+- **total: $0.05372440**
 
 | Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | BDA Geometry | LLM Geometry | Geo Match |
 |---|---|---|---|---|---|---|---|---|

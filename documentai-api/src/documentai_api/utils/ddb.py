@@ -9,8 +9,8 @@ from documentai_api.config.constants import (
     ConfigDefaults,
     DeletionType,
     ExtractMethod,
-    ProcessStatus,
     LlmUsageReason,
+    ProcessStatus,
 )
 from documentai_api.config.env import get_env_config
 from documentai_api.dtos.classification import ClassificationData
@@ -477,7 +477,10 @@ def get_token_usage_by_reason(object_key: str) -> dict[str, dict[str, int]]:
     record = get_ddb_record(object_key)
     tokens_by_model = (record.get(DocumentMetadata.TOKENS_BY_MODEL) or {}) if record else {}
     return {
-        k: {"inputTokens": int(v.get("inputTokens", 0)), "outputTokens": int(v.get("outputTokens", 0))}
+        k: {
+            "inputTokens": int(v.get("inputTokens", 0)),
+            "outputTokens": int(v.get("outputTokens", 0)),
+        }
         for k, v in tokens_by_model.items()
     }
 

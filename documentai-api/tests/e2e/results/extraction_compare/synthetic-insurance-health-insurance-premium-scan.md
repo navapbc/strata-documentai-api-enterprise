@@ -1,12 +1,26 @@
-_Run: 2026-09-25 19:29 UTC_
+_Run: 2026-09-26 22:38 UTC_
 
 
 ## synthetic-insurance-health-insurance-premium-scan.jpg
 
 **Durations**
 
-- bda: 21.05s extraction
-- llm: 1.98s extraction
+- bda: 21.01s extraction
+- llm: 2.141s extraction
+
+**Cost**
+
+_By Service_
+- us.amazon.nova-lite-v1:0: $0.00012384 (1956 in / 27 out)
+- us.amazon.nova-pro-v1:0: $0.01401920 (15020 in / 626 out)
+- bda: $0.04000000 (1 page(s))
+- **total: $0.05414304**
+
+_By Extraction Method_
+- shared (preclassification): $0.00933664
+- llm extraction: $0.00480640
+- primary (bda): $0.04000000
+- **total: $0.05414304**
 
 | Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | BDA Geometry | LLM Geometry | Geo Match |
 |---|---|---|---|---|---|---|---|---|

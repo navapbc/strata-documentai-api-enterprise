@@ -219,17 +219,9 @@ def _extract(
             ],
             temperature=0.0,
         )
-        usage = completion.usage if hasattr(completion, "usage") and completion.usage else None
-        logger.info(f"LLM extraction usage: {usage!r}")
-        input_tokens = (
-            getattr(usage, "input_tokens", None)
-            or getattr(usage, "prompt_tokens", None)
-        ) if usage else None
-
-        output_tokens = (
-            getattr(usage, "output_tokens", None)
-            or getattr(usage, "completion_tokens", None)
-        ) if usage else None
+        usage = completion.get("usage") if isinstance(completion, dict) else None
+        input_tokens = usage.get("inputTokens") if usage else None
+        output_tokens = usage.get("outputTokens") if usage else None
 
         if input_tokens is not None:
             span.set_attribute("llm.input_tokens", input_tokens)
@@ -337,7 +329,9 @@ def _write_llm_telemetry(
     ddb_service.update_item(table_name, {"fileName": ddb_key}, set_expr, expr_values)
 
     if input_tokens is not None and output_tokens is not None:
-        write_tokens_by_model(ddb_key, model_id, LlmUsageReason.LLM_EXTRACTION, input_tokens, output_tokens)
+        write_tokens_by_model(
+            ddb_key, model_id, LlmUsageReason.LLM_EXTRACTION, input_tokens, output_tokens
+        )
 
 
 def run_llm_extraction(

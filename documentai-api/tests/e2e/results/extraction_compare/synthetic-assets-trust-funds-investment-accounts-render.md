@@ -1,12 +1,25 @@
-_Run: 2026-09-25 19:25 UTC_
+_Run: 2026-09-26 22:34 UTC_
 
 
 ## synthetic-assets-trust-funds-investment-accounts-render.pdf
 
 **Durations**
 
-- bda: 21.82s extraction
-- llm: 2.783s extraction
+- bda: 22.01s extraction
+- llm: 5.136s extraction
+
+**Cost**
+
+_By Service_
+- us.amazon.nova-pro-v1:0: $0.01273520 (13651 in / 567 out)
+- bda: $0.04000000 (1 page(s))
+- **total: $0.05273520**
+
+_By Extraction Method_
+- shared (preclassification): $0.00878880
+- llm extraction: $0.00394640
+- primary (bda): $0.04000000
+- **total: $0.05273520**
 
 | Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | BDA Geometry | LLM Geometry | Geo Match |
 |---|---|---|---|---|---|---|---|---|

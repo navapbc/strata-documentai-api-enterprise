@@ -1,12 +1,25 @@
-_Run: 2026-09-25 19:27 UTC_
+_Run: 2026-09-26 22:36 UTC_
 
 
 ## synthetic-expense-child-support-rendered.pdf
 
 **Durations**
 
-- bda: 35.09s extraction
-- llm: 1.859s extraction
+- bda: 25.94s extraction
+- llm: 1.195s extraction
+
+**Cost**
+
+_By Service_
+- us.amazon.nova-pro-v1:0: $0.01329440 (15038 in / 395 out)
+- bda: $0.04000000 (1 page(s))
+- **total: $0.05329440**
+
+_By Extraction Method_
+- shared (preclassification): $0.00876960
+- llm extraction: $0.00452480
+- primary (bda): $0.04000000
+- **total: $0.05329440**
 
 | Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | BDA Geometry | LLM Geometry | Geo Match |
 |---|---|---|---|---|---|---|---|---|
@@ -19,10 +32,10 @@ _Run: 2026-09-25 19:27 UTC_
 | payer_name | - | Jordan Rivera | Jordan Rivera | 0.91 | 1.0000 | 0.325,0.252,0.114,0.011 | 0.325,0.252,0.113,0.012 | 🟡 |
 | payment_amount | - | 800 | 800 | 0.93 | 1.0000 | 0.374,0.438,0.040,0.014 | 0.374,0.438,0.249,0.015 | ❌ |
 | payment_frequency | - | Weekly | Weekly | 0.91 | 1.0000 | 0.373,0.464,0.145,0.015 | 0.373,0.464,0.212,0.015 | ❌ |
-| payment_type | - | Child Support | - | 0.43 | - | 0.258,0.071,0.160,0.020 | - | ❌ |
-| recipient_address | - | - | 1523 Aspen Ridge Drive, Helena, MT 59601 | 0.55 | 1.0000 | - | 0.326,0.306,0.355,0.015 | ❌ |
+| payment_type | - | Child Support | - | 0.42 | - | 0.258,0.071,0.160,0.020 | - | ❌ |
+| recipient_address | - | - | 1523 Aspen Ridge Drive, Helena, MT 59601 | 0.58 | 1.0000 | - | 0.326,0.306,0.355,0.015 | ❌ |
 | recipient_name.first_name | - | - | - | 0.89 | - | - | - |  |
-| recipient_name.last_name | - | - | - | 0.35 | - | - | - |  |
+| recipient_name.last_name | - | - | - | 0.39 | - | - | - |  |
 | recipient_name.middle_name | - | - | - | 0.88 | - | - | - |  |
-| recipient_state | - | - | - | 0.14 | - | - | - |  |
+| recipient_state | - | - | - | 0.15 | - | - | - |  |
 | recipient_zip_code | - | - | - | 0.16 | - | - | - |  |

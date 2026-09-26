@@ -11,6 +11,7 @@ environment.
 import json
 import os
 import time
+from collections import defaultdict
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -189,13 +190,17 @@ def _write_comparison_sidecar(filename: str, data: dict[str, Any]) -> None:
         "filename": filename,
         "primary_method": data.get("primaryMethod", "bda"),
         "durations": {
-            method: float(d["extractionDurationSeconds"]) if d.get("extractionDurationSeconds") is not None else None
+            method: float(d["extractionDurationSeconds"])
+            if d.get("extractionDurationSeconds") is not None
+            else None
             for method, d in (data.get("durations") or {}).items()
         },
         "cost": data.get("cost") or {},
         "cost_by_reason": data.get("costByReason") or {},
     }
-    (_RESULTS_DIR / f"{Path(filename).stem}.data.json").write_text(json.dumps(sidecar, default=float))
+    (_RESULTS_DIR / f"{Path(filename).stem}.data.json").write_text(
+        json.dumps(sidecar, default=float)
+    )
 
 
 def _write_comparison_md(
@@ -228,12 +233,31 @@ def _write_comparison_md(
 
     cost = data.get("cost", {})
     tokens = data.get("tokens", {})
+    cost_by_reason = data.get("costByReason") or {}
+    pages = data.get("pages", 1)
+
     if cost or tokens:
-        lines.append("**Cost**\n")
+        lines.append("**Cost**")
+        lines.append("")
+        lines.append("_By Service_")
         for model_id, entry_cost in cost.items():
             t = tokens.get(model_id, {})
-            lines.append(f"- {model_id}: ${entry_cost:.8f} ({t.get('inputTokens', 0)} in / {t.get('outputTokens', 0)} out)")
+            if t:
+                lines.append(
+                    f"- {model_id}: ${entry_cost:.8f} ({t.get('inputTokens', 0)} in / {t.get('outputTokens', 0)} out)"
+                )
+            else:
+                lines.append(f"- {model_id}: ${entry_cost:.8f} ({pages} page(s))")
         lines.append(f"- **total: ${sum(cost.values()):.8f}**")
+
+        if cost_by_reason:
+            lines.append("")
+            lines.append("_By Extraction Method_")
+            lines.append(f"- shared (preclassification): ${cost_by_reason.get('shared', 0.0):.8f}")
+            lines.append(f"- llm extraction: ${cost_by_reason.get('llmExtraction', 0.0):.8f}")
+            lines.append(f"- primary ({primary_method}): ${cost_by_reason.get('primary', 0.0):.8f}")
+            lines.append(f"- **total: ${sum(cost.values()):.8f}**")
+
         lines.append("")
 
     lines.append(
@@ -304,7 +328,9 @@ def _print_comparison(filename: str, data: dict[str, Any], expected: dict[str, s
         print("Cost:")
         for model_id, entry_cost in cost.items():
             t = tokens.get(model_id, {})
-            print(f"  {model_id}: ${entry_cost:.8f} ({t.get('inputTokens', 0)} in / {t.get('outputTokens', 0)} out)")
+            print(
+                f"  {model_id}: ${entry_cost:.8f} ({t.get('inputTokens', 0)} in / {t.get('outputTokens', 0)} out)"
+            )
         print(f"  total: ${sum(cost.values()):.8f}")
         print()
 
@@ -335,3 +361,126 @@ def _print_comparison(filename: str, data: dict[str, Any], expected: dict[str, s
             )
 
     print(sep)
+
+
+def write_extraction_compare_summary(results_dir: Path) -> None:
+    worker_files = sorted(
+        (f for f in results_dir.glob("*.md") if f.name != "extraction_compare_summary.md"),
+        key=lambda f: f.name,
+    )
+    if not worker_files:
+        return
+
+    duration_sums: dict[str, float] = defaultdict(float)
+    duration_counts: dict[str, int] = defaultdict(int)
+    cost_by_type: dict[str, float] = defaultdict(float)
+    reason_totals: dict[str, dict[str, float]] = defaultdict(lambda: defaultdict(float))
+    rows = []
+    for md_file in worker_files:
+        sidecar = results_dir / md_file.with_suffix(".data.json").name
+        if not sidecar.exists():
+            continue
+        data = json.loads(sidecar.read_text())
+        filename = data["filename"]
+        primary_method = data.get("primary_method", "bda")
+        file_cost = sum(data["cost"].values())
+        for cost_key, amount in data["cost"].items():
+            cost_by_type[cost_key] += amount
+        for reason, amount in (data.get("cost_by_reason") or {}).items():
+            reason_totals[primary_method][reason] += amount
+        for method, secs in data["durations"].items():
+            if secs is not None:
+                duration_sums[method] += secs
+                duration_counts[method] += 1
+        rows.append(
+            (
+                filename,
+                data["primary_method"],
+                data["durations"],
+                file_cost,
+                data.get("cost_by_reason") or {},
+            )
+        )
+
+    avg_durations = {
+        method: duration_sums[method] / duration_counts[method] for method in duration_sums
+    }
+
+    run_ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
+    lines = ["# Extraction Compare Results\n", f"\n_Run: {run_ts}_\n"]
+
+    if avg_durations:
+        lines.append("\n**Avg Durations**\n")
+        for method, avg in sorted(avg_durations.items()):
+            lines.append(f"- {method}: {avg:.2f}s")
+        lines.append("")
+
+    if cost_by_type:
+        total_cost = sum(cost_by_type.values())
+        lines.append("\n**Total Cost by Model**\n")
+        for cost_key, amount in sorted(cost_by_type.items()):
+            lines.append(f"- {cost_key}: ${amount:.6f}")
+        lines.append(f"- **total: ${total_cost:.6f}**")
+        lines.append("")
+
+    def _cost_compare_section(label: str, primary_method_key: str) -> list[str]:
+        totals = reason_totals.get(primary_method_key)
+        if not totals:
+            return []
+        shared = totals.get("shared", 0.0)
+        primary = totals.get("primary", 0.0)
+        llm = totals.get("llmExtraction", 0.0)
+        out = [f"\n**{label}**\n"]
+        out.append(f"- shared (preclassification): ${shared:.6f}")
+        out.append(f"- {primary_method_key} extraction total: ${primary:.6f}")
+        out.append(f"- LLM extraction total: ${llm:.6f}")
+        out.append("")
+        return out
+
+    lines += _cost_compare_section("BDA vs LLM Cost (docs where primary=bda)", "bda")
+    lines += _cost_compare_section("Textract vs LLM Cost (docs where primary=textract)", "textract")
+
+    if rows:
+        duration_methods = [m for m in sorted(avg_durations) if m != "textract"]
+        duration_labels = [
+            "Primary Duration" if m == "bda" else f"{m.upper()} Duration" for m in duration_methods
+        ]
+        headers = [
+            "Document",
+            "Method",
+            "Total Cost",
+            "Primary Cost",
+            "LLM Cost",
+            "Cost Delta",
+            *duration_labels,
+            "Duration Delta",
+        ]
+        lines.append("\n| " + " | ".join(headers) + " |")
+        lines.append("|---" * len(headers) + "|")
+
+        for filename, primary_method, durations, file_cost, cost_by_reason in rows:
+            stem = Path(filename).stem
+            link = f"[{filename}]({stem}.md)"
+            primary_cost = cost_by_reason.get("primary", 0.0) + cost_by_reason.get("shared", 0.0)
+            llm_cost = cost_by_reason.get("llmExtraction", 0.0)
+            cost_delta = llm_cost - primary_cost
+            primary_dur = durations.get("bda") or durations.get("textract")
+            llm_dur = durations.get("llm")
+            dur_delta = (
+                f"{llm_dur - primary_dur:+.2f}s"
+                if llm_dur is not None and primary_dur is not None
+                else "-"
+            )
+            dur_cells = " | ".join(
+                f"{durations.get(m):.2f}s" if durations.get(m) is not None else "-"
+                for m in duration_methods
+            )
+            lines.append(
+                f"| {link} | {primary_method} | ${file_cost:.6f} | ${primary_cost:.6f} | ${llm_cost:.6f} | {cost_delta:+.6f} | {dur_cells} | {dur_delta} |"
+            )
+        lines.append("")
+
+    header = "".join(f"{line}\n" if not line.endswith("\n") else line for line in lines)
+
+    summary = results_dir / "extraction_compare_summary.md"
+    summary.write_text(header)

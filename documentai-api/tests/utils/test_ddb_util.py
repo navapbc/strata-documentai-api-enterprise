@@ -5,7 +5,7 @@ from typing import Any
 import pytest
 from freezegun import freeze_time
 
-from documentai_api.config.constants import ExtractMethod, ProcessStatus, LlmUsageReason
+from documentai_api.config.constants import ExtractMethod, LlmUsageReason, ProcessStatus
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.dtos.ddb import InitialDdbRecord, PreClassificationDdbFields, UpdateDdbRecord
 from documentai_api.dtos.processing import InternalApiResponse
@@ -675,10 +675,14 @@ def test_write_tokens_by_model_creates_entry(ddb_doc_metadata_table):
         }
     )
 
-    ddb_util.write_tokens_by_model(object_key, "us.amazon.nova-pro-v1:0", LlmUsageReason.PRECLASSIFICATION, 100, 50)
+    ddb_util.write_tokens_by_model(
+        object_key, "us.amazon.nova-pro-v1:0", LlmUsageReason.PRECLASSIFICATION, 100, 50
+    )
 
     item = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"]
-    entry = item[DocumentMetadata.TOKENS_BY_MODEL][f"us.amazon.nova-pro-v1:0#{LlmUsageReason.PRECLASSIFICATION}"]
+    entry = item[DocumentMetadata.TOKENS_BY_MODEL][
+        f"us.amazon.nova-pro-v1:0#{LlmUsageReason.PRECLASSIFICATION}"
+    ]
     assert entry["inputTokens"] == Decimal(100)
     assert entry["outputTokens"] == Decimal(50)
 
@@ -693,13 +697,21 @@ def test_write_tokens_by_model_accumulates_same_model(ddb_doc_metadata_table):
         }
     )
 
-    ddb_util.write_tokens_by_model(object_key, "us.amazon.nova-pro-v1:0", LlmUsageReason.PRECLASSIFICATION, 100, 50)
-    ddb_util.write_tokens_by_model(object_key, "us.amazon.nova-pro-v1:0", LlmUsageReason.BLUEPRINT_MATCH, 200, 75)
+    ddb_util.write_tokens_by_model(
+        object_key, "us.amazon.nova-pro-v1:0", LlmUsageReason.PRECLASSIFICATION, 100, 50
+    )
+    ddb_util.write_tokens_by_model(
+        object_key, "us.amazon.nova-pro-v1:0", LlmUsageReason.BLUEPRINT_MATCH, 200, 75
+    )
 
     item = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"]
     tokens = item[DocumentMetadata.TOKENS_BY_MODEL]
-    assert tokens[f"us.amazon.nova-pro-v1:0#{LlmUsageReason.PRECLASSIFICATION}"]["inputTokens"] == Decimal(100)
-    assert tokens[f"us.amazon.nova-pro-v1:0#{LlmUsageReason.BLUEPRINT_MATCH}"]["inputTokens"] == Decimal(200)
+    assert tokens[f"us.amazon.nova-pro-v1:0#{LlmUsageReason.PRECLASSIFICATION}"][
+        "inputTokens"
+    ] == Decimal(100)
+    assert tokens[f"us.amazon.nova-pro-v1:0#{LlmUsageReason.BLUEPRINT_MATCH}"][
+        "inputTokens"
+    ] == Decimal(200)
 
 
 def test_write_tokens_by_model_separate_keys_per_model(ddb_doc_metadata_table):
@@ -712,13 +724,21 @@ def test_write_tokens_by_model_separate_keys_per_model(ddb_doc_metadata_table):
         }
     )
 
-    ddb_util.write_tokens_by_model(object_key, "us.amazon.nova-pro-v1:0", LlmUsageReason.LLM_EXTRACTION, 100, 50)
-    ddb_util.write_tokens_by_model(object_key, "us.amazon.nova-lite-v1:0", LlmUsageReason.PRECLASSIFICATION, 200, 75)
+    ddb_util.write_tokens_by_model(
+        object_key, "us.amazon.nova-pro-v1:0", LlmUsageReason.LLM_EXTRACTION, 100, 50
+    )
+    ddb_util.write_tokens_by_model(
+        object_key, "us.amazon.nova-lite-v1:0", LlmUsageReason.PRECLASSIFICATION, 200, 75
+    )
 
     item = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"]
     tokens = item[DocumentMetadata.TOKENS_BY_MODEL]
-    assert tokens[f"us.amazon.nova-pro-v1:0#{LlmUsageReason.LLM_EXTRACTION}"]["inputTokens"] == Decimal(100)
-    assert tokens[f"us.amazon.nova-lite-v1:0#{LlmUsageReason.PRECLASSIFICATION}"]["inputTokens"] == Decimal(200)
+    assert tokens[f"us.amazon.nova-pro-v1:0#{LlmUsageReason.LLM_EXTRACTION}"][
+        "inputTokens"
+    ] == Decimal(100)
+    assert tokens[f"us.amazon.nova-lite-v1:0#{LlmUsageReason.PRECLASSIFICATION}"][
+        "inputTokens"
+    ] == Decimal(200)
 
 
 # =============================================================================
@@ -733,8 +753,14 @@ def test_sum_token_usage_by_model_collapses_reasons(ddb_doc_metadata_table):
         Item={
             DocumentMetadata.FILE_NAME: object_key,
             DocumentMetadata.TOKENS_BY_MODEL: {
-                f"us.amazon.nova-pro-v1:0#{LlmUsageReason.PRECLASSIFICATION}": {"inputTokens": Decimal(100), "outputTokens": Decimal(50)},
-                f"us.amazon.nova-pro-v1:0#{LlmUsageReason.BLUEPRINT_MATCH}": {"inputTokens": Decimal(200), "outputTokens": Decimal(75)},
+                f"us.amazon.nova-pro-v1:0#{LlmUsageReason.PRECLASSIFICATION}": {
+                    "inputTokens": Decimal(100),
+                    "outputTokens": Decimal(50),
+                },
+                f"us.amazon.nova-pro-v1:0#{LlmUsageReason.BLUEPRINT_MATCH}": {
+                    "inputTokens": Decimal(200),
+                    "outputTokens": Decimal(75),
+                },
             },
         }
     )
@@ -751,8 +777,14 @@ def test_sum_token_usage_by_model_separate_models(ddb_doc_metadata_table):
         Item={
             DocumentMetadata.FILE_NAME: object_key,
             DocumentMetadata.TOKENS_BY_MODEL: {
-                f"us.amazon.nova-pro-v1:0#{LlmUsageReason.LLM_EXTRACTION}": {"inputTokens": Decimal(100), "outputTokens": Decimal(50)},
-                f"us.amazon.nova-lite-v1:0#{LlmUsageReason.CROP_DETECTION}": {"inputTokens": Decimal(200), "outputTokens": Decimal(75)},
+                f"us.amazon.nova-pro-v1:0#{LlmUsageReason.LLM_EXTRACTION}": {
+                    "inputTokens": Decimal(100),
+                    "outputTokens": Decimal(50),
+                },
+                f"us.amazon.nova-lite-v1:0#{LlmUsageReason.CROP_DETECTION}": {
+                    "inputTokens": Decimal(200),
+                    "outputTokens": Decimal(75),
+                },
             },
         }
     )

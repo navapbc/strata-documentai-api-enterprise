@@ -1,12 +1,25 @@
-_Run: 2026-09-25 19:29 UTC_
+_Run: 2026-09-26 22:37 UTC_
 
 
 ## synthetic-expense-utility-water-sewer-bill-render.pdf
 
 **Durations**
 
-- bda: 21.18s extraction
-- llm: 4.085s extraction
+- bda: 21.82s extraction
+- llm: 3.117s extraction
+
+**Cost**
+
+_By Service_
+- us.amazon.nova-pro-v1:0: $0.01644560 (16765 in / 948 out)
+- bda: $0.04000000 (1 page(s))
+- **total: $0.05644560**
+
+_By Extraction Method_
+- shared (preclassification): $0.00879200
+- llm extraction: $0.00765360
+- primary (bda): $0.04000000
+- **total: $0.05644560**
 
 | Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | BDA Geometry | LLM Geometry | Geo Match |
 |---|---|---|---|---|---|---|---|---|
@@ -30,4 +43,4 @@ _Run: 2026-09-25 19:29 UTC_
 | Service_Address.Zip_Code | - | 86336 | 86336 | 0.91 | 1.0000 | 0.189,0.404,0.041,0.010 | 0.189,0.404,0.042,0.009 | 🟡 |
 | Tot_Amt | - | 48.76 | 48.76 | 0.93 | 1.0000 | 0.715,0.264,0.046,0.012 | 0.715,0.264,0.046,0.012 | ✅ |
 | Total_Current_Charges | - | 48.76 | 48.76 | 0.93 | 1.0000 | 0.715,0.264,0.046,0.012 | 0.715,0.264,0.046,0.012 | ✅ |
-| is_total_amount_greater_than_equal_to_current_charges | - | True | Yes | 0.92 | 1.0000 | 0.715,0.178,0.046,0.012 | 0.385,0.645,0.296,0.011 | ❌ |
+| is_total_amount_greater_than_equal_to_current_charges | - | True | Yes | 0.92 | N/A | 0.715,0.178,0.046,0.012 | - | ❌ |

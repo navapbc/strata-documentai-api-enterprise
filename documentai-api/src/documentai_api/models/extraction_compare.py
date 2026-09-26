@@ -29,5 +29,6 @@ class CompareResponse(BaseApiResponse):
     llm: dict[str, CompareFieldResult] = Field(default_factory=dict)
     durations: dict[str, CompareDuration] = Field(default_factory=dict)
     tokens: dict[str, Any] = Field(default_factory=dict)
+    pages: int = 1
     cost: dict[str, float] = Field(default_factory=dict)
     cost_by_reason: dict[str, float] = Field(default_factory=dict)

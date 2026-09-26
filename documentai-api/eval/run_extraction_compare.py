@@ -41,7 +41,9 @@ def _print_comparison(data: dict) -> None:
         typer.echo("\nCost:")
         for model_id, entry_cost in cost.items():
             t = tokens.get(model_id, {})
-            typer.echo(f"  {model_id}: ${entry_cost:.8f} ({t.get('inputTokens', 0)} in / {t.get('outputTokens', 0)} out)")
+            typer.echo(
+                f"  {model_id}: ${entry_cost:.8f} ({t.get('inputTokens', 0)} in / {t.get('outputTokens', 0)} out)"
+            )
         typer.echo(f"  total: ${sum(cost.values()):.8f}")
 
     typer.echo("")

@@ -25,9 +25,9 @@ from documentai_api.classifiers.document_classification import (
     classify_as_not_implemented,
 )
 from documentai_api.config.constants import (
+    LlmUsageReason,
     ProcessStatus,
     S3MetadataKeys,
-    LlmUsageReason,
 )
 from documentai_api.config.env import get_env_config
 from documentai_api.dtos.classification import ClassificationData
@@ -202,7 +202,11 @@ def _persist_optimization_metrics(
         and crop_result.output_tokens is not None
     ):
         write_tokens_by_model(
-            ddb_key, crop_result.model_id, LlmUsageReason.CROP_DETECTION, crop_result.input_tokens, crop_result.output_tokens
+            ddb_key,
+            crop_result.model_id,
+            LlmUsageReason.CROP_DETECTION,
+            crop_result.input_tokens,
+            crop_result.output_tokens,
         )
 
 

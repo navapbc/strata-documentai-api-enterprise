@@ -1,12 +1,26 @@
-_Run: 2026-09-25 19:31 UTC_
+_Run: 2026-09-26 22:43 UTC_
 
 
 ## synthetic-snap-income-proof-employment-wage-verification-letter-rendered.png
 
 **Durations**
 
-- bda: 18.15s extraction
-- llm: 1.799s extraction
+- bda: 19.43s extraction
+- llm: 0.999s extraction
+
+**Cost**
+
+_By Service_
+- us.amazon.nova-lite-v1:0: $0.00010998 (1725 in / 27 out)
+- us.amazon.nova-pro-v1:0: $0.01161920 (12932 in / 398 out)
+- bda: $0.04000000 (1 page(s))
+- **total: $0.05172918**
+
+_By Extraction Method_
+- shared (preclassification): $0.00892438
+- llm extraction: $0.00280480
+- primary (bda): $0.04000000
+- **total: $0.05172918**
 
 | Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | BDA Geometry | LLM Geometry | Geo Match |
 |---|---|---|---|---|---|---|---|---|

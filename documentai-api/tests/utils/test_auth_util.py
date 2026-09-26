@@ -354,9 +354,11 @@ def test_ddb_verify_uses_cache_on_second_call(api_keys_table):
 @pytest.fixture
 def pinned_api_keys_config():
     """Pin get_env_config for _update_last_used tests."""
+    auth_util._last_used_written_at.clear()
     with patch("documentai_api.utils.auth.get_env_config") as mock_config:
         mock_config.return_value.api_keys_table_name = "api-keys"
         yield
+    auth_util._last_used_written_at.clear()
 
 
 def test_update_last_used_debounced_skips_second_call(pinned_api_keys_config):

@@ -1,12 +1,25 @@
-_Run: 2026-09-25 19:26 UTC_
+_Run: 2026-09-26 22:35 UTC_
 
 
 ## synthetic-assets-bank-statement-render.pdf
 
 **Durations**
 
-- bda: 21.05s extraction
-- llm: 5.219s extraction
+- bda: 22.8s extraction
+- llm: 3.415s extraction
+
+**Cost**
+
+_By Service_
+- us.amazon.nova-pro-v1:0: $0.01426400 (15502 in / 582 out)
+- bda: $0.04000000 (1 page(s))
+- **total: $0.05426400**
+
+_By Extraction Method_
+- shared (preclassification): $0.00876000
+- llm extraction: $0.00550400
+- primary (bda): $0.04000000
+- **total: $0.05426400**
 
 | Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | BDA Geometry | LLM Geometry | Geo Match |
 |---|---|---|---|---|---|---|---|---|

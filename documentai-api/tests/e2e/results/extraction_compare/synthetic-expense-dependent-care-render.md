@@ -1,12 +1,25 @@
-_Run: 2026-09-25 19:27 UTC_
+_Run: 2026-09-26 22:36 UTC_
 
 
 ## synthetic-expense-dependent-care-render.pdf
 
 **Durations**
 
-- bda: 22.14s extraction
-- llm: 2.226s extraction
+- bda: 22.98s extraction
+- llm: 2.864s extraction
+
+**Cost**
+
+_By Service_
+- us.amazon.nova-pro-v1:0: $0.01284320 (13714 in / 585 out)
+- bda: $0.04000000 (1 page(s))
+- **total: $0.05284320**
+
+_By Extraction Method_
+- shared (preclassification): $0.00880480
+- llm extraction: $0.00403840
+- primary (bda): $0.04000000
+- **total: $0.05284320**
 
 | Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | BDA Geometry | LLM Geometry | Geo Match |
 |---|---|---|---|---|---|---|---|---|
@@ -18,6 +31,6 @@ _Run: 2026-09-25 19:27 UTC_
 | payment_frequency | - | Weekly | Weekly | 0.92 | 1.0000 | 0.512,0.445,0.057,0.014 | 0.512,0.445,0.057,0.014 | ✅ |
 | provider_address | - | 485 Maple Avenue, Providence, RI 02903 | 485 Maple Avenue, Providence, RI 02903 | 0.91 | 1.0000 | 0.249,0.090,0.308,0.014 | 0.249,0.090,0.308,0.014 | ✅ |
 | provider_name | - | Bright Horizons Early Learning Center | Bright Horizons Early Learning Center | 0.89 | 1.0000 | 0.213,0.053,0.425,0.019 | 0.213,0.053,0.425,0.019 | ✅ |
-| service_end_date | - | 2026-08-30 | 2026-08-30 | 0.76 | 1.0000 | 0.617,0.650,0.073,0.013 | 0.194,0.446,0.103,0.014 | ❌ |
-| service_start_date | - | 2026-08-03 | 2026-08-03 | 0.64 | 1.0000 | 0.194,0.446,0.102,0.014 | 0.194,0.446,0.103,0.014 | 🟡 |
+| service_end_date | - | 2026-08-30 | 2026-08-30 | 0.76 | 0.9800 | 0.617,0.650,0.073,0.013 | 0.523,0.650,0.168,0.014 | ❌ |
+| service_start_date | - | 2026-08-03 | 2026-08-03 | 0.64 | 0.9800 | 0.194,0.446,0.102,0.014 | 0.523,0.650,0.168,0.014 | ❌ |
 | statement_date | - | 2026-09-05 | 2026-09-05 | 0.91 | 1.0000 | 0.720,0.076,0.094,0.012 | 0.720,0.076,0.094,0.012 | ✅ |

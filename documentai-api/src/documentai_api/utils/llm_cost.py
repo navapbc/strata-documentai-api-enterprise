@@ -5,8 +5,11 @@ from functools import lru_cache
 
 @lru_cache(maxsize=1)
 def _load_model_cost() -> dict[str, dict[str, float]]:
-    data = importlib.resources.files("documentai_api.config").joinpath("model_cost.json").read_text()
-    return json.loads(data)  # type: ignore[return-value]
+    data = (
+        importlib.resources.files("documentai_api.config").joinpath("model_cost.json").read_text()
+    )
+    result: dict[str, dict[str, float]] = json.loads(data)
+    return result
 
 
 def compute_llm_cost(model_id: str, input_tokens: int, output_tokens: int) -> float | None:
@@ -15,7 +18,10 @@ def compute_llm_cost(model_id: str, input_tokens: int, output_tokens: int) -> fl
     if not pricing:
         return None
 
-    return float((input_tokens * pricing["input_per_1m"] + output_tokens * pricing["output_per_1m"]) / 1_000_000)
+    return float(
+        (input_tokens * pricing["input_per_1m"] + output_tokens * pricing["output_per_1m"])
+        / 1_000_000
+    )
 
 
 def compute_textract_cost(pages: int) -> float:
