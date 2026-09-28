@@ -373,6 +373,8 @@ def write_extraction_compare_summary(results_dir: Path) -> None:
 
     duration_sums: dict[str, float] = defaultdict(float)
     duration_counts: dict[str, int] = defaultdict(int)
+    primary_dur_by_method: dict[str, list[float]] = defaultdict(list)
+    llm_dur_by_method: dict[str, list[float]] = defaultdict(list)
     cost_by_type: dict[str, float] = defaultdict(float)
     reason_totals: dict[str, dict[str, float]] = defaultdict(lambda: defaultdict(float))
     rows = []
@@ -392,6 +394,12 @@ def write_extraction_compare_summary(results_dir: Path) -> None:
             if secs is not None:
                 duration_sums[method] += secs
                 duration_counts[method] += 1
+        p_dur = data["durations"].get(primary_method)
+        llm_dur = data["durations"].get("llm")
+        if p_dur is not None:
+            primary_dur_by_method[primary_method].append(p_dur)
+        if llm_dur is not None:
+            llm_dur_by_method[primary_method].append(llm_dur)
         rows.append(
             (
                 filename,
@@ -410,41 +418,57 @@ def write_extraction_compare_summary(results_dir: Path) -> None:
     lines = ["# Extraction Compare Results\n", f"\n_Run: {run_ts}_\n"]
 
     if avg_durations:
-        lines.append("\n**Avg Durations**\n")
+        lines.append("\n## Avg Durations\n")
         for method, avg in sorted(avg_durations.items()):
             lines.append(f"- {method}: {avg:.2f}s")
         lines.append("")
 
     if cost_by_type:
-        total_cost = sum(cost_by_type.values())
-        lines.append("\n**Total Cost by Model**\n")
-        for cost_key, amount in sorted(cost_by_type.items()):
+        llm_costs = {k: v for k, v in cost_by_type.items() if k not in ("bda", "textract")}
+        lines.append("\n## Total Cost by Model\n")
+        for cost_key, amount in sorted(llm_costs.items()):
             lines.append(f"- {cost_key}: ${amount:.6f}")
-        lines.append(f"- **total: ${total_cost:.6f}**")
+        lines.append(f"- **total: ${sum(llm_costs.values()):.6f}**")
         lines.append("")
 
-    def _cost_compare_section(label: str, primary_method_key: str) -> list[str]:
+    def _median(vals: list[float]) -> float | None:
+        if not vals:
+            return None
+        s = sorted(vals)
+        mid = len(s) // 2
+        return s[mid] if len(s) % 2 else (s[mid - 1] + s[mid]) / 2
+
+    def _cost_compare_section(primary_method_key: str) -> list[tuple]:
         totals = reason_totals.get(primary_method_key)
         if not totals:
             return []
         shared = totals.get("shared", 0.0)
         primary = totals.get("primary", 0.0)
         llm = totals.get("llmExtraction", 0.0)
-        out = [f"\n**{label}**\n"]
-        out.append(f"- shared (preclassification): ${shared:.6f}")
-        out.append(f"- {primary_method_key} extraction total: ${primary:.6f}")
-        out.append(f"- LLM extraction total: ${llm:.6f}")
-        out.append("")
-        return out
+        ratio = f"{primary / llm:.1f}x {'cheaper' if llm < primary else 'more expensive'}" if llm else "-"
+        med_primary = _median(primary_dur_by_method.get(primary_method_key, []))
+        med_llm = _median(llm_dur_by_method.get(primary_method_key, []))
+        dur_ratio = (
+            f"{med_primary / med_llm:.1f}x {'faster' if med_llm < med_primary else 'slower'}"
+            if med_primary and med_llm
+            else "-"
+        )
+        return [(primary_method_key, shared, primary, llm, ratio, med_primary, med_llm, dur_ratio)]
 
-    lines += _cost_compare_section("BDA vs LLM Cost (docs where primary=bda)", "bda")
-    lines += _cost_compare_section("Textract vs LLM Cost (docs where primary=textract)", "textract")
+    cost_rows = _cost_compare_section("bda")
+    cost_rows += _cost_compare_section("textract")
+
+    if cost_rows:
+        lines.append("\n## Primary Extraction vs. LLM via Textract")
+        lines.append("| Primary Method | Shared (preclass) | Primary Total | LLM Total | LLM vs Primary | Median Primary Duration | Median LLM Duration | LLM vs Primary |")
+        lines.append("|---|---|---|---|---|---|---|---|")
+        for method, shared, primary, llm, ratio, med_p, med_l, dur_ratio in cost_rows:
+            med_p_cell = f"{med_p:.2f}s" if med_p is not None else "-"
+            med_l_cell = f"{med_l:.2f}s" if med_l is not None else "-"
+            lines.append(f"| {method} | ${shared:.6f} | ${primary:.6f} | ${llm:.6f} | {ratio} | {med_p_cell} | {med_l_cell} | {dur_ratio} |")
+        lines.append("")
 
     if rows:
-        duration_methods = [m for m in sorted(avg_durations) if m != "textract"]
-        duration_labels = [
-            "Primary Duration" if m == "bda" else f"{m.upper()} Duration" for m in duration_methods
-        ]
         headers = [
             "Document",
             "Method",
@@ -452,31 +476,32 @@ def write_extraction_compare_summary(results_dir: Path) -> None:
             "Primary Cost",
             "LLM Cost",
             "Cost Delta",
-            *duration_labels,
+            "Primary Duration",
+            "LLM Duration",
             "Duration Delta",
         ]
+        lines.append("\n## Document Summary")
         lines.append("\n| " + " | ".join(headers) + " |")
         lines.append("|---" * len(headers) + "|")
 
         for filename, primary_method, durations, file_cost, cost_by_reason in rows:
             stem = Path(filename).stem
             link = f"[{filename}]({stem}.md)"
-            primary_cost = cost_by_reason.get("primary", 0.0) + cost_by_reason.get("shared", 0.0)
-            llm_cost = cost_by_reason.get("llmExtraction", 0.0)
+            shared_cost = cost_by_reason.get("shared", 0.0)
+            primary_cost = cost_by_reason.get("primary", 0.0) + shared_cost
+            llm_cost = cost_by_reason.get("llmExtraction", 0.0) + shared_cost
             cost_delta = llm_cost - primary_cost
-            primary_dur = durations.get("bda") or durations.get("textract")
+            primary_dur = durations.get(primary_method)
             llm_dur = durations.get("llm")
             dur_delta = (
                 f"{llm_dur - primary_dur:+.2f}s"
                 if llm_dur is not None and primary_dur is not None
                 else "-"
             )
-            dur_cells = " | ".join(
-                f"{durations.get(m):.2f}s" if durations.get(m) is not None else "-"
-                for m in duration_methods
-            )
+            primary_dur_cell = f"{durations.get(primary_method):.2f}s" if durations.get(primary_method) is not None else "-"
+            llm_dur_cell = f"{durations.get('llm'):.2f}s" if durations.get('llm') is not None else "-"
             lines.append(
-                f"| {link} | {primary_method} | ${file_cost:.6f} | ${primary_cost:.6f} | ${llm_cost:.6f} | {cost_delta:+.6f} | {dur_cells} | {dur_delta} |"
+                f"| {link} | {primary_method} | ${file_cost:.6f} | ${primary_cost:.6f} | ${llm_cost:.6f} | {cost_delta:+.6f} | {primary_dur_cell} | {llm_dur_cell} | {dur_delta} |"
             )
         lines.append("")
 

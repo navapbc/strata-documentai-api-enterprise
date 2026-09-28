@@ -40,6 +40,7 @@
 	test-e2e \
 	test-e2e-routing \
 	test-extraction-compare \
+	regen-extraction-compare-summary \
 	test-integration \
 	metrics-agg \
 	metrics-agg-last-n-days \
@@ -190,6 +191,9 @@ test-e2e-routing: ## Run e2e routing tests
 test-extraction-compare: .env.e2e
 test-extraction-compare: ## Run the BDA vs LLM extraction-compare e2e test
 	@set -a && . ./.env.e2e && set +a && uv run --frozen pytest tests/e2e/test_extraction_compare.py -m e2e -n 4 $(args)
+
+regen-extraction-compare-summary: ## Regenerate extraction_compare_summary.md from existing per-doc results
+	uv run --frozen python3 -c "from pathlib import Path; from tests.e2e.test_extraction_compare import write_extraction_compare_summary; write_extraction_compare_summary(Path('tests/e2e/results/extraction_compare'))"
 
 .env.e2e: _require-jq ## Generate .env.e2e from deployed Lambda env vars + API Gateway endpoint
 # BASE_URL/AWS_REGION aren't in the Lambda's own env (that's API Gateway infra
