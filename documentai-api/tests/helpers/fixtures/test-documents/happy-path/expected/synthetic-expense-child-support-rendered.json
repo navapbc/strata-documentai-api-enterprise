@@ -1,0 +1,26 @@
+{
+  "fields": {
+    "case_number": "FC-2026-047532",
+    "child_name": null,
+    "court_name": "Fourth Judicial District Court, Missoula County",
+    "effective_end_date": null,
+    "effective_start_date": null,
+    "order_date": null,
+    "payer_name": "Jordan Rivera",
+    "payment_amount": 800,
+    "payment_frequency": "Weekly",
+    "payment_type": "Child Support",
+    "recipient_address": null,
+    "recipient_name.first_name": null,
+    "recipient_name.last_name": null,
+    "recipient_name.middle_name": null,
+    "recipient_state": null,
+    "recipient_zip_code": null
+  },
+  "notes": {
+    "child_name": "No child is named anywhere on any of the three child-support documents in this set - all are payor/recipient payment registries, not the underlying court order naming the child. Genuinely absent in all three.",
+    "recipient_address": "This document has no recipient/payee section at all - only 'Participant Information' for Jordan Rivera, whose Role is explicitly 'Payor'. LLM's extracted value (1523 Aspen Ridge Drive, Helena, MT 59601) is actually the payor's own address, mislabeled as the recipient's.",
+    "effective_start_date/order_date": "This is a payment-history statement, not the original court order - it gives 'Issued: September 1, 2026' (the statement's own issue date) and 'Period Covered: July 6, 2026 - August 24, 2026' (the payment window), but never the order's actual effective/issue date.",
+    "recipient_name.*/recipient_state/recipient_zip_code": "No recipient is named on this document at all (see recipient_address note)."
+  }
+}

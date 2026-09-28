@@ -1,26 +1,35 @@
-_Run: 2026-09-26 22:38 UTC_
+# synthetic-public-benefits-identity-proof-state-photo-id.jpg
 
 
-## synthetic-public-benefits-identity-proof-state-photo-id.jpg
+_Run: 2026-09-28 18:37 UTC_
 
-**Durations**
 
-- llm: 2.252s extraction
-- textract: 2.15s extraction
+## Durations
 
-**Cost**
+- llm: 3.491s extraction
+- textract: 2.28s extraction
+
+
+## Cost
 
 _By Service_
-- us.amazon.nova-pro-v1:0: $0.01531760 (16671 in / 619 out)
+- us.amazon.nova-pro-v1:0: $0.01533680 (16671 in / 625 out)
 - textract: $0.02500000 (1 page(s))
-- **total: $0.04031760**
+- **total: $0.04033680**
 
 _By Extraction Method_
-- shared (preclassification): $0.00885440
+- shared (preclassification): $0.00887360
 - llm extraction: $0.00646320
 - primary (textract): $0.02500000
-- **total: $0.04031760**
+- **total: $0.04033680**
 
+
+## Accuracy
+- TEXTRACT: 92% exact, 92% loose, 8% misses
+- LLM: 100% exact, 100% loose, 0% misses
+
+
+## Field Comparison
 | Field | Expected | TEXTRACT Value | LLM (via Textract) Value | TEXTRACT Conf | LLM Conf | TEXTRACT Geometry | LLM Geometry | Geo Match |
 |---|---|---|---|---|---|---|---|---|
 | ADDRESS_DETAILS.CITY | LAS VEGAS | ✅ LAS VEGAS | ✅ LAS VEGAS | 0.97 | N/A | - | 0.405,0.501,0.096,0.027 | ❌ |

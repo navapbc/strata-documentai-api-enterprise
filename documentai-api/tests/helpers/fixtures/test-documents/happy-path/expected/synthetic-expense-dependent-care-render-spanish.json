@@ -1,0 +1,20 @@
+{
+  "fields": {
+    "amount_paid": "750.00",
+    "balance_due": "750.00",
+    "dependent_names": "Mateo Vega",
+    "document_type": "Estado de Gastos de Cuidado Dependiente",
+    "payment_amount": "375.00",
+    "payment_frequency": "Semanal",
+    "provider_address": "1234 Camino del Sol, Suite 100, Las Vegas, NV 89119",
+    "provider_name": "Pequeños Pasos Centro de Cuidado Infantil",
+    "service_start_date": "2026-08-04",
+    "service_end_date": "2026-08-31",
+    "statement_date": "2026-09-05"
+  },
+  "notes": {
+    "_general": "This document never produced a successful e2e run (no .md draft existed), so there's no BDA/LLM output to cross-check against - read directly from the image.",
+    "payment_amount": "Uses the weekly rate ($375.00), matching the convention used on the sibling render/scan Dependent-Care-Statement documents.",
+    "payment_frequency": "Not printed as an explicit label on this document; inferred as weekly ('Semanal') from the 4 weekly $375.00 charge rows, matching the -scan sibling's convention."
+  }
+}

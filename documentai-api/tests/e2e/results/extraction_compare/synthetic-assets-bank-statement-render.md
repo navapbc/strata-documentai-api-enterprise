@@ -1,35 +1,44 @@
-_Run: 2026-09-26 22:35 UTC_
+# synthetic-assets-bank-statement-render.pdf
 
 
-## synthetic-assets-bank-statement-render.pdf
+_Run: 2026-09-28 18:34 UTC_
 
-**Durations**
 
-- bda: 22.8s extraction
-- llm: 3.415s extraction
+## Durations
 
-**Cost**
+- bda: 23.05s extraction
+- llm: 5.643s extraction
+
+
+## Cost
 
 _By Service_
-- us.amazon.nova-pro-v1:0: $0.01426400 (15502 in / 582 out)
+- us.amazon.nova-pro-v1:0: $0.01427040 (15498 in / 585 out)
 - bda: $0.04000000 (1 page(s))
-- **total: $0.05426400**
+- **total: $0.05427040**
 
 _By Extraction Method_
-- shared (preclassification): $0.00876000
-- llm extraction: $0.00550400
+- shared (preclassification): $0.00878240
+- llm extraction: $0.00548800
 - primary (bda): $0.04000000
-- **total: $0.05426400**
+- **total: $0.05427040**
 
+
+## Accuracy
+- BDA: 50% exact, 75% loose, 25% misses
+- LLM: 100% exact, 100% loose, 0% misses
+
+
+## Field Comparison
 | Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | BDA Geometry | LLM Geometry | Geo Match |
 |---|---|---|---|---|---|---|---|---|
-| account_holder_address | - | 7429 Oak Crest Drive, Little Rock, AR 72205 | 7429 Oak Crest Drive, Little Rock, AR 72205 | 0.89 | 1.0000 | 0.123,0.330,0.383,0.014 | 0.123,0.330,0.383,0.012 | 🟡 |
-| account_holder_name | - | Elias K. Thornton | Elias K. Thornton | 0.93 | 1.0000 | 0.124,0.306,0.151,0.013 | 0.124,0.306,0.151,0.013 | ✅ |
-| account_number | - | ****5678 | ****5678 | 0.81 | 1.0000 | 0.268,0.207,0.071,0.011 | 0.268,0.207,0.071,0.011 | ✅ |
-| account_summary.summary_amount | - | - | 2275.00, 4220.00, 3460.40, 0.00, 3034.60 | - | N/A | - | 0.738,0.591,0.091,0.015 | ❌ |
-| account_summary.summary_desc | - | - | Beginning Balance, Total Deposits / Credits, Total Withdrawals / Debits, Fees, Ending Balance | - | N/A | - | 0.135,0.474,0.137,0.015 | ❌ |
+| account_holder_address | 7429 Oak Crest Drive, Little Rock, AR 72205 | ✅ 7429 Oak Crest Drive, Little Rock, AR 72205 | ✅ 7429 Oak Crest Drive, Little Rock, AR 72205 | 0.89 | 1.0000 | 0.123,0.330,0.383,0.014 | 0.123,0.330,0.383,0.012 | 🟡 |
+| account_holder_name | Elias K. Thornton | ✅ Elias K. Thornton | ✅ Elias K. Thornton | 0.93 | 1.0000 | 0.124,0.306,0.151,0.013 | 0.124,0.306,0.151,0.013 | ✅ |
+| account_number | ****5678 | ✅ ****5678 | ✅ ****5678 | 0.81 | 1.0000 | 0.268,0.207,0.071,0.011 | 0.268,0.207,0.071,0.011 | ✅ |
+| account_summary.summary_amount | 2275.00, 4220.00, 3460.40, 0.00, 3034.60 | ❌ - | ✅ 2275.00, 4220.00, 3460.40, 0.00, 3034.60 | - | N/A | - | 0.738,0.591,0.091,0.015 | ❌ |
+| account_summary.summary_desc | Beginning Balance, Total Deposits / Credits, Total Withdrawals / Debits, Fees, Ending Balance | ❌ - | ✅ Beginning Balance, Total Deposits / Credits, Total Withdrawals / Debits, Fees, Ending Balance | - | N/A | - | 0.135,0.474,0.137,0.015 | ❌ |
 | account_type | - | - | - | 0.91 | - | - | - |  |
-| bank_name | - | Riverbend Financial Institution | Riverbend Financial Institution | 0.92 | 1.0000 | 0.228,0.045,0.212,0.049 | 0.229,0.079,0.211,0.015 | ❌ |
+| bank_name | Riverbend Financial Institution | ✅ Riverbend Financial Institution | ✅ Riverbend Financial Institution | 0.92 | 1.0000 | 0.228,0.045,0.212,0.049 | 0.229,0.079,0.211,0.015 | ❌ |
 | branch_transit_number | - | - | - | 0.93 | - | - | - |  |
-| statement_end_date | - | 08/31/2026 | 2026-08-31 | 0.75 | 1.0000 | 0.405,0.177,0.089,0.011 | 0.406,0.177,0.089,0.011 | 🟡 |
-| statement_start_date | - | 06/01/2026 | 2026-06-01 | 0.80 | 1.0000 | 0.291,0.177,0.088,0.011 | 0.291,0.177,0.088,0.011 | ✅ |
+| statement_end_date | 2026-08-31 | 🟡 08/31/2026 | ✅ 2026-08-31 | 0.75 | 1.0000 | 0.405,0.177,0.089,0.011 | 0.406,0.177,0.089,0.011 | 🟡 |
+| statement_start_date | 2026-06-01 | 🟡 06/01/2026 | ✅ 2026-06-01 | 0.80 | 1.0000 | 0.291,0.177,0.088,0.011 | 0.291,0.177,0.088,0.011 | ✅ |

@@ -1,27 +1,36 @@
-_Run: 2026-09-26 22:43 UTC_
+# synthetic-snap-income-proof-employment-wage-verification-letter-rendered.png
 
 
-## synthetic-snap-income-proof-employment-wage-verification-letter-rendered.png
+_Run: 2026-09-28 18:39 UTC_
 
-**Durations**
 
-- bda: 19.43s extraction
-- llm: 0.999s extraction
+## Durations
 
-**Cost**
+- bda: 21.6s extraction
+- llm: 1.437s extraction
+
+
+## Cost
 
 _By Service_
 - us.amazon.nova-lite-v1:0: $0.00010998 (1725 in / 27 out)
-- us.amazon.nova-pro-v1:0: $0.01161920 (12932 in / 398 out)
+- us.amazon.nova-pro-v1:0: $0.01157440 (12932 in / 384 out)
 - bda: $0.04000000 (1 page(s))
-- **total: $0.05172918**
+- **total: $0.05168438**
 
 _By Extraction Method_
-- shared (preclassification): $0.00892438
-- llm extraction: $0.00280480
+- shared (preclassification): $0.00889238
+- llm extraction: $0.00279200
 - primary (bda): $0.04000000
-- **total: $0.05172918**
+- **total: $0.05168438**
 
+
+## Accuracy
+- BDA: 100% exact, 100% loose, 0% misses
+- LLM: 100% exact, 100% loose, 0% misses
+
+
+## Field Comparison
 | Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | BDA Geometry | LLM Geometry | Geo Match |
 |---|---|---|---|---|---|---|---|---|
 | employee_name | Luis Mendoza | ✅ Luis Mendoza | ✅ Luis Mendoza | 0.90 | 1.0000 | 0.119,0.291,0.120,0.012 | 0.119,0.291,0.120,0.012 | ✅ |
@@ -31,4 +40,4 @@ _By Extraction Method_
 | issuer_name | Dana Whitfield | ✅ Dana Whitfield | ✅ Dana Whitfield | 0.95 | 1.0000 | 0.210,0.765,0.132,0.029 | 0.117,0.762,0.225,0.032 | ❌ |
 | issuer_title | Human Resources Manager | ✅ Human Resources Manager | ✅ Human Resources Manager | 0.92 | 1.0000 | 0.121,0.841,0.209,0.014 | 0.121,0.841,0.209,0.014 | ✅ |
 | job_title | Home Health Aide | ✅ Home Health Aide | ✅ Home Health Aide | 0.89 | 1.0000 | 0.158,0.465,0.157,0.012 | 0.158,0.466,0.157,0.012 | 🟡 |
-| salary_or_wage | $19.00 per hour | ✅ $19.00 per hour | ✅ $19.00 per hour | 0.34 | 1.0000 | 0.512,0.503,0.136,0.016 | 0.410,0.503,0.238,0.016 | ❌ |
+| salary_or_wage | $19.00 per hour | ✅ $19.00 per hour | ✅ $19.00 per hour | 0.35 | 1.0000 | 0.512,0.503,0.136,0.016 | 0.410,0.503,0.238,0.016 | ❌ |

@@ -1,0 +1,17 @@
+{
+  "fields": {
+    "cash_surrender_value": 9500,
+    "death_benefit": 100000,
+    "insured_name": "Jordan Rivera",
+    "insurer_name": "Northstar Life Insurance Company",
+    "policy_number": "XX-1234567-MD",
+    "policy_type": "Universal Life Insurance",
+    "policyholder_name": "Jordan Rivera",
+    "premium_amount": 50,
+    "premium_frequency": "Monthly",
+    "statement_date": "2026-08-31"
+  },
+  "notes": {
+    "insurer_name": "The header logo just says 'Northstar Life Insurance' (BDA's read), but the full legal name in the Contact Information block is 'Northstar Life Insurance Company' (LLM's read) - used as ground truth."
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "fields": {
+    "Account_Number": "8765 4321 0XXX XXXX",
+    "Balance_DueDate": "2026-09-30",
+    "BillingDateBeforeDueDate": true,
+    "Billing_Date": "2026-09-11",
+    "Start_Date": "2026-08-12",
+    "End_Date": "2026-07-11",
+    "Service_Address": "1234 Maple Drive, Broken Arrow, OK 74012",
+    "Line_Item_table.Amount": "72.99, 8.99, 5.00, -10.00, 49.99, -20.00, 7.00, 5.00, 0.00, -5.00, 4.28, 2.10, 2.54, 0.00",
+    "Summary_table.Description": "Saldo anterior, Pagos recibidos – 08/25/2026, Saldo anterior, Cargos actuales, TOTAL A PAGAR",
+    "Summary_table.Amount": "98.75, -98.75, 0.00, 102.89, 102.89"
+  },
+  "notes": {
+    "Start_Date/End_Date": "Printed as 'Período de servicio: 12/08/2026 – 11/07/2026'. Read day-first (matching this document's own date style, e.g. '11 de septiembre de 2026') as 12 Aug 2026 - 11 Jul 2026 - which is chronologically backwards (end before start) and doesn't align with the Sept 11 billing date either. This looks like a synthetic-data generation quirk in the source document itself, not an extraction error; recorded as literally printed.",
+    "Line_Item_table.Amount": "Discount/credit lines are printed with a leading minus sign (e.g. '- $10.00'); this fixture keeps the sign. LLM's value list matches in magnitude but drops all the minus signs.",
+    "Summary_table.Description": "The label 'Saldo anterior' (Previous Balance) appears twice in the Resumen de Cuenta box - once before the payment ($98.75) and once after ($0.00) - almost certainly a template labeling bug in the source document (the second one should logically read something like 'Saldo restante'). Recorded as literally printed rather than corrected.",
+    "Summary_table.Amount": "LLM only captured 3 of these 5 rows."
+  }
+}

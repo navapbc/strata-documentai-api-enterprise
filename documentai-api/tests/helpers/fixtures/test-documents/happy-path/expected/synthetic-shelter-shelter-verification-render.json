@@ -1,0 +1,14 @@
+{
+  "fields": {
+    "assertion_text": "Jordan Rivera has been residing at 1234 Cedar Lane, Apt 7B, New Haven, CT throughout the period of January 1, 2026, to August 31, 2026. Jordan Rivera is a tenant in good standing and has consistently paid rent in the amount of $1,120.00 each month during this period.",
+    "author_name": "Cynthia Marshall",
+    "author_relationship": "Property Manager",
+    "contact_information": "Phone: (860) 555-0199 Email: cynthia.marshall@elmviewhomes.org",
+    "customer_name": "Jordan Rivera",
+    "has_signature": true,
+    "statement_date": "2026-09-05"
+  },
+  "notes": {
+    "assertion_text": "LLM only captured the first sentence; the letter has a second sentence about rent payment history that's part of the same assertion."
+  }
+}

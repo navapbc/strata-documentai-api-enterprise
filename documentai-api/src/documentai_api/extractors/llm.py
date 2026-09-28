@@ -252,6 +252,11 @@ def _extract(
             # so the list separators themselves aren't stripped along with them.
             value = ", ".join(re.sub(r"[\$,\s]", "", item) for item in value.split(", "))
 
+        if field_type == "boolean" and value:
+            # LLM can return "yes" or "true" depending on the prompt; standardize
+            # to boolean strings
+            value = "True" if value.lower() in ("true", "yes", "1") else "False"
+
         conf, best_line = compute_confidence(extracted.text_citation, ocr_blocks)
         field_confidence_scores.append({field_name: conf})
 

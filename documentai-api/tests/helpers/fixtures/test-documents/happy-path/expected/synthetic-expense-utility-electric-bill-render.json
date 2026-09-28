@@ -1,0 +1,38 @@
+{
+  "fields": {
+    "Account Number": "****-6729",
+    "Address.Service Address": "8734 Meadowbrook Lane, Cheyenne, WY 82001",
+    "Address.Service address pin code": "82001",
+    "BalanceDue Date": "2026-09-25",
+    "BalanceGreaterCheck": "No",
+    "Category": "Electricity",
+    "CountMeterIDs": 1,
+    "Current Balance": "94.30",
+    "End Date": "2026-08-31",
+    "Is_NumMeterIDsListed": "No",
+    "Is_PrevGreaterThanCurr": null,
+    "Is_ValidPinCode": true,
+    "Is_ValidState": true,
+    "Line_Item_Charges.Charge": "78.20, 45.00, 33.20, 5.00, 3.10",
+    "Line_Item_Charges.Line item Description": "Energy Consumption (920 kWh at $0.085/kWh), Delivery/Distribution Charge, Supply/Generation Charge, Wyoming Energy Surcharge, Taxes & Fees",
+    "Meter Number": "02348719",
+    "MeterRead.Current value": "920 kWh",
+    "MeterRead.Delta or Metered value": null,
+    "MeterRead.Meter ID": "02348719",
+    "MeterRead.Previous value": null,
+    "MeterRead.Usage Unit": "kWh",
+    "Previous Balance": "112.45",
+    "Provider": "Cedar Grove Energy",
+    "StartDate": "2026-08-01",
+    "Total Balance Due": "94.30",
+    "Usage.power factor": "$0.085/kWh",
+    "Usage.usage": "920 kWh",
+    "UsageMult": null
+  },
+  "notes": {
+    "MeterRead.Previous value/Delta": "This bill only states 'Current Usage: 920 kWh' - it has no actual previous/current register reading pair (unlike the -scan variant of this document, which does). The 'Usage Comparison' chart's 860 kWh and 940 kWh bars are 'previous period' and 'same period last year' comparisons, not a sequential prior meter reading - LLM's -20kWh delta (920-940) wrongly treats the 'same period last year' bar as the prior reading.",
+    "Is_PrevGreaterThanCurr": "Not derivable for the same reason - no genuine previous register reading exists on this document.",
+    "Usage.power factor": "This schema field is presumably mislabeled - the document has no true electrical 'power factor' value (normally a 0-1 ratio); the only per-unit figure is 'Rate per kWh: $0.085', which is what both extractors actually captured here.",
+    "UsageMult": "No meter multiplier is mentioned on this document."
+  }
+}

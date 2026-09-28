@@ -1,0 +1,24 @@
+{
+  "fields": {
+    "case_number": "CS-21-123456",
+    "child_name": null,
+    "court_name": "Tribunal de Familia de la Ciudad de Norfolk",
+    "effective_end_date": null,
+    "effective_start_date": "2021-05-01",
+    "order_date": "2021-05-01",
+    "payer_name": "Daniel Ortega",
+    "payment_amount": 450,
+    "payment_frequency": "Semanal",
+    "payment_type": "Child Support",
+    "recipient_address": "4721 Willow Crossing Drive, Apt. 3B, Norfolk, VA 23513",
+    "recipient_name.first_name": "Marisol",
+    "recipient_name.last_name": "Vega",
+    "recipient_name.middle_name": null,
+    "recipient_state": "VA",
+    "recipient_zip_code": "23513"
+  },
+  "notes": {
+    "child_name": "No child is named on this document (payment-history statement between payor and recipient only).",
+    "payment_amount": "Uses 'Monto ordenado (actual)' ($450.00/week, the current-support order amount), not 'Monto total de la orden (actual + atrasos)' ($550.00/week, which adds the $100/week arrears payment) - consistent with how this field is read on the other two child-support documents. LLM's value (550.00) is the combined total, not the ordered current-support amount."
+  }
+}

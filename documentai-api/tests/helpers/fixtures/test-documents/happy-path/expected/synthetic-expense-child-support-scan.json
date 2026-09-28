@@ -1,0 +1,24 @@
+{
+  "fields": {
+    "case_number": "D-2022-04567-FC",
+    "child_name": null,
+    "court_name": "2nd Judicial District Court",
+    "effective_end_date": null,
+    "effective_start_date": "2022-03-22",
+    "order_date": "2022-03-15",
+    "payer_name": "Daniel R. Montoya",
+    "payment_amount": 500,
+    "payment_frequency": "Weekly",
+    "payment_type": "Child Support",
+    "recipient_address": "123 Desert Sage Rd, Apt 4B, Albuquerque, NM 87108",
+    "recipient_name.first_name": "Maria",
+    "recipient_name.last_name": "Lopez",
+    "recipient_name.middle_name": "Elena",
+    "recipient_state": "NM",
+    "recipient_zip_code": "87108"
+  },
+  "notes": {
+    "child_name": "No child is named on this document (payment-history statement between payor and recipient only).",
+    "payment_amount": "Uses the 'Weekly Current Support Amount' ($500.00), excluding the separate $125/week arrears paydown - consistent with how this field is read on the other two child-support documents in this set."
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "fields": {
+    "account_number": "****5678",
+    "account_holder_name": "Elias K. Thornton",
+    "account_holder_address": "7429 Oak Crest Drive, Little Rock, AR 72205",
+    "bank_name": "Riverbend Financial Institution",
+    "account_type": null,
+    "branch_transit_number": null,
+    "statement_start_date": "2026-06-01",
+    "statement_end_date": "2026-08-31",
+    "account_summary.summary_desc": "Beginning Balance, Total Deposits / Credits, Total Withdrawals / Debits, Fees, Ending Balance",
+    "account_summary.summary_amount": "2275.00, 4220.00, 3460.40, 0.00, 3034.60"
+  },
+  "notes": {
+    "account_type": "Not printed anywhere on this statement (a single summary-only page); BDA reported high confidence (0.91) with an empty value, which is correct here - genuinely absent, not a miss.",
+    "branch_transit_number": "Not printed anywhere on this statement; same as account_type - BDA's confident-but-empty result is correct.",
+    "account_summary.summary_desc/amount": "No transaction-level table on this page (doc explicitly notes 'No transactions listed on this page'), so transaction_details.* fields are absent; only the summary table's 5 rows apply."
+  }
+}

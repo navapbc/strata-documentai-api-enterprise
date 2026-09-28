@@ -1,0 +1,15 @@
+{
+  "fields": {
+    "employee_name": "Luis Mendoza",
+    "employer_name": "Harbor Home Care Services",
+    "employment_start_date": "August 12, 2024",
+    "employment_end_date": null,
+    "issuer_name": "Dana Whitfield",
+    "issuer_title": "Human Resources Manager",
+    "job_title": "Home Health Aide",
+    "salary_or_wage": "$19.00 per hour"
+  },
+  "notes": {
+    "employment_end_date": "Still currently employed - no end date is stated."
+  }
+}

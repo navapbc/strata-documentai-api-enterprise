@@ -1,0 +1,20 @@
+{
+  "fields": {
+    "coverage_start_date": "2026-09-01",
+    "coverage_end_date": "2026-09-30",
+    "employer_name": null,
+    "insurer_or_marketplace_name": "Harbor Health Plan, Inc.",
+    "payment_due_date": "2026-09-15",
+    "payment_frequency": "Monthly",
+    "payment_status": "Paid",
+    "policy_or_member_id": "HHP123456789",
+    "policyholder_name": "Jordan Rivera",
+    "premium_amount": "636.25",
+    "statement_date": "2026-09-01",
+    "subsidy_or_tax_credit_amount": "323.75"
+  },
+  "notes": {
+    "employer_name": "Coverage Tier is 'Individual' - no employer sponsor is mentioned.",
+    "payment_status": "Explicitly labeled 'PAYMENT STATUS: PAID IN FULL'."
+  }
+}

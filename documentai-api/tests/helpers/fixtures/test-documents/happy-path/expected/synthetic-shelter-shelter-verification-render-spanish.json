@@ -1,0 +1,16 @@
+{
+  "fields": {
+    "author_name": "Camila Ortega",
+    "author_relationship": "Administradora de Propiedades",
+    "assertion_text": "Por la presente, Alaska Hills Property Management, LLC verifica que el inquilino que se indica a continuación reside en la propiedad que administramos y que es responsable del pago del alquiler en el importe y con la frecuencia que se detallan a continuación.",
+    "has_signature": true,
+    "contact_information": "Tel: (907) 555-8124 Correo: cortega@alaskahillspm.com",
+    "customer_name": "Mateo Salazar",
+    "statement_date": "2026-09-08"
+  },
+  "notes": {
+    "_general": "This document never produced a successful e2e run (no .md draft existed), so there's no BDA/LLM output to cross-check against - read directly from the image.",
+    "author_relationship": "Printed both as a job title under the signature ('Administradora de Propiedades') and separately as 'Relación con el inquilino: Administradora de la propiedad' in a table - the job title form is used, matching the English sibling document's convention (author_relationship = 'Property Manager', the job title).",
+    "contact_information": "Uses the signer's own direct phone/email at the bottom of the letter, matching the English sibling's convention, rather than the general company letterhead contact block at the top."
+  }
+}

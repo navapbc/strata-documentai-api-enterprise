@@ -1,0 +1,19 @@
+{
+  "fields": {
+    "amount_paid": 1000,
+    "balance_due": 1000,
+    "dependent_names": "Elliot Morgan",
+    "document_type": "Dependent Care Expense Statement",
+    "payment_amount": 2000,
+    "payment_frequency": "Weekly",
+    "provider_address": "485 Maple Avenue, Providence, RI 02903",
+    "provider_name": "Bright Horizons Early Learning Center",
+    "service_end_date": "2026-08-30",
+    "service_start_date": "2026-08-03",
+    "statement_date": "2026-09-05"
+  },
+  "notes": {
+    "amount_paid/balance_due": "Both are genuinely $1,000.00 here (Total Charges $2,000.00 - Amount Paid $1,000.00 = Balance Due $1,000.00) - the equal values aren't an extraction error.",
+    "payment_amount": "This document has no explicit per-week rate line item - only 'Care Period: August 2026' with 'Total Charges: $2,000.00' and 'Payment Frequency: Weekly'. $2,000.00 is read as the effective monthly total (since the care period is a single month), matching what both extractors independently agreed on."
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "fields": {
+    "coverage_start_date": "2026-08-01",
+    "coverage_end_date": "2026-08-31",
+    "employer_name": null,
+    "insurer_or_marketplace_name": "Clearview Insurance Services",
+    "payment_due_date": "2026-09-20",
+    "payment_frequency": "Monthly",
+    "payment_status": "Paid",
+    "policy_or_member_id": "CLV-98274651",
+    "policyholder_name": "Jordan Rivera",
+    "premium_amount": 390,
+    "statement_date": "2026-09-05",
+    "subsidy_or_tax_credit_amount": 240
+  },
+  "notes": {
+    "employer_name": "This is a WIC-program individual marketplace plan (Program: WIC, Jurisdiction: California) - no employer sponsor is mentioned anywhere on the document.",
+    "premium_amount": "Uses the final 'Amount Due' ($390.00, after the -$240 subsidy and -$30 adjustment), not the $600.00 Gross Premium - this is the convention followed across all three health-insurance-premium documents in this set.",
+    "subsidy_or_tax_credit_amount": "Printed as a negative adjustment (-$240.00); this fixture uses the positive magnitude, matching BDA's convention."
+  }
+}

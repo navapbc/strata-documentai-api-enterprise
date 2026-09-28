@@ -1,0 +1,15 @@
+{
+  "fields": {
+    "account_holder_name": "Jordan Rivera",
+    "account_number": "xxxx-xxxx-1392",
+    "account_type": "Traditional IRA",
+    "account_balance": "$49,000.00",
+    "financial_institution": "Seaport Financial Group",
+    "tax_year": "2025",
+    "contribution_dates": null,
+    "distribution_dates": null
+  },
+  "notes": {
+    "contribution_dates/distribution_dates": "This render has no per-transaction table, only a Statement Period of 01/01/2025-12/31/2025 and lump-sum totals (Total Contributions $2,450.00, Total Distributions $980.00) - no specific contribution/distribution dates are printed anywhere. Both extractors filled these with the statement period itself, which isn't actually a contribution/distribution date - treated as genuinely absent."
+  }
+}

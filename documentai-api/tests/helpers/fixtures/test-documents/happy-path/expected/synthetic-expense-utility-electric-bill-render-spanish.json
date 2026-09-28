@@ -1,0 +1,39 @@
+{
+  "fields": {
+    "Account Number": "1234-5678-9012",
+    "Address.Service Address": "14 Maple Lane, Burlington, VT 05401",
+    "Address.Service address pin code": "05401",
+    "BalanceDue Date": "2026-06-10",
+    "BalanceGreaterCheck": "Yes",
+    "Category": "Electricidad",
+    "CountMeterIDs": 1,
+    "Current Balance": "134.28",
+    "End Date": "2026-05-15",
+    "Is_NumMeterIDsListed": null,
+    "Is_PrevGreaterThanCurr": "No",
+    "Is_ValidPinCode": true,
+    "Is_ValidState": true,
+    "Line_Item_Charges.Charge": "33.34, 51.32, 12.00, 1.04, 5.86, 1.95",
+    "Line_Item_Charges.Line item Description": "Cargo por entrega (distribución), Cargo por suministro (generación), Cargo básico de servicio, Ajuste de energía renovable, Impuesto estatal sobre ventas (6.000%), Impuesto municipal sobre energía (2.000%)",
+    "Meter Number": "MTR-72345678",
+    "MeterRead.Current value": "15842 kWh",
+    "MeterRead.Delta or Metered value": "521 kWh",
+    "MeterRead.Meter ID": "MTR-72345678",
+    "MeterRead.Previous value": "15321 kWh",
+    "MeterRead.Usage Unit": "kWh",
+    "Previous Balance": "118.74",
+    "Provider": "Cedar Grove Energy",
+    "StartDate": "2026-04-15",
+    "Total Balance Due": "134.28",
+    "Usage.power factor": null,
+    "Usage.usage": "521 kWh",
+    "UsageMult": null
+  },
+  "notes": {
+    "Current Balance/Total Balance Due": "The itemized 'Total de cargos actuales' ($105.51) plus 'Ajustes' ($0.00) doesn't reconcile to the headline 'Total a pagar' ($134.28) printed three times on this document (top summary box, second Resumen de Cuenta box, and remittance stub) - looks like a synthetic-data generation inconsistency in the source document, not an extraction error. Ground truth uses the repeated, prominent $134.28 figure.",
+    "BalanceGreaterCheck": "Neither extractor produced a value. Current ($134.28) > Previous ($118.74), so 'Yes'.",
+    "Category": "BDA read 'ELECTRICIDAD' (matching the header 'FACTURA DE ELECTRICIDAD'/Electricity Bill); LLM read 'Residencial R-1', which is actually the rate plan/tariff (Tarifa), not the utility category - 'Electricidad' is used for consistency with how the English-language sibling document's Category field ('Electricity') is read.",
+    "Is_NumMeterIDsListed": "Neither extractor produced a confident value and the field's intended semantics aren't clear from this document.",
+    "Usage.power factor": "No single per-kWh 'power factor' value exists - the itemized table has three different per-kWh rates ($0.06400, $0.09850, $0.00200) for different charge types, unlike the sibling render.pdf which has one unambiguous 'Rate per kWh'."
+  }
+}

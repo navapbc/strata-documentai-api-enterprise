@@ -1,36 +1,45 @@
-_Run: 2026-09-26 22:36 UTC_
+# synthetic-expense-dependent-care-render.pdf
 
 
-## synthetic-expense-dependent-care-render.pdf
+_Run: 2026-09-28 18:36 UTC_
 
-**Durations**
 
-- bda: 22.98s extraction
-- llm: 2.864s extraction
+## Durations
 
-**Cost**
+- bda: 23.15s extraction
+- llm: 2.475s extraction
+
+
+## Cost
 
 _By Service_
-- us.amazon.nova-pro-v1:0: $0.01284320 (13714 in / 585 out)
+- us.amazon.nova-pro-v1:0: $0.01281440 (13714 in / 576 out)
 - bda: $0.04000000 (1 page(s))
-- **total: $0.05284320**
+- **total: $0.05281440**
 
 _By Extraction Method_
-- shared (preclassification): $0.00880480
+- shared (preclassification): $0.00877600
 - llm extraction: $0.00403840
 - primary (bda): $0.04000000
-- **total: $0.05284320**
+- **total: $0.05281440**
 
+
+## Accuracy
+- BDA: 91% exact, 91% loose, 9% misses
+- LLM: 73% exact, 100% loose, 0% misses
+
+
+## Field Comparison
 | Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | BDA Geometry | LLM Geometry | Geo Match |
 |---|---|---|---|---|---|---|---|---|
-| amount_paid | - | 1000 | 1000.00 | 0.95 | 1.0000 | 0.733,0.782,0.085,0.015 | 0.733,0.783,0.085,0.014 | 🟡 |
-| balance_due | - | 1000 | 1000.00 | 0.95 | 1.0000 | 0.733,0.820,0.085,0.015 | 0.733,0.783,0.085,0.014 | ❌ |
-| dependent_names | - | - | Elliot Morgan | - | 1.0000 | - | 0.195,0.361,0.105,0.014 | ❌ |
-| document_type | - | Dependent Care Expense Statement | Dependent Care Expense Statement | 0.84 | 1.0000 | 0.213,0.179,0.250,0.026 | 0.213,0.179,0.562,0.026 | ❌ |
-| payment_amount | - | 2000 | 2000.00 | 0.25 | 1.0000 | 0.733,0.745,0.085,0.015 | 0.733,0.745,0.085,0.015 | ✅ |
-| payment_frequency | - | Weekly | Weekly | 0.92 | 1.0000 | 0.512,0.445,0.057,0.014 | 0.512,0.445,0.057,0.014 | ✅ |
-| provider_address | - | 485 Maple Avenue, Providence, RI 02903 | 485 Maple Avenue, Providence, RI 02903 | 0.91 | 1.0000 | 0.249,0.090,0.308,0.014 | 0.249,0.090,0.308,0.014 | ✅ |
-| provider_name | - | Bright Horizons Early Learning Center | Bright Horizons Early Learning Center | 0.89 | 1.0000 | 0.213,0.053,0.425,0.019 | 0.213,0.053,0.425,0.019 | ✅ |
-| service_end_date | - | 2026-08-30 | 2026-08-30 | 0.76 | 0.9800 | 0.617,0.650,0.073,0.013 | 0.523,0.650,0.168,0.014 | ❌ |
-| service_start_date | - | 2026-08-03 | 2026-08-03 | 0.64 | 0.9800 | 0.194,0.446,0.102,0.014 | 0.523,0.650,0.168,0.014 | ❌ |
-| statement_date | - | 2026-09-05 | 2026-09-05 | 0.91 | 1.0000 | 0.720,0.076,0.094,0.012 | 0.720,0.076,0.094,0.012 | ✅ |
+| amount_paid | 1000 | ✅ 1000 | 🟡 1000.00 | 0.95 | 1.0000 | 0.733,0.782,0.085,0.015 | 0.733,0.783,0.085,0.014 | 🟡 |
+| balance_due | 1000 | ✅ 1000 | 🟡 1000.00 | 0.95 | 1.0000 | 0.733,0.820,0.085,0.015 | 0.733,0.783,0.085,0.014 | ❌ |
+| dependent_names | Elliot Morgan | ❌ - | ✅ Elliot Morgan | - | 1.0000 | - | 0.195,0.361,0.105,0.014 | ❌ |
+| document_type | Dependent Care Expense Statement | ✅ Dependent Care Expense Statement | ✅ Dependent Care Expense Statement | 0.84 | 1.0000 | 0.213,0.179,0.250,0.026 | 0.213,0.179,0.562,0.026 | ❌ |
+| payment_amount | 2000 | ✅ 2000 | 🟡 2000.00 | 0.25 | 1.0000 | 0.733,0.745,0.085,0.015 | 0.733,0.745,0.085,0.015 | ✅ |
+| payment_frequency | Weekly | ✅ Weekly | ✅ Weekly | 0.92 | 1.0000 | 0.512,0.445,0.057,0.014 | 0.512,0.445,0.057,0.014 | ✅ |
+| provider_address | 485 Maple Avenue, Providence, RI 02903 | ✅ 485 Maple Avenue, Providence, RI 02903 | ✅ 485 Maple Avenue, Providence, RI 02903 | 0.91 | 1.0000 | 0.249,0.090,0.308,0.014 | 0.249,0.090,0.308,0.014 | ✅ |
+| provider_name | Bright Horizons Early Learning Center | ✅ Bright Horizons Early Learning Center | ✅ Bright Horizons Early Learning Center | 0.89 | 1.0000 | 0.213,0.053,0.425,0.019 | 0.213,0.053,0.425,0.019 | ✅ |
+| service_end_date | 2026-08-30 | ✅ 2026-08-30 | ✅ 2026-08-30 | 0.77 | 0.9800 | 0.617,0.650,0.074,0.013 | 0.523,0.650,0.168,0.014 | ❌ |
+| service_start_date | 2026-08-03 | ✅ 2026-08-03 | ✅ 2026-08-03 | 0.64 | 0.9800 | 0.194,0.446,0.103,0.014 | 0.523,0.650,0.168,0.014 | ❌ |
+| statement_date | 2026-09-05 | ✅ 2026-09-05 | ✅ 2026-09-05 | 0.91 | 1.0000 | 0.720,0.076,0.094,0.012 | 0.720,0.076,0.094,0.012 | ✅ |

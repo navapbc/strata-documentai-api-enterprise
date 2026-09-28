@@ -1,0 +1,17 @@
+{
+  "fields": {
+    "trust_name": "The Morgan E. Dalton Revocable Trust",
+    "trust_type": "Revocable Living Trust",
+    "beneficiary_name": "Morgan Elise Dalton",
+    "trustee_name": "Cedar Grove Trust Company, as Trustee",
+    "account_number": "TR-4567-89XX",
+    "statement_period_start": "2026-06-01",
+    "statement_period_end": "2026-08-31",
+    "account_balance": "90000.00",
+    "distributions_during_period": "1800.00",
+    "asset_types": "U.S. Equities, Fixed Income, Cash & Cash Equivalents, Alternative Investments"
+  },
+  "notes": {
+    "distributions_during_period": "The statement also shows a separate 'YTD Distributions' figure of $3,600.00 (Jan 1 - Aug 31); this field is the statement-period figure only ($1,800.00), matching the schema description."
+  }
+}

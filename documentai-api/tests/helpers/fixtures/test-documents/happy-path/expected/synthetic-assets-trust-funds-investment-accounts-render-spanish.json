@@ -1,0 +1,17 @@
+{
+  "fields": {
+    "trust_name": "Fideicomiso Rivera 2019",
+    "trust_type": "Revocable (Inter Vivos)",
+    "beneficiary_name": "María Isabel Rivera",
+    "trustee_name": "Pinehurst Trust Company",
+    "account_number": "PTC-9***-4582",
+    "statement_period_start": "2026-06-01",
+    "statement_period_end": "2026-08-31",
+    "account_balance": "45000.00",
+    "distributions_during_period": "900.00",
+    "asset_types": "Acciones (Nacionales), Bonos (Renta Fija), Fondos Mutuos, Efectivo y Equivalentes"
+  },
+  "notes": {
+    "trust_name": "A stray overlapping character appears after \"2019\" in the scan (likely a rendering artifact, not real text); read as \"Fideicomiso Rivera 2019\"."
+  }
+}

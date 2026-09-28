@@ -1,0 +1,20 @@
+{
+  "fields": {
+    "coverage_start_date": "2026-08-01",
+    "coverage_end_date": "2026-08-31",
+    "employer_name": null,
+    "insurer_or_marketplace_name": "Harbor Health Plan, Inc.",
+    "payment_due_date": "2026-08-25",
+    "payment_frequency": "Mensual",
+    "payment_status": "Paid",
+    "policy_or_member_id": "MEM-87X4-3K2L",
+    "policyholder_name": "María Elena Salazar",
+    "premium_amount": 260,
+    "statement_date": "2026-09-02",
+    "subsidy_or_tax_credit_amount": 225
+  },
+  "notes": {
+    "premium_amount": "Uses 'Cantidad adeudada' ($260.00, after the -$225 tax credit and +$35 adjustment), not 'Prima bruta mensual' ($450.00) - consistent with the other two documents in this set. LLM's value (450.00) is the gross premium, not the amount actually due.",
+    "payment_status": "Not printed as a literal 'Paid' label like the other two documents, but 'Pagos aplicados -$260.00' exactly matches 'Cantidad adeudada $260.00' with a resulting 'Saldo actual $0.00' - fully paid."
+  }
+}

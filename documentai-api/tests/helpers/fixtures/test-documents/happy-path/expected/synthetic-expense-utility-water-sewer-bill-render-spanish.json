@@ -1,0 +1,30 @@
+{
+  "fields": {
+    "Account_Info.Acct_Name": "Mariana López",
+    "Account_Info.Acct_No": "1234-5678-90",
+    "Account_Info.Meter_Number": "MTR-78543210",
+    "Curr_Meter_Reading": "68200",
+    "Prev_Meter_Reading": "62200",
+    "Dates.Bill_From_Date": "07/21/2026",
+    "Dates.Bill_To_Date": "08/20/2026",
+    "Dates.Billing_Date": "08/28/2026",
+    "Dates.Due_Date": "09/18/2026",
+    "Line_Items.Amount or Value": "22.50, 45.00, 12.75, 19.20, 4.50, 6.24",
+    "Line_Items.LineItemDescription": "Cargo base de agua, Uso de agua, Cargo base de alcantarillado, Cargo de alcantarillado, Tarifa de aguas pluviales, Impuesto local sobre servicios públicos (6%)",
+    "Prev_Bal": "88.03",
+    "Provider Name": "SERVICIO DE AGUA DEL CONDADO DE HARBOR",
+    "Service_Address.Building_Line 1": "214 Maple Way",
+    "Service_Address.Street": "214 Maple Way",
+    "Service_Address.City": "Pocatello",
+    "Service_Address.State": "ID",
+    "Service_Address.Zip_Code": "83204",
+    "Tot_Amt": "86.47",
+    "Total_Current_Charges": "110.19",
+    "is_total_amount_greater_than_equal_to_current_charges": false
+  },
+  "notes": {
+    "Prev_Bal": "The 'Resumen de Saldo' box has two similarly-labeled rows: 'Saldo anterior $88.03' (the balance carried in before this cycle's payment) and 'Saldo anterior pendiente $0.00' (the remainder after the $88.03 payment was applied). Prev_Bal uses the first ($88.03), matching the other two documents' convention of 'balance before this cycle's payment'. LLM's value (0.00) is the post-payment figure, mislabeled.",
+    "Tot_Amt/Total_Current_Charges": "'Total de cargos actuales' ($110.19) plus 'Saldo anterior pendiente' ($0.00) doesn't reconcile to the prominently repeated 'Total a pagar' ($86.47, shown 3 times) - the same kind of internal arithmetic inconsistency seen on the Spanish-language electric bill in this test set. Both values are recorded as printed rather than reconciled.",
+    "is_total_amount_greater_than_equal_to_current_charges": "Tot_Amt ($86.47) < Total_Current_Charges ($110.19), so this is false/No - both extractors' individual field values are correct here, and LLM's 'No' answer for this check is also correct."
+  }
+}

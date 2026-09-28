@@ -1,0 +1,18 @@
+{
+  "fields": {
+    "trust_name": null,
+    "trust_type": "Irrevocable Burial Trust Account",
+    "beneficiary_name": "Payable to Estate",
+    "trustee_name": "Cedar Grove Burial Trust Company",
+    "account_number": "***-***-7429",
+    "statement_period_start": "2026-01-01",
+    "statement_period_end": "2026-08-31",
+    "account_balance": "2750.00",
+    "distributions_during_period": "0.00",
+    "asset_types": "Cash"
+  },
+  "notes": {
+    "trust_name": "No distinct proper trust name is printed (e.g. no 'X Family Trust' label) - only 'Account Type: Irrevocable Burial Trust Account', which is the trust_type field. LLM filled trust_name with that same string, which is a mislabel rather than a real trust name; treated as genuinely absent.",
+    "asset_types": "Not an explicit table like the other trust/investment statements - inferred as 'Cash' since this is a cash-value burial trust account with no other asset classes shown (matches LLM's reasonable inference)."
+  }
+}

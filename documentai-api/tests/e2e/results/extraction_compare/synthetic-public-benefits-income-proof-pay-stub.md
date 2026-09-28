@@ -1,27 +1,36 @@
-_Run: 2026-09-26 22:39 UTC_
+# synthetic-public-benefits-income-proof-pay-stub.jpg
 
 
-## synthetic-public-benefits-income-proof-pay-stub.jpg
+_Run: 2026-09-28 18:38 UTC_
 
-**Durations**
 
-- bda: 23.66s extraction
-- llm: 11.0s extraction
+## Durations
 
-**Cost**
+- bda: 25.7s extraction
+- llm: 12.324s extraction
+
+
+## Cost
 
 _By Service_
 - us.amazon.nova-lite-v1:0: $0.00011328 (1780 in / 27 out)
-- us.amazon.nova-pro-v1:0: $0.02334880 (22978 in / 1552 out)
+- us.amazon.nova-pro-v1:0: $0.02333920 (22978 in / 1549 out)
 - bda: $0.04000000 (1 page(s))
-- **total: $0.06346208**
+- **total: $0.06345248**
 
 _By Extraction Method_
-- shared (preclassification): $0.00895808
+- shared (preclassification): $0.00894848
 - llm extraction: $0.01450400
 - primary (bda): $0.04000000
-- **total: $0.06346208**
+- **total: $0.06345248**
 
+
+## Accuracy
+- BDA: 69% exact, 79% loose, 21% misses
+- LLM: 79% exact, 90% loose, 10% misses
+
+
+## Field Comparison
 | Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | BDA Geometry | LLM Geometry | Geo Match |
 |---|---|---|---|---|---|---|---|---|
 | CityTaxes.ItemDescription | - | - | - | - | N/A | - | - |  |

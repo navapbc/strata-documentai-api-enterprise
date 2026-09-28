@@ -1,0 +1,23 @@
+{
+  "fields": {
+    "account_holder_name": "Alexis Morgan",
+    "account_number": "IRA-7821-****-5542",
+    "account_type": "Traditional IRA",
+    "account_balance": "$46,000.00",
+    "total_value": "46000.00",
+    "financial_institution": "Harbor Brokerage Services, Inc.",
+    "tax_year": "2026",
+    "document_type": "Brokerage Statement",
+    "statement_period_start": "2026-01-01",
+    "statement_period_end": "2026-08-31",
+    "contribution_dates": "02/14/2026, 05/12/2026",
+    "distribution_dates": "07/20/2026",
+    "capital_gains_distributions_cumulative": null,
+    "dividend_payments_cumulative": null,
+    "interest_credits_cumulative": null
+  },
+  "notes": {
+    "capital_gains_distributions_cumulative/dividend_payments_cumulative/interest_credits_cumulative": "The statement only reports a single lump-sum 'Investment Gains (Losses)' figure - not broken out into capital gains vs. dividends vs. interest.",
+    "document_type": "Literally titled 'IRA ACCOUNT STATEMENT', which isn't one of the schema's three enum values (Brokerage/Mutual Fund/Stock Statement); 'Brokerage Statement' used as the closest fit since the custodian is Harbor Brokerage Services, Inc."
+  }
+}

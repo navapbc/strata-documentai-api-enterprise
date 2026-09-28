@@ -1,0 +1,18 @@
+{
+  "fields": {
+    "trust_name": "Rivera Family Revocable Trust",
+    "trust_type": "Revocable Trust",
+    "beneficiary_name": "Jordan A. Rivera",
+    "trustee_name": "Cedar Grove Trust Company",
+    "account_number": "XX-XX-3456",
+    "statement_period_start": "2026-01-01",
+    "statement_period_end": "2026-06-30",
+    "account_balance": "100000.00",
+    "distributions_during_period": "2000.00",
+    "asset_types": "Equity Securities, Fixed Income Securities, Real Estate Holdings, Cash and Cash Equivalents"
+  },
+  "notes": {
+    "trust_name/beneficiary_name": "BDA has these two fields swapped (beneficiary_name='Rivera Family Revocable Trust', trust_name='Jordan A. Rivera') - backwards. LLM has them correct.",
+    "account_number": "Printed as 'Acct #: XX-XX-3456'; this fixture uses just the number, dropping the label prefix."
+  }
+}

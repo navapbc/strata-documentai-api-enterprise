@@ -1,0 +1,23 @@
+{
+  "fields": {
+    "VENDORDETAILS.VENDORNAME": "Harbor County Money Services",
+    "VENDORDETAILS.VENDORADDRESS": "310 Seaside Avenue, Suite 101, New London, CT 06320",
+    "VENDORDETAILS.VENDORPHONE": "(860) 555-2741",
+    "RECEIPT_ID": "MO-26-058714",
+    "RECEIPT_DATE": "2026-09-06",
+    "LINEITEMS.QTY": null,
+    "LINEITEMS.PRODUCT_CODE": null,
+    "LINEITEMS.AMT": "1200.00",
+    "PAYMENTDETAILS.SUBTOTAL": "1200.00",
+    "PAYMENTDETAILS.TAX": null,
+    "PAYMENTDETAILS.TOTAL": "1203.00",
+    "PAYMENTDETAILS.AMOUNTPAID": "1203.00",
+    "expire": "No"
+  },
+  "notes": {
+    "LINEITEMS.QTY/PRODUCT_CODE": "This is a money-order receipt, not an itemized goods receipt - no quantity or product code concept applies.",
+    "LINEITEMS.AMT": "The Payment Summary table has 2 rows (Money Order Amount $1,200.00, Issuance Fee - with a blank Amount cell and $3.00 only in the Fees column); only the first row has a value under 'Amount'.",
+    "PAYMENTDETAILS.TAX": "No tax is charged - the $3.00 'Issuance Fee' is a fee, not a tax.",
+    "expire": "Receipt date (2026-09-06) is not older than 1/1/2022, so 'No'."
+  }
+}

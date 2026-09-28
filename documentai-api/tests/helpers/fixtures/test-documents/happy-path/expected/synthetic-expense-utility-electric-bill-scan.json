@@ -1,0 +1,37 @@
+{
+  "fields": {
+    "Account Number": "1234 5678 9012",
+    "Address.Service Address": "4912 W Willow Ridge Dr, West Jordan, UT 84081",
+    "Address.Service address pin code": "84081",
+    "BalanceDue Date": "2026-09-17",
+    "BalanceGreaterCheck": "Yes",
+    "Category": "Electricity",
+    "CountMeterIDs": 1,
+    "Current Balance": "118.63",
+    "End Date": "2026-08-26",
+    "Is_NumMeterIDsListed": null,
+    "Is_PrevGreaterThanCurr": "No",
+    "Is_ValidPinCode": true,
+    "Is_ValidState": true,
+    "Line_Item_Charges.Charge": "65.52, 47.49, 5.50, 0.96, 4.18, 2.98",
+    "Line_Item_Charges.Line item Description": "Supply (Generation) Charge, Delivery (Distribution) Charge, Customer Charge, Utah Clean Energy Program, State Sales Tax, Municipal Franchise Fee",
+    "Meter Number": "CGEM12345678",
+    "MeterRead.Current value": "36885 kWh",
+    "MeterRead.Delta or Metered value": "640 kWh",
+    "MeterRead.Meter ID": "CGEM12345678",
+    "MeterRead.Previous value": "36245 kWh",
+    "MeterRead.Usage Unit": "kWh",
+    "Previous Balance": "112.74",
+    "Provider": "Cedar Grove Energy",
+    "StartDate": "2026-07-28",
+    "Total Balance Due": "118.63",
+    "Usage.power factor": null,
+    "Usage.usage": "640 kWh",
+    "UsageMult": null
+  },
+  "notes": {
+    "BalanceGreaterCheck": "Neither extractor produced a value. Current ($118.63) > Previous ($112.74), so 'Yes'.",
+    "Line_Item_Charges": "LLM only captured 1 of the 6 itemized charge rows.",
+    "Usage.power factor": "No single per-kWh 'power factor' value - three different per-kWh rates apply to different charge types on this bill."
+  }
+}
