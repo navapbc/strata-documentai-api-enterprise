@@ -1,32 +1,32 @@
 # synthetic-expense-utility-water-sewer-bill-render-spanish.png
 
 
-_Run: 2026-09-29 00:55 UTC_
+_Run: 2026-09-29 16:08 UTC_
 
 
 ## Durations
 
-- bda: 32.9s extraction
-- llm: 4.34s extraction
+- bda: 28.29s extraction
+- llm: 5.247s extraction
 
 
 ## Cost
 
 _By Service_
 - us.amazon.nova-lite-v1:0: $0.00012384 (1956 in / 27 out)
-- us.amazon.nova-pro-v1:0: $0.01831840 (17990 in / 1227 out)
+- us.amazon.nova-pro-v1:0: $0.01808800 (17990 in / 1155 out)
 - bda: $0.04000000 (1 page(s))
-- **total: $0.05844224**
+- **total: $0.05821184**
 
 _By Extraction Method_
-- shared (preclassification): $0.00945184
-- llm extraction: $0.00899040
+- shared (preclassification): $0.00928544
+- llm extraction: $0.00892640
 - primary (bda): $0.04000000
-- **total: $0.05844224**
+- **total: $0.05821184**
 
 
 ## Accuracy
-- BDA: 86% equivalent, 86% close, 14% misses
+- BDA: 81% equivalent, 81% close, 19% misses
 - LLM: 95% equivalent, 95% close, 5% misses
 
 
@@ -41,7 +41,7 @@ _By Extraction Method_
 | Dates.Bill_To_Date | 2026-08-20 | ✅ 08/20/2026 | ✅ 2026-08-20 | 0.75 | 0.9900 | 0.851,0.107,0.084,0.011 | 0.852,0.108,0.084,0.011 | 🟡 |
 | Dates.Billing_Date | 2026-08-28 | ✅ 08/28/2026 | ✅ 2026-08-28 | 0.86 | 1.0000 | 0.848,0.087,0.087,0.011 | 0.849,0.087,0.087,0.010 | 🟡 |
 | Dates.Due_Date | 2026-09-18 | ✅ 09/18/2026 | ✅ 2026-09-18 | 0.82 | 1.0000 | 0.844,0.129,0.092,0.011 | 0.843,0.129,0.093,0.011 | 🟡 |
-| Line_Items.Amount or Value | 22.50, 45.00, 12.75, 19.20, 4.50, 6.24 | ❌ - | ✅ $22.50, $45.00, $12.75, $19.20, $4.50, $6.24 | - | N/A | - | 0.572,0.369,0.042,0.010 | ❌ |
+| Line_Items.Amount or Value | 22.50, 45.00, 12.75, 19.20, 4.50, 6.24 | ❌ - | ✅ $22.50, $45.00, $12.75, $19.20, $4.50, $6.24 | - | N/A | - | 0.579,0.463,0.035,0.010 | ❌ |
 | Line_Items.LineItemDescription | Cargo base de agua, Uso de agua, Cargo base de alcantarillado, Cargo de alcantarillado, Tarifa de aguas pluviales, Impuesto local sobre servicios públicos (6%) | ❌ - | ✅ Cargo base de agua, Uso de agua, Cargo base de alcantarillado, Cargo de alcantarillado, Tarifa de aguas pluviales, Impuesto local sobre servicios públicos (6%) | - | N/A | - | 0.051,0.463,0.239,0.010 | ❌ |
 | Prev_Bal | 88.03 | ✅ 88.03 | ❌ 0.00 | 0.90 | 1.0000 | 0.896,0.352,0.049,0.011 | 0.905,0.431,0.040,0.010 | ❌ |
 | Prev_Meter_Reading | 62200 | ✅ 62,200 | ✅ 62,200 | 0.66 | 1.0000 | 0.806,0.653,0.045,0.010 | 0.806,0.653,0.046,0.010 | 🟡 |
@@ -49,7 +49,7 @@ _By Extraction Method_
 | Service_Address.Building_Line 1 | 214 Maple Way | ✅ 214 Maple Way | ✅ 214 Maple Way | 0.61 | 1.0000 | 0.038,0.250,0.068,0.010 | 0.348,0.235,0.098,0.011 | ❌ |
 | Service_Address.City | Pocatello | ✅ Pocatello | ✅ Pocatello | 0.86 | N/A | 0.038,0.264,0.062,0.010 | - | ❌ |
 | Service_Address.State | ID | ✅ ID | ✅ ID | 0.91 | 0.9900 | 0.106,0.264,0.013,0.009 | 0.214,0.141,0.013,0.009 | ❌ |
-| Service_Address.Street | 214 Maple Way | ✅ 214 Maple Way | ✅ 214 Maple Way | 0.86 | 1.0000 | 0.038,0.250,0.099,0.011 | 0.348,0.235,0.098,0.011 | ❌ |
+| Service_Address.Street | 214 Maple Way | ❌ - | ✅ 214 Maple Way | 0.06 | 1.0000 | - | 0.348,0.235,0.098,0.011 | ❌ |
 | Service_Address.Zip_Code | 83204 | ✅ 83204 | ✅ 83204 | 0.92 | 0.9900 | 0.122,0.264,0.041,0.009 | 0.432,0.250,0.041,0.009 | ❌ |
 | Tot_Amt | 86.47 | ✅ 86.47 | ✅ 86.47 | 0.92 | 1.0000 | 0.861,0.163,0.075,0.016 | 0.861,0.163,0.075,0.016 | ✅ |
 | Total_Current_Charges | 110.19 | ✅ 110.19 | ✅ 110.19 | 0.79 | 1.0000 | 0.557,0.494,0.057,0.011 | 0.890,0.449,0.055,0.011 | ❌ |

@@ -1,28 +1,28 @@
 # synthetic-public-benefits-income-proof-pay-statement-photo.png
 
 
-_Run: 2026-09-29 00:56 UTC_
+_Run: 2026-09-29 16:10 UTC_
 
 
 ## Durations
 
-- bda: 24.77s extraction
-- llm: 11.98s extraction
+- bda: 27.74s extraction
+- llm: 11.807s extraction
 
 
 ## Cost
 
 _By Service_
 - us.amazon.nova-lite-v1:0: $0.00011394 (1791 in / 27 out)
-- us.amazon.nova-pro-v1:0: $0.02364720 (23155 in / 1601 out)
+- us.amazon.nova-pro-v1:0: $0.02364400 (23155 in / 1600 out)
 - bda: $0.04000000 (1 page(s))
-- **total: $0.06376114**
+- **total: $0.06375794**
 
 _By Extraction Method_
-- shared (preclassification): $0.00901154
+- shared (preclassification): $0.00900834
 - llm extraction: $0.01474960
 - primary (bda): $0.04000000
-- **total: $0.06376114**
+- **total: $0.06375794**
 
 
 ## Accuracy

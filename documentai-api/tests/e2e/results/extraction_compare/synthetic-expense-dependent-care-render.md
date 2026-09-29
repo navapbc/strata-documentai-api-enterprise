@@ -1,27 +1,27 @@
 # synthetic-expense-dependent-care-render.pdf
 
 
-_Run: 2026-09-29 00:54 UTC_
+_Run: 2026-09-29 16:07 UTC_
 
 
 ## Durations
 
-- bda: 22.96s extraction
-- llm: 1.647s extraction
+- bda: 26.67s extraction
+- llm: 2.292s extraction
 
 
 ## Cost
 
 _By Service_
-- us.amazon.nova-pro-v1:0: $0.01297040 (13885 in / 582 out)
+- us.amazon.nova-pro-v1:0: $0.01296400 (13885 in / 580 out)
 - bda: $0.04000000 (1 page(s))
-- **total: $0.05297040**
+- **total: $0.05296400**
 
 _By Extraction Method_
-- shared (preclassification): $0.00878240
+- shared (preclassification): $0.00877600
 - llm extraction: $0.00418800
 - primary (bda): $0.04000000
-- **total: $0.05297040**
+- **total: $0.05296400**
 
 
 ## Accuracy

@@ -186,7 +186,13 @@ def get_supplemental_extraction_model_id() -> str:
 
 
 def get_llm_extractor_model_id() -> str:
-    """Bedrock model ID for LLM extraction. SSM-configurable; default Nova Pro."""
+    """Bedrock model ID for LLM extraction. SSM-configurable; default Nova Pro.
+
+    See docs/decisions/2026-09-29-llm-extraction-model-selection.md - Nova Lite was
+    tested and reverted (accuracy dropped 82% -> 74%, including empty simple fields
+    and failure to disambiguate same-value fields like insured_name/policyholder_name).
+    Don't retry Lite/Micro here without re-validating against that ADR's failure modes.
+    """
     from documentai_api.config.env import get_env_config
 
     config = get_env_config()

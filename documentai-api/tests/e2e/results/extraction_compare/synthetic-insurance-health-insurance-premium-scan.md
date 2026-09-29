@@ -1,28 +1,28 @@
 # synthetic-insurance-health-insurance-premium-scan.jpg
 
 
-_Run: 2026-09-29 00:55 UTC_
+_Run: 2026-09-29 16:09 UTC_
 
 
 ## Durations
 
-- bda: 22.31s extraction
-- llm: 1.902s extraction
+- bda: 19.81s extraction
+- llm: 3.021s extraction
 
 
 ## Cost
 
 _By Service_
 - us.amazon.nova-lite-v1:0: $0.00012384 (1956 in / 27 out)
-- us.amazon.nova-pro-v1:0: $0.01410480 (15191 in / 610 out)
+- us.amazon.nova-pro-v1:0: $0.01408240 (15191 in / 603 out)
 - bda: $0.04000000 (1 page(s))
-- **total: $0.05422864**
+- **total: $0.05420624**
 
 _By Extraction Method_
-- shared (preclassification): $0.00931104
-- llm extraction: $0.00491760
+- shared (preclassification): $0.00929184
+- llm extraction: $0.00491440
 - primary (bda): $0.04000000
-- **total: $0.05422864**
+- **total: $0.05420624**
 
 
 ## Accuracy

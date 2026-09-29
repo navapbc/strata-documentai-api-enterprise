@@ -1,27 +1,27 @@
 # synthetic-investment-and-royalty-income-render.pdf
 
 
-_Run: 2026-09-29 00:56 UTC_
+_Run: 2026-09-29 16:09 UTC_
 
 
 ## Durations
 
-- bda: 41.06s extraction
-- llm: 1.877s extraction
+- bda: 20.77s extraction
+- llm: 2.511s extraction
 
 
 ## Cost
 
 _By Service_
-- us.amazon.nova-pro-v1:0: $0.01225920 (13172 in / 538 out)
+- us.amazon.nova-pro-v1:0: $0.01229760 (13172 in / 550 out)
 - bda: $0.04000000 (1 page(s))
-- **total: $0.05225920**
+- **total: $0.05229760**
 
 _By Extraction Method_
-- shared (preclassification): $0.00877600
+- shared (preclassification): $0.00881440
 - llm extraction: $0.00348320
 - primary (bda): $0.04000000
-- **total: $0.05225920**
+- **total: $0.05229760**
 
 
 ## Accuracy

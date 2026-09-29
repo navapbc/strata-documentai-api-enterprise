@@ -357,6 +357,8 @@ module "config" {
     "models/supplemental-extraction-model-id" = "us.amazon.nova-micro-v1:0"
     # LLM extraction reads this path directly (documentai_api.utils.ssm.get_llm_extractor_model_id),
     # not via a *_MODEL_ID_PARAM env var like the models/* entries above.
+    # Pro required - see docs/decisions/2026-09-29-llm-extraction-model-selection.md:
+    # Lite was tested and dropped aggregate accuracy from 82% to 74% (Equivalent Match).
     "llm-extraction/model-id" = "us.amazon.nova-pro-v1:0"
   }
 

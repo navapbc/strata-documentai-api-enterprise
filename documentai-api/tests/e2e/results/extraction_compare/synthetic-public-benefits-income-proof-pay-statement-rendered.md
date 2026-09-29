@@ -1,28 +1,28 @@
 # synthetic-public-benefits-income-proof-pay-statement-rendered.png
 
 
-_Run: 2026-09-29 00:57 UTC_
+_Run: 2026-09-29 16:10 UTC_
 
 
 ## Durations
 
-- bda: 24.27s extraction
-- llm: 12.488s extraction
+- bda: 24.81s extraction
+- llm: 11.328s extraction
 
 
 ## Cost
 
 _By Service_
-- us.amazon.nova-lite-v1:0: $0.00010998 (1725 in / 27 out)
+- us.amazon.nova-lite-v1:0: $0.00011022 (1725 in / 28 out)
 - us.amazon.nova-pro-v1:0: $0.02351840 (23022 in / 1594 out)
 - bda: $0.04000000 (1 page(s))
-- **total: $0.06362838**
+- **total: $0.06362862**
 
 _By Extraction Method_
-- shared (preclassification): $0.00887958
-- llm extraction: $0.01474880
+- shared (preclassification): $0.00889262
+- llm extraction: $0.01473600
 - primary (bda): $0.04000000
-- **total: $0.06362838**
+- **total: $0.06362862**
 
 
 ## Accuracy
@@ -46,7 +46,7 @@ _By Extraction Method_
 | CurrentTotalDeductions | 457.44 | ✅ 457.44 | ✅ 457.44 | 0.95 | 1.0000 | 0.463,0.752,0.058,0.014 | 0.463,0.753,0.058,0.014 | 🟡 |
 | EmployeeAddress.City | Baltimore | ✅ Baltimore | ✅ Baltimore | 0.94 | N/A | 0.220,0.215,0.070,0.013 | - | ❌ |
 | EmployeeAddress.Line1 | 1824 E Lafayette Ave | ✅ 1824 E Lafayette Ave | ✅ 1824 E Lafayette Ave | 0.94 | 1.0000 | 0.221,0.193,0.146,0.014 | 0.221,0.193,0.146,0.014 | ✅ |
-| EmployeeAddress.Line2 | - | - | - | 0.93 | N/A | - | - |  |
+| EmployeeAddress.Line2 | - | - | - | 0.94 | N/A | - | - |  |
 | EmployeeAddress.State | MD | ✅ MD | ✅ MD | 0.94 | 1.0000 | 0.296,0.215,0.025,0.012 | 0.152,0.093,0.027,0.013 | ❌ |
 | EmployeeAddress.ZipCode | 21213 | ✅ 21213 | ✅ 21213 | 0.94 | 1.0000 | 0.326,0.215,0.042,0.012 | 0.326,0.215,0.042,0.012 | ✅ |
 | EmployeeName.FirstName | Jasmine | ✅ Jasmine | ✅ Jasmine | 0.92 | 1.0000 | 0.219,0.170,0.057,0.011 | 0.219,0.170,0.057,0.011 | ✅ |
@@ -54,13 +54,13 @@ _By Extraction Method_
 | EmployeeName.MiddleName | - | - | - | 0.93 | N/A | - | - |  |
 | EmployeeName.SuffixName | - | - | - | 0.93 | N/A | - | - |  |
 | EmployeeNumber | 10482 | ✅ 10482 | ✅ 10482 | 0.94 | 1.0000 | 0.220,0.243,0.042,0.012 | 0.220,0.243,0.042,0.012 | ✅ |
-| FederalFilingStatus | Married | ✅ Married | ✅ Married | 0.66 | 1.0000 | 0.813,0.611,0.049,0.010 | 0.813,0.611,0.049,0.011 | 🟡 |
+| FederalFilingStatus | Married | ✅ Married | ✅ Married | 0.65 | 1.0000 | 0.813,0.611,0.049,0.010 | 0.813,0.611,0.049,0.011 | 🟡 |
 | FederalTaxes.ItemDescription | Federal Income Tax | ❌ - | ✅ Federal Income Tax | - | 1.0000 | - | 0.069,0.611,0.129,0.012 | ❌ |
 | FederalTaxes.Period | 186.11 | ❌ - | ✅ 186.11 | - | 1.0000 | - | 0.465,0.610,0.053,0.013 | ❌ |
 | FederalTaxes.YTD | 2287.59 | ❌ - | ✅ 2287.59 | - | 1.0000 | - | 0.628,0.610,0.069,0.014 | ❌ |
 | HolidayHourlyRate | - | - | - | 0.95 | N/A | - | - |  |
-| PayDate | 2026-04-17 | ✅ 2026-04-17 | ✅ 2026-04-17 | 0.65 | 1.0000 | 0.739,0.094,0.087,0.013 | 0.739,0.094,0.088,0.013 | 🟡 |
-| PayPeriodEndDate | 2026-04-15 | ✅ 2026-04-15 | ✅ 2026-04-15 | 0.72 | 1.0000 | 0.852,0.070,0.086,0.013 | 0.852,0.070,0.086,0.013 | ✅ |
+| PayDate | 2026-04-17 | ✅ 2026-04-17 | ✅ 2026-04-17 | 0.64 | 1.0000 | 0.739,0.094,0.087,0.013 | 0.739,0.094,0.088,0.013 | 🟡 |
+| PayPeriodEndDate | 2026-04-15 | ✅ 2026-04-15 | ✅ 2026-04-15 | 0.71 | 1.0000 | 0.852,0.070,0.086,0.013 | 0.852,0.070,0.086,0.013 | ✅ |
 | PayPeriodStartDate | 2026-04-01 | ✅ 2026-04-01 | ✅ 2026-04-01 | 0.74 | 1.0000 | 0.739,0.070,0.087,0.013 | 0.739,0.070,0.087,0.013 | ✅ |
 | PayrollNumber | - | - | - | 0.95 | N/A | - | - |  |
 | RegularHourlyRate | 18.25 | ✅ 18.25 | ✅ 18.25 | 0.94 | 1.0000 | 0.219,0.291,0.048,0.014 | 0.219,0.291,0.048,0.014 | ✅ |

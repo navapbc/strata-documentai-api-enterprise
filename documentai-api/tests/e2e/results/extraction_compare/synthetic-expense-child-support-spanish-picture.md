@@ -1,33 +1,33 @@
 # synthetic-expense-child-support-spanish-picture.png
 
 
-_Run: 2026-09-29 00:53 UTC_
+_Run: 2026-09-29 16:07 UTC_
 
 
 ## Durations
 
-- bda: 29.17s extraction
-- llm: 2.409s extraction
+- bda: 28.03s extraction
+- llm: 2.857s extraction
 
 
 ## Cost
 
 _By Service_
 - us.amazon.nova-lite-v1:0: $0.00012384 (1956 in / 27 out)
-- us.amazon.nova-pro-v1:0: $0.01560240 (16791 in / 678 out)
+- us.amazon.nova-pro-v1:0: $0.01563760 (16791 in / 689 out)
 - bda: $0.04000000 (1 page(s))
-- **total: $0.05572624**
+- **total: $0.05576144**
 
 _By Extraction Method_
-- shared (preclassification): $0.00928224
-- llm extraction: $0.00644400
+- shared (preclassification): $0.00932384
+- llm extraction: $0.00643760
 - primary (bda): $0.04000000
-- **total: $0.05572624**
+- **total: $0.05576144**
 
 
 ## Accuracy
 - BDA: 77% equivalent, 77% close, 23% misses
-- LLM: 100% equivalent, 100% close, 0% misses
+- LLM: 92% equivalent, 92% close, 8% misses
 
 
 ## Field Comparison
@@ -41,7 +41,7 @@ _By Extraction Method_
 | order_date | 2021-01-05 | ❌ 2021-05-01 | ✅ 2021-01-05 | 0.84 | 0.9900 | 0.485,0.293,0.069,0.009 | 0.485,0.293,0.069,0.008 | 🟡 |
 | payer_name | Daniel Ortega | ✅ Daniel Ortega | ✅ Daniel Ortega | 0.88 | 1.0000 | 0.646,0.251,0.089,0.010 | 0.647,0.251,0.089,0.010 | 🟡 |
 | payment_amount | 450.00 | ✅ 450 | ✅ 450.00 | 0.74 | 1.0000 | 0.241,0.352,0.077,0.010 | 0.241,0.353,0.052,0.009 | ❌ |
-| payment_frequency | Semanal | ✅ Semanal | ✅ Semanal | 0.90 | 1.0000 | 0.208,0.369,0.054,0.008 | 0.208,0.369,0.054,0.008 | ✅ |
+| payment_frequency | Semanal | ✅ Semanal | ❌ Weekly | 0.90 | 1.0000 | 0.208,0.369,0.054,0.008 | 0.208,0.369,0.054,0.008 | ✅ |
 | payment_type | Child Support | ❌ - | ✅ Child Support | 0.05 | 0.9900 | - | 0.366,0.232,0.181,0.008 | ❌ |
 | recipient_address | 4721 Willow Crossing Drive Apt. 3B, Norfolk, VA 23513 | ✅ 4721 Willow Crossing Drive, Apt. 3B Norfolk, VA 23513 | ✅ 4721 Willow Crossing Drive, Apt. 3B, Norfolk, VA 23513 | 0.82 | 1.0000 | 0.074,0.262,0.220,0.023 | 0.074,0.263,0.220,0.010 | ❌ |
 | recipient_name.first_name | Marisol | ✅ Marisol | ✅ Marisol | 0.89 | 1.0000 | 0.076,0.248,0.048,0.008 | 0.076,0.248,0.048,0.008 | ✅ |

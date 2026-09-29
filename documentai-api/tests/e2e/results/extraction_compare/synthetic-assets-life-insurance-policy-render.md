@@ -1,27 +1,27 @@
 # synthetic-assets-life-insurance-policy-render.pdf
 
 
-_Run: 2026-09-29 00:52 UTC_
+_Run: 2026-09-29 16:06 UTC_
 
 
 ## Durations
 
-- bda: 22.56s extraction
-- llm: 1.497s extraction
+- bda: 21.2s extraction
+- llm: 1.825s extraction
 
 
 ## Cost
 
 _By Service_
-- us.amazon.nova-pro-v1:0: $0.01249680 (13629 in / 498 out)
+- us.amazon.nova-pro-v1:0: $0.01253200 (13629 in / 509 out)
 - bda: $0.04000000 (1 page(s))
-- **total: $0.05249680**
+- **total: $0.05253200**
 
 _By Extraction Method_
-- shared (preclassification): $0.00879840
+- shared (preclassification): $0.00883360
 - llm extraction: $0.00369840
 - primary (bda): $0.04000000
-- **total: $0.05249680**
+- **total: $0.05253200**
 
 
 ## Accuracy

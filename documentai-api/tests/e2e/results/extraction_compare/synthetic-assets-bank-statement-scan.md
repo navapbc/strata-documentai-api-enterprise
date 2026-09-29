@@ -1,28 +1,28 @@
 # synthetic-assets-bank-statement-scan.jpg
 
 
-_Run: 2026-09-29 00:51 UTC_
+_Run: 2026-09-29 16:05 UTC_
 
 
 ## Durations
 
-- bda: 26.02s extraction
-- llm: 11.223s extraction
+- bda: 27.0s extraction
+- llm: 9.932s extraction
 
 
 ## Cost
 
 _By Service_
 - us.amazon.nova-lite-v1:0: $0.00012384 (1956 in / 27 out)
-- us.amazon.nova-pro-v1:0: $0.01668880 (15837 in / 1256 out)
+- us.amazon.nova-pro-v1:0: $0.01668560 (15837 in / 1255 out)
 - bda: $0.04000000 (1 page(s))
-- **total: $0.05681264**
+- **total: $0.05680944**
 
 _By Extraction Method_
-- shared (preclassification): $0.00927584
-- llm extraction: $0.00753680
+- shared (preclassification): $0.00925984
+- llm extraction: $0.00754960
 - primary (bda): $0.04000000
-- **total: $0.05681264**
+- **total: $0.05680944**
 
 
 ## Accuracy
@@ -33,8 +33,8 @@ _By Extraction Method_
 ## Field Comparison
 | Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | BDA Geometry | LLM Geometry | Geo Match |
 |---|---|---|---|---|---|---|---|---|
-| account_holder_address | 237 WILLOW BEND WAY BALTIMORE, MD 21224 | ✅ 237 WILLOW BEND WAY BALTIMORE, MD 21224 | ✅ 237 Willow Bend Way, Baltimore, MD 21224 | 0.75 | N/A | 0.108,0.261,0.204,0.029 | 0.108,0.261,0.204,0.010 | ❌ |
-| account_holder_name | Alex M. Thompson | ✅ Alex M. Thompson | ✅ Alex M. Thompson | 0.86 | N/A | 0.107,0.244,0.183,0.011 | 0.107,0.244,0.183,0.011 | ✅ |
+| account_holder_address | 237 WILLOW BEND WAY BALTIMORE, MD 21224 | ✅ 237 WILLOW BEND WAY BALTIMORE, MD 21224 | ✅ 237 Willow Bend Way, Baltimore, MD 21224 | 0.76 | N/A | 0.108,0.261,0.204,0.029 | 0.108,0.261,0.204,0.010 | ❌ |
+| account_holder_name | Alex M. Thompson | ✅ Alex M. Thompson | ✅ Alex M. Thompson | 0.85 | N/A | 0.107,0.244,0.183,0.011 | 0.107,0.244,0.183,0.011 | ✅ |
 | account_number | ********5342 | ✅ ********5342 | ❌ *******5342 | 0.58 | 1.0000 | 0.283,0.374,0.094,0.010 | 0.065,0.374,0.062,0.009 | ❌ |
 | account_summary.summary_amount | 1225.00, 3110.00, 2550.20, 0.00, 1784.80 | ❌ - | ✅ 1225.00, 3110.00, 2550.20, 0.00, 1784.80 | - | N/A | - | 0.866,0.202,0.071,0.011 | ❌ |
 | account_summary.summary_desc | Beginning Balance, Total Deposits/Credits, Total Withdrawals/Debits, Total Fees, Ending Balance | ❌ - | ✅ Beginning Balance, Total Deposits/Credits, Total Withdrawals/Debits, Total Fees, Ending Balance | - | N/A | - | 0.577,0.203,0.135,0.012 | ❌ |

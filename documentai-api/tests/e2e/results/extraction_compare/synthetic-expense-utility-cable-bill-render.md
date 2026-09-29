@@ -1,27 +1,27 @@
 # synthetic-expense-utility-cable-bill-render.pdf
 
 
-_Run: 2026-09-29 00:54 UTC_
+_Run: 2026-09-29 16:08 UTC_
 
 
 ## Durations
 
-- bda: 25.64s extraction
-- llm: 2.762s extraction
+- bda: 24.85s extraction
+- llm: 4.343s extraction
 
 
 ## Cost
 
 _By Service_
-- us.amazon.nova-pro-v1:0: $0.01411600 (14217 in / 857 out)
+- us.amazon.nova-pro-v1:0: $0.01411280 (14217 in / 856 out)
 - bda: $0.04000000 (1 page(s))
-- **total: $0.05411600**
+- **total: $0.05411280**
 
 _By Extraction Method_
-- shared (preclassification): $0.00880800
+- shared (preclassification): $0.00880480
 - llm extraction: $0.00530800
 - primary (bda): $0.04000000
-- **total: $0.05411600**
+- **total: $0.05411280**
 
 
 ## Accuracy
