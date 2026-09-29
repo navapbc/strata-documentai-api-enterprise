@@ -7,9 +7,11 @@
     "policy_number": "NSL-78XX-45XX-9X21",
     "policy_type": "Whole Life Insurance",
     "policyholder_name": "Jordan Rivera",
-    "premium_amount": 175,
+    "premium_amount": "175.00",
     "premium_frequency": "Monthly",
     "statement_date": "2026-09-01"
   },
-  "notes": {}
+  "notes": {
+    "premium_amount": "Printed as \"$175.00\"; kept as cents-preserving string rather than rounded to a bare int, consistent with the trust-funds-investment-accounts fixture's convention."
+  }
 }

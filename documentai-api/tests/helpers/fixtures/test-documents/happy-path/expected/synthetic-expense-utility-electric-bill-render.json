@@ -16,7 +16,7 @@
     "Line_Item_Charges.Charge": "78.20, 45.00, 33.20, 5.00, 3.10",
     "Line_Item_Charges.Line item Description": "Energy Consumption (920 kWh at $0.085/kWh), Delivery/Distribution Charge, Supply/Generation Charge, Wyoming Energy Surcharge, Taxes & Fees",
     "Meter Number": "02348719",
-    "MeterRead.Current value": "920 kWh",
+    "MeterRead.Current value": "920",
     "MeterRead.Delta or Metered value": null,
     "MeterRead.Meter ID": "02348719",
     "MeterRead.Previous value": null,
@@ -33,6 +33,7 @@
     "MeterRead.Previous value/Delta": "This bill only states 'Current Usage: 920 kWh' - it has no actual previous/current register reading pair (unlike the -scan variant of this document, which does). The 'Usage Comparison' chart's 860 kWh and 940 kWh bars are 'previous period' and 'same period last year' comparisons, not a sequential prior meter reading - LLM's -20kWh delta (920-940) wrongly treats the 'same period last year' bar as the prior reading.",
     "Is_PrevGreaterThanCurr": "Not derivable for the same reason - no genuine previous register reading exists on this document.",
     "Usage.power factor": "This schema field is presumably mislabeled - the document has no true electrical 'power factor' value (normally a 0-1 ratio); the only per-unit figure is 'Rate per kWh: $0.085', which is what both extractors actually captured here.",
-    "UsageMult": "No meter multiplier is mentioned on this document."
+    "UsageMult": "No meter multiplier is mentioned on this document.",
+    "MeterRead.Current value": "Printed/derived as \"920 kWh\"; kept as the bare number here since this is a 'number'-typed field and the unit already lives separately in MeterRead.Usage Unit (\"kWh\")."
   }
 }

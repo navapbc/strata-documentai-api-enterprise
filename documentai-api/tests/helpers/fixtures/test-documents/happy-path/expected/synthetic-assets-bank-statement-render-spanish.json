@@ -10,7 +10,7 @@
     "statement_end_date": "2026-08-31",
     "account_summary.summary_desc": "Saldo Inicial (01/08/2026), Depósitos / Créditos Totales, Retiros / Débitos Totales, Cargos por Servicio, Saldo Final (31/08/2026)",
     "account_summary.summary_amount": "2150.00, 3900.00, 3198.00, 0.00, 2852.00",
-    "transaction_details.date": "08/05/2026, 08/19/2026, 08/28/2026, 08/10/2026, 08/15/2026, 08/27/2026",
+    "transaction_details.date": "2026-08-05, 2026-08-19, 2026-08-28, 2026-08-10, 2026-08-15, 2026-08-27",
     "transaction_details.description": "DEPÓSITO: Sueldo – Southern Gulf Logistics, DEPÓSITO: Sueldo – Southern Gulf Logistics, DEPÓSITO: Reembolso de Capacitación, DÉBITO: Pago de Renta – Magnolia Apartments, DÉBITO: Servicios Públicos – Alabama Power, DÉBITO: Compra – Walmart Supercenter",
     "transaction_details.deposits": "1875.00, 1875.00, 150.00, 0.00, 0.00, 0.00",
     "transaction_details.withdrawals": "0.00, 0.00, 0.00, 1758.90, 959.40, 479.70",
@@ -19,6 +19,7 @@
   "notes": {
     "account_number": "Printed as \"•••• 7421\" (bullet-masked). Both BDA and LLM normalized this down to just \"7421\" - a defensible read, but this fixture uses the as-printed masked form as ground truth, consistent with the identity-proof fixture's convention.",
     "transaction_details.description": "As-printed text includes an en-dash before the payee/vendor (e.g. \"DÉBITO: Servicios Públicos – Alabama Power\"); LLM dropped the dash on two of the six rows.",
+    "transaction_details.date": "Printed as MM/DD/YYYY ('08/05/2026', etc.); normalized to ISO 8601 (YYYY-MM-DD) here, consistent with statement_start_date/statement_end_date and every other date field in this schema. BDA's blueprint (AWS-managed, not ours) instructs it to always return MM/DD/YYYY for this field. Note extraction-compare's loose-match normalizer only handles a single date value, not a comma-joined list, so BDA will show as a hard miss here rather than a loose match, unlike the single-value date fields.",
     "transaction_details.withdrawals": "Not extracted by either method for this document, despite being a defined schema field."
   }
 }

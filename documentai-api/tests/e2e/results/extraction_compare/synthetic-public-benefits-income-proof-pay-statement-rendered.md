@@ -1,33 +1,33 @@
 # synthetic-public-benefits-income-proof-pay-statement-rendered.png
 
 
-_Run: 2026-09-28 18:38 UTC_
+_Run: 2026-09-29 00:57 UTC_
 
 
 ## Durations
 
-- bda: 28.83s extraction
-- llm: 11.524s extraction
+- bda: 24.27s extraction
+- llm: 12.488s extraction
 
 
 ## Cost
 
 _By Service_
-- us.amazon.nova-lite-v1:0: $0.00011022 (1725 in / 28 out)
-- us.amazon.nova-pro-v1:0: $0.02337200 (22851 in / 1591 out)
+- us.amazon.nova-lite-v1:0: $0.00010998 (1725 in / 27 out)
+- us.amazon.nova-pro-v1:0: $0.02351840 (23022 in / 1594 out)
 - bda: $0.04000000 (1 page(s))
-- **total: $0.06348222**
+- **total: $0.06362838**
 
 _By Extraction Method_
-- shared (preclassification): $0.00888302
-- llm extraction: $0.01459920
+- shared (preclassification): $0.00887958
+- llm extraction: $0.01474880
 - primary (bda): $0.04000000
-- **total: $0.06348222**
+- **total: $0.06362838**
 
 
 ## Accuracy
-- BDA: 80% exact, 83% loose, 17% misses
-- LLM: 83% exact, 91% loose, 9% misses
+- BDA: 83% equivalent, 83% close, 17% misses
+- LLM: 91% equivalent, 91% close, 9% misses
 
 
 ## Field Comparison
@@ -46,7 +46,7 @@ _By Extraction Method_
 | CurrentTotalDeductions | 457.44 | ✅ 457.44 | ✅ 457.44 | 0.95 | 1.0000 | 0.463,0.752,0.058,0.014 | 0.463,0.753,0.058,0.014 | 🟡 |
 | EmployeeAddress.City | Baltimore | ✅ Baltimore | ✅ Baltimore | 0.94 | N/A | 0.220,0.215,0.070,0.013 | - | ❌ |
 | EmployeeAddress.Line1 | 1824 E Lafayette Ave | ✅ 1824 E Lafayette Ave | ✅ 1824 E Lafayette Ave | 0.94 | 1.0000 | 0.221,0.193,0.146,0.014 | 0.221,0.193,0.146,0.014 | ✅ |
-| EmployeeAddress.Line2 | - | - | - | 0.94 | N/A | - | - |  |
+| EmployeeAddress.Line2 | - | - | - | 0.93 | N/A | - | - |  |
 | EmployeeAddress.State | MD | ✅ MD | ✅ MD | 0.94 | 1.0000 | 0.296,0.215,0.025,0.012 | 0.152,0.093,0.027,0.013 | ❌ |
 | EmployeeAddress.ZipCode | 21213 | ✅ 21213 | ✅ 21213 | 0.94 | 1.0000 | 0.326,0.215,0.042,0.012 | 0.326,0.215,0.042,0.012 | ✅ |
 | EmployeeName.FirstName | Jasmine | ✅ Jasmine | ✅ Jasmine | 0.92 | 1.0000 | 0.219,0.170,0.057,0.011 | 0.219,0.170,0.057,0.011 | ✅ |
@@ -54,14 +54,14 @@ _By Extraction Method_
 | EmployeeName.MiddleName | - | - | - | 0.93 | N/A | - | - |  |
 | EmployeeName.SuffixName | - | - | - | 0.93 | N/A | - | - |  |
 | EmployeeNumber | 10482 | ✅ 10482 | ✅ 10482 | 0.94 | 1.0000 | 0.220,0.243,0.042,0.012 | 0.220,0.243,0.042,0.012 | ✅ |
-| FederalFilingStatus | Married | ✅ Married | ✅ Married | 0.65 | 1.0000 | 0.813,0.611,0.049,0.010 | 0.813,0.611,0.049,0.011 | 🟡 |
+| FederalFilingStatus | Married | ✅ Married | ✅ Married | 0.66 | 1.0000 | 0.813,0.611,0.049,0.010 | 0.813,0.611,0.049,0.011 | 🟡 |
 | FederalTaxes.ItemDescription | Federal Income Tax | ❌ - | ✅ Federal Income Tax | - | 1.0000 | - | 0.069,0.611,0.129,0.012 | ❌ |
 | FederalTaxes.Period | 186.11 | ❌ - | ✅ 186.11 | - | 1.0000 | - | 0.465,0.610,0.053,0.013 | ❌ |
 | FederalTaxes.YTD | 2287.59 | ❌ - | ✅ 2287.59 | - | 1.0000 | - | 0.628,0.610,0.069,0.014 | ❌ |
 | HolidayHourlyRate | - | - | - | 0.95 | N/A | - | - |  |
-| PayDate | 2026-04-17 | ✅ 2026-04-17 | 🟡 04/17/2026 | 0.64 | 1.0000 | 0.739,0.094,0.087,0.013 | 0.739,0.094,0.088,0.013 | 🟡 |
-| PayPeriodEndDate | 2026-04-15 | ✅ 2026-04-15 | 🟡 04/15/2026 | 0.71 | 1.0000 | 0.852,0.070,0.086,0.013 | 0.852,0.070,0.086,0.013 | ✅ |
-| PayPeriodStartDate | 2026-04-01 | ✅ 2026-04-01 | 🟡 04/01/2026 | 0.74 | 1.0000 | 0.739,0.070,0.087,0.013 | 0.739,0.070,0.087,0.013 | ✅ |
+| PayDate | 2026-04-17 | ✅ 2026-04-17 | ✅ 2026-04-17 | 0.65 | 1.0000 | 0.739,0.094,0.087,0.013 | 0.739,0.094,0.088,0.013 | 🟡 |
+| PayPeriodEndDate | 2026-04-15 | ✅ 2026-04-15 | ✅ 2026-04-15 | 0.72 | 1.0000 | 0.852,0.070,0.086,0.013 | 0.852,0.070,0.086,0.013 | ✅ |
+| PayPeriodStartDate | 2026-04-01 | ✅ 2026-04-01 | ✅ 2026-04-01 | 0.74 | 1.0000 | 0.739,0.070,0.087,0.013 | 0.739,0.070,0.087,0.013 | ✅ |
 | PayrollNumber | - | - | - | 0.95 | N/A | - | - |  |
 | RegularHourlyRate | 18.25 | ✅ 18.25 | ✅ 18.25 | 0.94 | 1.0000 | 0.219,0.291,0.048,0.014 | 0.219,0.291,0.048,0.014 | ✅ |
 | StateFilingStatus | Married | ✅ Married | ✅ Married | 0.10 | 1.0000 | 0.813,0.611,0.049,0.011 | 0.813,0.611,0.049,0.011 | ✅ |
@@ -70,7 +70,7 @@ _By Extraction Method_
 | StateTaxes.YTD | 883.44 | ❌ - | ✅ 883.44 | - | 1.0000 | - | 0.641,0.638,0.056,0.013 | ❌ |
 | YTDCityTax | - | - | - | 0.95 | N/A | - | - |  |
 | YTDFederalTax | 2287.59 | ✅ 2287.59 | ✅ 2287.59 | 0.94 | 1.0000 | 0.628,0.610,0.068,0.014 | 0.628,0.610,0.069,0.014 | 🟡 |
-| YTDGrossPay | 18511.20 | 🟡 18511.2 | ✅ 18511.20 | 0.96 | 1.0000 | 0.828,0.512,0.080,0.014 | 0.828,0.512,0.081,0.014 | 🟡 |
+| YTDGrossPay | 18511.20 | ✅ 18511.2 | ✅ 18511.20 | 0.96 | 1.0000 | 0.828,0.512,0.080,0.014 | 0.828,0.512,0.081,0.014 | 🟡 |
 | YTDNetPay | 12921.89 | ✅ 12921.89 | ✅ 12921.89 | 0.93 | 1.0000 | 0.662,0.902,0.087,0.015 | 0.662,0.902,0.086,0.015 | 🟡 |
 | YTDStateTax | 883.44 | ✅ 883.44 | ✅ 883.44 | 0.91 | 1.0000 | 0.641,0.638,0.056,0.013 | 0.641,0.638,0.056,0.013 | ✅ |
 | YTDTotalDeductions | 5589.31 | ✅ 5589.31 | ✅ 5589.31 | 0.95 | 1.0000 | 0.626,0.752,0.070,0.014 | 0.626,0.753,0.070,0.014 | 🟡 |

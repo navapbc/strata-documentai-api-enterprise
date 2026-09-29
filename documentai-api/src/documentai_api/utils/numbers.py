@@ -1,5 +1,14 @@
 """Numeric utility functions."""
 
+import re
+
+
+def clean_number(value: str) -> str:
+    """Strip currency symbols, thousands separators, and trailing unit suffixes from a numeric string."""
+    value = re.sub(r"[\$,]", "", value).strip()
+    match = re.match(r"-?\d+(?:\.\d+)?", value)
+    return match.group(0) if match else value
+
 
 def median(vals: list[float]) -> float | None:
     """Return the median of a list, or None if empty."""

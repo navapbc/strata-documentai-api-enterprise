@@ -9,9 +9,9 @@
     "payment_status": "Paid",
     "policy_or_member_id": "MEM-87X4-3K2L",
     "policyholder_name": "María Elena Salazar",
-    "premium_amount": 260,
+    "premium_amount": "260.00",
     "statement_date": "2026-09-02",
-    "subsidy_or_tax_credit_amount": 225
+    "subsidy_or_tax_credit_amount": "225.00"
   },
   "notes": {
     "premium_amount": "Uses 'Cantidad adeudada' ($260.00, after the -$225 tax credit and +$35 adjustment), not 'Prima bruta mensual' ($450.00) - consistent with the other two documents in this set. LLM's value (450.00) is the gross premium, not the amount actually due.",

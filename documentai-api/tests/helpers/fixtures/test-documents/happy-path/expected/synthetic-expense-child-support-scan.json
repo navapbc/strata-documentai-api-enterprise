@@ -7,7 +7,7 @@
     "effective_start_date": "2022-03-22",
     "order_date": "2022-03-15",
     "payer_name": "Daniel R. Montoya",
-    "payment_amount": 500,
+    "payment_amount": "500.00",
     "payment_frequency": "Weekly",
     "payment_type": "Child Support",
     "recipient_address": "123 Desert Sage Rd, Apt 4B, Albuquerque, NM 87108",

@@ -5,10 +5,10 @@
     "Account_Info.Meter_Number": "4872915",
     "Curr_Meter_Reading": null,
     "Prev_Meter_Reading": null,
-    "Dates.Bill_From_Date": "08/01/2026",
-    "Dates.Bill_To_Date": "08/31/2026",
-    "Dates.Billing_Date": "09/05/2026",
-    "Dates.Due_Date": "09/25/2026",
+    "Dates.Bill_From_Date": "2026-08-01",
+    "Dates.Bill_To_Date": "2026-08-31",
+    "Dates.Billing_Date": "2026-09-05",
+    "Dates.Due_Date": "2026-09-25",
     "Line_Items.Amount or Value": "25.48, 18.20, 5.08",
     "Line_Items.LineItemDescription": "Water Charge, Sewer Charge, Stormwater Fee",
     "Prev_Bal": "62.48",
@@ -25,6 +25,7 @@
   "notes": {
     "Curr_Meter_Reading/Prev_Meter_Reading": "This bill has no actual meter register readings - only 'Water Usage: 4,580 gallons' for the current period and a comparison bar chart showing 'July 2026: 4,900 gallons' (the prior month's total usage, not a prior register reading). Unlike the -scan and -render-spanish siblings (which do have From/To register numbers), there's nothing here to read as a genuine meter reading. LLM's values (4,580 / 4,900 gallons) are period-usage totals, not register readings - treated as not derivable.",
     "Line_Items": "LLM only captured 1 of the 3 usage-detail rows.",
-    "is_total_amount_greater_than_equal_to_current_charges": "Tot_Amt equals Total_Current_Charges here ($48.76 = $48.76), so the 'greater than or equal to' check is true."
+    "is_total_amount_greater_than_equal_to_current_charges": "Tot_Amt equals Total_Current_Charges here ($48.76 = $48.76), so the 'greater than or equal to' check is true.",
+    "Dates": "Printed as MM/DD/YYYY ('08/01/2026', etc.); normalized to ISO 8601 (YYYY-MM-DD) here, consistent with every other date field in this schema. This is an AWS-managed blueprint (water-and-sewer-bill) whose field descriptions instruct MM/DD/YYYY - not ours to edit - but since these are single-value (not list) date fields, extraction-compare's normalizer resolves BDA's MM/DD/YYYY to the same calendar date, which now counts as an exact match."
   }
 }

@@ -16,10 +16,10 @@
     "Line_Item_Charges.Charge": "33.34, 51.32, 12.00, 1.04, 5.86, 1.95",
     "Line_Item_Charges.Line item Description": "Cargo por entrega (distribución), Cargo por suministro (generación), Cargo básico de servicio, Ajuste de energía renovable, Impuesto estatal sobre ventas (6.000%), Impuesto municipal sobre energía (2.000%)",
     "Meter Number": "MTR-72345678",
-    "MeterRead.Current value": "15842 kWh",
-    "MeterRead.Delta or Metered value": "521 kWh",
+    "MeterRead.Current value": "15842",
+    "MeterRead.Delta or Metered value": "521",
     "MeterRead.Meter ID": "MTR-72345678",
-    "MeterRead.Previous value": "15321 kWh",
+    "MeterRead.Previous value": "15321",
     "MeterRead.Usage Unit": "kWh",
     "Previous Balance": "118.74",
     "Provider": "Cedar Grove Energy",
@@ -34,6 +34,7 @@
     "BalanceGreaterCheck": "Neither extractor produced a value. Current ($134.28) > Previous ($118.74), so 'Yes'.",
     "Category": "BDA read 'ELECTRICIDAD' (matching the header 'FACTURA DE ELECTRICIDAD'/Electricity Bill); LLM read 'Residencial R-1', which is actually the rate plan/tariff (Tarifa), not the utility category - 'Electricidad' is used for consistency with how the English-language sibling document's Category field ('Electricity') is read.",
     "Is_NumMeterIDsListed": "Neither extractor produced a confident value and the field's intended semantics aren't clear from this document.",
-    "Usage.power factor": "No single per-kWh 'power factor' value exists - the itemized table has three different per-kWh rates ($0.06400, $0.09850, $0.00200) for different charge types, unlike the sibling render.pdf which has one unambiguous 'Rate per kWh'."
+    "Usage.power factor": "No single per-kWh 'power factor' value exists - the itemized table has three different per-kWh rates ($0.06400, $0.09850, $0.00200) for different charge types, unlike the sibling render.pdf which has one unambiguous 'Rate per kWh'.",
+    "MeterRead": "Current/Delta/Previous values printed/derived with a \"kWh\" suffix (e.g. \"15842 kWh\"); kept as bare numbers here since these are 'number'-typed fields and the unit already lives separately in MeterRead.Usage Unit (\"kWh\")."
   }
 }

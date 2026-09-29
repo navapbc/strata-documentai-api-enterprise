@@ -1,32 +1,32 @@
 # synthetic-assets-bank-statement-render.pdf
 
 
-_Run: 2026-09-28 18:34 UTC_
+_Run: 2026-09-29 00:52 UTC_
 
 
 ## Durations
 
-- bda: 23.05s extraction
-- llm: 5.643s extraction
+- bda: 24.53s extraction
+- llm: 1.93s extraction
 
 
 ## Cost
 
 _By Service_
-- us.amazon.nova-pro-v1:0: $0.01427040 (15498 in / 585 out)
+- us.amazon.nova-pro-v1:0: $0.01381920 (14906 in / 592 out)
 - bda: $0.04000000 (1 page(s))
-- **total: $0.05427040**
+- **total: $0.05381920**
 
 _By Extraction Method_
-- shared (preclassification): $0.00878240
-- llm extraction: $0.00548800
+- shared (preclassification): $0.00880480
+- llm extraction: $0.00501440
 - primary (bda): $0.04000000
-- **total: $0.05427040**
+- **total: $0.05381920**
 
 
 ## Accuracy
-- BDA: 50% exact, 75% loose, 25% misses
-- LLM: 100% exact, 100% loose, 0% misses
+- BDA: 75% equivalent, 75% close, 25% misses
+- LLM: 100% equivalent, 100% close, 0% misses
 
 
 ## Field Comparison
@@ -40,5 +40,5 @@ _By Extraction Method_
 | account_type | - | - | - | 0.91 | - | - | - |  |
 | bank_name | Riverbend Financial Institution | ✅ Riverbend Financial Institution | ✅ Riverbend Financial Institution | 0.92 | 1.0000 | 0.228,0.045,0.212,0.049 | 0.229,0.079,0.211,0.015 | ❌ |
 | branch_transit_number | - | - | - | 0.93 | - | - | - |  |
-| statement_end_date | 2026-08-31 | 🟡 08/31/2026 | ✅ 2026-08-31 | 0.75 | 1.0000 | 0.405,0.177,0.089,0.011 | 0.406,0.177,0.089,0.011 | 🟡 |
-| statement_start_date | 2026-06-01 | 🟡 06/01/2026 | ✅ 2026-06-01 | 0.80 | 1.0000 | 0.291,0.177,0.088,0.011 | 0.291,0.177,0.088,0.011 | ✅ |
+| statement_end_date | 2026-08-31 | ✅ 08/31/2026 | ✅ 2026-08-31 | 0.75 | 1.0000 | 0.405,0.177,0.089,0.011 | 0.406,0.177,0.089,0.011 | 🟡 |
+| statement_start_date | 2026-06-01 | ✅ 06/01/2026 | ✅ 2026-06-01 | 0.80 | 1.0000 | 0.291,0.177,0.088,0.011 | 0.291,0.177,0.088,0.011 | ✅ |

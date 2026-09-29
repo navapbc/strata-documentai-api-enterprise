@@ -1,12 +1,12 @@
 {
   "fields": {
-    "amount_paid": 650,
-    "balance_due": 650,
+    "amount_paid": "650.00",
+    "balance_due": "650.00",
     "dependent_names": "Elliot James Morgan",
     "document_type": "Dependent Care Expense Statement",
-    "payment_amount": 325,
+    "payment_amount": "325.00",
     "payment_frequency": "Weekly",
-    "provider_address": "321 Whispering Pines Drive, Holly Springs, NC 27540",
+    "provider_address": "321 Whispering Pines Drive Holly Springs, NC 27540",
     "provider_name": "Pine Ridge Family Learning Center",
     "service_end_date": "2026-08-30",
     "service_start_date": "2026-08-03",

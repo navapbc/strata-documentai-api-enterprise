@@ -13,8 +13,20 @@ from documentai_api.dtos.extraction import ExtractionResult
 from documentai_api.logging import get_logger
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.ddb import get_ddb_record, write_tokens_by_model
+from documentai_api.utils.numbers import clean_number
 
 logger = get_logger(__name__)
+
+# Number fields where the unit is redundant - a sibling field already carries it -
+# so stripping trailing unit text is safe. Fields not listed here only get
+# $/thousands-separator stripping: a trailing unit may be the only place that
+# information exists (e.g. SERVICES_TABLE.quantity's mixed gallons/kWh/Therms
+# line items, which have no separate unit field).
+_STRIP_TRAILING_UNIT_FIELDS = {
+    "MeterRead.Current value",
+    "MeterRead.Previous value",
+    "MeterRead.Delta or Metered value",
+}
 tracer = trace.get_tracer(__name__)
 
 
@@ -207,12 +219,20 @@ def _extract(
                         "Extract the requested fields from the document text below.\n"
                         "Follow these steps for each field:\n"
                         "1. Locate the relevant text in the document.\n"
-                        "2. Set value to the extracted field value.\n"
+                        "2. Set value to the extracted field value. If the field is a date, resolve "
+                        "it to the calendar date it represents and set value to that date in "
+                        "YYYY-MM-DD (ISO 8601) format, regardless of how the date is written in the "
+                        "document - e.g. '31/08/2026', 'August 31, 2026', and '31 de agosto de 2026' "
+                        "all become '2026-08-31'.\n"
                         "3. Set text_citation to the shortest exact verbatim substring that supports "
-                        "only this field's value — copy it character-for-character from the document, "
+                        "only this field's value - copy it character-for-character from the document "
+                        "exactly as printed (do not normalize dates or other values here), "
                         "do not include text belonging to adjacent fields.\n"
                         "4. If the field is not present in the document, leave both value and "
-                        "text_citation null — do not write placeholder text such as 'N/A' or 'Not applicable'.\n\n"
+                        "text_citation null - do not write placeholder text such as 'N/A' or 'Not applicable'.\n"
+                        "5. Some fields apply to multiple rows or occurrences (e.g. a transaction "
+                        "table's date, description, or amount column). For those, set value to every "
+                        "occurrence, in order, separated by ', ' - do not return only the first one.\n\n"
                         "Document text:\n" + ocr_text
                     ),
                 }
@@ -250,7 +270,14 @@ def _extract(
             # statement's per-transaction balances), joined by the model as ", ".
             # Strip $/thousands-separators within each item, but split on ", " first
             # so the list separators themselves aren't stripped along with them.
-            value = ", ".join(re.sub(r"[\$,\s]", "", item) for item in value.split(", "))
+            # For fields where the unit is redundant (a sibling field already carries it),
+            # also strip trailing unit text via clean_number. Fields not in this set only
+            # get $/comma stripping - their unit may be the only place that information
+            # exists (e.g. SERVICES_TABLE.quantity's mixed gallons/kWh/Therms items).
+            if field_name in _STRIP_TRAILING_UNIT_FIELDS:
+                value = ", ".join(clean_number(item) for item in value.split(", "))
+            else:
+                value = ", ".join(re.sub(r"[\$,]", "", item) for item in value.split(", "))
 
         if field_type == "boolean" and value:
             # LLM can return "yes" or "true" depending on the prompt; standardize

@@ -8,6 +8,7 @@ Skipped automatically if COGNITO_CLIENT_ID or SSM_PREFIX are not set in the
 environment.
 """
 
+import difflib
 import json
 import os
 import re
@@ -45,6 +46,15 @@ _ICON_APPROX = "🟡"
 _ICON_MISS = "❌"
 _ICON_NO_EXPECTED = ""
 _INDICATOR_MAP = {_ICON_EXACT: "=", _ICON_APPROX: "~", _ICON_MISS: "x", _ICON_NO_EXPECTED: "-"}
+_APPROX_SIMILARITY_THRESHOLD = 0.8
+_SIMILARITY_FIELDS = {
+    "insurer_name",
+    "insurer_or_marketplace_name",
+    "financial_institution",
+    "trust_name",
+    "trustee_name",
+    "bank_name",
+}
 
 
 class _AccuracyDisplay(TypedDict):
@@ -248,12 +258,16 @@ def _normalize_value(v: str) -> str:
     if m:
         v = f"{m.group(3)}-{m.group(1)}-{m.group(2)}"
 
+    m = re.fullmatch(r"(\d{2})/(\d{2})/(\d{2})", v)
+    if m:
+        v = f"20{m.group(3)}-{m.group(1)}-{m.group(2)}"
+
     # normalize boolean synonyms
     v = {"yes": "true", "no": "false"}.get(v, v)
     return v
 
 
-def _match_icon(expected: str, received: str, tolerance: float = 0.0) -> str:
+def _match_icon(expected: str, received: str, tolerance: float = 0.0, field_name: str = "") -> str:
     """Return an icon indicating exact, approximate, or no match. Tolerance applies to numeric geo coordinates."""
     if expected in ("—", _NO_VALUE) and received in ("—", _NO_VALUE):
         return _ICON_NO_EXPECTED
@@ -262,6 +276,11 @@ def _match_icon(expected: str, received: str, tolerance: float = 0.0) -> str:
         return _ICON_MISS
 
     if expected == received:
+        return _ICON_EXACT
+
+    norm_e, norm_r = _normalize_value(expected), _normalize_value(received)
+
+    if norm_e == norm_r:
         return _ICON_EXACT
 
     if tolerance:
@@ -274,14 +293,14 @@ def _match_icon(expected: str, received: str, tolerance: float = 0.0) -> str:
         except ValueError:
             pass
 
-    if _normalize_value(expected) == _normalize_value(received):
-        return _ICON_APPROX
-
     try:
-        if float(expected) == float(received):
-            return _ICON_APPROX
+        if float(norm_e) == float(norm_r):
+            return _ICON_EXACT
     except ValueError:
         pass
+
+    if field_name in _SIMILARITY_FIELDS and difflib.SequenceMatcher(None, norm_e, norm_r).ratio() >= _APPROX_SIMILARITY_THRESHOLD:
+        return _ICON_APPROX
 
     return _ICON_MISS
 
@@ -307,8 +326,8 @@ def _compute_accuracy(
         if ev == _NO_VALUE:
             continue
 
-        pc[_match_icon(ev, str(primary.get(field, CompareFieldResult()).value or _NO_VALUE))] += 1
-        lc[_match_icon(ev, str(llm.get(field, CompareFieldResult()).value or _NO_VALUE))] += 1
+        pc[_match_icon(ev, str(primary.get(field, CompareFieldResult()).value or _NO_VALUE), field_name=field)] += 1
+        lc[_match_icon(ev, str(llm.get(field, CompareFieldResult()).value or _NO_VALUE), field_name=field)] += 1
 
     return {
         _ResultData.PRIMARY: {
@@ -449,10 +468,10 @@ def _write_comparison_md(
         l_acc = _fmt_accuracy(accuracy.get(_ResultData.LLM))
         lines.append("\n## Accuracy")
         lines.append(
-            f"- {primary_method.upper()}: {p_acc['exact']} exact, {p_acc['loose']} loose, {p_acc['miss']} misses"
+            f"- {primary_method.upper()}: {p_acc['exact']} equivalent, {p_acc['loose']} close, {p_acc['miss']} misses"
         )
         lines.append(
-            f"- LLM: {l_acc['exact']} exact, {l_acc['loose']} loose, {l_acc['miss']} misses"
+            f"- LLM: {l_acc['exact']} equivalent, {l_acc['loose']} close, {l_acc['miss']} misses"
         )
         lines.append("")
 
@@ -482,8 +501,8 @@ def _write_comparison_md(
         llm_geo = _fmt_geometry(lm.geometry)
         geo_match = _match_icon(p_geo, llm_geo, tolerance=0.005)
         if expected is not None:
-            p_cell = f"{_match_icon(exp_val, p_val)} {p_val}".strip()
-            llm_cell = f"{_match_icon(exp_val, llm_val)} {llm_val}".strip()
+            p_cell = f"{_match_icon(exp_val, p_val, field_name=field)} {p_val}".strip()
+            llm_cell = f"{_match_icon(exp_val, llm_val, field_name=field)} {llm_val}".strip()
         else:
             p_cell = p_val
             llm_cell = llm_val
@@ -535,8 +554,8 @@ def _print_comparison(
         lm = result.llm.get(field, CompareFieldResult())
         p_val, llm_val, p_conf, llm_conf, exp_val = _field_display_values(p, lm, expected, field)
         if expected is not None:
-            p_match = _INDICATOR_MAP[_match_icon(exp_val, p_val)]
-            llm_match = _INDICATOR_MAP[_match_icon(exp_val, llm_val)]
+            p_match = _INDICATOR_MAP[_match_icon(exp_val, p_val, field_name=field)]
+            llm_match = _INDICATOR_MAP[_match_icon(exp_val, llm_val, field_name=field)]
             print(
                 f"{field:<{col}} {exp_val:<20} {p_match} {p_val:<24} {llm_match} {llm_val:<24} {p_conf:>8}   {llm_conf:>8}"
             )
@@ -828,22 +847,21 @@ def write_extraction_compare_summary(results_dir: Path) -> None:
         lines.append("")
 
         lines.append("\n### Accuracy")
-        header, sep = _md_table_header(
-            [
-                "Primary Method",
-                "Primary Exact %",
-                "LLM Exact %",
-                "Primary Exact+Approx %",
-                "LLM Exact+Approx %",
-            ]
-        )
-        lines.append(header)
-        lines.append(sep)
-        lines.extend(
-            f"| {r.method} | {r.p_avg['exact']} | {r.l_avg['exact']} | {r.p_avg['loose']} | {r.l_avg['loose']} |"
-            for r in cost_rows
-        )
-        lines.append("")
+        if len(cost_rows) == 2:
+            r0, r1 = cost_rows
+            header, sep = _md_table_header(["Metric", f"{r0.method.upper()} vs LLM", f"{r1.method.upper()} vs LLM"])
+            lines.append(header)
+            lines.append(sep)
+            lines.append(f"| Equivalent Match | {r0.p_avg['exact']} / {r0.l_avg['exact']} | {r1.p_avg['exact']} / {r1.l_avg['exact']} |")
+            lines.append(f"| Close Match | {r0.p_avg['loose']} / {r0.l_avg['loose']} | {r1.p_avg['loose']} / {r1.l_avg['loose']} |")
+            lines.append("")
+        else:
+            header, sep = _md_table_header(["Metric"] + [f"{r.method.upper()} vs LLM" for r in cost_rows])
+            lines.append(header)
+            lines.append(sep)
+            lines.append("| Equivalent Match | " + " | ".join(f"{r.p_avg['exact']} / {r.l_avg['exact']}" for r in cost_rows) + " |")
+            lines.append("| Close Match | " + " | ".join(f"{r.p_avg['loose']} / {r.l_avg['loose']}" for r in cost_rows) + " |")
+            lines.append("")
 
     if result["rows"]:
         _write_doc_summary_table(lines, result["rows"])

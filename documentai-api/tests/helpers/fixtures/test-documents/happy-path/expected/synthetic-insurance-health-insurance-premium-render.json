@@ -9,9 +9,9 @@
     "payment_status": "Paid",
     "policy_or_member_id": "CLV-98274651",
     "policyholder_name": "Jordan Rivera",
-    "premium_amount": 390,
+    "premium_amount": "390.00",
     "statement_date": "2026-09-05",
-    "subsidy_or_tax_credit_amount": 240
+    "subsidy_or_tax_credit_amount": "240.00"
   },
   "notes": {
     "employer_name": "This is a WIC-program individual marketplace plan (Program: WIC, Jurisdiction: California) - no employer sponsor is mentioned anywhere on the document.",

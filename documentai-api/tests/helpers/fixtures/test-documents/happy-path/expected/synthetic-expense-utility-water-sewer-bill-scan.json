@@ -5,10 +5,10 @@
     "Account_Info.Meter_Number": "MTR-1845726",
     "Curr_Meter_Reading": "26730",
     "Prev_Meter_Reading": "23010",
-    "Dates.Bill_From_Date": "07/24/2026",
-    "Dates.Bill_To_Date": "08/24/2026",
-    "Dates.Billing_Date": "08/25/2026",
-    "Dates.Due_Date": "09/15/2026",
+    "Dates.Bill_From_Date": "2026-07-24",
+    "Dates.Bill_To_Date": "2026-08-24",
+    "Dates.Billing_Date": "2026-08-25",
+    "Dates.Due_Date": "2026-09-15",
     "Line_Items.Amount or Value": "14.45, 18.99, 20.37, 17.54, 3.50, 0.04",
     "Line_Items.LineItemDescription": "Water Service Charge, Water Usage Charge, Sewer Service Charge, Sewer Usage Charge, Stormwater Fee, Colorado Water Conservation Fee",
     "Prev_Bal": "48.73",
@@ -23,6 +23,7 @@
     "is_total_amount_greater_than_equal_to_current_charges": true
   },
   "notes": {
-    "Line_Items": "LLM only captured 1 of the 6 charge-detail rows."
+    "Line_Items": "LLM only captured 1 of the 6 charge-detail rows.",
+    "Dates": "Printed as MM/DD/YYYY ('07/24/2026', etc.); normalized to ISO 8601 (YYYY-MM-DD) here, consistent with every other date field in this schema. This is an AWS-managed blueprint (water-and-sewer-bill) whose field descriptions instruct MM/DD/YYYY - not ours to edit - but since these are single-value (not list) date fields, extraction-compare's normalizer resolves BDA's MM/DD/YYYY to the same calendar date, which now counts as an exact match."
   }
 }

@@ -16,10 +16,10 @@
     "Line_Item_Charges.Charge": "65.52, 47.49, 5.50, 0.96, 4.18, 2.98",
     "Line_Item_Charges.Line item Description": "Supply (Generation) Charge, Delivery (Distribution) Charge, Customer Charge, Utah Clean Energy Program, State Sales Tax, Municipal Franchise Fee",
     "Meter Number": "CGEM12345678",
-    "MeterRead.Current value": "36885 kWh",
-    "MeterRead.Delta or Metered value": "640 kWh",
+    "MeterRead.Current value": "36885",
+    "MeterRead.Delta or Metered value": "640",
     "MeterRead.Meter ID": "CGEM12345678",
-    "MeterRead.Previous value": "36245 kWh",
+    "MeterRead.Previous value": "36245",
     "MeterRead.Usage Unit": "kWh",
     "Previous Balance": "112.74",
     "Provider": "Cedar Grove Energy",
@@ -32,6 +32,7 @@
   "notes": {
     "BalanceGreaterCheck": "Neither extractor produced a value. Current ($118.63) > Previous ($112.74), so 'Yes'.",
     "Line_Item_Charges": "LLM only captured 1 of the 6 itemized charge rows.",
-    "Usage.power factor": "No single per-kWh 'power factor' value - three different per-kWh rates apply to different charge types on this bill."
+    "Usage.power factor": "No single per-kWh 'power factor' value - three different per-kWh rates apply to different charge types on this bill.",
+    "MeterRead": "Current/Delta/Previous values printed/derived with a \"kWh\" suffix (e.g. \"36885 kWh\"); kept as bare numbers here since these are 'number'-typed fields and the unit already lives separately in MeterRead.Usage Unit (\"kWh\")."
   }
 }

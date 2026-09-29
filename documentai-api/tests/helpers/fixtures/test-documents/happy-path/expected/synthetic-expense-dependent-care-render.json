@@ -1,10 +1,10 @@
 {
   "fields": {
-    "amount_paid": 1000,
-    "balance_due": 1000,
+    "amount_paid": "1000.00",
+    "balance_due": "1000.00",
     "dependent_names": "Elliot Morgan",
     "document_type": "Dependent Care Expense Statement",
-    "payment_amount": 2000,
+    "payment_amount": "2000.00",
     "payment_frequency": "Weekly",
     "provider_address": "485 Maple Avenue, Providence, RI 02903",
     "provider_name": "Bright Horizons Early Learning Center",

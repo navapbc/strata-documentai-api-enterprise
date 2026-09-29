@@ -10,14 +10,15 @@
     "document_type": "Brokerage Statement",
     "statement_period_start": "2025-01-01",
     "statement_period_end": "2025-12-31",
-    "contribution_dates": "03/10/2025, 06/15/2025",
-    "distribution_dates": "11/20/2025",
+    "contribution_dates": "2025-03-10, 2025-06-15",
+    "distribution_dates": "2025-11-20",
     "capital_gains_distributions_cumulative": null,
     "dividend_payments_cumulative": null,
     "interest_credits_cumulative": null
   },
   "notes": {
     "capital_gains_distributions_cumulative/dividend_payments_cumulative/interest_credits_cumulative": "The statement only reports a single lump-sum 'Ganancias/Pérdidas Netas por Inversión' figure ($2,040.00 for the period) - it's not broken out into capital gains vs. dividends vs. interest, so these three fields are genuinely not derivable from this document.",
-    "document_type": "The schema's document_type enum is Brokerage/Mutual Fund/Stock Statement, none of which is a literal match for an 'IRA' statement. 'Brokerage Statement' is used as the closest fit since the issuer is a brokerage (Harbor Brokerage Services)."
+    "document_type": "The schema's document_type enum is Brokerage/Mutual Fund/Stock Statement, none of which is a literal match for an 'IRA' statement. 'Brokerage Statement' is used as the closest fit since the issuer is a brokerage (Harbor Brokerage Services).",
+    "contribution_dates/distribution_dates": "Printed as MM/DD/YYYY ('03/10/2025', '06/15/2025', '11/20/2025'); normalized to ISO 8601 (YYYY-MM-DD) here, consistent with every other date field in this schema."
   }
 }

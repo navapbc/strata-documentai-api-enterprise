@@ -4,13 +4,13 @@
     "child_name": null,
     "court_name": "Tribunal de Familia de la Ciudad de Norfolk",
     "effective_end_date": null,
-    "effective_start_date": "2021-05-01",
-    "order_date": "2021-05-01",
+    "effective_start_date": "2021-01-05",
+    "order_date": "2021-01-05",
     "payer_name": "Daniel Ortega",
-    "payment_amount": 450,
+    "payment_amount": "450.00",
     "payment_frequency": "Semanal",
     "payment_type": "Child Support",
-    "recipient_address": "4721 Willow Crossing Drive, Apt. 3B, Norfolk, VA 23513",
+    "recipient_address": "4721 Willow Crossing Drive Apt. 3B, Norfolk, VA 23513",
     "recipient_name.first_name": "Marisol",
     "recipient_name.last_name": "Vega",
     "recipient_name.middle_name": null,
@@ -19,6 +19,7 @@
   },
   "notes": {
     "child_name": "No child is named on this document (payment-history statement between payor and recipient only).",
-    "payment_amount": "Uses 'Monto ordenado (actual)' ($450.00/week, the current-support order amount), not 'Monto total de la orden (actual + atrasos)' ($550.00/week, which adds the $100/week arrears payment) - consistent with how this field is read on the other two child-support documents. LLM's value (550.00) is the combined total, not the ordered current-support amount."
+    "payment_amount": "Uses 'Monto ordenado (actual)' ($450.00/week, the current-support order amount), not 'Monto total de la orden (actual + atrasos)' ($550.00/week, which adds the $100/week arrears payment) - consistent with how this field is read on the other two child-support documents. LLM's value (550.00) is the combined total, not the ordered current-support amount.",
+    "effective_start_date/order_date": "Printed as '05/01/2021', which is ambiguous in isolation - but this document is unambiguously DD/MM/YYYY elsewhere: 'Fecha de nacimiento: 17/03/1990' (day 17 can't be a month), and every day-unambiguous date in the 8-row payment history table (19/07/2026, 30/08/2026, etc.) reads day-first too. So '05/01/2021' resolves to January 5, 2021, not May 1. BDA's '2021-05-01' assumes MM/DD/YYYY and is wrong; LLM's '2021-01-05' correctly applied the document's day-first convention."
   }
 }

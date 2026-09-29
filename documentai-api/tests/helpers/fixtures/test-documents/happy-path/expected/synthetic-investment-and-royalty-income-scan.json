@@ -10,14 +10,15 @@
     "document_type": "Brokerage Statement",
     "statement_period_start": "2026-01-01",
     "statement_period_end": "2026-08-31",
-    "contribution_dates": "02/14/2026, 05/12/2026",
-    "distribution_dates": "07/20/2026",
+    "contribution_dates": "2026-02-14, 2026-05-12",
+    "distribution_dates": "2026-07-20",
     "capital_gains_distributions_cumulative": null,
     "dividend_payments_cumulative": null,
     "interest_credits_cumulative": null
   },
   "notes": {
     "capital_gains_distributions_cumulative/dividend_payments_cumulative/interest_credits_cumulative": "The statement only reports a single lump-sum 'Investment Gains (Losses)' figure - not broken out into capital gains vs. dividends vs. interest.",
-    "document_type": "Literally titled 'IRA ACCOUNT STATEMENT', which isn't one of the schema's three enum values (Brokerage/Mutual Fund/Stock Statement); 'Brokerage Statement' used as the closest fit since the custodian is Harbor Brokerage Services, Inc."
+    "document_type": "Literally titled 'IRA ACCOUNT STATEMENT', which isn't one of the schema's three enum values (Brokerage/Mutual Fund/Stock Statement); 'Brokerage Statement' used as the closest fit since the custodian is Harbor Brokerage Services, Inc.",
+    "contribution_dates/distribution_dates": "Printed as MM/DD/YYYY ('02/14/2026', '05/12/2026', '07/20/2026'); normalized to ISO 8601 (YYYY-MM-DD) here, consistent with every other date field in this schema."
   }
 }
