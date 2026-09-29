@@ -8,11 +8,8 @@ Skipped automatically if COGNITO_CLIENT_ID or SSM_PREFIX are not set in the
 environment.
 """
 
-import difflib
 import json
 import os
-import re
-import time
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -22,11 +19,20 @@ from typing import Any, TypedDict
 
 import boto3
 import pytest
-import requests
 
 from documentai_api.config.constants import ExtractMethod, LlmUsageReason
 from documentai_api.config.env import get_env_config
 from documentai_api.models.extraction_compare import CompareFieldResult, CompareResponse
+from documentai_api.utils.extraction_compare_client import (
+    ICON_APPROX,
+    ICON_EXACT,
+    ICON_MISS,
+    NO_VALUE,
+    field_display_values,
+    match_icon,
+    print_comparison,
+    submit_and_poll,
+)
 from documentai_api.utils.numbers import median
 
 # =============================================================================
@@ -40,21 +46,6 @@ TEST_DOCS_DIR = _FIXTURES_DIR / "happy-path"
 _EXTRACT_COMPARE_ADMIN_EMAIL = "extract-compare-admin@internal.invalid"
 _EXPECTED_DIR = TEST_DOCS_DIR / "expected"
 _RESULTS_DIR = Path(__file__).parent / "results" / "extraction_compare"
-_NO_VALUE = "-"
-_ICON_EXACT = "✅"
-_ICON_APPROX = "🟡"
-_ICON_MISS = "❌"
-_ICON_NO_EXPECTED = ""
-_INDICATOR_MAP = {_ICON_EXACT: "=", _ICON_APPROX: "~", _ICON_MISS: "x", _ICON_NO_EXPECTED: "-"}
-_APPROX_SIMILARITY_THRESHOLD = 0.8
-_SIMILARITY_FIELDS = {
-    "insurer_name",
-    "insurer_or_marketplace_name",
-    "financial_institution",
-    "trust_name",
-    "trustee_name",
-    "bank_name",
-}
 
 
 class _AccuracyDisplay(TypedDict):
@@ -123,7 +114,7 @@ def _load_expected(filename: str) -> dict[str, str] | None:
     if not path.exists():
         return None
     data = json.loads(path.read_text())
-    return {k: str(v) if v is not None else _NO_VALUE for k, v in data.get("fields", {}).items()}
+    return {k: str(v) if v is not None else NO_VALUE for k, v in data.get("fields", {}).items()}
 
 
 def _compare_files() -> list[str]:
@@ -164,49 +155,16 @@ def compare_jwt(reset_env):
     return response["AuthenticationResult"]["AccessToken"]
 
 
-def _submit_and_poll(
-    file_path: Path, jwt: str, timeout: int = 120, interval: int = 10
-) -> CompareResponse:
-    """Submit a file to the extraction-compare endpoint and poll until complete."""
-    headers = {"Authorization": f"Bearer {jwt}"}
-
-    with file_path.open("rb") as f:
-        response = requests.post(
-            f"{BASE_URL}/v1/admin/extraction-compare",
-            headers=headers,
-            files={"file": (file_path.name, f)},
-            timeout=30,
-        )
-
-    assert response.status_code == 202, f"submit failed {response.status_code}: {response.text}"
-    job_id = response.json()["jobId"]
-
-    deadline = time.monotonic() + timeout
-
-    while time.monotonic() < deadline:
-        poll = requests.get(
-            f"{BASE_URL}/v1/admin/extraction-compare/{job_id}",
-            headers=headers,
-            timeout=30,
-        )
-        if poll.status_code == 200:
-            return CompareResponse.model_validate(poll.json())
-        assert poll.status_code == 404, f"unexpected status {poll.status_code}: {poll.text}"
-        time.sleep(interval)
-
-    pytest.fail(f"compare job {job_id} did not complete within {timeout}s")
-
-
 @pytest.mark.parametrize("filename", _COMPARE_FILES)
 def test_extraction_compare(filename, compare_jwt):
     """Run extraction compare for a single fixture file and write per-doc results."""
-    result = _submit_and_poll(TEST_DOCS_DIR / filename, compare_jwt)
+    result = submit_and_poll(BASE_URL, TEST_DOCS_DIR / filename, compare_jwt)
 
     assert result.job_id
     assert len(result.primary) > 0, "Primary extraction returned no fields"
     assert len(result.ocr_mapping) > 0, "OCR mapping returned no fields"
 
-    _print_comparison(filename, result, _load_expected(filename))
+    print_comparison(filename, result, _load_expected(filename))
     _write_comparison_md(filename, result, _load_expected(filename))
 
 
@@ -215,97 +173,13 @@ def test_extraction_compare(filename, compare_jwt):
 # =============================================================================
 
 
-def _field_display_values(
-    p: CompareFieldResult,
-    lm: CompareFieldResult,
-    expected: dict[str, str] | None,
-    field: str,
-) -> tuple[str, str, str, str, str]:
-    """Return (p_val, llm_val, p_conf, llm_conf, exp_val) formatted for display."""
-    p_val = str(p.value or _NO_VALUE)
-    llm_val = str(lm.value or _NO_VALUE)
-    p_conf = f"{p.confidence:.2f}" if p.confidence is not None else _NO_VALUE
-
-    llm_conf = (
-        "N/A"
-        if lm.confidence == 0.0
-        else f"{lm.confidence:.4f}"
-        if lm.confidence is not None
-        else _NO_VALUE
-    )
-
-    exp_val = expected.get(field, _NO_VALUE) if expected is not None else _NO_VALUE
-    return p_val, llm_val, p_conf, llm_conf, exp_val
-
-
 def _fmt_geometry(geo: list[dict[str, Any]] | None) -> str:
     if not geo:
-        return _NO_VALUE
+        return NO_VALUE
 
     bb = geo[0].get("boundingBox") or geo[0]
     left, top, w, h = bb.get("left", 0), bb.get("top", 0), bb.get("width", 0), bb.get("height", 0)
     return f"{left:.3f},{top:.3f},{w:.3f},{h:.3f}"
-
-
-def _normalize_value(v: str) -> str:
-    """Normalize a field value for loose equality comparison."""
-    v = v.strip().lower()
-    v = re.sub(r"[\$,]", "", v)  # strip currency symbols and commas
-    v = re.sub(r"\.0+$", "", v)  # strip trailing .00 / .0
-
-    # normalize common date formats to yyyy-mm-dd
-    m = re.fullmatch(r"(\d{2})/(\d{2})/(\d{4})", v)
-    if m:
-        v = f"{m.group(3)}-{m.group(1)}-{m.group(2)}"
-
-    m = re.fullmatch(r"(\d{2})/(\d{2})/(\d{2})", v)
-    if m:
-        v = f"20{m.group(3)}-{m.group(1)}-{m.group(2)}"
-
-    # normalize boolean synonyms
-    v = {"yes": "true", "no": "false"}.get(v, v)
-    return v
-
-
-def _match_icon(expected: str, received: str, tolerance: float = 0.0, field_name: str = "") -> str:
-    """Return an icon indicating exact, approximate, or no match. Tolerance applies to numeric geo coordinates."""
-    if expected in ("—", _NO_VALUE) and received in ("—", _NO_VALUE):
-        return _ICON_NO_EXPECTED
-
-    if expected in ("—", _NO_VALUE) or received in ("—", _NO_VALUE):
-        return _ICON_MISS
-
-    if expected == received:
-        return _ICON_EXACT
-
-    norm_e, norm_r = _normalize_value(expected), _normalize_value(received)
-
-    if norm_e == norm_r:
-        return _ICON_EXACT
-
-    if tolerance:
-        try:
-            if all(
-                abs(float(a) - float(b)) <= tolerance
-                for a, b in zip(expected.split(","), received.split(","), strict=False)
-            ):
-                return _ICON_APPROX
-        except ValueError:
-            pass
-
-    try:
-        if float(norm_e) == float(norm_r):
-            return _ICON_EXACT
-    except ValueError:
-        pass
-
-    if (
-        field_name in _SIMILARITY_FIELDS
-        and difflib.SequenceMatcher(None, norm_e, norm_r).ratio() >= _APPROX_SIMILARITY_THRESHOLD
-    ):
-        return _ICON_APPROX
-
-    return _ICON_MISS
 
 
 # =============================================================================
@@ -326,32 +200,32 @@ def _compute_accuracy(
     lc: Counter[str] = Counter()
 
     for field, ev in expected.items():
-        if ev == _NO_VALUE:
+        if ev == NO_VALUE:
             continue
 
         pc[
-            _match_icon(
+            match_icon(
                 ev,
-                str(primary.get(field, CompareFieldResult()).value or _NO_VALUE),
+                str(primary.get(field, CompareFieldResult()).value or NO_VALUE),
                 field_name=field,
             )
         ] += 1
         lc[
-            _match_icon(
-                ev, str(llm.get(field, CompareFieldResult()).value or _NO_VALUE), field_name=field
+            match_icon(
+                ev, str(llm.get(field, CompareFieldResult()).value or NO_VALUE), field_name=field
             )
         ] += 1
 
     return {
         _ResultData.PRIMARY: {
-            _ResultData.EXACT: pc[_ICON_EXACT],
-            _ResultData.APPROX: pc[_ICON_APPROX],
-            _ResultData.MISS: pc[_ICON_MISS],
+            _ResultData.EXACT: pc[ICON_EXACT],
+            _ResultData.APPROX: pc[ICON_APPROX],
+            _ResultData.MISS: pc[ICON_MISS],
         },
         _ResultData.OCR_MAPPING: {
-            _ResultData.EXACT: lc[_ICON_EXACT],
-            _ResultData.APPROX: lc[_ICON_APPROX],
-            _ResultData.MISS: lc[_ICON_MISS],
+            _ResultData.EXACT: lc[ICON_EXACT],
+            _ResultData.APPROX: lc[ICON_APPROX],
+            _ResultData.MISS: lc[ICON_MISS],
         },
     }
 
@@ -442,7 +316,7 @@ def _write_comparison_md(
     if result.durations:
         lines.append("\n## Durations\n")
         for method, d in result.durations.items():
-            extraction = d.extraction_duration_seconds or _NO_VALUE
+            extraction = d.extraction_duration_seconds or NO_VALUE
             line = f"- {method}: {extraction}s extraction"
             if d.bda_invocation_duration_seconds is not None:
                 line += f", {d.bda_invocation_duration_seconds}s BDA invocation"
@@ -509,15 +383,15 @@ def _write_comparison_md(
     for field in all_fields:
         p = result.primary.get(field, CompareFieldResult())
         lm = result.ocr_mapping.get(field, CompareFieldResult())
-        p_val, llm_val, p_conf, llm_conf, exp_val = _field_display_values(p, lm, expected, field)
+        p_val, llm_val, p_conf, llm_conf, exp_val = field_display_values(p, lm, expected, field)
         p_val = p_val.replace("\n", " ")
         llm_val = llm_val.replace("\n", " ")
         p_geo = _fmt_geometry(p.geometry)
         llm_geo = _fmt_geometry(lm.geometry)
-        geo_match = _match_icon(p_geo, llm_geo, tolerance=0.005)
+        geo_match = match_icon(p_geo, llm_geo, tolerance=0.005)
         if expected is not None:
-            p_cell = f"{_match_icon(exp_val, p_val, field_name=field)} {p_val}".strip()
-            llm_cell = f"{_match_icon(exp_val, llm_val, field_name=field)} {llm_val}".strip()
+            p_cell = f"{match_icon(exp_val, p_val, field_name=field)} {p_val}".strip()
+            llm_cell = f"{match_icon(exp_val, llm_val, field_name=field)} {llm_val}".strip()
         else:
             p_cell = p_val
             llm_cell = llm_val
@@ -526,62 +400,6 @@ def _write_comparison_md(
         )
     _RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     results_file.write_text("\n".join(lines) + "\n")
-
-
-def _print_comparison(
-    filename: str, result: CompareResponse, expected: dict[str, str] | None
-) -> None:
-    """Print a field-by-field comparison table to stdout."""
-    primary_method = result.primary_method
-    all_fields = sorted(
-        set(result.primary)
-        | set(result.ocr_mapping)
-        | (set(expected) if expected is not None else set())
-    )
-
-    col = 32
-    p_label = f"{primary_method.upper()} Value"
-    header = f"{'Field':<{col}} {'Expected':<20} {p_label:<26} {'LLM (via Textract)':<26} {'Conf':>8}   {'LLM Conf':>8}"
-    sep = "=" * len(header)
-
-    print(f"\n{filename}")
-    print(f"{sep}\n{header}\n{sep}")
-
-    for method, d in result.durations.items():
-        line = f"  {method}: {d.extraction_duration_seconds}s extraction"
-        if d.bda_invocation_duration_seconds is not None:
-            line += f", {d.bda_invocation_duration_seconds}s BDA invocation"
-        print(line)
-
-    if result.durations:
-        print()
-
-    if result.cost or result.tokens:
-        print("Cost:")
-        for model_id, entry_cost in result.cost.items():
-            t = result.tokens.get(model_id, {})
-            print(
-                f"  {model_id}: ${entry_cost:.8f} ({t.get('inputTokens', 0)} in / {t.get('outputTokens', 0)} out)"
-            )
-        print(f"  total: ${sum(result.cost.values()):.8f}")
-        print()
-
-    for field in all_fields:
-        p = result.primary.get(field, CompareFieldResult())
-        lm = result.ocr_mapping.get(field, CompareFieldResult())
-        p_val, llm_val, p_conf, llm_conf, exp_val = _field_display_values(p, lm, expected, field)
-        if expected is not None:
-            p_match = _INDICATOR_MAP[_match_icon(exp_val, p_val, field_name=field)]
-            llm_match = _INDICATOR_MAP[_match_icon(exp_val, llm_val, field_name=field)]
-            print(
-                f"{field:<{col}} {exp_val:<20} {p_match} {p_val:<24} {llm_match} {llm_val:<24} {p_conf:>8}   {llm_conf:>8}"
-            )
-        else:
-            print(
-                f"{field:<{col}} {exp_val:<20} {p_val:<26} {llm_val:<26} {p_conf:>8}   {llm_conf:>8}"
-            )
-
-    print(sep)
 
 
 # =============================================================================
