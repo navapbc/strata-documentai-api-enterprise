@@ -1,4 +1,4 @@
-"""Lambda handler for LLM result processing."""
+"""Lambda handler for OCR mapping result processing."""
 
 import json
 from typing import Any
@@ -6,8 +6,8 @@ from typing import Any
 from opentelemetry import trace
 from opentelemetry.propagate import extract
 
-from documentai_api.dtos.processing import LlmExtractionMessage
-from documentai_api.jobs.llm_result_processor.main import process_message
+from documentai_api.dtos.processing import OcrMappingMessage
+from documentai_api.jobs.ocr_mapping_processor.main import process_message
 from documentai_api.logging import get_logger, init
 from documentai_api.telemetry import setup as setup_otel
 from documentai_api.utils.lambda_error_handler import handle_lambda_errors
@@ -30,10 +30,12 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
             carrier = {k: v["stringValue"] for k, v in attrs.items() if "stringValue" in v}
             ctx = extract(carrier)
 
-            with tracer.start_as_current_span("llm_result_processor.handler", context=ctx) as span:
+            with tracer.start_as_current_span(
+                "documentai_api.jobs.ocr_mapping_processor.handler", context=ctx
+            ) as span:
                 try:
                     body = json.loads(record["body"])
-                    msg = LlmExtractionMessage.from_dict(body)
+                    msg = OcrMappingMessage.from_dict(body)
                     span.set_attribute("document.key", msg.ddb_key)
                     span.set_attribute("document.type", msg.document_type)
                     process_message(body)

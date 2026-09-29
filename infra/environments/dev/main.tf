@@ -289,9 +289,9 @@ module "metrics_queue" {
   name   = "${local.service_name}-metrics"
 }
 
-module "llm_queue" {
+module "ocr_mapping_queue" {
   source = "../../modules/queue"
-  name   = "${local.service_name}-llm"
+  name   = "${local.service_name}-ocr-mapping"
 }
 
 # --- Analytics (Athena + Glue) ---
@@ -343,7 +343,7 @@ module "config" {
     "feature-flags/enforce-blur-rejection"                      = "true"
     "feature-flags/include-missing-geo-with-missing-fields"     = "true"
     "feature-flags/flag-multiple-documents-in-multipage"        = "true"
-    "feature-flags/llm-extraction-enabled"                      = "false"
+    "feature-flags/ocr-mapping-enabled"                         = "false"
     # Thresholds
     # Vision model ids - swappable at runtime via SSM (no redeploy). Kept as
     # separate params so preclassification and bbox detection can be tuned apart.
@@ -355,11 +355,11 @@ module "config" {
     "models/bounding-box-model-id"            = "us.amazon.nova-lite-v1:0"
     "models/blur-quadrant-model-id"           = "us.amazon.nova-pro-v1:0"
     "models/supplemental-extraction-model-id" = "us.amazon.nova-micro-v1:0"
-    # LLM extraction reads this path directly (documentai_api.utils.ssm.get_llm_extractor_model_id),
+    # OCR mapping reads this path directly (documentai_api.utils.ssm.get_ocr_mapping_model_id),
     # not via a *_MODEL_ID_PARAM env var like the models/* entries above.
-    # Pro required - see docs/decisions/2026-09-29-llm-extraction-model-selection.md:
+    # Pro required - see docs/decisions/2026-09-29-ocr-mapping-model-selection.md:
     # Lite was tested and dropped aggregate accuracy from 82% to 74% (Equivalent Match).
-    "llm-extraction/model-id" = "us.amazon.nova-pro-v1:0"
+    "ocr-mapping/model-id" = "us.amazon.nova-pro-v1:0"
   }
 
   allowed_patterns = {
@@ -372,7 +372,7 @@ module "config" {
     "feature-flags/enforce-blur-rejection"                      = "^(true|false)$"
     "feature-flags/include-missing-geo-with-missing-fields"     = "^(true|false)$"
     "feature-flags/flag-multiple-documents-in-multipage"        = "^(true|false)$"
-    "feature-flags/llm-extraction-enabled"                      = "^(true|false)$"
+    "feature-flags/ocr-mapping-enabled"                         = "^(true|false)$"
   }
 }
 
@@ -630,7 +630,7 @@ locals {
       DOCUMENTAI_PREPROCESSING_LOCATION                         = "s3://${module.input_bucket.bucket_name}/preprocessing"
       DOCUMENTAI_OUTPUT_LOCATION                                = "s3://${module.output_bucket.bucket_name}/processed"
       DDB_METRICS_INPUT_QUEUE_URL                               = module.metrics_queue.queue_url
-      LLM_INPUT_QUEUE_URL                                       = module.llm_queue.queue_url
+      OCR_MAPPING_QUEUE_URL                                     = module.ocr_mapping_queue.queue_url
       DDB_EXPORT_BUCKET_NAME                                    = module.metrics_bucket.bucket_name
       DDB_RAW_DATA_TABLE_NAME                                   = module.analytics.raw_metrics_table_name
       GLUE_DATABASE_NAME                                        = module.analytics.database_name
@@ -716,11 +716,11 @@ module "monitoring" {
 
   # Worker Lambdas
   workers = {
-    "Document Processor"   = { function_name = module.workers["document-processor"].function_name, timeout_seconds = 300, pipeline = true, scheduled = false }
-    "BDA Result Processor" = { function_name = module.workers["bda-result-processor"].function_name, timeout_seconds = 300, pipeline = true, scheduled = false }
-    "LLM Result Processor" = { function_name = module.workers["llm-result-processor"].function_name, timeout_seconds = 300, pipeline = true, scheduled = false }
-    "Metrics Processor"    = { function_name = module.workers["metrics-processor"].function_name, timeout_seconds = 300, pipeline = false, scheduled = false }
-    "Metrics Aggregator"   = { function_name = module.workers["metrics-aggregator"].function_name, timeout_seconds = 300, pipeline = false, scheduled = true, invocation_window_seconds = 600 }
+    "Document Processor"    = { function_name = module.workers["document-processor"].function_name, timeout_seconds = 300, pipeline = true, scheduled = false }
+    "BDA Result Processor"  = { function_name = module.workers["bda-result-processor"].function_name, timeout_seconds = 300, pipeline = true, scheduled = false }
+    "OCR Mapping Processor" = { function_name = module.workers["ocr-mapping-processor"].function_name, timeout_seconds = 300, pipeline = true, scheduled = false }
+    "Metrics Processor"     = { function_name = module.workers["metrics-processor"].function_name, timeout_seconds = 300, pipeline = false, scheduled = false }
+    "Metrics Aggregator"    = { function_name = module.workers["metrics-aggregator"].function_name, timeout_seconds = 300, pipeline = false, scheduled = true, invocation_window_seconds = 600 }
     # invocation_window_seconds = 86400: current-month cron fires daily, so a full
     # day with zero runs means the schedule is broken. Note: on first apply with
     # create_alarms = true the alarm starts in ALARM until the next daily run lands
@@ -738,7 +738,7 @@ module "monitoring" {
   metrics_queue_dlq_name      = module.metrics_queue.dlq_name
   document_processor_dlq_name = module.workers["document-processor"].dlq_name
   bda_output_dlq_name         = module.workers["bda-result-processor"].dlq_name
-  llm_queue_dlq_name          = module.workers["llm-result-processor"].dlq_name
+  ocr_mapping_queue_dlq_name  = module.workers["ocr-mapping-processor"].dlq_name
 }
 
 # --- Consolidated IAM Policies (4 policies instead of 15+) ---
@@ -909,7 +909,7 @@ data "aws_iam_policy_document" "supporting_services" {
       "sqs:DeleteMessage",
       "sqs:GetQueueAttributes",
     ]
-    resources = [module.metrics_queue.queue_arn, module.llm_queue.queue_arn]
+    resources = [module.metrics_queue.queue_arn, module.ocr_mapping_queue.queue_arn]
   }
 
   # SSM
@@ -979,13 +979,13 @@ resource "aws_iam_policy" "supporting_services" {
 # for_each and each trigger is resolved from its own homogeneous lookup map.
 locals {
   worker_commands = {
-    "document-processor"   = ["documentai_api.jobs.document_processor.handler.handler"]
-    "bda-result-processor" = ["documentai_api.jobs.bda_result_processor.handler.handler"]
-    "llm-result-processor" = ["documentai_api.jobs.llm_result_processor.handler.handler"]
-    "metrics-processor"    = ["documentai_api.jobs.metrics_processor.handler.handler"]
-    "metrics-aggregator"   = ["documentai_api.jobs.metrics_aggregator.handler.handler"]
-    "usage-report"         = ["documentai_api.jobs.usage_report.handler.handler"]
-    "document-reaper"      = ["documentai_api.jobs.document_reaper.handler.handler"]
+    "document-processor"    = ["documentai_api.jobs.document_processor.handler.handler"]
+    "bda-result-processor"  = ["documentai_api.jobs.bda_result_processor.handler.handler"]
+    "ocr-mapping-processor" = ["documentai_api.jobs.ocr_mapping_processor.handler.handler"]
+    "metrics-processor"     = ["documentai_api.jobs.metrics_processor.handler.handler"]
+    "metrics-aggregator"    = ["documentai_api.jobs.metrics_aggregator.handler.handler"]
+    "usage-report"          = ["documentai_api.jobs.usage_report.handler.handler"]
+    "document-reaper"       = ["documentai_api.jobs.document_reaper.handler.handler"]
   }
 }
 
@@ -1007,8 +1007,8 @@ module "workers" {
   }, each.key, null)
 
   sqs_trigger = lookup({
-    "metrics-processor"    = { queue_arn = module.metrics_queue.queue_arn, batch_size = 10, max_batching_window_seconds = 300 }
-    "llm-result-processor" = { queue_arn = module.llm_queue.queue_arn, batch_size = 1, max_batching_window_seconds = 0 }
+    "metrics-processor"     = { queue_arn = module.metrics_queue.queue_arn, batch_size = 10, max_batching_window_seconds = 300 }
+    "ocr-mapping-processor" = { queue_arn = module.ocr_mapping_queue.queue_arn, batch_size = 1, max_batching_window_seconds = 0 }
   }, each.key, null)
 
   schedules = lookup({

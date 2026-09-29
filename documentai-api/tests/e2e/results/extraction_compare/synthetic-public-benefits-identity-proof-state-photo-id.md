@@ -1,32 +1,32 @@
 # synthetic-public-benefits-identity-proof-state-photo-id.jpg
 
 
-_Run: 2026-09-29 16:09 UTC_
+_Run: 2026-09-29 19:59 UTC_
 
 
 ## Durations
 
-- llm: 3.973s extraction
-- textract: 2.54s extraction
+- ocr-mapping: 2.752s extraction
+- textract: 2.5s extraction
 
 
 ## Cost
 
 _By Service_
-- us.amazon.nova-pro-v1:0: $0.01544800 (16842 in / 617 out)
+- us.amazon.nova-pro-v1:0: $0.01546720 (16842 in / 623 out)
 - textract: $0.02500000 (1 page(s))
-- **total: $0.04044800**
+- **total: $0.04046720**
 
 _By Extraction Method_
-- shared (preclassification): $0.00884800
-- llm extraction: $0.00660000
+- shared (preclassification): $0.00886720
+- ocr-mapping extraction: $0.00660000
 - primary (textract): $0.02500000
-- **total: $0.04044800**
+- **total: $0.04046720**
 
 
 ## Accuracy
 - TEXTRACT: 92% equivalent, 92% close, 8% misses
-- LLM: 100% equivalent, 100% close, 0% misses
+- OCR Mapping: 100% equivalent, 100% close, 0% misses
 
 
 ## Field Comparison

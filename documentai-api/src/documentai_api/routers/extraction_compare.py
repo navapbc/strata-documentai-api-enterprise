@@ -1,4 +1,4 @@
-"""Compare router - run BDA and LLM on the same document through the real pipeline."""
+"""Compare router - run BDA and OCR mapping on the same document through the real pipeline."""
 
 import io
 import json
@@ -32,8 +32,8 @@ router = APIRouter(
     dependencies=[Depends(verify_jwt_with_role)],
 )
 
-_LLM = ExtractMethod.LLM.value
-_LLM_EXTRACTION_REASON = LlmUsageReason.LLM_EXTRACTION.value
+_OCR_MAPPING = ExtractMethod.OCR_MAPPING.value
+_OCR_MAPPING_REASON = LlmUsageReason.OCR_MAPPING.value
 _PRIMARY_REASON = "primary"
 _SHARED_REASON = "shared"
 
@@ -57,12 +57,12 @@ async def run_compare(
     claims: AdminClaims,
     file: Annotated[UploadFile, File(...)],
 ) -> CompareSubmitResponse:
-    """Submit a document through the real pipeline with both BDA and LLM extraction.
+    """Submit a document through the real pipeline with both BDA and OCR mapping extraction.
 
     Returns immediately with a job_id. Poll GET /{job_id} until 200.
 
     Uses is_compare=True which:
-    - Forces LLM extraction regardless of the feature flag
+    - Forces OCR mapping extraction regardless of the feature flag
     - Writes each path's output to apiResponsesByMethod map instead of terminal status
     - Suppresses metrics queue emission and batch counter increments
     """
@@ -100,7 +100,7 @@ def get_compare_result(job_id: str) -> CompareResponse:
     primary_method = record.get(DocumentMetadata.EXTRACT_METHOD) or ExtractMethod.BDA.value
     responses = record.get(DocumentMetadata.API_RESPONSES_BY_METHOD) or {}
 
-    if not {primary_method, _LLM}.issubset(responses.keys()):
+    if not {primary_method, _OCR_MAPPING}.issubset(responses.keys()):
         raise HTTPException(status_code=404, detail="Results not ready")
 
     object_key = record.get(DocumentMetadata.FILE_NAME, "")
@@ -121,9 +121,9 @@ def get_compare_result(job_id: str) -> CompareResponse:
         cost[ExtractMethod.BDA.value] = compute_bda_cost(pages, is_custom)
 
     # cost_by_reason: collapse per-model costs into reason buckets so callers
-    # can compare primary-path cost vs llm-extraction cost directly.
+    # can compare primary-path cost vs ocr-mapping cost directly.
     # shared = preclassification + blueprintMatch + cropDetection (both paths pay)
-    # llmExtraction = LLM extraction only
+    # ocrMapping = OCR mapping extraction only
     # primary = textract flat fee (when applicable)
     cost_by_reason: dict[str, float] = {}
     for composite_key, entry in get_token_usage_by_reason(object_key).items():
@@ -131,7 +131,7 @@ def get_compare_result(job_id: str) -> CompareResponse:
         c = compute_llm_cost(model_id, entry["inputTokens"], entry["outputTokens"])
         if c is None:
             continue
-        bucket = _LLM_EXTRACTION_REASON if reason == _LLM_EXTRACTION_REASON else _SHARED_REASON
+        bucket = _OCR_MAPPING_REASON if reason == _OCR_MAPPING_REASON else _SHARED_REASON
         cost_by_reason[bucket] = round(cost_by_reason.get(bucket, 0.0) + c, 8)
 
     if primary_method == ExtractMethod.TEXTRACT.value:
@@ -143,7 +143,7 @@ def get_compare_result(job_id: str) -> CompareResponse:
         job_id=job_id,
         primary_method=primary_method,
         primary=_extract_fields(responses[primary_method]),
-        llm=_extract_fields(responses[_LLM]),
+        ocr_mapping=_extract_fields(responses[_OCR_MAPPING]),
         durations=record.get(DocumentMetadata.DURATIONS_BY_METHOD) or {},
         tokens=tokens,
         pages=pages,

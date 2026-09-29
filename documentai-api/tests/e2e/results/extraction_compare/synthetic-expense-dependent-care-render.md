@@ -1,32 +1,32 @@
 # synthetic-expense-dependent-care-render.pdf
 
 
-_Run: 2026-09-29 16:07 UTC_
+_Run: 2026-09-29 19:58 UTC_
 
 
 ## Durations
 
-- bda: 26.67s extraction
-- llm: 2.292s extraction
+- bda: 22.33s extraction
+- ocr-mapping: 2.365s extraction
 
 
 ## Cost
 
 _By Service_
-- us.amazon.nova-pro-v1:0: $0.01296400 (13885 in / 580 out)
+- us.amazon.nova-pro-v1:0: $0.01298640 (13885 in / 587 out)
 - bda: $0.04000000 (1 page(s))
-- **total: $0.05296400**
+- **total: $0.05298640**
 
 _By Extraction Method_
-- shared (preclassification): $0.00877600
-- llm extraction: $0.00418800
+- shared (preclassification): $0.00879840
+- ocr-mapping extraction: $0.00418800
 - primary (bda): $0.04000000
-- **total: $0.05296400**
+- **total: $0.05298640**
 
 
 ## Accuracy
 - BDA: 91% equivalent, 91% close, 9% misses
-- LLM: 100% equivalent, 100% close, 0% misses
+- OCR Mapping: 100% equivalent, 100% close, 0% misses
 
 
 ## Field Comparison
@@ -40,6 +40,6 @@ _By Extraction Method_
 | payment_frequency | Weekly | ✅ Weekly | ✅ Weekly | 0.92 | 1.0000 | 0.512,0.445,0.057,0.014 | 0.512,0.445,0.057,0.014 | ✅ |
 | provider_address | 485 Maple Avenue, Providence, RI 02903 | ✅ 485 Maple Avenue, Providence, RI 02903 | ✅ 485 Maple Avenue, Providence, RI 02903 | 0.91 | 1.0000 | 0.249,0.090,0.308,0.014 | 0.249,0.090,0.308,0.014 | ✅ |
 | provider_name | Bright Horizons Early Learning Center | ✅ Bright Horizons Early Learning Center | ✅ Bright Horizons Early Learning Center | 0.89 | 1.0000 | 0.213,0.053,0.425,0.019 | 0.213,0.053,0.425,0.019 | ✅ |
-| service_end_date | 2026-08-30 | ✅ 2026-08-30 | ✅ 2026-08-30 | 0.76 | 0.9800 | 0.617,0.650,0.073,0.013 | 0.523,0.650,0.168,0.014 | ❌ |
-| service_start_date | 2026-08-03 | ✅ 2026-08-03 | ✅ 2026-08-03 | 0.64 | 0.9800 | 0.194,0.446,0.102,0.014 | 0.523,0.650,0.168,0.014 | ❌ |
+| service_end_date | 2026-08-30 | ✅ 2026-08-30 | ✅ 2026-08-30 | 0.77 | 0.9800 | 0.617,0.650,0.074,0.013 | 0.523,0.650,0.168,0.014 | ❌ |
+| service_start_date | 2026-08-03 | ✅ 2026-08-03 | ✅ 2026-08-03 | 0.64 | 0.9800 | 0.194,0.446,0.103,0.014 | 0.523,0.650,0.168,0.014 | ❌ |
 | statement_date | 2026-09-05 | ✅ 2026-09-05 | ✅ 2026-09-05 | 0.91 | 1.0000 | 0.720,0.076,0.094,0.012 | 0.720,0.076,0.094,0.012 | ✅ |

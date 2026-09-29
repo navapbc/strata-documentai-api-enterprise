@@ -133,13 +133,13 @@ def is_multipage_document_flagging_enabled() -> bool:
     return _get_flag(FeatureFlags.FLAG_MULTIPLE_DOCUMENTS_IN_MULTIPAGE, default=True)
 
 
-def is_llm_extraction_enabled() -> bool:
-    """Whether LLM-based extraction executes when a document type is known.
+def is_ocr_mapping_enabled() -> bool:
+    """Whether OCR mapping extraction executes when a document type is known.
 
-    When enabled, documents with a matched blueprint type are routed to the LLM
-    extraction path (instructor + Bedrock against Textract OCR blocks). Default: false.
+    When enabled, documents with a matched blueprint type are routed to the OCR
+    mapping extraction path (instructor + Bedrock against Textract OCR blocks). Default: false.
     """
-    return _get_flag(FeatureFlags.LLM_EXTRACTION_ENABLED, default=False)
+    return _get_flag(FeatureFlags.OCR_MAPPING_ENABLED, default=False)
 
 
 def get_classification_model_id() -> str:
@@ -185,10 +185,10 @@ def get_supplemental_extraction_model_id() -> str:
     )
 
 
-def get_llm_extractor_model_id() -> str:
-    """Bedrock model ID for LLM extraction. SSM-configurable; default Nova Pro.
+def get_ocr_mapping_model_id() -> str:
+    """Bedrock model ID for OCR mapping extraction. SSM-configurable; default Nova Pro.
 
-    See docs/decisions/2026-09-29-llm-extraction-model-selection.md - Nova Lite was
+    See docs/decisions/2026-09-29-ocr-mapping-model-selection.md - Nova Lite was
     tested and reverted (accuracy dropped 82% -> 74%, including empty simple fields
     and failure to disambiguate same-value fields like insured_name/policyholder_name).
     Don't retry Lite/Micro here without re-validating against that ADR's failure modes.
@@ -197,6 +197,6 @@ def get_llm_extractor_model_id() -> str:
 
     config = get_env_config()
     return _get_model_id(
-        f"{config.ssm_prefix}/llm-extraction/model-id" if config.ssm_prefix else None,
+        f"{config.ssm_prefix}/ocr-mapping/model-id" if config.ssm_prefix else None,
         "us.amazon.nova-pro-v1:0",
     )

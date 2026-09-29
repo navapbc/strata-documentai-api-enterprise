@@ -1,15 +1,19 @@
-"""Tests for the LLM extractor."""
+"""Tests for the OCR mapping extractor."""
 
 from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
 
-from documentai_api.extractors.llm import compute_confidence, ocr_blocks_to_text, run_llm_extraction
+from documentai_api.extractors.ocr_mapping import (
+    compute_confidence,
+    ocr_blocks_to_text,
+    run_ocr_mapping_extraction,
+)
 
-# ---------------------------------------------------------------------------
+# =============================================================================
 # Fixtures
-# ---------------------------------------------------------------------------
+# =============================================================================
 
 LINE_BLOCK = {
     "BlockType": "LINE",
@@ -34,9 +38,9 @@ WORD_BLOCK_2 = {
 OCR_BLOCKS: list[dict[str, Any]] = [LINE_BLOCK, WORD_BLOCK, WORD_BLOCK_2]
 
 
-# ---------------------------------------------------------------------------
+# =============================================================================
 # compute_confidence
-# ---------------------------------------------------------------------------
+# =============================================================================
 
 
 def test_compute_confidence_empty_citation():
@@ -70,9 +74,9 @@ def test_compute_confidence_no_bounding_box_falls_back_to_ratio():
     assert block is not None
 
 
-# ---------------------------------------------------------------------------
+# =============================================================================
 # ocr_blocks_to_text
-# ---------------------------------------------------------------------------
+# =============================================================================
 
 
 def test_ocr_blocks_to_text_joins_lines():
@@ -96,9 +100,9 @@ def test_ocr_blocks_to_text_empty_blocks():
     assert ocr_blocks_to_text([]) == ""
 
 
-# ---------------------------------------------------------------------------
-# run_llm_extraction
-# ---------------------------------------------------------------------------
+# =============================================================================
+# run_ocr_mapping_extraction
+# =============================================================================
 
 
 def _make_field_response(value: str, citation: str) -> MagicMock:
@@ -108,7 +112,7 @@ def _make_field_response(value: str, citation: str) -> MagicMock:
     return m
 
 
-def test_run_llm_extraction_success(mocker):
+def test_run_ocr_mapping_extraction_success(mocker):
     from documentai_api.utils.schemas import DocumentSchema, SchemaField
 
     schema = DocumentSchema(
@@ -123,11 +127,11 @@ def test_run_llm_extraction_success(mocker):
     mock_completion = {"usage": {"inputTokens": 100, "outputTokens": 50}}
 
     mocker.patch(
-        "documentai_api.utils.ssm.get_llm_extractor_model_id",
+        "documentai_api.utils.ssm.get_ocr_mapping_model_id",
         return_value="us.amazon.nova-pro-v1:0",
     )
     mocker.patch("documentai_api.utils.schemas.get_document_schema", return_value=schema)
-    mocker.patch("documentai_api.extractors.llm.get_ddb_record", return_value={})
+    mocker.patch("documentai_api.extractors.ocr_mapping.get_ddb_record", return_value={})
 
     mock_client = MagicMock()
     mock_client.chat.completions.create_with_completion.return_value = (
@@ -140,9 +144,11 @@ def test_run_llm_extraction_success(mocker):
         return_value=MagicMock(),
     )
 
-    mock_telemetry = mocker.patch("documentai_api.extractors.llm._write_llm_telemetry")
+    mock_telemetry = mocker.patch(
+        "documentai_api.extractors.ocr_mapping._write_ocr_mapping_telemetry"
+    )
 
-    result = run_llm_extraction(
+    result = run_ocr_mapping_extraction(
         ddb_key="doc.json",
         document_type="payslip",
         ocr_blocks=OCR_BLOCKS,
@@ -153,7 +159,7 @@ def test_run_llm_extraction_success(mocker):
     mock_telemetry.assert_called_once()
 
 
-def test_run_llm_extraction_uses_dotted_field_names(mocker):
+def test_run_ocr_mapping_extraction_uses_dotted_field_names(mocker):
     """Dotted field names (e.g. "CompanyAddress.City") must round-trip correctly.
 
     The mangled Pydantic attribute name (CompanyAddress_City) should map back to the
@@ -177,7 +183,7 @@ def test_run_llm_extraction_uses_dotted_field_names(mocker):
     mock_completion = {"usage": {"inputTokens": 100, "outputTokens": 50}}
 
     mocker.patch(
-        "documentai_api.utils.ssm.get_llm_extractor_model_id",
+        "documentai_api.utils.ssm.get_ocr_mapping_model_id",
         return_value="us.amazon.nova-pro-v1:0",
     )
     mocker.patch("documentai_api.utils.schemas.get_document_schema", return_value=schema)
@@ -192,10 +198,10 @@ def test_run_llm_extraction_uses_dotted_field_names(mocker):
         "documentai_api.services.aws_client_factory.AWSClientFactory.get_bedrock_runtime_client",
         return_value=MagicMock(),
     )
-    mocker.patch("documentai_api.extractors.llm.get_ddb_record", return_value={})
-    mocker.patch("documentai_api.extractors.llm._write_llm_telemetry")
+    mocker.patch("documentai_api.extractors.ocr_mapping.get_ddb_record", return_value={})
+    mocker.patch("documentai_api.extractors.ocr_mapping._write_ocr_mapping_telemetry")
 
-    result = run_llm_extraction(
+    result = run_ocr_mapping_extraction(
         ddb_key="doc.json",
         document_type="payslip",
         ocr_blocks=OCR_BLOCKS,
@@ -209,9 +215,9 @@ def test_run_llm_extraction_uses_dotted_field_names(mocker):
     assert fields["CompanyAddress.City"]["fieldType"] == "address"
 
 
-def test_run_llm_extraction_raises_on_missing_schema(mocker):
+def test_run_ocr_mapping_extraction_raises_on_missing_schema(mocker):
     mocker.patch(
-        "documentai_api.utils.ssm.get_llm_extractor_model_id",
+        "documentai_api.utils.ssm.get_ocr_mapping_model_id",
         return_value="us.amazon.nova-pro-v1:0",
     )
     mocker.patch("documentai_api.utils.schemas.get_document_schema", return_value=None)
@@ -220,17 +226,17 @@ def test_run_llm_extraction_raises_on_missing_schema(mocker):
         return_value=MagicMock(),
     )
     mocker.patch("instructor.from_bedrock", return_value=MagicMock())
-    mocker.patch("documentai_api.extractors.llm.get_ddb_record", return_value={})
+    mocker.patch("documentai_api.extractors.ocr_mapping.get_ddb_record", return_value={})
 
     with pytest.raises(ValueError, match="No schema found"):
-        run_llm_extraction(
+        run_ocr_mapping_extraction(
             ddb_key="doc.json",
             document_type="unknown-type",
             ocr_blocks=OCR_BLOCKS,
         )
 
 
-def test_run_llm_extraction_raises_on_empty_ocr(mocker):
+def test_run_ocr_mapping_extraction_raises_on_empty_ocr(mocker):
     from documentai_api.utils.schemas import DocumentSchema, SchemaField
 
     schema = DocumentSchema(
@@ -239,7 +245,7 @@ def test_run_llm_extraction_raises_on_empty_ocr(mocker):
         fields=[SchemaField(name="employee_name", type="string", description="")],
     )
     mocker.patch(
-        "documentai_api.utils.ssm.get_llm_extractor_model_id",
+        "documentai_api.utils.ssm.get_ocr_mapping_model_id",
         return_value="us.amazon.nova-pro-v1:0",
     )
     mocker.patch("documentai_api.utils.schemas.get_document_schema", return_value=schema)
@@ -248,10 +254,10 @@ def test_run_llm_extraction_raises_on_empty_ocr(mocker):
         return_value=MagicMock(),
     )
     mocker.patch("instructor.from_bedrock", return_value=MagicMock())
-    mocker.patch("documentai_api.extractors.llm.get_ddb_record", return_value={})
+    mocker.patch("documentai_api.extractors.ocr_mapping.get_ddb_record", return_value={})
 
     with pytest.raises(ValueError, match="No OCR text available"):
-        run_llm_extraction(
+        run_ocr_mapping_extraction(
             ddb_key="doc.json",
             document_type="payslip",
             ocr_blocks=[],

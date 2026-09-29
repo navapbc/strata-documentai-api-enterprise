@@ -1,33 +1,33 @@
 # synthetic-investment-and-royalty-income-scan.jpg
 
 
-_Run: 2026-09-29 16:10 UTC_
+_Run: 2026-09-29 20:00 UTC_
 
 
 ## Durations
 
-- bda: 24.82s extraction
-- llm: 2.321s extraction
+- bda: 22.25s extraction
+- ocr-mapping: 1.985s extraction
 
 
 ## Cost
 
 _By Service_
 - us.amazon.nova-lite-v1:0: $0.00012384 (1956 in / 27 out)
-- us.amazon.nova-pro-v1:0: $0.01303840 (14374 in / 481 out)
+- us.amazon.nova-pro-v1:0: $0.01306080 (14374 in / 488 out)
 - bda: $0.04000000 (1 page(s))
-- **total: $0.05316224**
+- **total: $0.05318464**
 
 _By Extraction Method_
-- shared (preclassification): $0.00928544
-- llm extraction: $0.00387680
+- shared (preclassification): $0.00930784
+- ocr-mapping extraction: $0.00387680
 - primary (bda): $0.04000000
-- **total: $0.05316224**
+- **total: $0.05318464**
 
 
 ## Accuracy
 - BDA: 33% equivalent, 42% close, 58% misses
-- LLM: 67% equivalent, 67% close, 33% misses
+- OCR Mapping: 67% equivalent, 67% close, 33% misses
 
 
 ## Field Comparison

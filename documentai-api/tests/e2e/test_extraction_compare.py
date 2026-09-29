@@ -71,10 +71,10 @@ class _CostRow:
     method: str
     shared: float
     primary: float
-    llm: float
+    ocr_mapping: float
     ratio: str
     median_primary: float | None
-    median_llm: float | None
+    median_ocr_mapping: float | None
     dur_ratio: str
     p_avg: _AccuracyDisplay
     l_avg: _AccuracyDisplay
@@ -90,7 +90,7 @@ class _ResultData(StrEnum):
     COST_BY_REASON = "cost_by_reason"
     ACCURACY = "accuracy"
     PRIMARY = "primary"
-    LLM = "llm"
+    OCR_MAPPING = "ocr-mapping"
     EXACT = "exact"
     APPROX = "approx"
     MISS = "miss"
@@ -204,7 +204,7 @@ def test_extraction_compare(filename, compare_jwt):
 
     assert result.job_id
     assert len(result.primary) > 0, "Primary extraction returned no fields"
-    assert len(result.llm) > 0, "LLM returned no fields"
+    assert len(result.ocr_mapping) > 0, "OCR mapping returned no fields"
 
     _print_comparison(filename, result, _load_expected(filename))
     _write_comparison_md(filename, result, _load_expected(filename))
@@ -299,7 +299,10 @@ def _match_icon(expected: str, received: str, tolerance: float = 0.0, field_name
     except ValueError:
         pass
 
-    if field_name in _SIMILARITY_FIELDS and difflib.SequenceMatcher(None, norm_e, norm_r).ratio() >= _APPROX_SIMILARITY_THRESHOLD:
+    if (
+        field_name in _SIMILARITY_FIELDS
+        and difflib.SequenceMatcher(None, norm_e, norm_r).ratio() >= _APPROX_SIMILARITY_THRESHOLD
+    ):
         return _ICON_APPROX
 
     return _ICON_MISS
@@ -326,8 +329,18 @@ def _compute_accuracy(
         if ev == _NO_VALUE:
             continue
 
-        pc[_match_icon(ev, str(primary.get(field, CompareFieldResult()).value or _NO_VALUE), field_name=field)] += 1
-        lc[_match_icon(ev, str(llm.get(field, CompareFieldResult()).value or _NO_VALUE), field_name=field)] += 1
+        pc[
+            _match_icon(
+                ev,
+                str(primary.get(field, CompareFieldResult()).value or _NO_VALUE),
+                field_name=field,
+            )
+        ] += 1
+        lc[
+            _match_icon(
+                ev, str(llm.get(field, CompareFieldResult()).value or _NO_VALUE), field_name=field
+            )
+        ] += 1
 
     return {
         _ResultData.PRIMARY: {
@@ -335,7 +348,7 @@ def _compute_accuracy(
             _ResultData.APPROX: pc[_ICON_APPROX],
             _ResultData.MISS: pc[_ICON_MISS],
         },
-        _ResultData.LLM: {
+        _ResultData.OCR_MAPPING: {
             _ResultData.EXACT: lc[_ICON_EXACT],
             _ResultData.APPROX: lc[_ICON_APPROX],
             _ResultData.MISS: lc[_ICON_MISS],
@@ -414,12 +427,14 @@ def _write_comparison_md(
     filename: str, result: CompareResponse, expected: dict[str, str] | None
 ) -> None:
     """Write per-document field comparison to a markdown file and persist result data."""
-    accuracy = _compute_accuracy(result.primary, result.llm, expected)
+    accuracy = _compute_accuracy(result.primary, result.ocr_mapping, expected)
     _write_result_data(filename, result, accuracy)
 
     primary_method = result.primary_method
     all_fields = sorted(
-        set(result.primary) | set(result.llm) | (set(expected) if expected is not None else set())
+        set(result.primary)
+        | set(result.ocr_mapping)
+        | (set(expected) if expected is not None else set())
     )
     results_file = _RESULTS_DIR / f"{Path(filename).stem}.md"
     lines = [f"# {filename}\n", f"\n_Run: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')}_\n"]
@@ -455,7 +470,7 @@ def _write_comparison_md(
                 f"- shared (preclassification): ${result.cost_by_reason.get('shared', 0.0):.8f}"
             )
             lines.append(
-                f"- llm extraction: ${result.cost_by_reason.get(LlmUsageReason.LLM_EXTRACTION, 0.0):.8f}"
+                f"- ocr-mapping extraction: ${result.cost_by_reason.get(LlmUsageReason.OCR_MAPPING, 0.0):.8f}"
             )
             lines.append(
                 f"- primary ({primary_method}): ${result.cost_by_reason.get('primary', 0.0):.8f}"
@@ -465,13 +480,13 @@ def _write_comparison_md(
 
     if accuracy:
         p_acc = _fmt_accuracy(accuracy.get(_ResultData.PRIMARY))
-        l_acc = _fmt_accuracy(accuracy.get(_ResultData.LLM))
+        l_acc = _fmt_accuracy(accuracy.get(_ResultData.OCR_MAPPING))
         lines.append("\n## Accuracy")
         lines.append(
             f"- {primary_method.upper()}: {p_acc['exact']} equivalent, {p_acc['loose']} close, {p_acc['miss']} misses"
         )
         lines.append(
-            f"- LLM: {l_acc['exact']} equivalent, {l_acc['loose']} close, {l_acc['miss']} misses"
+            f"- OCR Mapping: {l_acc['exact']} equivalent, {l_acc['loose']} close, {l_acc['miss']} misses"
         )
         lines.append("")
 
@@ -493,7 +508,7 @@ def _write_comparison_md(
     lines.append(sep)
     for field in all_fields:
         p = result.primary.get(field, CompareFieldResult())
-        lm = result.llm.get(field, CompareFieldResult())
+        lm = result.ocr_mapping.get(field, CompareFieldResult())
         p_val, llm_val, p_conf, llm_conf, exp_val = _field_display_values(p, lm, expected, field)
         p_val = p_val.replace("\n", " ")
         llm_val = llm_val.replace("\n", " ")
@@ -519,7 +534,9 @@ def _print_comparison(
     """Print a field-by-field comparison table to stdout."""
     primary_method = result.primary_method
     all_fields = sorted(
-        set(result.primary) | set(result.llm) | (set(expected) if expected is not None else set())
+        set(result.primary)
+        | set(result.ocr_mapping)
+        | (set(expected) if expected is not None else set())
     )
 
     col = 32
@@ -551,7 +568,7 @@ def _print_comparison(
 
     for field in all_fields:
         p = result.primary.get(field, CompareFieldResult())
-        lm = result.llm.get(field, CompareFieldResult())
+        lm = result.ocr_mapping.get(field, CompareFieldResult())
         p_val, llm_val, p_conf, llm_conf, exp_val = _field_display_values(p, lm, expected, field)
         if expected is not None:
             p_match = _INDICATOR_MAP[_match_icon(exp_val, p_val, field_name=field)]
@@ -625,7 +642,7 @@ def _aggregate_result_data(worker_files: list[Path], results_dir: Path) -> _Summ
                 duration_counts[method] += 1
 
         p_dur = data[_ResultData.DURATIONS].get(primary_method)
-        llm_dur = data[_ResultData.DURATIONS].get(ExtractMethod.LLM)
+        llm_dur = data[_ResultData.DURATIONS].get(ExtractMethod.OCR_MAPPING)
 
         if p_dur is not None:
             primary_dur_by_method[primary_method].append(p_dur)
@@ -642,9 +659,15 @@ def _aggregate_result_data(worker_files: list[Path], results_dir: Path) -> _Summ
                 acc.get(_ResultData.PRIMARY, {}).get(_ResultData.APPROX, 0)
             )
             a[_ResultData.P_MISS].append(acc.get(_ResultData.PRIMARY, {}).get(_ResultData.MISS, 0))
-            a[_ResultData.L_EXACT].append(acc.get(_ResultData.LLM, {}).get(_ResultData.EXACT, 0))
-            a[_ResultData.L_APPROX].append(acc.get(_ResultData.LLM, {}).get(_ResultData.APPROX, 0))
-            a[_ResultData.L_MISS].append(acc.get(_ResultData.LLM, {}).get(_ResultData.MISS, 0))
+            a[_ResultData.L_EXACT].append(
+                acc.get(_ResultData.OCR_MAPPING, {}).get(_ResultData.EXACT, 0)
+            )
+            a[_ResultData.L_APPROX].append(
+                acc.get(_ResultData.OCR_MAPPING, {}).get(_ResultData.APPROX, 0)
+            )
+            a[_ResultData.L_MISS].append(
+                acc.get(_ResultData.OCR_MAPPING, {}).get(_ResultData.MISS, 0)
+            )
 
         rows.append(
             (
@@ -700,10 +723,10 @@ def _write_doc_summary_table(
         link = f"[{filename}]({stem}.md)"
         shared_cost = cost_by_reason.get("shared", 0.0)
         primary_cost = cost_by_reason.get("primary", 0.0) + shared_cost
-        llm_cost = cost_by_reason.get(LlmUsageReason.LLM_EXTRACTION, 0.0) + shared_cost
+        llm_cost = cost_by_reason.get(LlmUsageReason.OCR_MAPPING, 0.0) + shared_cost
         cost_delta = llm_cost - primary_cost
         primary_dur = durations.get(primary_method)
-        llm_dur = durations.get(ExtractMethod.LLM)
+        llm_dur = durations.get(ExtractMethod.OCR_MAPPING)
         dur_delta = (
             f"{llm_dur - primary_dur:+.2f}s"
             if llm_dur is not None and primary_dur is not None
@@ -712,7 +735,7 @@ def _write_doc_summary_table(
         primary_dur_cell = f"{primary_dur:.2f}s" if primary_dur is not None else "-"
         llm_dur_cell = f"{llm_dur:.2f}s" if llm_dur is not None else "-"
         p_acc = acc.get(_ResultData.PRIMARY) if acc else None
-        l_acc = acc.get(_ResultData.LLM) if acc else None
+        l_acc = acc.get(_ResultData.OCR_MAPPING) if acc else None
         p_fmt = _fmt_accuracy(p_acc)
         l_fmt = _fmt_accuracy(l_acc)
         lines.append(
@@ -735,15 +758,15 @@ def _cost_compare_section(
 
     shared = totals.get("shared", 0.0)
     primary = totals.get("primary", 0.0)
-    llm = totals.get(LlmUsageReason.LLM_EXTRACTION, 0.0)
+    llm = totals.get(LlmUsageReason.OCR_MAPPING, 0.0)
     ratio = (
         f"{primary / llm:.1f}x {'cheaper' if llm < primary else 'more expensive'}" if llm else "-"
     )
     median_primary = median(primary_dur_by_method.get(primary_method_key, []))
-    median_llm = median(llm_dur_by_method.get(primary_method_key, []))
+    median_ocr_mapping = median(llm_dur_by_method.get(primary_method_key, []))
     dur_ratio = (
-        f"{median_primary / median_llm:.1f}x {'faster' if median_llm < median_primary else 'slower'}"
-        if median_primary and median_llm
+        f"{median_primary / median_ocr_mapping:.1f}x {'faster' if median_ocr_mapping < median_primary else 'slower'}"
+        if median_primary and median_ocr_mapping
         else "-"
     )
     a = accuracy_by_method.get(primary_method_key)
@@ -764,10 +787,10 @@ def _cost_compare_section(
             method=primary_method_key,
             shared=shared,
             primary=primary,
-            llm=llm,
+            ocr_mapping=llm,
             ratio=ratio,
             median_primary=median_primary,
-            median_llm=median_llm,
+            median_ocr_mapping=median_ocr_mapping,
             dur_ratio=dur_ratio,
             p_avg=p_avg,
             l_avg=l_avg,
@@ -840,27 +863,43 @@ def write_extraction_compare_summary(results_dir: Path) -> None:
         lines.append(sep)
         for r in cost_rows:
             med_p_cell = f"{r.median_primary:.2f}s" if r.median_primary is not None else "-"
-            med_l_cell = f"{r.median_llm:.2f}s" if r.median_llm is not None else "-"
+            med_l_cell = f"{r.median_ocr_mapping:.2f}s" if r.median_ocr_mapping is not None else "-"
             lines.append(
-                f"| {r.method} | ${r.shared:.6f} | ${r.primary:.6f} | ${r.llm:.6f} | {r.ratio} | {med_p_cell} | {med_l_cell} | {r.dur_ratio} |"
+                f"| {r.method} | ${r.shared:.6f} | ${r.primary:.6f} | ${r.ocr_mapping:.6f} | {r.ratio} | {med_p_cell} | {med_l_cell} | {r.dur_ratio} |"
             )
         lines.append("")
 
         lines.append("\n### Accuracy")
         if len(cost_rows) == 2:
             r0, r1 = cost_rows
-            header, sep = _md_table_header(["Metric", f"{r0.method.upper()} vs LLM", f"{r1.method.upper()} vs LLM"])
+            header, sep = _md_table_header(
+                ["Metric", f"{r0.method.upper()} vs LLM", f"{r1.method.upper()} vs LLM"]
+            )
             lines.append(header)
             lines.append(sep)
-            lines.append(f"| Equivalent Match | {r0.p_avg['exact']} / {r0.l_avg['exact']} | {r1.p_avg['exact']} / {r1.l_avg['exact']} |")
-            lines.append(f"| Close Match | {r0.p_avg['loose']} / {r0.l_avg['loose']} | {r1.p_avg['loose']} / {r1.l_avg['loose']} |")
+            lines.append(
+                f"| Equivalent Match | {r0.p_avg['exact']} / {r0.l_avg['exact']} | {r1.p_avg['exact']} / {r1.l_avg['exact']} |"
+            )
+            lines.append(
+                f"| Close Match | {r0.p_avg['loose']} / {r0.l_avg['loose']} | {r1.p_avg['loose']} / {r1.l_avg['loose']} |"
+            )
             lines.append("")
         else:
-            header, sep = _md_table_header(["Metric"] + [f"{r.method.upper()} vs LLM" for r in cost_rows])
+            header, sep = _md_table_header(
+                ["Metric"] + [f"{r.method.upper()} vs LLM" for r in cost_rows]
+            )
             lines.append(header)
             lines.append(sep)
-            lines.append("| Equivalent Match | " + " | ".join(f"{r.p_avg['exact']} / {r.l_avg['exact']}" for r in cost_rows) + " |")
-            lines.append("| Close Match | " + " | ".join(f"{r.p_avg['loose']} / {r.l_avg['loose']}" for r in cost_rows) + " |")
+            lines.append(
+                "| Equivalent Match | "
+                + " | ".join(f"{r.p_avg['exact']} / {r.l_avg['exact']}" for r in cost_rows)
+                + " |"
+            )
+            lines.append(
+                "| Close Match | "
+                + " | ".join(f"{r.p_avg['loose']} / {r.l_avg['loose']}" for r in cost_rows)
+                + " |"
+            )
             lines.append("")
 
     if result["rows"]:

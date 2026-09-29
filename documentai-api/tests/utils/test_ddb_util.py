@@ -725,7 +725,7 @@ def test_write_tokens_by_model_separate_keys_per_model(ddb_doc_metadata_table):
     )
 
     ddb_util.write_tokens_by_model(
-        object_key, "us.amazon.nova-pro-v1:0", LlmUsageReason.LLM_EXTRACTION, 100, 50
+        object_key, "us.amazon.nova-pro-v1:0", LlmUsageReason.OCR_MAPPING, 100, 50
     )
     ddb_util.write_tokens_by_model(
         object_key, "us.amazon.nova-lite-v1:0", LlmUsageReason.PRECLASSIFICATION, 200, 75
@@ -733,7 +733,7 @@ def test_write_tokens_by_model_separate_keys_per_model(ddb_doc_metadata_table):
 
     item = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"]
     tokens = item[DocumentMetadata.TOKENS_BY_MODEL]
-    assert tokens[f"us.amazon.nova-pro-v1:0#{LlmUsageReason.LLM_EXTRACTION}"][
+    assert tokens[f"us.amazon.nova-pro-v1:0#{LlmUsageReason.OCR_MAPPING}"][
         "inputTokens"
     ] == Decimal(100)
     assert tokens[f"us.amazon.nova-lite-v1:0#{LlmUsageReason.PRECLASSIFICATION}"][
@@ -777,7 +777,7 @@ def test_sum_token_usage_by_model_separate_models(ddb_doc_metadata_table):
         Item={
             DocumentMetadata.FILE_NAME: object_key,
             DocumentMetadata.TOKENS_BY_MODEL: {
-                f"us.amazon.nova-pro-v1:0#{LlmUsageReason.LLM_EXTRACTION}": {
+                f"us.amazon.nova-pro-v1:0#{LlmUsageReason.OCR_MAPPING}": {
                     "inputTokens": Decimal(100),
                     "outputTokens": Decimal(50),
                 },

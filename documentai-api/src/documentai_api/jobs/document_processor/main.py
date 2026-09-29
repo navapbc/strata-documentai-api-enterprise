@@ -33,7 +33,7 @@ from documentai_api.config.env import get_env_config
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.dtos.processing import (
     CropResult,
-    LlmExtractionMessage,
+    OcrMappingMessage,
     OptimizationResult,
     PreExtractionResult,
 )
@@ -57,7 +57,7 @@ from documentai_api.utils.dates import strip_time
 from documentai_api.utils.ddb import get_ddb_record, write_tokens_by_model
 from documentai_api.utils.image_optimization import optimize_s3_image
 from documentai_api.utils.s3 import parse_s3_uri
-from documentai_api.utils.ssm import is_llm_extraction_enabled
+from documentai_api.utils.ssm import is_ocr_mapping_enabled
 from documentai_api.utils.uploads import validate_s3_object_is_bda_native
 
 logger = documentai_api.logging.get_logger(__name__)
@@ -303,7 +303,7 @@ def invoke_bda(
         raise
 
 
-def _invoke_llm_path(
+def _invoke_ocr_mapping_path(
     ddb_key: str,
     existing_record: dict[str, Any],
     file_bytes: bytes,
@@ -311,7 +311,7 @@ def _invoke_llm_path(
     tenant_id: str,
     batch_id: str | None,
 ) -> None:
-    """Write OCR blocks to S3 and enqueue an LLM extraction request.
+    """Write OCR blocks to S3 and enqueue an OCR mapping extraction request.
 
     No-ops when the feature flag is off or no blueprint type was matched.
     Errors are logged and swallowed - BDA is the authoritative extraction path.
@@ -321,14 +321,14 @@ def _invoke_llm_path(
     document_type = existing_record.get(DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCHED_TYPE)
     is_compare = existing_record.get(DocumentMetadata.IS_COMPARE, False)
 
-    if not document_type or (not is_llm_extraction_enabled() and not is_compare):
+    if not document_type or (not is_ocr_mapping_enabled() and not is_compare):
         return
 
     try:
         output_location = get_env_config().get_output_location
         output_bucket, output_prefix = parse_s3_uri(output_location)
         ocr_blocks = get_layout_ocr_blocks(file_bytes)
-        ocr_key = f"{output_prefix}/llm/ocr/{ddb_key}.json"
+        ocr_key = f"{output_prefix}/ocr-mapping/ocr/{ddb_key}.json"
         s3_service.put_object(
             output_bucket,
             ocr_key,
@@ -337,9 +337,9 @@ def _invoke_llm_path(
         )
         ocr_blocks_uri = f"s3://{output_bucket}/{ocr_key}"
 
-        queue_url = get_env_config().llm_input_queue_url
+        queue_url = get_env_config().ocr_mapping_queue_url
         if not queue_url:
-            logger.warning("LLM_INPUT_QUEUE_URL not set, skipping LLM extraction")
+            logger.warning("OCR_MAPPING_QUEUE_URL not set, skipping OCR mapping extraction")
             return
 
         from opentelemetry.propagate import inject
@@ -350,7 +350,7 @@ def _invoke_llm_path(
             k: {"DataType": "String", "StringValue": v} for k, v in carrier.items()
         } or None
         payload = json.dumps(
-            LlmExtractionMessage(
+            OcrMappingMessage(
                 ddb_key=ddb_key,
                 document_type=document_type,
                 ocr_blocks_uri=ocr_blocks_uri,
@@ -359,9 +359,9 @@ def _invoke_llm_path(
             ).to_dict()
         )
         sqs_service.send_message(queue_url, payload, message_attributes)
-        logger.info(f"Enqueued LLM extraction for {ddb_key}")
+        logger.info(f"Enqueued OCR mapping extraction for {ddb_key}")
     except Exception as e:
-        logger.error(f"Failed to enqueue LLM extraction for {ddb_key}: {e}")
+        logger.error(f"Failed to enqueue OCR mapping extraction for {ddb_key}: {e}")
 
 
 def _invoke_bda_path(
@@ -490,7 +490,7 @@ def _dispatch_document_processor(
     # Textract identity and BDA are mutually exclusive. Textract identity is
     # optimized for identity documents (driver's licenses, passports), and
     # is 5x to 20x faster than BDA.
-    _invoke_llm_path(
+    _invoke_ocr_mapping_path(
         ddb_key,
         existing_record,
         s3_file_bytes,

@@ -1,32 +1,32 @@
 # synthetic-assets-trust-funds-investment-accounts-render.pdf
 
 
-_Run: 2026-09-29 16:05 UTC_
+_Run: 2026-09-29 19:55 UTC_
 
 
 ## Durations
 
-- bda: 25.23s extraction
-- llm: 11.907s extraction
+- bda: 20.26s extraction
+- ocr-mapping: 5.337s extraction
 
 
 ## Cost
 
 _By Service_
-- us.amazon.nova-pro-v1:0: $0.01286240 (13822 in / 564 out)
+- us.amazon.nova-pro-v1:0: $0.01288480 (13822 in / 571 out)
 - bda: $0.04000000 (1 page(s))
-- **total: $0.05286240**
+- **total: $0.05288480**
 
 _By Extraction Method_
-- shared (preclassification): $0.00877920
-- llm extraction: $0.00408320
+- shared (preclassification): $0.00880160
+- ocr-mapping extraction: $0.00408320
 - primary (bda): $0.04000000
-- **total: $0.05286240**
+- **total: $0.05288480**
 
 
 ## Accuracy
 - BDA: 70% equivalent, 70% close, 30% misses
-- LLM: 90% equivalent, 90% close, 10% misses
+- OCR Mapping: 90% equivalent, 90% close, 10% misses
 
 
 ## Field Comparison

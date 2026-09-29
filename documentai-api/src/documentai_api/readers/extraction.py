@@ -6,7 +6,7 @@ from typing import Any
 from documentai_api.config.constants import ExtractMethod
 from documentai_api.dtos.processing import ReaderResult
 from documentai_api.readers.bda import read_bda_output
-from documentai_api.readers.llm import read_llm_output
+from documentai_api.readers.ocr_mapping import read_ocr_mapping_output
 from documentai_api.readers.textract import read_textract_output
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.bda import get_bda_result_json
@@ -14,7 +14,7 @@ from documentai_api.utils.bda import get_bda_result_json
 _READERS: dict[str, Any] = {
     ExtractMethod.TEXTRACT: read_textract_output,
     ExtractMethod.BDA: read_bda_output,
-    ExtractMethod.LLM: read_llm_output,
+    ExtractMethod.OCR_MAPPING: read_ocr_mapping_output,
 }
 
 

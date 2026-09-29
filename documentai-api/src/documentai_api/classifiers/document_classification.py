@@ -44,7 +44,7 @@ def _write_terminal_status(
     LLM is never the authoritative writer of v1ApiResponseJson, so it skips the
     update_ddb race and batch increment entirely.
     """
-    if extraction_method != ExtractMethod.LLM:
+    if extraction_method != ExtractMethod.OCR_MAPPING:
         condition, extra_values = ProcessStatus.build_ddb_non_terminal_condition()
         try:
             update_ddb(record, condition_expression=condition, extra_expression_values=extra_values)

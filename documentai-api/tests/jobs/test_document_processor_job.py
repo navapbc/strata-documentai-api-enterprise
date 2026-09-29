@@ -868,12 +868,12 @@ def test_main_textract_extraction_result_none_falls_through_to_bda(
 
 
 # =============================================================================
-# LLM extraction dispatch
+# OCR mapping extraction dispatch
 # =============================================================================
 
 
 @pytest.fixture
-def llm_ddb_record(mocker):
+def ocr_mapping_ddb_record(mocker):
     """DDB record with a matched blueprint type, wired with the standard stubs."""
     mock_get = mocker.patch(f"{_MAIN_MODULE}.get_ddb_record")
     mock_get.return_value = {
@@ -894,12 +894,12 @@ def llm_ddb_record(mocker):
     return mock_get
 
 
-def test_main_invokes_llm_when_flag_on_and_blueprint_matched(
-    input_pdf, mocker, mock_invoke_bda, monkeypatch, llm_ddb_record
+def test_main_invokes_ocr_mapping_when_flag_on_and_blueprint_matched(
+    input_pdf, mocker, mock_invoke_bda, monkeypatch, ocr_mapping_ddb_record
 ):
-    """When LLM flag is on and a blueprint type is matched, LLM enqueues and BDA runs."""
-    monkeypatch.setenv("LLM_INPUT_QUEUE_URL", "https://sqs/llm-queue")
-    mocker.patch(f"{_MAIN_MODULE}.is_llm_extraction_enabled", return_value=True)
+    """When OCR mapping flag is on and a blueprint type is matched, OCR mapping enqueues and BDA runs."""
+    monkeypatch.setenv("OCR_MAPPING_QUEUE_URL", "https://sqs/ocr-mapping-queue")
+    mocker.patch(f"{_MAIN_MODULE}.is_ocr_mapping_enabled", return_value=True)
     mock_get_ocr = mocker.patch(f"{_MAIN_MODULE}.get_layout_ocr_blocks", return_value=[])
     mock_put = mocker.patch(f"{_MAIN_MODULE}.s3_service.put_object")
     mock_send = mocker.patch(f"{_MAIN_MODULE}.sqs_service.send_message")
@@ -909,13 +909,15 @@ def test_main_invokes_llm_when_flag_on_and_blueprint_matched(
     mock_get_ocr.assert_called_once()
     mock_put.assert_called_once()
     mock_send.assert_called_once()
-    assert "llm-queue" in mock_send.call_args.args[0]
+    assert "ocr-mapping-queue" in mock_send.call_args.args[0]
     mock_invoke_bda.assert_called_once()
 
 
-def test_main_bda_still_runs_when_llm_fails(input_pdf, mocker, mock_invoke_bda, llm_ddb_record):
-    """When LLM enqueue raises, BDA still runs."""
-    mocker.patch(f"{_MAIN_MODULE}.is_llm_extraction_enabled", return_value=True)
+def test_main_bda_still_runs_when_ocr_mapping_fails(
+    input_pdf, mocker, mock_invoke_bda, ocr_mapping_ddb_record
+):
+    """When OCR mapping enqueue raises, BDA still runs."""
+    mocker.patch(f"{_MAIN_MODULE}.is_ocr_mapping_enabled", return_value=True)
     mocker.patch(f"{_MAIN_MODULE}.get_layout_ocr_blocks", side_effect=RuntimeError("OCR down"))
 
     main(input_pdf.key, input_pdf.bucket_name)
@@ -923,9 +925,11 @@ def test_main_bda_still_runs_when_llm_fails(input_pdf, mocker, mock_invoke_bda, 
     mock_invoke_bda.assert_called_once()
 
 
-def test_main_skips_llm_when_flag_off(input_pdf, mocker, mock_invoke_bda, llm_ddb_record):
-    """When LLM flag is off, nothing is enqueued even if a blueprint type is matched."""
-    mocker.patch(f"{_MAIN_MODULE}.is_llm_extraction_enabled", return_value=False)
+def test_main_skips_ocr_mapping_when_flag_off(
+    input_pdf, mocker, mock_invoke_bda, ocr_mapping_ddb_record
+):
+    """When OCR mapping flag is off, nothing is enqueued even if a blueprint type is matched."""
+    mocker.patch(f"{_MAIN_MODULE}.is_ocr_mapping_enabled", return_value=False)
     mock_send = mocker.patch(f"{_MAIN_MODULE}.sqs_service.send_message")
 
     main(input_pdf.key, input_pdf.bucket_name)
@@ -934,25 +938,25 @@ def test_main_skips_llm_when_flag_off(input_pdf, mocker, mock_invoke_bda, llm_dd
     mock_invoke_bda.assert_called_once()
 
 
-def test_main_skips_llm_when_queue_url_not_configured(
-    input_pdf, mocker, mock_invoke_bda, llm_ddb_record
+def test_main_skips_ocr_mapping_when_queue_url_not_configured(
+    input_pdf, mocker, mock_invoke_bda, ocr_mapping_ddb_record
 ):
-    """When LLM_INPUT_QUEUE_URL is not set, nothing is enqueued and BDA still runs."""
-    mocker.patch(f"{_MAIN_MODULE}.is_llm_extraction_enabled", return_value=True)
+    """When OCR_MAPPING_QUEUE_URL is not set, nothing is enqueued and BDA still runs."""
+    mocker.patch(f"{_MAIN_MODULE}.is_ocr_mapping_enabled", return_value=True)
     mocker.patch(f"{_MAIN_MODULE}.get_layout_ocr_blocks", return_value=[])
     mocker.patch(f"{_MAIN_MODULE}.s3_service.put_object")
     mock_send = mocker.patch(f"{_MAIN_MODULE}.sqs_service.send_message")
 
-    # LLM_INPUT_QUEUE_URL intentionally not set
+    # OCR_MAPPING_QUEUE_URL intentionally not set
     main(input_pdf.key, input_pdf.bucket_name)
 
     mock_send.assert_not_called()
     mock_invoke_bda.assert_called_once()
 
 
-def test_main_skips_llm_when_no_blueprint_type(input_pdf, mocker, mock_invoke_bda):
-    """When LLM flag is on but no blueprint type was matched, nothing is enqueued."""
-    mocker.patch(f"{_MAIN_MODULE}.is_llm_extraction_enabled", return_value=True)
+def test_main_skips_ocr_mapping_when_no_blueprint_type(input_pdf, mocker, mock_invoke_bda):
+    """When OCR mapping flag is on but no blueprint type was matched, nothing is enqueued."""
+    mocker.patch(f"{_MAIN_MODULE}.is_ocr_mapping_enabled", return_value=True)
     mocker.patch(f"{_MAIN_MODULE}.get_ddb_record").return_value = {
         DocumentMetadata.TENANT_ID: "test-tenant-id",
         DocumentMetadata.PROCESS_STATUS: ProcessStatus.NOT_STARTED.value,

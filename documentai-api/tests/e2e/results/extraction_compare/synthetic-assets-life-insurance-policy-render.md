@@ -1,32 +1,32 @@
 # synthetic-assets-life-insurance-policy-render.pdf
 
 
-_Run: 2026-09-29 16:06 UTC_
+_Run: 2026-09-29 19:56 UTC_
 
 
 ## Durations
 
-- bda: 21.2s extraction
-- llm: 1.825s extraction
+- bda: 23.03s extraction
+- ocr-mapping: 1.881s extraction
 
 
 ## Cost
 
 _By Service_
-- us.amazon.nova-pro-v1:0: $0.01253200 (13629 in / 509 out)
+- us.amazon.nova-pro-v1:0: $0.01254160 (13629 in / 512 out)
 - bda: $0.04000000 (1 page(s))
-- **total: $0.05253200**
+- **total: $0.05254160**
 
 _By Extraction Method_
-- shared (preclassification): $0.00883360
-- llm extraction: $0.00369840
+- shared (preclassification): $0.00884320
+- ocr-mapping extraction: $0.00369840
 - primary (bda): $0.04000000
-- **total: $0.05253200**
+- **total: $0.05254160**
 
 
 ## Accuracy
 - BDA: 90% equivalent, 100% close, 0% misses
-- LLM: 100% equivalent, 100% close, 0% misses
+- OCR Mapping: 100% equivalent, 100% close, 0% misses
 
 
 ## Field Comparison
@@ -35,7 +35,7 @@ _By Extraction Method_
 | cash_surrender_value | 9500 | ✅ 9500 | ✅ 9500 | 0.71 | 1.0000 | 0.477,0.474,0.059,0.015 | 0.477,0.473,0.059,0.015 | 🟡 |
 | death_benefit | 100000 | ✅ 100000 | ✅ 100000 | 0.91 | 1.0000 | 0.477,0.438,0.080,0.015 | 0.477,0.438,0.080,0.015 | ✅ |
 | insured_name | Jordan Rivera | ✅ Jordan Rivera | ✅ Jordan Rivera | 0.92 | 1.0000 | 0.476,0.368,0.125,0.015 | 0.476,0.333,0.125,0.015 | ❌ |
-| insurer_name | Northstar Life Insurance Company | 🟡 Northstar Life Insurance | ✅ Northstar Life Insurance Company | 0.41 | 1.0000 | 0.274,0.034,0.224,0.030 | 0.148,0.774,0.309,0.016 | ❌ |
+| insurer_name | Northstar Life Insurance Company | 🟡 Northstar Life Insurance | ✅ Northstar Life Insurance Company | 0.39 | 1.0000 | 0.274,0.034,0.224,0.030 | 0.148,0.774,0.309,0.016 | ❌ |
 | policy_number | XX-1234567-MD | ✅ XX-1234567-MD | ✅ XX-1234567-MD | 0.93 | 1.0000 | 0.477,0.262,0.145,0.012 | 0.477,0.262,0.145,0.012 | ✅ |
 | policy_type | Universal Life Insurance | ✅ Universal Life Insurance | ✅ Universal Life Insurance | 0.89 | 1.0000 | 0.477,0.403,0.225,0.013 | 0.477,0.403,0.225,0.013 | ✅ |
 | policyholder_name | Jordan Rivera | ✅ Jordan Rivera | ✅ Jordan Rivera | 0.93 | 1.0000 | 0.476,0.333,0.125,0.015 | 0.476,0.333,0.125,0.015 | ✅ |

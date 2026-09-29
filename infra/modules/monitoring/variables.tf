@@ -130,9 +130,9 @@ variable "bda_output_dlq_name" {
   default     = null
 }
 
-variable "llm_queue_dlq_name" {
+variable "ocr_mapping_queue_dlq_name" {
   type        = string
-  description = "Name of the LLM result processor dead-letter queue to monitor. Null disables its metrics."
+  description = "Name of the OCR mapping processor dead-letter queue to monitor. Null disables its metrics."
   default     = null
 }
 

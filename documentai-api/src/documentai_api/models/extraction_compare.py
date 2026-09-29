@@ -26,7 +26,7 @@ class CompareResponse(BaseApiResponse):
     job_id: str
     primary_method: str
     primary: dict[str, CompareFieldResult] = Field(default_factory=dict)
-    llm: dict[str, CompareFieldResult] = Field(default_factory=dict)
+    ocr_mapping: dict[str, CompareFieldResult] = Field(default_factory=dict)
     durations: dict[str, CompareDuration] = Field(default_factory=dict)
     tokens: dict[str, Any] = Field(default_factory=dict)
     pages: int = 1

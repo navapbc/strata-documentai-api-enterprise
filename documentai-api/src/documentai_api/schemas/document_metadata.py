@@ -127,12 +127,7 @@ class DocumentMetadata:
     # extraction method
     EXTRACT_METHOD = "extractionMethod"
 
-    # llm extraction telemetry
-    LLM_DOCUMENT_TYPE = "llmDocumentType"
-    LLM_MODEL_ID = "llmModelId"
-    LLM_DURATION_SECONDS = "llmDurationSeconds"
-    LLM_INPUT_TOKENS = "llmInputTokens"
-    LLM_OUTPUT_TOKENS = "llmOutputTokens"
+    # ocr mapping extraction telemetry
 
     # compare flag
     IS_COMPARE = "isCompare"

@@ -1,11 +1,11 @@
-# Use Nova Pro, Not Lite/Micro, for LLM Extraction
+# Use Nova Pro, Not Lite/Micro, for OCR Mapping
 
 - Status: accepted
 - Date: 2026-09-29
 
 ## Context and Problem Statement
 
-The LLM extraction path (`documentai_api.extractors.llm`, model chosen via `get_llm_extractor_model_id`) receives Textract OCR text and maps it to a schema-validated Pydantic object via `instructor` and Bedrock Converse. It has defaulted to Nova Pro since introduction; this
+The OCR mapping path (`documentai_api.extractors.llm`, model chosen via `get_ocr_mapping_model_id`) receives Textract OCR text and maps it to a schema-validated Pydantic object via `instructor` and Bedrock Converse. It has defaulted to Nova Pro since introduction; this
 investigation asked if a cheaper model tier could retain BDA-like accuracy while further reducing the LLM path's cost.
 
 The call is text-only (`ocr_text`, a plain string built from Textract blocks - no image bytes are sent). The open question was purely whether Lite/Micro's reasoning capability was sufficient for this task's actual demands.
@@ -24,7 +24,7 @@ The call is text-only (`ocr_text`, a plain string built from Textract blocks - n
 
 ## Decision Outcome
 
-Chosen option: Nova Pro. Nova Lite was tested by pointing `/docai/dev/llm-extraction/model-id` at `us.amazon.nova-lite-v1:0` and running the full `extraction-compare` suite. Aggregate LLM accuracy (Equivalent Match) via Nova Lite dropped from 82% to 74% versus the Pro baseline, with BDA holding steady at 76-77%. The LLM path's accuracy lead over BDA nearly disappeared. Two concrete issues drove the drop in accuracy, for example `synthetic-assets-life-insurance-policy-render.pdf`:
+Chosen option: Nova Pro. Nova Lite was tested by pointing `/docai/dev/ocr-mapping/model-id` at `us.amazon.nova-lite-v1:0` and running the full `extraction-compare` suite. Aggregate LLM accuracy (Equivalent Match) via Nova Lite dropped from 82% to 74% versus the Pro baseline, with BDA holding steady at 76-77%. The LLM path's accuracy lead over BDA nearly disappeared. Two concrete issues drove the drop in accuracy, for example `synthetic-assets-life-insurance-policy-render.pdf`:
 
 - `premium_frequency` returned empty using Lite despite being unambiguously printed ("Monthly"); the value extracted correctly by both BDA and Pro.
 - `insured_name` returned empty using Nova Lite even though the identical text was correctly extracted for the adjacent `policyholder_name` field on the same document. Nova Lite could not reliably disambiguate two same-valued fields while Nova Pro handled without issue.
@@ -39,7 +39,7 @@ Nova Micro was not tested directly: it is a further capability cut below Lite, w
 ### Negative Consequences
 
 - Highest per-token cost of the three Nova tiers for this step, though this is dwarfed by BDA's flat per-document cost in absolute terms.
-- If a future Nova generation changes the small-model accuracy/cost curve, this decision should be re-tested via `extraction-compare` rather than assumed to still hold - see the docstring on `get_llm_extractor_model_id` for the specific failure modes to re-check against.
+- If a future Nova generation changes the small-model accuracy/cost curve, this decision should be re-tested via `extraction-compare` rather than assumed to still hold - see the docstring on `get_ocr_mapping_model_id` for the specific failure modes to re-check against.
 
 ## Pros and Cons of the Options
 
@@ -63,6 +63,6 @@ Nova Micro was not tested directly: it is a further capability cut below Lite, w
 
 ## Links
 
-- Implementation: [ssm.py](../../documentai-api/src/documentai_api/utils/ssm.py) (`get_llm_extractor_model_id`), [main.tf](../../infra/environments/dev/main.tf) (`llm-extraction/model-id`)
+- Implementation: [ssm.py](../../documentai-api/src/documentai_api/utils/ssm.py) (`get_ocr_mapping_model_id`), [main.tf](../../infra/environments/dev/main.tf) (`ocr-mapping/model-id`)
 - Extraction path: [llm.py](../../documentai-api/src/documentai_api/extractors/llm.py)
 - Measurement tool: [test_extraction_compare.py](../../documentai-api/tests/e2e/test_extraction_compare.py), results in `documentai-api/tests/e2e/results/extraction_compare/`

@@ -1,15 +1,15 @@
-"""LLM reader: extract field values from stored LLM extraction result JSON."""
+"""OCR mapping reader: extract field values from stored OCR mapping result JSON."""
 
 from typing import Any
 
 from documentai_api.dtos.processing import ReaderResult
 
 
-def read_llm_output(
+def read_ocr_mapping_output(
     result_json: dict[str, Any],
     include_geometry: bool = False,
 ) -> ReaderResult:
-    """Extract field confidence metadata, values, and geometry from stored LLM results."""
+    """Extract field confidence metadata, values, and geometry from stored OCR mapping results."""
     fields = result_json.get("fields", {})
 
     empty_fields: list[str] = []

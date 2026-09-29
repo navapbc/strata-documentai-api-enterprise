@@ -1,26 +1,26 @@
-"""Tests for pipeline/llm.py."""
+"""Tests for pipeline/ocr_mapping.py."""
 
 import pytest
 
 from documentai_api.dtos.extraction import ExtractionResult
-from documentai_api.dtos.processing import LlmExtractionMessage, ProcessorResult
-from documentai_api.pipeline.llm import run_llm_pipeline
+from documentai_api.dtos.processing import OcrMappingMessage, ProcessorResult
+from documentai_api.pipeline.ocr_mapping import run_ocr_mapping_pipeline
 
-_MODULE = "documentai_api.pipeline.llm"
+_MODULE = "documentai_api.pipeline.ocr_mapping"
 
 
 @pytest.fixture
 def extraction_msg():
-    return LlmExtractionMessage(
+    return OcrMappingMessage(
         ddb_key="doc.json",
         document_type="w2",
-        ocr_blocks_uri="s3://bucket/llm/ocr/doc.json",
+        ocr_blocks_uri="s3://bucket/ocr-mapping/ocr/doc.json",
         tenant_id="test-tenant-id",
         batch_id="test-batch-id",
     )
 
 
-def test_run_llm_pipeline_calls_classify(extraction_msg, mocker):
+def test_run_ocr_mapping_pipeline_calls_classify(extraction_msg, mocker):
     extraction = ExtractionResult(document_type="w2")
     processor_result = ProcessorResult(
         object_key="doc.json",
@@ -29,10 +29,10 @@ def test_run_llm_pipeline_calls_classify(extraction_msg, mocker):
         extraction_result=extraction,
         output_uri="s3://bucket/output.json",
     )
-    mocker.patch(f"{_MODULE}.process_llm_result", return_value=processor_result)
+    mocker.patch(f"{_MODULE}.process_ocr_mapping_result", return_value=processor_result)
     mock_classify = mocker.patch(f"{_MODULE}.classify_extraction_result")
 
-    run_llm_pipeline(extraction_msg)
+    run_ocr_mapping_pipeline(extraction_msg)
 
     mock_classify.assert_called_once_with(
         ddb_key="doc.json",
@@ -44,11 +44,11 @@ def test_run_llm_pipeline_calls_classify(extraction_msg, mocker):
     )
 
 
-def test_run_llm_pipeline_raises_when_no_extraction_result(extraction_msg, mocker):
+def test_run_ocr_mapping_pipeline_raises_when_no_extraction_result(extraction_msg, mocker):
     mocker.patch(
-        f"{_MODULE}.process_llm_result",
+        f"{_MODULE}.process_ocr_mapping_result",
         return_value=ProcessorResult(object_key="doc.json"),
     )
 
     with pytest.raises(ValueError, match="no extraction_result"):
-        run_llm_pipeline(extraction_msg)
+        run_ocr_mapping_pipeline(extraction_msg)

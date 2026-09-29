@@ -602,7 +602,7 @@ class ExtractMethod(StrEnum):
 
     BDA = "bda"
     TEXTRACT = "textract"
-    LLM = "llm"
+    OCR_MAPPING = "ocr-mapping"
 
 
 class LlmUsageReason(StrEnum):
@@ -610,7 +610,7 @@ class LlmUsageReason(StrEnum):
 
     PRECLASSIFICATION = "preclassification"
     BLUEPRINT_MATCH = "blueprintMatch"
-    LLM_EXTRACTION = "llmExtraction"
+    OCR_MAPPING = "ocrMapping"
     CROP_DETECTION = "cropDetection"
 
 
@@ -624,7 +624,7 @@ class FeatureFlags:
     SKIP_BDA_IF_UNCLASSIFIED = "skip-bda-if-unclassified"
     ENABLE_PRECLASSIFICATION_BLUEPRINT_MATCHING = "enable-preclassification-blueprint-matching"
     FLAG_MULTIPLE_DOCUMENTS_IN_MULTIPAGE = "flag-multiple-documents-in-multipage"
-    LLM_EXTRACTION_ENABLED = "llm-extraction-enabled"
+    OCR_MAPPING_ENABLED = "ocr-mapping-enabled"
 
 
 ATHENA_QUERY_TIMEOUT_SECONDS = 300

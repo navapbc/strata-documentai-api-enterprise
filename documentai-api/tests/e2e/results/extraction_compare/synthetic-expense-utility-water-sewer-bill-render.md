@@ -1,32 +1,32 @@
 # synthetic-expense-utility-water-sewer-bill-render.pdf
 
 
-_Run: 2026-09-29 16:08 UTC_
+_Run: 2026-09-29 19:59 UTC_
 
 
 ## Durations
 
-- bda: 21.7s extraction
-- llm: 5.149s extraction
+- bda: 22.93s extraction
+- ocr-mapping: 5.672s extraction
 
 
 ## Cost
 
 _By Service_
-- us.amazon.nova-pro-v1:0: $0.01681600 (16936 in / 1021 out)
+- us.amazon.nova-pro-v1:0: $0.01685440 (16936 in / 1033 out)
 - bda: $0.04000000 (1 page(s))
-- **total: $0.05681600**
+- **total: $0.05685440**
 
 _By Extraction Method_
-- shared (preclassification): $0.00880480
-- llm extraction: $0.00801120
+- shared (preclassification): $0.00883040
+- ocr-mapping extraction: $0.00802400
 - primary (bda): $0.04000000
-- **total: $0.05681600**
+- **total: $0.05685440**
 
 
 ## Accuracy
 - BDA: 84% equivalent, 84% close, 16% misses
-- LLM: 89% equivalent, 89% close, 11% misses
+- OCR Mapping: 89% equivalent, 89% close, 11% misses
 
 
 ## Field Comparison

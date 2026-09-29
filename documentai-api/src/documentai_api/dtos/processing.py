@@ -109,8 +109,8 @@ class PageMetadata:
 
 
 @dataclass
-class LlmExtractionMessage:
-    """SQS message payload for async LLM extraction."""
+class OcrMappingMessage:
+    """SQS message payload for async OCR mapping extraction."""
 
     ddb_key: str
     document_type: str

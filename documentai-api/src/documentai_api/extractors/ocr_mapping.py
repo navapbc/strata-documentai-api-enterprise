@@ -1,4 +1,4 @@
-"""LLM extraction: instructor + Bedrock against Textract OCR blocks."""
+"""OCR mapping extraction: instructor + Bedrock against Textract OCR blocks."""
 
 import json
 import re
@@ -182,7 +182,7 @@ def _extract(
     from documentai_api.services.aws_client_factory import AWSClientFactory
     from documentai_api.utils.llm_blueprint_models import build_blueprint_model
     from documentai_api.utils.schemas import get_document_schema
-    from documentai_api.utils.ssm import get_llm_extractor_model_id
+    from documentai_api.utils.ssm import get_ocr_mapping_model_id
     from documentai_api.utils.textract import _build_geometry_entry
 
     schema = get_document_schema(document_type)
@@ -195,7 +195,7 @@ def _extract(
     if not ocr_text.strip():
         raise ValueError(f"No OCR text available for {ddb_key}")
 
-    model_id = get_llm_extractor_model_id()
+    model_id = get_ocr_mapping_model_id()
     blueprint_model, field_name_map = build_blueprint_model(schema)
 
     bedrock_client = AWSClientFactory.get_bedrock_runtime_client()
@@ -205,10 +205,10 @@ def _extract(
     input_tokens: int | None = None
     output_tokens: int | None = None
 
-    with tracer.start_as_current_span("llm.extraction") as span:
+    with tracer.start_as_current_span("ocr_mapping.extraction") as span:
         span.set_attribute("document.key", ddb_key)
         span.set_attribute("document.type", document_type)
-        span.set_attribute("llm.model_id", model_id)
+        span.set_attribute("ocr_mapping.model_id", model_id)
         response, completion = client.chat.completions.create_with_completion(
             model=model_id,
             response_model=blueprint_model,
@@ -244,10 +244,10 @@ def _extract(
         output_tokens = usage.get("outputTokens") if usage else None
 
         if input_tokens is not None:
-            span.set_attribute("llm.input_tokens", input_tokens)
+            span.set_attribute("ocr_mapping.input_tokens", input_tokens)
 
         if output_tokens is not None:
-            span.set_attribute("llm.output_tokens", output_tokens)
+            span.set_attribute("ocr_mapping.output_tokens", output_tokens)
 
     field_type_map = {f.name: f.type for f in schema.fields}
     word_blocks = [b for b in ocr_blocks if b.get("BlockType") == "WORD"]
@@ -313,7 +313,7 @@ def _extract(
     duration = Decimal(str(round((completed_at - started_at).total_seconds(), 3)))
     body = json.dumps(
         {
-            "source": ExtractMethod.LLM,
+            "source": ExtractMethod.OCR_MAPPING,
             "document_type": document_type,
             "model_id": model_id,
             "fields": fields_output,
@@ -331,54 +331,36 @@ def _extract(
     return result, duration, input_tokens, output_tokens
 
 
-def _write_llm_telemetry(
+def _write_ocr_mapping_telemetry(
     ddb_key: str,
-    document_type: str,
-    duration: Decimal,
     input_tokens: int | None,
     output_tokens: int | None,
 ) -> None:
-    from documentai_api.config.env import get_env_config
-    from documentai_api.services import ddb as ddb_service
-    from documentai_api.utils.ssm import get_llm_extractor_model_id
-
-    model_id = get_llm_extractor_model_id()
-    table_name = get_env_config().get_document_metadata_table_name
-    updates: dict[str, Any] = {
-        DocumentMetadata.LLM_DOCUMENT_TYPE: document_type,
-        DocumentMetadata.LLM_MODEL_ID: model_id,
-        DocumentMetadata.LLM_DURATION_SECONDS: duration,
-    }
-
-    if input_tokens is not None:
-        updates[DocumentMetadata.LLM_INPUT_TOKENS] = input_tokens
-
-    if output_tokens is not None:
-        updates[DocumentMetadata.LLM_OUTPUT_TOKENS] = output_tokens
-
-    set_expr = "SET " + ", ".join(f"{k} = :{k}" for k in updates)
-    expr_values = {f":{k}": v for k, v in updates.items()}
-    ddb_service.update_item(table_name, {"fileName": ddb_key}, set_expr, expr_values)
+    from documentai_api.utils.ssm import get_ocr_mapping_model_id
 
     if input_tokens is not None and output_tokens is not None:
         write_tokens_by_model(
-            ddb_key, model_id, LlmUsageReason.LLM_EXTRACTION, input_tokens, output_tokens
+            ddb_key,
+            get_ocr_mapping_model_id(),
+            LlmUsageReason.OCR_MAPPING,
+            input_tokens,
+            output_tokens,
         )
 
 
-def run_llm_extraction(
+def run_ocr_mapping_extraction(
     ddb_key: str,
     document_type: str,
     ocr_blocks: list[dict[str, Any]],
 ) -> ExtractionResult:
-    """Primary LLM extraction path. Raises on failure."""
+    """Primary OCR mapping extraction path. Raises on failure."""
     ddb_record = get_ddb_record(ddb_key) or {}
     started_at_str = ddb_record.get(DocumentMetadata.EXTRACTION_STARTED_AT)
     processing_started_at = (
         datetime.fromisoformat(started_at_str) if started_at_str else datetime.now(UTC)
     )
 
-    with tracer.start_as_current_span("llm.run_extraction") as span:
+    with tracer.start_as_current_span("ocr_mapping.run_extraction") as span:
         span.set_attribute("document.key", ddb_key)
         span.set_attribute("document.type", document_type)
 
@@ -386,12 +368,12 @@ def run_llm_extraction(
             ddb_key, document_type, ocr_blocks, processing_started_at
         )
         result.processing_duration_seconds = duration
-        _write_llm_telemetry(ddb_key, document_type, duration, input_tokens, output_tokens)
+        _write_ocr_mapping_telemetry(ddb_key, input_tokens, output_tokens)
 
-        span.set_attribute("llm.field_count", len(result.field_confidence_scores))
+        span.set_attribute("ocr_mapping.field_count", len(result.field_confidence_scores))
 
     logger.info(
-        f"LLM extraction complete for {ddb_key}",
+        f"OCR mapping extraction complete for {ddb_key}",
         extra={
             "document_type": document_type,
             "field_count": len(result.field_confidence_scores),
