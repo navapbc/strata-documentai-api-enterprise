@@ -14,35 +14,208 @@
     "subsidy_or_tax_credit_amount": "323.75"
   },
   "geometry": {
-    "payment_due_date": {
-      "page": 0,
-      "left": 0.7890625,
-      "top": 0.10286458333333333,
-      "width": 0.0810546875,
-      "height": 0.010416666666666666
+    "matched": {
+      "insurer_or_marketplace_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.3525390625,
+        "top": 0.0390625,
+        "width": 0.4990234375,
+        "height": 0.016276041666666668
+      },
+      "payment_due_date": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.7890625,
+        "top": 0.10286458333333333,
+        "width": 0.0810546875,
+        "height": 0.010416666666666666
+      },
+      "payment_status": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.728515625,
+        "top": 0.162109375,
+        "width": 0.056640625,
+        "height": 0.014322916666666666
+      },
+      "policy_or_member_id": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.2734375,
+        "top": 0.3216145833333333,
+        "width": 0.1005859375,
+        "height": 0.009114583333333334
+      },
+      "policyholder_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.09375,
+        "top": 0.19205729166666666,
+        "width": 0.1025390625,
+        "height": 0.011067708333333334
+      }
     },
-    "payment_status": {
-      "page": 0,
-      "left": 0.728515625,
-      "top": 0.162109375,
-      "width": 0.056640625,
-      "height": 0.014322916666666666
-    },
-    "policy_or_member_id": {
-      "page": 0,
-      "left": 0.2734375,
-      "top": 0.3216145833333333,
-      "width": 0.1005859375,
-      "height": 0.009114583333333334
-    },
-    "policyholder_name": {
-      "page": 0,
-      "left": 0.09375,
-      "top": 0.19205729166666666,
-      "width": 0.1025390625,
-      "height": 0.011067708333333334
+    "not_matched": {
+      "ambiguous": {
+        "coverage_start_date": {
+          "expected_value": "2026-09-01",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.791015625,
+              "top": 0.068359375,
+              "width": 0.080078125,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.7900390625,
+              "top": 0.0859375,
+              "width": 0.080078125,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.0556640625,
+              "top": 0.6744791666666666,
+              "width": 0.0810546875,
+              "height": 0.009765625
+            }
+          ]
+        },
+        "coverage_end_date": {
+          "expected_value": "2026-09-30",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.8896484375,
+              "top": 0.08723958333333333,
+              "width": 0.0810546875,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.544921875,
+              "top": 0.4309895833333333,
+              "width": 0.09375,
+              "height": 0.011067708333333334
+            }
+          ]
+        },
+        "payment_frequency": {
+          "expected_value": "Monthly",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.568359375,
+              "top": 0.240234375,
+              "width": 0.0556640625,
+              "height": 0.012369791666666666
+            },
+            {
+              "page": 0,
+              "left": 0.1064453125,
+              "top": 0.4720052083333333,
+              "width": 0.0546875,
+              "height": 0.01171875
+            },
+            {
+              "page": 0,
+              "left": 0.080078125,
+              "top": 0.564453125,
+              "width": 0.0537109375,
+              "height": 0.011067708333333334
+            }
+          ]
+        },
+        "premium_amount": {
+          "expected_value": "636.25",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.8623046875,
+              "top": 0.3111979166666667,
+              "width": 0.0634765625,
+              "height": 0.01953125
+            },
+            {
+              "page": 0,
+              "left": 0.8798828125,
+              "top": 0.3444010416666667,
+              "width": 0.064453125,
+              "height": 0.01171875
+            },
+            {
+              "page": 0,
+              "left": 0.830078125,
+              "top": 0.5455729166666666,
+              "width": 0.0673828125,
+              "height": 0.020833333333333332
+            },
+            {
+              "page": 0,
+              "left": 0.8427734375,
+              "top": 0.7083333333333334,
+              "width": 0.0634765625,
+              "height": 0.012369791666666666
+            }
+          ]
+        },
+        "statement_date": {
+          "expected_value": "2026-09-01",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.791015625,
+              "top": 0.068359375,
+              "width": 0.080078125,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.7900390625,
+              "top": 0.0859375,
+              "width": 0.080078125,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.0556640625,
+              "top": 0.6744791666666666,
+              "width": 0.0810546875,
+              "height": 0.009765625
+            }
+          ]
+        },
+        "subsidy_or_tax_credit_amount": {
+          "expected_value": "323.75",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.8828125,
+              "top": 0.2688802083333333,
+              "width": 0.0634765625,
+              "height": 0.01171875
+            },
+            {
+              "page": 0,
+              "left": 0.826171875,
+              "top": 0.501953125,
+              "width": 0.0732421875,
+              "height": 0.012369791666666666
+            }
+          ]
+        }
+      }
     }
   },
+  "expected_document_class": "Health-Insurance-Premium-Statement",
   "notes": {
     "employer_name": "Coverage Tier is 'Individual' - no employer sponsor is mentioned.",
     "payment_status": "Explicitly labeled 'PAYMENT STATUS: PAID IN FULL'."

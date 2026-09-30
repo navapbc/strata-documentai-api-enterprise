@@ -1,7 +1,7 @@
 # synthetic-investment-and-royalty-income-scan.jpg
 
 
-_Run: 2026-09-30 02:19 UTC_
+_Run: 2026-09-30 16:51 UTC_
 
 
 ## Durations
@@ -32,8 +32,8 @@ _By Extracted Data_
 - OCR Mapping: 67% equivalent, 67% close, 33% misses
 
 _By Geometry_
-- BDA: 1/3 exact, 2 miss
-- OCR Mapping: 3/3 exact, 0 miss
+- BDA: 1/5 exact, 4 miss
+- OCR Mapping: 3/5 exact, 2 miss
 
 
 ## Field Comparison
@@ -42,13 +42,13 @@ _By Geometry_
 | account_balance | $46,000.00 | ❌ - | ✅ 46000.00 | - | 1.0000 | - | - | 0.726,0.299,0.147,0.020 |
 | account_holder_name | Alexis Morgan | ✅ Alexis Morgan | ✅ Alexis Morgan | 0.93 | 1.0000 | 0.053,0.145,0.101,0.011 | ✅ 0.053,0.145,0.101,0.011 | ✅ 0.053,0.145,0.101,0.011 |
 | account_number | IRA-7821-****-5542 | ❌ - | ✅ IRA-7821-****-5542 | - | 0.9000 | 0.666,0.148,0.133,0.009 | ❌ - | ✅ 0.665,0.148,0.135,0.009 |
-| account_type | Traditional IRA | ❌ - | ✅ Traditional IRA | - | 1.0000 | - | - | 0.665,0.165,0.101,0.009 |
+| account_type | Traditional IRA | ❌ - | ✅ Traditional IRA | - | 1.0000 | 0.508,0.165,0.258,0.010 | ❌ - | ❌ 0.665,0.165,0.101,0.009 |
 | capital_gains_distributions_cumulative | - | - | - | 0.89 | - | - | - | - |
 | contribution_dates | 2026-02-14, 2026-05-12 | ❌ - | ✅ 2026-02-14, 2026-05-12 | - | N/A | - | - | 0.059,0.590,0.074,0.009 |
 | distribution_dates | 2026-07-20 | ❌ - | ✅ 2026-07-20 | - | 1.0000 | 0.059,0.630,0.074,0.008 | ❌ - | ✅ 0.059,0.629,0.075,0.009 |
 | dividend_payments_cumulative | - | - | - | 0.90 | - | - | - | - |
 | document_type | Brokerage Statement | ❌ IRA ACCOUNT STATEMENT | ❌ - | 0.38 | - | - | 0.750,0.050,0.212,0.010 | - |
-| financial_institution | Harbor Brokerage Services, Inc. | 🟡 Harbor Brokerage Services | ✅ Harbor Brokerage Services, Inc. | 0.65 | 1.0000 | - | 0.135,0.044,0.345,0.020 | 0.666,0.182,0.121,0.011 |
+| financial_institution | Harbor Brokerage Services, Inc. | 🟡 Harbor Brokerage Services | ✅ Harbor Brokerage Services, Inc. | 0.65 | 1.0000 | 0.054,0.174,0.826,0.019 | ❌ 0.135,0.044,0.345,0.020 | ❌ 0.666,0.182,0.121,0.011 |
 | interest_credits_cumulative | - | - | - | 0.90 | - | - | - | - |
 | statement_period_end | 2026-08-31 | ✅ 2026-08-31 | ❌ - | 0.83 | - | - | 0.793,0.131,0.113,0.011 | - |
 | statement_period_start | 2026-01-01 | ✅ 2026-01-01 | ❌ - | 0.87 | - | - | 0.665,0.131,0.111,0.011 | - |

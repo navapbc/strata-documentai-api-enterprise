@@ -189,6 +189,16 @@ def get_document_schema(document_type: str) -> DocumentSchema | None:
     return schemas.get(document_type)
 
 
+def is_list_field(document_type: str, field_name: str) -> bool:
+    """Return True if field_name is an array-typed field in the given document type's schema."""
+    schema = get_document_schema(document_type)
+    if not schema:
+        return False
+
+    field = next((f for f in schema.fields if f.name == field_name), None)
+    return field is not None and field.type == "array"
+
+
 def get_all_fields() -> list[dict[str, Any]]:
     schemas = get_all_schemas()
     data: list[dict[str, Any]] = []

@@ -1,7 +1,7 @@
 # synthetic-public-benefits-income-proof-pay-stub.jpg
 
 
-_Run: 2026-09-30 02:19 UTC_
+_Run: 2026-09-30 16:51 UTC_
 
 
 ## Durations
@@ -32,8 +32,8 @@ _By Extracted Data_
 - OCR Mapping: 86% equivalent, 86% close, 14% misses
 
 _By Geometry_
-- BDA: 12/14 exact, 2 miss
-- OCR Mapping: 12/14 exact, 2 miss
+- BDA: 12/16 exact, 4 miss
+- OCR Mapping: 12/16 exact, 4 miss
 
 
 ## Field Comparison
@@ -43,7 +43,7 @@ _By Geometry_
 | CityTaxes.Period | - | - | - | - | N/A | - | - | - |
 | CityTaxes.YTD | - | - | - | - | N/A | - | - | - |
 | CompanyAddress.City | Hartford | ✅ Hartford | ✅ Hartford | 0.94 | N/A | 0.137,0.289,0.041,0.014 | ✅ 0.137,0.289,0.042,0.017 | ❌ - |
-| CompanyAddress.Line1 | 1234 Community Way | ✅ 1234 Community Way | ✅ 1234 Community Way | 0.95 | 1.0000 | - | 0.137,0.261,0.104,0.024 | 0.137,0.261,0.104,0.021 |
+| CompanyAddress.Line1 | 1234 Community Way | ✅ 1234 Community Way | ✅ 1234 Community Way | 0.95 | 1.0000 | 0.137,0.198,0.615,0.082 | ❌ 0.137,0.261,0.104,0.024 | ❌ 0.137,0.261,0.104,0.021 |
 | CompanyAddress.Line2 | - | - | - | 0.95 | N/A | - | - | - |
 | CompanyAddress.State | ST | ✅ ST | ✅ ST | 0.92 | 1.0000 | 0.182,0.288,0.012,0.010 | ✅ 0.182,0.288,0.013,0.012 | ✅ 0.182,0.288,0.013,0.012 |
 | CompanyAddress.ZipCode | 06103 | ✅ 06103 | ✅ 06103 | 0.94 | 1.0000 | 0.198,0.285,0.028,0.012 | ✅ 0.197,0.285,0.029,0.014 | ✅ 0.197,0.285,0.029,0.014 |
@@ -61,7 +61,7 @@ _By Geometry_
 | EmployeeName.SuffixName | - | - | - | 0.94 | N/A | - | - | - |
 | EmployeeNumber | EMP-78245 | ✅ EMP-78245 | ✅ EMP-78245 | 0.90 | 1.0000 | 0.473,0.228,0.051,0.015 | ✅ 0.473,0.228,0.053,0.016 | ✅ 0.473,0.228,0.052,0.016 |
 | FederalFilingStatus | - | - | - | 0.94 | N/A | - | - | - |
-| FederalTaxes.ItemDescription | Federal Income Tax | ❌ - | ✅ Federal Income Tax | - | 1.0000 | - | - | 0.533,0.357,0.072,0.017 |
+| FederalTaxes.ItemDescription | Federal Income Tax | ❌ - | ✅ Federal Income Tax | - | 1.0000 | 0.140,0.332,0.715,0.084 | ❌ - | ❌ 0.533,0.357,0.072,0.017 |
 | FederalTaxes.Period | 152.10 | ❌ - | ✅ 152.10 | - | 1.0000 | 0.742,0.342,0.029,0.011 | ❌ - | ✅ 0.741,0.340,0.031,0.013 |
 | FederalTaxes.YTD | 1064.70 | ❌ - | ✅ 1064.70 | - | 1.0000 | 0.820,0.332,0.035,0.012 | ❌ - | ✅ 0.820,0.332,0.036,0.015 |
 | HolidayHourlyRate | - | - | - | 0.95 | N/A | - | - | - |

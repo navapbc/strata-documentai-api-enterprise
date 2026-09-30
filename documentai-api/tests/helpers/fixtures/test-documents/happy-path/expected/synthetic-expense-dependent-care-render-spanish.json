@@ -12,7 +12,197 @@
     "service_end_date": "2026-08-31",
     "statement_date": "2026-09-05"
   },
-  "geometry": {},
+  "geometry": {
+    "matched": {
+      "payment_frequency": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.6591796875,
+        "top": 0.3951822916666667,
+        "width": 0.0537109375,
+        "height": 0.008463541666666666
+      },
+      "provider_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.037109375,
+        "top": 0.9153645833333334,
+        "width": 0.2802734375,
+        "height": 0.010416666666666666
+      }
+    },
+    "not_matched": {
+      "text_not_found": {
+        "document_type": {
+          "expected_value": "Estado de Gastos de Cuidado Dependiente"
+        },
+        "provider_address": {
+          "expected_value": "1234 Camino del Sol, Suite 100, Las Vegas, NV 89119"
+        },
+        "service_start_date": {
+          "expected_value": "2026-08-04"
+        },
+        "service_end_date": {
+          "expected_value": "2026-08-31"
+        },
+        "statement_date": {
+          "expected_value": "2026-09-05"
+        }
+      },
+      "ambiguous": {
+        "amount_paid": {
+          "expected_value": "750.00",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.87890625,
+              "top": 0.673828125,
+              "width": 0.0625,
+              "height": 0.011067708333333334
+            },
+            {
+              "page": 0,
+              "left": 0.8828125,
+              "top": 0.7044270833333334,
+              "width": 0.05859375,
+              "height": 0.011067708333333334
+            },
+            {
+              "page": 0,
+              "left": 0.494140625,
+              "top": 0.7194010416666666,
+              "width": 0.056640625,
+              "height": 0.010416666666666666
+            }
+          ]
+        },
+        "balance_due": {
+          "expected_value": "750.00",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.87890625,
+              "top": 0.673828125,
+              "width": 0.0625,
+              "height": 0.011067708333333334
+            },
+            {
+              "page": 0,
+              "left": 0.8828125,
+              "top": 0.7044270833333334,
+              "width": 0.05859375,
+              "height": 0.011067708333333334
+            },
+            {
+              "page": 0,
+              "left": 0.494140625,
+              "top": 0.7194010416666666,
+              "width": 0.056640625,
+              "height": 0.010416666666666666
+            }
+          ]
+        },
+        "dependent_names": {
+          "expected_value": "Mateo Vega",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.0517578125,
+              "top": 0.23763020833333334,
+              "width": 0.728515625,
+              "height": 0.01953125
+            },
+            {
+              "page": 0,
+              "left": 0.046875,
+              "top": 0.7688802083333334,
+              "width": 0.6279296875,
+              "height": 0.009765625
+            }
+          ]
+        },
+        "payment_amount": {
+          "expected_value": "375.00",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.638671875,
+              "top": 0.4251302083333333,
+              "width": 0.0537109375,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.884765625,
+              "top": 0.4251302083333333,
+              "width": 0.052734375,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.638671875,
+              "top": 0.4680989583333333,
+              "width": 0.0537109375,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.884765625,
+              "top": 0.4680989583333333,
+              "width": 0.052734375,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.638671875,
+              "top": 0.5110677083333334,
+              "width": 0.0537109375,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.884765625,
+              "top": 0.5110677083333334,
+              "width": 0.052734375,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.638671875,
+              "top": 0.5540364583333334,
+              "width": 0.0537109375,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.884765625,
+              "top": 0.5540364583333334,
+              "width": 0.052734375,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.4873046875,
+              "top": 0.6705729166666666,
+              "width": 0.05078125,
+              "height": 0.009114583333333334
+            },
+            {
+              "page": 0,
+              "left": 0.4873046875,
+              "top": 0.6946614583333334,
+              "width": 0.05078125,
+              "height": 0.009765625
+            }
+          ]
+        }
+      }
+    }
+  },
+  "expected_document_class": "Invoices",
+  "language": "spa",
   "notes": {
     "_general": "This document never produced a successful e2e run (no .md draft existed), so there's no BDA/LLM output to cross-check against - read directly from the image.",
     "payment_amount": "Uses the weekly rate ($375.00), matching the convention used on the sibling render/scan Dependent-Care-Statement documents.",

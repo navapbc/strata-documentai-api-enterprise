@@ -12,35 +12,74 @@
     "account_summary.summary_amount": "2275.00, 4220.00, 3460.40, 0.00, 3034.60"
   },
   "geometry": {
-    "account_number": {
-      "page": 0,
-      "left": 0.2687908496732026,
-      "top": 0.20707070707070707,
-      "width": 0.06944444444444445,
-      "height": 0.010732323232323232
+    "matched": {
+      "bank_name": {
+        "determination_method": "manual",
+        "page": 0,
+        "left": 0.229575,
+        "top": 0.046086,
+        "width": 0.652778,
+        "height": 0.059974,
+        "explanation": "Bank name spans two header lines; geo merged from 'Riverbend Bank Statement -' and 'Financial Institution Deposit Income Verification'."
+      },
+      "account_number": {
+        "determination_method": "manual",
+        "explanation": "Word-level match for '****5678' on the Account No. line.",
+        "page": 0,
+        "left": 0.269,
+        "top": 0.207,
+        "width": 0.069,
+        "height": 0.011
+      },
+      "statement_start_date": {
+        "determination_method": "manual",
+        "explanation": "Word-level match for '2026-06-01' on the Statement Period line.",
+        "page": 0,
+        "left": 0.292,
+        "top": 0.177,
+        "width": 0.087,
+        "height": 0.011
+      },
+      "statement_end_date": {
+        "determination_method": "manual",
+        "explanation": "Word-level match for '2026-08-31' on the Statement Period line.",
+        "page": 0,
+        "left": 0.406,
+        "top": 0.177,
+        "width": 0.087,
+        "height": 0.011
+      },
+      "account_holder_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.12418300653594772,
+        "top": 0.3068181818181818,
+        "width": 0.1503267973856209,
+        "height": 0.011363636363636364
+      },
+      "account_holder_address": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.12336601307189543,
+        "top": 0.3301767676767677,
+        "width": 0.38235294117647056,
+        "height": 0.013257575757575758
+      }
     },
-    "account_holder_name": {
-      "page": 0,
-      "left": 0.12418300653594772,
-      "top": 0.3068181818181818,
-      "width": 0.1503267973856209,
-      "height": 0.011363636363636364
-    },
-    "statement_start_date": {
-      "page": 0,
-      "left": 0.2916666666666667,
-      "top": 0.1773989898989899,
-      "width": 0.08660130718954248,
-      "height": 0.010732323232323232
-    },
-    "statement_end_date": {
-      "page": 0,
-      "left": 0.40604575163398693,
-      "top": 0.1773989898989899,
-      "width": 0.08741830065359477,
-      "height": 0.010732323232323232
+    "not_matched": {
+      "text_not_found": {
+        "account_summary.summary_desc": {
+          "expected_value": "Beginning Balance, Total Deposits / Credits, Total Withdrawals / Debits, Fees, Ending Balance"
+        },
+        "account_summary.summary_amount": {
+          "expected_value": "2275.00, 4220.00, 3460.40, 0.00, 3034.60"
+        }
+      }
     }
   },
+  "expected_document_class": "Bank-Statement",
   "notes": {
     "account_type": "Not printed anywhere on this statement (a single summary-only page); BDA reported high confidence (0.91) with an empty value, which is correct here - genuinely absent, not a miss.",
     "branch_transit_number": "Not printed anywhere on this statement; same as account_type - BDA's confident-but-empty result is correct.",

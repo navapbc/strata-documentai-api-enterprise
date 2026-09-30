@@ -18,42 +18,157 @@
     "recipient_zip_code": "23513"
   },
   "geometry": {
-    "case_number": {
-      "page": 0,
-      "left": 0.4755859375,
-      "top": 0.248046875,
-      "width": 0.0869140625,
-      "height": 0.0078125
+    "matched": {
+      "case_number": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.4755859375,
+        "top": 0.248046875,
+        "width": 0.0869140625,
+        "height": 0.0078125
+      },
+      "payer_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.076171875,
+        "top": 0.24739583333333334,
+        "width": 0.6591796875,
+        "height": 0.013020833333333334
+      },
+      "payment_frequency": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.2080078125,
+        "top": 0.369140625,
+        "width": 0.0546875,
+        "height": 0.0078125
+      },
+      "recipient_name.first_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.076171875,
+        "top": 0.24739583333333334,
+        "width": 0.0478515625,
+        "height": 0.0078125
+      },
+      "recipient_name.last_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.12890625,
+        "top": 0.24739583333333334,
+        "width": 0.0322265625,
+        "height": 0.009765625
+      },
+      "recipient_state": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.2490234375,
+        "top": 0.14778645833333334,
+        "width": 0.015625,
+        "height": 0.006510416666666667
+      }
     },
-    "payment_frequency": {
-      "page": 0,
-      "left": 0.2080078125,
-      "top": 0.369140625,
-      "width": 0.0546875,
-      "height": 0.0078125
-    },
-    "recipient_name.first_name": {
-      "page": 0,
-      "left": 0.076171875,
-      "top": 0.24739583333333334,
-      "width": 0.0478515625,
-      "height": 0.0078125
-    },
-    "recipient_name.last_name": {
-      "page": 0,
-      "left": 0.12890625,
-      "top": 0.24739583333333334,
-      "width": 0.0322265625,
-      "height": 0.009765625
-    },
-    "recipient_state": {
-      "page": 0,
-      "left": 0.2490234375,
-      "top": 0.14778645833333334,
-      "width": 0.015625,
-      "height": 0.006510416666666667
+    "not_matched": {
+      "text_not_found": {
+        "court_name": {
+          "expected_value": "Tribunal de Familia de la Ciudad de Norfolk"
+        },
+        "effective_start_date": {
+          "expected_value": "2021-01-05"
+        },
+        "order_date": {
+          "expected_value": "2021-01-05"
+        },
+        "payment_type": {
+          "expected_value": "Child Support"
+        },
+        "recipient_address": {
+          "expected_value": "4721 Willow Crossing Drive Apt. 3B, Norfolk, VA 23513"
+        },
+        "recipient_zip_code": {
+          "expected_value": "23513"
+        }
+      },
+      "ambiguous": {
+        "payment_amount": {
+          "expected_value": "450.00",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.2412109375,
+              "top": 0.3522135416666667,
+              "width": 0.0517578125,
+              "height": 0.009114583333333334
+            },
+            {
+              "page": 0,
+              "left": 0.4921875,
+              "top": 0.4869791666666667,
+              "width": 0.0537109375,
+              "height": 0.016927083333333332
+            },
+            {
+              "page": 0,
+              "left": 0.4921875,
+              "top": 0.5091145833333334,
+              "width": 0.0546875,
+              "height": 0.016927083333333332
+            },
+            {
+              "page": 0,
+              "left": 0.49609375,
+              "top": 0.5338541666666666,
+              "width": 0.05078125,
+              "height": 0.009765625
+            },
+            {
+              "page": 0,
+              "left": 0.4921875,
+              "top": 0.5540364583333334,
+              "width": 0.0546875,
+              "height": 0.016927083333333332
+            },
+            {
+              "page": 0,
+              "left": 0.49609375,
+              "top": 0.5794270833333334,
+              "width": 0.0517578125,
+              "height": 0.009114583333333334
+            },
+            {
+              "page": 0,
+              "left": 0.4931640625,
+              "top": 0.599609375,
+              "width": 0.0546875,
+              "height": 0.016927083333333332
+            },
+            {
+              "page": 0,
+              "left": 0.4931640625,
+              "top": 0.623046875,
+              "width": 0.0556640625,
+              "height": 0.017578125
+            },
+            {
+              "page": 0,
+              "left": 0.4970703125,
+              "top": 0.6490885416666666,
+              "width": 0.0517578125,
+              "height": 0.009765625
+            }
+          ]
+        }
+      }
     }
   },
+  "expected_document_class": "Child-Support-Document",
+  "language": "spa",
   "notes": {
     "child_name": "No child is named on this document (payment-history statement between payor and recipient only).",
     "payment_amount": "Uses 'Monto ordenado (actual)' ($450.00/week, the current-support order amount), not 'Monto total de la orden (actual + atrasos)' ($550.00/week, which adds the $100/week arrears payment) - consistent with how this field is read on the other two child-support documents. LLM's value (550.00) is the combined total, not the ordered current-support amount.",

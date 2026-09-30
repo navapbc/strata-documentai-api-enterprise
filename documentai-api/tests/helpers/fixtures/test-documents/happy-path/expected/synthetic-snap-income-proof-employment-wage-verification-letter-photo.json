@@ -10,28 +10,73 @@
     "salary_or_wage": "$19.00 per hour"
   },
   "geometry": {
-    "employee_name": {
-      "page": 0,
-      "left": 0.19521178637200737,
-      "top": 0.26933701657458564,
-      "width": 0.10497237569060773,
-      "height": 0.011049723756906077
-    },
-    "employer_name": {
-      "page": 0,
-      "left": 0.17955801104972377,
-      "top": 0.7783149171270718,
-      "width": 0.19705340699815838,
-      "height": 0.011740331491712707
-    },
-    "issuer_title": {
-      "page": 0,
-      "left": 0.17955801104972377,
-      "top": 0.7582872928176796,
-      "width": 0.19521178637200737,
-      "height": 0.011740331491712707
+    "matched": {
+      "employee_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.19521178637200737,
+        "top": 0.26933701657458564,
+        "width": 0.10497237569060773,
+        "height": 0.011049723756906077
+      },
+      "employer_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.17955801104972377,
+        "top": 0.7783149171270718,
+        "width": 0.19705340699815838,
+        "height": 0.011740331491712707
+      },
+      "employment_start_date": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.1887661141804788,
+        "top": 0.4198895027624309,
+        "width": 0.34714548802946593,
+        "height": 0.015193370165745856
+      },
+      "issuer_title": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.17955801104972377,
+        "top": 0.7582872928176796,
+        "width": 0.19521178637200737,
+        "height": 0.011740331491712707
+      },
+      "job_title": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.1887661141804788,
+        "top": 0.4198895027624309,
+        "width": 0.34714548802946593,
+        "height": 0.015193370165745856
+      },
+      "salary_or_wage": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.1887661141804788,
+        "top": 0.4530386740331492,
+        "width": 0.46408839779005523,
+        "height": 0.015193370165745856
+      },
+      "issuer_name": {
+        "determination_method": "manual",
+        "explanation": "Two OCR matches: signature area (top=0.685) and printed name (top=0.739). Printed name is the field value location.",
+        "page": 0,
+        "left": 0.18047882136279927,
+        "top": 0.738950276243094,
+        "width": 0.10865561694290976,
+        "height": 0.011049723756906077
+      }
     }
   },
+  "expected_document_class": "Employment-Verification-Letter",
   "notes": {
     "employment_end_date": "Still currently employed - no end date is stated."
   }

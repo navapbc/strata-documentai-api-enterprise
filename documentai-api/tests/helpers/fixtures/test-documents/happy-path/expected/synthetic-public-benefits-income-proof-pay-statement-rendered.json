@@ -47,133 +47,426 @@
     "currency": "USD"
   },
   "geometry": {
-    "PayPeriodStartDate": {
-      "page": 0,
-      "left": 0.7388939256572983,
-      "top": 0.07012622720897616,
-      "width": 0.08703535811423391,
-      "height": 0.011921458625525946
+    "matched": {
+      "PayPeriodStartDate": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.7388939256572983,
+        "top": 0.07012622720897616,
+        "width": 0.08703535811423391,
+        "height": 0.011921458625525946
+      },
+      "PayPeriodEndDate": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.8513145965548504,
+        "top": 0.07012622720897616,
+        "width": 0.08522212148685404,
+        "height": 0.011921458625525946
+      },
+      "PayDate": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.7388939256572983,
+        "top": 0.09396914446002805,
+        "width": 0.08703535811423391,
+        "height": 0.012622720897615708
+      },
+      "EmployeeName.FirstName": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.21940163191296463,
+        "top": 0.1697054698457223,
+        "width": 0.056210335448776065,
+        "height": 0.011220196353436185
+      },
+      "EmployeeName.LastName": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.2810516772438803,
+        "top": 0.1697054698457223,
+        "width": 0.04170444242973708,
+        "height": 0.011220196353436185
+      },
+      "EmployeeAddress.Line1": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.06708975521305531,
+        "top": 0.19284712482468444,
+        "width": 0.29827742520398914,
+        "height": 0.014025245441795231
+      },
+      "EmployeeAddress.ZipCode": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.3254759746146872,
+        "top": 0.21458625525946703,
+        "width": 0.04170444242973708,
+        "height": 0.011220196353436185
+      },
+      "CurrentGrossPay": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.6727107887579329,
+        "top": 0.511921458625526,
+        "width": 0.07162284678150499,
+        "height": 0.01332398316970547
+      },
+      "CurrentNetPay": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.34088848594741616,
+        "top": 0.8036465638148668,
+        "width": 0.10244786944696282,
+        "height": 0.0182328190743338
+      },
+      "YTDNetPay": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.6618313689936537,
+        "top": 0.9018232819074333,
+        "width": 0.08522212148685404,
+        "height": 0.014726507713884993
+      },
+      "YTDFederalTax": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.6273798730734361,
+        "top": 0.6100981767180925,
+        "width": 0.06799637352674524,
+        "height": 0.012622720897615708
+      },
+      "YTDStateTax": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.6409791477787852,
+        "top": 0.638148667601683,
+        "width": 0.05439709882139619,
+        "height": 0.012622720897615708
+      },
+      "FederalTaxes.ItemDescription": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.06890299184043518,
+        "top": 0.6100981767180925,
+        "width": 0.7923844061650045,
+        "height": 0.012622720897615708
+      },
+      "FederalTaxes.Period": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.46509519492293744,
+        "top": 0.6100981767180925,
+        "width": 0.051677243880326386,
+        "height": 0.012622720897615708
+      },
+      "FederalTaxes.YTD": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.6273798730734361,
+        "top": 0.6100981767180925,
+        "width": 0.06799637352674524,
+        "height": 0.012622720897615708
+      },
+      "StateTaxes.ItemDescription": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.06890299184043518,
+        "top": 0.638148667601683,
+        "width": 0.7923844061650045,
+        "height": 0.014726507713884993
+      },
+      "StateTaxes.Period": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.4732547597461469,
+        "top": 0.638148667601683,
+        "width": 0.04533091568449683,
+        "height": 0.012622720897615708
+      },
+      "StateTaxes.YTD": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.6409791477787852,
+        "top": 0.638148667601683,
+        "width": 0.05439709882139619,
+        "height": 0.012622720897615708
+      },
+      "EmployeeNumber": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.22030825022665457,
+        "top": 0.24333800841514727,
+        "width": 0.04079782411604715,
+        "height": 0.010518934081346423
+      },
+      "CurrentTotalDeductions": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.46237533998186764,
+        "top": 0.7531556802244039,
+        "width": 0.057116953762466005,
+        "height": 0.012622720897615708
+      },
+      "YTDTotalDeductions": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.6255666364460563,
+        "top": 0.7524544179523142,
+        "width": 0.06799637352674524,
+        "height": 0.014025245441795231
+      }
     },
-    "PayPeriodEndDate": {
-      "page": 0,
-      "left": 0.8513145965548504,
-      "top": 0.07012622720897616,
-      "width": 0.08522212148685404,
-      "height": 0.011921458625525946
-    },
-    "PayDate": {
-      "page": 0,
-      "left": 0.7388939256572983,
-      "top": 0.09396914446002805,
-      "width": 0.08703535811423391,
-      "height": 0.012622720897615708
-    },
-    "EmployeeName.FirstName": {
-      "page": 0,
-      "left": 0.21940163191296463,
-      "top": 0.1697054698457223,
-      "width": 0.056210335448776065,
-      "height": 0.011220196353436185
-    },
-    "EmployeeName.LastName": {
-      "page": 0,
-      "left": 0.2810516772438803,
-      "top": 0.1697054698457223,
-      "width": 0.04170444242973708,
-      "height": 0.011220196353436185
-    },
-    "EmployeeAddress.ZipCode": {
-      "page": 0,
-      "left": 0.3254759746146872,
-      "top": 0.21458625525946703,
-      "width": 0.04170444242973708,
-      "height": 0.011220196353436185
-    },
-    "CurrentGrossPay": {
-      "page": 0,
-      "left": 0.6727107887579329,
-      "top": 0.511921458625526,
-      "width": 0.07162284678150499,
-      "height": 0.01332398316970547
-    },
-    "CurrentNetPay": {
-      "page": 0,
-      "left": 0.34088848594741616,
-      "top": 0.8036465638148668,
-      "width": 0.10244786944696282,
-      "height": 0.0182328190743338
-    },
-    "YTDNetPay": {
-      "page": 0,
-      "left": 0.6618313689936537,
-      "top": 0.9018232819074333,
-      "width": 0.08522212148685404,
-      "height": 0.014726507713884993
-    },
-    "YTDFederalTax": {
-      "page": 0,
-      "left": 0.6273798730734361,
-      "top": 0.6100981767180925,
-      "width": 0.06799637352674524,
-      "height": 0.012622720897615708
-    },
-    "YTDStateTax": {
-      "page": 0,
-      "left": 0.6409791477787852,
-      "top": 0.638148667601683,
-      "width": 0.05439709882139619,
-      "height": 0.012622720897615708
-    },
-    "FederalTaxes.Period": {
-      "page": 0,
-      "left": 0.46509519492293744,
-      "top": 0.6100981767180925,
-      "width": 0.051677243880326386,
-      "height": 0.012622720897615708
-    },
-    "FederalTaxes.YTD": {
-      "page": 0,
-      "left": 0.6273798730734361,
-      "top": 0.6100981767180925,
-      "width": 0.06799637352674524,
-      "height": 0.012622720897615708
-    },
-    "StateTaxes.Period": {
-      "page": 0,
-      "left": 0.4732547597461469,
-      "top": 0.638148667601683,
-      "width": 0.04533091568449683,
-      "height": 0.012622720897615708
-    },
-    "StateTaxes.YTD": {
-      "page": 0,
-      "left": 0.6409791477787852,
-      "top": 0.638148667601683,
-      "width": 0.05439709882139619,
-      "height": 0.012622720897615708
-    },
-    "EmployeeNumber": {
-      "page": 0,
-      "left": 0.22030825022665457,
-      "top": 0.24333800841514727,
-      "width": 0.04079782411604715,
-      "height": 0.010518934081346423
-    },
-    "CurrentTotalDeductions": {
-      "page": 0,
-      "left": 0.46237533998186764,
-      "top": 0.7531556802244039,
-      "width": 0.057116953762466005,
-      "height": 0.012622720897615708
-    },
-    "YTDTotalDeductions": {
-      "page": 0,
-      "left": 0.6255666364460563,
-      "top": 0.7524544179523142,
-      "width": 0.06799637352674524,
-      "height": 0.014025245441795231
+    "not_matched": {
+      "text_not_found": {
+        "currency": {
+          "expected_value": "USD"
+        }
+      },
+      "ambiguous": {
+        "EmployeeAddress.City": {
+          "expected_value": "Baltimore",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.06708975521305531,
+              "top": 0.09256661991584852,
+              "width": 0.07615593834995467,
+              "height": 0.014726507713884993
+            },
+            {
+              "page": 0,
+              "left": 0.22030825022665457,
+              "top": 0.21458625525946703,
+              "width": 0.06799637352674524,
+              "height": 0.01332398316970547
+            },
+            {
+              "page": 0,
+              "left": 0.5086128739800544,
+              "top": 0.2187938288920056,
+              "width": 0.07252946509519492,
+              "height": 0.01332398316970547
+            }
+          ]
+        },
+        "EmployeeAddress.State": {
+          "expected_value": "MD",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.1514052583862194,
+              "top": 0.09256661991584852,
+              "width": 0.027198549410698096,
+              "height": 0.012622720897615708
+            },
+            {
+              "page": 0,
+              "left": 0.2955575702629193,
+              "top": 0.21458625525946703,
+              "width": 0.024478694469628286,
+              "height": 0.011220196353436185
+            },
+            {
+              "page": 0,
+              "left": 0.5893019038984587,
+              "top": 0.2187938288920056,
+              "width": 0.024478694469628286,
+              "height": 0.011220196353436185
+            }
+          ]
+        },
+        "CompanyAddress.Line1": {
+          "expected_value": "2458 Harford Rd",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.06618313689936536,
+              "top": 0.07223001402524544,
+              "width": 0.1242067089755213,
+              "height": 0.011220196353436185
+            },
+            {
+              "page": 0,
+              "left": 0.5086128739800544,
+              "top": 0.1956521739130435,
+              "width": 0.1214868540344515,
+              "height": 0.011921458625525946
+            }
+          ]
+        },
+        "CompanyAddress.City": {
+          "expected_value": "Baltimore",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.06708975521305531,
+              "top": 0.09256661991584852,
+              "width": 0.07615593834995467,
+              "height": 0.014726507713884993
+            },
+            {
+              "page": 0,
+              "left": 0.22030825022665457,
+              "top": 0.21458625525946703,
+              "width": 0.06799637352674524,
+              "height": 0.01332398316970547
+            },
+            {
+              "page": 0,
+              "left": 0.5086128739800544,
+              "top": 0.2187938288920056,
+              "width": 0.07252946509519492,
+              "height": 0.01332398316970547
+            }
+          ]
+        },
+        "CompanyAddress.State": {
+          "expected_value": "MD",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.1514052583862194,
+              "top": 0.09256661991584852,
+              "width": 0.027198549410698096,
+              "height": 0.012622720897615708
+            },
+            {
+              "page": 0,
+              "left": 0.2955575702629193,
+              "top": 0.21458625525946703,
+              "width": 0.024478694469628286,
+              "height": 0.011220196353436185
+            },
+            {
+              "page": 0,
+              "left": 0.5893019038984587,
+              "top": 0.2187938288920056,
+              "width": 0.024478694469628286,
+              "height": 0.011220196353436185
+            }
+          ]
+        },
+        "CompanyAddress.ZipCode": {
+          "expected_value": "21218",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.18495013599274707,
+              "top": 0.09256661991584852,
+              "width": 0.04623753399818677,
+              "height": 0.012622720897615708
+            },
+            {
+              "page": 0,
+              "left": 0.6210335448776065,
+              "top": 0.21809256661991586,
+              "width": 0.043517679057116954,
+              "height": 0.011921458625525946
+            }
+          ]
+        },
+        "FederalFilingStatus": {
+          "expected_value": "Married",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.8132366273798731,
+              "top": 0.6107994389901823,
+              "width": 0.04805077062556664,
+              "height": 0.010518934081346423
+            },
+            {
+              "page": 0,
+              "left": 0.8132366273798731,
+              "top": 0.6388499298737728,
+              "width": 0.04805077062556664,
+              "height": 0.010518934081346423
+            }
+          ]
+        },
+        "StateFilingStatus": {
+          "expected_value": "Married",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.8132366273798731,
+              "top": 0.6107994389901823,
+              "width": 0.04805077062556664,
+              "height": 0.010518934081346423
+            },
+            {
+              "page": 0,
+              "left": 0.8132366273798731,
+              "top": 0.6388499298737728,
+              "width": 0.04805077062556664,
+              "height": 0.010518934081346423
+            }
+          ]
+        },
+        "YTDGrossPay": {
+          "expected_value": "18511.20",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.827742520398912,
+              "top": 0.511921458625526,
+              "width": 0.07887579329102448,
+              "height": 0.01332398316970547
+            },
+            {
+              "page": 0,
+              "left": 0.2184950135992747,
+              "top": 0.9018232819074333,
+              "width": 0.0843155031731641,
+              "height": 0.014726507713884993
+            }
+          ]
+        },
+        "RegularHourlyRate": {
+          "expected_value": "18.25",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.21940163191296463,
+              "top": 0.2917251051893408,
+              "width": 0.0471441523118767,
+              "height": 0.01332398316970547
+            },
+            {
+              "page": 0,
+              "left": 0.5077062556663645,
+              "top": 0.39901823281907434,
+              "width": 0.04623753399818677,
+              "height": 0.012622720897615708
+            }
+          ]
+        }
+      }
     }
   },
+  "expected_document_class": "Payslip",
   "notes": {
     "HolidayHourlyRate/PayrollNumber/CityTaxes.*/YTDCityTax": "This paystub has no holiday-pay line item, no separate payroll number distinct from the Employee ID, and no city-level tax deduction (only Federal, Maryland State, Social Security, Medicare, and Health Insurance are listed) - all genuinely absent.",
     "is_ytd_gross_pay_highest/is_gross_pay_valid": "Both ask essentially the same question (is YTD Gross Pay the largest dollar figure on the page); $18,511.20 is indeed the largest amount shown, so both are true.",

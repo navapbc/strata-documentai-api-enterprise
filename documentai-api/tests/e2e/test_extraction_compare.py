@@ -132,10 +132,14 @@ def _load_expected_geometry(filename: str) -> dict[str, str] | None:
     path = _EXPECTED_DIR / f"{Path(filename).stem}.json"
     if not path.exists():
         return None
-    geo = json.loads(path.read_text()).get("geometry", {})
-    result = {
-        field: f"{bb['left']:.3f},{bb['top']:.3f},{bb['width']:.3f},{bb['height']:.3f}"
-        for field, bb in geo.items()
+    raw_geo = json.loads(path.read_text()).get("geometry", {})
+    matched = raw_geo.get("matched", {}) if isinstance(raw_geo.get("matched"), dict) else raw_geo
+
+    def _fmt(bb: dict[str, Any]) -> str:
+        return f"{bb['left']:.3f},{bb['top']:.3f},{bb['width']:.3f},{bb['height']:.3f}"
+
+    result: dict[str, str] = {
+        field: _fmt(bb) for field, bb in matched.items() if isinstance(bb, dict) and "left" in bb
     }
     return result or None
 
@@ -207,6 +211,15 @@ def _fmt_geometry(geo: list[dict[str, Any]] | None) -> str:
     return f"{left:.3f},{top:.3f},{w:.3f},{h:.3f}"
 
 
+def _geo_match_icon(exp_geo: str, actual_geo: str, tolerance: float) -> str:
+    """Return match icon for expected vs actual geo."""
+    return match_icon(exp_geo, actual_geo, tolerance=tolerance)
+
+
+def _fmt_exp_geo(exp_geo: str) -> str:
+    return exp_geo
+
+
 # =============================================================================
 # Accuracy helpers
 # =============================================================================
@@ -248,8 +261,8 @@ def _compute_accuracy(
         for field, exp_geo in expected_geo.items():
             p_geo = _fmt_geometry(primary.get(field, CompareFieldResult()).geometry)
             l_geo = _fmt_geometry(llm.get(field, CompareFieldResult()).geometry)
-            pgc[match_icon(exp_geo, p_geo, tolerance=_GEO_TOLERANCE)] += 1
-            lgc[match_icon(exp_geo, l_geo, tolerance=_GEO_TOLERANCE)] += 1
+            pgc[_geo_match_icon(exp_geo, p_geo, tolerance=_GEO_TOLERANCE)] += 1
+            lgc[_geo_match_icon(exp_geo, l_geo, tolerance=_GEO_TOLERANCE)] += 1
 
     result: dict[str, dict[str, int]] = {
         _ResultData.PRIMARY: {
@@ -460,12 +473,12 @@ def _write_comparison_md(
         llm_geo = _fmt_geometry(lm.geometry)
         exp_geo = expected_geo.get(field, NO_VALUE) if expected_geo else NO_VALUE
         p_geo_cell = (
-            f"{match_icon(exp_geo, p_geo, tolerance=_GEO_TOLERANCE)} "
+            f"{_geo_match_icon(exp_geo, p_geo, tolerance=_GEO_TOLERANCE)} "
             if exp_geo != NO_VALUE
             else ""
         ) + p_geo
         llm_geo_cell = (
-            f"{match_icon(exp_geo, llm_geo, tolerance=_GEO_TOLERANCE)} "
+            f"{_geo_match_icon(exp_geo, llm_geo, tolerance=_GEO_TOLERANCE)} "
             if exp_geo != NO_VALUE
             else ""
         ) + llm_geo
@@ -852,12 +865,12 @@ def regen_comparison_md(results_dir: Path) -> None:
             llm_geo = _fmt_geometry(lm.geometry)
             exp_geo = expected_geo.get(field, NO_VALUE) if expected_geo else NO_VALUE
             p_geo_cell = (
-                f"{match_icon(exp_geo, p_geo, tolerance=_GEO_TOLERANCE)} "
+                f"{_geo_match_icon(exp_geo, p_geo, tolerance=_GEO_TOLERANCE)} "
                 if exp_geo != NO_VALUE
                 else ""
             ) + p_geo
             llm_geo_cell = (
-                f"{match_icon(exp_geo, llm_geo, tolerance=_GEO_TOLERANCE)} "
+                f"{_geo_match_icon(exp_geo, llm_geo, tolerance=_GEO_TOLERANCE)} "
                 if exp_geo != NO_VALUE
                 else ""
             ) + llm_geo

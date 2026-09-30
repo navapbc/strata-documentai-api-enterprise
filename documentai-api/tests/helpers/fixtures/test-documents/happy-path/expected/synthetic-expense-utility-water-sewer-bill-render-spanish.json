@@ -23,42 +23,349 @@
     "is_total_amount_greater_than_equal_to_current_charges": false
   },
   "geometry": {
-    "Account_Info.Meter_Number": {
-      "page": 0,
-      "left": 0.7197265625,
-      "top": 0.5690104166666666,
-      "width": 0.103515625,
-      "height": 0.008463541666666666
+    "matched": {
+      "Account_Info.Acct_Name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.0380859375,
+        "top": 0.23502604166666666,
+        "width": 0.0947265625,
+        "height": 0.011067708333333334
+      },
+      "Account_Info.Acct_No": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.2236328125,
+        "top": 0.8444010416666666,
+        "width": 0.091796875,
+        "height": 0.0078125
+      },
+      "Account_Info.Meter_Number": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.7197265625,
+        "top": 0.5690104166666666,
+        "width": 0.103515625,
+        "height": 0.008463541666666666
+      },
+      "Curr_Meter_Reading": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.8056640625,
+        "top": 0.625,
+        "width": 0.0458984375,
+        "height": 0.008463541666666666
+      },
+      "Prev_Meter_Reading": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.8056640625,
+        "top": 0.6529947916666666,
+        "width": 0.0458984375,
+        "height": 0.009114583333333334
+      },
+      "Service_Address.Building_Line 1": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.0380859375,
+        "top": 0.25,
+        "width": 0.0986328125,
+        "height": 0.010416666666666666
+      },
+      "Service_Address.Street": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.0380859375,
+        "top": 0.25,
+        "width": 0.0986328125,
+        "height": 0.010416666666666666
+      }
     },
-    "Curr_Meter_Reading": {
-      "page": 0,
-      "left": 0.8056640625,
-      "top": 0.625,
-      "width": 0.0458984375,
-      "height": 0.008463541666666666
-    },
-    "Prev_Meter_Reading": {
-      "page": 0,
-      "left": 0.8056640625,
-      "top": 0.6529947916666666,
-      "width": 0.0458984375,
-      "height": 0.009114583333333334
-    },
-    "Service_Address.Building_Line 1": {
-      "page": 0,
-      "left": 0.0380859375,
-      "top": 0.25,
-      "width": 0.0986328125,
-      "height": 0.010416666666666666
-    },
-    "Service_Address.Street": {
-      "page": 0,
-      "left": 0.0380859375,
-      "top": 0.25,
-      "width": 0.0986328125,
-      "height": 0.010416666666666666
+    "not_matched": {
+      "text_not_found": {
+        "Line_Items.Amount or Value": {
+          "expected_value": "22.50, 45.00, 12.75, 19.20, 4.50, 6.24"
+        },
+        "Line_Items.LineItemDescription": {
+          "expected_value": "Cargo base de agua, Uso de agua, Cargo base de alcantarillado, Cargo de alcantarillado, Tarifa de aguas pluviales, Impuesto local sobre servicios públicos (6%)"
+        },
+        "Provider Name": {
+          "expected_value": "SERVICIO DE AGUA DEL CONDADO DE HARBOR"
+        }
+      },
+      "ambiguous": {
+        "Dates.Bill_From_Date": {
+          "expected_value": "2026-07-21",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.751953125,
+              "top": 0.107421875,
+              "width": 0.08203125,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.6015625,
+              "top": 0.6529947916666666,
+              "width": 0.078125,
+              "height": 0.009114583333333334
+            }
+          ]
+        },
+        "Dates.Bill_To_Date": {
+          "expected_value": "2026-08-20",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.8515625,
+              "top": 0.107421875,
+              "width": 0.083984375,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.6015625,
+              "top": 0.625,
+              "width": 0.078125,
+              "height": 0.009765625
+            }
+          ]
+        },
+        "Dates.Billing_Date": {
+          "expected_value": "2026-08-28",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.8486328125,
+              "top": 0.08723958333333333,
+              "width": 0.0869140625,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.2373046875,
+              "top": 0.859375,
+              "width": 0.078125,
+              "height": 0.009765625
+            }
+          ]
+        },
+        "Dates.Due_Date": {
+          "expected_value": "2026-09-18",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.8427734375,
+              "top": 0.12825520833333334,
+              "width": 0.0927734375,
+              "height": 0.011067708333333334
+            },
+            {
+              "page": 0,
+              "left": 0.2373046875,
+              "top": 0.875,
+              "width": 0.078125,
+              "height": 0.009765625
+            }
+          ]
+        },
+        "Prev_Bal": {
+          "expected_value": "88.03",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.896484375,
+              "top": 0.3522135416666667,
+              "width": 0.048828125,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.8876953125,
+              "top": 0.37109375,
+              "width": 0.056640625,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.8876953125,
+              "top": 0.3899739583333333,
+              "width": 0.056640625,
+              "height": 0.009765625
+            }
+          ]
+        },
+        "Service_Address.City": {
+          "expected_value": "Pocatello",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.0380859375,
+              "top": 0.2643229166666667,
+              "width": 0.0625,
+              "height": 0.009114583333333334
+            },
+            {
+              "page": 0,
+              "left": 0.146484375,
+              "top": 0.14127604166666666,
+              "width": 0.0625,
+              "height": 0.009765625
+            },
+            {
+              "page": 0,
+              "left": 0.3486328125,
+              "top": 0.24934895833333334,
+              "width": 0.0615234375,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.1142578125,
+              "top": 0.8190104166666666,
+              "width": 0.056640625,
+              "height": 0.0078125
+            },
+            {
+              "page": 0,
+              "left": 0.443359375,
+              "top": 0.826171875,
+              "width": 0.060546875,
+              "height": 0.009114583333333334
+            },
+            {
+              "page": 0,
+              "left": 0.4423828125,
+              "top": 0.91796875,
+              "width": 0.0615234375,
+              "height": 0.009114583333333334
+            }
+          ]
+        },
+        "Service_Address.State": {
+          "expected_value": "ID",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.10546875,
+              "top": 0.2643229166666667,
+              "width": 0.0126953125,
+              "height": 0.0078125
+            },
+            {
+              "page": 0,
+              "left": 0.2138671875,
+              "top": 0.14127604166666666,
+              "width": 0.0126953125,
+              "height": 0.008463541666666666
+            },
+            {
+              "page": 0,
+              "left": 0.4150390625,
+              "top": 0.25,
+              "width": 0.01171875,
+              "height": 0.0078125
+            },
+            {
+              "page": 0,
+              "left": 0.5087890625,
+              "top": 0.826171875,
+              "width": 0.01171875,
+              "height": 0.0078125
+            },
+            {
+              "page": 0,
+              "left": 0.5087890625,
+              "top": 0.91796875,
+              "width": 0.01171875,
+              "height": 0.0078125
+            }
+          ]
+        },
+        "Service_Address.Zip_Code": {
+          "expected_value": "83204",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.1220703125,
+              "top": 0.2643229166666667,
+              "width": 0.041015625,
+              "height": 0.0078125
+            },
+            {
+              "page": 0,
+              "left": 0.431640625,
+              "top": 0.25,
+              "width": 0.0400390625,
+              "height": 0.0078125
+            },
+            {
+              "page": 0,
+              "left": 0.525390625,
+              "top": 0.91796875,
+              "width": 0.0390625,
+              "height": 0.0078125
+            }
+          ]
+        },
+        "Tot_Amt": {
+          "expected_value": "86.47",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.861328125,
+              "top": 0.162109375,
+              "width": 0.07421875,
+              "height": 0.015625
+            },
+            {
+              "page": 0,
+              "left": 0.88671875,
+              "top": 0.4765625,
+              "width": 0.0576171875,
+              "height": 0.01171875
+            },
+            {
+              "page": 0,
+              "left": 0.2607421875,
+              "top": 0.8997395833333334,
+              "width": 0.0546875,
+              "height": 0.011067708333333334
+            }
+          ]
+        },
+        "Total_Current_Charges": {
+          "expected_value": "110.19",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.8896484375,
+              "top": 0.44921875,
+              "width": 0.0546875,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.556640625,
+              "top": 0.4934895833333333,
+              "width": 0.056640625,
+              "height": 0.010416666666666666
+            }
+          ]
+        }
+      }
     }
   },
+  "expected_document_class": "Invoices",
+  "language": "spa",
   "notes": {
     "Prev_Bal": "The 'Resumen de Saldo' box has two similarly-labeled rows: 'Saldo anterior $88.03' (the balance carried in before this cycle's payment) and 'Saldo anterior pendiente $0.00' (the remainder after the $88.03 payment was applied). Prev_Bal uses the first ($88.03), matching the other two documents' convention of 'balance before this cycle's payment'. LLM's value (0.00) is the post-payment figure, mislabeled.",
     "Tot_Amt/Total_Current_Charges": "'Total de cargos actuales' ($110.19) plus 'Saldo anterior pendiente' ($0.00) doesn't reconcile to the prominently repeated 'Total a pagar' ($86.47, shown 3 times) - the same kind of internal arithmetic inconsistency seen on the Spanish-language electric bill in this test set. Both values are recorded as printed rather than reconciled.",

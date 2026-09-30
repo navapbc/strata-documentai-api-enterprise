@@ -30,56 +30,291 @@
     "UsageMult": null
   },
   "geometry": {
-    "Category": {
-      "page": 0,
-      "left": 0.79296875,
-      "top": 0.025390625,
-      "width": 0.10546875,
-      "height": 0.009114583333333334
+    "matched": {
+      "Category": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.79296875,
+        "top": 0.025390625,
+        "width": 0.10546875,
+        "height": 0.009114583333333334
+      },
+      "CountMeterIDs": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.3349609375,
+        "top": 0.5384114583333334,
+        "width": 0.00390625,
+        "height": 0.007161458333333333
+      },
+      "End Date": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.52734375,
+        "top": 0.2571614583333333,
+        "width": 0.064453125,
+        "height": 0.009114583333333334
+      },
+      "MeterRead.Current value": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.4443359375,
+        "top": 0.3326822916666667,
+        "width": 0.0390625,
+        "height": 0.009114583333333334
+      },
+      "MeterRead.Delta or Metered value": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.4443359375,
+        "top": 0.3697916666666667,
+        "width": 0.01953125,
+        "height": 0.008463541666666666
+      },
+      "MeterRead.Previous value": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.4443359375,
+        "top": 0.3509114583333333,
+        "width": 0.037109375,
+        "height": 0.009765625
+      },
+      "StartDate": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.4443359375,
+        "top": 0.2571614583333333,
+        "width": 0.150390625,
+        "height": 0.009114583333333334
+      },
+      "Usage.usage": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.033203125,
+        "top": 0.3658854166666667,
+        "width": 0.9033203125,
+        "height": 0.012369791666666666
+      }
     },
-    "CountMeterIDs": {
-      "page": 0,
-      "left": 0.3349609375,
-      "top": 0.5384114583333334,
-      "width": 0.00390625,
-      "height": 0.007161458333333333
-    },
-    "End Date": {
-      "page": 0,
-      "left": 0.5302734375,
-      "top": 0.2571614583333333,
-      "width": 0.0615234375,
-      "height": 0.009114583333333334
-    },
-    "MeterRead.Current value": {
-      "page": 0,
-      "left": 0.4443359375,
-      "top": 0.3326822916666667,
-      "width": 0.0390625,
-      "height": 0.009114583333333334
-    },
-    "MeterRead.Delta or Metered value": {
-      "page": 0,
-      "left": 0.4443359375,
-      "top": 0.3697916666666667,
-      "width": 0.01953125,
-      "height": 0.008463541666666666
-    },
-    "MeterRead.Previous value": {
-      "page": 0,
-      "left": 0.4443359375,
-      "top": 0.3509114583333333,
-      "width": 0.037109375,
-      "height": 0.009765625
-    },
-    "StartDate": {
-      "page": 0,
-      "left": 0.4443359375,
-      "top": 0.2571614583333333,
-      "width": 0.150390625,
-      "height": 0.009114583333333334
+    "not_matched": {
+      "text_not_found": {
+        "Address.Service Address": {
+          "expected_value": "14 Maple Lane, Burlington, VT 05401"
+        },
+        "Line_Item_Charges.Charge": {
+          "expected_value": "33.34, 51.32, 12.00, 1.04, 5.86, 1.95"
+        },
+        "Line_Item_Charges.Line item Description": {
+          "expected_value": "Cargo por entrega (distribución), Cargo por suministro (generación), Cargo básico de servicio, Ajuste de energía renovable, Impuesto estatal sobre ventas (6.000%), Impuesto municipal sobre energía (2.000%)"
+        },
+        "Meter Number": {
+          "expected_value": "MTR-72345678"
+        },
+        "MeterRead.Meter ID": {
+          "expected_value": "MTR-72345678"
+        }
+      },
+      "ambiguous": {
+        "Account Number": {
+          "expected_value": "1234-5678-9012",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.8525390625,
+              "top": 0.06770833333333333,
+              "width": 0.0947265625,
+              "height": 0.008463541666666666
+            },
+            {
+              "page": 0,
+              "left": 0.4892578125,
+              "top": 0.7962239583333334,
+              "width": 0.0966796875,
+              "height": 0.008463541666666666
+            }
+          ]
+        },
+        "Address.Service address pin code": {
+          "expected_value": "05401",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.12890625,
+              "top": 0.2819010416666667,
+              "width": 0.0380859375,
+              "height": 0.008463541666666666
+            },
+            {
+              "page": 0,
+              "left": 0.12890625,
+              "top": 0.33984375,
+              "width": 0.0380859375,
+              "height": 0.009114583333333334
+            }
+          ]
+        },
+        "BalanceDue Date": {
+          "expected_value": "2026-06-10",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.791015625,
+              "top": 0.189453125,
+              "width": 0.1357421875,
+              "height": 0.016927083333333332
+            },
+            {
+              "page": 0,
+              "left": 0.513671875,
+              "top": 0.8352864583333334,
+              "width": 0.072265625,
+              "height": 0.009765625
+            }
+          ]
+        },
+        "Current Balance": {
+          "expected_value": "134.28",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.611328125,
+              "top": 0.18815104166666666,
+              "width": 0.09765625,
+              "height": 0.018880208333333332
+            },
+            {
+              "page": 0,
+              "left": 0.5302734375,
+              "top": 0.7194010416666666,
+              "width": 0.05859375,
+              "height": 0.01171875
+            },
+            {
+              "page": 0,
+              "left": 0.5234375,
+              "top": 0.857421875,
+              "width": 0.0625,
+              "height": 0.012369791666666666
+            }
+          ]
+        },
+        "MeterRead.Usage Unit": {
+          "expected_value": "kWh",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.48828125,
+              "top": 0.3326822916666667,
+              "width": 0.0244140625,
+              "height": 0.0078125
+            },
+            {
+              "page": 0,
+              "left": 0.48828125,
+              "top": 0.3509114583333333,
+              "width": 0.0244140625,
+              "height": 0.008463541666666666
+            },
+            {
+              "page": 0,
+              "left": 0.4697265625,
+              "top": 0.3697916666666667,
+              "width": 0.0244140625,
+              "height": 0.0078125
+            },
+            {
+              "page": 0,
+              "left": 0.8828125,
+              "top": 0.45703125,
+              "width": 0.0361328125,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.87109375,
+              "top": 0.697265625,
+              "width": 0.0244140625,
+              "height": 0.008463541666666666
+            }
+          ]
+        },
+        "Previous Balance": {
+          "expected_value": "118.74",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.2490234375,
+              "top": 0.671875,
+              "width": 0.0458984375,
+              "height": 0.009114583333333334
+            },
+            {
+              "page": 0,
+              "left": 0.2490234375,
+              "top": 0.6920572916666666,
+              "width": 0.0458984375,
+              "height": 0.009765625
+            }
+          ]
+        },
+        "Provider": {
+          "expected_value": "Cedar Grove Energy",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.1025390625,
+              "top": 0.853515625,
+              "width": 0.6845703125,
+              "height": 0.017578125
+            },
+            {
+              "page": 0,
+              "left": 0.1025390625,
+              "top": 0.9010416666666666,
+              "width": 0.68359375,
+              "height": 0.012369791666666666
+            }
+          ]
+        },
+        "Total Balance Due": {
+          "expected_value": "134.28",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.611328125,
+              "top": 0.18815104166666666,
+              "width": 0.09765625,
+              "height": 0.018880208333333332
+            },
+            {
+              "page": 0,
+              "left": 0.5302734375,
+              "top": 0.7194010416666666,
+              "width": 0.05859375,
+              "height": 0.01171875
+            },
+            {
+              "page": 0,
+              "left": 0.5234375,
+              "top": 0.857421875,
+              "width": 0.0625,
+              "height": 0.012369791666666666
+            }
+          ]
+        }
+      }
     }
   },
+  "expected_document_class": "Invoices",
+  "language": "spa",
   "notes": {
     "Current Balance/Total Balance Due": "The itemized 'Total de cargos actuales' ($105.51) plus 'Ajustes' ($0.00) doesn't reconcile to the headline 'Total a pagar' ($134.28) printed three times on this document (top summary box, second Resumen de Cuenta box, and remittance stub) - looks like a synthetic-data generation inconsistency in the source document, not an extraction error. Ground truth uses the repeated, prominent $134.28 figure.",
     "BalanceGreaterCheck": "Neither extractor produced a value. Current ($134.28) > Previous ($118.74), so 'Yes'.",

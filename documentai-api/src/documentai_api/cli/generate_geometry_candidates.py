@@ -21,12 +21,18 @@ import typer
 from PIL import Image
 
 from documentai_api.utils.extraction_compare_client import normalize_value as _normalize_value
+from documentai_api.utils.schemas import is_list_field
 
 app = typer.Typer()
 
 _DOC_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg"}
-_MANUAL_REVIEW_FILENAME = "geometry_manual.json"
-_FIXTURE_KEY_ORDER = {"fields": 0, "geometry": 1, "notes": 2}
+_FIXTURE_KEY_ORDER = {
+    "fields": 0,
+    "geometry": 1,
+    "expected_document_class": 2,
+    "language": 3,
+    "notes": 4,
+}
 _COMPUTED_FIELDS = {
     "BalanceGreaterCheck",
     "BillingDateBeforeDueDate",
@@ -73,13 +79,6 @@ class _BBox:
     height: float
 
 
-@dataclasses.dataclass
-class _ManualReview:
-    reason: str
-    expected_value: object
-    candidates: list[_BBox] = dataclasses.field(default_factory=list)
-
-
 def _normalize(value: object) -> str:
     """Normalize for OCR matching: date/currency normalization then lowercase, strip punctuation."""
     text = str(value) if not isinstance(value, str) else value
@@ -92,15 +91,11 @@ def _bbox(line: _OcrLine | _OcrWord) -> _BBox:
     return _BBox(page=line.page, left=line.left, top=line.top, width=line.width, height=line.height)
 
 
-def _is_list_value(value: object) -> bool:
-    if not isinstance(value, str):
-        return False
-    return len([p for p in value.split(",") if p.strip()]) > 1
-
-
-def _ocr_image(image: Image.Image, page: int) -> tuple[list[_OcrLine], list[_OcrWord]]:
+def _ocr_image(
+    image: Image.Image, page: int, lang: str = "eng"
+) -> tuple[list[_OcrLine], list[_OcrWord]]:
     """Run pytesseract; return line-level and word-level results."""
-    data = pytesseract.image_to_data(image, output_type=pytesseract.Output.DICT)
+    data = pytesseract.image_to_data(image, lang=lang, output_type=pytesseract.Output.DICT)
     w, h = image.size
     line_bboxes: dict[tuple[int, int, int], dict[str, float]] = {}
     line_words: dict[tuple[int, int, int], list[str]] = {}
@@ -134,7 +129,7 @@ def _ocr_image(image: Image.Image, page: int) -> tuple[list[_OcrLine], list[_Ocr
     return lines, words
 
 
-def _ocr_document(path: Path) -> tuple[list[_OcrLine], list[_OcrWord]]:
+def _ocr_document(path: Path, lang: str = "eng") -> tuple[list[_OcrLine], list[_OcrWord]]:
     """OCR all pages via pytesseract + pypdfium2; each entry carries its page index."""
     if path.suffix.lower() == ".pdf":
         all_lines: list[_OcrLine] = []
@@ -142,12 +137,12 @@ def _ocr_document(path: Path) -> tuple[list[_OcrLine], list[_OcrWord]]:
         pdf = pypdfium2.PdfDocument(str(path))
         for i, pdf_page in enumerate(pdf):
             bitmap = pdf_page.render(scale=2.0)
-            lines, words = _ocr_image(bitmap.to_pil(), page=i)
+            lines, words = _ocr_image(bitmap.to_pil(), page=i, lang=lang)
             all_lines.extend(lines)
             all_words.extend(words)
         return all_lines, all_words
 
-    lines, words = _ocr_image(Image.open(path).convert("RGB"), page=0)
+    lines, words = _ocr_image(Image.open(path).convert("RGB"), page=0, lang=lang)
     return lines, words
 
 
@@ -175,24 +170,20 @@ def main(
     Uses pytesseract + pypdfium2 (independent of Textract) so ground-truth geometry
     is not circular with the OCR-mapping extractor.
 
-    Resolved geometry is merged into each expected JSON under a "geometry" key.
-    Existing geometry entries are never overwritten so human picks survive re-runs.
-    All manual-review and text-not-found fields are written to <fixtures_dir>/expected/geometry_manual.json.
+    Resolved geometry is written to geometry.matched in each fixture JSON.
+    Unresolved fields are written to geometry.not_matched.text_not_found or geometry.not_matched.ambiguous.
+    Existing matched entries are never overwritten so human picks survive re-runs.
     """
     expected_dir = fixtures_dir / "expected"
     if not expected_dir.is_dir():
         typer.echo(f"Expected dir not found: {expected_dir}", err=True)
         raise typer.Exit(1)
 
-    all_manual: dict[str, dict[str, _ManualReview]] = {}
     total_matched = 0
     total_manual = 0
     total_not_found = 0
 
     for expected_path in sorted(expected_dir.glob("*.json")):
-        if expected_path.name == _MANUAL_REVIEW_FILENAME:
-            continue
-
         stem = expected_path.stem
         document_path = _find_document(fixtures_dir, stem)
 
@@ -202,82 +193,92 @@ def main(
 
         fixture = json.loads(expected_path.read_text())
         fields: dict[str, object] = fixture.get("fields", {})
+        doc_type = fixture.get("expected_document_class") or ""
 
-        all_lines, all_words = _ocr_document(document_path)
+        all_lines, all_words = _ocr_document(document_path, lang=fixture.get("language", "eng"))
 
-        matched_geo: dict[str, object] = {}
-        manual_review: dict[str, _ManualReview] = {}
+        existing_geo: dict[str, object] = fixture.get("geometry", {})
+        # Seed only from manual entries — pytesseract entries are rebuilt on every run
+        # so the algorithm can improve without manual picks being overwritten.
+        _raw = existing_geo.get("matched")
+        existing_matched: dict[str, object] = _raw if isinstance(_raw, dict) else existing_geo
+        matched_geo: dict[str, object] = {
+            k: v
+            for k, v in existing_matched.items()
+            if isinstance(v, dict) and v.get("determination_method") == "manual"
+        }
+        not_matched: dict[str, dict[str, object]] = {"text_not_found": {}, "ambiguous": {}}
         not_found_count = 0
 
         for field, value in fields.items():
             if value is None:
                 continue
 
-            if _is_list_value(value):
-                manual_review[field] = _ManualReview(reason="list_value", expected_value=value)
+            if field in matched_geo:
+                continue
+
+            if is_list_field(doc_type, field):
+                not_matched["ambiguous"][field] = {"reason": "list_value", "expected_value": value}
                 continue
 
             if field in _COMPUTED_FIELDS:
                 continue
 
             norm_expected = _normalize(value)
-            # try exact line match first, then word match for single-token values
+            # exact line match, then word match, then substring line match (last resort — line
+            # bboxes span the full row including labels, so word-level is preferred when available)
             matches: list[_OcrLine | _OcrWord] = [
                 ln for ln in all_lines if _normalize(ln.text) == norm_expected
             ]
+
             if not matches:
                 matches = [w for w in all_words if _normalize(w.text) == norm_expected]
 
+            if not matches:
+                matches = [ln for ln in all_lines if norm_expected in _normalize(ln.text)]
+
             if len(matches) == 1:
-                matched_geo[field] = dataclasses.asdict(_bbox(matches[0]))
+                matched_geo[field] = {
+                    "determination_method": "pytesseract",
+                    "explanation": "Resolved via pytesseract OCR match.",
+                    **dataclasses.asdict(_bbox(matches[0])),
+                }
             elif len(matches) == 0:
                 not_found_count += 1
-                manual_review[field] = _ManualReview(reason="text_not_found", expected_value=value)
+                not_matched["text_not_found"][field] = {"expected_value": value}
             else:
-                manual_review[field] = _ManualReview(
-                    reason="ambiguous",
-                    expected_value=value,
-                    candidates=[_bbox(m) for m in matches],
-                )
+                not_matched["ambiguous"][field] = {
+                    "reason": "multiple_ocr_matches",
+                    "expected_value": value,
+                    "candidates": [dataclasses.asdict(_bbox(m)) for m in matches],
+                }
 
+        geometry_out: dict[str, object] = {"matched": matched_geo}
+        if not_matched["text_not_found"] or not_matched["ambiguous"]:
+            geometry_out["not_matched"] = {k: v for k, v in not_matched.items() if v}
         fixture = dict(
             sorted(
-                {**fixture, "geometry": matched_geo}.items(),
+                {**fixture, "geometry": geometry_out}.items(),
                 key=lambda kv: _FIXTURE_KEY_ORDER.get(kv[0], 99),
             )
         )
         expected_path.write_text(json.dumps(fixture, indent=2, ensure_ascii=False) + "\n")
 
-        newly_matched = len(matched_geo)
-        manual_count = len([e for e in manual_review.values() if e.reason != "text_not_found"])
+        matched = len(matched_geo)
+        manual_count = len(not_matched["ambiguous"])
 
-        total_matched += newly_matched
+        total_matched += matched
         total_manual += manual_count
         total_not_found += not_found_count
 
-        if manual_review:
-            all_manual[stem] = manual_review
-
         typer.echo(
             f"[OCR] {document_path.name} - "
-            + typer.style(f"geo-matched={newly_matched}", fg=typer.colors.GREEN)
+            + typer.style(f"geo-matched={matched}", fg=typer.colors.GREEN)
             + "  "
             + typer.style(f"manual-review={manual_count}", fg=typer.colors.YELLOW)
             + "  "
             + typer.style(f"text-not-found={not_found_count}", fg=typer.colors.RED)
         )
-
-    (expected_dir / _MANUAL_REVIEW_FILENAME).write_text(
-        json.dumps(
-            {
-                stem: {f: dataclasses.asdict(e) for f, e in entries.items()}
-                for stem, entries in all_manual.items()
-            },
-            indent=2,
-            ensure_ascii=False,
-        )
-        + "\n"
-    )
 
     typer.echo(
         "\nDone. "
@@ -287,7 +288,6 @@ def main(
         + "  "
         + typer.style(f"text-not-found={total_not_found}", fg=typer.colors.RED)
     )
-    typer.echo(f"Manual review written to {expected_dir}/{_MANUAL_REVIEW_FILENAME}")
 
 
 if __name__ == "__main__":

@@ -14,42 +14,117 @@
     "subsidy_or_tax_credit_amount": "240.00"
   },
   "geometry": {
-    "insurer_or_marketplace_name": {
-      "page": 0,
-      "left": 0.11029411764705882,
-      "top": 0.18434343434343434,
-      "width": 0.21650326797385622,
-      "height": 0.010101010101010102
+    "matched": {
+      "insurer_or_marketplace_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.11029411764705882,
+        "top": 0.18434343434343434,
+        "width": 0.21650326797385622,
+        "height": 0.010101010101010102
+      },
+      "payment_due_date": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.6977124183006536,
+        "top": 0.27714646464646464,
+        "width": 0.08251633986928104,
+        "height": 0.00946969696969697
+      },
+      "payment_frequency": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.7892156862745098,
+        "top": 0.5107323232323232,
+        "width": 0.05555555555555555,
+        "height": 0.017676767676767676
+      },
+      "policy_or_member_id": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.25,
+        "top": 0.4513888888888889,
+        "width": 0.10212418300653595,
+        "height": 0.010101010101010102
+      },
+      "policyholder_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.10702614379084967,
+        "top": 0.3541666666666667,
+        "width": 0.7401960784313726,
+        "height": 0.021464646464646464
+      },
+      "statement_date": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.6977124183006536,
+        "top": 0.1976010101010101,
+        "width": 0.08251633986928104,
+        "height": 0.010101010101010102
+      }
     },
-    "payment_due_date": {
-      "page": 0,
-      "left": 0.6977124183006536,
-      "top": 0.27714646464646464,
-      "width": 0.08251633986928104,
-      "height": 0.00946969696969697
-    },
-    "payment_frequency": {
-      "page": 0,
-      "left": 0.7892156862745098,
-      "top": 0.5107323232323232,
-      "width": 0.05555555555555555,
-      "height": 0.017676767676767676
-    },
-    "policy_or_member_id": {
-      "page": 0,
-      "left": 0.25,
-      "top": 0.4513888888888889,
-      "width": 0.10212418300653595,
-      "height": 0.010101010101010102
-    },
-    "statement_date": {
-      "page": 0,
-      "left": 0.6977124183006536,
-      "top": 0.1976010101010101,
-      "width": 0.08251633986928104,
-      "height": 0.010101010101010102
+    "not_matched": {
+      "text_not_found": {
+        "coverage_start_date": {
+          "expected_value": "2026-08-01"
+        },
+        "coverage_end_date": {
+          "expected_value": "2026-08-31"
+        },
+        "payment_status": {
+          "expected_value": "Paid"
+        }
+      },
+      "ambiguous": {
+        "premium_amount": {
+          "expected_value": "390.00",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.7892156862745098,
+              "top": 0.7954545454545454,
+              "width": 0.05718954248366013,
+              "height": 0.011363636363636364
+            },
+            {
+              "page": 0,
+              "left": 0.7892156862745098,
+              "top": 0.8200757575757576,
+              "width": 0.05718954248366013,
+              "height": 0.01893939393939394
+            }
+          ]
+        },
+        "subsidy_or_tax_credit_amount": {
+          "expected_value": "240.00",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.7826797385620915,
+              "top": 0.4147727272727273,
+              "width": 0.06209150326797386,
+              "height": 0.011994949494949494
+            },
+            {
+              "page": 0,
+              "left": 0.7834967320261438,
+              "top": 0.740530303030303,
+              "width": 0.06290849673202614,
+              "height": 0.011994949494949494
+            }
+          ]
+        }
+      }
     }
   },
+  "expected_document_class": "Health-Insurance-Premium-Statement",
   "notes": {
     "employer_name": "This is a WIC-program individual marketplace plan (Program: WIC, Jurisdiction: California) - no employer sponsor is mentioned anywhere on the document.",
     "premium_amount": "Uses the final 'Amount Due' ($390.00, after the -$240 subsidy and -$30 adjustment), not the $600.00 Gross Premium - this is the convention followed across all three health-insurance-premium documents in this set.",

@@ -1,7 +1,7 @@
 # synthetic-expense-child-support-spanish-picture.png
 
 
-_Run: 2026-09-30 02:19 UTC_
+_Run: 2026-09-30 16:51 UTC_
 
 
 ## Durations
@@ -32,8 +32,8 @@ _By Extracted Data_
 - OCR Mapping: 92% equivalent, 92% close, 8% misses
 
 _By Geometry_
-- BDA: 4/5 exact, 1 miss
-- OCR Mapping: 5/5 exact, 0 miss
+- BDA: 4/6 exact, 2 miss
+- OCR Mapping: 5/6 exact, 1 miss
 
 
 ## Field Comparison
@@ -45,7 +45,7 @@ _By Geometry_
 | effective_end_date | - | - | - | 0.88 | - | - | - | - |
 | effective_start_date | 2021-01-05 | ✅ 2021-01-05 | ✅ 2021-01-05 | 0.74 | 0.9900 | - | 0.171,0.385,0.072,0.009 | 0.485,0.293,0.069,0.008 |
 | order_date | 2021-01-05 | ✅ 2021-01-05 | ✅ 2021-01-05 | 0.78 | 0.9900 | - | 0.485,0.293,0.069,0.009 | 0.485,0.293,0.069,0.008 |
-| payer_name | Daniel Ortega | ✅ Daniel Ortega | ✅ Daniel Ortega | 0.88 | 1.0000 | - | 0.646,0.251,0.089,0.010 | 0.647,0.251,0.089,0.010 |
+| payer_name | Daniel Ortega | ✅ Daniel Ortega | ✅ Daniel Ortega | 0.88 | 1.0000 | 0.076,0.247,0.659,0.013 | ❌ 0.646,0.251,0.089,0.010 | ❌ 0.647,0.251,0.089,0.010 |
 | payment_amount | 450.00 | ✅ 450 | ✅ 450.00 | 0.73 | 1.0000 | - | 0.241,0.352,0.077,0.010 | 0.241,0.353,0.052,0.009 |
 | payment_frequency | Semanal | ✅ Semanal | ❌ Weekly | 0.90 | 1.0000 | 0.208,0.369,0.055,0.008 | ✅ 0.208,0.369,0.054,0.008 | ✅ 0.208,0.369,0.054,0.008 |
 | payment_type | Child Support | ❌ - | ✅ Child Support | 0.05 | 0.9900 | - | - | 0.366,0.232,0.181,0.008 |

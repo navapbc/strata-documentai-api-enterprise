@@ -20,28 +20,99 @@
     "SERVICES_TABLE.amount": "28.24, 41.63, 12.25, 2.00"
   },
   "geometry": {
-    "ID": {
-      "page": 0,
-      "left": 0.6367403314917127,
-      "top": 0.11049723756906077,
-      "width": 0.08011049723756906,
-      "height": 0.014732965009208104
+    "matched": {
+      "ID": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.6367403314917127,
+        "top": 0.11049723756906077,
+        "width": 0.08011049723756906,
+        "height": 0.014732965009208104
+      },
+      "SUBTOTAL": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.6015193370165746,
+        "top": 0.20626151012891344,
+        "width": 0.06975138121546962,
+        "height": 0.026703499079189688
+      },
+      "TOTAL": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.6015193370165746,
+        "top": 0.20626151012891344,
+        "width": 0.06975138121546962,
+        "height": 0.026703499079189688
+      }
     },
-    "SUBTOTAL": {
-      "page": 0,
-      "left": 0.6015193370165746,
-      "top": 0.20626151012891344,
-      "width": 0.06975138121546962,
-      "height": 0.026703499079189688
-    },
-    "TOTAL": {
-      "page": 0,
-      "left": 0.6015193370165746,
-      "top": 0.20626151012891344,
-      "width": 0.06975138121546962,
-      "height": 0.026703499079189688
+    "not_matched": {
+      "text_not_found": {
+        "DATE": {
+          "expected_value": "2026-04-01"
+        },
+        "VENDORADDRESS": {
+          "expected_value": "PO Box 90012, Las Vegas, NV 89109-0012"
+        },
+        "RECIPIENTADDRESS": {
+          "expected_value": "4821 Desert Bloom Ave, Las Vegas, NV 89146"
+        },
+        "SERVICES_TABLE.product name": {
+          "expected_value": "Water, Electric, Natural Gas, Trash & Recycling"
+        },
+        "SERVICES_TABLE.quantity": {
+          "expected_value": "3200 gallons, 620 kWh, 18 Therms, 1 Unit"
+        },
+        "SERVICES_TABLE.amount": {
+          "expected_value": "28.24, 41.63, 12.25, 2.00"
+        }
+      },
+      "ambiguous": {
+        "VENDORNAME": {
+          "expected_value": "Desert Bloom Utilities",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.24240331491712708,
+              "top": 0.7891344383057091,
+              "width": 0.1277624309392265,
+              "height": 0.02117863720073665
+            },
+            {
+              "page": 0,
+              "left": 0.6077348066298343,
+              "top": 0.785451197053407,
+              "width": 0.10290055248618785,
+              "height": 0.01841620626151013
+            }
+          ]
+        },
+        "RECIPIENTNAME": {
+          "expected_value": "Elena Martinez",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.23342541436464087,
+              "top": 0.21915285451197053,
+              "width": 0.07458563535911603,
+              "height": 0.011970534069981584
+            },
+            {
+              "page": 0,
+              "left": 0.24240331491712708,
+              "top": 0.3876611418047882,
+              "width": 0.06077348066298342,
+              "height": 0.011970534069981584
+            }
+          ]
+        }
+      }
     }
   },
+  "expected_document_class": "Invoices",
   "notes": {
     "_general": "This document never produced a successful e2e run (no .md draft existed), so there's no BDA/LLM output to cross-check against - read directly from the image. Uses the generic Invoices schema's field names since this is a combined multi-utility bill (water/electric/gas/trash), matching its bdaMatchedDocumentClass of 'Invoices'.",
     "VENDORADDRESS": "No distinct company HQ street address is printed, only the payment mailing address (PO Box).",

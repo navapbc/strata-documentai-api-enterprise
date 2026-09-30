@@ -9,21 +9,69 @@
     "statement_date": "2026-09-05"
   },
   "geometry": {
-    "author_name": {
-      "page": 0,
-      "left": 0.12663398692810457,
-      "top": 0.7733585858585859,
-      "width": 0.13562091503267973,
-      "height": 0.013888888888888888
+    "matched": {
+      "author_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.12663398692810457,
+        "top": 0.7733585858585859,
+        "width": 0.13562091503267973,
+        "height": 0.013888888888888888
+      },
+      "author_relationship": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.12663398692810457,
+        "top": 0.7922979797979798,
+        "width": 0.14705882352941177,
+        "height": 0.013257575757575758
+      }
     },
-    "author_relationship": {
-      "page": 0,
-      "left": 0.12663398692810457,
-      "top": 0.7922979797979798,
-      "width": 0.14705882352941177,
-      "height": 0.013257575757575758
+    "not_matched": {
+      "text_not_found": {
+        "assertion_text": {
+          "expected_value": "Jordan Rivera has been residing at 1234 Cedar Lane, Apt 7B, New Haven, CT throughout the period of January 1, 2026, to August 31, 2026. Jordan Rivera is a tenant in good standing and has consistently paid rent in the amount of $1,120.00 each month during this period."
+        },
+        "contact_information": {
+          "expected_value": "Phone: (860) 555-0199 Email: cynthia.marshall@elmviewhomes.org"
+        },
+        "statement_date": {
+          "expected_value": "2026-09-05"
+        }
+      },
+      "ambiguous": {
+        "customer_name": {
+          "expected_value": "Jordan Rivera",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.12581699346405228,
+              "top": 0.2803030303030303,
+              "width": 0.3202614379084967,
+              "height": 0.013888888888888888
+            },
+            {
+              "page": 0,
+              "left": 0.12581699346405228,
+              "top": 0.5265151515151515,
+              "width": 0.6666666666666666,
+              "height": 0.013888888888888888
+            },
+            {
+              "page": 0,
+              "left": 0.12581699346405228,
+              "top": 0.5448232323232324,
+              "width": 0.7026143790849673,
+              "height": 0.01452020202020202
+            }
+          ]
+        }
+      }
     }
   },
+  "expected_document_class": "Shelter-Verification-Letter",
   "notes": {
     "assertion_text": "LLM only captured the first sentence; the letter has a second sentence about rent payment history that's part of the same assertion."
   }

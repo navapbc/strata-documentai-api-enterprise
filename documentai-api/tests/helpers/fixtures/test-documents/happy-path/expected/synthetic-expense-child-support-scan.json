@@ -18,56 +18,253 @@
     "recipient_zip_code": "87108"
   },
   "geometry": {
-    "case_number": {
-      "page": 0,
-      "left": 0.7109375,
-      "top": 0.19010416666666666,
-      "width": 0.1162109375,
-      "height": 0.008463541666666666
+    "matched": {
+      "case_number": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.7109375,
+        "top": 0.19010416666666666,
+        "width": 0.1162109375,
+        "height": 0.008463541666666666
+      },
+      "court_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.0986328125,
+        "top": 0.22135416666666666,
+        "width": 0.779296875,
+        "height": 0.01953125
+      },
+      "effective_start_date": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.35546875,
+        "top": 0.361328125,
+        "width": 0.072265625,
+        "height": 0.008463541666666666
+      },
+      "order_date": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.7109375,
+        "top": 0.20833333333333334,
+        "width": 0.072265625,
+        "height": 0.0078125
+      },
+      "payer_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.0966796875,
+        "top": 0.279296875,
+        "width": 0.736328125,
+        "height": 0.013020833333333334
+      },
+      "recipient_name.first_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.09765625,
+        "top": 0.189453125,
+        "width": 0.0380859375,
+        "height": 0.008463541666666666
+      },
+      "recipient_name.last_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.1865234375,
+        "top": 0.189453125,
+        "width": 0.041015625,
+        "height": 0.010416666666666666
+      },
+      "recipient_name.middle_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.1416015625,
+        "top": 0.189453125,
+        "width": 0.0390625,
+        "height": 0.008463541666666666
+      },
+      "recipient_zip_code": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.2216796875,
+        "top": 0.244140625,
+        "width": 0.0400390625,
+        "height": 0.0078125
+      }
     },
-    "effective_start_date": {
-      "page": 0,
-      "left": 0.35546875,
-      "top": 0.361328125,
-      "width": 0.072265625,
-      "height": 0.008463541666666666
-    },
-    "order_date": {
-      "page": 0,
-      "left": 0.7109375,
-      "top": 0.20833333333333334,
-      "width": 0.072265625,
-      "height": 0.0078125
-    },
-    "recipient_name.first_name": {
-      "page": 0,
-      "left": 0.09765625,
-      "top": 0.189453125,
-      "width": 0.0380859375,
-      "height": 0.008463541666666666
-    },
-    "recipient_name.last_name": {
-      "page": 0,
-      "left": 0.1865234375,
-      "top": 0.189453125,
-      "width": 0.041015625,
-      "height": 0.010416666666666666
-    },
-    "recipient_name.middle_name": {
-      "page": 0,
-      "left": 0.1416015625,
-      "top": 0.189453125,
-      "width": 0.0390625,
-      "height": 0.008463541666666666
-    },
-    "recipient_zip_code": {
-      "page": 0,
-      "left": 0.2216796875,
-      "top": 0.244140625,
-      "width": 0.0400390625,
-      "height": 0.0078125
+    "not_matched": {
+      "text_not_found": {
+        "recipient_address": {
+          "expected_value": "123 Desert Sage Rd, Apt 4B, Albuquerque, NM 87108"
+        }
+      },
+      "ambiguous": {
+        "payment_amount": {
+          "expected_value": "500.00",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.35546875,
+              "top": 0.2936197916666667,
+              "width": 0.0517578125,
+              "height": 0.01953125
+            },
+            {
+              "page": 0,
+              "left": 0.509765625,
+              "top": 0.5013020833333334,
+              "width": 0.0498046875,
+              "height": 0.017578125
+            },
+            {
+              "page": 0,
+              "left": 0.509765625,
+              "top": 0.5260416666666666,
+              "width": 0.0498046875,
+              "height": 0.017578125
+            },
+            {
+              "page": 0,
+              "left": 0.509765625,
+              "top": 0.55078125,
+              "width": 0.0498046875,
+              "height": 0.017578125
+            },
+            {
+              "page": 0,
+              "left": 0.509765625,
+              "top": 0.5755208333333334,
+              "width": 0.0498046875,
+              "height": 0.016927083333333332
+            },
+            {
+              "page": 0,
+              "left": 0.509765625,
+              "top": 0.599609375,
+              "width": 0.0498046875,
+              "height": 0.016927083333333332
+            },
+            {
+              "page": 0,
+              "left": 0.509765625,
+              "top": 0.6263020833333334,
+              "width": 0.0498046875,
+              "height": 0.009765625
+            },
+            {
+              "page": 0,
+              "left": 0.509765625,
+              "top": 0.6477864583333334,
+              "width": 0.0498046875,
+              "height": 0.017578125
+            },
+            {
+              "page": 0,
+              "left": 0.509765625,
+              "top": 0.6744791666666666,
+              "width": 0.0498046875,
+              "height": 0.009765625
+            }
+          ]
+        },
+        "payment_frequency": {
+          "expected_value": "Weekly",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.0966796875,
+              "top": 0.3001302083333333,
+              "width": 0.046875,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.35546875,
+              "top": 0.30859375,
+              "width": 0.0478515625,
+              "height": 0.020182291666666668
+            },
+            {
+              "page": 0,
+              "left": 0.52734375,
+              "top": 0.4388020833333333,
+              "width": 0.05859375,
+              "height": 0.013020833333333334
+            },
+            {
+              "page": 0,
+              "left": 0.50390625,
+              "top": 0.4772135416666667,
+              "width": 0.0595703125,
+              "height": 0.017578125
+            }
+          ]
+        },
+        "payment_type": {
+          "expected_value": "Child Support",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.296875,
+              "top": 0.08138020833333333,
+              "width": 0.37109375,
+              "height": 0.013020833333333334
+            },
+            {
+              "page": 0,
+              "left": 0.5703125,
+              "top": 0.263671875,
+              "width": 0.2734375,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.09765625,
+              "top": 0.3079427083333333,
+              "width": 0.748046875,
+              "height": 0.020833333333333332
+            }
+          ]
+        },
+        "recipient_state": {
+          "expected_value": "NM",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.5380859375,
+              "top": 0.11458333333333333,
+              "width": 0.0263671875,
+              "height": 0.009114583333333334
+            },
+            {
+              "page": 0,
+              "left": 0.19140625,
+              "top": 0.244140625,
+              "width": 0.021484375,
+              "height": 0.0078125
+            },
+            {
+              "page": 0,
+              "left": 0.83203125,
+              "top": 0.24544270833333334,
+              "width": 0.0205078125,
+              "height": 0.0078125
+            }
+          ]
+        }
+      }
     }
   },
+  "expected_document_class": "Child-Support-Document",
   "notes": {
     "child_name": "No child is named on this document (payment-history statement between payor and recipient only).",
     "payment_amount": "Uses the 'Weekly Current Support Amount' ($500.00), excluding the separate $125/week arrears paydown - consistent with how this field is read on the other two child-support documents in this set."

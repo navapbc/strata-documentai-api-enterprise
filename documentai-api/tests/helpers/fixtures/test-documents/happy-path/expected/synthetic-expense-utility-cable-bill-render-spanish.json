@@ -11,7 +11,42 @@
     "Summary_table.Description": "Saldo anterior, Pagos recibidos – 08/25/2026, Saldo anterior, Cargos actuales, TOTAL A PAGAR",
     "Summary_table.Amount": "98.75, -98.75, 0.00, 102.89, 102.89"
   },
-  "geometry": {},
+  "geometry": {
+    "matched": {},
+    "not_matched": {
+      "text_not_found": {
+        "Account_Number": {
+          "expected_value": "8765 4321 0XXX XXXX"
+        },
+        "Balance_DueDate": {
+          "expected_value": "2026-09-30"
+        },
+        "Billing_Date": {
+          "expected_value": "2026-09-11"
+        },
+        "Start_Date": {
+          "expected_value": "2026-08-12"
+        },
+        "End_Date": {
+          "expected_value": "2026-07-11"
+        },
+        "Service_Address": {
+          "expected_value": "1234 Maple Drive, Broken Arrow, OK 74012"
+        },
+        "Line_Item_table.Amount": {
+          "expected_value": "72.99, 8.99, 5.00, -10.00, 49.99, -20.00, 7.00, 5.00, 0.00, -5.00, 4.28, 2.10, 2.54, 0.00"
+        },
+        "Summary_table.Description": {
+          "expected_value": "Saldo anterior, Pagos recibidos – 08/25/2026, Saldo anterior, Cargos actuales, TOTAL A PAGAR"
+        },
+        "Summary_table.Amount": {
+          "expected_value": "98.75, -98.75, 0.00, 102.89, 102.89"
+        }
+      }
+    }
+  },
+  "expected_document_class": "Invoices",
+  "language": "spa",
   "notes": {
     "Start_Date/End_Date": "Printed as 'Período de servicio: 12/08/2026 – 11/07/2026'. Read day-first (matching this document's own date style, e.g. '11 de septiembre de 2026') as 12 Aug 2026 - 11 Jul 2026 - which is chronologically backwards (end before start) and doesn't align with the Sept 11 billing date either. This looks like a synthetic-data generation quirk in the source document itself, not an extraction error; recorded as literally printed.",
     "Line_Item_table.Amount": "Discount/credit lines are printed with a leading minus sign (e.g. '- $10.00'); this fixture keeps the sign. LLM's value list matches in magnitude but drops all the minus signs.",

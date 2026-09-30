@@ -17,28 +17,225 @@
     "interest_credits_cumulative": null
   },
   "geometry": {
-    "account_holder_name": {
-      "page": 0,
-      "left": 0.052734375,
-      "top": 0.14453125,
-      "width": 0.1005859375,
-      "height": 0.011067708333333334
+    "matched": {
+      "account_holder_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.052734375,
+        "top": 0.14453125,
+        "width": 0.1005859375,
+        "height": 0.011067708333333334
+      },
+      "account_number": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.666015625,
+        "top": 0.14778645833333334,
+        "width": 0.1328125,
+        "height": 0.009114583333333334
+      },
+      "account_type": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.5078125,
+        "top": 0.16471354166666666,
+        "width": 0.2578125,
+        "height": 0.010416666666666666
+      },
+      "financial_institution": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.0537109375,
+        "top": 0.17447916666666666,
+        "width": 0.826171875,
+        "height": 0.018880208333333332
+      },
+      "distribution_dates": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.05859375,
+        "top": 0.6295572916666666,
+        "width": 0.07421875,
+        "height": 0.008463541666666666
+      }
     },
-    "account_number": {
-      "page": 0,
-      "left": 0.666015625,
-      "top": 0.14778645833333334,
-      "width": 0.1328125,
-      "height": 0.009114583333333334
-    },
-    "distribution_dates": {
-      "page": 0,
-      "left": 0.05859375,
-      "top": 0.6295572916666666,
-      "width": 0.07421875,
-      "height": 0.008463541666666666
+    "not_matched": {
+      "text_not_found": {
+        "document_type": {
+          "expected_value": "Brokerage Statement"
+        },
+        "contribution_dates": {
+          "expected_value": "2026-02-14, 2026-05-12"
+        }
+      },
+      "ambiguous": {
+        "account_balance": {
+          "expected_value": "$46,000.00",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.7255859375,
+              "top": 0.298828125,
+              "width": 0.1455078125,
+              "height": 0.018880208333333332
+            },
+            {
+              "page": 0,
+              "left": 0.5234375,
+              "top": 0.3430989583333333,
+              "width": 0.080078125,
+              "height": 0.020182291666666668
+            },
+            {
+              "page": 0,
+              "left": 0.8798828125,
+              "top": 0.6302083333333334,
+              "width": 0.072265625,
+              "height": 0.009765625
+            },
+            {
+              "page": 0,
+              "left": 0.8798828125,
+              "top": 0.6497395833333334,
+              "width": 0.072265625,
+              "height": 0.009765625
+            },
+            {
+              "page": 0,
+              "left": 0.3623046875,
+              "top": 0.876953125,
+              "width": 0.0771484375,
+              "height": 0.022786458333333332
+            }
+          ]
+        },
+        "total_value": {
+          "expected_value": "46000.00",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.7255859375,
+              "top": 0.298828125,
+              "width": 0.1455078125,
+              "height": 0.018880208333333332
+            },
+            {
+              "page": 0,
+              "left": 0.5234375,
+              "top": 0.3430989583333333,
+              "width": 0.080078125,
+              "height": 0.020182291666666668
+            },
+            {
+              "page": 0,
+              "left": 0.8798828125,
+              "top": 0.6302083333333334,
+              "width": 0.072265625,
+              "height": 0.009765625
+            },
+            {
+              "page": 0,
+              "left": 0.8798828125,
+              "top": 0.6497395833333334,
+              "width": 0.072265625,
+              "height": 0.009765625
+            },
+            {
+              "page": 0,
+              "left": 0.3623046875,
+              "top": 0.876953125,
+              "width": 0.0771484375,
+              "height": 0.022786458333333332
+            }
+          ]
+        },
+        "tax_year": {
+          "expected_value": "2026",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.7421875,
+              "top": 0.11458333333333333,
+              "width": 0.033203125,
+              "height": 0.0078125
+            },
+            {
+              "page": 0,
+              "left": 0.7412109375,
+              "top": 0.130859375,
+              "width": 0.033203125,
+              "height": 0.008463541666666666
+            },
+            {
+              "page": 0,
+              "left": 0.87109375,
+              "top": 0.13151041666666666,
+              "width": 0.033203125,
+              "height": 0.008463541666666666
+            },
+            {
+              "page": 0,
+              "left": 0.6650390625,
+              "top": 0.19921875,
+              "width": 0.033203125,
+              "height": 0.008463541666666666
+            }
+          ]
+        },
+        "statement_period_start": {
+          "expected_value": "2026-01-01",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.2470703125,
+              "top": 0.271484375,
+              "width": 0.0771484375,
+              "height": 0.008463541666666666
+            },
+            {
+              "page": 0,
+              "left": 0.05859375,
+              "top": 0.5442708333333334,
+              "width": 0.07421875,
+              "height": 0.015625
+            }
+          ]
+        },
+        "statement_period_end": {
+          "expected_value": "2026-08-31",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.2255859375,
+              "top": 0.3489583333333333,
+              "width": 0.078125,
+              "height": 0.009114583333333334
+            },
+            {
+              "page": 0,
+              "left": 0.05859375,
+              "top": 0.6490885416666666,
+              "width": 0.07421875,
+              "height": 0.008463541666666666
+            },
+            {
+              "page": 0,
+              "left": 0.2705078125,
+              "top": 0.7916666666666666,
+              "width": 0.0771484375,
+              "height": 0.008463541666666666
+            }
+          ]
+        }
+      }
     }
   },
+  "expected_document_class": "Investment-Account-Statement",
   "notes": {
     "capital_gains_distributions_cumulative/dividend_payments_cumulative/interest_credits_cumulative": "The statement only reports a single lump-sum 'Investment Gains (Losses)' figure - not broken out into capital gains vs. dividends vs. interest.",
     "document_type": "Literally titled 'IRA ACCOUNT STATEMENT', which isn't one of the schema's three enum values (Brokerage/Mutual Fund/Stock Statement); 'Brokerage Statement' used as the closest fit since the custodian is Harbor Brokerage Services, Inc.",

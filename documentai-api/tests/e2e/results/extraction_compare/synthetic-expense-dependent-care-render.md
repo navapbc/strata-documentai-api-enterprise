@@ -1,7 +1,7 @@
 # synthetic-expense-dependent-care-render.pdf
 
 
-_Run: 2026-09-30 02:19 UTC_
+_Run: 2026-09-30 16:51 UTC_
 
 
 ## Durations
@@ -31,8 +31,8 @@ _By Extracted Data_
 - OCR Mapping: 100% equivalent, 100% close, 0% misses
 
 _By Geometry_
-- BDA: 3/5 exact, 2 miss
-- OCR Mapping: 5/5 exact, 0 miss
+- BDA: 3/7 exact, 4 miss
+- OCR Mapping: 5/7 exact, 2 miss
 
 
 ## Field Comparison
@@ -44,8 +44,8 @@ _By Geometry_
 | document_type | Dependent Care Expense Statement | ✅ Dependent Care Expense Statement | ✅ Dependent Care Expense Statement | 0.84 | 1.0000 | 0.213,0.179,0.561,0.025 | ❌ 0.213,0.179,0.250,0.026 | ✅ 0.213,0.179,0.562,0.026 |
 | payment_amount | 2000.00 | ✅ 2000 | ✅ 2000.00 | 0.25 | 1.0000 | 0.734,0.746,0.084,0.015 | ✅ 0.733,0.745,0.085,0.015 | ✅ 0.733,0.745,0.085,0.015 |
 | payment_frequency | Weekly | ✅ Weekly | ✅ Weekly | 0.92 | 1.0000 | 0.512,0.446,0.056,0.014 | ✅ 0.512,0.445,0.057,0.014 | ✅ 0.512,0.445,0.057,0.014 |
-| provider_address | 485 Maple Avenue, Providence, RI 02903 | ✅ 485 Maple Avenue, Providence, RI 02903 | ✅ 485 Maple Avenue, Providence, RI 02903 | 0.91 | 1.0000 | - | 0.249,0.090,0.308,0.014 | 0.249,0.090,0.308,0.014 |
-| provider_name | Bright Horizons Early Learning Center | ✅ Bright Horizons Early Learning Center | ✅ Bright Horizons Early Learning Center | 0.89 | 1.0000 | - | 0.213,0.053,0.425,0.019 | 0.213,0.053,0.425,0.019 |
+| provider_address | 485 Maple Avenue, Providence, RI 02903 | ✅ 485 Maple Avenue, Providence, RI 02903 | ✅ 485 Maple Avenue, Providence, RI 02903 | 0.91 | 1.0000 | 0.101,0.081,0.456,0.028 | ❌ 0.249,0.090,0.308,0.014 | ❌ 0.249,0.090,0.308,0.014 |
+| provider_name | Bright Horizons Early Learning Center | ✅ Bright Horizons Early Learning Center | ✅ Bright Horizons Early Learning Center | 0.89 | 1.0000 | 0.115,0.053,0.735,0.023 | ❌ 0.213,0.053,0.425,0.019 | ❌ 0.213,0.053,0.425,0.019 |
 | service_end_date | 2026-08-30 | ✅ 2026-08-30 | ✅ 2026-08-30 | 0.76 | 0.9800 | - | 0.617,0.650,0.073,0.013 | 0.523,0.650,0.168,0.014 |
 | service_start_date | 2026-08-03 | ✅ 2026-08-03 | ✅ 2026-08-03 | 0.64 | 0.9800 | - | 0.194,0.446,0.102,0.014 | 0.523,0.650,0.168,0.014 |
 | statement_date | 2026-09-05 | ✅ 2026-09-05 | ✅ 2026-09-05 | 0.91 | 1.0000 | 0.721,0.076,0.092,0.011 | ✅ 0.720,0.076,0.094,0.012 | ✅ 0.720,0.076,0.094,0.012 |

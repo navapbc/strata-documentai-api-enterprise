@@ -1,7 +1,7 @@
 # synthetic-insurance-health-insurance-premium-scan.jpg
 
 
-_Run: 2026-09-30 02:19 UTC_
+_Run: 2026-09-30 16:51 UTC_
 
 
 ## Durations
@@ -32,8 +32,8 @@ _By Extracted Data_
 - OCR Mapping: 91% equivalent, 91% close, 9% misses
 
 _By Geometry_
-- BDA: 4/4 exact, 0 miss
-- OCR Mapping: 3/4 exact, 1 miss
+- BDA: 4/5 exact, 1 miss
+- OCR Mapping: 3/5 exact, 2 miss
 
 
 ## Field Comparison
@@ -42,7 +42,7 @@ _By Geometry_
 | coverage_end_date | 2026-09-30 | ✅ 2026-09-30 | ✅ 2026-09-30 | 0.91 | 0.8500 | - | 0.890,0.087,0.081,0.012 | 0.890,0.087,0.081,0.012 |
 | coverage_start_date | 2026-09-01 | ✅ 2026-09-01 | ✅ 2026-09-01 | 0.83 | 1.0000 | - | - | 0.791,0.068,0.081,0.011 |
 | employer_name | - | - | - | 0.94 | - | - | - | - |
-| insurer_or_marketplace_name | Harbor Health Plan, Inc. | 🟡 Harbor Health Plan | ✅ Harbor Health Plan, Inc. | 0.70 | 1.0000 | - | 0.135,0.042,0.185,0.044 | 0.352,0.039,0.111,0.012 |
+| insurer_or_marketplace_name | Harbor Health Plan, Inc. | 🟡 Harbor Health Plan | ✅ Harbor Health Plan, Inc. | 0.70 | 1.0000 | 0.353,0.039,0.499,0.016 | ❌ 0.135,0.042,0.185,0.044 | ❌ 0.352,0.039,0.111,0.012 |
 | payment_due_date | 2026-09-15 | ✅ 2026-09-15 | ✅ 2026-09-15 | 0.92 | 1.0000 | 0.789,0.103,0.081,0.010 | ✅ 0.789,0.103,0.081,0.011 | ✅ 0.789,0.103,0.082,0.011 |
 | payment_frequency | Monthly | ✅ monthly | ✅ monthly | 0.86 | 1.0000 | - | 0.080,0.564,0.055,0.012 | 0.047,0.564,0.325,0.014 |
 | payment_status | Paid | ✅ Paid | ✅ Paid | 0.88 | 1.0000 | 0.729,0.162,0.057,0.014 | ✅ 0.729,0.162,0.057,0.015 | ❌ 0.729,0.162,0.159,0.016 |

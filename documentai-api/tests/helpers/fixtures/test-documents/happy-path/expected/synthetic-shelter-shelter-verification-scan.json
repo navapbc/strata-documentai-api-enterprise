@@ -15,35 +15,121 @@
     "expire": "No"
   },
   "geometry": {
-    "RECEIPT_ID": {
-      "page": 0,
-      "left": 0.755859375,
-      "top": 0.091796875,
-      "width": 0.1416015625,
-      "height": 0.010416666666666666
+    "matched": {
+      "VENDORDETAILS.VENDORPHONE": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.1943359375,
+        "top": 0.146484375,
+        "width": 0.5439453125,
+        "height": 0.021484375
+      },
+      "RECEIPT_ID": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.755859375,
+        "top": 0.091796875,
+        "width": 0.1416015625,
+        "height": 0.010416666666666666
+      },
+      "RECEIPT_DATE": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.755859375,
+        "top": 0.11848958333333333,
+        "width": 0.09765625,
+        "height": 0.01171875
+      },
+      "PAYMENTDETAILS.TOTAL": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.8115234375,
+        "top": 0.7421875,
+        "width": 0.0966796875,
+        "height": 0.014973958333333334
+      },
+      "PAYMENTDETAILS.AMOUNTPAID": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.8115234375,
+        "top": 0.7421875,
+        "width": 0.0966796875,
+        "height": 0.014973958333333334
+      }
     },
-    "RECEIPT_DATE": {
-      "page": 0,
-      "left": 0.755859375,
-      "top": 0.11848958333333333,
-      "width": 0.09765625,
-      "height": 0.01171875
-    },
-    "PAYMENTDETAILS.TOTAL": {
-      "page": 0,
-      "left": 0.8115234375,
-      "top": 0.7421875,
-      "width": 0.0966796875,
-      "height": 0.014973958333333334
-    },
-    "PAYMENTDETAILS.AMOUNTPAID": {
-      "page": 0,
-      "left": 0.8115234375,
-      "top": 0.7421875,
-      "width": 0.0966796875,
-      "height": 0.014973958333333334
+    "not_matched": {
+      "text_not_found": {
+        "VENDORDETAILS.VENDORADDRESS": {
+          "expected_value": "310 Seaside Avenue, Suite 101, New London, CT 06320"
+        }
+      },
+      "ambiguous": {
+        "VENDORDETAILS.VENDORNAME": {
+          "expected_value": "Harbor County Money Services",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.1171875,
+              "top": 0.21614583333333334,
+              "width": 0.7763671875,
+              "height": 0.014322916666666666
+            },
+            {
+              "page": 0,
+              "left": 0.240234375,
+              "top": 0.876953125,
+              "width": 0.5,
+              "height": 0.014973958333333334
+            }
+          ]
+        },
+        "LINEITEMS.AMT": {
+          "expected_value": "1200.00",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.5361328125,
+              "top": 0.6731770833333334,
+              "width": 0.0830078125,
+              "height": 0.013020833333333334
+            },
+            {
+              "page": 0,
+              "left": 0.8212890625,
+              "top": 0.6731770833333334,
+              "width": 0.0830078125,
+              "height": 0.013020833333333334
+            }
+          ]
+        },
+        "PAYMENTDETAILS.SUBTOTAL": {
+          "expected_value": "1200.00",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.5361328125,
+              "top": 0.6731770833333334,
+              "width": 0.0830078125,
+              "height": 0.013020833333333334
+            },
+            {
+              "page": 0,
+              "left": 0.8212890625,
+              "top": 0.6731770833333334,
+              "width": 0.0830078125,
+              "height": 0.013020833333333334
+            }
+          ]
+        }
+      }
     }
   },
+  "expected_document_class": "Receipts",
   "notes": {
     "LINEITEMS.QTY/PRODUCT_CODE": "This is a money-order receipt, not an itemized goods receipt - no quantity or product code concept applies.",
     "LINEITEMS.AMT": "The Payment Summary table has 2 rows (Money Order Amount $1,200.00, Issuance Fee - with a blank Amount cell and $3.00 only in the Fees column); only the first row has a value under 'Amount'.",

@@ -1,7 +1,7 @@
 # synthetic-expense-utility-water-sewer-bill-render-spanish.png
 
 
-_Run: 2026-09-30 02:19 UTC_
+_Run: 2026-09-30 16:51 UTC_
 
 
 ## Durations
@@ -32,15 +32,15 @@ _By Extracted Data_
 - OCR Mapping: 95% equivalent, 95% close, 5% misses
 
 _By Geometry_
-- BDA: 3/5 exact, 2 miss
-- OCR Mapping: 3/5 exact, 2 miss
+- BDA: 4/7 exact, 3 miss
+- OCR Mapping: 4/7 exact, 3 miss
 
 
 ## Field Comparison
 | Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Geo | BDA Geometry | LLM Geometry |
 |---|---|---|---|---|---|---|---|---|
-| Account_Info.Acct_Name | Mariana López | ✅ Mariana López | ✅ Mariana López | 0.89 | 0.9800 | - | 0.039,0.235,0.094,0.011 | 0.039,0.235,0.094,0.011 |
-| Account_Info.Acct_No | 1234-5678-90 | ✅ 1234-5678-90 | ✅ 1234-5678-90 | 0.94 | 1.0000 | - | 0.829,0.067,0.107,0.009 | 0.829,0.067,0.107,0.009 |
+| Account_Info.Acct_Name | Mariana López | ✅ Mariana López | ✅ Mariana López | 0.89 | 0.9800 | 0.038,0.235,0.095,0.011 | ✅ 0.039,0.235,0.094,0.011 | ✅ 0.039,0.235,0.094,0.011 |
+| Account_Info.Acct_No | 1234-5678-90 | ✅ 1234-5678-90 | ✅ 1234-5678-90 | 0.94 | 1.0000 | 0.224,0.844,0.092,0.008 | ❌ 0.829,0.067,0.107,0.009 | ❌ 0.829,0.067,0.107,0.009 |
 | Account_Info.Meter_Number | MTR-78543210 | ✅ MTR-78543210 | ✅ MTR-78543210 | 0.91 | 0.9900 | 0.720,0.569,0.104,0.008 | ✅ 0.719,0.569,0.105,0.009 | ✅ 0.719,0.569,0.105,0.009 |
 | Curr_Meter_Reading | 68200 | ✅ 68,200 | ✅ 68,200 | 0.57 | 1.0000 | 0.806,0.625,0.046,0.008 | ✅ 0.805,0.625,0.046,0.010 | ✅ 0.806,0.625,0.046,0.010 |
 | Dates.Bill_From_Date | 2026-07-21 | ✅ 07/21/2026 | ✅ 2026-07-21 | 0.72 | 0.9900 | - | 0.752,0.107,0.083,0.011 | 0.752,0.107,0.083,0.011 |

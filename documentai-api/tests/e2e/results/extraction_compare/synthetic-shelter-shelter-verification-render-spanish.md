@@ -1,7 +1,7 @@
 # synthetic-shelter-shelter-verification-render-spanish.png
 
 
-_Run: 2026-09-30 02:19 UTC_
+_Run: 2026-09-30 16:51 UTC_
 
 
 ## Durations
@@ -32,8 +32,8 @@ _By Extracted Data_
 - OCR Mapping: 57% equivalent, 57% close, 43% misses
 
 _By Geometry_
-- BDA: 1/2 exact, 1 miss
-- OCR Mapping: 2/2 exact, 0 miss
+- BDA: 1/3 exact, 2 miss
+- OCR Mapping: 2/3 exact, 1 miss
 
 
 ## Field Comparison
@@ -45,4 +45,4 @@ _By Geometry_
 | contact_information | Tel: (907) 555-8124 Correo: cortega@alaskahillspm.com | ✅ Tel: (907) 555-8124 Correo: cortega@alaskahillspm.com | ❌ (907) 555-8124, cortega@alaskahillspm.com | 0.61 | 0.8400 | - | 0.093,0.931,0.265,0.026 | 0.607,0.062,0.312,0.012 |
 | customer_name | Mateo Salazar | ✅ Mateo Salazar | ✅ Mateo Salazar | 0.91 | 1.0000 | 0.409,0.353,0.109,0.009 | ✅ 0.409,0.353,0.110,0.010 | ✅ 0.409,0.353,0.111,0.010 |
 | has_signature | True | ✅ True | ✅ True | 0.86 | 0.9900 | - | 0.096,0.844,0.277,0.042 | 0.096,0.845,0.275,0.041 |
-| statement_date | 2026-09-08 | ✅ 2026-09-08 | ✅ 2026-09-08 | 0.73 | 0.9900 | - | 0.333,0.180,0.205,0.012 | 0.333,0.180,0.205,0.012 |
+| statement_date | 2026-09-08 | ✅ 2026-09-08 | ✅ 2026-09-08 | 0.73 | 0.9900 | 0.733,0.855,0.175,0.008 | ❌ 0.333,0.180,0.205,0.012 | ❌ 0.333,0.180,0.205,0.012 |

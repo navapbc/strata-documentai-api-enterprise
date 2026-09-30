@@ -1,7 +1,7 @@
 # synthetic-public-benefits-income-proof-pay-statement-photo.png
 
 
-_Run: 2026-09-30 02:19 UTC_
+_Run: 2026-09-30 16:51 UTC_
 
 
 ## Durations
@@ -32,8 +32,8 @@ _By Extracted Data_
 - OCR Mapping: 91% equivalent, 91% close, 9% misses
 
 _By Geometry_
-- BDA: 15/22 exact, 7 miss
-- OCR Mapping: 21/22 exact, 1 miss
+- BDA: 15/24 exact, 9 miss
+- OCR Mapping: 21/24 exact, 3 miss
 
 
 ## Field Comparison
@@ -43,7 +43,7 @@ _By Geometry_
 | CityTaxes.Period | - | - | - | - | N/A | - | - | - |
 | CityTaxes.YTD | - | - | - | - | N/A | - | - | - |
 | CompanyAddress.City | Baltimore | ✅ Baltimore | ✅ Baltimore | 0.93 | N/A | - | 0.164,0.132,0.066,0.013 | - |
-| CompanyAddress.Line1 | 2458 Harford Rd | ✅ 2458 Harford Rd | ✅ 2458 Harford Rd | 0.95 | 1.0000 | - | 0.163,0.114,0.108,0.013 | 0.163,0.114,0.108,0.012 |
+| CompanyAddress.Line1 | 2458 Harford Rd | ✅ 2458 Harford Rd | ✅ 2458 Harford Rd | 0.95 | 1.0000 | 0.166,0.220,0.459,0.012 | ❌ 0.163,0.114,0.108,0.013 | ❌ 0.163,0.114,0.108,0.012 |
 | CompanyAddress.Line2 | - | - | - | 0.94 | N/A | - | - | - |
 | CompanyAddress.State | MD | ✅ MD | ✅ MD | 0.93 | 1.0000 | - | 0.236,0.134,0.023,0.011 | 0.236,0.133,0.023,0.011 |
 | CompanyAddress.ZipCode | 21218 | ✅ 21218 | ✅ 21218 | 0.93 | 1.0000 | - | 0.263,0.134,0.040,0.011 | 0.263,0.134,0.040,0.011 |
@@ -51,7 +51,7 @@ _By Geometry_
 | CurrentNetPay | 1148.22 | ✅ 1148.22 | ✅ 1148.22 | 0.91 | 1.0000 | 0.384,0.765,0.092,0.017 | ✅ 0.384,0.764,0.093,0.020 | ✅ 0.384,0.764,0.093,0.019 |
 | CurrentTotalDeductions | 457.44 | ✅ 457.44 | ✅ 457.44 | 0.95 | 1.0000 | 0.490,0.711,0.054,0.020 | ✅ 0.493,0.713,0.052,0.014 | ✅ 0.494,0.713,0.052,0.014 |
 | EmployeeAddress.City | Baltimore | ✅ Baltimore | ✅ Baltimore | 0.94 | N/A | - | 0.292,0.238,0.057,0.012 | - |
-| EmployeeAddress.Line1 | 1824 E Lafayette Ave | ✅ 1824 E Lafayette Ave | ✅ 1824 E Lafayette Ave | 0.95 | 1.0000 | - | 0.293,0.219,0.118,0.013 | 0.293,0.220,0.118,0.013 |
+| EmployeeAddress.Line1 | 1824 E Lafayette Ave | ✅ 1824 E Lafayette Ave | ✅ 1824 E Lafayette Ave | 0.95 | 1.0000 | 0.166,0.220,0.459,0.012 | ❌ 0.293,0.219,0.118,0.013 | ❌ 0.293,0.220,0.118,0.013 |
 | EmployeeAddress.Line2 | - | - | - | 0.93 | N/A | - | - | - |
 | EmployeeAddress.State | MD | ✅ MD | ✅ MD | 0.94 | 1.0000 | - | 0.354,0.238,0.020,0.010 | 0.236,0.133,0.023,0.011 |
 | EmployeeAddress.ZipCode | 21213 | ✅ 21213 | ✅ 21213 | 0.94 | 1.0000 | 0.378,0.238,0.035,0.009 | ✅ 0.379,0.238,0.035,0.010 | ✅ 0.379,0.238,0.035,0.010 |

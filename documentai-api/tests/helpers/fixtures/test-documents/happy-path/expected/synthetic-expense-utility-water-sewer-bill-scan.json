@@ -23,77 +23,228 @@
     "is_total_amount_greater_than_equal_to_current_charges": true
   },
   "geometry": {
-    "Account_Info.Acct_Name": {
-      "page": 0,
-      "left": 0.1953125,
-      "top": 0.875,
-      "width": 0.091796875,
-      "height": 0.009765625
+    "matched": {
+      "Account_Info.Acct_Name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.1953125,
+        "top": 0.875,
+        "width": 0.091796875,
+        "height": 0.009765625
+      },
+      "Account_Info.Acct_No": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.6982421875,
+        "top": 0.2571614583333333,
+        "width": 0.1162109375,
+        "height": 0.009114583333333334
+      },
+      "Account_Info.Meter_Number": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.69921875,
+        "top": 0.2747395833333333,
+        "width": 0.09375,
+        "height": 0.008463541666666666
+      },
+      "Curr_Meter_Reading": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.326171875,
+        "top": 0.408203125,
+        "width": 0.0400390625,
+        "height": 0.017578125
+      },
+      "Prev_Meter_Reading": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.326171875,
+        "top": 0.4309895833333333,
+        "width": 0.0400390625,
+        "height": 0.009765625
+      },
+      "Prev_Bal": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.4306640625,
+        "top": 0.17317708333333334,
+        "width": 0.0439453125,
+        "height": 0.010416666666666666
+      },
+      "Service_Address.Building_Line 1": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.1953125,
+        "top": 0.8938802083333334,
+        "width": 0.138671875,
+        "height": 0.01171875
+      },
+      "Service_Address.Street": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.1953125,
+        "top": 0.8938802083333334,
+        "width": 0.138671875,
+        "height": 0.01171875
+      },
+      "Tot_Amt": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.8427734375,
+        "top": 0.8684895833333334,
+        "width": 0.0634765625,
+        "height": 0.014322916666666666
+      },
+      "Total_Current_Charges": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.8427734375,
+        "top": 0.8684895833333334,
+        "width": 0.0634765625,
+        "height": 0.014322916666666666
+      }
     },
-    "Account_Info.Acct_No": {
-      "page": 0,
-      "left": 0.6982421875,
-      "top": 0.2571614583333333,
-      "width": 0.1162109375,
-      "height": 0.009114583333333334
-    },
-    "Account_Info.Meter_Number": {
-      "page": 0,
-      "left": 0.69921875,
-      "top": 0.2747395833333333,
-      "width": 0.09375,
-      "height": 0.008463541666666666
-    },
-    "Curr_Meter_Reading": {
-      "page": 0,
-      "left": 0.326171875,
-      "top": 0.408203125,
-      "width": 0.0400390625,
-      "height": 0.017578125
-    },
-    "Prev_Meter_Reading": {
-      "page": 0,
-      "left": 0.326171875,
-      "top": 0.4309895833333333,
-      "width": 0.0400390625,
-      "height": 0.009765625
-    },
-    "Prev_Bal": {
-      "page": 0,
-      "left": 0.4306640625,
-      "top": 0.17317708333333334,
-      "width": 0.0439453125,
-      "height": 0.010416666666666666
-    },
-    "Service_Address.Building_Line 1": {
-      "page": 0,
-      "left": 0.1953125,
-      "top": 0.8938802083333334,
-      "width": 0.138671875,
-      "height": 0.01171875
-    },
-    "Service_Address.Street": {
-      "page": 0,
-      "left": 0.1953125,
-      "top": 0.8938802083333334,
-      "width": 0.138671875,
-      "height": 0.01171875
-    },
-    "Tot_Amt": {
-      "page": 0,
-      "left": 0.8427734375,
-      "top": 0.8684895833333334,
-      "width": 0.0634765625,
-      "height": 0.014322916666666666
-    },
-    "Total_Current_Charges": {
-      "page": 0,
-      "left": 0.8427734375,
-      "top": 0.8684895833333334,
-      "width": 0.0634765625,
-      "height": 0.014322916666666666
+    "not_matched": {
+      "text_not_found": {
+        "Dates.Bill_From_Date": {
+          "expected_value": "2026-07-24"
+        },
+        "Dates.Bill_To_Date": {
+          "expected_value": "2026-08-24"
+        },
+        "Dates.Billing_Date": {
+          "expected_value": "2026-08-25"
+        },
+        "Dates.Due_Date": {
+          "expected_value": "2026-09-15"
+        },
+        "Line_Items.Amount or Value": {
+          "expected_value": "14.45, 18.99, 20.37, 17.54, 3.50, 0.04"
+        },
+        "Line_Items.LineItemDescription": {
+          "expected_value": "Water Service Charge, Water Usage Charge, Sewer Service Charge, Sewer Usage Charge, Stormwater Fee, Colorado Water Conservation Fee"
+        }
+      },
+      "ambiguous": {
+        "Provider Name": {
+          "expected_value": "Harbor County Water Service",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.1962890625,
+              "top": 0.036458333333333336,
+              "width": 0.3525390625,
+              "height": 0.018880208333333332
+            },
+            {
+              "page": 0,
+              "left": 0.1513671875,
+              "top": 0.8059895833333334,
+              "width": 0.197265625,
+              "height": 0.01171875
+            },
+            {
+              "page": 0,
+              "left": 0.640625,
+              "top": 0.943359375,
+              "width": 0.197265625,
+              "height": 0.012369791666666666
+            }
+          ]
+        },
+        "Service_Address.City": {
+          "expected_value": "Loveland",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.69921875,
+              "top": 0.23893229166666666,
+              "width": 0.0634765625,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.1953125,
+              "top": 0.9088541666666666,
+              "width": 0.0615234375,
+              "height": 0.010416666666666666
+            }
+          ]
+        },
+        "Service_Address.State": {
+          "expected_value": "CO",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.28515625,
+              "top": 0.09830729166666667,
+              "width": 0.0205078125,
+              "height": 0.009765625
+            },
+            {
+              "page": 0,
+              "left": 0.7685546875,
+              "top": 0.23958333333333334,
+              "width": 0.0185546875,
+              "height": 0.008463541666666666
+            },
+            {
+              "page": 0,
+              "left": 0.232421875,
+              "top": 0.8391927083333334,
+              "width": 0.0185546875,
+              "height": 0.008463541666666666
+            },
+            {
+              "page": 0,
+              "left": 0.2626953125,
+              "top": 0.9088541666666666,
+              "width": 0.0185546875,
+              "height": 0.009114583333333334
+            },
+            {
+              "page": 0,
+              "left": 0.6982421875,
+              "top": 0.9739583333333334,
+              "width": 0.01953125,
+              "height": 0.009114583333333334
+            }
+          ]
+        },
+        "Service_Address.Zip_Code": {
+          "expected_value": "80538",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.7919921875,
+              "top": 0.23958333333333334,
+              "width": 0.0419921875,
+              "height": 0.008463541666666666
+            },
+            {
+              "page": 0,
+              "left": 0.2861328125,
+              "top": 0.9095052083333334,
+              "width": 0.041015625,
+              "height": 0.008463541666666666
+            }
+          ]
+        }
+      }
     }
   },
+  "expected_document_class": "Invoices",
   "notes": {
     "Line_Items": "LLM only captured 1 of the 6 charge-detail rows.",
     "Dates": "Printed as MM/DD/YYYY ('07/24/2026', etc.); normalized to ISO 8601 (YYYY-MM-DD) here, consistent with every other date field in this schema. This is an AWS-managed blueprint (water-and-sewer-bill) whose field descriptions instruct MM/DD/YYYY - not ours to edit - but since these are single-value (not list) date fields, extraction-compare's normalizer resolves BDA's MM/DD/YYYY to the same calendar date, which now counts as an exact match."

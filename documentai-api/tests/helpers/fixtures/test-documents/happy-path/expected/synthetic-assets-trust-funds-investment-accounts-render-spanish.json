@@ -12,28 +12,128 @@
     "asset_types": "Acciones (Nacionales), Bonos (Renta Fija), Fondos Mutuos, Efectivo y Equivalentes"
   },
   "geometry": {
-    "trustee_name": {
-      "page": 0,
-      "left": 0.73828125,
-      "top": 0.0234375,
-      "width": 0.169921875,
-      "height": 0.009765625
+    "matched": {
+      "trust_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.041015625,
+        "top": 0.14713541666666666,
+        "width": 0.873046875,
+        "height": 0.009114583333333334
+      },
+      "trust_type": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.0400390625,
+        "top": 0.16731770833333334,
+        "width": 0.5859375,
+        "height": 0.009765625
+      },
+      "beneficiary_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.041015625,
+        "top": 0.17903645833333334,
+        "width": 0.34765625,
+        "height": 0.022786458333333332
+      },
+      "trustee_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.73828125,
+        "top": 0.0234375,
+        "width": 0.169921875,
+        "height": 0.009765625
+      },
+      "account_number": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.2578125,
+        "top": 0.28515625,
+        "width": 0.103515625,
+        "height": 0.0078125
+      },
+      "distributions_during_period": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.5478515625,
+        "top": 0.5572916666666666,
+        "width": 0.0498046875,
+        "height": 0.009114583333333334
+      }
     },
-    "account_number": {
-      "page": 0,
-      "left": 0.2578125,
-      "top": 0.28515625,
-      "width": 0.103515625,
-      "height": 0.0078125
-    },
-    "distributions_during_period": {
-      "page": 0,
-      "left": 0.5478515625,
-      "top": 0.5572916666666666,
-      "width": 0.0498046875,
-      "height": 0.009114583333333334
+    "not_matched": {
+      "text_not_found": {
+        "statement_period_start": {
+          "expected_value": "2026-06-01"
+        },
+        "statement_period_end": {
+          "expected_value": "2026-08-31"
+        }
+      },
+      "ambiguous": {
+        "account_balance": {
+          "expected_value": "45000.00",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.8662109375,
+              "top": 0.3274739583333333,
+              "width": 0.0810546875,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.8818359375,
+              "top": 0.513671875,
+              "width": 0.0693359375,
+              "height": 0.009114583333333334
+            },
+            {
+              "page": 0,
+              "left": 0.7763671875,
+              "top": 0.599609375,
+              "width": 0.05859375,
+              "height": 0.015625
+            },
+            {
+              "page": 0,
+              "left": 0.880859375,
+              "top": 0.6022135416666666,
+              "width": 0.0703125,
+              "height": 0.009114583333333334
+            },
+            {
+              "page": 0,
+              "left": 0.7763671875,
+              "top": 0.6236979166666666,
+              "width": 0.05859375,
+              "height": 0.014973958333333334
+            },
+            {
+              "page": 0,
+              "left": 0.2900390625,
+              "top": 0.83984375,
+              "width": 0.080078125,
+              "height": 0.022135416666666668
+            }
+          ]
+        },
+        "asset_types": {
+          "reason": "list_value",
+          "expected_value": "Acciones (Nacionales), Bonos (Renta Fija), Fondos Mutuos, Efectivo y Equivalentes"
+        }
+      }
     }
   },
+  "expected_document_class": "Investment-Account-Statement",
+  "language": "spa",
   "notes": {
     "trust_name": "A stray overlapping character appears after \"2019\" in the scan (likely a rendering artifact, not real text); read as \"Fideicomiso Rivera 2019\"."
   }

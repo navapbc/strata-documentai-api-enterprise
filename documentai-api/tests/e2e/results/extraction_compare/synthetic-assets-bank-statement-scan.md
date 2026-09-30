@@ -1,7 +1,7 @@
 # synthetic-assets-bank-statement-scan.jpg
 
 
-_Run: 2026-09-30 02:19 UTC_
+_Run: 2026-09-30 16:51 UTC_
 
 
 ## Durations
@@ -32,8 +32,8 @@ _By Extracted Data_
 - OCR Mapping: 73% equivalent, 73% close, 27% misses
 
 _By Geometry_
-- BDA: 2/2 exact, 0 miss
-- OCR Mapping: 1/2 exact, 1 miss
+- BDA: 2/3 exact, 1 miss
+- OCR Mapping: 1/3 exact, 2 miss
 
 
 ## Field Comparison
@@ -45,7 +45,7 @@ _By Geometry_
 | account_summary.summary_amount | 1225.00, 3110.00, 2550.20, 0.00, 1784.80 | ❌ - | ✅ 1225.00, 3110.00, 2550.20, 0.00, 1784.80 | - | N/A | - | - | 0.866,0.202,0.071,0.011 |
 | account_summary.summary_desc | Beginning Balance, Total Deposits/Credits, Total Withdrawals/Debits, Total Fees, Ending Balance | ❌ - | ✅ Beginning Balance, Total Deposits/Credits, Total Withdrawals/Debits, Total Fees, Ending Balance | - | N/A | - | - | 0.577,0.203,0.135,0.012 |
 | account_type | Checking | ✅ Checking | ✅ Checking | 0.93 | 1.0000 | 0.283,0.357,0.067,0.012 | ✅ 0.283,0.358,0.069,0.012 | ❌ 0.065,0.358,0.062,0.010 |
-| bank_name | Harbor Community Bank | ✅ Harbor Community Bank | ✅ Harbor Community Bank | 0.85 | 1.0000 | - | 0.178,0.046,0.280,0.053 | 0.179,0.072,0.279,0.027 |
+| bank_name | Harbor Community Bank | ✅ Harbor Community Bank | ✅ Harbor Community Bank | 0.85 | 1.0000 | 0.159,0.924,0.207,0.011 | ❌ 0.178,0.046,0.280,0.053 | ❌ 0.179,0.072,0.279,0.027 |
 | branch_transit_number | ******1250 | ✅ ******1250 | ✅ ******1250 | 0.76 | 1.0000 | - | 0.283,0.391,0.078,0.010 | 0.066,0.390,0.057,0.012 |
 | statement_end_date | 2026-08-31 | ✅ 08/31/2026 | ✅ 2026-08-31 | 0.73 | 1.0000 | - | 0.747,0.092,0.120,0.012 | 0.609,0.092,0.258,0.012 |
 | statement_start_date | 2026-08-01 | ✅ 08/01/2026 | ✅ 2026-08-01 | 0.71 | 1.0000 | - | 0.609,0.092,0.120,0.012 | 0.609,0.092,0.258,0.012 |

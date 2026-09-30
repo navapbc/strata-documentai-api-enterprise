@@ -13,28 +13,217 @@
     "statement_date": "2026-09-02"
   },
   "geometry": {
-    "dependent_names": {
-      "page": 0,
-      "left": 0.064453125,
-      "top": 0.341796875,
-      "width": 0.1533203125,
-      "height": 0.01171875
+    "matched": {
+      "dependent_names": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.064453125,
+        "top": 0.341796875,
+        "width": 0.1533203125,
+        "height": 0.01171875
+      },
+      "provider_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.2197265625,
+        "top": 0.048828125,
+        "width": 0.3349609375,
+        "height": 0.014322916666666666
+      },
+      "statement_date": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.7578125,
+        "top": 0.103515625,
+        "width": 0.0810546875,
+        "height": 0.009114583333333334
+      }
     },
-    "provider_name": {
-      "page": 0,
-      "left": 0.2197265625,
-      "top": 0.048828125,
-      "width": 0.3349609375,
-      "height": 0.014322916666666666
-    },
-    "statement_date": {
-      "page": 0,
-      "left": 0.7578125,
-      "top": 0.103515625,
-      "width": 0.0810546875,
-      "height": 0.009114583333333334
+    "not_matched": {
+      "text_not_found": {
+        "document_type": {
+          "expected_value": "Dependent Care Expense Statement"
+        },
+        "payment_frequency": {
+          "expected_value": "Weekly"
+        },
+        "provider_address": {
+          "expected_value": "321 Whispering Pines Drive Holly Springs, NC 27540"
+        }
+      },
+      "ambiguous": {
+        "amount_paid": {
+          "expected_value": "650.00",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.8603515625,
+              "top": 0.6575520833333334,
+              "width": 0.0595703125,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.8603515625,
+              "top": 0.7174479166666666,
+              "width": 0.0712890625,
+              "height": 0.011067708333333334
+            },
+            {
+              "page": 0,
+              "left": 0.8671875,
+              "top": 0.7434895833333334,
+              "width": 0.0654296875,
+              "height": 0.011067708333333334
+            }
+          ]
+        },
+        "balance_due": {
+          "expected_value": "650.00",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.8603515625,
+              "top": 0.6575520833333334,
+              "width": 0.0595703125,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.8603515625,
+              "top": 0.7174479166666666,
+              "width": 0.0712890625,
+              "height": 0.011067708333333334
+            },
+            {
+              "page": 0,
+              "left": 0.8671875,
+              "top": 0.7434895833333334,
+              "width": 0.0654296875,
+              "height": 0.011067708333333334
+            }
+          ]
+        },
+        "payment_amount": {
+          "expected_value": "325.00",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.72265625,
+              "top": 0.4635416666666667,
+              "width": 0.0595703125,
+              "height": 0.018229166666666668
+            },
+            {
+              "page": 0,
+              "left": 0.8642578125,
+              "top": 0.4661458333333333,
+              "width": 0.0595703125,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.72265625,
+              "top": 0.490234375,
+              "width": 0.0595703125,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.8642578125,
+              "top": 0.490234375,
+              "width": 0.0595703125,
+              "height": 0.011067708333333334
+            },
+            {
+              "page": 0,
+              "left": 0.72265625,
+              "top": 0.5149739583333334,
+              "width": 0.0595703125,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.865234375,
+              "top": 0.5149739583333334,
+              "width": 0.0595703125,
+              "height": 0.011067708333333334
+            },
+            {
+              "page": 0,
+              "left": 0.72265625,
+              "top": 0.537109375,
+              "width": 0.0595703125,
+              "height": 0.018229166666666668
+            },
+            {
+              "page": 0,
+              "left": 0.8642578125,
+              "top": 0.5397135416666666,
+              "width": 0.060546875,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.6611328125,
+              "top": 0.6302083333333334,
+              "width": 0.0595703125,
+              "height": 0.018229166666666668
+            },
+            {
+              "page": 0,
+              "left": 0.66015625,
+              "top": 0.654296875,
+              "width": 0.060546875,
+              "height": 0.018880208333333332
+            }
+          ]
+        },
+        "service_end_date": {
+          "expected_value": "2026-08-30",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.1669921875,
+              "top": 0.5397135416666666,
+              "width": 0.0849609375,
+              "height": 0.009765625
+            },
+            {
+              "page": 0,
+              "left": 0.8583984375,
+              "top": 0.123046875,
+              "width": 0.08203125,
+              "height": 0.009114583333333334
+            }
+          ]
+        },
+        "service_start_date": {
+          "expected_value": "2026-08-03",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.0625,
+              "top": 0.4661458333333333,
+              "width": 0.0849609375,
+              "height": 0.009765625
+            },
+            {
+              "page": 0,
+              "left": 0.7578125,
+              "top": 0.123046875,
+              "width": 0.0810546875,
+              "height": 0.008463541666666666
+            }
+          ]
+        }
+      }
     }
   },
+  "expected_document_class": "Invoices",
   "notes": {
     "payment_frequency": "Not explicitly labeled on this document (unlike the render variant); inferred from the weekly $325.00 line items in the Service Details table.",
     "document_type": "Printed as 'DEPENDENT CARE EXPENSE STATEMENT' (all caps title); normalized to title case here for consistency with the sibling render document."

@@ -10,35 +10,73 @@
     "salary_or_wage": "$19.00 per hour"
   },
   "geometry": {
-    "employee_name": {
-      "page": 0,
-      "left": 0.11967361740707162,
-      "top": 0.29102384291725103,
-      "width": 0.11786038077969176,
-      "height": 0.011220196353436185
-    },
-    "employer_name": {
-      "page": 0,
-      "left": 0.1214868540344515,
-      "top": 0.8625525946704067,
-      "width": 0.20942883046237534,
-      "height": 0.011220196353436185
-    },
-    "issuer_name": {
-      "page": 0,
-      "left": 0.1214868540344515,
-      "top": 0.820476858345021,
-      "width": 0.11332728921124206,
-      "height": 0.010518934081346423
-    },
-    "issuer_title": {
-      "page": 0,
-      "left": 0.1214868540344515,
-      "top": 0.8422159887798036,
-      "width": 0.20670897552130554,
-      "height": 0.01332398316970547
+    "matched": {
+      "employee_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.11967361740707162,
+        "top": 0.29102384291725103,
+        "width": 0.11786038077969176,
+        "height": 0.011220196353436185
+      },
+      "employer_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.1214868540344515,
+        "top": 0.8625525946704067,
+        "width": 0.20942883046237534,
+        "height": 0.011220196353436185
+      },
+      "employment_start_date": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.12058023572076156,
+        "top": 0.46563814866760167,
+        "width": 0.3898458748866727,
+        "height": 0.014726507713884993
+      },
+      "issuer_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.1214868540344515,
+        "top": 0.820476858345021,
+        "width": 0.11332728921124206,
+        "height": 0.010518934081346423
+      },
+      "issuer_title": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.1214868540344515,
+        "top": 0.8422159887798036,
+        "width": 0.20670897552130554,
+        "height": 0.01332398316970547
+      },
+      "job_title": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.12058023572076156,
+        "top": 0.46563814866760167,
+        "width": 0.3898458748866727,
+        "height": 0.014726507713884993
+      },
+      "salary_or_wage": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.12058023572076156,
+        "top": 0.5028050490883591,
+        "width": 0.5258386219401632,
+        "height": 0.014726507713884993
+      }
     }
   },
+  "expected_document_class": "Employment-Verification-Letter",
   "notes": {
     "employer_name": "Both BDA and LLM currently return 'Harbor Home Care Service' (missing the trailing 's') - the letterhead and signature block both print 'Harbor Home Care Services'. Both methods share this extraction miss, not just one.",
     "employment_end_date": "Letter describes ongoing employment ('has been employed... since August 12, 2024') with no end date stated - genuinely absent."

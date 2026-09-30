@@ -12,28 +12,77 @@
     "Summary_table.Amount": "87.50, -87.50, 112.25, 112.25"
   },
   "geometry": {
-    "Account_Number": {
-      "page": 0,
-      "left": 0.2704248366013072,
-      "top": 0.8838383838383839,
-      "width": 0.10620915032679738,
-      "height": 0.010101010101010102
+    "matched": {
+      "Account_Number": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.2704248366013072,
+        "top": 0.8838383838383839,
+        "width": 0.10620915032679738,
+        "height": 0.010101010101010102
+      },
+      "Balance_DueDate": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.2704248366013072,
+        "top": 0.9292929292929293,
+        "width": 0.08741830065359477,
+        "height": 0.010732323232323232
+      },
+      "Billing_Date": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.8276143790849673,
+        "top": 0.026515151515151516,
+        "width": 0.06862745098039216,
+        "height": 0.008207070707070708
+      }
     },
-    "Balance_DueDate": {
-      "page": 0,
-      "left": 0.2704248366013072,
-      "top": 0.9292929292929293,
-      "width": 0.08741830065359477,
-      "height": 0.010732323232323232
-    },
-    "Billing_Date": {
-      "page": 0,
-      "left": 0.8276143790849673,
-      "top": 0.026515151515151516,
-      "width": 0.06862745098039216,
-      "height": 0.008207070707070708
+    "not_matched": {
+      "text_not_found": {
+        "Start_Date": {
+          "expected_value": "2026-08-01"
+        },
+        "End_Date": {
+          "expected_value": "2026-08-31"
+        },
+        "Line_Item_table.Amount": {
+          "expected_value": "54.99, 48.00, 8.00, 7.50, 4.76"
+        },
+        "Summary_table.Description": {
+          "expected_value": "Previous Balance, Payments Received, New Charges Total, Amount Due"
+        },
+        "Summary_table.Amount": {
+          "expected_value": "87.50, -87.50, 112.25, 112.25"
+        }
+      },
+      "ambiguous": {
+        "Service_Address": {
+          "expected_value": "5127 Maplewood Drive, Lincoln, NE 68506",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.11029411764705882,
+              "top": 0.26325757575757575,
+              "width": 0.7745098039215687,
+              "height": 0.017676767676767676
+            },
+            {
+              "page": 0,
+              "left": 0.11029411764705882,
+              "top": 0.3213383838383838,
+              "width": 0.7753267973856209,
+              "height": 0.011363636363636364
+            }
+          ]
+        }
+      }
     }
   },
+  "expected_document_class": "Invoices",
   "notes": {
     "Line_Item_table.Amount": "LLM only captured the first row ($54.99, Cable TV Service); this fixture lists all 5 itemized charge rows.",
     "Summary_table.Amount/Description": "LLM only captured 1 of the 4 Billing Summary rows (New Charges Total); this fixture lists all 4."

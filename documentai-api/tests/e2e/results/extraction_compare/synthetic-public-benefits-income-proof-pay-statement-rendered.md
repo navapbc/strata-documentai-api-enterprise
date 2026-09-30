@@ -1,7 +1,7 @@
 # synthetic-public-benefits-income-proof-pay-statement-rendered.png
 
 
-_Run: 2026-09-30 02:19 UTC_
+_Run: 2026-09-30 16:51 UTC_
 
 
 ## Durations
@@ -32,8 +32,8 @@ _By Extracted Data_
 - OCR Mapping: 89% equivalent, 89% close, 11% misses
 
 _By Geometry_
-- BDA: 5/18 exact, 13 miss
-- OCR Mapping: 18/18 exact, 0 miss
+- BDA: 5/21 exact, 16 miss
+- OCR Mapping: 18/21 exact, 3 miss
 
 
 ## Field Comparison
@@ -51,7 +51,7 @@ _By Geometry_
 | CurrentNetPay | 1148.22 | ✅ 1148.22 | ✅ 1148.22 | 0.89 | 1.0000 | 0.341,0.804,0.102,0.018 | ✅ 0.336,0.824,0.108,0.022 | ✅ 0.341,0.804,0.103,0.018 |
 | CurrentTotalDeductions | 457.44 | ✅ 457.44 | ✅ 457.44 | 0.94 | 1.0000 | 0.462,0.753,0.057,0.013 | ✅ 0.463,0.765,0.060,0.016 | ✅ 0.463,0.753,0.058,0.014 |
 | EmployeeAddress.City | Baltimore | ✅ Baltimore | ✅ Baltimore | 0.93 | N/A | - | 0.209,0.143,0.073,0.015 | - |
-| EmployeeAddress.Line1 | 1824 E Lafayette Ave | ✅ 1824 E Lafayette Ave | ✅ 1824 E Lafayette Ave | 0.94 | 1.0000 | - | 0.209,0.118,0.153,0.017 | 0.221,0.193,0.146,0.014 |
+| EmployeeAddress.Line1 | 1824 E Lafayette Ave | ✅ 1824 E Lafayette Ave | ✅ 1824 E Lafayette Ave | 0.94 | 1.0000 | 0.067,0.193,0.298,0.014 | ❌ 0.209,0.118,0.153,0.017 | ❌ 0.221,0.193,0.146,0.014 |
 | EmployeeAddress.Line2 | - | - | - | 0.93 | N/A | - | - | - |
 | EmployeeAddress.State | MD | ✅ MD | ✅ MD | 0.93 | 1.0000 | - | 0.288,0.143,0.026,0.013 | 0.152,0.093,0.027,0.013 |
 | EmployeeAddress.ZipCode | 21213 | ✅ 21213 | ✅ 21213 | 0.93 | 1.0000 | 0.325,0.215,0.042,0.011 | ❌ 0.319,0.143,0.044,0.014 | ✅ 0.326,0.215,0.042,0.012 |
@@ -61,7 +61,7 @@ _By Geometry_
 | EmployeeName.SuffixName | - | - | - | 0.93 | N/A | - | - | - |
 | EmployeeNumber | 10482 | ✅ 10482 | ✅ 10482 | 0.93 | 1.0000 | 0.220,0.243,0.041,0.011 | ❌ 0.209,0.176,0.044,0.013 | ✅ 0.220,0.243,0.042,0.012 |
 | FederalFilingStatus | Married | ✅ Married | ✅ Married | 0.30 | 1.0000 | - | 0.832,0.602,0.051,0.012 | 0.813,0.611,0.049,0.011 |
-| FederalTaxes.ItemDescription | Federal Income Tax | ❌ - | ✅ Federal Income Tax | - | 1.0000 | - | - | 0.069,0.611,0.129,0.012 |
+| FederalTaxes.ItemDescription | Federal Income Tax | ❌ - | ✅ Federal Income Tax | - | 1.0000 | 0.069,0.610,0.792,0.013 | ❌ - | ❌ 0.069,0.611,0.129,0.012 |
 | FederalTaxes.Period | 186.11 | ❌ - | ✅ 186.11 | - | 1.0000 | 0.465,0.610,0.052,0.013 | ❌ - | ✅ 0.465,0.610,0.053,0.013 |
 | FederalTaxes.YTD | 2287.59 | ❌ - | ✅ 2287.59 | - | 1.0000 | 0.627,0.610,0.068,0.013 | ❌ - | ✅ 0.628,0.610,0.069,0.014 |
 | HolidayHourlyRate | - | - | - | 0.94 | N/A | - | - | - |
@@ -71,7 +71,7 @@ _By Geometry_
 | PayrollNumber | - | - | - | 0.94 | N/A | - | - | - |
 | RegularHourlyRate | 18.25 | ✅ 18.25 | ✅ 18.25 | 0.93 | 1.0000 | - | 0.208,0.232,0.050,0.016 | 0.219,0.291,0.048,0.014 |
 | StateFilingStatus | Married | ✅ Married | ✅ Married | 0.07 | 1.0000 | - | 0.832,0.601,0.051,0.013 | 0.813,0.611,0.049,0.011 |
-| StateTaxes.ItemDescription | Maryland State Tax | ❌ - | ✅ Maryland State Tax | - | 1.0000 | - | - | 0.069,0.639,0.134,0.014 |
+| StateTaxes.ItemDescription | Maryland State Tax | ❌ - | ✅ Maryland State Tax | - | 1.0000 | 0.069,0.638,0.792,0.015 | ❌ - | ❌ 0.069,0.639,0.134,0.014 |
 | StateTaxes.Period | 72.78 | ❌ - | ✅ 72.78 | - | 1.0000 | 0.473,0.638,0.045,0.013 | ❌ - | ✅ 0.473,0.638,0.047,0.014 |
 | StateTaxes.YTD | 883.44 | ❌ - | ✅ 883.44 | - | 1.0000 | 0.641,0.638,0.054,0.013 | ❌ - | ✅ 0.641,0.638,0.056,0.013 |
 | YTDCityTax | - | - | - | 0.94 | N/A | - | - | - |

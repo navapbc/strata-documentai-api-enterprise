@@ -13,42 +13,123 @@
     "statement_date": "2026-09-05"
   },
   "geometry": {
-    "dependent_names": {
-      "page": 0,
-      "left": 0.19526143790849673,
-      "top": 0.36047979797979796,
-      "width": 0.10457516339869281,
-      "height": 0.013888888888888888
+    "matched": {
+      "dependent_names": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.19526143790849673,
+        "top": 0.36047979797979796,
+        "width": 0.10457516339869281,
+        "height": 0.013888888888888888
+      },
+      "document_type": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.21323529411764705,
+        "top": 0.17929292929292928,
+        "width": 0.5612745098039216,
+        "height": 0.025252525252525252
+      },
+      "payment_amount": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.7336601307189542,
+        "top": 0.7455808080808081,
+        "width": 0.08415032679738563,
+        "height": 0.01452020202020202
+      },
+      "payment_frequency": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.5122549019607843,
+        "top": 0.4457070707070707,
+        "width": 0.056372549019607844,
+        "height": 0.013888888888888888
+      },
+      "provider_address": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.10130718954248366,
+        "top": 0.08143939393939394,
+        "width": 0.45588235294117646,
+        "height": 0.027777777777777776
+      },
+      "provider_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.11519607843137254,
+        "top": 0.05303030303030303,
+        "width": 0.7352941176470589,
+        "height": 0.022727272727272728
+      },
+      "statement_date": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.7205882352941176,
+        "top": 0.0763888888888889,
+        "width": 0.0923202614379085,
+        "height": 0.011363636363636364
+      }
     },
-    "document_type": {
-      "page": 0,
-      "left": 0.21323529411764705,
-      "top": 0.17929292929292928,
-      "width": 0.5612745098039216,
-      "height": 0.025252525252525252
-    },
-    "payment_amount": {
-      "page": 0,
-      "left": 0.7336601307189542,
-      "top": 0.7455808080808081,
-      "width": 0.08415032679738563,
-      "height": 0.01452020202020202
-    },
-    "payment_frequency": {
-      "page": 0,
-      "left": 0.5122549019607843,
-      "top": 0.4457070707070707,
-      "width": 0.056372549019607844,
-      "height": 0.013888888888888888
-    },
-    "statement_date": {
-      "page": 0,
-      "left": 0.7205882352941176,
-      "top": 0.0763888888888889,
-      "width": 0.0923202614379085,
-      "height": 0.011363636363636364
+    "not_matched": {
+      "text_not_found": {
+        "service_end_date": {
+          "expected_value": "2026-08-30"
+        },
+        "service_start_date": {
+          "expected_value": "2026-08-03"
+        }
+      },
+      "ambiguous": {
+        "amount_paid": {
+          "expected_value": "1000.00",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.7336601307189542,
+              "top": 0.7828282828282829,
+              "width": 0.08415032679738563,
+              "height": 0.01452020202020202
+            },
+            {
+              "page": 0,
+              "left": 0.7336601307189542,
+              "top": 0.8207070707070707,
+              "width": 0.08415032679738563,
+              "height": 0.013888888888888888
+            }
+          ]
+        },
+        "balance_due": {
+          "expected_value": "1000.00",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.7336601307189542,
+              "top": 0.7828282828282829,
+              "width": 0.08415032679738563,
+              "height": 0.01452020202020202
+            },
+            {
+              "page": 0,
+              "left": 0.7336601307189542,
+              "top": 0.8207070707070707,
+              "width": 0.08415032679738563,
+              "height": 0.013888888888888888
+            }
+          ]
+        }
+      }
     }
   },
+  "expected_document_class": "Invoices",
   "notes": {
     "amount_paid/balance_due": "Both are genuinely $1,000.00 here (Total Charges $2,000.00 - Amount Paid $1,000.00 = Balance Due $1,000.00) - the equal values aren't an extraction error.",
     "payment_amount": "This document has no explicit per-week rate line item - only 'Care Period: August 2026' with 'Total Charges: $2,000.00' and 'Payment Frequency: Weekly'. $2,000.00 is read as the effective monthly total (since the care period is a single month), matching what both extractors independently agreed on."

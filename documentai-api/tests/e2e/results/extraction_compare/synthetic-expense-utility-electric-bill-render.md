@@ -1,7 +1,7 @@
 # synthetic-expense-utility-electric-bill-render.pdf
 
 
-_Run: 2026-09-30 02:19 UTC_
+_Run: 2026-09-30 16:51 UTC_
 
 
 ## Durations
@@ -31,14 +31,14 @@ _By Extracted Data_
 - OCR Mapping: 75% equivalent, 75% close, 25% misses
 
 _By Geometry_
-- BDA: 2/7 exact, 5 miss
-- OCR Mapping: 3/7 exact, 4 miss
+- BDA: 2/8 exact, 6 miss
+- OCR Mapping: 4/8 exact, 4 miss
 
 
 ## Field Comparison
 | Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Geo | BDA Geometry | LLM Geometry |
 |---|---|---|---|---|---|---|---|---|
-| Account Number | ****-6729 | ❌ - | ✅ ****-6729 | - | 0.9900 | - | - | 0.782,0.085,0.065,0.010 |
+| Account Number | ****-6729 | ❌ - | ✅ ****-6729 | - | 0.9900 | 0.783,0.085,0.064,0.009 | ❌ - | ✅ 0.782,0.085,0.065,0.010 |
 | Address.Service Address | 8734 Meadowbrook Lane, Cheyenne, WY 82001 | ✅ 8734 Meadowbrook Lane, Cheyenne, WY 82001 | ✅ 8734 Meadowbrook Lane, Cheyenne, WY 82001 | 0.77 | N/A | - | 0.114,0.300,0.176,0.029 | 0.114,0.300,0.134,0.010 |
 | Address.Service address pin code | 82001 | ❌ WY 82001 | ✅ 82001 | 0.80 | 1.0000 | - | 0.192,0.317,0.070,0.010 | 0.221,0.317,0.040,0.010 |
 | BalanceDue Date | 2026-09-25 | ✅ 09/25/26 | ✅ 2026-09-25 | 0.88 | 1.0000 | - | 0.744,0.172,0.141,0.012 | 0.744,0.172,0.142,0.012 |

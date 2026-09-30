@@ -10,14 +10,64 @@
     "distribution_dates": null
   },
   "geometry": {
-    "tax_year": {
-      "page": 0,
-      "left": 0.7483660130718954,
-      "top": 0.2897727272727273,
-      "width": 0.03676470588235294,
-      "height": 0.010101010101010102
+    "matched": {
+      "account_holder_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.11683006535947713,
+        "top": 0.25441919191919193,
+        "width": 0.678921568627451,
+        "height": 0.015782828282828284
+      },
+      "account_number": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.11683006535947713,
+        "top": 0.25441919191919193,
+        "width": 0.678921568627451,
+        "height": 0.015782828282828284
+      },
+      "account_type": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.11683006535947713,
+        "top": 0.22853535353535354,
+        "width": 0.673202614379085,
+        "height": 0.013888888888888888
+      },
+      "account_balance": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.7785947712418301,
+        "top": 0.6837121212121212,
+        "width": 0.08741830065359477,
+        "height": 0.013257575757575758
+      },
+      "financial_institution": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.11437908496732026,
+        "top": 0.16666666666666666,
+        "width": 0.3668300653594771,
+        "height": 0.011363636363636364
+      },
+      "tax_year": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.7483660130718954,
+        "top": 0.2897727272727273,
+        "width": 0.03676470588235294,
+        "height": 0.010101010101010102
+      }
     }
   },
+  "expected_document_class": "Investment-Account-Statement",
   "notes": {
     "contribution_dates/distribution_dates": "This render has no per-transaction table, only a Statement Period of 01/01/2025-12/31/2025 and lump-sum totals (Total Contributions $2,450.00, Total Distributions $980.00) - no specific contribution/distribution dates are printed anywhere. Both extractors filled these with the statement period itself, which isn't actually a contribution/distribution date - treated as genuinely absent."
   }

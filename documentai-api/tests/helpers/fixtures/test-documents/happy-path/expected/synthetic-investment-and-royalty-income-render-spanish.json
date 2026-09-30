@@ -17,21 +17,237 @@
     "interest_credits_cumulative": null
   },
   "geometry": {
-    "account_type": {
-      "page": 0,
-      "left": 0.7109375,
-      "top": 0.17447916666666666,
-      "width": 0.10546875,
-      "height": 0.0078125
+    "matched": {
+      "account_holder_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.056640625,
+        "top": 0.205078125,
+        "width": 0.1669921875,
+        "height": 0.01171875
+      },
+      "account_number": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.7109375,
+        "top": 0.20833333333333334,
+        "width": 0.1630859375,
+        "height": 0.008463541666666666
+      },
+      "account_type": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.7109375,
+        "top": 0.17447916666666666,
+        "width": 0.10546875,
+        "height": 0.0078125
+      },
+      "account_balance": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.8564453125,
+        "top": 0.4231770833333333,
+        "width": 0.08203125,
+        "height": 0.009765625
+      },
+      "total_value": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.8564453125,
+        "top": 0.4231770833333333,
+        "width": 0.08203125,
+        "height": 0.009765625
+      },
+      "financial_institution": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "page": 0,
+        "left": 0.0458984375,
+        "top": 0.087890625,
+        "width": 0.220703125,
+        "height": 0.009765625
+      }
     },
-    "total_value": {
-      "page": 0,
-      "left": 0.8564453125,
-      "top": 0.4231770833333333,
-      "width": 0.08203125,
-      "height": 0.009765625
+    "not_matched": {
+      "text_not_found": {
+        "document_type": {
+          "expected_value": "Brokerage Statement"
+        },
+        "contribution_dates": {
+          "expected_value": "2025-03-10, 2025-06-15"
+        }
+      },
+      "ambiguous": {
+        "tax_year": {
+          "expected_value": "2025",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.056640625,
+              "top": 0.3424479166666667,
+              "width": 0.1884765625,
+              "height": 0.008463541666666666
+            },
+            {
+              "page": 0,
+              "left": 0.056640625,
+              "top": 0.423828125,
+              "width": 0.19140625,
+              "height": 0.0078125
+            },
+            {
+              "page": 0,
+              "left": 0.75390625,
+              "top": 0.07942708333333333,
+              "width": 0.1982421875,
+              "height": 0.009114583333333334
+            },
+            {
+              "page": 0,
+              "left": 0.044921875,
+              "top": 0.4466145833333333,
+              "width": 0.5927734375,
+              "height": 0.008463541666666666
+            },
+            {
+              "page": 0,
+              "left": 0.056640625,
+              "top": 0.525390625,
+              "width": 0.19921875,
+              "height": 0.0078125
+            },
+            {
+              "page": 0,
+              "left": 0.056640625,
+              "top": 0.5442708333333334,
+              "width": 0.2646484375,
+              "height": 0.0078125
+            },
+            {
+              "page": 0,
+              "left": 0.056640625,
+              "top": 0.5625,
+              "width": 0.2646484375,
+              "height": 0.0078125
+            },
+            {
+              "page": 0,
+              "left": 0.056640625,
+              "top": 0.5813802083333334,
+              "width": 0.3125,
+              "height": 0.009114583333333334
+            },
+            {
+              "page": 0,
+              "left": 0.0576171875,
+              "top": 0.599609375,
+              "width": 0.2587890625,
+              "height": 0.0078125
+            },
+            {
+              "page": 0,
+              "left": 0.0576171875,
+              "top": 0.6184895833333334,
+              "width": 0.3125,
+              "height": 0.009765625
+            },
+            {
+              "page": 0,
+              "left": 0.0576171875,
+              "top": 0.7395833333333334,
+              "width": 0.369140625,
+              "height": 0.009765625
+            }
+          ]
+        },
+        "statement_period_start": {
+          "expected_value": "2025-01-01",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.1650390625,
+              "top": 0.3424479166666667,
+              "width": 0.080078125,
+              "height": 0.008463541666666666
+            },
+            {
+              "page": 0,
+              "left": 0.75390625,
+              "top": 0.07942708333333333,
+              "width": 0.087890625,
+              "height": 0.009114583333333334
+            },
+            {
+              "page": 0,
+              "left": 0.056640625,
+              "top": 0.525390625,
+              "width": 0.072265625,
+              "height": 0.0078125
+            }
+          ]
+        },
+        "statement_period_end": {
+          "expected_value": "2025-12-31",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.166015625,
+              "top": 0.423828125,
+              "width": 0.08203125,
+              "height": 0.0078125
+            },
+            {
+              "page": 0,
+              "left": 0.865234375,
+              "top": 0.07942708333333333,
+              "width": 0.0869140625,
+              "height": 0.009114583333333334
+            },
+            {
+              "page": 0,
+              "left": 0.146484375,
+              "top": 0.4466145833333333,
+              "width": 0.0654296875,
+              "height": 0.007161458333333333
+            },
+            {
+              "page": 0,
+              "left": 0.0576171875,
+              "top": 0.6184895833333334,
+              "width": 0.0703125,
+              "height": 0.0078125
+            }
+          ]
+        },
+        "distribution_dates": {
+          "expected_value": "2025-11-20",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.0576171875,
+              "top": 0.6002604166666666,
+              "width": 0.0703125,
+              "height": 0.007161458333333333
+            },
+            {
+              "page": 0,
+              "left": 0.0576171875,
+              "top": 0.740234375,
+              "width": 0.0771484375,
+              "height": 0.0078125
+            }
+          ]
+        }
+      }
     }
   },
+  "expected_document_class": "Investment-Account-Statement",
+  "language": "spa",
   "notes": {
     "capital_gains_distributions_cumulative/dividend_payments_cumulative/interest_credits_cumulative": "The statement only reports a single lump-sum 'Ganancias/Pérdidas Netas por Inversión' figure ($2,040.00 for the period) - it's not broken out into capital gains vs. dividends vs. interest, so these three fields are genuinely not derivable from this document.",
     "document_type": "The schema's document_type enum is Brokerage/Mutual Fund/Stock Statement, none of which is a literal match for an 'IRA' statement. 'Brokerage Statement' is used as the closest fit since the issuer is a brokerage (Harbor Brokerage Services).",

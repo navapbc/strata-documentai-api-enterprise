@@ -1,7 +1,7 @@
 # synthetic-public-benefits-identity-proof-state-photo-id.jpg
 
 
-_Run: 2026-09-30 02:19 UTC_
+_Run: 2026-09-30 16:51 UTC_
 
 
 ## Durations
@@ -31,16 +31,16 @@ _By Extracted Data_
 - OCR Mapping: 100% equivalent, 100% close, 0% misses
 
 _By Geometry_
-- TEXTRACT: 7/7 exact, 0 miss
-- OCR Mapping: 7/7 exact, 0 miss
+- TEXTRACT: 7/9 exact, 2 miss
+- OCR Mapping: 7/9 exact, 2 miss
 
 
 ## Field Comparison
 | Field | Expected | TEXTRACT Value | LLM (via Textract) Value | TEXTRACT Conf | LLM Conf | Expected Geo | TEXTRACT Geometry | LLM Geometry |
 |---|---|---|---|---|---|---|---|---|
-| ADDRESS_DETAILS.CITY | LAS VEGAS | ✅ LAS VEGAS | ✅ LAS VEGAS | 0.97 | N/A | - | - | 0.405,0.501,0.096,0.027 |
+| ADDRESS_DETAILS.CITY | LAS VEGAS | ✅ LAS VEGAS | ✅ LAS VEGAS | 0.97 | N/A | 0.405,0.460,0.367,0.067 | ❌ - | ❌ 0.405,0.501,0.096,0.027 |
 | ADDRESS_DETAILS.STATE | NV | ✅ NV | ✅ NV | 0.98 | 1.0000 | 0.506,0.499,0.022,0.019 | ✅ 0.505,0.498,0.024,0.021 | ✅ 0.506,0.499,0.023,0.020 |
-| ADDRESS_DETAILS.STREET_ADDRESS | 4821 DESERT BLOOM AVE | ✅ 4821 DESERT BLOOM AVE | ✅ 4821 DESERT BLOOM AVE | 0.97 | 1.0000 | - | 0.402,0.458,0.209,0.041 | 0.403,0.461,0.208,0.038 |
+| ADDRESS_DETAILS.STREET_ADDRESS | 4821 DESERT BLOOM AVE | ✅ 4821 DESERT BLOOM AVE | ✅ 4821 DESERT BLOOM AVE | 0.97 | 1.0000 | 0.404,0.428,0.382,0.068 | ❌ 0.402,0.458,0.209,0.041 | ❌ 0.403,0.461,0.208,0.038 |
 | ADDRESS_DETAILS.ZIP_CODE | 89146 | ✅ 89146 | ✅ 89146 | 0.98 | 1.0000 | - | 0.646,0.588,0.057,0.028 | 0.534,0.494,0.049,0.023 |
 | CLASS | D | ✅ D | ✅ D | 0.98 | 0.9700 | - | 0.353,0.730,0.012,0.020 | 0.355,0.731,0.011,0.019 |
 | COUNTY | - | - | - | 0.99 | - | - | - | - |
