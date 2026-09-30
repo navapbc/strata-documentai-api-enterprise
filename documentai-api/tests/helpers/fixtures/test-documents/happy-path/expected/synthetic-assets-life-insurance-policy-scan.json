@@ -11,6 +11,29 @@
     "premium_frequency": "Monthly",
     "statement_date": "2026-09-01"
   },
+  "geometry": {
+    "death_benefit": {
+      "page": 0,
+      "left": 0.171875,
+      "top": 0.5149739583333334,
+      "width": 0.091796875,
+      "height": 0.016927083333333332
+    },
+    "insurer_name": {
+      "page": 0,
+      "left": 0.0830078125,
+      "top": 0.14388020833333334,
+      "width": 0.23046875,
+      "height": 0.010416666666666666
+    },
+    "policy_number": {
+      "page": 0,
+      "left": 0.3037109375,
+      "top": 0.373046875,
+      "width": 0.146484375,
+      "height": 0.009114583333333334
+    }
+  },
   "notes": {
     "premium_amount": "Printed as \"$175.00\"; kept as cents-preserving string rather than rounded to a bare int, consistent with the trust-funds-investment-accounts fixture's convention."
   }

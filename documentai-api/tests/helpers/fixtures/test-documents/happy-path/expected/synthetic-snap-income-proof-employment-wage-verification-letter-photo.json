@@ -9,6 +9,29 @@
     "job_title": "Home Health Aide",
     "salary_or_wage": "$19.00 per hour"
   },
+  "geometry": {
+    "employee_name": {
+      "page": 0,
+      "left": 0.19521178637200737,
+      "top": 0.26933701657458564,
+      "width": 0.10497237569060773,
+      "height": 0.011049723756906077
+    },
+    "employer_name": {
+      "page": 0,
+      "left": 0.17955801104972377,
+      "top": 0.7783149171270718,
+      "width": 0.19705340699815838,
+      "height": 0.011740331491712707
+    },
+    "issuer_title": {
+      "page": 0,
+      "left": 0.17955801104972377,
+      "top": 0.7582872928176796,
+      "width": 0.19521178637200737,
+      "height": 0.011740331491712707
+    }
+  },
   "notes": {
     "employment_end_date": "Still currently employed - no end date is stated."
   }

@@ -46,6 +46,7 @@ TEST_DOCS_DIR = _FIXTURES_DIR / "happy-path"
 _EXTRACT_COMPARE_ADMIN_EMAIL = "extract-compare-admin@internal.invalid"
 _EXPECTED_DIR = TEST_DOCS_DIR / "expected"
 _RESULTS_DIR = Path(__file__).parent / "results" / "extraction_compare"
+_GEO_TOLERANCE = 0.025
 
 
 class _AccuracyDisplay(TypedDict):
@@ -69,6 +70,8 @@ class _CostRow:
     dur_ratio: str
     p_avg: _AccuracyDisplay
     l_avg: _AccuracyDisplay
+    p_geo_counts: str
+    l_geo_counts: str
 
 
 class _ResultData(StrEnum):
@@ -91,6 +94,14 @@ class _ResultData(StrEnum):
     L_EXACT = "l_exact"
     L_APPROX = "l_approx"
     L_MISS = "l_miss"
+    PRIMARY_GEO = "primary_geo"
+    OCR_MAPPING_GEO = "ocr-mapping_geo"
+    P_GEO_EXACT = "p_geo_exact"
+    P_GEO_APPROX = "p_geo_approx"
+    P_GEO_MISS = "p_geo_miss"
+    L_GEO_EXACT = "l_geo_exact"
+    L_GEO_APPROX = "l_geo_approx"
+    L_GEO_MISS = "l_geo_miss"
 
 
 # =============================================================================
@@ -115,6 +126,18 @@ def _load_expected(filename: str) -> dict[str, str] | None:
         return None
     data = json.loads(path.read_text())
     return {k: str(v) if v is not None else NO_VALUE for k, v in data.get("fields", {}).items()}
+
+
+def _load_expected_geometry(filename: str) -> dict[str, str] | None:
+    path = _EXPECTED_DIR / f"{Path(filename).stem}.json"
+    if not path.exists():
+        return None
+    geo = json.loads(path.read_text()).get("geometry", {})
+    result = {
+        field: f"{bb['left']:.3f},{bb['top']:.3f},{bb['width']:.3f},{bb['height']:.3f}"
+        for field, bb in geo.items()
+    }
+    return result or None
 
 
 def _compare_files() -> list[str]:
@@ -165,7 +188,9 @@ def test_extraction_compare(filename, compare_jwt):
     assert len(result.ocr_mapping) > 0, "OCR mapping returned no fields"
 
     print_comparison(filename, result, _load_expected(filename))
-    _write_comparison_md(filename, result, _load_expected(filename))
+    _write_comparison_md(
+        filename, result, _load_expected(filename), _load_expected_geometry(filename)
+    )
 
 
 # =============================================================================
@@ -191,8 +216,9 @@ def _compute_accuracy(
     primary: dict[str, CompareFieldResult],
     llm: dict[str, CompareFieldResult],
     expected: dict[str, str] | None,
+    expected_geo: dict[str, str] | None = None,
 ) -> dict[str, dict[str, int]]:
-    """Count exact/approx/non-match for primary and llm against expected."""
+    """Count exact/approx/non-match for primary and llm against expected fields and geometry."""
     if expected is None:
         return {}
 
@@ -202,7 +228,6 @@ def _compute_accuracy(
     for field, ev in expected.items():
         if ev == NO_VALUE:
             continue
-
         pc[
             match_icon(
                 ev,
@@ -216,7 +241,17 @@ def _compute_accuracy(
             )
         ] += 1
 
-    return {
+    pgc: Counter[str] = Counter()
+    lgc: Counter[str] = Counter()
+
+    if expected_geo:
+        for field, exp_geo in expected_geo.items():
+            p_geo = _fmt_geometry(primary.get(field, CompareFieldResult()).geometry)
+            l_geo = _fmt_geometry(llm.get(field, CompareFieldResult()).geometry)
+            pgc[match_icon(exp_geo, p_geo, tolerance=_GEO_TOLERANCE)] += 1
+            lgc[match_icon(exp_geo, l_geo, tolerance=_GEO_TOLERANCE)] += 1
+
+    result: dict[str, dict[str, int]] = {
         _ResultData.PRIMARY: {
             _ResultData.EXACT: pc[ICON_EXACT],
             _ResultData.APPROX: pc[ICON_APPROX],
@@ -228,6 +263,18 @@ def _compute_accuracy(
             _ResultData.MISS: lc[ICON_MISS],
         },
     }
+    if expected_geo:
+        result[_ResultData.PRIMARY_GEO] = {
+            _ResultData.EXACT: pgc[ICON_EXACT],
+            _ResultData.APPROX: pgc[ICON_APPROX],
+            _ResultData.MISS: pgc[ICON_MISS],
+        }
+        result[_ResultData.OCR_MAPPING_GEO] = {
+            _ResultData.EXACT: lgc[ICON_EXACT],
+            _ResultData.APPROX: lgc[ICON_APPROX],
+            _ResultData.MISS: lgc[ICON_MISS],
+        }
+    return result
 
 
 def _avg_accuracy(exact: list[int], approx: list[int], miss: list[int]) -> _AccuracyDisplay:
@@ -268,6 +315,18 @@ def _fmt_accuracy(a: dict[str, int] | None) -> _AccuracyDisplay:
     )
 
 
+def _fmt_geo_accuracy(a: dict[str, int] | None) -> str:
+    """Format geo accuracy as 'n/total exact, n miss' raw counts."""
+    if not a:
+        return "-"
+    exact = a.get(_ResultData.EXACT, 0)
+    miss = a.get(_ResultData.MISS, 0)
+    total = exact + a.get(_ResultData.APPROX, 0) + miss
+    if total == 0:
+        return "-"
+    return f"{exact}/{total} exact, {miss} miss"
+
+
 # =============================================================================
 # Per-document writers
 # =============================================================================
@@ -291,6 +350,8 @@ def _write_result_data(
         _ResultData.COST: result.cost,
         _ResultData.COST_BY_REASON: result.cost_by_reason,
         _ResultData.ACCURACY: accuracy,
+        _ResultData.PRIMARY: {f: r.model_dump() for f, r in result.primary.items()},
+        _ResultData.OCR_MAPPING: {f: r.model_dump() for f, r in result.ocr_mapping.items()},
     }
     (_RESULTS_DIR / f"{Path(filename).stem}.data.json").write_text(
         json.dumps(result_data, default=float)
@@ -298,10 +359,13 @@ def _write_result_data(
 
 
 def _write_comparison_md(
-    filename: str, result: CompareResponse, expected: dict[str, str] | None
+    filename: str,
+    result: CompareResponse,
+    expected: dict[str, str] | None,
+    expected_geo: dict[str, str] | None = None,
 ) -> None:
     """Write per-document field comparison to a markdown file and persist result data."""
-    accuracy = _compute_accuracy(result.primary, result.ocr_mapping, expected)
+    accuracy = _compute_accuracy(result.primary, result.ocr_mapping, expected, expected_geo)
     _write_result_data(filename, result, accuracy)
 
     primary_method = result.primary_method
@@ -355,13 +419,19 @@ def _write_comparison_md(
     if accuracy:
         p_acc = _fmt_accuracy(accuracy.get(_ResultData.PRIMARY))
         l_acc = _fmt_accuracy(accuracy.get(_ResultData.OCR_MAPPING))
+        p_geo_acc = _fmt_geo_accuracy(accuracy.get(_ResultData.PRIMARY_GEO))
+        l_geo_acc = _fmt_geo_accuracy(accuracy.get(_ResultData.OCR_MAPPING_GEO))
         lines.append("\n## Accuracy")
+        lines.append("\n_By Extracted Data_")
         lines.append(
             f"- {primary_method.upper()}: {p_acc['exact']} equivalent, {p_acc['loose']} close, {p_acc['miss']} misses"
         )
         lines.append(
             f"- OCR Mapping: {l_acc['exact']} equivalent, {l_acc['loose']} close, {l_acc['miss']} misses"
         )
+        lines.append("\n_By Geometry_")
+        lines.append(f"- {primary_method.upper()}: {p_geo_acc}")
+        lines.append(f"- OCR Mapping: {l_geo_acc}")
         lines.append("")
 
     lines.append("\n## Field Comparison")
@@ -373,9 +443,9 @@ def _write_comparison_md(
             "LLM (via Textract) Value",
             f"{primary_method.upper()} Conf",
             "LLM Conf",
+            "Expected Geo",
             f"{primary_method.upper()} Geometry",
             "LLM Geometry",
-            "Geo Match",
         ]
     )
     lines.append(header)
@@ -388,7 +458,17 @@ def _write_comparison_md(
         llm_val = llm_val.replace("\n", " ")
         p_geo = _fmt_geometry(p.geometry)
         llm_geo = _fmt_geometry(lm.geometry)
-        geo_match = match_icon(p_geo, llm_geo, tolerance=0.005)
+        exp_geo = expected_geo.get(field, NO_VALUE) if expected_geo else NO_VALUE
+        p_geo_cell = (
+            f"{match_icon(exp_geo, p_geo, tolerance=_GEO_TOLERANCE)} "
+            if exp_geo != NO_VALUE
+            else ""
+        ) + p_geo
+        llm_geo_cell = (
+            f"{match_icon(exp_geo, llm_geo, tolerance=_GEO_TOLERANCE)} "
+            if exp_geo != NO_VALUE
+            else ""
+        ) + llm_geo
         if expected is not None:
             p_cell = f"{match_icon(exp_val, p_val, field_name=field)} {p_val}".strip()
             llm_cell = f"{match_icon(exp_val, llm_val, field_name=field)} {llm_val}".strip()
@@ -396,7 +476,7 @@ def _write_comparison_md(
             p_cell = p_val
             llm_cell = llm_val
         lines.append(
-            f"| {field} | {exp_val} | {p_cell} | {llm_cell} | {p_conf} | {llm_conf} | {p_geo} | {llm_geo} | {geo_match} |"
+            f"| {field} | {exp_val} | {p_cell} | {llm_cell} | {p_conf} | {llm_conf} | {exp_geo} | {p_geo_cell} | {llm_geo_cell} |"
         )
     _RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     results_file.write_text("\n".join(lines) + "\n")
@@ -435,6 +515,12 @@ def _aggregate_result_data(worker_files: list[Path], results_dir: Path) -> _Summ
             _ResultData.L_EXACT: [],
             _ResultData.L_APPROX: [],
             _ResultData.L_MISS: [],
+            _ResultData.P_GEO_EXACT: [],
+            _ResultData.P_GEO_APPROX: [],
+            _ResultData.P_GEO_MISS: [],
+            _ResultData.L_GEO_EXACT: [],
+            _ResultData.L_GEO_APPROX: [],
+            _ResultData.L_GEO_MISS: [],
         }
     )
     rows = []
@@ -468,6 +554,17 @@ def _aggregate_result_data(worker_files: list[Path], results_dir: Path) -> _Summ
             llm_dur_by_method[primary_method].append(llm_dur)
 
         acc = data.get(_ResultData.ACCURACY) or {}
+        primary = {
+            f: CompareFieldResult.model_validate(v)
+            for f, v in data.get(_ResultData.PRIMARY, {}).items()
+        }
+        ocr_mapping = {
+            f: CompareFieldResult.model_validate(v)
+            for f, v in data.get(_ResultData.OCR_MAPPING, {}).items()
+        }
+        expected = _load_expected(filename)
+        expected_geo = _load_expected_geometry(filename)
+        acc = _compute_accuracy(primary, ocr_mapping, expected, expected_geo)
         if acc:
             a = accuracy_by_method[primary_method]
             a[_ResultData.P_EXACT].append(
@@ -485,6 +582,24 @@ def _aggregate_result_data(worker_files: list[Path], results_dir: Path) -> _Summ
             )
             a[_ResultData.L_MISS].append(
                 acc.get(_ResultData.OCR_MAPPING, {}).get(_ResultData.MISS, 0)
+            )
+            a[_ResultData.P_GEO_EXACT].append(
+                acc.get(_ResultData.PRIMARY_GEO, {}).get(_ResultData.EXACT, 0)
+            )
+            a[_ResultData.P_GEO_APPROX].append(
+                acc.get(_ResultData.PRIMARY_GEO, {}).get(_ResultData.APPROX, 0)
+            )
+            a[_ResultData.P_GEO_MISS].append(
+                acc.get(_ResultData.PRIMARY_GEO, {}).get(_ResultData.MISS, 0)
+            )
+            a[_ResultData.L_GEO_EXACT].append(
+                acc.get(_ResultData.OCR_MAPPING_GEO, {}).get(_ResultData.EXACT, 0)
+            )
+            a[_ResultData.L_GEO_APPROX].append(
+                acc.get(_ResultData.OCR_MAPPING_GEO, {}).get(_ResultData.APPROX, 0)
+            )
+            a[_ResultData.L_GEO_MISS].append(
+                acc.get(_ResultData.OCR_MAPPING_GEO, {}).get(_ResultData.MISS, 0)
             )
 
         rows.append(
@@ -600,6 +715,26 @@ def _cost_compare_section(
         else _NO_ACCURACY
     )
 
+    def _geo_counts(exact_list: list[int], approx_list: list[int], miss_list: list[int]) -> str:
+        exact = sum(exact_list)
+        total = exact + sum(approx_list) + sum(miss_list)
+        return f"{exact}/{total}" if total else "-"
+
+    p_geo_counts = (
+        _geo_counts(
+            a[_ResultData.P_GEO_EXACT], a[_ResultData.P_GEO_APPROX], a[_ResultData.P_GEO_MISS]
+        )
+        if a
+        else "-"
+    )
+    l_geo_counts = (
+        _geo_counts(
+            a[_ResultData.L_GEO_EXACT], a[_ResultData.L_GEO_APPROX], a[_ResultData.L_GEO_MISS]
+        )
+        if a
+        else "-"
+    )
+
     return [
         _CostRow(
             method=primary_method_key,
@@ -612,8 +747,130 @@ def _cost_compare_section(
             dur_ratio=dur_ratio,
             p_avg=p_avg,
             l_avg=l_avg,
+            p_geo_counts=p_geo_counts,
+            l_geo_counts=l_geo_counts,
         )
     ]
+
+
+def regen_comparison_md(results_dir: Path) -> None:
+    """Re-render per-document markdown files from existing .data.json sidecars."""
+    for sidecar in sorted(results_dir.glob("*.data.json")):
+        data = json.loads(sidecar.read_text())
+        filename = data[_ResultData.FILENAME]
+        primary_method = data.get(_ResultData.PRIMARY_METHOD, ExtractMethod.BDA)
+        primary = {
+            f: CompareFieldResult.model_validate(v)
+            for f, v in data.get(_ResultData.PRIMARY, {}).items()
+        }
+        ocr_mapping = {
+            f: CompareFieldResult.model_validate(v)
+            for f, v in data.get(_ResultData.OCR_MAPPING, {}).items()
+        }
+        expected = _load_expected(filename)
+        expected_geo = _load_expected_geometry(filename)
+        accuracy = _compute_accuracy(primary, ocr_mapping, expected, expected_geo)
+
+        all_fields = sorted(
+            set(primary) | set(ocr_mapping) | (set(expected) if expected else set())
+        )
+        results_file = results_dir / f"{Path(filename).stem}.md"
+        run_ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
+        lines = [f"# {filename}\n", f"\n_Run: {run_ts}_\n"]
+
+        durations = data.get(_ResultData.DURATIONS, {})
+        if durations:
+            lines.append("\n## Durations\n")
+            for method, dur in durations.items():
+                lines.append(f"- {method}: {dur}s extraction")
+            lines.append("")
+
+        cost = data.get(_ResultData.COST, {})
+        if cost:
+            lines.append("\n## Cost\n")
+            lines.append("_By Service_")
+            for model_id, entry_cost in cost.items():
+                lines.append(f"- {model_id}: ${entry_cost:.8f}")
+            lines.append(f"- **total: ${sum(cost.values()):.8f}**")
+            cost_by_reason = data.get(_ResultData.COST_BY_REASON, {})
+            if cost_by_reason:
+                lines.append("")
+                lines.append("_By Extraction Method_")
+                lines.append(
+                    f"- shared (preclassification): ${cost_by_reason.get('shared', 0.0):.8f}"
+                )
+                lines.append(
+                    f"- ocr-mapping extraction: ${cost_by_reason.get(LlmUsageReason.OCR_MAPPING, 0.0):.8f}"
+                )
+                lines.append(
+                    f"- primary ({primary_method}): ${cost_by_reason.get('primary', 0.0):.8f}"
+                )
+                lines.append(f"- **total: ${sum(cost.values()):.8f}**")
+            lines.append("")
+
+        if accuracy:
+            p_acc = _fmt_accuracy(accuracy.get(_ResultData.PRIMARY))
+            l_acc = _fmt_accuracy(accuracy.get(_ResultData.OCR_MAPPING))
+            p_geo_acc = _fmt_geo_accuracy(accuracy.get(_ResultData.PRIMARY_GEO))
+            l_geo_acc = _fmt_geo_accuracy(accuracy.get(_ResultData.OCR_MAPPING_GEO))
+            lines.append("\n## Accuracy")
+            lines.append("\n_By Extracted Data_")
+            lines.append(
+                f"- {primary_method.upper()}: {p_acc['exact']} equivalent, {p_acc['loose']} close, {p_acc['miss']} misses"
+            )
+            lines.append(
+                f"- OCR Mapping: {l_acc['exact']} equivalent, {l_acc['loose']} close, {l_acc['miss']} misses"
+            )
+            lines.append("\n_By Geometry_")
+            lines.append(f"- {primary_method.upper()}: {p_geo_acc}")
+            lines.append(f"- OCR Mapping: {l_geo_acc}")
+            lines.append("")
+
+        lines.append("\n## Field Comparison")
+        header, sep = _md_table_header(
+            [
+                "Field",
+                "Expected",
+                f"{primary_method.upper()} Value",
+                "LLM (via Textract) Value",
+                f"{primary_method.upper()} Conf",
+                "LLM Conf",
+                "Expected Geo",
+                f"{primary_method.upper()} Geometry",
+                "LLM Geometry",
+            ]
+        )
+        lines.append(header)
+        lines.append(sep)
+        for field in all_fields:
+            p = primary.get(field, CompareFieldResult())
+            lm = ocr_mapping.get(field, CompareFieldResult())
+            p_val, llm_val, p_conf, llm_conf, exp_val = field_display_values(p, lm, expected, field)
+            p_val = p_val.replace("\n", " ")
+            llm_val = llm_val.replace("\n", " ")
+            p_geo = _fmt_geometry(p.geometry)
+            llm_geo = _fmt_geometry(lm.geometry)
+            exp_geo = expected_geo.get(field, NO_VALUE) if expected_geo else NO_VALUE
+            p_geo_cell = (
+                f"{match_icon(exp_geo, p_geo, tolerance=_GEO_TOLERANCE)} "
+                if exp_geo != NO_VALUE
+                else ""
+            ) + p_geo
+            llm_geo_cell = (
+                f"{match_icon(exp_geo, llm_geo, tolerance=_GEO_TOLERANCE)} "
+                if exp_geo != NO_VALUE
+                else ""
+            ) + llm_geo
+            if expected is not None:
+                p_cell = f"{match_icon(exp_val, p_val, field_name=field)} {p_val}".strip()
+                llm_cell = f"{match_icon(exp_val, llm_val, field_name=field)} {llm_val}".strip()
+            else:
+                p_cell = p_val
+                llm_cell = llm_val
+            lines.append(
+                f"| {field} | {exp_val} | {p_cell} | {llm_cell} | {p_conf} | {llm_conf} | {exp_geo} | {p_geo_cell} | {llm_geo_cell} |"
+            )
+        results_file.write_text("\n".join(lines) + "\n")
 
 
 def write_extraction_compare_summary(results_dir: Path) -> None:
@@ -688,37 +945,21 @@ def write_extraction_compare_summary(results_dir: Path) -> None:
         lines.append("")
 
         lines.append("\n### Accuracy")
-        if len(cost_rows) == 2:
-            r0, r1 = cost_rows
-            header, sep = _md_table_header(
-                ["Metric", f"{r0.method.upper()} vs LLM", f"{r1.method.upper()} vs LLM"]
-            )
-            lines.append(header)
-            lines.append(sep)
-            lines.append(
-                f"| Equivalent Match | {r0.p_avg['exact']} / {r0.l_avg['exact']} | {r1.p_avg['exact']} / {r1.l_avg['exact']} |"
-            )
-            lines.append(
-                f"| Close Match | {r0.p_avg['loose']} / {r0.l_avg['loose']} | {r1.p_avg['loose']} / {r1.l_avg['loose']} |"
-            )
-            lines.append("")
-        else:
-            header, sep = _md_table_header(
-                ["Metric"] + [f"{r.method.upper()} vs LLM" for r in cost_rows]
-            )
-            lines.append(header)
-            lines.append(sep)
-            lines.append(
-                "| Equivalent Match | "
-                + " | ".join(f"{r.p_avg['exact']} / {r.l_avg['exact']}" for r in cost_rows)
-                + " |"
-            )
-            lines.append(
-                "| Close Match | "
-                + " | ".join(f"{r.p_avg['loose']} / {r.l_avg['loose']}" for r in cost_rows)
-                + " |"
-            )
-            lines.append("")
+        header, sep = _md_table_header(
+            [
+                "Primary Method",
+                "Equiv Match (Primary / LLM)",
+                "Close Match (Primary / LLM)",
+                "Geo Match (Primary / LLM)",
+            ]
+        )
+        lines.append(header)
+        lines.append(sep)
+        lines.extend(
+            f"| {r.method} | {r.p_avg['exact']} / {r.l_avg['exact']} | {r.p_avg['loose']} / {r.l_avg['loose']} | {r.p_geo_counts} / {r.l_geo_counts} |"
+            for r in cost_rows
+        )
+        lines.append("")
 
     if result["rows"]:
         _write_doc_summary_table(lines, result["rows"])

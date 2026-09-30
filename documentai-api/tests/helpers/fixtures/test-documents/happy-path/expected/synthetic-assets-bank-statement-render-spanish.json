@@ -16,6 +16,15 @@
     "transaction_details.withdrawals": "0.00, 0.00, 0.00, 1758.90, 959.40, 479.70",
     "transaction_details.balance": "4025.00, 5900.00, 6050.00, 4291.10, 3331.70, 2852.00"
   },
+  "geometry": {
+    "branch_transit_number": {
+      "page": 0,
+      "left": 0.7109375,
+      "top": 0.3463541666666667,
+      "width": 0.083984375,
+      "height": 0.009114583333333334
+    }
+  },
   "notes": {
     "account_number": "Printed as \"•••• 7421\" (bullet-masked). Both BDA and LLM normalized this down to just \"7421\" - a defensible read, but this fixture uses the as-printed masked form as ground truth, consistent with the identity-proof fixture's convention.",
     "transaction_details.description": "As-printed text includes an en-dash before the payee/vendor (e.g. \"DÉBITO: Servicios Públicos – Alabama Power\"); LLM dropped the dash on two of the six rows.",

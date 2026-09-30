@@ -17,6 +17,29 @@
     "recipient_state": null,
     "recipient_zip_code": null
   },
+  "geometry": {
+    "case_number": {
+      "page": 0,
+      "left": 0.6740196078431373,
+      "top": 0.12121212121212122,
+      "width": 0.1642156862745098,
+      "height": 0.012626262626262626
+    },
+    "payment_amount": {
+      "page": 0,
+      "left": 0.3741830065359477,
+      "top": 0.43876262626262624,
+      "width": 0.04003267973856209,
+      "height": 0.012626262626262626
+    },
+    "payment_frequency": {
+      "page": 0,
+      "left": 0.3741830065359477,
+      "top": 0.4640151515151515,
+      "width": 0.05800653594771242,
+      "height": 0.01452020202020202
+    }
+  },
   "notes": {
     "child_name": "No child is named anywhere on any of the three child-support documents in this set - all are payor/recipient payment registries, not the underlying court order naming the child. Genuinely absent in all three.",
     "recipient_address": "This document has no recipient/payee section at all - only 'Participant Information' for Jordan Rivera, whose Role is explicitly 'Payor'. LLM's extracted value (1523 Aspen Ridge Drive, Helena, MT 59601) is actually the payor's own address, mislabeled as the recipient's.",

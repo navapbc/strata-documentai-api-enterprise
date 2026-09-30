@@ -14,6 +14,36 @@
     "PAYMENTDETAILS.AMOUNTPAID": "1203.00",
     "expire": "No"
   },
+  "geometry": {
+    "RECEIPT_ID": {
+      "page": 0,
+      "left": 0.755859375,
+      "top": 0.091796875,
+      "width": 0.1416015625,
+      "height": 0.010416666666666666
+    },
+    "RECEIPT_DATE": {
+      "page": 0,
+      "left": 0.755859375,
+      "top": 0.11848958333333333,
+      "width": 0.09765625,
+      "height": 0.01171875
+    },
+    "PAYMENTDETAILS.TOTAL": {
+      "page": 0,
+      "left": 0.8115234375,
+      "top": 0.7421875,
+      "width": 0.0966796875,
+      "height": 0.014973958333333334
+    },
+    "PAYMENTDETAILS.AMOUNTPAID": {
+      "page": 0,
+      "left": 0.8115234375,
+      "top": 0.7421875,
+      "width": 0.0966796875,
+      "height": 0.014973958333333334
+    }
+  },
   "notes": {
     "LINEITEMS.QTY/PRODUCT_CODE": "This is a money-order receipt, not an itemized goods receipt - no quantity or product code concept applies.",
     "LINEITEMS.AMT": "The Payment Summary table has 2 rows (Money Order Amount $1,200.00, Issuance Fee - with a blank Amount cell and $3.00 only in the Fees column); only the first row has a value under 'Amount'.",

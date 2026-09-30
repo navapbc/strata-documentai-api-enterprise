@@ -12,6 +12,7 @@
     "service_end_date": "2026-08-31",
     "statement_date": "2026-09-05"
   },
+  "geometry": {},
   "notes": {
     "_general": "This document never produced a successful e2e run (no .md draft existed), so there's no BDA/LLM output to cross-check against - read directly from the image.",
     "payment_amount": "Uses the weekly rate ($375.00), matching the convention used on the sibling render/scan Dependent-Care-Statement documents.",

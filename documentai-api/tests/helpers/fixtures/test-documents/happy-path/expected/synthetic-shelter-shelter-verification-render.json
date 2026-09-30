@@ -8,6 +8,22 @@
     "has_signature": true,
     "statement_date": "2026-09-05"
   },
+  "geometry": {
+    "author_name": {
+      "page": 0,
+      "left": 0.12663398692810457,
+      "top": 0.7733585858585859,
+      "width": 0.13562091503267973,
+      "height": 0.013888888888888888
+    },
+    "author_relationship": {
+      "page": 0,
+      "left": 0.12663398692810457,
+      "top": 0.7922979797979798,
+      "width": 0.14705882352941177,
+      "height": 0.013257575757575758
+    }
+  },
   "notes": {
     "assertion_text": "LLM only captured the first sentence; the letter has a second sentence about rent payment history that's part of the same assertion."
   }

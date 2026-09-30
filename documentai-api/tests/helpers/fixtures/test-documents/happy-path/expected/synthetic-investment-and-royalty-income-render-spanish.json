@@ -16,6 +16,22 @@
     "dividend_payments_cumulative": null,
     "interest_credits_cumulative": null
   },
+  "geometry": {
+    "account_type": {
+      "page": 0,
+      "left": 0.7109375,
+      "top": 0.17447916666666666,
+      "width": 0.10546875,
+      "height": 0.0078125
+    },
+    "total_value": {
+      "page": 0,
+      "left": 0.8564453125,
+      "top": 0.4231770833333333,
+      "width": 0.08203125,
+      "height": 0.009765625
+    }
+  },
   "notes": {
     "capital_gains_distributions_cumulative/dividend_payments_cumulative/interest_credits_cumulative": "The statement only reports a single lump-sum 'Ganancias/Pérdidas Netas por Inversión' figure ($2,040.00 for the period) - it's not broken out into capital gains vs. dividends vs. interest, so these three fields are genuinely not derivable from this document.",
     "document_type": "The schema's document_type enum is Brokerage/Mutual Fund/Stock Statement, none of which is a literal match for an 'IRA' statement. 'Brokerage Statement' is used as the closest fit since the issuer is a brokerage (Harbor Brokerage Services).",

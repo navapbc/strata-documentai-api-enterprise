@@ -11,6 +11,29 @@
     "distributions_during_period": "900.00",
     "asset_types": "Acciones (Nacionales), Bonos (Renta Fija), Fondos Mutuos, Efectivo y Equivalentes"
   },
+  "geometry": {
+    "trustee_name": {
+      "page": 0,
+      "left": 0.73828125,
+      "top": 0.0234375,
+      "width": 0.169921875,
+      "height": 0.009765625
+    },
+    "account_number": {
+      "page": 0,
+      "left": 0.2578125,
+      "top": 0.28515625,
+      "width": 0.103515625,
+      "height": 0.0078125
+    },
+    "distributions_during_period": {
+      "page": 0,
+      "left": 0.5478515625,
+      "top": 0.5572916666666666,
+      "width": 0.0498046875,
+      "height": 0.009114583333333334
+    }
+  },
   "notes": {
     "trust_name": "A stray overlapping character appears after \"2019\" in the scan (likely a rendering artifact, not real text); read as \"Fideicomiso Rivera 2019\"."
   }

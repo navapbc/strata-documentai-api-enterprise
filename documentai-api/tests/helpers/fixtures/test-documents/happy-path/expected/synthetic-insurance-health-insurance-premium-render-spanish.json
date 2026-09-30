@@ -13,6 +13,29 @@
     "statement_date": "2026-09-02",
     "subsidy_or_tax_credit_amount": "225.00"
   },
+  "geometry": {
+    "policy_or_member_id": {
+      "page": 0,
+      "left": 0.7314453125,
+      "top": 0.126953125,
+      "width": 0.1328125,
+      "height": 0.008463541666666666
+    },
+    "premium_amount": {
+      "page": 0,
+      "left": 0.8623046875,
+      "top": 0.5481770833333334,
+      "width": 0.0654296875,
+      "height": 0.011067708333333334
+    },
+    "subsidy_or_tax_credit_amount": {
+      "page": 0,
+      "left": 0.8662109375,
+      "top": 0.4967447916666667,
+      "width": 0.0615234375,
+      "height": 0.009765625
+    }
+  },
   "notes": {
     "premium_amount": "Uses 'Cantidad adeudada' ($260.00, after the -$225 tax credit and +$35 adjustment), not 'Prima bruta mensual' ($450.00) - consistent with the other two documents in this set. LLM's value (450.00) is the gross premium, not the amount actually due.",
     "payment_status": "Not printed as a literal 'Paid' label like the other two documents, but 'Pagos aplicados -$260.00' exactly matches 'Cantidad adeudada $260.00' with a resulting 'Saldo actual $0.00' - fully paid."

@@ -29,6 +29,29 @@
     "Usage.usage": "640 kWh",
     "UsageMult": null
   },
+  "geometry": {
+    "MeterRead.Current value": {
+      "page": 0,
+      "left": 0.7685546875,
+      "top": 0.40234375,
+      "width": 0.044921875,
+      "height": 0.014973958333333334
+    },
+    "MeterRead.Previous value": {
+      "page": 0,
+      "left": 0.6591796875,
+      "top": 0.4049479166666667,
+      "width": 0.041015625,
+      "height": 0.008463541666666666
+    },
+    "Provider": {
+      "page": 0,
+      "left": 0.1650390625,
+      "top": 0.039713541666666664,
+      "width": 0.3017578125,
+      "height": 0.022135416666666668
+    }
+  },
   "notes": {
     "BalanceGreaterCheck": "Neither extractor produced a value. Current ($118.63) > Previous ($112.74), so 'Yes'.",
     "Line_Item_Charges": "LLM only captured 1 of the 6 itemized charge rows.",

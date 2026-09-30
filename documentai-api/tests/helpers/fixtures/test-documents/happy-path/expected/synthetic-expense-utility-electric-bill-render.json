@@ -29,6 +29,57 @@
     "Usage.usage": "920 kWh",
     "UsageMult": null
   },
+  "geometry": {
+    "Current Balance": {
+      "page": 0,
+      "left": 0.6772875816993464,
+      "top": 0.2922979797979798,
+      "width": 0.05065359477124183,
+      "height": 0.011994949494949494
+    },
+    "Meter Number": {
+      "page": 0,
+      "left": 0.15604575163398693,
+      "top": 0.46654040404040403,
+      "width": 0.07352941176470588,
+      "height": 0.008838383838383838
+    },
+    "MeterRead.Meter ID": {
+      "page": 0,
+      "left": 0.15604575163398693,
+      "top": 0.46654040404040403,
+      "width": 0.07352941176470588,
+      "height": 0.008838383838383838
+    },
+    "Previous Balance": {
+      "page": 0,
+      "left": 0.6772875816993464,
+      "top": 0.23926767676767677,
+      "width": 0.05800653594771242,
+      "height": 0.011363636363636364
+    },
+    "Provider": {
+      "page": 0,
+      "left": 0.23039215686274508,
+      "top": 0.09595959595959595,
+      "width": 0.31290849673202614,
+      "height": 0.023989898989898988
+    },
+    "Total Balance Due": {
+      "page": 0,
+      "left": 0.6772875816993464,
+      "top": 0.2922979797979798,
+      "width": 0.05065359477124183,
+      "height": 0.011994949494949494
+    },
+    "Usage.power factor": {
+      "page": 0,
+      "left": 0.3611111111111111,
+      "top": 0.7146464646464646,
+      "width": 0.08986928104575163,
+      "height": 0.012626262626262626
+    }
+  },
   "notes": {
     "MeterRead.Previous value/Delta": "This bill only states 'Current Usage: 920 kWh' - it has no actual previous/current register reading pair (unlike the -scan variant of this document, which does). The 'Usage Comparison' chart's 860 kWh and 940 kWh bars are 'previous period' and 'same period last year' comparisons, not a sequential prior meter reading - LLM's -20kWh delta (920-940) wrongly treats the 'same period last year' bar as the prior reading.",
     "Is_PrevGreaterThanCurr": "Not derivable for the same reason - no genuine previous register reading exists on this document.",

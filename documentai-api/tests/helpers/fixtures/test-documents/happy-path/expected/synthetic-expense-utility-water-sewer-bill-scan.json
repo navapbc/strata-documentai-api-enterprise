@@ -22,6 +22,78 @@
     "Total_Current_Charges": "64.86",
     "is_total_amount_greater_than_equal_to_current_charges": true
   },
+  "geometry": {
+    "Account_Info.Acct_Name": {
+      "page": 0,
+      "left": 0.1953125,
+      "top": 0.875,
+      "width": 0.091796875,
+      "height": 0.009765625
+    },
+    "Account_Info.Acct_No": {
+      "page": 0,
+      "left": 0.6982421875,
+      "top": 0.2571614583333333,
+      "width": 0.1162109375,
+      "height": 0.009114583333333334
+    },
+    "Account_Info.Meter_Number": {
+      "page": 0,
+      "left": 0.69921875,
+      "top": 0.2747395833333333,
+      "width": 0.09375,
+      "height": 0.008463541666666666
+    },
+    "Curr_Meter_Reading": {
+      "page": 0,
+      "left": 0.326171875,
+      "top": 0.408203125,
+      "width": 0.0400390625,
+      "height": 0.017578125
+    },
+    "Prev_Meter_Reading": {
+      "page": 0,
+      "left": 0.326171875,
+      "top": 0.4309895833333333,
+      "width": 0.0400390625,
+      "height": 0.009765625
+    },
+    "Prev_Bal": {
+      "page": 0,
+      "left": 0.4306640625,
+      "top": 0.17317708333333334,
+      "width": 0.0439453125,
+      "height": 0.010416666666666666
+    },
+    "Service_Address.Building_Line 1": {
+      "page": 0,
+      "left": 0.1953125,
+      "top": 0.8938802083333334,
+      "width": 0.138671875,
+      "height": 0.01171875
+    },
+    "Service_Address.Street": {
+      "page": 0,
+      "left": 0.1953125,
+      "top": 0.8938802083333334,
+      "width": 0.138671875,
+      "height": 0.01171875
+    },
+    "Tot_Amt": {
+      "page": 0,
+      "left": 0.8427734375,
+      "top": 0.8684895833333334,
+      "width": 0.0634765625,
+      "height": 0.014322916666666666
+    },
+    "Total_Current_Charges": {
+      "page": 0,
+      "left": 0.8427734375,
+      "top": 0.8684895833333334,
+      "width": 0.0634765625,
+      "height": 0.014322916666666666
+    }
+  },
   "notes": {
     "Line_Items": "LLM only captured 1 of the 6 charge-detail rows.",
     "Dates": "Printed as MM/DD/YYYY ('07/24/2026', etc.); normalized to ISO 8601 (YYYY-MM-DD) here, consistent with every other date field in this schema. This is an AWS-managed blueprint (water-and-sewer-bill) whose field descriptions instruct MM/DD/YYYY - not ours to edit - but since these are single-value (not list) date fields, extraction-compare's normalizer resolves BDA's MM/DD/YYYY to the same calendar date, which now counts as an exact match."

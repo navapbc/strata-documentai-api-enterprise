@@ -1,0 +1,4375 @@
+{
+  "synthetic-assets-bank-statement-render-spanish": {
+    "account_number": {
+      "reason": "ambiguous",
+      "expected_value": "•••• 7421",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.7060546875,
+          "top": 0.1796875,
+          "width": 0.033203125,
+          "height": 0.008463541666666666
+        },
+        {
+          "page": 0,
+          "left": 0.748046875,
+          "top": 0.3287760416666667,
+          "width": 0.0341796875,
+          "height": 0.008463541666666666
+        }
+      ]
+    },
+    "account_holder_name": {
+      "reason": "text_not_found",
+      "expected_value": "María Elena Vásquez",
+      "candidates": []
+    },
+    "account_holder_address": {
+      "reason": "list_value",
+      "expected_value": "217 Magnolia Circle Apt 4B, Mobile, AL 36604",
+      "candidates": []
+    },
+    "bank_name": {
+      "reason": "text_not_found",
+      "expected_value": "Riverstone Community Bank",
+      "candidates": []
+    },
+    "account_type": {
+      "reason": "text_not_found",
+      "expected_value": "Cuenta de Cheques Personal",
+      "candidates": []
+    },
+    "statement_start_date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-08-01",
+      "candidates": []
+    },
+    "statement_end_date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-08-31",
+      "candidates": []
+    },
+    "account_summary.summary_desc": {
+      "reason": "list_value",
+      "expected_value": "Saldo Inicial (01/08/2026), Depósitos / Créditos Totales, Retiros / Débitos Totales, Cargos por Servicio, Saldo Final (31/08/2026)",
+      "candidates": []
+    },
+    "account_summary.summary_amount": {
+      "reason": "list_value",
+      "expected_value": "2150.00, 3900.00, 3198.00, 0.00, 2852.00",
+      "candidates": []
+    },
+    "transaction_details.date": {
+      "reason": "list_value",
+      "expected_value": "2026-08-05, 2026-08-19, 2026-08-28, 2026-08-10, 2026-08-15, 2026-08-27",
+      "candidates": []
+    },
+    "transaction_details.description": {
+      "reason": "list_value",
+      "expected_value": "DEPÓSITO: Sueldo – Southern Gulf Logistics, DEPÓSITO: Sueldo – Southern Gulf Logistics, DEPÓSITO: Reembolso de Capacitación, DÉBITO: Pago de Renta – Magnolia Apartments, DÉBITO: Servicios Públicos – Alabama Power, DÉBITO: Compra – Walmart Supercenter",
+      "candidates": []
+    },
+    "transaction_details.deposits": {
+      "reason": "list_value",
+      "expected_value": "1875.00, 1875.00, 150.00, 0.00, 0.00, 0.00",
+      "candidates": []
+    },
+    "transaction_details.withdrawals": {
+      "reason": "list_value",
+      "expected_value": "0.00, 0.00, 0.00, 1758.90, 959.40, 479.70",
+      "candidates": []
+    },
+    "transaction_details.balance": {
+      "reason": "list_value",
+      "expected_value": "4025.00, 5900.00, 6050.00, 4291.10, 3331.70, 2852.00",
+      "candidates": []
+    }
+  },
+  "synthetic-assets-bank-statement-render": {
+    "account_holder_address": {
+      "reason": "list_value",
+      "expected_value": "7429 Oak Crest Drive, Little Rock, AR 72205",
+      "candidates": []
+    },
+    "bank_name": {
+      "reason": "text_not_found",
+      "expected_value": "Riverbend Financial Institution",
+      "candidates": []
+    },
+    "account_summary.summary_desc": {
+      "reason": "list_value",
+      "expected_value": "Beginning Balance, Total Deposits / Credits, Total Withdrawals / Debits, Fees, Ending Balance",
+      "candidates": []
+    },
+    "account_summary.summary_amount": {
+      "reason": "list_value",
+      "expected_value": "2275.00, 4220.00, 3460.40, 0.00, 3034.60",
+      "candidates": []
+    }
+  },
+  "synthetic-assets-bank-statement-scan": {
+    "account_number": {
+      "reason": "text_not_found",
+      "expected_value": "********5342",
+      "candidates": []
+    },
+    "account_holder_address": {
+      "reason": "list_value",
+      "expected_value": "237 WILLOW BEND WAY BALTIMORE, MD 21224",
+      "candidates": []
+    },
+    "bank_name": {
+      "reason": "text_not_found",
+      "expected_value": "Harbor Community Bank",
+      "candidates": []
+    },
+    "branch_transit_number": {
+      "reason": "text_not_found",
+      "expected_value": "******1250",
+      "candidates": []
+    },
+    "statement_start_date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-08-01",
+      "candidates": []
+    },
+    "statement_end_date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-08-31",
+      "candidates": []
+    },
+    "account_summary.summary_desc": {
+      "reason": "list_value",
+      "expected_value": "Beginning Balance, Total Deposits/Credits, Total Withdrawals/Debits, Total Fees, Ending Balance",
+      "candidates": []
+    },
+    "account_summary.summary_amount": {
+      "reason": "list_value",
+      "expected_value": "1225.00, 3110.00, 2550.20, 0.00, 1784.80",
+      "candidates": []
+    },
+    "transaction_details.date": {
+      "reason": "list_value",
+      "expected_value": "2026-08-06, 2026-08-20, 2026-08-27, 2026-08-10, 2026-08-18, 2026-08-25",
+      "candidates": []
+    },
+    "transaction_details.description": {
+      "reason": "list_value",
+      "expected_value": "DIRECT DEPOSIT Bluewater Solutions LLC PAYROLL, DIRECT DEPOSIT Bluewater Solutions LLC PAYROLL, DIRECT DEPOSIT Bluewater Solutions LLC BONUS, DEBIT CARD PURCHASE Giant Food #6207 Baltimore MD, RENT PAYMENT Greenfield Apartments, ONLINE TRANSFER Alex M. Thompson Savings",
+      "candidates": []
+    },
+    "transaction_details.deposits": {
+      "reason": "list_value",
+      "expected_value": "1375.00, 1375.00, 360.00, 0.00, 0.00, 0.00",
+      "candidates": []
+    },
+    "transaction_details.withdrawals": {
+      "reason": "list_value",
+      "expected_value": "0.00, 0.00, 0.00, 1402.61, 765.06, 382.53",
+      "candidates": []
+    },
+    "transaction_details.balance": {
+      "reason": "list_value",
+      "expected_value": "2600.00, 3975.00, 4335.60, 2932.39, 2167.33, 1784.80",
+      "candidates": []
+    }
+  },
+  "synthetic-assets-life-insurance-policy-render": {
+    "insured_name": {
+      "reason": "text_not_found",
+      "expected_value": "Jordan Rivera",
+      "candidates": []
+    },
+    "policy_type": {
+      "reason": "text_not_found",
+      "expected_value": "Universal Life Insurance",
+      "candidates": []
+    },
+    "policyholder_name": {
+      "reason": "text_not_found",
+      "expected_value": "Jordan Rivera",
+      "candidates": []
+    },
+    "statement_date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-08-31",
+      "candidates": []
+    }
+  },
+  "synthetic-assets-life-insurance-policy-scan": {
+    "cash_surrender_value": {
+      "reason": "ambiguous",
+      "expected_value": 13000,
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.4619140625,
+          "top": 0.5169270833333334,
+          "width": 0.0908203125,
+          "height": 0.016927083333333332
+        },
+        {
+          "page": 0,
+          "left": 0.5302734375,
+          "top": 0.5859375,
+          "width": 0.052734375,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.5302734375,
+          "top": 0.6243489583333334,
+          "width": 0.052734375,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.529296875,
+          "top": 0.6653645833333334,
+          "width": 0.0537109375,
+          "height": 0.011067708333333334
+        }
+      ]
+    },
+    "insured_name": {
+      "reason": "text_not_found",
+      "expected_value": "Jordan Rivera",
+      "candidates": []
+    },
+    "policy_type": {
+      "reason": "text_not_found",
+      "expected_value": "Whole Life Insurance",
+      "candidates": []
+    },
+    "policyholder_name": {
+      "reason": "text_not_found",
+      "expected_value": "Jordan Rivera",
+      "candidates": []
+    },
+    "premium_amount": {
+      "reason": "ambiguous",
+      "expected_value": "175.00",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.302734375,
+          "top": 0.4661458333333333,
+          "width": 0.052734375,
+          "height": 0.009765625
+        },
+        {
+          "page": 0,
+          "left": 0.328125,
+          "top": 0.7486979166666666,
+          "width": 0.05078125,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.328125,
+          "top": 0.7708333333333334,
+          "width": 0.05078125,
+          "height": 0.009765625
+        },
+        {
+          "page": 0,
+          "left": 0.328125,
+          "top": 0.79296875,
+          "width": 0.05078125,
+          "height": 0.009765625
+        }
+      ]
+    },
+    "premium_frequency": {
+      "reason": "ambiguous",
+      "expected_value": "Monthly",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.3037109375,
+          "top": 0.4453125,
+          "width": 0.05078125,
+          "height": 0.016927083333333332
+        },
+        {
+          "page": 0,
+          "left": 0.7509765625,
+          "top": 0.51953125,
+          "width": 0.0869140625,
+          "height": 0.016927083333333332
+        },
+        {
+          "page": 0,
+          "left": 0.55859375,
+          "top": 0.7513020833333334,
+          "width": 0.048828125,
+          "height": 0.011067708333333334
+        },
+        {
+          "page": 0,
+          "left": 0.55859375,
+          "top": 0.7734375,
+          "width": 0.048828125,
+          "height": 0.011067708333333334
+        },
+        {
+          "page": 0,
+          "left": 0.55859375,
+          "top": 0.7962239583333334,
+          "width": 0.048828125,
+          "height": 0.010416666666666666
+        }
+      ]
+    },
+    "statement_date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-09-01",
+      "candidates": []
+    }
+  },
+  "synthetic-assets-trust-funds-investment-accounts-render-spanish": {
+    "trust_name": {
+      "reason": "text_not_found",
+      "expected_value": "Fideicomiso Rivera 2019",
+      "candidates": []
+    },
+    "trust_type": {
+      "reason": "text_not_found",
+      "expected_value": "Revocable (Inter Vivos)",
+      "candidates": []
+    },
+    "beneficiary_name": {
+      "reason": "text_not_found",
+      "expected_value": "María Isabel Rivera",
+      "candidates": []
+    },
+    "statement_period_start": {
+      "reason": "text_not_found",
+      "expected_value": "2026-06-01",
+      "candidates": []
+    },
+    "statement_period_end": {
+      "reason": "text_not_found",
+      "expected_value": "2026-08-31",
+      "candidates": []
+    },
+    "account_balance": {
+      "reason": "ambiguous",
+      "expected_value": "45000.00",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.8662109375,
+          "top": 0.3274739583333333,
+          "width": 0.0810546875,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.8818359375,
+          "top": 0.513671875,
+          "width": 0.0693359375,
+          "height": 0.009114583333333334
+        },
+        {
+          "page": 0,
+          "left": 0.7763671875,
+          "top": 0.599609375,
+          "width": 0.05859375,
+          "height": 0.015625
+        },
+        {
+          "page": 0,
+          "left": 0.880859375,
+          "top": 0.6022135416666666,
+          "width": 0.0703125,
+          "height": 0.009114583333333334
+        },
+        {
+          "page": 0,
+          "left": 0.7763671875,
+          "top": 0.6236979166666666,
+          "width": 0.05859375,
+          "height": 0.014973958333333334
+        },
+        {
+          "page": 0,
+          "left": 0.2900390625,
+          "top": 0.83984375,
+          "width": 0.080078125,
+          "height": 0.022135416666666668
+        }
+      ]
+    },
+    "asset_types": {
+      "reason": "list_value",
+      "expected_value": "Acciones (Nacionales), Bonos (Renta Fija), Fondos Mutuos, Efectivo y Equivalentes",
+      "candidates": []
+    }
+  },
+  "synthetic-assets-trust-funds-investment-accounts-render": {
+    "trust_name": {
+      "reason": "text_not_found",
+      "expected_value": "Rivera Family Revocable Trust",
+      "candidates": []
+    },
+    "trust_type": {
+      "reason": "text_not_found",
+      "expected_value": "Revocable Trust",
+      "candidates": []
+    },
+    "beneficiary_name": {
+      "reason": "text_not_found",
+      "expected_value": "Jordan A. Rivera",
+      "candidates": []
+    },
+    "statement_period_start": {
+      "reason": "ambiguous",
+      "expected_value": "2026-01-01",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.7344771241830066,
+          "top": 0.16792929292929293,
+          "width": 0.07516339869281045,
+          "height": 0.00946969696969697
+        },
+        {
+          "page": 0,
+          "left": 0.2826797385620915,
+          "top": 0.4236111111111111,
+          "width": 0.0857843137254902,
+          "height": 0.011994949494949494
+        }
+      ]
+    },
+    "statement_period_end": {
+      "reason": "ambiguous",
+      "expected_value": "2026-06-30",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.8341503267973857,
+          "top": 0.16792929292929293,
+          "width": 0.07761437908496732,
+          "height": 0.00946969696969697
+        },
+        {
+          "page": 0,
+          "left": 0.2818627450980392,
+          "top": 0.553030303030303,
+          "width": 0.08660130718954248,
+          "height": 0.011994949494949494
+        },
+        {
+          "page": 0,
+          "left": 0.30392156862745096,
+          "top": 0.5984848484848485,
+          "width": 0.10130718954248366,
+          "height": 0.013888888888888888
+        }
+      ]
+    },
+    "account_balance": {
+      "reason": "ambiguous",
+      "expected_value": "100000.00",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.7883986928104575,
+          "top": 0.5416666666666666,
+          "width": 0.08905228758169935,
+          "height": 0.026515151515151516
+        },
+        {
+          "page": 0,
+          "left": 0.5735294117647058,
+          "top": 0.7493686868686869,
+          "width": 0.08823529411764706,
+          "height": 0.01893939393939394
+        }
+      ]
+    },
+    "distributions_during_period": {
+      "reason": "ambiguous",
+      "expected_value": "2000.00",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.8071895424836601,
+          "top": 0.5006313131313131,
+          "width": 0.06944444444444445,
+          "height": 0.011363636363636364
+        },
+        {
+          "page": 0,
+          "left": 0.3022875816993464,
+          "top": 0.8333333333333334,
+          "width": 0.07026143790849673,
+          "height": 0.010732323232323232
+        }
+      ]
+    },
+    "asset_types": {
+      "reason": "list_value",
+      "expected_value": "Equity Securities, Fixed Income Securities, Real Estate Holdings, Cash and Cash Equivalents",
+      "candidates": []
+    }
+  },
+  "synthetic-assets-trust-funds-investment-accounts-scan": {
+    "trust_name": {
+      "reason": "text_not_found",
+      "expected_value": "The Morgan E. Dalton Revocable Trust",
+      "candidates": []
+    },
+    "trust_type": {
+      "reason": "text_not_found",
+      "expected_value": "Revocable Living Trust",
+      "candidates": []
+    },
+    "beneficiary_name": {
+      "reason": "text_not_found",
+      "expected_value": "Morgan Elise Dalton",
+      "candidates": []
+    },
+    "trustee_name": {
+      "reason": "list_value",
+      "expected_value": "Cedar Grove Trust Company, as Trustee",
+      "candidates": []
+    },
+    "statement_period_end": {
+      "reason": "ambiguous",
+      "expected_value": "2026-08-31",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.66796875,
+          "top": 0.3678385416666667,
+          "width": 0.06640625,
+          "height": 0.0078125
+        },
+        {
+          "page": 0,
+          "left": 0.2373046875,
+          "top": 0.7630208333333334,
+          "width": 0.0751953125,
+          "height": 0.008463541666666666
+        }
+      ]
+    },
+    "account_balance": {
+      "reason": "ambiguous",
+      "expected_value": "90000.00",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.845703125,
+          "top": 0.3645833333333333,
+          "width": 0.083984375,
+          "height": 0.011067708333333334
+        },
+        {
+          "page": 0,
+          "left": 0.4296875,
+          "top": 0.470703125,
+          "width": 0.0595703125,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.4130859375,
+          "top": 0.4973958333333333,
+          "width": 0.0751953125,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.865234375,
+          "top": 0.607421875,
+          "width": 0.068359375,
+          "height": 0.009114583333333334
+        },
+        {
+          "page": 0,
+          "left": 0.7314453125,
+          "top": 0.6979166666666666,
+          "width": 0.056640625,
+          "height": 0.020182291666666668
+        },
+        {
+          "page": 0,
+          "left": 0.8681640625,
+          "top": 0.7239583333333334,
+          "width": 0.068359375,
+          "height": 0.009765625
+        },
+        {
+          "page": 0,
+          "left": 0.3583984375,
+          "top": 0.88671875,
+          "width": 0.0703125,
+          "height": 0.010416666666666666
+        }
+      ]
+    },
+    "distributions_during_period": {
+      "reason": "ambiguous",
+      "expected_value": "1800.00",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.87109375,
+          "top": 0.396484375,
+          "width": 0.0595703125,
+          "height": 0.009765625
+        },
+        {
+          "page": 0,
+          "left": 0.5849609375,
+          "top": 0.724609375,
+          "width": 0.0595703125,
+          "height": 0.009765625
+        }
+      ]
+    },
+    "asset_types": {
+      "reason": "list_value",
+      "expected_value": "U.S. Equities, Fixed Income, Cash & Cash Equivalents, Alternative Investments",
+      "candidates": []
+    }
+  },
+  "synthetic-expense-burial-scan-corner-torn": {
+    "trust_type": {
+      "reason": "text_not_found",
+      "expected_value": "Irrevocable Burial Trust Account",
+      "candidates": []
+    },
+    "trustee_name": {
+      "reason": "text_not_found",
+      "expected_value": "Cedar Grove Burial Trust Company",
+      "candidates": []
+    },
+    "account_number": {
+      "reason": "text_not_found",
+      "expected_value": "***-***-7429",
+      "candidates": []
+    },
+    "statement_period_end": {
+      "reason": "ambiguous",
+      "expected_value": "2026-08-31",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.7841796875,
+          "top": 0.4049479166666667,
+          "width": 0.078125,
+          "height": 0.008463541666666666
+        },
+        {
+          "page": 0,
+          "left": 0.0810546875,
+          "top": 0.634765625,
+          "width": 0.078125,
+          "height": 0.017578125
+        }
+      ]
+    },
+    "distributions_during_period": {
+      "reason": "ambiguous",
+      "expected_value": "0.00",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.5791015625,
+          "top": 0.4095052083333333,
+          "width": 0.0400390625,
+          "height": 0.017578125
+        },
+        {
+          "page": 0,
+          "left": 0.5791015625,
+          "top": 0.4342447916666667,
+          "width": 0.0400390625,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.7236328125,
+          "top": 0.6002604166666666,
+          "width": 0.0400390625,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.7236328125,
+          "top": 0.6217447916666666,
+          "width": 0.0390625,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.4521484375,
+          "top": 0.640625,
+          "width": 0.0380859375,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.5791015625,
+          "top": 0.6419270833333334,
+          "width": 0.0400390625,
+          "height": 0.009765625
+        },
+        {
+          "page": 0,
+          "left": 0.72265625,
+          "top": 0.6432291666666666,
+          "width": 0.0400390625,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.578125,
+          "top": 0.6686197916666666,
+          "width": 0.0400390625,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.72265625,
+          "top": 0.669921875,
+          "width": 0.0400390625,
+          "height": 0.010416666666666666
+        }
+      ]
+    },
+    "asset_types": {
+      "reason": "ambiguous",
+      "expected_value": "Cash",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.7919921875,
+          "top": 0.3893229166666667,
+          "width": 0.048828125,
+          "height": 0.009114583333333334
+        },
+        {
+          "page": 0,
+          "left": 0.158203125,
+          "top": 0.4615885416666667,
+          "width": 0.0400390625,
+          "height": 0.009114583333333334
+        },
+        {
+          "page": 0,
+          "left": 0.1640625,
+          "top": 0.48828125,
+          "width": 0.0302734375,
+          "height": 0.007161458333333333
+        }
+      ]
+    }
+  },
+  "synthetic-expense-child-support-rendered": {
+    "court_name": {
+      "reason": "list_value",
+      "expected_value": "Fourth Judicial District Court, Missoula County",
+      "candidates": []
+    },
+    "payer_name": {
+      "reason": "text_not_found",
+      "expected_value": "Jordan Rivera",
+      "candidates": []
+    },
+    "payment_type": {
+      "reason": "text_not_found",
+      "expected_value": "Child Support",
+      "candidates": []
+    }
+  },
+  "synthetic-expense-child-support-scan": {
+    "court_name": {
+      "reason": "text_not_found",
+      "expected_value": "2nd Judicial District Court",
+      "candidates": []
+    },
+    "payer_name": {
+      "reason": "text_not_found",
+      "expected_value": "Daniel R. Montoya",
+      "candidates": []
+    },
+    "payment_amount": {
+      "reason": "ambiguous",
+      "expected_value": "500.00",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.35546875,
+          "top": 0.2936197916666667,
+          "width": 0.0517578125,
+          "height": 0.01953125
+        },
+        {
+          "page": 0,
+          "left": 0.509765625,
+          "top": 0.5013020833333334,
+          "width": 0.0498046875,
+          "height": 0.017578125
+        },
+        {
+          "page": 0,
+          "left": 0.509765625,
+          "top": 0.5260416666666666,
+          "width": 0.0498046875,
+          "height": 0.017578125
+        },
+        {
+          "page": 0,
+          "left": 0.509765625,
+          "top": 0.55078125,
+          "width": 0.0498046875,
+          "height": 0.017578125
+        },
+        {
+          "page": 0,
+          "left": 0.509765625,
+          "top": 0.5755208333333334,
+          "width": 0.0498046875,
+          "height": 0.016927083333333332
+        },
+        {
+          "page": 0,
+          "left": 0.509765625,
+          "top": 0.599609375,
+          "width": 0.0498046875,
+          "height": 0.016927083333333332
+        },
+        {
+          "page": 0,
+          "left": 0.509765625,
+          "top": 0.6263020833333334,
+          "width": 0.0498046875,
+          "height": 0.009765625
+        },
+        {
+          "page": 0,
+          "left": 0.509765625,
+          "top": 0.6477864583333334,
+          "width": 0.0498046875,
+          "height": 0.017578125
+        },
+        {
+          "page": 0,
+          "left": 0.509765625,
+          "top": 0.6744791666666666,
+          "width": 0.0498046875,
+          "height": 0.009765625
+        }
+      ]
+    },
+    "payment_frequency": {
+      "reason": "ambiguous",
+      "expected_value": "Weekly",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.0966796875,
+          "top": 0.3001302083333333,
+          "width": 0.046875,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.35546875,
+          "top": 0.30859375,
+          "width": 0.0478515625,
+          "height": 0.020182291666666668
+        },
+        {
+          "page": 0,
+          "left": 0.52734375,
+          "top": 0.4388020833333333,
+          "width": 0.05859375,
+          "height": 0.013020833333333334
+        },
+        {
+          "page": 0,
+          "left": 0.50390625,
+          "top": 0.4772135416666667,
+          "width": 0.0595703125,
+          "height": 0.017578125
+        }
+      ]
+    },
+    "payment_type": {
+      "reason": "text_not_found",
+      "expected_value": "Child Support",
+      "candidates": []
+    },
+    "recipient_address": {
+      "reason": "list_value",
+      "expected_value": "123 Desert Sage Rd, Apt 4B, Albuquerque, NM 87108",
+      "candidates": []
+    },
+    "recipient_state": {
+      "reason": "ambiguous",
+      "expected_value": "NM",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.5380859375,
+          "top": 0.11458333333333333,
+          "width": 0.0263671875,
+          "height": 0.009114583333333334
+        },
+        {
+          "page": 0,
+          "left": 0.19140625,
+          "top": 0.244140625,
+          "width": 0.021484375,
+          "height": 0.0078125
+        },
+        {
+          "page": 0,
+          "left": 0.83203125,
+          "top": 0.24544270833333334,
+          "width": 0.0205078125,
+          "height": 0.0078125
+        }
+      ]
+    }
+  },
+  "synthetic-expense-child-support-spanish-picture": {
+    "court_name": {
+      "reason": "text_not_found",
+      "expected_value": "Tribunal de Familia de la Ciudad de Norfolk",
+      "candidates": []
+    },
+    "effective_start_date": {
+      "reason": "text_not_found",
+      "expected_value": "2021-01-05",
+      "candidates": []
+    },
+    "order_date": {
+      "reason": "text_not_found",
+      "expected_value": "2021-01-05",
+      "candidates": []
+    },
+    "payer_name": {
+      "reason": "text_not_found",
+      "expected_value": "Daniel Ortega",
+      "candidates": []
+    },
+    "payment_amount": {
+      "reason": "ambiguous",
+      "expected_value": "450.00",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.2412109375,
+          "top": 0.3522135416666667,
+          "width": 0.0517578125,
+          "height": 0.009114583333333334
+        },
+        {
+          "page": 0,
+          "left": 0.4921875,
+          "top": 0.4869791666666667,
+          "width": 0.0537109375,
+          "height": 0.016927083333333332
+        },
+        {
+          "page": 0,
+          "left": 0.4921875,
+          "top": 0.5091145833333334,
+          "width": 0.0546875,
+          "height": 0.016927083333333332
+        },
+        {
+          "page": 0,
+          "left": 0.49609375,
+          "top": 0.53125,
+          "width": 0.05078125,
+          "height": 0.016927083333333332
+        },
+        {
+          "page": 0,
+          "left": 0.4921875,
+          "top": 0.5540364583333334,
+          "width": 0.0546875,
+          "height": 0.016927083333333332
+        },
+        {
+          "page": 0,
+          "left": 0.49609375,
+          "top": 0.5768229166666666,
+          "width": 0.0556640625,
+          "height": 0.016927083333333332
+        },
+        {
+          "page": 0,
+          "left": 0.4931640625,
+          "top": 0.599609375,
+          "width": 0.0546875,
+          "height": 0.016927083333333332
+        },
+        {
+          "page": 0,
+          "left": 0.4970703125,
+          "top": 0.6490885416666666,
+          "width": 0.0517578125,
+          "height": 0.009765625
+        }
+      ]
+    },
+    "payment_type": {
+      "reason": "text_not_found",
+      "expected_value": "Child Support",
+      "candidates": []
+    },
+    "recipient_address": {
+      "reason": "list_value",
+      "expected_value": "4721 Willow Crossing Drive Apt. 3B, Norfolk, VA 23513",
+      "candidates": []
+    },
+    "recipient_zip_code": {
+      "reason": "text_not_found",
+      "expected_value": "23513",
+      "candidates": []
+    }
+  },
+  "synthetic-expense-dependent-care-render-spanish": {
+    "amount_paid": {
+      "reason": "ambiguous",
+      "expected_value": "750.00",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.87890625,
+          "top": 0.673828125,
+          "width": 0.0625,
+          "height": 0.011067708333333334
+        },
+        {
+          "page": 0,
+          "left": 0.8828125,
+          "top": 0.7044270833333334,
+          "width": 0.05859375,
+          "height": 0.011067708333333334
+        },
+        {
+          "page": 0,
+          "left": 0.494140625,
+          "top": 0.7194010416666666,
+          "width": 0.056640625,
+          "height": 0.010416666666666666
+        }
+      ]
+    },
+    "balance_due": {
+      "reason": "ambiguous",
+      "expected_value": "750.00",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.87890625,
+          "top": 0.673828125,
+          "width": 0.0625,
+          "height": 0.011067708333333334
+        },
+        {
+          "page": 0,
+          "left": 0.8828125,
+          "top": 0.7044270833333334,
+          "width": 0.05859375,
+          "height": 0.011067708333333334
+        },
+        {
+          "page": 0,
+          "left": 0.494140625,
+          "top": 0.7194010416666666,
+          "width": 0.056640625,
+          "height": 0.010416666666666666
+        }
+      ]
+    },
+    "dependent_names": {
+      "reason": "text_not_found",
+      "expected_value": "Mateo Vega",
+      "candidates": []
+    },
+    "document_type": {
+      "reason": "text_not_found",
+      "expected_value": "Estado de Gastos de Cuidado Dependiente",
+      "candidates": []
+    },
+    "payment_amount": {
+      "reason": "ambiguous",
+      "expected_value": "375.00",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.638671875,
+          "top": 0.4251302083333333,
+          "width": 0.0537109375,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.884765625,
+          "top": 0.4251302083333333,
+          "width": 0.052734375,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.638671875,
+          "top": 0.4680989583333333,
+          "width": 0.0537109375,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.884765625,
+          "top": 0.4680989583333333,
+          "width": 0.052734375,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.638671875,
+          "top": 0.5110677083333334,
+          "width": 0.0537109375,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.884765625,
+          "top": 0.5110677083333334,
+          "width": 0.052734375,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.638671875,
+          "top": 0.5540364583333334,
+          "width": 0.0537109375,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.884765625,
+          "top": 0.5540364583333334,
+          "width": 0.052734375,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.4873046875,
+          "top": 0.6705729166666666,
+          "width": 0.05078125,
+          "height": 0.009114583333333334
+        },
+        {
+          "page": 0,
+          "left": 0.4873046875,
+          "top": 0.6946614583333334,
+          "width": 0.05078125,
+          "height": 0.009765625
+        }
+      ]
+    },
+    "payment_frequency": {
+      "reason": "text_not_found",
+      "expected_value": "Semanal",
+      "candidates": []
+    },
+    "provider_address": {
+      "reason": "list_value",
+      "expected_value": "1234 Camino del Sol, Suite 100, Las Vegas, NV 89119",
+      "candidates": []
+    },
+    "provider_name": {
+      "reason": "text_not_found",
+      "expected_value": "Pequeños Pasos Centro de Cuidado Infantil",
+      "candidates": []
+    },
+    "service_start_date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-08-04",
+      "candidates": []
+    },
+    "service_end_date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-08-31",
+      "candidates": []
+    },
+    "statement_date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-09-05",
+      "candidates": []
+    }
+  },
+  "synthetic-expense-dependent-care-render": {
+    "amount_paid": {
+      "reason": "ambiguous",
+      "expected_value": "1000.00",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.7336601307189542,
+          "top": 0.7828282828282829,
+          "width": 0.08415032679738563,
+          "height": 0.01452020202020202
+        },
+        {
+          "page": 0,
+          "left": 0.7336601307189542,
+          "top": 0.8207070707070707,
+          "width": 0.08415032679738563,
+          "height": 0.013888888888888888
+        }
+      ]
+    },
+    "balance_due": {
+      "reason": "ambiguous",
+      "expected_value": "1000.00",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.7336601307189542,
+          "top": 0.7828282828282829,
+          "width": 0.08415032679738563,
+          "height": 0.01452020202020202
+        },
+        {
+          "page": 0,
+          "left": 0.7336601307189542,
+          "top": 0.8207070707070707,
+          "width": 0.08415032679738563,
+          "height": 0.013888888888888888
+        }
+      ]
+    },
+    "provider_address": {
+      "reason": "list_value",
+      "expected_value": "485 Maple Avenue, Providence, RI 02903",
+      "candidates": []
+    },
+    "provider_name": {
+      "reason": "text_not_found",
+      "expected_value": "Bright Horizons Early Learning Center",
+      "candidates": []
+    },
+    "service_end_date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-08-30",
+      "candidates": []
+    },
+    "service_start_date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-08-03",
+      "candidates": []
+    }
+  },
+  "synthetic-expense-dependent-care-scan": {
+    "amount_paid": {
+      "reason": "ambiguous",
+      "expected_value": "650.00",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.8603515625,
+          "top": 0.6575520833333334,
+          "width": 0.0595703125,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.8603515625,
+          "top": 0.7174479166666666,
+          "width": 0.0712890625,
+          "height": 0.011067708333333334
+        },
+        {
+          "page": 0,
+          "left": 0.8671875,
+          "top": 0.7434895833333334,
+          "width": 0.0654296875,
+          "height": 0.011067708333333334
+        }
+      ]
+    },
+    "balance_due": {
+      "reason": "ambiguous",
+      "expected_value": "650.00",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.8603515625,
+          "top": 0.6575520833333334,
+          "width": 0.0595703125,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.8603515625,
+          "top": 0.7174479166666666,
+          "width": 0.0712890625,
+          "height": 0.011067708333333334
+        },
+        {
+          "page": 0,
+          "left": 0.8671875,
+          "top": 0.7434895833333334,
+          "width": 0.0654296875,
+          "height": 0.011067708333333334
+        }
+      ]
+    },
+    "document_type": {
+      "reason": "text_not_found",
+      "expected_value": "Dependent Care Expense Statement",
+      "candidates": []
+    },
+    "payment_amount": {
+      "reason": "ambiguous",
+      "expected_value": "325.00",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.72265625,
+          "top": 0.4635416666666667,
+          "width": 0.0595703125,
+          "height": 0.018229166666666668
+        },
+        {
+          "page": 0,
+          "left": 0.8642578125,
+          "top": 0.4661458333333333,
+          "width": 0.0595703125,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.72265625,
+          "top": 0.490234375,
+          "width": 0.0595703125,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.8642578125,
+          "top": 0.490234375,
+          "width": 0.0595703125,
+          "height": 0.011067708333333334
+        },
+        {
+          "page": 0,
+          "left": 0.72265625,
+          "top": 0.5149739583333334,
+          "width": 0.0595703125,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.865234375,
+          "top": 0.5149739583333334,
+          "width": 0.0595703125,
+          "height": 0.011067708333333334
+        },
+        {
+          "page": 0,
+          "left": 0.72265625,
+          "top": 0.537109375,
+          "width": 0.0595703125,
+          "height": 0.018229166666666668
+        },
+        {
+          "page": 0,
+          "left": 0.8642578125,
+          "top": 0.5397135416666666,
+          "width": 0.060546875,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.6611328125,
+          "top": 0.6302083333333334,
+          "width": 0.0595703125,
+          "height": 0.018229166666666668
+        },
+        {
+          "page": 0,
+          "left": 0.66015625,
+          "top": 0.654296875,
+          "width": 0.060546875,
+          "height": 0.018880208333333332
+        }
+      ]
+    },
+    "payment_frequency": {
+      "reason": "text_not_found",
+      "expected_value": "Weekly",
+      "candidates": []
+    },
+    "provider_address": {
+      "reason": "list_value",
+      "expected_value": "321 Whispering Pines Drive Holly Springs, NC 27540",
+      "candidates": []
+    },
+    "service_end_date": {
+      "reason": "ambiguous",
+      "expected_value": "2026-08-30",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.1669921875,
+          "top": 0.5397135416666666,
+          "width": 0.0849609375,
+          "height": 0.009765625
+        },
+        {
+          "page": 0,
+          "left": 0.8583984375,
+          "top": 0.123046875,
+          "width": 0.08203125,
+          "height": 0.009114583333333334
+        }
+      ]
+    },
+    "service_start_date": {
+      "reason": "ambiguous",
+      "expected_value": "2026-08-03",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.0625,
+          "top": 0.4661458333333333,
+          "width": 0.0849609375,
+          "height": 0.009765625
+        },
+        {
+          "page": 0,
+          "left": 0.7578125,
+          "top": 0.123046875,
+          "width": 0.0810546875,
+          "height": 0.008463541666666666
+        }
+      ]
+    }
+  },
+  "synthetic-expense-utility-cable-bill-render-spanish": {
+    "Account_Number": {
+      "reason": "text_not_found",
+      "expected_value": "8765 4321 0XXX XXXX",
+      "candidates": []
+    },
+    "Balance_DueDate": {
+      "reason": "text_not_found",
+      "expected_value": "2026-09-30",
+      "candidates": []
+    },
+    "Billing_Date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-09-11",
+      "candidates": []
+    },
+    "Start_Date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-08-12",
+      "candidates": []
+    },
+    "End_Date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-07-11",
+      "candidates": []
+    },
+    "Service_Address": {
+      "reason": "list_value",
+      "expected_value": "1234 Maple Drive, Broken Arrow, OK 74012",
+      "candidates": []
+    },
+    "Line_Item_table.Amount": {
+      "reason": "list_value",
+      "expected_value": "72.99, 8.99, 5.00, -10.00, 49.99, -20.00, 7.00, 5.00, 0.00, -5.00, 4.28, 2.10, 2.54, 0.00",
+      "candidates": []
+    },
+    "Summary_table.Description": {
+      "reason": "list_value",
+      "expected_value": "Saldo anterior, Pagos recibidos – 08/25/2026, Saldo anterior, Cargos actuales, TOTAL A PAGAR",
+      "candidates": []
+    },
+    "Summary_table.Amount": {
+      "reason": "list_value",
+      "expected_value": "98.75, -98.75, 0.00, 102.89, 102.89",
+      "candidates": []
+    }
+  },
+  "synthetic-expense-utility-cable-bill-render": {
+    "Start_Date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-08-01",
+      "candidates": []
+    },
+    "End_Date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-08-31",
+      "candidates": []
+    },
+    "Service_Address": {
+      "reason": "list_value",
+      "expected_value": "5127 Maplewood Drive, Lincoln, NE 68506",
+      "candidates": []
+    },
+    "Line_Item_table.Amount": {
+      "reason": "list_value",
+      "expected_value": "54.99, 48.00, 8.00, 7.50, 4.76",
+      "candidates": []
+    },
+    "Summary_table.Description": {
+      "reason": "list_value",
+      "expected_value": "Previous Balance, Payments Received, New Charges Total, Amount Due",
+      "candidates": []
+    },
+    "Summary_table.Amount": {
+      "reason": "list_value",
+      "expected_value": "87.50, -87.50, 112.25, 112.25",
+      "candidates": []
+    }
+  },
+  "synthetic-expense-utility-electric-bill-render-spanish": {
+    "Account Number": {
+      "reason": "ambiguous",
+      "expected_value": "1234-5678-9012",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.8525390625,
+          "top": 0.06770833333333333,
+          "width": 0.0947265625,
+          "height": 0.008463541666666666
+        },
+        {
+          "page": 0,
+          "left": 0.4892578125,
+          "top": 0.7962239583333334,
+          "width": 0.0966796875,
+          "height": 0.008463541666666666
+        }
+      ]
+    },
+    "Address.Service Address": {
+      "reason": "list_value",
+      "expected_value": "14 Maple Lane, Burlington, VT 05401",
+      "candidates": []
+    },
+    "Address.Service address pin code": {
+      "reason": "ambiguous",
+      "expected_value": "05401",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.12890625,
+          "top": 0.2819010416666667,
+          "width": 0.0380859375,
+          "height": 0.008463541666666666
+        },
+        {
+          "page": 0,
+          "left": 0.12890625,
+          "top": 0.33984375,
+          "width": 0.0380859375,
+          "height": 0.009114583333333334
+        }
+      ]
+    },
+    "BalanceDue Date": {
+      "reason": "ambiguous",
+      "expected_value": "2026-06-10",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.791015625,
+          "top": 0.189453125,
+          "width": 0.1357421875,
+          "height": 0.016927083333333332
+        },
+        {
+          "page": 0,
+          "left": 0.513671875,
+          "top": 0.8352864583333334,
+          "width": 0.072265625,
+          "height": 0.009765625
+        }
+      ]
+    },
+    "Current Balance": {
+      "reason": "ambiguous",
+      "expected_value": "134.28",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.611328125,
+          "top": 0.18815104166666666,
+          "width": 0.09765625,
+          "height": 0.018880208333333332
+        },
+        {
+          "page": 0,
+          "left": 0.5302734375,
+          "top": 0.7194010416666666,
+          "width": 0.05859375,
+          "height": 0.01171875
+        },
+        {
+          "page": 0,
+          "left": 0.5234375,
+          "top": 0.857421875,
+          "width": 0.0625,
+          "height": 0.012369791666666666
+        }
+      ]
+    },
+    "Line_Item_Charges.Charge": {
+      "reason": "list_value",
+      "expected_value": "33.34, 51.32, 12.00, 1.04, 5.86, 1.95",
+      "candidates": []
+    },
+    "Line_Item_Charges.Line item Description": {
+      "reason": "list_value",
+      "expected_value": "Cargo por entrega (distribución), Cargo por suministro (generación), Cargo básico de servicio, Ajuste de energía renovable, Impuesto estatal sobre ventas (6.000%), Impuesto municipal sobre energía (2.000%)",
+      "candidates": []
+    },
+    "Meter Number": {
+      "reason": "text_not_found",
+      "expected_value": "MTR-72345678",
+      "candidates": []
+    },
+    "MeterRead.Meter ID": {
+      "reason": "text_not_found",
+      "expected_value": "MTR-72345678",
+      "candidates": []
+    },
+    "MeterRead.Usage Unit": {
+      "reason": "ambiguous",
+      "expected_value": "kWh",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.48828125,
+          "top": 0.3326822916666667,
+          "width": 0.0244140625,
+          "height": 0.0078125
+        },
+        {
+          "page": 0,
+          "left": 0.48828125,
+          "top": 0.3509114583333333,
+          "width": 0.0244140625,
+          "height": 0.008463541666666666
+        },
+        {
+          "page": 0,
+          "left": 0.4697265625,
+          "top": 0.3697916666666667,
+          "width": 0.0244140625,
+          "height": 0.0078125
+        },
+        {
+          "page": 0,
+          "left": 0.8828125,
+          "top": 0.45703125,
+          "width": 0.0361328125,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.87109375,
+          "top": 0.697265625,
+          "width": 0.0244140625,
+          "height": 0.008463541666666666
+        }
+      ]
+    },
+    "Previous Balance": {
+      "reason": "ambiguous",
+      "expected_value": "118.74",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.2490234375,
+          "top": 0.671875,
+          "width": 0.0458984375,
+          "height": 0.009114583333333334
+        },
+        {
+          "page": 0,
+          "left": 0.2490234375,
+          "top": 0.6920572916666666,
+          "width": 0.0458984375,
+          "height": 0.009765625
+        }
+      ]
+    },
+    "Provider": {
+      "reason": "text_not_found",
+      "expected_value": "Cedar Grove Energy",
+      "candidates": []
+    },
+    "Total Balance Due": {
+      "reason": "ambiguous",
+      "expected_value": "134.28",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.611328125,
+          "top": 0.18815104166666666,
+          "width": 0.09765625,
+          "height": 0.018880208333333332
+        },
+        {
+          "page": 0,
+          "left": 0.5302734375,
+          "top": 0.7194010416666666,
+          "width": 0.05859375,
+          "height": 0.01171875
+        },
+        {
+          "page": 0,
+          "left": 0.5234375,
+          "top": 0.857421875,
+          "width": 0.0625,
+          "height": 0.012369791666666666
+        }
+      ]
+    },
+    "Usage.usage": {
+      "reason": "text_not_found",
+      "expected_value": "521 kWh",
+      "candidates": []
+    }
+  },
+  "synthetic-expense-utility-electric-bill-render": {
+    "Account Number": {
+      "reason": "text_not_found",
+      "expected_value": "****-6729",
+      "candidates": []
+    },
+    "Address.Service Address": {
+      "reason": "list_value",
+      "expected_value": "8734 Meadowbrook Lane, Cheyenne, WY 82001",
+      "candidates": []
+    },
+    "Address.Service address pin code": {
+      "reason": "ambiguous",
+      "expected_value": "82001",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.22140522875816993,
+          "top": 0.31691919191919193,
+          "width": 0.0392156862745098,
+          "height": 0.00946969696969697
+        },
+        {
+          "page": 0,
+          "left": 0.22140522875816993,
+          "top": 0.37815656565656564,
+          "width": 0.0392156862745098,
+          "height": 0.008838383838383838
+        }
+      ]
+    },
+    "BalanceDue Date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-09-25",
+      "candidates": []
+    },
+    "Category": {
+      "reason": "ambiguous",
+      "expected_value": "Electricity",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.3684640522875817,
+          "top": 0.1369949494949495,
+          "width": 0.11437908496732026,
+          "height": 0.018308080808080808
+        },
+        {
+          "page": 0,
+          "left": 0.5686274509803921,
+          "top": 0.027777777777777776,
+          "width": 0.15359477124183007,
+          "height": 0.023989898989898988
+        }
+      ]
+    },
+    "CountMeterIDs": {
+      "reason": "ambiguous",
+      "expected_value": 1,
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.8112745098039216,
+          "top": 0.13257575757575757,
+          "width": 0.010620915032679739,
+          "height": 0.010732323232323232
+        },
+        {
+          "page": 0,
+          "left": 0.46895424836601307,
+          "top": 0.6256313131313131,
+          "width": 0.004084967320261438,
+          "height": 0.006944444444444444
+        },
+        {
+          "page": 0,
+          "left": 0.6209150326797386,
+          "top": 0.6256313131313131,
+          "width": 0.004901960784313725,
+          "height": 0.006944444444444444
+        },
+        {
+          "page": 0,
+          "left": 0.7753267973856209,
+          "top": 0.6376262626262627,
+          "width": 0.004084967320261438,
+          "height": 0.007575757575757576
+        },
+        {
+          "page": 0,
+          "left": 0.8570261437908496,
+          "top": 0.9684343434343434,
+          "width": 0.005718954248366013,
+          "height": 0.010101010101010102
+        },
+        {
+          "page": 0,
+          "left": 0.8913398692810458,
+          "top": 0.9684343434343434,
+          "width": 0.004901960784313725,
+          "height": 0.010101010101010102
+        }
+      ]
+    },
+    "End Date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-08-31",
+      "candidates": []
+    },
+    "Line_Item_Charges.Charge": {
+      "reason": "list_value",
+      "expected_value": "78.20, 45.00, 33.20, 5.00, 3.10",
+      "candidates": []
+    },
+    "Line_Item_Charges.Line item Description": {
+      "reason": "list_value",
+      "expected_value": "Energy Consumption (920 kWh at $0.085/kWh), Delivery/Distribution Charge, Supply/Generation Charge, Wyoming Energy Surcharge, Taxes & Fees",
+      "candidates": []
+    },
+    "MeterRead.Current value": {
+      "reason": "ambiguous",
+      "expected_value": "920",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.4722222222222222,
+          "top": 0.48547979797979796,
+          "width": 0.02287581699346405,
+          "height": 0.008207070707070708
+        },
+        {
+          "page": 0,
+          "left": 0.11437908496732026,
+          "top": 0.5082070707070707,
+          "width": 0.024509803921568627,
+          "height": 0.008838383838383838
+        },
+        {
+          "page": 0,
+          "left": 0.2696078431372549,
+          "top": 0.7152777777777778,
+          "width": 0.03104575163398693,
+          "height": 0.011994949494949494
+        }
+      ]
+    },
+    "MeterRead.Usage Unit": {
+      "reason": "ambiguous",
+      "expected_value": "kWh",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.380718954248366,
+          "top": 0.4463383838383838,
+          "width": 0.03104575163398693,
+          "height": 0.008838383838383838
+        },
+        {
+          "page": 0,
+          "left": 0.8088235294117647,
+          "top": 0.48042929292929293,
+          "width": 0.029411764705882353,
+          "height": 0.008838383838383838
+        },
+        {
+          "page": 0,
+          "left": 0.5008169934640523,
+          "top": 0.48484848484848486,
+          "width": 0.028594771241830064,
+          "height": 0.008838383838383838
+        },
+        {
+          "page": 0,
+          "left": 0.6544117647058824,
+          "top": 0.4911616161616162,
+          "width": 0.029411764705882353,
+          "height": 0.008838383838383838
+        },
+        {
+          "page": 0,
+          "left": 0.14460784313725492,
+          "top": 0.5082070707070707,
+          "width": 0.028594771241830064,
+          "height": 0.008838383838383838
+        },
+        {
+          "page": 0,
+          "left": 0.17647058823529413,
+          "top": 0.5321969696969697,
+          "width": 0.032679738562091505,
+          "height": 0.008838383838383838
+        },
+        {
+          "page": 0,
+          "left": 0.30637254901960786,
+          "top": 0.7152777777777778,
+          "width": 0.03022875816993464,
+          "height": 0.00946969696969697
+        }
+      ]
+    },
+    "StartDate": {
+      "reason": "text_not_found",
+      "expected_value": "2026-08-01",
+      "candidates": []
+    },
+    "Usage.usage": {
+      "reason": "text_not_found",
+      "expected_value": "920 kWh",
+      "candidates": []
+    }
+  },
+  "synthetic-expense-utility-electric-bill-scan": {
+    "Account Number": {
+      "reason": "text_not_found",
+      "expected_value": "1234 5678 9012",
+      "candidates": []
+    },
+    "Address.Service Address": {
+      "reason": "list_value",
+      "expected_value": "4912 W Willow Ridge Dr, West Jordan, UT 84081",
+      "candidates": []
+    },
+    "Address.Service address pin code": {
+      "reason": "ambiguous",
+      "expected_value": "84081",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.7666015625,
+          "top": 0.19075520833333334,
+          "width": 0.037109375,
+          "height": 0.0078125
+        },
+        {
+          "page": 0,
+          "left": 0.1962890625,
+          "top": 0.21614583333333334,
+          "width": 0.04296875,
+          "height": 0.009114583333333334
+        }
+      ]
+    },
+    "BalanceDue Date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-09-17",
+      "candidates": []
+    },
+    "Category": {
+      "reason": "ambiguous",
+      "expected_value": "Electricity",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.6591796875,
+          "top": 0.03125,
+          "width": 0.1572265625,
+          "height": 0.013671875
+        },
+        {
+          "page": 0,
+          "left": 0.0751953125,
+          "top": 0.4296875,
+          "width": 0.09375,
+          "height": 0.0078125
+        }
+      ]
+    },
+    "CountMeterIDs": {
+      "reason": "text_not_found",
+      "expected_value": 1,
+      "candidates": []
+    },
+    "Current Balance": {
+      "reason": "ambiguous",
+      "expected_value": "118.63",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.8701171875,
+          "top": 0.3079427083333333,
+          "width": 0.0595703125,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.845703125,
+          "top": 0.3313802083333333,
+          "width": 0.083984375,
+          "height": 0.014973958333333334
+        }
+      ]
+    },
+    "End Date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-08-26",
+      "candidates": []
+    },
+    "Line_Item_Charges.Charge": {
+      "reason": "list_value",
+      "expected_value": "65.52, 47.49, 5.50, 0.96, 4.18, 2.98",
+      "candidates": []
+    },
+    "Line_Item_Charges.Line item Description": {
+      "reason": "list_value",
+      "expected_value": "Supply (Generation) Charge, Delivery (Distribution) Charge, Customer Charge, Utah Clean Energy Program, State Sales Tax, Municipal Franchise Fee",
+      "candidates": []
+    },
+    "Meter Number": {
+      "reason": "ambiguous",
+      "expected_value": "CGEM12345678",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.658203125,
+          "top": 0.24479166666666666,
+          "width": 0.1025390625,
+          "height": 0.0078125
+        },
+        {
+          "page": 0,
+          "left": 0.072265625,
+          "top": 0.4049479166666667,
+          "width": 0.0966796875,
+          "height": 0.007161458333333333
+        }
+      ]
+    },
+    "MeterRead.Delta or Metered value": {
+      "reason": "ambiguous",
+      "expected_value": "640",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.912109375,
+          "top": 0.404296875,
+          "width": 0.0234375,
+          "height": 0.0078125
+        },
+        {
+          "page": 0,
+          "left": 0.3095703125,
+          "top": 0.642578125,
+          "width": 0.0224609375,
+          "height": 0.0078125
+        },
+        {
+          "page": 0,
+          "left": 0.3095703125,
+          "top": 0.6575520833333334,
+          "width": 0.0224609375,
+          "height": 0.0078125
+        },
+        {
+          "page": 0,
+          "left": 0.3095703125,
+          "top": 0.6888020833333334,
+          "width": 0.0224609375,
+          "height": 0.007161458333333333
+        }
+      ]
+    },
+    "MeterRead.Meter ID": {
+      "reason": "ambiguous",
+      "expected_value": "CGEM12345678",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.658203125,
+          "top": 0.24479166666666666,
+          "width": 0.1025390625,
+          "height": 0.0078125
+        },
+        {
+          "page": 0,
+          "left": 0.072265625,
+          "top": 0.4049479166666667,
+          "width": 0.0966796875,
+          "height": 0.007161458333333333
+        }
+      ]
+    },
+    "MeterRead.Usage Unit": {
+      "reason": "ambiguous",
+      "expected_value": "kWh",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.90234375,
+          "top": 0.3873697916666667,
+          "width": 0.03515625,
+          "height": 0.009114583333333334
+        },
+        {
+          "page": 0,
+          "left": 0.337890625,
+          "top": 0.4290364583333333,
+          "width": 0.0390625,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.3369140625,
+          "top": 0.642578125,
+          "width": 0.0244140625,
+          "height": 0.0078125
+        },
+        {
+          "page": 0,
+          "left": 0.4765625,
+          "top": 0.642578125,
+          "width": 0.0302734375,
+          "height": 0.008463541666666666
+        },
+        {
+          "page": 0,
+          "left": 0.3369140625,
+          "top": 0.6575520833333334,
+          "width": 0.0244140625,
+          "height": 0.0078125
+        },
+        {
+          "page": 0,
+          "left": 0.4765625,
+          "top": 0.6575520833333334,
+          "width": 0.0302734375,
+          "height": 0.008463541666666666
+        },
+        {
+          "page": 0,
+          "left": 0.3369140625,
+          "top": 0.6881510416666666,
+          "width": 0.0244140625,
+          "height": 0.0078125
+        },
+        {
+          "page": 0,
+          "left": 0.4765625,
+          "top": 0.6881510416666666,
+          "width": 0.0302734375,
+          "height": 0.008463541666666666
+        }
+      ]
+    },
+    "Previous Balance": {
+      "reason": "ambiguous",
+      "expected_value": "112.74",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.87890625,
+          "top": 0.2630208333333333,
+          "width": 0.05078125,
+          "height": 0.009765625
+        },
+        {
+          "page": 0,
+          "left": 0.873046875,
+          "top": 0.283203125,
+          "width": 0.056640625,
+          "height": 0.009765625
+        }
+      ]
+    },
+    "StartDate": {
+      "reason": "text_not_found",
+      "expected_value": "2026-07-28",
+      "candidates": []
+    },
+    "Total Balance Due": {
+      "reason": "ambiguous",
+      "expected_value": "118.63",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.8701171875,
+          "top": 0.3079427083333333,
+          "width": 0.0595703125,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.845703125,
+          "top": 0.3313802083333333,
+          "width": 0.083984375,
+          "height": 0.014973958333333334
+        }
+      ]
+    },
+    "Usage.usage": {
+      "reason": "text_not_found",
+      "expected_value": "640 kWh",
+      "candidates": []
+    }
+  },
+  "synthetic-expense-utility-water-sewer-bill-render-spanish": {
+    "Account_Info.Acct_Name": {
+      "reason": "text_not_found",
+      "expected_value": "Mariana López",
+      "candidates": []
+    },
+    "Account_Info.Acct_No": {
+      "reason": "ambiguous",
+      "expected_value": "1234-5678-90",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.8291015625,
+          "top": 0.06705729166666667,
+          "width": 0.1064453125,
+          "height": 0.009114583333333334
+        },
+        {
+          "page": 0,
+          "left": 0.2236328125,
+          "top": 0.8444010416666666,
+          "width": 0.091796875,
+          "height": 0.0078125
+        }
+      ]
+    },
+    "Dates.Bill_From_Date": {
+      "reason": "ambiguous",
+      "expected_value": "2026-07-21",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.751953125,
+          "top": 0.107421875,
+          "width": 0.08203125,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.6015625,
+          "top": 0.6529947916666666,
+          "width": 0.078125,
+          "height": 0.009114583333333334
+        }
+      ]
+    },
+    "Dates.Bill_To_Date": {
+      "reason": "ambiguous",
+      "expected_value": "2026-08-20",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.8515625,
+          "top": 0.107421875,
+          "width": 0.083984375,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.6015625,
+          "top": 0.625,
+          "width": 0.078125,
+          "height": 0.009765625
+        }
+      ]
+    },
+    "Dates.Billing_Date": {
+      "reason": "ambiguous",
+      "expected_value": "2026-08-28",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.8486328125,
+          "top": 0.08723958333333333,
+          "width": 0.0869140625,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.2373046875,
+          "top": 0.859375,
+          "width": 0.078125,
+          "height": 0.009765625
+        }
+      ]
+    },
+    "Dates.Due_Date": {
+      "reason": "ambiguous",
+      "expected_value": "2026-09-18",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.8427734375,
+          "top": 0.12825520833333334,
+          "width": 0.0927734375,
+          "height": 0.011067708333333334
+        },
+        {
+          "page": 0,
+          "left": 0.2373046875,
+          "top": 0.875,
+          "width": 0.078125,
+          "height": 0.009765625
+        }
+      ]
+    },
+    "Line_Items.Amount or Value": {
+      "reason": "list_value",
+      "expected_value": "22.50, 45.00, 12.75, 19.20, 4.50, 6.24",
+      "candidates": []
+    },
+    "Line_Items.LineItemDescription": {
+      "reason": "list_value",
+      "expected_value": "Cargo base de agua, Uso de agua, Cargo base de alcantarillado, Cargo de alcantarillado, Tarifa de aguas pluviales, Impuesto local sobre servicios públicos (6%)",
+      "candidates": []
+    },
+    "Prev_Bal": {
+      "reason": "ambiguous",
+      "expected_value": "88.03",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.896484375,
+          "top": 0.3522135416666667,
+          "width": 0.048828125,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.8876953125,
+          "top": 0.37109375,
+          "width": 0.056640625,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.8876953125,
+          "top": 0.3899739583333333,
+          "width": 0.056640625,
+          "height": 0.009765625
+        }
+      ]
+    },
+    "Provider Name": {
+      "reason": "text_not_found",
+      "expected_value": "SERVICIO DE AGUA DEL CONDADO DE HARBOR",
+      "candidates": []
+    },
+    "Service_Address.City": {
+      "reason": "ambiguous",
+      "expected_value": "Pocatello",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.0380859375,
+          "top": 0.2643229166666667,
+          "width": 0.0625,
+          "height": 0.009114583333333334
+        },
+        {
+          "page": 0,
+          "left": 0.146484375,
+          "top": 0.14127604166666666,
+          "width": 0.0625,
+          "height": 0.009765625
+        },
+        {
+          "page": 0,
+          "left": 0.3486328125,
+          "top": 0.24934895833333334,
+          "width": 0.0615234375,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.0673828125,
+          "top": 0.8138020833333334,
+          "width": 0.103515625,
+          "height": 0.013020833333333334
+        },
+        {
+          "page": 0,
+          "left": 0.443359375,
+          "top": 0.826171875,
+          "width": 0.060546875,
+          "height": 0.009114583333333334
+        },
+        {
+          "page": 0,
+          "left": 0.4423828125,
+          "top": 0.91796875,
+          "width": 0.0615234375,
+          "height": 0.009114583333333334
+        }
+      ]
+    },
+    "Service_Address.State": {
+      "reason": "ambiguous",
+      "expected_value": "ID",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.10546875,
+          "top": 0.2643229166666667,
+          "width": 0.0126953125,
+          "height": 0.0078125
+        },
+        {
+          "page": 0,
+          "left": 0.2138671875,
+          "top": 0.14127604166666666,
+          "width": 0.0126953125,
+          "height": 0.008463541666666666
+        },
+        {
+          "page": 0,
+          "left": 0.4150390625,
+          "top": 0.25,
+          "width": 0.01171875,
+          "height": 0.0078125
+        },
+        {
+          "page": 0,
+          "left": 0.1796875,
+          "top": 0.8190104166666666,
+          "width": 0.0107421875,
+          "height": 0.0078125
+        },
+        {
+          "page": 0,
+          "left": 0.5087890625,
+          "top": 0.826171875,
+          "width": 0.01171875,
+          "height": 0.0078125
+        },
+        {
+          "page": 0,
+          "left": 0.5087890625,
+          "top": 0.91796875,
+          "width": 0.01171875,
+          "height": 0.0078125
+        }
+      ]
+    },
+    "Service_Address.Zip_Code": {
+      "reason": "ambiguous",
+      "expected_value": "83204",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.1220703125,
+          "top": 0.2643229166666667,
+          "width": 0.041015625,
+          "height": 0.0078125
+        },
+        {
+          "page": 0,
+          "left": 0.431640625,
+          "top": 0.25,
+          "width": 0.0400390625,
+          "height": 0.0078125
+        },
+        {
+          "page": 0,
+          "left": 0.525390625,
+          "top": 0.91796875,
+          "width": 0.0390625,
+          "height": 0.0078125
+        }
+      ]
+    },
+    "Tot_Amt": {
+      "reason": "ambiguous",
+      "expected_value": "86.47",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.861328125,
+          "top": 0.162109375,
+          "width": 0.07421875,
+          "height": 0.015625
+        },
+        {
+          "page": 0,
+          "left": 0.88671875,
+          "top": 0.4765625,
+          "width": 0.0576171875,
+          "height": 0.01171875
+        },
+        {
+          "page": 0,
+          "left": 0.2607421875,
+          "top": 0.8997395833333334,
+          "width": 0.0546875,
+          "height": 0.011067708333333334
+        }
+      ]
+    },
+    "Total_Current_Charges": {
+      "reason": "ambiguous",
+      "expected_value": "110.19",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.8896484375,
+          "top": 0.44921875,
+          "width": 0.0546875,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.556640625,
+          "top": 0.4934895833333333,
+          "width": 0.056640625,
+          "height": 0.010416666666666666
+        }
+      ]
+    }
+  },
+  "synthetic-expense-utility-water-sewer-bill-render": {
+    "Account_Info.Acct_Name": {
+      "reason": "ambiguous",
+      "expected_value": "Jordan Rivera",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.10866013071895425,
+          "top": 0.3194444444444444,
+          "width": 0.09068627450980392,
+          "height": 0.00946969696969697
+        },
+        {
+          "page": 0,
+          "left": 0.10866013071895425,
+          "top": 0.8200757575757576,
+          "width": 0.0915032679738562,
+          "height": 0.00946969696969697
+        }
+      ]
+    },
+    "Dates.Due_Date": {
+      "reason": "ambiguous",
+      "expected_value": "2026-09-25",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.23284313725490197,
+          "top": 0.24116161616161616,
+          "width": 0.07761437908496732,
+          "height": 0.00946969696969697
+        },
+        {
+          "page": 0,
+          "left": 0.7361111111111112,
+          "top": 0.7411616161616161,
+          "width": 0.0784313725490196,
+          "height": 0.00946969696969697
+        },
+        {
+          "page": 0,
+          "left": 0.4665032679738562,
+          "top": 0.922979797979798,
+          "width": 0.0784313725490196,
+          "height": 0.00946969696969697
+        }
+      ]
+    },
+    "Line_Items.Amount or Value": {
+      "reason": "list_value",
+      "expected_value": "25.48, 18.20, 5.08",
+      "candidates": []
+    },
+    "Line_Items.LineItemDescription": {
+      "reason": "list_value",
+      "expected_value": "Water Charge, Sewer Charge, Stormwater Fee",
+      "candidates": []
+    },
+    "Prev_Bal": {
+      "reason": "ambiguous",
+      "expected_value": "62.48",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.7156862745098039,
+          "top": 0.17803030303030304,
+          "width": 0.0457516339869281,
+          "height": 0.010732323232323232
+        },
+        {
+          "page": 0,
+          "left": 0.7156862745098039,
+          "top": 0.20202020202020202,
+          "width": 0.0457516339869281,
+          "height": 0.011363636363636364
+        }
+      ]
+    },
+    "Provider Name": {
+      "reason": "text_not_found",
+      "expected_value": "Harbor County Water Service",
+      "candidates": []
+    },
+    "Service_Address.City": {
+      "reason": "ambiguous",
+      "expected_value": "Sedona",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.10866013071895425,
+          "top": 0.40404040404040403,
+          "width": 0.05310457516339869,
+          "height": 0.011363636363636364
+        },
+        {
+          "page": 0,
+          "left": 0.10866013071895425,
+          "top": 0.7537878787878788,
+          "width": 0.05310457516339869,
+          "height": 0.010732323232323232
+        },
+        {
+          "page": 0,
+          "left": 0.10866013071895425,
+          "top": 0.8522727272727273,
+          "width": 0.05310457516339869,
+          "height": 0.010732323232323232
+        },
+        {
+          "page": 0,
+          "left": 0.3243464052287582,
+          "top": 0.9387626262626263,
+          "width": 0.05392156862745098,
+          "height": 0.010732323232323232
+        }
+      ]
+    },
+    "Service_Address.State": {
+      "reason": "ambiguous",
+      "expected_value": "AZ",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.16666666666666666,
+          "top": 0.4046717171717172,
+          "width": 0.01715686274509804,
+          "height": 0.008838383838383838
+        },
+        {
+          "page": 0,
+          "left": 0.16666666666666666,
+          "top": 0.7537878787878788,
+          "width": 0.017973856209150325,
+          "height": 0.00946969696969697
+        },
+        {
+          "page": 0,
+          "left": 0.16666666666666666,
+          "top": 0.8529040404040404,
+          "width": 0.017973856209150325,
+          "height": 0.008838383838383838
+        },
+        {
+          "page": 0,
+          "left": 0.3831699346405229,
+          "top": 0.9387626262626263,
+          "width": 0.017973856209150325,
+          "height": 0.00946969696969697
+        }
+      ]
+    },
+    "Service_Address.Zip_Code": {
+      "reason": "ambiguous",
+      "expected_value": "86336",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.1895424836601307,
+          "top": 0.4046717171717172,
+          "width": 0.04084967320261438,
+          "height": 0.008838383838383838
+        },
+        {
+          "page": 0,
+          "left": 0.1895424836601307,
+          "top": 0.8529040404040404,
+          "width": 0.04084967320261438,
+          "height": 0.008838383838383838
+        }
+      ]
+    },
+    "Tot_Amt": {
+      "reason": "ambiguous",
+      "expected_value": "48.76",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.7156862745098039,
+          "top": 0.2638888888888889,
+          "width": 0.0457516339869281,
+          "height": 0.011363636363636364
+        },
+        {
+          "page": 0,
+          "left": 0.7156862745098039,
+          "top": 0.29797979797979796,
+          "width": 0.056372549019607844,
+          "height": 0.013888888888888888
+        },
+        {
+          "page": 0,
+          "left": 0.7818627450980392,
+          "top": 0.6224747474747475,
+          "width": 0.0457516339869281,
+          "height": 0.010732323232323232
+        },
+        {
+          "page": 0,
+          "left": 0.7785947712418301,
+          "top": 0.7752525252525253,
+          "width": 0.06045751633986928,
+          "height": 0.013888888888888888
+        },
+        {
+          "page": 0,
+          "left": 0.39705882352941174,
+          "top": 0.9223484848484849,
+          "width": 0.04493464052287582,
+          "height": 0.010101010101010102
+        }
+      ]
+    },
+    "Total_Current_Charges": {
+      "reason": "ambiguous",
+      "expected_value": "48.76",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.7156862745098039,
+          "top": 0.2638888888888889,
+          "width": 0.0457516339869281,
+          "height": 0.011363636363636364
+        },
+        {
+          "page": 0,
+          "left": 0.7156862745098039,
+          "top": 0.29797979797979796,
+          "width": 0.056372549019607844,
+          "height": 0.013888888888888888
+        },
+        {
+          "page": 0,
+          "left": 0.7818627450980392,
+          "top": 0.6224747474747475,
+          "width": 0.0457516339869281,
+          "height": 0.010732323232323232
+        },
+        {
+          "page": 0,
+          "left": 0.7785947712418301,
+          "top": 0.7752525252525253,
+          "width": 0.06045751633986928,
+          "height": 0.013888888888888888
+        },
+        {
+          "page": 0,
+          "left": 0.39705882352941174,
+          "top": 0.9223484848484849,
+          "width": 0.04493464052287582,
+          "height": 0.010101010101010102
+        }
+      ]
+    }
+  },
+  "synthetic-expense-utility-water-sewer-bill-scan": {
+    "Dates.Bill_From_Date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-07-24",
+      "candidates": []
+    },
+    "Dates.Bill_To_Date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-08-24",
+      "candidates": []
+    },
+    "Dates.Billing_Date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-08-25",
+      "candidates": []
+    },
+    "Dates.Due_Date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-09-15",
+      "candidates": []
+    },
+    "Line_Items.Amount or Value": {
+      "reason": "list_value",
+      "expected_value": "14.45, 18.99, 20.37, 17.54, 3.50, 0.04",
+      "candidates": []
+    },
+    "Line_Items.LineItemDescription": {
+      "reason": "list_value",
+      "expected_value": "Water Service Charge, Water Usage Charge, Sewer Service Charge, Sewer Usage Charge, Stormwater Fee, Colorado Water Conservation Fee",
+      "candidates": []
+    },
+    "Provider Name": {
+      "reason": "ambiguous",
+      "expected_value": "Harbor County Water Service",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.1962890625,
+          "top": 0.036458333333333336,
+          "width": 0.3525390625,
+          "height": 0.018880208333333332
+        },
+        {
+          "page": 0,
+          "left": 0.1513671875,
+          "top": 0.8059895833333334,
+          "width": 0.197265625,
+          "height": 0.01171875
+        },
+        {
+          "page": 0,
+          "left": 0.640625,
+          "top": 0.943359375,
+          "width": 0.197265625,
+          "height": 0.012369791666666666
+        }
+      ]
+    },
+    "Service_Address.City": {
+      "reason": "ambiguous",
+      "expected_value": "Loveland",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.69921875,
+          "top": 0.23893229166666666,
+          "width": 0.0634765625,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.1953125,
+          "top": 0.9088541666666666,
+          "width": 0.0615234375,
+          "height": 0.010416666666666666
+        }
+      ]
+    },
+    "Service_Address.State": {
+      "reason": "ambiguous",
+      "expected_value": "CO",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.28515625,
+          "top": 0.09830729166666667,
+          "width": 0.0205078125,
+          "height": 0.009765625
+        },
+        {
+          "page": 0,
+          "left": 0.7685546875,
+          "top": 0.23958333333333334,
+          "width": 0.0185546875,
+          "height": 0.008463541666666666
+        },
+        {
+          "page": 0,
+          "left": 0.232421875,
+          "top": 0.8391927083333334,
+          "width": 0.0185546875,
+          "height": 0.008463541666666666
+        },
+        {
+          "page": 0,
+          "left": 0.2626953125,
+          "top": 0.9088541666666666,
+          "width": 0.0185546875,
+          "height": 0.009114583333333334
+        },
+        {
+          "page": 0,
+          "left": 0.6982421875,
+          "top": 0.9739583333333334,
+          "width": 0.01953125,
+          "height": 0.009114583333333334
+        }
+      ]
+    },
+    "Service_Address.Zip_Code": {
+      "reason": "ambiguous",
+      "expected_value": "80538",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.7919921875,
+          "top": 0.23958333333333334,
+          "width": 0.0419921875,
+          "height": 0.008463541666666666
+        },
+        {
+          "page": 0,
+          "left": 0.2861328125,
+          "top": 0.9095052083333334,
+          "width": 0.041015625,
+          "height": 0.008463541666666666
+        }
+      ]
+    }
+  },
+  "synthetic-insurance-health-insurance-premium-render-spanish": {
+    "coverage_start_date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-08-01",
+      "candidates": []
+    },
+    "coverage_end_date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-08-31",
+      "candidates": []
+    },
+    "insurer_or_marketplace_name": {
+      "reason": "list_value",
+      "expected_value": "Harbor Health Plan, Inc.",
+      "candidates": []
+    },
+    "payment_due_date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-08-25",
+      "candidates": []
+    },
+    "payment_frequency": {
+      "reason": "ambiguous",
+      "expected_value": "Mensual",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.7099609375,
+          "top": 0.2513020833333333,
+          "width": 0.052734375,
+          "height": 0.0078125
+        },
+        {
+          "page": 0,
+          "left": 0.1474609375,
+          "top": 0.4713541666666667,
+          "width": 0.0556640625,
+          "height": 0.008463541666666666
+        },
+        {
+          "page": 0,
+          "left": 0.1396484375,
+          "top": 0.80859375,
+          "width": 0.0517578125,
+          "height": 0.0078125
+        }
+      ]
+    },
+    "payment_status": {
+      "reason": "text_not_found",
+      "expected_value": "Paid",
+      "candidates": []
+    },
+    "policyholder_name": {
+      "reason": "text_not_found",
+      "expected_value": "María Elena Salazar",
+      "candidates": []
+    },
+    "statement_date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-09-02",
+      "candidates": []
+    }
+  },
+  "synthetic-insurance-health-insurance-premium-render": {
+    "coverage_start_date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-08-01",
+      "candidates": []
+    },
+    "coverage_end_date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-08-31",
+      "candidates": []
+    },
+    "payment_status": {
+      "reason": "text_not_found",
+      "expected_value": "Paid",
+      "candidates": []
+    },
+    "policyholder_name": {
+      "reason": "text_not_found",
+      "expected_value": "Jordan Rivera",
+      "candidates": []
+    },
+    "premium_amount": {
+      "reason": "ambiguous",
+      "expected_value": "390.00",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.7892156862745098,
+          "top": 0.7954545454545454,
+          "width": 0.05718954248366013,
+          "height": 0.011363636363636364
+        },
+        {
+          "page": 0,
+          "left": 0.7892156862745098,
+          "top": 0.8200757575757576,
+          "width": 0.05718954248366013,
+          "height": 0.01893939393939394
+        }
+      ]
+    },
+    "subsidy_or_tax_credit_amount": {
+      "reason": "ambiguous",
+      "expected_value": "240.00",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.7826797385620915,
+          "top": 0.4147727272727273,
+          "width": 0.06209150326797386,
+          "height": 0.011994949494949494
+        },
+        {
+          "page": 0,
+          "left": 0.7834967320261438,
+          "top": 0.740530303030303,
+          "width": 0.06290849673202614,
+          "height": 0.011994949494949494
+        }
+      ]
+    }
+  },
+  "synthetic-insurance-health-insurance-premium-scan": {
+    "coverage_start_date": {
+      "reason": "ambiguous",
+      "expected_value": "2026-09-01",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.791015625,
+          "top": 0.068359375,
+          "width": 0.080078125,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.7900390625,
+          "top": 0.0859375,
+          "width": 0.080078125,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.0556640625,
+          "top": 0.6744791666666666,
+          "width": 0.0810546875,
+          "height": 0.009765625
+        }
+      ]
+    },
+    "coverage_end_date": {
+      "reason": "ambiguous",
+      "expected_value": "2026-09-30",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.8896484375,
+          "top": 0.08723958333333333,
+          "width": 0.0810546875,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.544921875,
+          "top": 0.4309895833333333,
+          "width": 0.09375,
+          "height": 0.011067708333333334
+        }
+      ]
+    },
+    "insurer_or_marketplace_name": {
+      "reason": "list_value",
+      "expected_value": "Harbor Health Plan, Inc.",
+      "candidates": []
+    },
+    "payment_frequency": {
+      "reason": "ambiguous",
+      "expected_value": "Monthly",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.568359375,
+          "top": 0.240234375,
+          "width": 0.0556640625,
+          "height": 0.012369791666666666
+        },
+        {
+          "page": 0,
+          "left": 0.1064453125,
+          "top": 0.4720052083333333,
+          "width": 0.0546875,
+          "height": 0.01171875
+        },
+        {
+          "page": 0,
+          "left": 0.080078125,
+          "top": 0.564453125,
+          "width": 0.0537109375,
+          "height": 0.011067708333333334
+        }
+      ]
+    },
+    "premium_amount": {
+      "reason": "ambiguous",
+      "expected_value": "636.25",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.8623046875,
+          "top": 0.3111979166666667,
+          "width": 0.0634765625,
+          "height": 0.01953125
+        },
+        {
+          "page": 0,
+          "left": 0.8798828125,
+          "top": 0.3444010416666667,
+          "width": 0.064453125,
+          "height": 0.01171875
+        },
+        {
+          "page": 0,
+          "left": 0.830078125,
+          "top": 0.5455729166666666,
+          "width": 0.0673828125,
+          "height": 0.020833333333333332
+        },
+        {
+          "page": 0,
+          "left": 0.8427734375,
+          "top": 0.7083333333333334,
+          "width": 0.0634765625,
+          "height": 0.012369791666666666
+        }
+      ]
+    },
+    "statement_date": {
+      "reason": "ambiguous",
+      "expected_value": "2026-09-01",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.791015625,
+          "top": 0.068359375,
+          "width": 0.080078125,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.7900390625,
+          "top": 0.0859375,
+          "width": 0.080078125,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.0556640625,
+          "top": 0.6744791666666666,
+          "width": 0.0810546875,
+          "height": 0.009765625
+        }
+      ]
+    },
+    "subsidy_or_tax_credit_amount": {
+      "reason": "ambiguous",
+      "expected_value": "323.75",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.8828125,
+          "top": 0.2688802083333333,
+          "width": 0.0634765625,
+          "height": 0.01171875
+        },
+        {
+          "page": 0,
+          "left": 0.826171875,
+          "top": 0.501953125,
+          "width": 0.0732421875,
+          "height": 0.012369791666666666
+        }
+      ]
+    }
+  },
+  "synthetic-investment-and-royalty-income-render-spanish": {
+    "account_holder_name": {
+      "reason": "text_not_found",
+      "expected_value": "María Elena Vásquez",
+      "candidates": []
+    },
+    "account_number": {
+      "reason": "text_not_found",
+      "expected_value": "***-***-6721",
+      "candidates": []
+    },
+    "account_balance": {
+      "reason": "list_value",
+      "expected_value": "$51,000.00",
+      "candidates": []
+    },
+    "financial_institution": {
+      "reason": "list_value",
+      "expected_value": "Harbor Brokerage Services, LLC",
+      "candidates": []
+    },
+    "tax_year": {
+      "reason": "text_not_found",
+      "expected_value": "2025",
+      "candidates": []
+    },
+    "document_type": {
+      "reason": "text_not_found",
+      "expected_value": "Brokerage Statement",
+      "candidates": []
+    },
+    "statement_period_start": {
+      "reason": "ambiguous",
+      "expected_value": "2025-01-01",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.1650390625,
+          "top": 0.3424479166666667,
+          "width": 0.080078125,
+          "height": 0.008463541666666666
+        },
+        {
+          "page": 0,
+          "left": 0.75390625,
+          "top": 0.07942708333333333,
+          "width": 0.087890625,
+          "height": 0.009114583333333334
+        },
+        {
+          "page": 0,
+          "left": 0.056640625,
+          "top": 0.5227864583333334,
+          "width": 0.076171875,
+          "height": 0.015625
+        }
+      ]
+    },
+    "statement_period_end": {
+      "reason": "ambiguous",
+      "expected_value": "2025-12-31",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.166015625,
+          "top": 0.423828125,
+          "width": 0.08203125,
+          "height": 0.0078125
+        },
+        {
+          "page": 0,
+          "left": 0.865234375,
+          "top": 0.07942708333333333,
+          "width": 0.0869140625,
+          "height": 0.009114583333333334
+        },
+        {
+          "page": 0,
+          "left": 0.146484375,
+          "top": 0.4466145833333333,
+          "width": 0.0654296875,
+          "height": 0.007161458333333333
+        },
+        {
+          "page": 0,
+          "left": 0.0576171875,
+          "top": 0.6184895833333334,
+          "width": 0.0703125,
+          "height": 0.0078125
+        }
+      ]
+    },
+    "contribution_dates": {
+      "reason": "list_value",
+      "expected_value": "2025-03-10, 2025-06-15",
+      "candidates": []
+    },
+    "distribution_dates": {
+      "reason": "ambiguous",
+      "expected_value": "2025-11-20",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.0576171875,
+          "top": 0.6002604166666666,
+          "width": 0.0703125,
+          "height": 0.007161458333333333
+        },
+        {
+          "page": 0,
+          "left": 0.0576171875,
+          "top": 0.740234375,
+          "width": 0.0771484375,
+          "height": 0.0078125
+        }
+      ]
+    }
+  },
+  "synthetic-investment-and-royalty-income-render": {
+    "account_holder_name": {
+      "reason": "text_not_found",
+      "expected_value": "Jordan Rivera",
+      "candidates": []
+    },
+    "account_number": {
+      "reason": "text_not_found",
+      "expected_value": "xxxx-xxxx-1392",
+      "candidates": []
+    },
+    "account_type": {
+      "reason": "text_not_found",
+      "expected_value": "Traditional IRA",
+      "candidates": []
+    },
+    "account_balance": {
+      "reason": "list_value",
+      "expected_value": "$49,000.00",
+      "candidates": []
+    },
+    "financial_institution": {
+      "reason": "text_not_found",
+      "expected_value": "Seaport Financial Group",
+      "candidates": []
+    }
+  },
+  "synthetic-investment-and-royalty-income-scan": {
+    "account_type": {
+      "reason": "text_not_found",
+      "expected_value": "Traditional IRA",
+      "candidates": []
+    },
+    "account_balance": {
+      "reason": "list_value",
+      "expected_value": "$46,000.00",
+      "candidates": []
+    },
+    "total_value": {
+      "reason": "ambiguous",
+      "expected_value": "46000.00",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.7255859375,
+          "top": 0.298828125,
+          "width": 0.1455078125,
+          "height": 0.018880208333333332
+        },
+        {
+          "page": 0,
+          "left": 0.5234375,
+          "top": 0.3430989583333333,
+          "width": 0.080078125,
+          "height": 0.020182291666666668
+        },
+        {
+          "page": 0,
+          "left": 0.8798828125,
+          "top": 0.6302083333333334,
+          "width": 0.072265625,
+          "height": 0.009765625
+        },
+        {
+          "page": 0,
+          "left": 0.8798828125,
+          "top": 0.6497395833333334,
+          "width": 0.072265625,
+          "height": 0.009765625
+        },
+        {
+          "page": 0,
+          "left": 0.3623046875,
+          "top": 0.876953125,
+          "width": 0.0771484375,
+          "height": 0.022786458333333332
+        }
+      ]
+    },
+    "financial_institution": {
+      "reason": "list_value",
+      "expected_value": "Harbor Brokerage Services, Inc.",
+      "candidates": []
+    },
+    "tax_year": {
+      "reason": "ambiguous",
+      "expected_value": "2026",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.7421875,
+          "top": 0.11458333333333333,
+          "width": 0.033203125,
+          "height": 0.0078125
+        },
+        {
+          "page": 0,
+          "left": 0.7412109375,
+          "top": 0.130859375,
+          "width": 0.033203125,
+          "height": 0.008463541666666666
+        },
+        {
+          "page": 0,
+          "left": 0.87109375,
+          "top": 0.13151041666666666,
+          "width": 0.033203125,
+          "height": 0.008463541666666666
+        },
+        {
+          "page": 0,
+          "left": 0.6650390625,
+          "top": 0.19921875,
+          "width": 0.033203125,
+          "height": 0.008463541666666666
+        }
+      ]
+    },
+    "document_type": {
+      "reason": "text_not_found",
+      "expected_value": "Brokerage Statement",
+      "candidates": []
+    },
+    "statement_period_start": {
+      "reason": "ambiguous",
+      "expected_value": "2026-01-01",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.2470703125,
+          "top": 0.271484375,
+          "width": 0.0771484375,
+          "height": 0.008463541666666666
+        },
+        {
+          "page": 0,
+          "left": 0.05859375,
+          "top": 0.5442708333333334,
+          "width": 0.07421875,
+          "height": 0.015625
+        }
+      ]
+    },
+    "statement_period_end": {
+      "reason": "ambiguous",
+      "expected_value": "2026-08-31",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.2255859375,
+          "top": 0.3489583333333333,
+          "width": 0.078125,
+          "height": 0.009114583333333334
+        },
+        {
+          "page": 0,
+          "left": 0.05859375,
+          "top": 0.6490885416666666,
+          "width": 0.07421875,
+          "height": 0.008463541666666666
+        },
+        {
+          "page": 0,
+          "left": 0.2705078125,
+          "top": 0.7916666666666666,
+          "width": 0.0771484375,
+          "height": 0.008463541666666666
+        }
+      ]
+    },
+    "contribution_dates": {
+      "reason": "list_value",
+      "expected_value": "2026-02-14, 2026-05-12",
+      "candidates": []
+    }
+  },
+  "synthetic-public-benefits-identity-proof-state-photo-id": {
+    "ADDRESS_DETAILS.CITY": {
+      "reason": "text_not_found",
+      "expected_value": "LAS VEGAS",
+      "candidates": []
+    },
+    "ADDRESS_DETAILS.STREET_ADDRESS": {
+      "reason": "text_not_found",
+      "expected_value": "4821 DESERT BLOOM AVE",
+      "candidates": []
+    },
+    "ADDRESS_DETAILS.ZIP_CODE": {
+      "reason": "ambiguous",
+      "expected_value": "89146",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.5345303867403315,
+          "top": 0.494475138121547,
+          "width": 0.04765193370165746,
+          "height": 0.02117863720073665
+        },
+        {
+          "page": 0,
+          "left": 0.6477900552486188,
+          "top": 0.5911602209944752,
+          "width": 0.054558011049723756,
+          "height": 0.02394106813996317
+        }
+      ]
+    },
+    "CLASS": {
+      "reason": "text_not_found",
+      "expected_value": "D",
+      "candidates": []
+    },
+    "DATE_OF_BIRTH": {
+      "reason": "text_not_found",
+      "expected_value": "1996-05-14",
+      "candidates": []
+    },
+    "RESTRICTIONS": {
+      "reason": "text_not_found",
+      "expected_value": "NONE",
+      "candidates": []
+    }
+  },
+  "synthetic-public-benefits-income-proof-pay-statement-photo": {
+    "EmployeeAddress.Line1": {
+      "reason": "text_not_found",
+      "expected_value": "1824 E Lafayette Ave",
+      "candidates": []
+    },
+    "EmployeeAddress.City": {
+      "reason": "ambiguous",
+      "expected_value": "Baltimore",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.16390423572744015,
+          "top": 0.13259668508287292,
+          "width": 0.06537753222836096,
+          "height": 0.012430939226519336
+        },
+        {
+          "page": 0,
+          "left": 0.2918968692449355,
+          "top": 0.23825966850828728,
+          "width": 0.056169429097605895,
+          "height": 0.010359116022099447
+        },
+        {
+          "page": 0,
+          "left": 0.5285451197053407,
+          "top": 0.24102209944751382,
+          "width": 0.058011049723756904,
+          "height": 0.010359116022099447
+        }
+      ]
+    },
+    "EmployeeAddress.State": {
+      "reason": "ambiguous",
+      "expected_value": "MD",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.23572744014732966,
+          "top": 0.13397790055248618,
+          "width": 0.022099447513812154,
+          "height": 0.009668508287292817
+        },
+        {
+          "page": 0,
+          "left": 0.35451197053406996,
+          "top": 0.23825966850828728,
+          "width": 0.019337016574585635,
+          "height": 0.008977900552486187
+        },
+        {
+          "page": 0,
+          "left": 0.5930018416206262,
+          "top": 0.24102209944751382,
+          "width": 0.020257826887661142,
+          "height": 0.008287292817679558
+        }
+      ]
+    },
+    "CompanyAddress.Line1": {
+      "reason": "text_not_found",
+      "expected_value": "2458 Harford Rd",
+      "candidates": []
+    },
+    "CompanyAddress.City": {
+      "reason": "ambiguous",
+      "expected_value": "Baltimore",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.16390423572744015,
+          "top": 0.13259668508287292,
+          "width": 0.06537753222836096,
+          "height": 0.012430939226519336
+        },
+        {
+          "page": 0,
+          "left": 0.2918968692449355,
+          "top": 0.23825966850828728,
+          "width": 0.056169429097605895,
+          "height": 0.010359116022099447
+        },
+        {
+          "page": 0,
+          "left": 0.5285451197053407,
+          "top": 0.24102209944751382,
+          "width": 0.058011049723756904,
+          "height": 0.010359116022099447
+        }
+      ]
+    },
+    "CompanyAddress.State": {
+      "reason": "ambiguous",
+      "expected_value": "MD",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.23572744014732966,
+          "top": 0.13397790055248618,
+          "width": 0.022099447513812154,
+          "height": 0.009668508287292817
+        },
+        {
+          "page": 0,
+          "left": 0.35451197053406996,
+          "top": 0.23825966850828728,
+          "width": 0.019337016574585635,
+          "height": 0.008977900552486187
+        },
+        {
+          "page": 0,
+          "left": 0.5930018416206262,
+          "top": 0.24102209944751382,
+          "width": 0.020257826887661142,
+          "height": 0.008287292817679558
+        }
+      ]
+    },
+    "CompanyAddress.ZipCode": {
+      "reason": "ambiguous",
+      "expected_value": "21218",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.26335174953959484,
+          "top": 0.13466850828729282,
+          "width": 0.03867403314917127,
+          "height": 0.010359116022099447
+        },
+        {
+          "page": 0,
+          "left": 0.6187845303867403,
+          "top": 0.24102209944751382,
+          "width": 0.03591160220994475,
+          "height": 0.008287292817679558
+        }
+      ]
+    },
+    "FederalFilingStatus": {
+      "reason": "ambiguous",
+      "expected_value": "Married",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.7992633517495396,
+          "top": 0.5787292817679558,
+          "width": 0.0432780847145488,
+          "height": 0.009668508287292817
+        },
+        {
+          "page": 0,
+          "left": 0.8001841620626151,
+          "top": 0.6042817679558011,
+          "width": 0.0432780847145488,
+          "height": 0.009668508287292817
+        }
+      ]
+    },
+    "StateFilingStatus": {
+      "reason": "ambiguous",
+      "expected_value": "Married",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.7992633517495396,
+          "top": 0.5787292817679558,
+          "width": 0.0432780847145488,
+          "height": 0.009668508287292817
+        },
+        {
+          "page": 0,
+          "left": 0.8001841620626151,
+          "top": 0.6042817679558011,
+          "width": 0.0432780847145488,
+          "height": 0.009668508287292817
+        }
+      ]
+    },
+    "currency": {
+      "reason": "text_not_found",
+      "expected_value": "USD",
+      "candidates": []
+    }
+  },
+  "synthetic-public-benefits-income-proof-pay-statement-rendered": {
+    "EmployeeAddress.Line1": {
+      "reason": "text_not_found",
+      "expected_value": "1824 E Lafayette Ave",
+      "candidates": []
+    },
+    "EmployeeAddress.City": {
+      "reason": "ambiguous",
+      "expected_value": "Baltimore",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.06708975521305531,
+          "top": 0.09256661991584852,
+          "width": 0.07615593834995467,
+          "height": 0.014726507713884993
+        },
+        {
+          "page": 0,
+          "left": 0.22030825022665457,
+          "top": 0.21458625525946703,
+          "width": 0.06799637352674524,
+          "height": 0.01332398316970547
+        },
+        {
+          "page": 0,
+          "left": 0.5086128739800544,
+          "top": 0.2187938288920056,
+          "width": 0.07252946509519492,
+          "height": 0.01332398316970547
+        }
+      ]
+    },
+    "EmployeeAddress.State": {
+      "reason": "ambiguous",
+      "expected_value": "MD",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.1514052583862194,
+          "top": 0.09256661991584852,
+          "width": 0.027198549410698096,
+          "height": 0.012622720897615708
+        },
+        {
+          "page": 0,
+          "left": 0.2955575702629193,
+          "top": 0.21458625525946703,
+          "width": 0.024478694469628286,
+          "height": 0.011220196353436185
+        },
+        {
+          "page": 0,
+          "left": 0.5893019038984587,
+          "top": 0.2187938288920056,
+          "width": 0.024478694469628286,
+          "height": 0.011220196353436185
+        }
+      ]
+    },
+    "CompanyAddress.Line1": {
+      "reason": "ambiguous",
+      "expected_value": "2458 Harford Rd",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.06618313689936536,
+          "top": 0.07223001402524544,
+          "width": 0.1242067089755213,
+          "height": 0.011220196353436185
+        },
+        {
+          "page": 0,
+          "left": 0.5086128739800544,
+          "top": 0.1956521739130435,
+          "width": 0.1214868540344515,
+          "height": 0.011921458625525946
+        }
+      ]
+    },
+    "CompanyAddress.City": {
+      "reason": "ambiguous",
+      "expected_value": "Baltimore",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.06708975521305531,
+          "top": 0.09256661991584852,
+          "width": 0.07615593834995467,
+          "height": 0.014726507713884993
+        },
+        {
+          "page": 0,
+          "left": 0.22030825022665457,
+          "top": 0.21458625525946703,
+          "width": 0.06799637352674524,
+          "height": 0.01332398316970547
+        },
+        {
+          "page": 0,
+          "left": 0.5086128739800544,
+          "top": 0.2187938288920056,
+          "width": 0.07252946509519492,
+          "height": 0.01332398316970547
+        }
+      ]
+    },
+    "CompanyAddress.State": {
+      "reason": "ambiguous",
+      "expected_value": "MD",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.1514052583862194,
+          "top": 0.09256661991584852,
+          "width": 0.027198549410698096,
+          "height": 0.012622720897615708
+        },
+        {
+          "page": 0,
+          "left": 0.2955575702629193,
+          "top": 0.21458625525946703,
+          "width": 0.024478694469628286,
+          "height": 0.011220196353436185
+        },
+        {
+          "page": 0,
+          "left": 0.5893019038984587,
+          "top": 0.2187938288920056,
+          "width": 0.024478694469628286,
+          "height": 0.011220196353436185
+        }
+      ]
+    },
+    "CompanyAddress.ZipCode": {
+      "reason": "ambiguous",
+      "expected_value": "21218",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.18495013599274707,
+          "top": 0.09256661991584852,
+          "width": 0.04623753399818677,
+          "height": 0.012622720897615708
+        },
+        {
+          "page": 0,
+          "left": 0.6210335448776065,
+          "top": 0.21809256661991586,
+          "width": 0.043517679057116954,
+          "height": 0.011921458625525946
+        }
+      ]
+    },
+    "FederalFilingStatus": {
+      "reason": "ambiguous",
+      "expected_value": "Married",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.8132366273798731,
+          "top": 0.6107994389901823,
+          "width": 0.04805077062556664,
+          "height": 0.010518934081346423
+        },
+        {
+          "page": 0,
+          "left": 0.8132366273798731,
+          "top": 0.6388499298737728,
+          "width": 0.04805077062556664,
+          "height": 0.010518934081346423
+        }
+      ]
+    },
+    "StateFilingStatus": {
+      "reason": "ambiguous",
+      "expected_value": "Married",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.8132366273798731,
+          "top": 0.6107994389901823,
+          "width": 0.04805077062556664,
+          "height": 0.010518934081346423
+        },
+        {
+          "page": 0,
+          "left": 0.8132366273798731,
+          "top": 0.6388499298737728,
+          "width": 0.04805077062556664,
+          "height": 0.010518934081346423
+        }
+      ]
+    },
+    "YTDGrossPay": {
+      "reason": "ambiguous",
+      "expected_value": "18511.20",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.827742520398912,
+          "top": 0.511921458625526,
+          "width": 0.07887579329102448,
+          "height": 0.01332398316970547
+        },
+        {
+          "page": 0,
+          "left": 0.2184950135992747,
+          "top": 0.9018232819074333,
+          "width": 0.0843155031731641,
+          "height": 0.014726507713884993
+        }
+      ]
+    },
+    "RegularHourlyRate": {
+      "reason": "ambiguous",
+      "expected_value": "18.25",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.21940163191296463,
+          "top": 0.2917251051893408,
+          "width": 0.0471441523118767,
+          "height": 0.01332398316970547
+        },
+        {
+          "page": 0,
+          "left": 0.5077062556663645,
+          "top": 0.39901823281907434,
+          "width": 0.04623753399818677,
+          "height": 0.012622720897615708
+        }
+      ]
+    },
+    "FederalTaxes.ItemDescription": {
+      "reason": "text_not_found",
+      "expected_value": "Federal Income Tax",
+      "candidates": []
+    },
+    "StateTaxes.ItemDescription": {
+      "reason": "text_not_found",
+      "expected_value": "Maryland State Tax",
+      "candidates": []
+    },
+    "currency": {
+      "reason": "text_not_found",
+      "expected_value": "USD",
+      "candidates": []
+    }
+  },
+  "synthetic-public-benefits-income-proof-pay-stub": {
+    "CompanyAddress.Line1": {
+      "reason": "text_not_found",
+      "expected_value": "1234 Community Way",
+      "candidates": []
+    },
+    "CurrentGrossPay": {
+      "reason": "ambiguous",
+      "expected_value": "1350.00",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.4005524861878453,
+          "top": 0.3775322283609576,
+          "width": 0.03729281767955801,
+          "height": 0.01289134438305709
+        },
+        {
+          "page": 0,
+          "left": 0.406767955801105,
+          "top": 0.6206261510128913,
+          "width": 0.0462707182320442,
+          "height": 0.017495395948434623
+        },
+        {
+          "page": 0,
+          "left": 0.6091160220994475,
+          "top": 0.6906077348066298,
+          "width": 0.04074585635359116,
+          "height": 0.014732965009208104
+        }
+      ]
+    },
+    "FederalTaxes.ItemDescription": {
+      "reason": "text_not_found",
+      "expected_value": "Federal Income Tax",
+      "candidates": []
+    },
+    "PayPeriodEndDate": {
+      "reason": "text_not_found",
+      "expected_value": "2026-03-31",
+      "candidates": []
+    },
+    "PayPeriodStartDate": {
+      "reason": "text_not_found",
+      "expected_value": "2026-03-16",
+      "candidates": []
+    },
+    "StateTaxes.ItemDescription": {
+      "reason": "text_not_found",
+      "expected_value": "State Income Tax",
+      "candidates": []
+    },
+    "StateTaxes.Period": {
+      "reason": "text_not_found",
+      "expected_value": "59.48",
+      "candidates": []
+    },
+    "StateTaxes.YTD": {
+      "reason": "text_not_found",
+      "expected_value": "416.36",
+      "candidates": []
+    },
+    "YTDGrossPay": {
+      "reason": "ambiguous",
+      "expected_value": "9450.00",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.4703038674033149,
+          "top": 0.3710865561694291,
+          "width": 0.03660220994475138,
+          "height": 0.011970534069981584
+        },
+        {
+          "page": 0,
+          "left": 0.4723756906077348,
+          "top": 0.4005524861878453,
+          "width": 0.03729281767955801,
+          "height": 0.011970534069981584
+        },
+        {
+          "page": 0,
+          "left": 0.481353591160221,
+          "top": 0.6114180478821363,
+          "width": 0.04558011049723757,
+          "height": 0.017495395948434623
+        }
+      ]
+    },
+    "YTDNetPay": {
+      "reason": "text_not_found",
+      "expected_value": "6562.92",
+      "candidates": []
+    },
+    "YTDStateTax": {
+      "reason": "text_not_found",
+      "expected_value": "416.36",
+      "candidates": []
+    },
+    "currency": {
+      "reason": "text_not_found",
+      "expected_value": "USD",
+      "candidates": []
+    }
+  },
+  "synthetic-public-benefits-residency-proof-utility-bill": {
+    "DATE": {
+      "reason": "text_not_found",
+      "expected_value": "2026-04-01",
+      "candidates": []
+    },
+    "VENDORNAME": {
+      "reason": "ambiguous",
+      "expected_value": "Desert Bloom Utilities",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.24240331491712708,
+          "top": 0.7891344383057091,
+          "width": 0.1277624309392265,
+          "height": 0.02117863720073665
+        },
+        {
+          "page": 0,
+          "left": 0.6077348066298343,
+          "top": 0.785451197053407,
+          "width": 0.10290055248618785,
+          "height": 0.01841620626151013
+        }
+      ]
+    },
+    "VENDORADDRESS": {
+      "reason": "list_value",
+      "expected_value": "PO Box 90012, Las Vegas, NV 89109-0012",
+      "candidates": []
+    },
+    "RECIPIENTNAME": {
+      "reason": "ambiguous",
+      "expected_value": "Elena Martinez",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.23342541436464087,
+          "top": 0.21915285451197053,
+          "width": 0.07458563535911603,
+          "height": 0.011970534069981584
+        },
+        {
+          "page": 0,
+          "left": 0.24240331491712708,
+          "top": 0.3876611418047882,
+          "width": 0.06077348066298342,
+          "height": 0.011970534069981584
+        }
+      ]
+    },
+    "RECIPIENTADDRESS": {
+      "reason": "list_value",
+      "expected_value": "4821 Desert Bloom Ave, Las Vegas, NV 89146",
+      "candidates": []
+    },
+    "SERVICES_TABLE.product name": {
+      "reason": "list_value",
+      "expected_value": "Water, Electric, Natural Gas, Trash & Recycling",
+      "candidates": []
+    },
+    "SERVICES_TABLE.quantity": {
+      "reason": "list_value",
+      "expected_value": "3200 gallons, 620 kWh, 18 Therms, 1 Unit",
+      "candidates": []
+    },
+    "SERVICES_TABLE.amount": {
+      "reason": "list_value",
+      "expected_value": "28.24, 41.63, 12.25, 2.00",
+      "candidates": []
+    }
+  },
+  "synthetic-shelter-shelter-verification-render-spanish": {
+    "author_name": {
+      "reason": "ambiguous",
+      "expected_value": "Camila Ortega",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.09375,
+          "top": 0.8873697916666666,
+          "width": 0.103515625,
+          "height": 0.010416666666666666
+        },
+        {
+          "page": 0,
+          "left": 0.734375,
+          "top": 0.875,
+          "width": 0.1005859375,
+          "height": 0.010416666666666666
+        }
+      ]
+    },
+    "assertion_text": {
+      "reason": "list_value",
+      "expected_value": "Por la presente, Alaska Hills Property Management, LLC verifica que el inquilino que se indica a continuación reside en la propiedad que administramos y que es responsable del pago del alquiler en el importe y con la frecuencia que se detallan a continuación.",
+      "candidates": []
+    },
+    "contact_information": {
+      "reason": "text_not_found",
+      "expected_value": "Tel: (907) 555-8124 Correo: cortega@alaskahillspm.com",
+      "candidates": []
+    },
+    "statement_date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-09-08",
+      "candidates": []
+    }
+  },
+  "synthetic-shelter-shelter-verification-render": {
+    "assertion_text": {
+      "reason": "list_value",
+      "expected_value": "Jordan Rivera has been residing at 1234 Cedar Lane, Apt 7B, New Haven, CT throughout the period of January 1, 2026, to August 31, 2026. Jordan Rivera is a tenant in good standing and has consistently paid rent in the amount of $1,120.00 each month during this period.",
+      "candidates": []
+    },
+    "contact_information": {
+      "reason": "text_not_found",
+      "expected_value": "Phone: (860) 555-0199 Email: cynthia.marshall@elmviewhomes.org",
+      "candidates": []
+    },
+    "customer_name": {
+      "reason": "text_not_found",
+      "expected_value": "Jordan Rivera",
+      "candidates": []
+    },
+    "statement_date": {
+      "reason": "text_not_found",
+      "expected_value": "2026-09-05",
+      "candidates": []
+    }
+  },
+  "synthetic-shelter-shelter-verification-scan": {
+    "VENDORDETAILS.VENDORNAME": {
+      "reason": "text_not_found",
+      "expected_value": "Harbor County Money Services",
+      "candidates": []
+    },
+    "VENDORDETAILS.VENDORADDRESS": {
+      "reason": "list_value",
+      "expected_value": "310 Seaside Avenue, Suite 101, New London, CT 06320",
+      "candidates": []
+    },
+    "VENDORDETAILS.VENDORPHONE": {
+      "reason": "text_not_found",
+      "expected_value": "(860) 555-2741",
+      "candidates": []
+    },
+    "LINEITEMS.AMT": {
+      "reason": "ambiguous",
+      "expected_value": "1200.00",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.5361328125,
+          "top": 0.6731770833333334,
+          "width": 0.0830078125,
+          "height": 0.013020833333333334
+        },
+        {
+          "page": 0,
+          "left": 0.8212890625,
+          "top": 0.6731770833333334,
+          "width": 0.0830078125,
+          "height": 0.013020833333333334
+        }
+      ]
+    },
+    "PAYMENTDETAILS.SUBTOTAL": {
+      "reason": "ambiguous",
+      "expected_value": "1200.00",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.5361328125,
+          "top": 0.6731770833333334,
+          "width": 0.0830078125,
+          "height": 0.013020833333333334
+        },
+        {
+          "page": 0,
+          "left": 0.8212890625,
+          "top": 0.6731770833333334,
+          "width": 0.0830078125,
+          "height": 0.013020833333333334
+        }
+      ]
+    }
+  },
+  "synthetic-snap-income-proof-employment-wage-verification-letter-photo": {
+    "employment_start_date": {
+      "reason": "list_value",
+      "expected_value": "August 12, 2024",
+      "candidates": []
+    },
+    "issuer_name": {
+      "reason": "ambiguous",
+      "expected_value": "Dana Whitfield",
+      "candidates": [
+        {
+          "page": 0,
+          "left": 0.17771639042357273,
+          "top": 0.6850828729281768,
+          "width": 0.20902394106813996,
+          "height": 0.027624309392265192
+        },
+        {
+          "page": 0,
+          "left": 0.18047882136279927,
+          "top": 0.738950276243094,
+          "width": 0.10865561694290976,
+          "height": 0.011049723756906077
+        }
+      ]
+    },
+    "job_title": {
+      "reason": "text_not_found",
+      "expected_value": "Home Health Aide",
+      "candidates": []
+    },
+    "salary_or_wage": {
+      "reason": "text_not_found",
+      "expected_value": "$19.00 per hour",
+      "candidates": []
+    }
+  },
+  "synthetic-snap-income-proof-employment-wage-verification-letter-rendered": {
+    "employment_start_date": {
+      "reason": "list_value",
+      "expected_value": "August 12, 2024",
+      "candidates": []
+    },
+    "job_title": {
+      "reason": "text_not_found",
+      "expected_value": "Home Health Aide",
+      "candidates": []
+    },
+    "salary_or_wage": {
+      "reason": "text_not_found",
+      "expected_value": "$19.00 per hour",
+      "candidates": []
+    }
+  }
+}

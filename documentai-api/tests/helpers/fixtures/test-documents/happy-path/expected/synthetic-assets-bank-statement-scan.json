@@ -16,6 +16,22 @@
     "transaction_details.withdrawals": "0.00, 0.00, 0.00, 1402.61, 765.06, 382.53",
     "transaction_details.balance": "2600.00, 3975.00, 4335.60, 2932.39, 2167.33, 1784.80"
   },
+  "geometry": {
+    "account_holder_name": {
+      "page": 0,
+      "left": 0.107421875,
+      "top": 0.24348958333333334,
+      "width": 0.181640625,
+      "height": 0.010416666666666666
+    },
+    "account_type": {
+      "page": 0,
+      "left": 0.283203125,
+      "top": 0.357421875,
+      "width": 0.0673828125,
+      "height": 0.01171875
+    }
+  },
   "notes": {
     "account_number": "Image shows 8 masking asterisks before the last 4 digits (\"********5342\"). BDA matched this exactly; LLM's OCR read only 7 asterisks.",
     "transaction_details.description": "Each transaction cell has a bold header line plus a detail sub-line (e.g. \"DIRECT DEPOSIT\" + \"Bluewater Solutions LLC PAYROLL\"); this fixture combines both lines as the fuller/more complete answer. LLM only captured the header line for each row.",

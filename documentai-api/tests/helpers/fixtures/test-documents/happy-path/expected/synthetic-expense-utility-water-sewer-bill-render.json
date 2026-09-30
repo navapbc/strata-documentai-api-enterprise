@@ -22,6 +22,57 @@
     "Total_Current_Charges": "48.76",
     "is_total_amount_greater_than_equal_to_current_charges": true
   },
+  "geometry": {
+    "Account_Info.Acct_No": {
+      "page": 0,
+      "left": 0.7361111111111112,
+      "top": 0.7171717171717171,
+      "width": 0.0718954248366013,
+      "height": 0.00946969696969697
+    },
+    "Account_Info.Meter_Number": {
+      "page": 0,
+      "left": 0.23284313725490197,
+      "top": 0.1773989898989899,
+      "width": 0.05718954248366013,
+      "height": 0.008838383838383838
+    },
+    "Dates.Bill_From_Date": {
+      "page": 0,
+      "left": 0.23284313725490197,
+      "top": 0.19823232323232323,
+      "width": 0.0784313725490196,
+      "height": 0.00946969696969697
+    },
+    "Dates.Bill_To_Date": {
+      "page": 0,
+      "left": 0.3333333333333333,
+      "top": 0.19823232323232323,
+      "width": 0.0784313725490196,
+      "height": 0.010101010101010102
+    },
+    "Dates.Billing_Date": {
+      "page": 0,
+      "left": 0.23284313725490197,
+      "top": 0.2196969696969697,
+      "width": 0.07761437908496732,
+      "height": 0.00946969696969697
+    },
+    "Service_Address.Building_Line 1": {
+      "page": 0,
+      "left": 0.10947712418300654,
+      "top": 0.836489898989899,
+      "width": 0.15931372549019607,
+      "height": 0.00946969696969697
+    },
+    "Service_Address.Street": {
+      "page": 0,
+      "left": 0.10947712418300654,
+      "top": 0.836489898989899,
+      "width": 0.15931372549019607,
+      "height": 0.00946969696969697
+    }
+  },
   "notes": {
     "Curr_Meter_Reading/Prev_Meter_Reading": "This bill has no actual meter register readings - only 'Water Usage: 4,580 gallons' for the current period and a comparison bar chart showing 'July 2026: 4,900 gallons' (the prior month's total usage, not a prior register reading). Unlike the -scan and -render-spanish siblings (which do have From/To register numbers), there's nothing here to read as a genuine meter reading. LLM's values (4,580 / 4,900 gallons) are period-usage totals, not register readings - treated as not derivable.",
     "Line_Items": "LLM only captured 1 of the 3 usage-detail rows.",

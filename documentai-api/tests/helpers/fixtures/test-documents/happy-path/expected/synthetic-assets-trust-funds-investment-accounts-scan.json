@@ -11,6 +11,22 @@
     "distributions_during_period": "1800.00",
     "asset_types": "U.S. Equities, Fixed Income, Cash & Cash Equivalents, Alternative Investments"
   },
+  "geometry": {
+    "account_number": {
+      "page": 0,
+      "left": 0.69921875,
+      "top": 0.123046875,
+      "width": 0.0966796875,
+      "height": 0.009114583333333334
+    },
+    "statement_period_start": {
+      "page": 0,
+      "left": 0.0556640625,
+      "top": 0.5911458333333334,
+      "width": 0.0673828125,
+      "height": 0.007161458333333333
+    }
+  },
   "notes": {
     "distributions_during_period": "The statement also shows a separate 'YTD Distributions' figure of $3,600.00 (Jan 1 - Aug 31); this field is the statement-period figure only ($1,800.00), matching the schema description."
   }

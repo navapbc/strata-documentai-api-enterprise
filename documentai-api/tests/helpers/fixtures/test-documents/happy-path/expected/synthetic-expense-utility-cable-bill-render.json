@@ -11,6 +11,29 @@
     "Summary_table.Description": "Previous Balance, Payments Received, New Charges Total, Amount Due",
     "Summary_table.Amount": "87.50, -87.50, 112.25, 112.25"
   },
+  "geometry": {
+    "Account_Number": {
+      "page": 0,
+      "left": 0.2704248366013072,
+      "top": 0.8838383838383839,
+      "width": 0.10620915032679738,
+      "height": 0.010101010101010102
+    },
+    "Balance_DueDate": {
+      "page": 0,
+      "left": 0.2704248366013072,
+      "top": 0.9292929292929293,
+      "width": 0.08741830065359477,
+      "height": 0.010732323232323232
+    },
+    "Billing_Date": {
+      "page": 0,
+      "left": 0.8276143790849673,
+      "top": 0.026515151515151516,
+      "width": 0.06862745098039216,
+      "height": 0.008207070707070708
+    }
+  },
   "notes": {
     "Line_Item_table.Amount": "LLM only captured the first row ($54.99, Cable TV Service); this fixture lists all 5 itemized charge rows.",
     "Summary_table.Amount/Description": "LLM only captured 1 of the 4 Billing Summary rows (New Charges Total); this fixture lists all 4."

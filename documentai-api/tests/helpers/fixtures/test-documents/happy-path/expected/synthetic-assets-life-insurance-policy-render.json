@@ -11,6 +11,50 @@
     "premium_frequency": "Monthly",
     "statement_date": "2026-08-31"
   },
+  "geometry": {
+    "cash_surrender_value": {
+      "page": 0,
+      "left": 0.47794117647058826,
+      "top": 0.4741161616161616,
+      "width": 0.05800653594771242,
+      "height": 0.013888888888888888
+    },
+    "death_benefit": {
+      "page": 0,
+      "left": 0.47794117647058826,
+      "top": 0.43813131313131315,
+      "width": 0.0784313725490196,
+      "height": 0.01452020202020202
+    },
+    "insurer_name": {
+      "page": 0,
+      "left": 0.14950980392156862,
+      "top": 0.773989898989899,
+      "width": 0.30718954248366015,
+      "height": 0.015782828282828284
+    },
+    "policy_number": {
+      "page": 0,
+      "left": 0.477124183006536,
+      "top": 0.26262626262626265,
+      "width": 0.14460784313725492,
+      "height": 0.011363636363636364
+    },
+    "premium_amount": {
+      "page": 0,
+      "left": 0.47794117647058826,
+      "top": 0.5088383838383839,
+      "width": 0.05718954248366013,
+      "height": 0.013257575757575758
+    },
+    "premium_frequency": {
+      "page": 0,
+      "left": 0.5424836601307189,
+      "top": 0.5088383838383839,
+      "width": 0.08741830065359477,
+      "height": 0.015782828282828284
+    }
+  },
   "notes": {
     "insurer_name": "The header logo just says 'Northstar Life Insurance' (BDA's read), but the full legal name in the Contact Information block is 'Northstar Life Insurance Company' (LLM's read) - used as ground truth.",
     "premium_amount": "Printed as \"$50.00 (Monthly)\"; kept as a cents-preserving string rather than rounded to a bare int, consistent with the trust-funds-investment-accounts fixture's convention."

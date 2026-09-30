@@ -135,7 +135,7 @@ def match_icon(expected: str, received: str, tolerance: float = 0.0, field_name:
                 abs(float(a) - float(b)) <= tolerance
                 for a, b in zip(expected.split(","), received.split(","), strict=False)
             ):
-                return ICON_APPROX
+                return ICON_EXACT
         except ValueError:
             pass
 

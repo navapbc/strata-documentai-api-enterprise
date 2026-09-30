@@ -17,6 +17,57 @@
     "recipient_state": "NM",
     "recipient_zip_code": "87108"
   },
+  "geometry": {
+    "case_number": {
+      "page": 0,
+      "left": 0.7109375,
+      "top": 0.19010416666666666,
+      "width": 0.1162109375,
+      "height": 0.008463541666666666
+    },
+    "effective_start_date": {
+      "page": 0,
+      "left": 0.35546875,
+      "top": 0.361328125,
+      "width": 0.072265625,
+      "height": 0.008463541666666666
+    },
+    "order_date": {
+      "page": 0,
+      "left": 0.7109375,
+      "top": 0.20833333333333334,
+      "width": 0.072265625,
+      "height": 0.0078125
+    },
+    "recipient_name.first_name": {
+      "page": 0,
+      "left": 0.09765625,
+      "top": 0.189453125,
+      "width": 0.0380859375,
+      "height": 0.008463541666666666
+    },
+    "recipient_name.last_name": {
+      "page": 0,
+      "left": 0.1865234375,
+      "top": 0.189453125,
+      "width": 0.041015625,
+      "height": 0.010416666666666666
+    },
+    "recipient_name.middle_name": {
+      "page": 0,
+      "left": 0.1416015625,
+      "top": 0.189453125,
+      "width": 0.0390625,
+      "height": 0.008463541666666666
+    },
+    "recipient_zip_code": {
+      "page": 0,
+      "left": 0.2216796875,
+      "top": 0.244140625,
+      "width": 0.0400390625,
+      "height": 0.0078125
+    }
+  },
   "notes": {
     "child_name": "No child is named on this document (payment-history statement between payor and recipient only).",
     "payment_amount": "Uses the 'Weekly Current Support Amount' ($500.00), excluding the separate $125/week arrears paydown - consistent with how this field is read on the other two child-support documents in this set."

@@ -12,6 +12,29 @@
     "service_start_date": "2026-08-03",
     "statement_date": "2026-09-02"
   },
+  "geometry": {
+    "dependent_names": {
+      "page": 0,
+      "left": 0.064453125,
+      "top": 0.341796875,
+      "width": 0.1533203125,
+      "height": 0.01171875
+    },
+    "provider_name": {
+      "page": 0,
+      "left": 0.2197265625,
+      "top": 0.048828125,
+      "width": 0.3349609375,
+      "height": 0.014322916666666666
+    },
+    "statement_date": {
+      "page": 0,
+      "left": 0.7578125,
+      "top": 0.103515625,
+      "width": 0.0810546875,
+      "height": 0.009114583333333334
+    }
+  },
   "notes": {
     "payment_frequency": "Not explicitly labeled on this document (unlike the render variant); inferred from the weekly $325.00 line items in the Service Details table.",
     "document_type": "Printed as 'DEPENDENT CARE EXPENSE STATEMENT' (all caps title); normalized to title case here for consistency with the sibling render document."

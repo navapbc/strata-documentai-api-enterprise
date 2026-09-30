@@ -1,0 +1,1305 @@
+{
+  "filename": "synthetic-public-benefits-income-proof-pay-stub.jpg",
+  "primary_method": "bda",
+  "durations": {
+    "bda": 27.85,
+    "ocr-mapping": 17.481
+  },
+  "cost": {
+    "us.amazon.nova-lite-v1:0": 0.00011328,
+    "us.amazon.nova-pro-v1:0": 0.023492,
+    "bda": 0.04
+  },
+  "cost_by_reason": {
+    "shared": 0.00896768,
+    "ocrMapping": 0.0146376,
+    "primary": 0.04
+  },
+  "accuracy": {
+    "primary": {
+      "exact": 23,
+      "approx": 0,
+      "miss": 6
+    },
+    "ocr-mapping": {
+      "exact": 25,
+      "approx": 0,
+      "miss": 4
+    },
+    "primary_geo": {
+      "exact": 12,
+      "approx": 0,
+      "miss": 2
+    },
+    "ocr-mapping_geo": {
+      "exact": 12,
+      "approx": 0,
+      "miss": 2
+    }
+  },
+  "primary": {
+    "PayPeriodStartDate": {
+      "value": "2026-03-16",
+      "confidence": 0.88,
+      "geometry": [
+        {
+          "boundingBox": {
+            "top": 0.22728400516242406,
+            "left": 0.711617649397415,
+            "width": 0.046240378450527975,
+            "height": 0.013480559419143778
+          },
+          "vertices": [
+            {
+              "x": 0.711617649397415,
+              "y": 0.23171735741038835
+            },
+            {
+              "x": 0.7568162131009365,
+              "y": 0.22728400516242406
+            },
+            {
+              "x": 0.757858027847943,
+              "y": 0.23629132370652078
+            },
+            {
+              "x": 0.7126129249333617,
+              "y": 0.24076456458156784
+            }
+          ],
+          "page": 1
+        }
+      ]
+    },
+    "YTDNetPay": {
+      "value": 6562.92,
+      "confidence": 0.95,
+      "geometry": [
+        {
+          "boundingBox": {
+            "top": 0.5683867923311803,
+            "left": 0.8410413928425734,
+            "width": 0.046384140987281164,
+            "height": 0.0190537110025204
+          },
+          "vertices": [
+            {
+              "x": 0.8410413928425734,
+              "y": 0.5741430684574665
+            },
+            {
+              "x": 0.8857538492668334,
+              "y": 0.5683867923311803
+            },
+            {
+              "x": 0.8874255338298546,
+              "y": 0.5816237766375537
+            },
+            {
+              "x": 0.8426490120678101,
+              "y": 0.5874405033337007
+            }
+          ],
+          "page": 1
+        }
+      ]
+    },
+    "CurrentGrossPay": {
+      "value": 1350,
+      "confidence": 0.95,
+      "geometry": [
+        {
+          "boundingBox": {
+            "top": 0.6189889206241113,
+            "left": 0.4065419140166176,
+            "width": 0.04788051437499269,
+            "height": 0.02030052063652854
+          },
+          "vertices": [
+            {
+              "x": 0.4065419140166176,
+              "y": 0.6249968032515565
+            },
+            {
+              "x": 0.45336257177234374,
+              "y": 0.6189889206241113
+            },
+            {
+              "x": 0.4544224283916103,
+              "y": 0.633215700434271
+            },
+            {
+              "x": 0.4075269903685974,
+              "y": 0.6392894412606398
+            }
+          ],
+          "page": 1
+        }
+      ]
+    },
+    "HolidayHourlyRate": {
+      "value": "",
+      "confidence": 0.95,
+      "geometry": null
+    },
+    "CompanyAddress.State": {
+      "value": "ST",
+      "confidence": 0.92,
+      "geometry": [
+        {
+          "boundingBox": {
+            "top": 0.28776805633559893,
+            "left": 0.1816381560608039,
+            "width": 0.013195138580574028,
+            "height": 0.011962800931013318
+          },
+          "vertices": [
+            {
+              "x": 0.1816381560608039,
+              "y": 0.28901986906986055
+            },
+            {
+              "x": 0.19434426686173598,
+              "y": 0.28776805633559893
+            },
+            {
+              "x": 0.19483329464137794,
+              "y": 0.29846626989584574
+            },
+            {
+              "x": 0.1821109775117755,
+              "y": 0.29973085726661225
+            }
+          ],
+          "page": 1
+        }
+      ]
+    },
+    "CompanyAddress.ZipCode": {
+      "value": "06103",
+      "confidence": 0.94,
+      "geometry": [
+        {
+          "boundingBox": {
+            "top": 0.2847016992457619,
+            "left": 0.19719950843021317,
+            "width": 0.028816803813556974,
+            "height": 0.013873424862040074
+          },
+          "vertices": [
+            {
+              "x": 0.19719950843021317,
+              "y": 0.2874867564311033
+            },
+            {
+              "x": 0.22546830951790225,
+              "y": 0.2847016992457619
+            },
+            {
+              "x": 0.22601631224377014,
+              "y": 0.2957606146575605
+            },
+            {
+              "x": 0.1977102772879033,
+              "y": 0.29857512410780196
+            }
+          ],
+          "page": 1
+        }
+      ]
+    },
+    "CompanyAddress.City": {
+      "value": "Hartford",
+      "confidence": 0.94,
+      "geometry": [
+        {
+          "boundingBox": {
+            "top": 0.28877560197937047,
+            "left": 0.13714880152787978,
+            "width": 0.04153635878915071,
+            "height": 0.017159758609512188
+          },
+          "vertices": [
+            {
+              "x": 0.13714880152787978,
+              "y": 0.29280949724599714
+            },
+            {
+              "x": 0.1781136012144075,
+              "y": 0.28877560197937047
+            },
+            {
+              "x": 0.1786851603170305,
+              "y": 0.3018511615333502
+            },
+            {
+              "x": 0.1376562667498048,
+              "y": 0.30593536058888265
+            }
+          ],
+          "page": 1
+        }
+      ]
+    },
+    "CompanyAddress.Line1": {
+      "value": "1234 Community Way",
+      "confidence": 0.95,
+      "geometry": [
+        {
+          "boundingBox": {
+            "top": 0.2605141681827971,
+            "left": 0.13665908245468283,
+            "width": 0.10372311120278024,
+            "height": 0.02438387630365102
+          },
+          "vertices": [
+            {
+              "x": 0.13665908245468283,
+              "y": 0.27046797825374363
+            },
+            {
+              "x": 0.23964692632281262,
+              "y": 0.2605141681827971
+            },
+            {
+              "x": 0.24038219365746308,
+              "y": 0.2748055603044357
+            },
+            {
+              "x": 0.1372176344947583,
+              "y": 0.2848980444864481
+            }
+          ],
+          "page": 1
+        }
+      ]
+    },
+    "CompanyAddress.Line2": {
+      "value": "",
+      "confidence": 0.95,
+      "geometry": null
+    },
+    "PayPeriodEndDate": {
+      "value": "2026-03-31",
+      "confidence": 0.89,
+      "geometry": [
+        {
+          "boundingBox": {
+            "top": 0.2234615991424199,
+            "left": 0.7587722529333457,
+            "width": 0.04092381921127386,
+            "height": 0.012639330263660598
+          },
+          "vertices": [
+            {
+              "x": 0.7587722529333457,
+              "y": 0.227373531670195
+            },
+            {
+              "x": 0.7986450752631091,
+              "y": 0.2234615991424199
+            },
+            {
+              "x": 0.7996960721446196,
+              "y": 0.2321549279902099
+            },
+            {
+              "x": 0.759783792625294,
+              "y": 0.2361009294060805
+            }
+          ],
+          "page": 1
+        }
+      ]
+    },
+    "PayDate": {
+      "value": "2026-04-03",
+      "confidence": 0.8,
+      "geometry": [
+        {
+          "boundingBox": {
+            "top": 0.20087894898385633,
+            "left": 0.7086756714605023,
+            "width": 0.04384445026921713,
+            "height": 0.013546610289694783
+          },
+          "vertices": [
+            {
+              "x": 0.7086756714605023,
+              "y": 0.2049743270364202
+            },
+            {
+              "x": 0.7514342302893197,
+              "y": 0.20087894898385633
+            },
+            {
+              "x": 0.7525201217297194,
+              "y": 0.21029086563637056
+            },
+            {
+              "x": 0.7097153934489775,
+              "y": 0.21442555927355111
+            }
+          ],
+          "page": 1
+        }
+      ]
+    },
+    "currency": {
+      "value": "USD",
+      "confidence": 0.92,
+      "geometry": [
+        {
+          "boundingBox": {
+            "top": 0.28776805633559893,
+            "left": 0.1816381560608039,
+            "width": 0.013195138580574028,
+            "height": 0.011962800931013318
+          },
+          "vertices": [
+            {
+              "x": 0.1816381560608039,
+              "y": 0.28901986906986055
+            },
+            {
+              "x": 0.19434426686173598,
+              "y": 0.28776805633559893
+            },
+            {
+              "x": 0.19483329464137794,
+              "y": 0.29846626989584574
+            },
+            {
+              "x": 0.1821109775117755,
+              "y": 0.29973085726661225
+            }
+          ],
+          "page": 1
+        }
+      ]
+    },
+    "EmployeeAddress.State": {
+      "value": "",
+      "confidence": 0.92,
+      "geometry": null
+    },
+    "EmployeeAddress.ZipCode": {
+      "value": "",
+      "confidence": 0.94,
+      "geometry": null
+    },
+    "EmployeeAddress.City": {
+      "value": "",
+      "confidence": 0.93,
+      "geometry": null
+    },
+    "EmployeeAddress.Line1": {
+      "value": "",
+      "confidence": 0.94,
+      "geometry": null
+    },
+    "EmployeeAddress.Line2": {
+      "value": "",
+      "confidence": 0.95,
+      "geometry": null
+    },
+    "YTDGrossPay": {
+      "value": 9450,
+      "confidence": 0.96,
+      "geometry": [
+        {
+          "boundingBox": {
+            "top": 0.6103831578089157,
+            "left": 0.48113410366449544,
+            "width": 0.04700469344746899,
+            "height": 0.020074428639562436
+          },
+          "vertices": [
+            {
+              "x": 0.48113410366449544,
+              "y": 0.6162669469464714
+            },
+            {
+              "x": 0.5269625120823151,
+              "y": 0.6103831578089157
+            },
+            {
+              "x": 0.5281387971119644,
+              "y": 0.6245094408737569
+            },
+            {
+              "x": 0.48223813976429847,
+              "y": 0.6304575864484782
+            }
+          ],
+          "page": 1
+        }
+      ]
+    },
+    "is_gross_pay_valid": {
+      "value": true,
+      "confidence": 0.92,
+      "geometry": [
+        {
+          "boundingBox": {
+            "top": 0.6103831578089157,
+            "left": 0.48113410366449544,
+            "width": 0.04700469344746899,
+            "height": 0.020074428639562436
+          },
+          "vertices": [
+            {
+              "x": 0.48113410366449544,
+              "y": 0.6162669469464714
+            },
+            {
+              "x": 0.5269625120823151,
+              "y": 0.6103831578089157
+            },
+            {
+              "x": 0.5281387971119644,
+              "y": 0.6245094408737569
+            },
+            {
+              "x": 0.48223813976429847,
+              "y": 0.6304575864484782
+            }
+          ],
+          "page": 1
+        }
+      ]
+    },
+    "StateFilingStatus": {
+      "value": "",
+      "confidence": 0.94,
+      "geometry": null
+    },
+    "YTDCityTax": {
+      "value": "",
+      "confidence": 0.95,
+      "geometry": null
+    },
+    "EmployeeNumber": {
+      "value": "EMP-78245",
+      "confidence": 0.9,
+      "geometry": [
+        {
+          "boundingBox": {
+            "top": 0.22830963206287647,
+            "left": 0.47287633474979524,
+            "width": 0.05263530614876616,
+            "height": 0.01561132784073474
+          },
+          "vertices": [
+            {
+              "x": 0.47287633474979524,
+              "y": 0.23328770412625985
+            },
+            {
+              "x": 0.5245920455309379,
+              "y": 0.22830963206287647
+            },
+            {
+              "x": 0.5255116408985614,
+              "y": 0.2388903044938961
+            },
+            {
+              "x": 0.47373192714038076,
+              "y": 0.2439209599036112
+            }
+          ],
+          "page": 1
+        }
+      ]
+    },
+    "RegularHourlyRate": {
+      "value": 16.88,
+      "confidence": 0.95,
+      "geometry": [
+        {
+          "boundingBox": {
+            "top": 0.3849710333384959,
+            "left": 0.3247433389184027,
+            "width": 0.027503010424595076,
+            "height": 0.013462204678662937
+          },
+          "vertices": [
+            {
+              "x": 0.3247433389184027,
+              "y": 0.3878642778886404
+            },
+            {
+              "x": 0.35156896489148126,
+              "y": 0.3849710333384959
+            },
+            {
+              "x": 0.35224634934299776,
+              "y": 0.39551283213713384
+            },
+            {
+              "x": 0.3253878265041107,
+              "y": 0.39843323801715885
+            }
+          ],
+          "page": 1
+        }
+      ]
+    },
+    "are_field_names_sufficient": {
+      "value": true,
+      "confidence": 0.07,
+      "geometry": null
+    },
+    "YTDTotalDeductions": {
+      "value": 2887.08,
+      "confidence": 0.58,
+      "geometry": [
+        {
+          "boundingBox": {
+            "top": 0.5229769755406498,
+            "left": 0.8442156861008849,
+            "width": 0.037206205698594674,
+            "height": 0.015614513982472933
+          },
+          "vertices": [
+            {
+              "x": 0.8442156861008849,
+              "y": 0.5274431982544159
+            },
+            {
+              "x": 0.8800190921664721,
+              "y": 0.5229769755406498
+            },
+            {
+              "x": 0.8814218917994796,
+              "y": 0.534084834725249
+            },
+            {
+              "x": 0.8455752135778288,
+              "y": 0.5385914895231227
+            }
+          ],
+          "page": 1
+        }
+      ]
+    },
+    "is_ytd_gross_pay_highest": {
+      "value": true,
+      "confidence": 0.92,
+      "geometry": [
+        {
+          "boundingBox": {
+            "top": 0.6103831578089157,
+            "left": 0.48113410366449544,
+            "width": 0.04700469344746899,
+            "height": 0.020074428639562436
+          },
+          "vertices": [
+            {
+              "x": 0.48113410366449544,
+              "y": 0.6162669469464714
+            },
+            {
+              "x": 0.5269625120823151,
+              "y": 0.6103831578089157
+            },
+            {
+              "x": 0.5281387971119644,
+              "y": 0.6245094408737569
+            },
+            {
+              "x": 0.48223813976429847,
+              "y": 0.6304575864484782
+            }
+          ],
+          "page": 1
+        }
+      ]
+    },
+    "YTDStateTax": {
+      "value": 416.36,
+      "confidence": 0.95,
+      "geometry": [
+        {
+          "boundingBox": {
+            "top": 0.35533746526845156,
+            "left": 0.8287230312711146,
+            "width": 0.03064223188739712,
+            "height": 0.013544980564967168
+          },
+          "vertices": [
+            {
+              "x": 0.8287230312711146,
+              "y": 0.3585657432245617
+            },
+            {
+              "x": 0.8580671681547092,
+              "y": 0.35533746526845156
+            },
+            {
+              "x": 0.8593652631585117,
+              "y": 0.3656239854916717
+            },
+            {
+              "x": 0.8299875567247204,
+              "y": 0.3688824458334187
+            }
+          ],
+          "page": 1
+        }
+      ]
+    },
+    "PayrollNumber": {
+      "value": "",
+      "confidence": 0.95,
+      "geometry": null
+    },
+    "EmployeeName.FirstName": {
+      "value": "Elena",
+      "confidence": 0.95,
+      "geometry": [
+        {
+          "boundingBox": {
+            "top": 0.20875993775081045,
+            "left": 0.4710884026711191,
+            "width": 0.025351836383024073,
+            "height": 0.013165940244524776
+          },
+          "vertices": [
+            {
+              "x": 0.4710884026711191,
+              "y": 0.211067381325022
+            },
+            {
+              "x": 0.49553546105840535,
+              "y": 0.20875993775081045
+            },
+            {
+              "x": 0.4964402390541432,
+              "y": 0.21959309885568049
+            },
+            {
+              "x": 0.47196211880462063,
+              "y": 0.22192587799533522
+            }
+          ],
+          "page": 1
+        }
+      ]
+    },
+    "EmployeeName.SuffixName": {
+      "value": "",
+      "confidence": 0.94,
+      "geometry": null
+    },
+    "EmployeeName.LastName": {
+      "value": "Martinez",
+      "confidence": 0.9,
+      "geometry": [
+        {
+          "boundingBox": {
+            "top": 0.2051662380274449,
+            "left": 0.49915763325662155,
+            "width": 0.03837109482916112,
+            "height": 0.013894902253818314
+          },
+          "vertices": [
+            {
+              "x": 0.49915763325662155,
+              "y": 0.2087024317414392
+            },
+            {
+              "x": 0.536613674252192,
+              "y": 0.2051662380274449
+            },
+            {
+              "x": 0.5375287280857827,
+              "y": 0.21548784394991746
+            },
+            {
+              "x": 0.5000274456697915,
+              "y": 0.21906114028126322
+            }
+          ],
+          "page": 1
+        }
+      ]
+    },
+    "EmployeeName.MiddleName": {
+      "value": "",
+      "confidence": 0.93,
+      "geometry": null
+    },
+    "FederalFilingStatus": {
+      "value": "",
+      "confidence": 0.94,
+      "geometry": null
+    },
+    "CurrentTotalDeductions": {
+      "value": 312.44,
+      "confidence": 0.45,
+      "geometry": [
+        {
+          "boundingBox": {
+            "top": 0.5328243055849967,
+            "left": 0.7650512356421026,
+            "width": 0.030780205285237616,
+            "height": 0.01451510222928698
+          },
+          "vertices": [
+            {
+              "x": 0.7650512356421026,
+              "y": 0.5365056251002988
+            },
+            {
+              "x": 0.7945789761662976,
+              "y": 0.5328243055849967
+            },
+            {
+              "x": 0.7958314409273403,
+              "y": 0.5436258778350249
+            },
+            {
+              "x": 0.7662687537463391,
+              "y": 0.5473394078142837
+            }
+          ],
+          "page": 1
+        }
+      ]
+    },
+    "CurrentNetPay": {
+      "value": 1037.56,
+      "confidence": 0.94,
+      "geometry": [
+        {
+          "boundingBox": {
+            "top": 0.7507464569519334,
+            "left": 0.7371817973151353,
+            "width": 0.04080443499210695,
+            "height": 0.018497415450744348
+          },
+          "vertices": [
+            {
+              "x": 0.7371817973151353,
+              "y": 0.7563857342179813
+            },
+            {
+              "x": 0.7765657314960042,
+              "y": 0.7507464569519334
+            },
+            {
+              "x": 0.7779862323072423,
+              "y": 0.7635528128209825
+            },
+            {
+              "x": 0.7385482881753035,
+              "y": 0.7692438724026778
+            }
+          ],
+          "page": 1
+        }
+      ]
+    },
+    "YTDFederalTax": {
+      "value": 1064.7,
+      "confidence": 0.96,
+      "geometry": [
+        {
+          "boundingBox": {
+            "top": 0.33151834059989277,
+            "left": 0.8192181389344448,
+            "width": 0.03642588196880714,
+            "height": 0.014618312262440591
+          },
+          "vertices": [
+            {
+              "x": 0.8192181389344448,
+              "y": 0.33530249940485
+            },
+            {
+              "x": 0.8542826109804138,
+              "y": 0.33151834059989277
+            },
+            {
+              "x": 0.855644020903252,
+              "y": 0.34231472863425605
+            },
+            {
+              "x": 0.8205372853585171,
+              "y": 0.34613665286233336
+            }
+          ],
+          "page": 1
+        }
+      ]
+    }
+  },
+  "ocr-mapping": {
+    "PayPeriodStartDate": {
+      "value": "2026-03-16",
+      "confidence": 0.87,
+      "geometry": [
+        {
+          "boundingBox": {
+            "width": 0.08741003274917603,
+            "height": 0.017697768285870552,
+            "left": 0.7117340564727783,
+            "top": 0.22319607436656952
+          },
+          "page": 1
+        }
+      ]
+    },
+    "PayPeriodEndDate": {
+      "value": "2026-03-31",
+      "confidence": 0.87,
+      "geometry": [
+        {
+          "boundingBox": {
+            "left": 0.7590121030807495,
+            "top": 0.2235715240240097,
+            "width": 0.04013201594352722,
+            "height": 0.012620220892131329
+          },
+          "page": 1
+        }
+      ]
+    },
+    "PayDate": {
+      "value": "2026-04-03",
+      "confidence": 1.0,
+      "geometry": [
+        {
+          "boundingBox": {
+            "left": 0.7086275219917297,
+            "top": 0.20085500180721283,
+            "width": 0.044008515775203705,
+            "height": 0.013602305203676224
+          },
+          "page": 1
+        }
+      ]
+    },
+    "EmployeeName.FirstName": {
+      "value": "Elena",
+      "confidence": 1.0,
+      "geometry": [
+        {
+          "boundingBox": {
+            "left": 0.47121644020080566,
+            "top": 0.20874351263046265,
+            "width": 0.02527865581214428,
+            "height": 0.01309287827461958
+          },
+          "page": 1
+        }
+      ]
+    },
+    "EmployeeName.MiddleName": {
+      "value": "",
+      "confidence": 0.0,
+      "geometry": null
+    },
+    "EmployeeName.LastName": {
+      "value": "Martinez",
+      "confidence": 1.0,
+      "geometry": [
+        {
+          "boundingBox": {
+            "left": 0.4989461898803711,
+            "top": 0.20526400208473206,
+            "width": 0.03845950961112976,
+            "height": 0.013718107715249062
+          },
+          "page": 1
+        }
+      ]
+    },
+    "EmployeeName.SuffixName": {
+      "value": "",
+      "confidence": 0.0,
+      "geometry": null
+    },
+    "EmployeeAddress.Line1": {
+      "value": "",
+      "confidence": 0.0,
+      "geometry": null
+    },
+    "EmployeeAddress.Line2": {
+      "value": "",
+      "confidence": 0.0,
+      "geometry": null
+    },
+    "EmployeeAddress.State": {
+      "value": "",
+      "confidence": 0.0,
+      "geometry": null
+    },
+    "EmployeeAddress.City": {
+      "value": "",
+      "confidence": 0.0,
+      "geometry": null
+    },
+    "EmployeeAddress.ZipCode": {
+      "value": "",
+      "confidence": 0.0,
+      "geometry": null
+    },
+    "CompanyAddress.Line1": {
+      "value": "1234 Community Way",
+      "confidence": 1.0,
+      "geometry": [
+        {
+          "boundingBox": {
+            "left": 0.13666293025016785,
+            "top": 0.2614305913448334,
+            "width": 0.10363870300352573,
+            "height": 0.020556099712848663
+          },
+          "page": 1
+        }
+      ]
+    },
+    "CompanyAddress.Line2": {
+      "value": "",
+      "confidence": 0.0,
+      "geometry": null
+    },
+    "CompanyAddress.State": {
+      "value": "ST",
+      "confidence": 1.0,
+      "geometry": [
+        {
+          "boundingBox": {
+            "left": 0.18170034885406494,
+            "top": 0.2875891923904419,
+            "width": 0.013086706399917603,
+            "height": 0.01214016042649746
+          },
+          "page": 1
+        }
+      ]
+    },
+    "CompanyAddress.City": {
+      "value": "Hartford",
+      "confidence": 0.0,
+      "geometry": null
+    },
+    "CompanyAddress.ZipCode": {
+      "value": "06103",
+      "confidence": 1.0,
+      "geometry": [
+        {
+          "boundingBox": {
+            "left": 0.1971253603696823,
+            "top": 0.28479456901550293,
+            "width": 0.028986290097236633,
+            "height": 0.013650944456458092
+          },
+          "page": 1
+        }
+      ]
+    },
+    "FederalFilingStatus": {
+      "value": "",
+      "confidence": 0.0,
+      "geometry": null
+    },
+    "StateFilingStatus": {
+      "value": "",
+      "confidence": 0.0,
+      "geometry": null
+    },
+    "CurrentGrossPay": {
+      "value": "1350.00",
+      "confidence": 1.0,
+      "geometry": [
+        {
+          "boundingBox": {
+            "left": 0.4001588225364685,
+            "top": 0.37620705366134644,
+            "width": 0.03921089693903923,
+            "height": 0.015523293986916542
+          },
+          "page": 1
+        }
+      ]
+    },
+    "YTDGrossPay": {
+      "value": "9450.00",
+      "confidence": 1.0,
+      "geometry": [
+        {
+          "boundingBox": {
+            "left": 0.4697463810443878,
+            "top": 0.36964496970176697,
+            "width": 0.03837662190198898,
+            "height": 0.015375434421002865
+          },
+          "page": 1
+        }
+      ]
+    },
+    "CurrentNetPay": {
+      "value": "1037.56",
+      "confidence": 1.0,
+      "geometry": [
+        {
+          "boundingBox": {
+            "left": 0.7554426789283752,
+            "top": 0.578508198261261,
+            "width": 0.04672446474432945,
+            "height": 0.01966531202197075
+          },
+          "page": 1
+        }
+      ]
+    },
+    "YTDNetPay": {
+      "value": "6562.92",
+      "confidence": 1.0,
+      "geometry": [
+        {
+          "boundingBox": {
+            "left": 0.8409531116485596,
+            "top": 0.5683614611625671,
+            "width": 0.045864664018154144,
+            "height": 0.019522566348314285
+          },
+          "page": 1
+        }
+      ]
+    },
+    "RegularHourlyRate": {
+      "value": "16.88",
+      "confidence": 1.0,
+      "geometry": [
+        {
+          "boundingBox": {
+            "left": 0.3246775269508362,
+            "top": 0.384907990694046,
+            "width": 0.027604075148701668,
+            "height": 0.013490922749042511
+          },
+          "page": 1
+        }
+      ]
+    },
+    "HolidayHourlyRate": {
+      "value": "",
+      "confidence": 0.0,
+      "geometry": null
+    },
+    "YTDFederalTax": {
+      "value": "1064.70",
+      "confidence": 1.0,
+      "geometry": [
+        {
+          "boundingBox": {
+            "left": 0.8195873498916626,
+            "top": 0.33154237270355225,
+            "width": 0.03618916496634483,
+            "height": 0.01464110054075718
+          },
+          "page": 1
+        }
+      ]
+    },
+    "YTDStateTax": {
+      "value": "416.36",
+      "confidence": 1.0,
+      "geometry": [
+        {
+          "boundingBox": {
+            "left": 0.828642725944519,
+            "top": 0.3553251624107361,
+            "width": 0.0309470072388649,
+            "height": 0.013589507900178432
+          },
+          "page": 1
+        }
+      ]
+    },
+    "is_ytd_gross_pay_highest": {
+      "value": "",
+      "confidence": 0.0,
+      "geometry": null
+    },
+    "FederalTaxes.ItemDescription": {
+      "value": "Federal Income Tax",
+      "confidence": 1.0,
+      "geometry": [
+        {
+          "boundingBox": {
+            "left": 0.5333179831504822,
+            "top": 0.3570449948310852,
+            "width": 0.07243785727769136,
+            "height": 0.016638156957924366
+          },
+          "page": 1
+        }
+      ]
+    },
+    "FederalTaxes.YTD": {
+      "value": "1064.70",
+      "confidence": 1.0,
+      "geometry": [
+        {
+          "boundingBox": {
+            "left": 0.8195873498916626,
+            "top": 0.33154237270355225,
+            "width": 0.03618916496634483,
+            "height": 0.01464110054075718
+          },
+          "page": 1
+        }
+      ]
+    },
+    "FederalTaxes.Period": {
+      "value": "152.10",
+      "confidence": 1.0,
+      "geometry": [
+        {
+          "boundingBox": {
+            "left": 0.7412151098251343,
+            "top": 0.34011372923851013,
+            "width": 0.030788535252213478,
+            "height": 0.013489742763340473
+          },
+          "page": 1
+        }
+      ]
+    },
+    "StateTaxes.ItemDescription": {
+      "value": "State Income Tax",
+      "confidence": 1.0,
+      "geometry": [
+        {
+          "boundingBox": {
+            "left": 0.5352157354354858,
+            "top": 0.3819599747657776,
+            "width": 0.06462315283715725,
+            "height": 0.0158110735937953
+          },
+          "page": 1
+        }
+      ]
+    },
+    "StateTaxes.YTD": {
+      "value": "416.36",
+      "confidence": 1.0,
+      "geometry": [
+        {
+          "boundingBox": {
+            "left": 0.828642725944519,
+            "top": 0.3553251624107361,
+            "width": 0.0309470072388649,
+            "height": 0.013589507900178432
+          },
+          "page": 1
+        }
+      ]
+    },
+    "StateTaxes.Period": {
+      "value": "59.48",
+      "confidence": 1.0,
+      "geometry": [
+        {
+          "boundingBox": {
+            "left": 0.7484550476074219,
+            "top": 0.3639695942401886,
+            "width": 0.026402760297060013,
+            "height": 0.013308314606547356
+          },
+          "page": 1
+        }
+      ]
+    },
+    "EmployeeNumber": {
+      "value": "EMP-78245",
+      "confidence": 1.0,
+      "geometry": [
+        {
+          "boundingBox": {
+            "left": 0.47307491302490234,
+            "top": 0.22829434275627136,
+            "width": 0.05239972844719887,
+            "height": 0.015729885548353195
+          },
+          "page": 1
+        }
+      ]
+    },
+    "PayrollNumber": {
+      "value": "",
+      "confidence": 0.0,
+      "geometry": null
+    },
+    "CityTaxes.ItemDescription": {
+      "value": "",
+      "confidence": 0.0,
+      "geometry": null
+    },
+    "CityTaxes.YTD": {
+      "value": "",
+      "confidence": 0.0,
+      "geometry": null
+    },
+    "CityTaxes.Period": {
+      "value": "",
+      "confidence": 0.0,
+      "geometry": null
+    },
+    "YTDCityTax": {
+      "value": "",
+      "confidence": 0.0,
+      "geometry": null
+    },
+    "CurrentTotalDeductions": {
+      "value": "312.44",
+      "confidence": 1.0,
+      "geometry": [
+        {
+          "boundingBox": {
+            "left": 0.7649211287498474,
+            "top": 0.5324987769126892,
+            "width": 0.031190386041998863,
+            "height": 0.015273038297891617
+          },
+          "page": 1
+        }
+      ]
+    },
+    "YTDTotalDeductions": {
+      "value": "2887.08",
+      "confidence": 1.0,
+      "geometry": [
+        {
+          "boundingBox": {
+            "left": 0.8440456986427307,
+            "top": 0.523106038570404,
+            "width": 0.03724369779229164,
+            "height": 0.0156558845192194
+          },
+          "page": 1
+        }
+      ]
+    },
+    "is_gross_pay_valid": {
+      "value": "",
+      "confidence": 0.0,
+      "geometry": null
+    },
+    "are_field_names_sufficient": {
+      "value": "",
+      "confidence": 0.0,
+      "geometry": null
+    },
+    "currency": {
+      "value": "",
+      "confidence": 0.0,
+      "geometry": null
+    }
+  }
+}

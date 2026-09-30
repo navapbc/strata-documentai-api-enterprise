@@ -46,6 +46,134 @@
     "are_field_names_sufficient": true,
     "currency": "USD"
   },
+  "geometry": {
+    "PayPeriodStartDate": {
+      "page": 0,
+      "left": 0.7388939256572983,
+      "top": 0.07012622720897616,
+      "width": 0.08703535811423391,
+      "height": 0.011921458625525946
+    },
+    "PayPeriodEndDate": {
+      "page": 0,
+      "left": 0.8513145965548504,
+      "top": 0.07012622720897616,
+      "width": 0.08522212148685404,
+      "height": 0.011921458625525946
+    },
+    "PayDate": {
+      "page": 0,
+      "left": 0.7388939256572983,
+      "top": 0.09396914446002805,
+      "width": 0.08703535811423391,
+      "height": 0.012622720897615708
+    },
+    "EmployeeName.FirstName": {
+      "page": 0,
+      "left": 0.21940163191296463,
+      "top": 0.1697054698457223,
+      "width": 0.056210335448776065,
+      "height": 0.011220196353436185
+    },
+    "EmployeeName.LastName": {
+      "page": 0,
+      "left": 0.2810516772438803,
+      "top": 0.1697054698457223,
+      "width": 0.04170444242973708,
+      "height": 0.011220196353436185
+    },
+    "EmployeeAddress.ZipCode": {
+      "page": 0,
+      "left": 0.3254759746146872,
+      "top": 0.21458625525946703,
+      "width": 0.04170444242973708,
+      "height": 0.011220196353436185
+    },
+    "CurrentGrossPay": {
+      "page": 0,
+      "left": 0.6727107887579329,
+      "top": 0.511921458625526,
+      "width": 0.07162284678150499,
+      "height": 0.01332398316970547
+    },
+    "CurrentNetPay": {
+      "page": 0,
+      "left": 0.34088848594741616,
+      "top": 0.8036465638148668,
+      "width": 0.10244786944696282,
+      "height": 0.0182328190743338
+    },
+    "YTDNetPay": {
+      "page": 0,
+      "left": 0.6618313689936537,
+      "top": 0.9018232819074333,
+      "width": 0.08522212148685404,
+      "height": 0.014726507713884993
+    },
+    "YTDFederalTax": {
+      "page": 0,
+      "left": 0.6273798730734361,
+      "top": 0.6100981767180925,
+      "width": 0.06799637352674524,
+      "height": 0.012622720897615708
+    },
+    "YTDStateTax": {
+      "page": 0,
+      "left": 0.6409791477787852,
+      "top": 0.638148667601683,
+      "width": 0.05439709882139619,
+      "height": 0.012622720897615708
+    },
+    "FederalTaxes.Period": {
+      "page": 0,
+      "left": 0.46509519492293744,
+      "top": 0.6100981767180925,
+      "width": 0.051677243880326386,
+      "height": 0.012622720897615708
+    },
+    "FederalTaxes.YTD": {
+      "page": 0,
+      "left": 0.6273798730734361,
+      "top": 0.6100981767180925,
+      "width": 0.06799637352674524,
+      "height": 0.012622720897615708
+    },
+    "StateTaxes.Period": {
+      "page": 0,
+      "left": 0.4732547597461469,
+      "top": 0.638148667601683,
+      "width": 0.04533091568449683,
+      "height": 0.012622720897615708
+    },
+    "StateTaxes.YTD": {
+      "page": 0,
+      "left": 0.6409791477787852,
+      "top": 0.638148667601683,
+      "width": 0.05439709882139619,
+      "height": 0.012622720897615708
+    },
+    "EmployeeNumber": {
+      "page": 0,
+      "left": 0.22030825022665457,
+      "top": 0.24333800841514727,
+      "width": 0.04079782411604715,
+      "height": 0.010518934081346423
+    },
+    "CurrentTotalDeductions": {
+      "page": 0,
+      "left": 0.46237533998186764,
+      "top": 0.7531556802244039,
+      "width": 0.057116953762466005,
+      "height": 0.012622720897615708
+    },
+    "YTDTotalDeductions": {
+      "page": 0,
+      "left": 0.6255666364460563,
+      "top": 0.7524544179523142,
+      "width": 0.06799637352674524,
+      "height": 0.014025245441795231
+    }
+  },
   "notes": {
     "HolidayHourlyRate/PayrollNumber/CityTaxes.*/YTDCityTax": "This paystub has no holiday-pay line item, no separate payroll number distinct from the Employee ID, and no city-level tax deduction (only Federal, Maryland State, Social Security, Medicare, and Health Insurance are listed) - all genuinely absent.",
     "is_ytd_gross_pay_highest/is_gross_pay_valid": "Both ask essentially the same question (is YTD Gross Pay the largest dollar figure on the page); $18,511.20 is indeed the largest amount shown, so both are true.",

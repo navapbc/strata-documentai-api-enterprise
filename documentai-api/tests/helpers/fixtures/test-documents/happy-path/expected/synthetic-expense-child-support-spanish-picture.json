@@ -17,6 +17,43 @@
     "recipient_state": "VA",
     "recipient_zip_code": "23513"
   },
+  "geometry": {
+    "case_number": {
+      "page": 0,
+      "left": 0.4755859375,
+      "top": 0.248046875,
+      "width": 0.0869140625,
+      "height": 0.0078125
+    },
+    "payment_frequency": {
+      "page": 0,
+      "left": 0.2080078125,
+      "top": 0.369140625,
+      "width": 0.0546875,
+      "height": 0.0078125
+    },
+    "recipient_name.first_name": {
+      "page": 0,
+      "left": 0.076171875,
+      "top": 0.24739583333333334,
+      "width": 0.0478515625,
+      "height": 0.0078125
+    },
+    "recipient_name.last_name": {
+      "page": 0,
+      "left": 0.12890625,
+      "top": 0.24739583333333334,
+      "width": 0.0322265625,
+      "height": 0.009765625
+    },
+    "recipient_state": {
+      "page": 0,
+      "left": 0.2490234375,
+      "top": 0.14778645833333334,
+      "width": 0.015625,
+      "height": 0.006510416666666667
+    }
+  },
   "notes": {
     "child_name": "No child is named on this document (payment-history statement between payor and recipient only).",
     "payment_amount": "Uses 'Monto ordenado (actual)' ($450.00/week, the current-support order amount), not 'Monto total de la orden (actual + atrasos)' ($550.00/week, which adds the $100/week arrears payment) - consistent with how this field is read on the other two child-support documents. LLM's value (550.00) is the combined total, not the ordered current-support amount.",

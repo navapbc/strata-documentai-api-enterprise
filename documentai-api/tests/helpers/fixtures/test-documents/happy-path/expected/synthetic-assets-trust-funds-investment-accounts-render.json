@@ -11,6 +11,22 @@
     "distributions_during_period": "2000.00",
     "asset_types": "Equity Securities, Fixed Income Securities, Real Estate Holdings, Cash and Cash Equivalents"
   },
+  "geometry": {
+    "trustee_name": {
+      "page": 0,
+      "left": 0.09395424836601307,
+      "top": 0.12563131313131312,
+      "width": 0.3014705882352941,
+      "height": 0.016414141414141416
+    },
+    "account_number": {
+      "page": 0,
+      "left": 0.7565359477124183,
+      "top": 0.2922979797979798,
+      "width": 0.08823529411764706,
+      "height": 0.010101010101010102
+    }
+  },
   "notes": {
     "trust_name/beneficiary_name": "BDA has these two fields swapped (beneficiary_name='Rivera Family Revocable Trust', trust_name='Jordan A. Rivera') - backwards. LLM has them correct.",
     "account_number": "Printed as 'Acct #: XX-XX-3456'; this fixture uses just the number, dropping the label prefix."

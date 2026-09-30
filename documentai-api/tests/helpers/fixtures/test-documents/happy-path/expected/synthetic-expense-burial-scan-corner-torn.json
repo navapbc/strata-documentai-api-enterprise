@@ -11,6 +11,29 @@
     "distributions_during_period": "0.00",
     "asset_types": "Cash"
   },
+  "geometry": {
+    "beneficiary_name": {
+      "page": 0,
+      "left": 0.55859375,
+      "top": 0.75390625,
+      "width": 0.126953125,
+      "height": 0.011067708333333334
+    },
+    "statement_period_start": {
+      "page": 0,
+      "left": 0.08203125,
+      "top": 0.57421875,
+      "width": 0.078125,
+      "height": 0.009114583333333334
+    },
+    "account_balance": {
+      "page": 0,
+      "left": 0.7314453125,
+      "top": 0.4446614583333333,
+      "width": 0.1396484375,
+      "height": 0.020833333333333332
+    }
+  },
   "notes": {
     "trust_name": "No distinct proper trust name is printed (e.g. no 'X Family Trust' label) - only 'Account Type: Irrevocable Burial Trust Account', which is the trust_type field. LLM filled trust_name with that same string, which is a mislabel rather than a real trust name; treated as genuinely absent.",
     "asset_types": "Not an explicit table like the other trust/investment statements - inferred as 'Cash' since this is a cash-value burial trust account with no other asset classes shown (matches LLM's reasonable inference)."

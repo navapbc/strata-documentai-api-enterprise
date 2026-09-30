@@ -1,0 +1,407 @@
+{
+  "filename": "synthetic-shelter-shelter-verification-render-spanish.png",
+  "primary_method": "bda",
+  "durations": {
+    "bda": 43.85,
+    "ocr-mapping": 2.082
+  },
+  "cost": {
+    "us.amazon.nova-lite-v1:0": 0.00012384,
+    "us.amazon.nova-pro-v1:0": 0.0127704,
+    "bda": 0.04
+  },
+  "cost_by_reason": {
+    "shared": 0.00926944,
+    "ocrMapping": 0.0036248,
+    "primary": 0.04
+  },
+  "accuracy": {
+    "primary": {
+      "exact": 5,
+      "approx": 0,
+      "miss": 2
+    },
+    "ocr-mapping": {
+      "exact": 4,
+      "approx": 0,
+      "miss": 3
+    },
+    "primary_geo": {
+      "exact": 1,
+      "approx": 0,
+      "miss": 1
+    },
+    "ocr-mapping_geo": {
+      "exact": 2,
+      "approx": 0,
+      "miss": 0
+    }
+  },
+  "primary": {
+    "author_name": {
+      "value": "Camila Ortega",
+      "confidence": 0.85,
+      "geometry": [
+        {
+          "boundingBox": {
+            "top": 0.8872967159410239,
+            "left": 0.09414471003236997,
+            "width": 0.10367783138719426,
+            "height": 0.010749500236121201
+          },
+          "vertices": [
+            {
+              "x": 0.09414473608205774,
+              "y": 0.8872967159410239
+            },
+            {
+              "x": 0.19782254141956424,
+              "y": 0.887297022079919
+            },
+            {
+              "x": 0.19782251519814412,
+              "y": 0.8980462161771451
+            },
+            {
+              "x": 0.09414471003236997,
+              "y": 0.8980459046589266
+            }
+          ],
+          "page": 1
+        }
+      ]
+    },
+    "statement_date": {
+      "value": "2026-09-08",
+      "confidence": 0.73,
+      "geometry": [
+        {
+          "boundingBox": {
+            "top": 0.18029297610160785,
+            "left": 0.33259944329328595,
+            "width": 0.20454587455992457,
+            "height": 0.012215097953167553
+          },
+          "vertices": [
+            {
+              "x": 0.3325994733440454,
+              "y": 0.1802930701574984
+            },
+            {
+              "x": 0.5371453178532105,
+              "y": 0.18029297610160785
+            },
+            {
+              "x": 0.5371452874174378,
+              "y": 0.19250799205895927
+            },
+            {
+              "x": 0.33259944329328595,
+              "y": 0.1925080740547754
+            }
+          ],
+          "page": 1
+        },
+        {
+          "boundingBox": {
+            "top": 0.8941394384241428,
+            "left": 0.874388405131646,
+            "width": 0.03519085796034238,
+            "height": 0.009283531851439708
+          },
+          "vertices": [
+            {
+              "x": 0.8743884287452699,
+              "y": 0.8941394384241428
+            },
+            {
+              "x": 0.9095792630919883,
+              "y": 0.8941395434972447
+            },
+            {
+              "x": 0.9095792394280224,
+              "y": 0.9034229702755825
+            },
+            {
+              "x": 0.874388405131646,
+              "y": 0.9034228636255869
+            }
+          ],
+          "page": 1
+        }
+      ]
+    },
+    "assertion_text": {
+      "value": "Alaska Hills Property Management, LLC verifica que el inquilino que se indica a continuaci\u00f3n reside en la propiedad que administramos y que es responsable del pago del alquiler en el importe y con la frecuencia que se detallan a continuaci\u00f3n.",
+      "confidence": 0.59,
+      "geometry": [
+        {
+          "boundingBox": {
+            "top": 0.2689739803304387,
+            "left": 0.10269938448158242,
+            "width": 0.7672917805784818,
+            "height": 0.04666143440053383
+          },
+          "vertices": [
+            {
+              "x": 0.10269949762243034,
+              "y": 0.2689740047122856
+            },
+            {
+              "x": 0.8699911650600642,
+              "y": 0.2689739803304387
+            },
+            {
+              "x": 0.8699910464021402,
+              "y": 0.3156354147309725
+            },
+            {
+              "x": 0.10269938448158242,
+              "y": 0.3156352662971365
+            }
+          ],
+          "page": 1
+        }
+      ]
+    },
+    "has_signature": {
+      "value": true,
+      "confidence": 0.86,
+      "geometry": [
+        {
+          "boundingBox": {
+            "top": 0.8438113652406732,
+            "left": 0.09561101311752013,
+            "width": 0.27730944930324686,
+            "height": 0.0420203734298098
+          },
+          "vertices": [
+            {
+              "x": 0.09561111495761286,
+              "y": 0.8438113652406732
+            },
+            {
+              "x": 0.372920462420767,
+              "y": 0.8438121258704286
+            },
+            {
+              "x": 0.37292035878508506,
+              "y": 0.885831738670483
+            },
+            {
+              "x": 0.09561101311752013,
+              "y": 0.8858309217959578
+            }
+          ],
+          "page": 1
+        }
+      ]
+    },
+    "contact_information": {
+      "value": "Tel: (907) 555-8124 Correo: cortega@alaskahillspm.com",
+      "confidence": 0.61,
+      "geometry": [
+        {
+          "boundingBox": {
+            "top": 0.9307820673753359,
+            "left": 0.0932892417635359,
+            "width": 0.26545699217364893,
+            "height": 0.025896645044842237
+          },
+          "vertices": [
+            {
+              "x": 0.0932893045161878,
+              "y": 0.9307820673753359
+            },
+            {
+              "x": 0.35874623393718486,
+              "y": 0.9307829069331768
+            },
+            {
+              "x": 0.3587461701252453,
+              "y": 0.9566787124201781
+            },
+            {
+              "x": 0.0932892417635359,
+              "y": 0.9566778396813652
+            }
+          ],
+          "page": 1
+        }
+      ]
+    },
+    "customer_name": {
+      "value": "Mateo Salazar",
+      "confidence": 0.91,
+      "geometry": [
+        {
+          "boundingBox": {
+            "top": 0.3530132494082931,
+            "left": 0.408601075626889,
+            "width": 0.1104596951214088,
+            "height": 0.00952775240943693
+          },
+          "vertices": [
+            {
+              "x": 0.4086010991780648,
+              "y": 0.3530132494082931
+            },
+            {
+              "x": 0.5190607707482978,
+              "y": 0.35301329070585125
+            },
+            {
+              "x": 0.5190607470349472,
+              "y": 0.36254100181773
+            },
+            {
+              "x": 0.408601075626889,
+              "y": 0.3625409554402428
+            }
+          ],
+          "page": 1
+        }
+      ]
+    },
+    "author_relationship": {
+      "value": "Administradora de la propiedad",
+      "confidence": 0.84,
+      "geometry": [
+        {
+          "boundingBox": {
+            "top": 0.9161246604306369,
+            "left": 0.2800560608437402,
+            "width": 0.23020563187423476,
+            "height": 0.011727122920569766
+          },
+          "vertices": [
+            {
+              "x": 0.2800560895975207,
+              "y": 0.9161246604306369
+            },
+            {
+              "x": 0.510261692717975,
+              "y": 0.9161253722119062
+            },
+            {
+              "x": 0.5102616635482152,
+              "y": 0.9278517833512067
+            },
+            {
+              "x": 0.2800560608437402,
+              "y": 0.9278510585398808
+            }
+          ],
+          "page": 1
+        }
+      ]
+    }
+  },
+  "ocr-mapping": {
+    "author_name": {
+      "value": "Camila Ortega",
+      "confidence": 0.99,
+      "geometry": [
+        {
+          "boundingBox": {
+            "left": 0.09591230005025864,
+            "top": 0.8446143269538879,
+            "width": 0.2752612754702568,
+            "height": 0.040736135095357895
+          },
+          "page": 1
+        }
+      ]
+    },
+    "statement_date": {
+      "value": "2026-09-08",
+      "confidence": 0.99,
+      "geometry": [
+        {
+          "boundingBox": {
+            "left": 0.3325820565223694,
+            "top": 0.18029014766216278,
+            "width": 0.2048027254641056,
+            "height": 0.012275596149265766
+          },
+          "page": 1
+        }
+      ]
+    },
+    "assertion_text": {
+      "value": "Alaska Hills Property Management, LLC verifica que el inquilino que se indica a continuaci\u00f3n reside en la propiedad que administramos y que es responsable del pago del alquiler en el importe y con la frecuencia que se detallan a continuaci\u00f3n.",
+      "confidence": 0.0,
+      "geometry": [
+        {
+          "boundingBox": {
+            "left": 0.10270417481660843,
+            "top": 0.302681028842926,
+            "width": 0.6943132132291794,
+            "height": 0.0129463579505682
+          },
+          "page": 1
+        }
+      ]
+    },
+    "has_signature": {
+      "value": "True",
+      "confidence": 0.99,
+      "geometry": [
+        {
+          "boundingBox": {
+            "left": 0.09591230005025864,
+            "top": 0.8446143269538879,
+            "width": 0.2752612754702568,
+            "height": 0.040736135095357895
+          },
+          "page": 1
+        }
+      ]
+    },
+    "contact_information": {
+      "value": "(907) 555-8124, cortega@alaskahillspm.com",
+      "confidence": 0.84,
+      "geometry": [
+        {
+          "boundingBox": {
+            "width": 0.31155335903167725,
+            "height": 0.011743836104869843,
+            "left": 0.6072359681129456,
+            "top": 0.0621940903365612
+          },
+          "page": 1
+        }
+      ]
+    },
+    "customer_name": {
+      "value": "Mateo Salazar",
+      "confidence": 1.0,
+      "geometry": [
+        {
+          "boundingBox": {
+            "left": 0.40854915976524353,
+            "top": 0.3531334102153778,
+            "width": 0.11056957766413689,
+            "height": 0.009524906985461712
+          },
+          "page": 1
+        }
+      ]
+    },
+    "author_relationship": {
+      "value": "Administradora de la propiedad",
+      "confidence": 1.0,
+      "geometry": [
+        {
+          "boundingBox": {
+            "left": 0.09346089512109756,
+            "top": 0.9015199542045593,
+            "width": 0.23029687255620956,
+            "height": 0.010972615331411362
+          },
+          "page": 1
+        }
+      ]
+    }
+  }
+}

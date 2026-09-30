@@ -12,6 +12,43 @@
     "service_start_date": "2026-08-03",
     "statement_date": "2026-09-05"
   },
+  "geometry": {
+    "dependent_names": {
+      "page": 0,
+      "left": 0.19526143790849673,
+      "top": 0.36047979797979796,
+      "width": 0.10457516339869281,
+      "height": 0.013888888888888888
+    },
+    "document_type": {
+      "page": 0,
+      "left": 0.21323529411764705,
+      "top": 0.17929292929292928,
+      "width": 0.5612745098039216,
+      "height": 0.025252525252525252
+    },
+    "payment_amount": {
+      "page": 0,
+      "left": 0.7336601307189542,
+      "top": 0.7455808080808081,
+      "width": 0.08415032679738563,
+      "height": 0.01452020202020202
+    },
+    "payment_frequency": {
+      "page": 0,
+      "left": 0.5122549019607843,
+      "top": 0.4457070707070707,
+      "width": 0.056372549019607844,
+      "height": 0.013888888888888888
+    },
+    "statement_date": {
+      "page": 0,
+      "left": 0.7205882352941176,
+      "top": 0.0763888888888889,
+      "width": 0.0923202614379085,
+      "height": 0.011363636363636364
+    }
+  },
   "notes": {
     "amount_paid/balance_due": "Both are genuinely $1,000.00 here (Total Charges $2,000.00 - Amount Paid $1,000.00 = Balance Due $1,000.00) - the equal values aren't an extraction error.",
     "payment_amount": "This document has no explicit per-week rate line item - only 'Care Period: August 2026' with 'Total Charges: $2,000.00' and 'Payment Frequency: Weekly'. $2,000.00 is read as the effective monthly total (since the care period is a single month), matching what both extractors independently agreed on."

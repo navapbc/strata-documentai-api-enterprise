@@ -46,6 +46,106 @@
     "is_gross_pay_valid": true,
     "is_ytd_gross_pay_highest": true
   },
+  "geometry": {
+    "CompanyAddress.City": {
+      "page": 0,
+      "left": 0.13743093922651933,
+      "top": 0.289134438305709,
+      "width": 0.04074585635359116,
+      "height": 0.013812154696132596
+    },
+    "CompanyAddress.State": {
+      "page": 0,
+      "left": 0.18162983425414364,
+      "top": 0.2882136279926335,
+      "width": 0.012430939226519336,
+      "height": 0.010128913443830571
+    },
+    "CompanyAddress.ZipCode": {
+      "page": 0,
+      "left": 0.19751381215469613,
+      "top": 0.285451197053407,
+      "width": 0.027624309392265192,
+      "height": 0.011970534069981584
+    },
+    "CurrentNetPay": {
+      "page": 0,
+      "left": 0.7375690607734806,
+      "top": 0.7523020257826888,
+      "width": 0.0393646408839779,
+      "height": 0.014732965009208104
+    },
+    "CurrentTotalDeductions": {
+      "page": 0,
+      "left": 0.7651933701657458,
+      "top": 0.5303867403314917,
+      "width": 0.029696132596685083,
+      "height": 0.020257826887661142
+    },
+    "EmployeeName.FirstName": {
+      "page": 0,
+      "left": 0.47099447513812154,
+      "top": 0.21086556169429096,
+      "width": 0.024861878453038673,
+      "height": 0.010128913443830571
+    },
+    "EmployeeName.LastName": {
+      "page": 0,
+      "left": 0.4993093922651934,
+      "top": 0.20718232044198895,
+      "width": 0.03729281767955801,
+      "height": 0.011049723756906077
+    },
+    "EmployeeNumber": {
+      "page": 0,
+      "left": 0.47306629834254144,
+      "top": 0.2283609576427256,
+      "width": 0.05110497237569061,
+      "height": 0.014732965009208104
+    },
+    "FederalTaxes.Period": {
+      "page": 0,
+      "left": 0.7417127071823204,
+      "top": 0.3416206261510129,
+      "width": 0.029005524861878452,
+      "height": 0.011049723756906077
+    },
+    "FederalTaxes.YTD": {
+      "page": 0,
+      "left": 0.8197513812154696,
+      "top": 0.3324125230202578,
+      "width": 0.03522099447513812,
+      "height": 0.011970534069981584
+    },
+    "PayDate": {
+      "page": 0,
+      "left": 0.7064917127071824,
+      "top": 0.19797421731123388,
+      "width": 0.04488950276243094,
+      "height": 0.026703499079189688
+    },
+    "RegularHourlyRate": {
+      "page": 0,
+      "left": 0.324585635359116,
+      "top": 0.3858195211786372,
+      "width": 0.026933701657458564,
+      "height": 0.011049723756906077
+    },
+    "YTDFederalTax": {
+      "page": 0,
+      "left": 0.8197513812154696,
+      "top": 0.3324125230202578,
+      "width": 0.03522099447513812,
+      "height": 0.011970534069981584
+    },
+    "YTDTotalDeductions": {
+      "page": 0,
+      "left": 0.8439226519337016,
+      "top": 0.5248618784530387,
+      "width": 0.03660220994475138,
+      "height": 0.011970534069981584
+    }
+  },
   "notes": {
     "EmployeeAddress.*": "This pay stub only prints the company/employer address, not a separate employee home address - genuinely absent from the document.",
     "PayrollNumber": "No distinct payroll number is printed; only 'Employee ID: EMP-78245' appears, which maps to EmployeeNumber.",

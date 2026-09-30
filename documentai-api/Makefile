@@ -7,6 +7,7 @@
 	diagrams \
 	generate-categories \
 	generate-env-names \
+	generate-geometry-candidates \
 	tenant \
 	tenant-deactivate \
 	tenant-list \
@@ -65,6 +66,10 @@ __check_defined = \
 
 _require-jq:
 	@command -v jq >/dev/null || (echo "jq required" && exit 1)
+
+_require-tesseract:
+	@command -v tesseract >/dev/null || (echo "tesseract binary required: brew install tesseract" && exit 1)
+	@tesseract --list-langs 2>/dev/null | grep -q '^spa$$' || (echo "Tesseract Spanish language pack required: brew install tesseract-lang" && exit 1)
 
 define get_api_lambda_env_vars
 	FN=$$(aws lambda list-functions --query "Functions[?contains(FunctionName, 'docai') && ends_with(FunctionName, '-api')].FunctionName" --output text); \
@@ -192,8 +197,11 @@ test-extraction-compare: .env.e2e
 test-extraction-compare: ## Run the BDA vs LLM extraction-compare e2e test
 	@set -a && . ./.env.e2e && set +a && uv run --frozen pytest tests/e2e/test_extraction_compare.py -m e2e -n 4 $(args)
 
-regen-extraction-compare-summary: ## Regenerate extraction_compare_summary.md from existing per-doc results
-	uv run --frozen python3 -c "from pathlib import Path; from tests.e2e.test_extraction_compare import write_extraction_compare_summary; write_extraction_compare_summary(Path('tests/e2e/results/extraction_compare'))"
+regen-extraction-compare-summary: ## Regenerate per-doc and summary markdown from existing .data.json sidecars
+	uv run --frozen python3 -c "from pathlib import Path; from tests.e2e.test_extraction_compare import regen_comparison_md, write_extraction_compare_summary; p = Path('tests/e2e/results/extraction_compare'); regen_comparison_md(p); write_extraction_compare_summary(p)"
+
+generate-geometry-candidates: _require-tesseract ## Generate ground-truth geometry candidates for fixture documents
+	$(AWS_RUN_CMD) --extra cli-geo generate-geometry-candidates $(args)
 
 .env.e2e: _require-jq ## Generate .env.e2e from deployed Lambda env vars + API Gateway endpoint
 # BASE_URL/AWS_REGION aren't in the Lambda's own env (that's API Gateway infra

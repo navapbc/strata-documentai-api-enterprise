@@ -11,6 +11,36 @@
     "account_summary.summary_desc": "Beginning Balance, Total Deposits / Credits, Total Withdrawals / Debits, Fees, Ending Balance",
     "account_summary.summary_amount": "2275.00, 4220.00, 3460.40, 0.00, 3034.60"
   },
+  "geometry": {
+    "account_number": {
+      "page": 0,
+      "left": 0.2687908496732026,
+      "top": 0.20707070707070707,
+      "width": 0.06944444444444445,
+      "height": 0.010732323232323232
+    },
+    "account_holder_name": {
+      "page": 0,
+      "left": 0.12418300653594772,
+      "top": 0.3068181818181818,
+      "width": 0.1503267973856209,
+      "height": 0.011363636363636364
+    },
+    "statement_start_date": {
+      "page": 0,
+      "left": 0.2916666666666667,
+      "top": 0.1773989898989899,
+      "width": 0.08660130718954248,
+      "height": 0.010732323232323232
+    },
+    "statement_end_date": {
+      "page": 0,
+      "left": 0.40604575163398693,
+      "top": 0.1773989898989899,
+      "width": 0.08741830065359477,
+      "height": 0.010732323232323232
+    }
+  },
   "notes": {
     "account_type": "Not printed anywhere on this statement (a single summary-only page); BDA reported high confidence (0.91) with an empty value, which is correct here - genuinely absent, not a miss.",
     "branch_transit_number": "Not printed anywhere on this statement; same as account_type - BDA's confident-but-empty result is correct.",

@@ -29,6 +29,57 @@
     "Usage.usage": "521 kWh",
     "UsageMult": null
   },
+  "geometry": {
+    "Category": {
+      "page": 0,
+      "left": 0.79296875,
+      "top": 0.025390625,
+      "width": 0.10546875,
+      "height": 0.009114583333333334
+    },
+    "CountMeterIDs": {
+      "page": 0,
+      "left": 0.3349609375,
+      "top": 0.5384114583333334,
+      "width": 0.00390625,
+      "height": 0.007161458333333333
+    },
+    "End Date": {
+      "page": 0,
+      "left": 0.5302734375,
+      "top": 0.2571614583333333,
+      "width": 0.0615234375,
+      "height": 0.009114583333333334
+    },
+    "MeterRead.Current value": {
+      "page": 0,
+      "left": 0.4443359375,
+      "top": 0.3326822916666667,
+      "width": 0.0390625,
+      "height": 0.009114583333333334
+    },
+    "MeterRead.Delta or Metered value": {
+      "page": 0,
+      "left": 0.4443359375,
+      "top": 0.3697916666666667,
+      "width": 0.01953125,
+      "height": 0.008463541666666666
+    },
+    "MeterRead.Previous value": {
+      "page": 0,
+      "left": 0.4443359375,
+      "top": 0.3509114583333333,
+      "width": 0.037109375,
+      "height": 0.009765625
+    },
+    "StartDate": {
+      "page": 0,
+      "left": 0.4443359375,
+      "top": 0.2571614583333333,
+      "width": 0.150390625,
+      "height": 0.009114583333333334
+    }
+  },
   "notes": {
     "Current Balance/Total Balance Due": "The itemized 'Total de cargos actuales' ($105.51) plus 'Ajustes' ($0.00) doesn't reconcile to the headline 'Total a pagar' ($134.28) printed three times on this document (top summary box, second Resumen de Cuenta box, and remittance stub) - looks like a synthetic-data generation inconsistency in the source document, not an extraction error. Ground truth uses the repeated, prominent $134.28 figure.",
     "BalanceGreaterCheck": "Neither extractor produced a value. Current ($134.28) > Previous ($118.74), so 'Yes'.",

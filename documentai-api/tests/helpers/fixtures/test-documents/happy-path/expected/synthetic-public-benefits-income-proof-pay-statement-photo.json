@@ -46,6 +46,162 @@
     "are_field_names_sufficient": true,
     "currency": "USD"
   },
+  "geometry": {
+    "PayPeriodStartDate": {
+      "page": 0,
+      "left": 0.7053406998158379,
+      "top": 0.12154696132596685,
+      "width": 0.06998158379373849,
+      "height": 0.010359116022099447
+    },
+    "PayPeriodEndDate": {
+      "page": 0,
+      "left": 0.7965009208103131,
+      "top": 0.12223756906077347,
+      "width": 0.06813996316758748,
+      "height": 0.009668508287292817
+    },
+    "PayDate": {
+      "page": 0,
+      "left": 0.7044198895027625,
+      "top": 0.1408839779005525,
+      "width": 0.070902394106814,
+      "height": 0.011049723756906077
+    },
+    "EmployeeName.FirstName": {
+      "page": 0,
+      "left": 0.2918968692449355,
+      "top": 0.20165745856353592,
+      "width": 0.04511970534069982,
+      "height": 0.008977900552486187
+    },
+    "EmployeeName.LastName": {
+      "page": 0,
+      "left": 0.3416206261510129,
+      "top": 0.20165745856353592,
+      "width": 0.03406998158379374,
+      "height": 0.008977900552486187
+    },
+    "EmployeeAddress.ZipCode": {
+      "page": 0,
+      "left": 0.3784530386740331,
+      "top": 0.23825966850828728,
+      "width": 0.034990791896869246,
+      "height": 0.008977900552486187
+    },
+    "CurrentGrossPay": {
+      "page": 0,
+      "left": 0.6740331491712708,
+      "top": 0.4937845303867403,
+      "width": 0.06261510128913444,
+      "height": 0.011049723756906077
+    },
+    "YTDGrossPay": {
+      "page": 0,
+      "left": 0.26887661141804786,
+      "top": 0.863950276243094,
+      "width": 0.07826887661141804,
+      "height": 0.013812154696132596
+    },
+    "CurrentNetPay": {
+      "page": 0,
+      "left": 0.3839779005524862,
+      "top": 0.7651933701657458,
+      "width": 0.09208103130755065,
+      "height": 0.017265193370165747
+    },
+    "YTDNetPay": {
+      "page": 0,
+      "left": 0.6786372007366482,
+      "top": 0.856353591160221,
+      "width": 0.07642725598526703,
+      "height": 0.014502762430939226
+    },
+    "RegularHourlyRate": {
+      "page": 0,
+      "left": 0.289134438305709,
+      "top": 0.30179558011049723,
+      "width": 0.03867403314917127,
+      "height": 0.010359116022099447
+    },
+    "YTDFederalTax": {
+      "page": 0,
+      "left": 0.6362799263351749,
+      "top": 0.580110497237569,
+      "width": 0.05985267034990792,
+      "height": 0.011049723756906077
+    },
+    "YTDStateTax": {
+      "page": 0,
+      "left": 0.64548802946593,
+      "top": 0.6022099447513812,
+      "width": 0.05156537753222836,
+      "height": 0.020027624309392266
+    },
+    "FederalTaxes.ItemDescription": {
+      "page": 0,
+      "left": 0.1427255985267035,
+      "top": 0.5835635359116023,
+      "width": 0.1151012891344383,
+      "height": 0.010359116022099447
+    },
+    "FederalTaxes.Period": {
+      "page": 0,
+      "left": 0.4953959484346225,
+      "top": 0.5808011049723757,
+      "width": 0.04419889502762431,
+      "height": 0.011049723756906077
+    },
+    "FederalTaxes.YTD": {
+      "page": 0,
+      "left": 0.6362799263351749,
+      "top": 0.580110497237569,
+      "width": 0.05985267034990792,
+      "height": 0.011049723756906077
+    },
+    "StateTaxes.ItemDescription": {
+      "page": 0,
+      "left": 0.141804788213628,
+      "top": 0.6098066298342542,
+      "width": 0.11878453038674033,
+      "height": 0.013121546961325966
+    },
+    "StateTaxes.Period": {
+      "page": 0,
+      "left": 0.501841620626151,
+      "top": 0.606353591160221,
+      "width": 0.040515653775322284,
+      "height": 0.011049723756906077
+    },
+    "StateTaxes.YTD": {
+      "page": 0,
+      "left": 0.64548802946593,
+      "top": 0.6022099447513812,
+      "width": 0.05156537753222836,
+      "height": 0.020027624309392266
+    },
+    "EmployeeNumber": {
+      "page": 0,
+      "left": 0.292817679558011,
+      "top": 0.2610497237569061,
+      "width": 0.03222836095764273,
+      "height": 0.008977900552486187
+    },
+    "CurrentTotalDeductions": {
+      "page": 0,
+      "left": 0.48987108655616945,
+      "top": 0.7113259668508287,
+      "width": 0.05432780847145488,
+      "height": 0.020027624309392266
+    },
+    "YTDTotalDeductions": {
+      "page": 0,
+      "left": 0.639963167587477,
+      "top": 0.7120165745856354,
+      "width": 0.06077348066298342,
+      "height": 0.013121546961325966
+    }
+  },
   "notes": {
     "_general": "Same underlying pay statement as the -rendered variant (identical BDA/LLM output values confirm this is the same source data, just photographed instead of rendered to PDF/PNG directly) - ground truth mirrors that fixture.",
     "HolidayHourlyRate/PayrollNumber/CityTaxes.*/YTDCityTax": "This paystub has no holiday-pay line item, no separate payroll number distinct from the Employee ID, and no city-level tax deduction - all genuinely absent.",

@@ -22,6 +22,43 @@
     "Total_Current_Charges": "110.19",
     "is_total_amount_greater_than_equal_to_current_charges": false
   },
+  "geometry": {
+    "Account_Info.Meter_Number": {
+      "page": 0,
+      "left": 0.7197265625,
+      "top": 0.5690104166666666,
+      "width": 0.103515625,
+      "height": 0.008463541666666666
+    },
+    "Curr_Meter_Reading": {
+      "page": 0,
+      "left": 0.8056640625,
+      "top": 0.625,
+      "width": 0.0458984375,
+      "height": 0.008463541666666666
+    },
+    "Prev_Meter_Reading": {
+      "page": 0,
+      "left": 0.8056640625,
+      "top": 0.6529947916666666,
+      "width": 0.0458984375,
+      "height": 0.009114583333333334
+    },
+    "Service_Address.Building_Line 1": {
+      "page": 0,
+      "left": 0.0380859375,
+      "top": 0.25,
+      "width": 0.0986328125,
+      "height": 0.010416666666666666
+    },
+    "Service_Address.Street": {
+      "page": 0,
+      "left": 0.0380859375,
+      "top": 0.25,
+      "width": 0.0986328125,
+      "height": 0.010416666666666666
+    }
+  },
   "notes": {
     "Prev_Bal": "The 'Resumen de Saldo' box has two similarly-labeled rows: 'Saldo anterior $88.03' (the balance carried in before this cycle's payment) and 'Saldo anterior pendiente $0.00' (the remainder after the $88.03 payment was applied). Prev_Bal uses the first ($88.03), matching the other two documents' convention of 'balance before this cycle's payment'. LLM's value (0.00) is the post-payment figure, mislabeled.",
     "Tot_Amt/Total_Current_Charges": "'Total de cargos actuales' ($110.19) plus 'Saldo anterior pendiente' ($0.00) doesn't reconcile to the prominently repeated 'Total a pagar' ($86.47, shown 3 times) - the same kind of internal arithmetic inconsistency seen on the Spanish-language electric bill in this test set. Both values are recorded as printed rather than reconciled.",

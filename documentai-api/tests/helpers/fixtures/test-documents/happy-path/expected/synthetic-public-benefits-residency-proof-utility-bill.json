@@ -19,6 +19,29 @@
     "SERVICES_TABLE.unit price": null,
     "SERVICES_TABLE.amount": "28.24, 41.63, 12.25, 2.00"
   },
+  "geometry": {
+    "ID": {
+      "page": 0,
+      "left": 0.6367403314917127,
+      "top": 0.11049723756906077,
+      "width": 0.08011049723756906,
+      "height": 0.014732965009208104
+    },
+    "SUBTOTAL": {
+      "page": 0,
+      "left": 0.6015193370165746,
+      "top": 0.20626151012891344,
+      "width": 0.06975138121546962,
+      "height": 0.026703499079189688
+    },
+    "TOTAL": {
+      "page": 0,
+      "left": 0.6015193370165746,
+      "top": 0.20626151012891344,
+      "width": 0.06975138121546962,
+      "height": 0.026703499079189688
+    }
+  },
   "notes": {
     "_general": "This document never produced a successful e2e run (no .md draft existed), so there's no BDA/LLM output to cross-check against - read directly from the image. Uses the generic Invoices schema's field names since this is a combined multi-utility bill (water/electric/gas/trash), matching its bdaMatchedDocumentClass of 'Invoices'.",
     "VENDORADDRESS": "No distinct company HQ street address is printed, only the payment mailing address (PO Box).",
