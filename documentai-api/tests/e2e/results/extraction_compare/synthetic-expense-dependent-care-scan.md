@@ -1,7 +1,7 @@
 # synthetic-expense-dependent-care-scan.png
 
 
-_Run: 2026-09-30 16:51 UTC_
+_Run: 2026-09-30 19:07 UTC_
 
 
 ## Durations
@@ -32,7 +32,7 @@ _By Extracted Data_
 - OCR Mapping: 91% equivalent, 91% close, 9% misses
 
 _By Geometry_
-- BDA: 2/3 exact, 1 miss
+- BDA: 2/2 exact, 0 miss
 - OCR Mapping: 3/3 exact, 0 miss
 
 

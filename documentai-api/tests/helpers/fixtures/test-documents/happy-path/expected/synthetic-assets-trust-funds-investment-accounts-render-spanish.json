@@ -16,56 +16,80 @@
       "trust_name": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.041015625,
-        "top": 0.14713541666666666,
-        "width": 0.873046875,
-        "height": 0.009114583333333334
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.041015625,
+            "top": 0.14713541666666666,
+            "width": 0.873046875,
+            "height": 0.009114583333333334
+          }
+        ]
       },
       "trust_type": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.0400390625,
-        "top": 0.16731770833333334,
-        "width": 0.5859375,
-        "height": 0.009765625
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.0400390625,
+            "top": 0.16731770833333334,
+            "width": 0.5859375,
+            "height": 0.009765625
+          }
+        ]
       },
       "beneficiary_name": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.041015625,
-        "top": 0.17903645833333334,
-        "width": 0.34765625,
-        "height": 0.022786458333333332
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.041015625,
+            "top": 0.17903645833333334,
+            "width": 0.34765625,
+            "height": 0.022786458333333332
+          }
+        ]
       },
       "trustee_name": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.73828125,
-        "top": 0.0234375,
-        "width": 0.169921875,
-        "height": 0.009765625
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.73828125,
+            "top": 0.0234375,
+            "width": 0.169921875,
+            "height": 0.009765625
+          }
+        ]
       },
       "account_number": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.2578125,
-        "top": 0.28515625,
-        "width": 0.103515625,
-        "height": 0.0078125
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.2578125,
+            "top": 0.28515625,
+            "width": 0.103515625,
+            "height": 0.0078125
+          }
+        ]
       },
       "distributions_during_period": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.5478515625,
-        "top": 0.5572916666666666,
-        "width": 0.0498046875,
-        "height": 0.009114583333333334
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.5478515625,
+            "top": 0.5572916666666666,
+            "width": 0.0498046875,
+            "height": 0.009114583333333334
+          }
+        ]
       }
     },
     "not_matched": {
@@ -79,6 +103,8 @@
       },
       "ambiguous": {
         "account_balance": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "45000.00",
           "candidates": [
             {
@@ -126,8 +152,10 @@
           ]
         },
         "asset_types": {
+          "determination_method": "pytesseract",
           "reason": "list_value",
-          "expected_value": "Acciones (Nacionales), Bonos (Renta Fija), Fondos Mutuos, Efectivo y Equivalentes"
+          "expected_value": "Acciones (Nacionales), Bonos (Renta Fija), Fondos Mutuos, Efectivo y Equivalentes",
+          "candidates": []
         }
       }
     }

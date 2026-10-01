@@ -1,6 +1,6 @@
 # Extraction Compare Results
 
-_Run: 2026-09-30 16:51 UTC_
+_Run: 2026-09-30 19:07 UTC_
 
 ## Avg Durations
 - bda: 26.23s
@@ -25,8 +25,8 @@ _Run: 2026-09-30 16:51 UTC_
 ### Accuracy
 | Primary Method | Equiv Match (Primary / LLM) | Close Match (Primary / LLM) | Geo Match (Primary / LLM) |
 |---|---|---|---|
-| bda | 78% / 84% | 80% / 84% | 132/256 / 153/256 |
-| textract | 92% / 100% | 92% / 100% | 7/9 / 7/9 |
+| bda | 78% / 84% | 80% / 84% | 141/238 / 164/270 |
+| textract | 92% / 100% | 92% / 100% | 7/8 / 7/9 |
 
 
 ## Document Summary

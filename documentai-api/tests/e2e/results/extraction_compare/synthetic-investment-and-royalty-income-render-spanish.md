@@ -1,7 +1,7 @@
 # synthetic-investment-and-royalty-income-render-spanish.png
 
 
-_Run: 2026-09-30 16:51 UTC_
+_Run: 2026-09-30 19:07 UTC_
 
 
 ## Durations
@@ -32,8 +32,8 @@ _By Extracted Data_
 - OCR Mapping: 58% equivalent, 58% close, 42% misses
 
 _By Geometry_
-- BDA: 2/6 exact, 4 miss
-- OCR Mapping: 2/6 exact, 4 miss
+- BDA: 2/3 exact, 1 miss
+- OCR Mapping: 2/5 exact, 3 miss
 
 
 ## Field Comparison

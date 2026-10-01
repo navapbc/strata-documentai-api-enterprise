@@ -48,390 +48,449 @@
   },
   "geometry": {
     "matched": {
+      "FederalFilingStatus": {
+        "determination_method": "reviewed",
+        "explanation": "Federal filing status row is the first of the two Married entries.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.7992633517495396,
+            "top": 0.5787292817679558,
+            "width": 0.0432780847145488,
+            "height": 0.009668508287292817
+          }
+        ]
+      },
+      "StateFilingStatus": {
+        "determination_method": "reviewed",
+        "explanation": "State filing status row is the second of the two Married entries.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.8001841620626151,
+            "top": 0.6042817679558011,
+            "width": 0.0432780847145488,
+            "height": 0.009668508287292817
+          }
+        ]
+      },
+      "EmployeeAddress.City": {
+        "determination_method": "reviewed",
+        "explanation": "Employee address city is the second candidate (employee address row).",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.2918968692449355,
+            "top": 0.23825966850828728,
+            "width": 0.056169429097605895,
+            "height": 0.010359116022099447
+          }
+        ]
+      },
+      "EmployeeAddress.State": {
+        "determination_method": "reviewed",
+        "explanation": "Employee address state is the second candidate (employee address row).",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.35451197053406996,
+            "top": 0.23825966850828728,
+            "width": 0.019337016574585635,
+            "height": 0.008977900552486187
+          }
+        ]
+      },
+      "CompanyAddress.City": {
+        "determination_method": "reviewed",
+        "explanation": "Either candidate is a valid location; same value appears in both the header and company address block.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.16390423572744015,
+            "top": 0.13259668508287292,
+            "width": 0.06537753222836096,
+            "height": 0.012430939226519336
+          },
+          {
+            "page": 0,
+            "left": 0.2918968692449355,
+            "top": 0.23825966850828728,
+            "width": 0.056169429097605895,
+            "height": 0.010359116022099447
+          },
+          {
+            "page": 0,
+            "left": 0.5285451197053407,
+            "top": 0.24102209944751382,
+            "width": 0.058011049723756904,
+            "height": 0.010359116022099447
+          }
+        ]
+      },
+      "CompanyAddress.State": {
+        "determination_method": "reviewed",
+        "explanation": "Either candidate is a valid location; same value appears in both the header and company address block.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.23572744014732966,
+            "top": 0.13397790055248618,
+            "width": 0.022099447513812154,
+            "height": 0.009668508287292817
+          },
+          {
+            "page": 0,
+            "left": 0.35451197053406996,
+            "top": 0.23825966850828728,
+            "width": 0.019337016574585635,
+            "height": 0.008977900552486187
+          },
+          {
+            "page": 0,
+            "left": 0.5930018416206262,
+            "top": 0.24102209944751382,
+            "width": 0.020257826887661142,
+            "height": 0.008287292817679558
+          }
+        ]
+      },
+      "CompanyAddress.ZipCode": {
+        "determination_method": "reviewed",
+        "explanation": "Either candidate is a valid location; same value appears in both the header and company address block.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.26335174953959484,
+            "top": 0.13466850828729282,
+            "width": 0.03867403314917127,
+            "height": 0.010359116022099447
+          },
+          {
+            "page": 0,
+            "left": 0.6187845303867403,
+            "top": 0.24102209944751382,
+            "width": 0.03591160220994475,
+            "height": 0.008287292817679558
+          }
+        ]
+      },
       "PayPeriodStartDate": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.7053406998158379,
-        "top": 0.12154696132596685,
-        "width": 0.06998158379373849,
-        "height": 0.010359116022099447
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.7053406998158379,
+            "top": 0.12154696132596685,
+            "width": 0.06998158379373849,
+            "height": 0.010359116022099447
+          }
+        ]
       },
       "PayPeriodEndDate": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.7965009208103131,
-        "top": 0.12223756906077347,
-        "width": 0.06813996316758748,
-        "height": 0.009668508287292817
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.7965009208103131,
+            "top": 0.12223756906077347,
+            "width": 0.06813996316758748,
+            "height": 0.009668508287292817
+          }
+        ]
       },
       "PayDate": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.7044198895027625,
-        "top": 0.1408839779005525,
-        "width": 0.070902394106814,
-        "height": 0.011049723756906077
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.7044198895027625,
+            "top": 0.1408839779005525,
+            "width": 0.070902394106814,
+            "height": 0.011049723756906077
+          }
+        ]
       },
       "EmployeeName.FirstName": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.2918968692449355,
-        "top": 0.20165745856353592,
-        "width": 0.04511970534069982,
-        "height": 0.008977900552486187
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.2918968692449355,
+            "top": 0.20165745856353592,
+            "width": 0.04511970534069982,
+            "height": 0.008977900552486187
+          }
+        ]
       },
       "EmployeeName.LastName": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.3416206261510129,
-        "top": 0.20165745856353592,
-        "width": 0.03406998158379374,
-        "height": 0.008977900552486187
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.3416206261510129,
+            "top": 0.20165745856353592,
+            "width": 0.03406998158379374,
+            "height": 0.008977900552486187
+          }
+        ]
       },
       "EmployeeAddress.Line1": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.16574585635359115,
-        "top": 0.22030386740331492,
-        "width": 0.4594843462246777,
-        "height": 0.011740331491712707
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.16574585635359115,
+            "top": 0.22030386740331492,
+            "width": 0.4594843462246777,
+            "height": 0.011740331491712707
+          }
+        ]
       },
       "EmployeeAddress.ZipCode": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.3784530386740331,
-        "top": 0.23825966850828728,
-        "width": 0.034990791896869246,
-        "height": 0.008977900552486187
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.3784530386740331,
+            "top": 0.23825966850828728,
+            "width": 0.034990791896869246,
+            "height": 0.008977900552486187
+          }
+        ]
       },
       "CompanyAddress.Line1": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.16574585635359115,
-        "top": 0.22030386740331492,
-        "width": 0.4594843462246777,
-        "height": 0.011740331491712707
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.16574585635359115,
+            "top": 0.22030386740331492,
+            "width": 0.4594843462246777,
+            "height": 0.011740331491712707
+          }
+        ]
       },
       "CurrentGrossPay": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.6740331491712708,
-        "top": 0.4937845303867403,
-        "width": 0.06261510128913444,
-        "height": 0.011049723756906077
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.6740331491712708,
+            "top": 0.4937845303867403,
+            "width": 0.06261510128913444,
+            "height": 0.011049723756906077
+          }
+        ]
       },
       "YTDGrossPay": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.26887661141804786,
-        "top": 0.863950276243094,
-        "width": 0.07826887661141804,
-        "height": 0.013812154696132596
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.26887661141804786,
+            "top": 0.863950276243094,
+            "width": 0.07826887661141804,
+            "height": 0.013812154696132596
+          }
+        ]
       },
       "CurrentNetPay": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.3839779005524862,
-        "top": 0.7651933701657458,
-        "width": 0.09208103130755065,
-        "height": 0.017265193370165747
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.3839779005524862,
+            "top": 0.7651933701657458,
+            "width": 0.09208103130755065,
+            "height": 0.017265193370165747
+          }
+        ]
       },
       "YTDNetPay": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.6786372007366482,
-        "top": 0.856353591160221,
-        "width": 0.07642725598526703,
-        "height": 0.014502762430939226
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.6786372007366482,
+            "top": 0.856353591160221,
+            "width": 0.07642725598526703,
+            "height": 0.014502762430939226
+          }
+        ]
       },
       "RegularHourlyRate": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.289134438305709,
-        "top": 0.30179558011049723,
-        "width": 0.03867403314917127,
-        "height": 0.010359116022099447
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.289134438305709,
+            "top": 0.30179558011049723,
+            "width": 0.03867403314917127,
+            "height": 0.010359116022099447
+          }
+        ]
       },
       "YTDFederalTax": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.6362799263351749,
-        "top": 0.580110497237569,
-        "width": 0.05985267034990792,
-        "height": 0.011049723756906077
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.6362799263351749,
+            "top": 0.580110497237569,
+            "width": 0.05985267034990792,
+            "height": 0.011049723756906077
+          }
+        ]
       },
       "YTDStateTax": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.64548802946593,
-        "top": 0.6022099447513812,
-        "width": 0.05156537753222836,
-        "height": 0.020027624309392266
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.64548802946593,
+            "top": 0.6022099447513812,
+            "width": 0.05156537753222836,
+            "height": 0.020027624309392266
+          }
+        ]
       },
       "FederalTaxes.ItemDescription": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.1427255985267035,
-        "top": 0.5835635359116023,
-        "width": 0.1151012891344383,
-        "height": 0.010359116022099447
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.1427255985267035,
+            "top": 0.5835635359116023,
+            "width": 0.1151012891344383,
+            "height": 0.010359116022099447
+          }
+        ]
       },
       "FederalTaxes.Period": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.4953959484346225,
-        "top": 0.5808011049723757,
-        "width": 0.04419889502762431,
-        "height": 0.011049723756906077
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.4953959484346225,
+            "top": 0.5808011049723757,
+            "width": 0.04419889502762431,
+            "height": 0.011049723756906077
+          }
+        ]
       },
       "FederalTaxes.YTD": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.6362799263351749,
-        "top": 0.580110497237569,
-        "width": 0.05985267034990792,
-        "height": 0.011049723756906077
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.6362799263351749,
+            "top": 0.580110497237569,
+            "width": 0.05985267034990792,
+            "height": 0.011049723756906077
+          }
+        ]
       },
       "StateTaxes.ItemDescription": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.141804788213628,
-        "top": 0.6098066298342542,
-        "width": 0.11878453038674033,
-        "height": 0.013121546961325966
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.141804788213628,
+            "top": 0.6098066298342542,
+            "width": 0.11878453038674033,
+            "height": 0.013121546961325966
+          }
+        ]
       },
       "StateTaxes.Period": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.501841620626151,
-        "top": 0.606353591160221,
-        "width": 0.040515653775322284,
-        "height": 0.011049723756906077
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.501841620626151,
+            "top": 0.606353591160221,
+            "width": 0.040515653775322284,
+            "height": 0.011049723756906077
+          }
+        ]
       },
       "StateTaxes.YTD": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.64548802946593,
-        "top": 0.6022099447513812,
-        "width": 0.05156537753222836,
-        "height": 0.020027624309392266
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.64548802946593,
+            "top": 0.6022099447513812,
+            "width": 0.05156537753222836,
+            "height": 0.020027624309392266
+          }
+        ]
       },
       "EmployeeNumber": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.292817679558011,
-        "top": 0.2610497237569061,
-        "width": 0.03222836095764273,
-        "height": 0.008977900552486187
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.292817679558011,
+            "top": 0.2610497237569061,
+            "width": 0.03222836095764273,
+            "height": 0.008977900552486187
+          }
+        ]
       },
       "CurrentTotalDeductions": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.48987108655616945,
-        "top": 0.7113259668508287,
-        "width": 0.05432780847145488,
-        "height": 0.020027624309392266
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.48987108655616945,
+            "top": 0.7113259668508287,
+            "width": 0.05432780847145488,
+            "height": 0.020027624309392266
+          }
+        ]
       },
       "YTDTotalDeductions": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.639963167587477,
-        "top": 0.7120165745856354,
-        "width": 0.06077348066298342,
-        "height": 0.013121546961325966
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.639963167587477,
+            "top": 0.7120165745856354,
+            "width": 0.06077348066298342,
+            "height": 0.013121546961325966
+          }
+        ]
       }
     },
     "not_matched": {
       "text_not_found": {
         "currency": {
           "expected_value": "USD"
-        }
-      },
-      "ambiguous": {
-        "EmployeeAddress.City": {
-          "expected_value": "Baltimore",
-          "candidates": [
-            {
-              "page": 0,
-              "left": 0.16390423572744015,
-              "top": 0.13259668508287292,
-              "width": 0.06537753222836096,
-              "height": 0.012430939226519336
-            },
-            {
-              "page": 0,
-              "left": 0.2918968692449355,
-              "top": 0.23825966850828728,
-              "width": 0.056169429097605895,
-              "height": 0.010359116022099447
-            },
-            {
-              "page": 0,
-              "left": 0.5285451197053407,
-              "top": 0.24102209944751382,
-              "width": 0.058011049723756904,
-              "height": 0.010359116022099447
-            }
-          ]
-        },
-        "EmployeeAddress.State": {
-          "expected_value": "MD",
-          "candidates": [
-            {
-              "page": 0,
-              "left": 0.23572744014732966,
-              "top": 0.13397790055248618,
-              "width": 0.022099447513812154,
-              "height": 0.009668508287292817
-            },
-            {
-              "page": 0,
-              "left": 0.35451197053406996,
-              "top": 0.23825966850828728,
-              "width": 0.019337016574585635,
-              "height": 0.008977900552486187
-            },
-            {
-              "page": 0,
-              "left": 0.5930018416206262,
-              "top": 0.24102209944751382,
-              "width": 0.020257826887661142,
-              "height": 0.008287292817679558
-            }
-          ]
-        },
-        "CompanyAddress.City": {
-          "expected_value": "Baltimore",
-          "candidates": [
-            {
-              "page": 0,
-              "left": 0.16390423572744015,
-              "top": 0.13259668508287292,
-              "width": 0.06537753222836096,
-              "height": 0.012430939226519336
-            },
-            {
-              "page": 0,
-              "left": 0.2918968692449355,
-              "top": 0.23825966850828728,
-              "width": 0.056169429097605895,
-              "height": 0.010359116022099447
-            },
-            {
-              "page": 0,
-              "left": 0.5285451197053407,
-              "top": 0.24102209944751382,
-              "width": 0.058011049723756904,
-              "height": 0.010359116022099447
-            }
-          ]
-        },
-        "CompanyAddress.State": {
-          "expected_value": "MD",
-          "candidates": [
-            {
-              "page": 0,
-              "left": 0.23572744014732966,
-              "top": 0.13397790055248618,
-              "width": 0.022099447513812154,
-              "height": 0.009668508287292817
-            },
-            {
-              "page": 0,
-              "left": 0.35451197053406996,
-              "top": 0.23825966850828728,
-              "width": 0.019337016574585635,
-              "height": 0.008977900552486187
-            },
-            {
-              "page": 0,
-              "left": 0.5930018416206262,
-              "top": 0.24102209944751382,
-              "width": 0.020257826887661142,
-              "height": 0.008287292817679558
-            }
-          ]
-        },
-        "CompanyAddress.ZipCode": {
-          "expected_value": "21218",
-          "candidates": [
-            {
-              "page": 0,
-              "left": 0.26335174953959484,
-              "top": 0.13466850828729282,
-              "width": 0.03867403314917127,
-              "height": 0.010359116022099447
-            },
-            {
-              "page": 0,
-              "left": 0.6187845303867403,
-              "top": 0.24102209944751382,
-              "width": 0.03591160220994475,
-              "height": 0.008287292817679558
-            }
-          ]
-        },
-        "FederalFilingStatus": {
-          "expected_value": "Married",
-          "candidates": [
-            {
-              "page": 0,
-              "left": 0.7992633517495396,
-              "top": 0.5787292817679558,
-              "width": 0.0432780847145488,
-              "height": 0.009668508287292817
-            },
-            {
-              "page": 0,
-              "left": 0.8001841620626151,
-              "top": 0.6042817679558011,
-              "width": 0.0432780847145488,
-              "height": 0.009668508287292817
-            }
-          ]
-        },
-        "StateFilingStatus": {
-          "expected_value": "Married",
-          "candidates": [
-            {
-              "page": 0,
-              "left": 0.7992633517495396,
-              "top": 0.5787292817679558,
-              "width": 0.0432780847145488,
-              "height": 0.009668508287292817
-            },
-            {
-              "page": 0,
-              "left": 0.8001841620626151,
-              "top": 0.6042817679558011,
-              "width": 0.0432780847145488,
-              "height": 0.009668508287292817
-            }
-          ]
         }
       }
     }

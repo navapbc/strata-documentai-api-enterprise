@@ -51,146 +51,210 @@
       "CompanyAddress.City": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.13743093922651933,
-        "top": 0.289134438305709,
-        "width": 0.04074585635359116,
-        "height": 0.013812154696132596
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.13743093922651933,
+            "top": 0.289134438305709,
+            "width": 0.04074585635359116,
+            "height": 0.013812154696132596
+          }
+        ]
       },
       "CompanyAddress.Line1": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.13674033149171272,
-        "top": 0.19797421731123388,
-        "width": 0.6146408839779005,
-        "height": 0.08195211786372007
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.13674033149171272,
+            "top": 0.19797421731123388,
+            "width": 0.6146408839779005,
+            "height": 0.08195211786372007
+          }
+        ]
       },
       "CompanyAddress.State": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.18162983425414364,
-        "top": 0.2882136279926335,
-        "width": 0.012430939226519336,
-        "height": 0.010128913443830571
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.18162983425414364,
+            "top": 0.2882136279926335,
+            "width": 0.012430939226519336,
+            "height": 0.010128913443830571
+          }
+        ]
       },
       "CompanyAddress.ZipCode": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.19751381215469613,
-        "top": 0.285451197053407,
-        "width": 0.027624309392265192,
-        "height": 0.011970534069981584
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.19751381215469613,
+            "top": 0.285451197053407,
+            "width": 0.027624309392265192,
+            "height": 0.011970534069981584
+          }
+        ]
       },
       "CurrentNetPay": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.7375690607734806,
-        "top": 0.7523020257826888,
-        "width": 0.0393646408839779,
-        "height": 0.014732965009208104
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.7375690607734806,
+            "top": 0.7523020257826888,
+            "width": 0.0393646408839779,
+            "height": 0.014732965009208104
+          }
+        ]
       },
       "CurrentTotalDeductions": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.7651933701657458,
-        "top": 0.5303867403314917,
-        "width": 0.029696132596685083,
-        "height": 0.020257826887661142
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.7651933701657458,
+            "top": 0.5303867403314917,
+            "width": 0.029696132596685083,
+            "height": 0.020257826887661142
+          }
+        ]
       },
       "EmployeeName.FirstName": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.47099447513812154,
-        "top": 0.21086556169429096,
-        "width": 0.024861878453038673,
-        "height": 0.010128913443830571
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.47099447513812154,
+            "top": 0.21086556169429096,
+            "width": 0.024861878453038673,
+            "height": 0.010128913443830571
+          }
+        ]
       },
       "EmployeeName.LastName": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.4993093922651934,
-        "top": 0.20718232044198895,
-        "width": 0.03729281767955801,
-        "height": 0.011049723756906077
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.4993093922651934,
+            "top": 0.20718232044198895,
+            "width": 0.03729281767955801,
+            "height": 0.011049723756906077
+          }
+        ]
       },
       "EmployeeNumber": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.47306629834254144,
-        "top": 0.2283609576427256,
-        "width": 0.05110497237569061,
-        "height": 0.014732965009208104
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.47306629834254144,
+            "top": 0.2283609576427256,
+            "width": 0.05110497237569061,
+            "height": 0.014732965009208104
+          }
+        ]
       },
       "FederalTaxes.ItemDescription": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.14019337016574585,
-        "top": 0.3324125230202578,
-        "width": 0.7147790055248618,
-        "height": 0.08379373848987108
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.14019337016574585,
+            "top": 0.3324125230202578,
+            "width": 0.7147790055248618,
+            "height": 0.08379373848987108
+          }
+        ]
       },
       "FederalTaxes.Period": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.7417127071823204,
-        "top": 0.3416206261510129,
-        "width": 0.029005524861878452,
-        "height": 0.011049723756906077
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.7417127071823204,
+            "top": 0.3416206261510129,
+            "width": 0.029005524861878452,
+            "height": 0.011049723756906077
+          }
+        ]
       },
       "FederalTaxes.YTD": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.8197513812154696,
-        "top": 0.3324125230202578,
-        "width": 0.03522099447513812,
-        "height": 0.011970534069981584
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.8197513812154696,
+            "top": 0.3324125230202578,
+            "width": 0.03522099447513812,
+            "height": 0.011970534069981584
+          }
+        ]
       },
       "PayDate": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.7064917127071824,
-        "top": 0.19797421731123388,
-        "width": 0.04488950276243094,
-        "height": 0.026703499079189688
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.7064917127071824,
+            "top": 0.19797421731123388,
+            "width": 0.04488950276243094,
+            "height": 0.026703499079189688
+          }
+        ]
       },
       "RegularHourlyRate": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.324585635359116,
-        "top": 0.3858195211786372,
-        "width": 0.026933701657458564,
-        "height": 0.011049723756906077
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.324585635359116,
+            "top": 0.3858195211786372,
+            "width": 0.026933701657458564,
+            "height": 0.011049723756906077
+          }
+        ]
       },
       "YTDFederalTax": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.8197513812154696,
-        "top": 0.3324125230202578,
-        "width": 0.03522099447513812,
-        "height": 0.011970534069981584
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.8197513812154696,
+            "top": 0.3324125230202578,
+            "width": 0.03522099447513812,
+            "height": 0.011970534069981584
+          }
+        ]
       },
       "YTDTotalDeductions": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.8439226519337016,
-        "top": 0.5248618784530387,
-        "width": 0.03660220994475138,
-        "height": 0.011970534069981584
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.8439226519337016,
+            "top": 0.5248618784530387,
+            "width": 0.03660220994475138,
+            "height": 0.011970534069981584
+          }
+        ]
       }
     },
     "not_matched": {
@@ -222,6 +286,8 @@
       },
       "ambiguous": {
         "CurrentGrossPay": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "1350.00",
           "candidates": [
             {
@@ -248,6 +314,8 @@
           ]
         },
         "YTDGrossPay": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "9450.00",
           "candidates": [
             {

@@ -31,84 +31,198 @@
   },
   "geometry": {
     "matched": {
+      "Address.Service address pin code": {
+        "determination_method": "reviewed",
+        "explanation": "Resolved from multiple candidates; selected the billing details section occurrence.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.22140522875816993,
+            "top": 0.31691919191919193,
+            "width": 0.0392156862745098,
+            "height": 0.00946969696969697
+          }
+        ]
+      },
+      "MeterRead.Current value": {
+        "determination_method": "reviewed",
+        "explanation": "Resolved from multiple candidates; selected the meter reading table occurrence.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.4722222222222222,
+            "top": 0.48547979797979796,
+            "width": 0.02287581699346405,
+            "height": 0.008207070707070708
+          }
+        ]
+      },
+      "MeterRead.Usage Unit": {
+        "determination_method": "reviewed",
+        "explanation": "Resolved from multiple candidates; selected the meter reading table occurrence.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.380718954248366,
+            "top": 0.4463383838383838,
+            "width": 0.03104575163398693,
+            "height": 0.008838383838383838
+          }
+        ]
+      },
+      "Usage.usage": {
+        "determination_method": "reviewed",
+        "explanation": "Resolved from multiple candidates; selected the usage details section occurrence.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.11437908496732026,
+            "top": 0.48484848484848486,
+            "width": 0.5694444444444444,
+            "height": 0.020202020202020204
+          }
+        ]
+      },
+      "Category": {
+        "determination_method": "reviewed",
+        "explanation": "Both candidates are valid: one is the section header, the other is the document type in the header area.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.3684640522875817,
+            "top": 0.1369949494949495,
+            "width": 0.11437908496732026,
+            "height": 0.018308080808080808
+          },
+          {
+            "page": 0,
+            "left": 0.5686274509803921,
+            "top": 0.027777777777777776,
+            "width": 0.15359477124183007,
+            "height": 0.023989898989898988
+          }
+        ]
+      },
+      "Address.Service Address": {
+        "determination_method": "reviewed",
+        "explanation": "Value spans two OCR lines; bounding box merged from both lines of the service address block (top occurrence).",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.1144,
+            "top": 0.3005,
+            "width": 0.1756,
+            "height": 0.0284
+          }
+        ]
+      },
       "Account Number": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.7826797385620915,
-        "top": 0.08522727272727272,
-        "width": 0.06372549019607843,
-        "height": 0.00946969696969697
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.7826797385620915,
+            "top": 0.08522727272727272,
+            "width": 0.06372549019607843,
+            "height": 0.00946969696969697
+          }
+        ]
       },
       "Current Balance": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.6772875816993464,
-        "top": 0.2922979797979798,
-        "width": 0.05065359477124183,
-        "height": 0.011994949494949494
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.6772875816993464,
+            "top": 0.2922979797979798,
+            "width": 0.05065359477124183,
+            "height": 0.011994949494949494
+          }
+        ]
       },
       "Meter Number": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.15604575163398693,
-        "top": 0.46654040404040403,
-        "width": 0.07352941176470588,
-        "height": 0.008838383838383838
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.15604575163398693,
+            "top": 0.46654040404040403,
+            "width": 0.07352941176470588,
+            "height": 0.008838383838383838
+          }
+        ]
       },
       "MeterRead.Meter ID": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.15604575163398693,
-        "top": 0.46654040404040403,
-        "width": 0.07352941176470588,
-        "height": 0.008838383838383838
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.15604575163398693,
+            "top": 0.46654040404040403,
+            "width": 0.07352941176470588,
+            "height": 0.008838383838383838
+          }
+        ]
       },
       "Previous Balance": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.6772875816993464,
-        "top": 0.23926767676767677,
-        "width": 0.05800653594771242,
-        "height": 0.011363636363636364
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.6772875816993464,
+            "top": 0.23926767676767677,
+            "width": 0.05800653594771242,
+            "height": 0.011363636363636364
+          }
+        ]
       },
       "Provider": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.23039215686274508,
-        "top": 0.09595959595959595,
-        "width": 0.31290849673202614,
-        "height": 0.023989898989898988
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.23039215686274508,
+            "top": 0.09595959595959595,
+            "width": 0.31290849673202614,
+            "height": 0.023989898989898988
+          }
+        ]
       },
       "Total Balance Due": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.6772875816993464,
-        "top": 0.2922979797979798,
-        "width": 0.05065359477124183,
-        "height": 0.011994949494949494
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.6772875816993464,
+            "top": 0.2922979797979798,
+            "width": 0.05065359477124183,
+            "height": 0.011994949494949494
+          }
+        ]
       },
       "Usage.power factor": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.3611111111111111,
-        "top": 0.7146464646464646,
-        "width": 0.08986928104575163,
-        "height": 0.012626262626262626
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.3611111111111111,
+            "top": 0.7146464646464646,
+            "width": 0.08986928104575163,
+            "height": 0.012626262626262626
+          }
+        ]
       }
     },
     "not_matched": {
       "text_not_found": {
-        "Address.Service Address": {
-          "expected_value": "8734 Meadowbrook Lane, Cheyenne, WY 82001"
-        },
         "BalanceDue Date": {
           "expected_value": "2026-09-25"
         },
@@ -123,199 +237,6 @@
         },
         "StartDate": {
           "expected_value": "2026-08-01"
-        }
-      },
-      "ambiguous": {
-        "Address.Service address pin code": {
-          "expected_value": "82001",
-          "candidates": [
-            {
-              "page": 0,
-              "left": 0.22140522875816993,
-              "top": 0.31691919191919193,
-              "width": 0.0392156862745098,
-              "height": 0.00946969696969697
-            },
-            {
-              "page": 0,
-              "left": 0.22140522875816993,
-              "top": 0.37815656565656564,
-              "width": 0.0392156862745098,
-              "height": 0.008838383838383838
-            }
-          ]
-        },
-        "Category": {
-          "expected_value": "Electricity",
-          "candidates": [
-            {
-              "page": 0,
-              "left": 0.3684640522875817,
-              "top": 0.1369949494949495,
-              "width": 0.11437908496732026,
-              "height": 0.018308080808080808
-            },
-            {
-              "page": 0,
-              "left": 0.5686274509803921,
-              "top": 0.027777777777777776,
-              "width": 0.15359477124183007,
-              "height": 0.023989898989898988
-            }
-          ]
-        },
-        "CountMeterIDs": {
-          "expected_value": 1,
-          "candidates": [
-            {
-              "page": 0,
-              "left": 0.8112745098039216,
-              "top": 0.13257575757575757,
-              "width": 0.010620915032679739,
-              "height": 0.010732323232323232
-            },
-            {
-              "page": 0,
-              "left": 0.46895424836601307,
-              "top": 0.6256313131313131,
-              "width": 0.004084967320261438,
-              "height": 0.006944444444444444
-            },
-            {
-              "page": 0,
-              "left": 0.6209150326797386,
-              "top": 0.6256313131313131,
-              "width": 0.004901960784313725,
-              "height": 0.006944444444444444
-            },
-            {
-              "page": 0,
-              "left": 0.7753267973856209,
-              "top": 0.6376262626262627,
-              "width": 0.004084967320261438,
-              "height": 0.007575757575757576
-            },
-            {
-              "page": 0,
-              "left": 0.8570261437908496,
-              "top": 0.9684343434343434,
-              "width": 0.005718954248366013,
-              "height": 0.010101010101010102
-            },
-            {
-              "page": 0,
-              "left": 0.8913398692810458,
-              "top": 0.9684343434343434,
-              "width": 0.004901960784313725,
-              "height": 0.010101010101010102
-            }
-          ]
-        },
-        "MeterRead.Current value": {
-          "expected_value": "920",
-          "candidates": [
-            {
-              "page": 0,
-              "left": 0.4722222222222222,
-              "top": 0.48547979797979796,
-              "width": 0.02287581699346405,
-              "height": 0.008207070707070708
-            },
-            {
-              "page": 0,
-              "left": 0.11437908496732026,
-              "top": 0.5082070707070707,
-              "width": 0.024509803921568627,
-              "height": 0.008838383838383838
-            },
-            {
-              "page": 0,
-              "left": 0.2696078431372549,
-              "top": 0.7152777777777778,
-              "width": 0.03104575163398693,
-              "height": 0.011994949494949494
-            }
-          ]
-        },
-        "MeterRead.Usage Unit": {
-          "expected_value": "kWh",
-          "candidates": [
-            {
-              "page": 0,
-              "left": 0.380718954248366,
-              "top": 0.4463383838383838,
-              "width": 0.03104575163398693,
-              "height": 0.008838383838383838
-            },
-            {
-              "page": 0,
-              "left": 0.8088235294117647,
-              "top": 0.48042929292929293,
-              "width": 0.029411764705882353,
-              "height": 0.008838383838383838
-            },
-            {
-              "page": 0,
-              "left": 0.5008169934640523,
-              "top": 0.48484848484848486,
-              "width": 0.028594771241830064,
-              "height": 0.008838383838383838
-            },
-            {
-              "page": 0,
-              "left": 0.6544117647058824,
-              "top": 0.4911616161616162,
-              "width": 0.029411764705882353,
-              "height": 0.008838383838383838
-            },
-            {
-              "page": 0,
-              "left": 0.14460784313725492,
-              "top": 0.5082070707070707,
-              "width": 0.028594771241830064,
-              "height": 0.008838383838383838
-            },
-            {
-              "page": 0,
-              "left": 0.17647058823529413,
-              "top": 0.5321969696969697,
-              "width": 0.032679738562091505,
-              "height": 0.008838383838383838
-            },
-            {
-              "page": 0,
-              "left": 0.30637254901960786,
-              "top": 0.7152777777777778,
-              "width": 0.03022875816993464,
-              "height": 0.00946969696969697
-            }
-          ]
-        },
-        "Usage.usage": {
-          "expected_value": "920 kWh",
-          "candidates": [
-            {
-              "page": 0,
-              "left": 0.11437908496732026,
-              "top": 0.48484848484848486,
-              "width": 0.5694444444444444,
-              "height": 0.020202020202020204
-            },
-            {
-              "page": 0,
-              "left": 0.11437908496732026,
-              "top": 0.5082070707070707,
-              "width": 0.29820261437908496,
-              "height": 0.010732323232323232
-            },
-            {
-              "page": 0,
-              "left": 0.11519607843137254,
-              "top": 0.7140151515151515,
-              "width": 0.7173202614379085,
-              "height": 0.015151515151515152
-            }
-          ]
         }
       }
     }

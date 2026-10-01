@@ -1,7 +1,7 @@
 # synthetic-expense-dependent-care-render.pdf
 
 
-_Run: 2026-09-30 16:51 UTC_
+_Run: 2026-09-30 19:07 UTC_
 
 
 ## Durations
@@ -31,7 +31,7 @@ _By Extracted Data_
 - OCR Mapping: 100% equivalent, 100% close, 0% misses
 
 _By Geometry_
-- BDA: 3/7 exact, 4 miss
+- BDA: 3/6 exact, 3 miss
 - OCR Mapping: 5/7 exact, 2 miss
 
 

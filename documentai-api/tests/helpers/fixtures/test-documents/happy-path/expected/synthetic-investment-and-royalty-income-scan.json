@@ -21,47 +21,67 @@
       "account_holder_name": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.052734375,
-        "top": 0.14453125,
-        "width": 0.1005859375,
-        "height": 0.011067708333333334
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.052734375,
+            "top": 0.14453125,
+            "width": 0.1005859375,
+            "height": 0.011067708333333334
+          }
+        ]
       },
       "account_number": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.666015625,
-        "top": 0.14778645833333334,
-        "width": 0.1328125,
-        "height": 0.009114583333333334
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.666015625,
+            "top": 0.14778645833333334,
+            "width": 0.1328125,
+            "height": 0.009114583333333334
+          }
+        ]
       },
       "account_type": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.5078125,
-        "top": 0.16471354166666666,
-        "width": 0.2578125,
-        "height": 0.010416666666666666
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.5078125,
+            "top": 0.16471354166666666,
+            "width": 0.2578125,
+            "height": 0.010416666666666666
+          }
+        ]
       },
       "financial_institution": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.0537109375,
-        "top": 0.17447916666666666,
-        "width": 0.826171875,
-        "height": 0.018880208333333332
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.0537109375,
+            "top": 0.17447916666666666,
+            "width": 0.826171875,
+            "height": 0.018880208333333332
+          }
+        ]
       },
       "distribution_dates": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.05859375,
-        "top": 0.6295572916666666,
-        "width": 0.07421875,
-        "height": 0.008463541666666666
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.05859375,
+            "top": 0.6295572916666666,
+            "width": 0.07421875,
+            "height": 0.008463541666666666
+          }
+        ]
       }
     },
     "not_matched": {
@@ -75,6 +95,8 @@
       },
       "ambiguous": {
         "account_balance": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "$46,000.00",
           "candidates": [
             {
@@ -115,6 +137,8 @@
           ]
         },
         "total_value": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "46000.00",
           "candidates": [
             {
@@ -155,6 +179,8 @@
           ]
         },
         "tax_year": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "2026",
           "candidates": [
             {
@@ -188,6 +214,8 @@
           ]
         },
         "statement_period_start": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "2026-01-01",
           "candidates": [
             {
@@ -207,6 +235,8 @@
           ]
         },
         "statement_period_end": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "2026-08-31",
           "candidates": [
             {

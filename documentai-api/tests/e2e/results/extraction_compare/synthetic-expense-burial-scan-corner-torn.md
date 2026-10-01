@@ -1,7 +1,7 @@
 # synthetic-expense-burial-scan-corner-torn.jpg
 
 
-_Run: 2026-09-30 16:51 UTC_
+_Run: 2026-09-30 19:07 UTC_
 
 
 ## Durations
@@ -33,7 +33,7 @@ _By Extracted Data_
 
 _By Geometry_
 - BDA: 1/3 exact, 2 miss
-- OCR Mapping: 0/3 exact, 3 miss
+- OCR Mapping: 0/2 exact, 2 miss
 
 
 ## Field Comparison

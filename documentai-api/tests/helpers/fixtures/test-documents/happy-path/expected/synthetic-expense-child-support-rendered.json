@@ -19,59 +19,83 @@
   },
   "geometry": {
     "matched": {
+      "payment_type": {
+        "determination_method": "reviewed",
+        "explanation": "Two OCR matches: title (top=0.071) and body label (top=0.739). Body label is the field value location.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.12336601307189543,
+            "top": 0.7386363636363636,
+            "width": 0.4991830065359477,
+            "height": 0.01452020202020202
+          }
+        ]
+      },
       "case_number": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.6740196078431373,
-        "top": 0.12121212121212122,
-        "width": 0.1642156862745098,
-        "height": 0.012626262626262626
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.6740196078431373,
+            "top": 0.12121212121212122,
+            "width": 0.1642156862745098,
+            "height": 0.012626262626262626
+          }
+        ]
       },
       "court_name": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.12254901960784313,
-        "top": 0.413510101010101,
-        "width": 0.6282679738562091,
-        "height": 0.01452020202020202
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.12254901960784313,
+            "top": 0.413510101010101,
+            "width": 0.6282679738562091,
+            "height": 0.01452020202020202
+          }
+        ]
       },
       "payer_name": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.12336601307189543,
-        "top": 0.24936868686868688,
-        "width": 0.3145424836601307,
-        "height": 0.019570707070707072
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.12336601307189543,
+            "top": 0.24936868686868688,
+            "width": 0.3145424836601307,
+            "height": 0.019570707070707072
+          }
+        ]
       },
       "payment_amount": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.3741830065359477,
-        "top": 0.43876262626262624,
-        "width": 0.04003267973856209,
-        "height": 0.012626262626262626
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.3741830065359477,
+            "top": 0.43876262626262624,
+            "width": 0.04003267973856209,
+            "height": 0.012626262626262626
+          }
+        ]
       },
       "payment_frequency": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.3741830065359477,
-        "top": 0.4640151515151515,
-        "width": 0.05800653594771242,
-        "height": 0.01452020202020202
-      },
-      "payment_type": {
-        "determination_method": "manual",
-        "explanation": "Two OCR matches: title (top=0.071) and body label (top=0.739). Body label is the field value location.",
-        "page": 0,
-        "left": 0.12336601307189543,
-        "top": 0.7386363636363636,
-        "width": 0.4991830065359477,
-        "height": 0.01452020202020202
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.3741830065359477,
+            "top": 0.4640151515151515,
+            "width": 0.05800653594771242,
+            "height": 0.01452020202020202
+          }
+        ]
       }
     }
   },

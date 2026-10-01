@@ -18,47 +18,67 @@
       "insurer_or_marketplace_name": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.43359375,
-        "top": 0.034505208333333336,
-        "width": 0.181640625,
-        "height": 0.011067708333333334
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.43359375,
+            "top": 0.034505208333333336,
+            "width": 0.181640625,
+            "height": 0.011067708333333334
+          }
+        ]
       },
       "policy_or_member_id": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.7314453125,
-        "top": 0.126953125,
-        "width": 0.1328125,
-        "height": 0.008463541666666666
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.7314453125,
+            "top": 0.126953125,
+            "width": 0.1328125,
+            "height": 0.008463541666666666
+          }
+        ]
       },
       "policyholder_name": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.048828125,
-        "top": 0.2421875,
-        "width": 0.166015625,
-        "height": 0.009765625
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.048828125,
+            "top": 0.2421875,
+            "width": 0.166015625,
+            "height": 0.009765625
+          }
+        ]
       },
       "premium_amount": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.8623046875,
-        "top": 0.5481770833333334,
-        "width": 0.0654296875,
-        "height": 0.011067708333333334
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.8623046875,
+            "top": 0.5481770833333334,
+            "width": 0.0654296875,
+            "height": 0.011067708333333334
+          }
+        ]
       },
       "subsidy_or_tax_credit_amount": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.873046875,
-        "top": 0.2779947916666667,
-        "width": 0.05859375,
-        "height": 0.009114583333333334
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.873046875,
+            "top": 0.2779947916666667,
+            "width": 0.05859375,
+            "height": 0.009114583333333334
+          }
+        ]
       }
     },
     "not_matched": {
@@ -81,6 +101,8 @@
       },
       "ambiguous": {
         "payment_frequency": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "Mensual",
           "candidates": [
             {

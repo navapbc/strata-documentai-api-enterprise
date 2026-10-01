@@ -1,10 +1,17 @@
 """CLI tool to generate ground-truth geometry candidates for fixture documents.
 
 For each fixture that has an expected JSON:
-  - geo-matched:    resolved fields are merged into the expected JSON under a "geometry" key.
-                    Existing geometry entries are never overwritten (human picks survive re-runs).
-  - manual-review:  ambiguous or list-value fields written to <fixtures_dir>/expected/geometry_manual.json.
-  - text-not-found: fields whose normalized value had no OCR match, also in expected/geometry_manual.json.
+  - geo-matched:            resolved fields written to geometry.matched.
+  - manual-review-required: fields in geometry.not_matched.ambiguous with determination_method=pytesseract
+                            (multiple OCR locations or list-value — needs a human to resolve).
+  - acknowledged:           fields in geometry.not_matched.ambiguous with determination_method=reviewed
+                            (human confirmed no single canonical location exists).
+  - text-not-found:         fields whose normalized value had no OCR match.
+
+determination_method semantics:
+  pytesseract — fully automated single unambiguous match, never reviewed.
+  reviewed    — human has signed off: either confirmed the final candidate set from pytesseract's
+                ambiguous list (in matched), or confirmed the field is unresolvable (in ambiguous).
 """
 
 from __future__ import annotations
@@ -12,11 +19,12 @@ from __future__ import annotations
 import dataclasses
 import json
 import re
+from enum import StrEnum
 from pathlib import Path
 from typing import Annotated
 
-import pypdfium2  # type: ignore[import-not-found]
-import pytesseract  # type: ignore[import-not-found]
+import pypdfium2
+import pytesseract
 import typer
 from PIL import Image
 
@@ -24,6 +32,64 @@ from documentai_api.utils.extraction_compare_client import normalize_value as _n
 from documentai_api.utils.schemas import is_list_field
 
 app = typer.Typer()
+
+
+class _DeterminationMethod(StrEnum):
+    pytesseract = "pytesseract"
+    reviewed = "reviewed"
+
+
+class _Reason(StrEnum):
+    multiple_ocr_matches = "multiple_ocr_matches"
+    list_value = "list_value"
+    repeating_table_value = "repeating_table_value"
+
+
+@dataclasses.dataclass
+class _MatchedEntry:
+    determination_method: _DeterminationMethod
+    explanation: str
+    candidates: list[dict[str, object]]
+
+    @classmethod
+    def from_dict(cls, d: dict[str, object]) -> _MatchedEntry:
+        raw_candidates = d.get("candidates", [])
+        return cls(
+            determination_method=_DeterminationMethod(str(d["determination_method"])),
+            explanation=str(d.get("explanation", "")),
+            candidates=raw_candidates if isinstance(raw_candidates, list) else [],
+        )
+
+
+@dataclasses.dataclass
+class _AmbiguousEntry:
+    determination_method: _DeterminationMethod
+    reason: _Reason
+    expected_value: object
+    candidates: list[dict[str, object]] = dataclasses.field(default_factory=list)
+    explanation: str | None = None
+
+    @classmethod
+    def from_dict(cls, d: dict[str, object]) -> _AmbiguousEntry:
+        raw_candidates = d.get("candidates", [])
+        raw_explanation = d.get("explanation")
+        return cls(
+            determination_method=_DeterminationMethod(str(d["determination_method"])),
+            reason=_Reason(str(d["reason"])),
+            expected_value=d["expected_value"],
+            candidates=raw_candidates if isinstance(raw_candidates, list) else [],
+            explanation=raw_explanation if isinstance(raw_explanation, str) else None,
+        )
+
+
+@dataclasses.dataclass
+class _NotFoundEntry:
+    expected_value: object
+
+    @classmethod
+    def from_dict(cls, d: dict[str, object]) -> _NotFoundEntry:
+        return cls(expected_value=d["expected_value"])
+
 
 _DOC_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg"}
 _FIXTURE_KEY_ORDER = {
@@ -33,13 +99,15 @@ _FIXTURE_KEY_ORDER = {
     "language": 3,
     "notes": 4,
 }
-_COMPUTED_FIELDS = {
+_INFERRED_FIELDS = {
     "BalanceGreaterCheck",
     "BillingDateBeforeDueDate",
+    "CountMeterIDs",
     "Is_NumMeterIDsListed",
     "Is_PrevGreaterThanCurr",
     "Is_ValidPinCode",
     "Is_ValidState",
+    "MeterRead.Delta or Metered value",
     "VALIDATION",
     "are_field_names_sufficient",
     "expire",
@@ -146,6 +214,12 @@ def _ocr_document(path: Path, lang: str = "eng") -> tuple[list[_OcrLine], list[_
     return lines, words
 
 
+def _serialize(v: object) -> object:
+    if dataclasses.is_dataclass(v) and not isinstance(v, type):
+        return {k: val for k, val in dataclasses.asdict(v).items() if val is not None}
+    return v
+
+
 def _find_document(fixtures_dir: Path, stem: str) -> Path | None:
     for ext in _DOC_EXTENSIONS:
         candidate = fixtures_dir / (stem + ext)
@@ -179,8 +253,10 @@ def main(
         typer.echo(f"Expected dir not found: {expected_dir}", err=True)
         raise typer.Exit(1)
 
+    total_fields = 0
     total_matched = 0
-    total_manual = 0
+    total_manual_required = 0
+    total_acknowledged = 0
     total_not_found = 0
 
     for expected_path in sorted(expected_dir.glob("*.json")):
@@ -198,30 +274,56 @@ def main(
         all_lines, all_words = _ocr_document(document_path, lang=fixture.get("language", "eng"))
 
         existing_geo: dict[str, object] = fixture.get("geometry", {})
-        # Seed only from manual entries — pytesseract entries are rebuilt on every run
-        # so the algorithm can improve without manual picks being overwritten.
+        # Seed reviewed entries — human decisions that must survive re-runs.
+        # pytesseract entries are rebuilt each run so the algorithm can improve freely.
         _raw = existing_geo.get("matched")
         existing_matched: dict[str, object] = _raw if isinstance(_raw, dict) else existing_geo
-        matched_geo: dict[str, object] = {
-            k: v
+        matched_geo: dict[str, _MatchedEntry] = {
+            k: _MatchedEntry.from_dict(v)
             for k, v in existing_matched.items()
-            if isinstance(v, dict) and v.get("determination_method") == "manual"
+            if isinstance(v, dict)
+            and v.get("determination_method") == _DeterminationMethod.reviewed
         }
-        not_matched: dict[str, dict[str, object]] = {"text_not_found": {}, "ambiguous": {}}
+        _raw_not_matched = existing_geo.get("not_matched", {})
+        _existing_not_matched: dict[str, object] = (
+            _raw_not_matched if isinstance(_raw_not_matched, dict) else {}
+        )
+        _raw_ambiguous = _existing_not_matched.get("ambiguous", {})
+        _existing_ambiguous: dict[str, object] = (
+            _raw_ambiguous if isinstance(_raw_ambiguous, dict) else {}
+        )
+
+        _seeded_ambiguous: dict[str, _AmbiguousEntry] = {
+            k: _AmbiguousEntry.from_dict(
+                {**v, "determination_method": _DeterminationMethod.pytesseract}
+                if "determination_method" not in v
+                else v
+            )
+            for k, v in _existing_ambiguous.items()
+            if isinstance(v, dict) and "reason" in v
+        }
+        not_matched: dict[str, dict[str, _MatchedEntry | _AmbiguousEntry | _NotFoundEntry]] = {
+            "text_not_found": {},
+            "ambiguous": _seeded_ambiguous,  # type: ignore[dict-item]
+        }
         not_found_count = 0
 
         for field, value in fields.items():
             if value is None:
                 continue
 
-            if field in matched_geo:
+            if field in matched_geo or field in not_matched["ambiguous"]:
                 continue
 
             if is_list_field(doc_type, field):
-                not_matched["ambiguous"][field] = {"reason": "list_value", "expected_value": value}
+                not_matched["ambiguous"][field] = _AmbiguousEntry(
+                    determination_method=_DeterminationMethod.pytesseract,
+                    reason=_Reason.list_value,
+                    expected_value=value,
+                )
                 continue
 
-            if field in _COMPUTED_FIELDS:
+            if field in _INFERRED_FIELDS:
                 continue
 
             norm_expected = _normalize(value)
@@ -238,24 +340,32 @@ def main(
                 matches = [ln for ln in all_lines if norm_expected in _normalize(ln.text)]
 
             if len(matches) == 1:
-                matched_geo[field] = {
-                    "determination_method": "pytesseract",
-                    "explanation": "Resolved via pytesseract OCR match.",
-                    **dataclasses.asdict(_bbox(matches[0])),
-                }
+                matched_geo[field] = _MatchedEntry(
+                    determination_method=_DeterminationMethod.pytesseract,
+                    explanation="Resolved via pytesseract OCR match.",
+                    candidates=[dataclasses.asdict(_bbox(matches[0]))],
+                )
             elif len(matches) == 0:
                 not_found_count += 1
-                not_matched["text_not_found"][field] = {"expected_value": value}
+                not_matched["text_not_found"][field] = _NotFoundEntry(expected_value=value)
             else:
-                not_matched["ambiguous"][field] = {
-                    "reason": "multiple_ocr_matches",
-                    "expected_value": value,
-                    "candidates": [dataclasses.asdict(_bbox(m)) for m in matches],
-                }
+                not_matched["ambiguous"][field] = _AmbiguousEntry(
+                    determination_method=_DeterminationMethod.pytesseract,
+                    reason=_Reason.multiple_ocr_matches,
+                    expected_value=value,
+                    candidates=[dataclasses.asdict(_bbox(m)) for m in matches],
+                )
 
-        geometry_out: dict[str, object] = {"matched": matched_geo}
-        if not_matched["text_not_found"] or not_matched["ambiguous"]:
-            geometry_out["not_matched"] = {k: v for k, v in not_matched.items() if v}
+        geometry_out: dict[str, object] = {
+            "matched": {k: _serialize(v) for k, v in matched_geo.items()}
+        }
+        not_matched_out = {
+            bucket: {k: _serialize(v) for k, v in entries.items()}
+            for bucket, entries in not_matched.items()
+            if entries
+        }
+        if not_matched_out:
+            geometry_out["not_matched"] = not_matched_out
         fixture = dict(
             sorted(
                 {**fixture, "geometry": geometry_out}.items(),
@@ -265,28 +375,49 @@ def main(
         expected_path.write_text(json.dumps(fixture, indent=2, ensure_ascii=False) + "\n")
 
         matched = len(matched_geo)
-        manual_count = len(not_matched["ambiguous"])
+        ambiguous = not_matched["ambiguous"]
+        manual_required_count = sum(
+            1
+            for v in ambiguous.values()
+            if isinstance(v, _AmbiguousEntry)
+            and v.determination_method == _DeterminationMethod.pytesseract
+        )
+        acknowledged_count = sum(
+            1
+            for v in ambiguous.values()
+            if isinstance(v, _AmbiguousEntry)
+            and v.determination_method == _DeterminationMethod.reviewed
+        )
+        field_count = matched + len(ambiguous) + not_found_count
 
+        total_fields += field_count
         total_matched += matched
-        total_manual += manual_count
+        total_manual_required += manual_required_count
+        total_acknowledged += acknowledged_count
         total_not_found += not_found_count
 
         typer.echo(
             f"[OCR] {document_path.name} - "
             + typer.style(f"geo-matched={matched}", fg=typer.colors.GREEN)
             + "  "
-            + typer.style(f"manual-review={manual_count}", fg=typer.colors.YELLOW)
+            + typer.style(f"manual-review-required={manual_required_count}", fg=typer.colors.YELLOW)
             + "  "
             + typer.style(f"text-not-found={not_found_count}", fg=typer.colors.RED)
+            + "  "
+            + typer.style(f"acknowledged={acknowledged_count}", fg=typer.colors.CYAN)
         )
 
     typer.echo(
         "\nDone. "
+        + typer.style(f"total-fields={total_fields}", fg=typer.colors.WHITE)
+        + "  "
         + typer.style(f"geo-matched={total_matched}", fg=typer.colors.GREEN)
         + "  "
-        + typer.style(f"manual-review={total_manual}", fg=typer.colors.YELLOW)
+        + typer.style(f"manual-review-required={total_manual_required}", fg=typer.colors.YELLOW)
         + "  "
         + typer.style(f"text-not-found={total_not_found}", fg=typer.colors.RED)
+        + "  "
+        + typer.style(f"acknowledged={total_acknowledged}", fg=typer.colors.CYAN)
     )
 
 

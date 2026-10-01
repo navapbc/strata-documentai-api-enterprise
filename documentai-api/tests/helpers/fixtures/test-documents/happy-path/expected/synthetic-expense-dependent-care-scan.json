@@ -17,29 +17,41 @@
       "dependent_names": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.064453125,
-        "top": 0.341796875,
-        "width": 0.1533203125,
-        "height": 0.01171875
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.064453125,
+            "top": 0.341796875,
+            "width": 0.1533203125,
+            "height": 0.01171875
+          }
+        ]
       },
       "provider_name": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.2197265625,
-        "top": 0.048828125,
-        "width": 0.3349609375,
-        "height": 0.014322916666666666
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.2197265625,
+            "top": 0.048828125,
+            "width": 0.3349609375,
+            "height": 0.014322916666666666
+          }
+        ]
       },
       "statement_date": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.7578125,
-        "top": 0.103515625,
-        "width": 0.0810546875,
-        "height": 0.009114583333333334
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.7578125,
+            "top": 0.103515625,
+            "width": 0.0810546875,
+            "height": 0.009114583333333334
+          }
+        ]
       }
     },
     "not_matched": {
@@ -56,6 +68,8 @@
       },
       "ambiguous": {
         "amount_paid": {
+          "determination_method": "reviewed",
+          "reason": "repeating_table_value",
           "expected_value": "650.00",
           "candidates": [
             {
@@ -79,9 +93,12 @@
               "width": 0.0654296875,
               "height": 0.011067708333333334
             }
-          ]
+          ],
+          "explanation": "Value appears in multiple weekly service rows; no single canonical location."
         },
         "balance_due": {
+          "determination_method": "reviewed",
+          "reason": "repeating_table_value",
           "expected_value": "650.00",
           "candidates": [
             {
@@ -105,9 +122,12 @@
               "width": 0.0654296875,
               "height": 0.011067708333333334
             }
-          ]
+          ],
+          "explanation": "Value appears in multiple weekly service rows; no single canonical location."
         },
         "payment_amount": {
+          "determination_method": "reviewed",
+          "reason": "repeating_table_value",
           "expected_value": "325.00",
           "candidates": [
             {
@@ -180,9 +200,12 @@
               "width": 0.060546875,
               "height": 0.018880208333333332
             }
-          ]
+          ],
+          "explanation": "Value appears in multiple weekly service rows; no single canonical location."
         },
         "service_end_date": {
+          "determination_method": "reviewed",
+          "reason": "repeating_table_value",
           "expected_value": "2026-08-30",
           "candidates": [
             {
@@ -199,9 +222,12 @@
               "width": 0.08203125,
               "height": 0.009114583333333334
             }
-          ]
+          ],
+          "explanation": "Value appears in multiple weekly service rows; no single canonical location."
         },
         "service_start_date": {
+          "determination_method": "reviewed",
+          "reason": "repeating_table_value",
           "expected_value": "2026-08-03",
           "candidates": [
             {
@@ -218,7 +244,8 @@
               "width": 0.0810546875,
               "height": 0.008463541666666666
             }
-          ]
+          ],
+          "explanation": "Value appears in multiple weekly service rows; no single canonical location."
         }
       }
     }

@@ -14,58 +14,82 @@
   "geometry": {
     "matched": {
       "bank_name": {
-        "determination_method": "manual",
-        "page": 0,
-        "left": 0.229575,
-        "top": 0.046086,
-        "width": 0.652778,
-        "height": 0.059974,
-        "explanation": "Bank name spans two header lines; geo merged from 'Riverbend Bank Statement -' and 'Financial Institution Deposit Income Verification'."
+        "determination_method": "reviewed",
+        "explanation": "Bank name spans two header lines; geo merged from 'Riverbend Bank Statement -' and 'Financial Institution Deposit Income Verification'.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.229575,
+            "top": 0.046086,
+            "width": 0.652778,
+            "height": 0.059974
+          }
+        ]
       },
       "account_number": {
-        "determination_method": "manual",
+        "determination_method": "reviewed",
         "explanation": "Word-level match for '****5678' on the Account No. line.",
-        "page": 0,
-        "left": 0.269,
-        "top": 0.207,
-        "width": 0.069,
-        "height": 0.011
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.269,
+            "top": 0.207,
+            "width": 0.069,
+            "height": 0.011
+          }
+        ]
       },
       "statement_start_date": {
-        "determination_method": "manual",
+        "determination_method": "reviewed",
         "explanation": "Word-level match for '2026-06-01' on the Statement Period line.",
-        "page": 0,
-        "left": 0.292,
-        "top": 0.177,
-        "width": 0.087,
-        "height": 0.011
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.292,
+            "top": 0.177,
+            "width": 0.087,
+            "height": 0.011
+          }
+        ]
       },
       "statement_end_date": {
-        "determination_method": "manual",
+        "determination_method": "reviewed",
         "explanation": "Word-level match for '2026-08-31' on the Statement Period line.",
-        "page": 0,
-        "left": 0.406,
-        "top": 0.177,
-        "width": 0.087,
-        "height": 0.011
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.406,
+            "top": 0.177,
+            "width": 0.087,
+            "height": 0.011
+          }
+        ]
       },
       "account_holder_name": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.12418300653594772,
-        "top": 0.3068181818181818,
-        "width": 0.1503267973856209,
-        "height": 0.011363636363636364
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.12418300653594772,
+            "top": 0.3068181818181818,
+            "width": 0.1503267973856209,
+            "height": 0.011363636363636364
+          }
+        ]
       },
       "account_holder_address": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.12336601307189543,
-        "top": 0.3301767676767677,
-        "width": 0.38235294117647056,
-        "height": 0.013257575757575758
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.12336601307189543,
+            "top": 0.3301767676767677,
+            "width": 0.38235294117647056,
+            "height": 0.013257575757575758
+          }
+        ]
       }
     },
     "not_matched": {

@@ -27,65 +27,93 @@
       "Account_Info.Acct_Name": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.0380859375,
-        "top": 0.23502604166666666,
-        "width": 0.0947265625,
-        "height": 0.011067708333333334
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.0380859375,
+            "top": 0.23502604166666666,
+            "width": 0.0947265625,
+            "height": 0.011067708333333334
+          }
+        ]
       },
       "Account_Info.Acct_No": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.2236328125,
-        "top": 0.8444010416666666,
-        "width": 0.091796875,
-        "height": 0.0078125
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.2236328125,
+            "top": 0.8444010416666666,
+            "width": 0.091796875,
+            "height": 0.0078125
+          }
+        ]
       },
       "Account_Info.Meter_Number": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.7197265625,
-        "top": 0.5690104166666666,
-        "width": 0.103515625,
-        "height": 0.008463541666666666
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.7197265625,
+            "top": 0.5690104166666666,
+            "width": 0.103515625,
+            "height": 0.008463541666666666
+          }
+        ]
       },
       "Curr_Meter_Reading": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.8056640625,
-        "top": 0.625,
-        "width": 0.0458984375,
-        "height": 0.008463541666666666
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.8056640625,
+            "top": 0.625,
+            "width": 0.0458984375,
+            "height": 0.008463541666666666
+          }
+        ]
       },
       "Prev_Meter_Reading": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.8056640625,
-        "top": 0.6529947916666666,
-        "width": 0.0458984375,
-        "height": 0.009114583333333334
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.8056640625,
+            "top": 0.6529947916666666,
+            "width": 0.0458984375,
+            "height": 0.009114583333333334
+          }
+        ]
       },
       "Service_Address.Building_Line 1": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.0380859375,
-        "top": 0.25,
-        "width": 0.0986328125,
-        "height": 0.010416666666666666
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.0380859375,
+            "top": 0.25,
+            "width": 0.0986328125,
+            "height": 0.010416666666666666
+          }
+        ]
       },
       "Service_Address.Street": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.0380859375,
-        "top": 0.25,
-        "width": 0.0986328125,
-        "height": 0.010416666666666666
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.0380859375,
+            "top": 0.25,
+            "width": 0.0986328125,
+            "height": 0.010416666666666666
+          }
+        ]
       }
     },
     "not_matched": {
@@ -102,6 +130,8 @@
       },
       "ambiguous": {
         "Dates.Bill_From_Date": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "2026-07-21",
           "candidates": [
             {
@@ -121,6 +151,8 @@
           ]
         },
         "Dates.Bill_To_Date": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "2026-08-20",
           "candidates": [
             {
@@ -140,6 +172,8 @@
           ]
         },
         "Dates.Billing_Date": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "2026-08-28",
           "candidates": [
             {
@@ -159,6 +193,8 @@
           ]
         },
         "Dates.Due_Date": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "2026-09-18",
           "candidates": [
             {
@@ -178,6 +214,8 @@
           ]
         },
         "Prev_Bal": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "88.03",
           "candidates": [
             {
@@ -204,6 +242,8 @@
           ]
         },
         "Service_Address.City": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "Pocatello",
           "candidates": [
             {
@@ -251,6 +291,8 @@
           ]
         },
         "Service_Address.State": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "ID",
           "candidates": [
             {
@@ -291,6 +333,8 @@
           ]
         },
         "Service_Address.Zip_Code": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "83204",
           "candidates": [
             {
@@ -317,6 +361,8 @@
           ]
         },
         "Tot_Amt": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "86.47",
           "candidates": [
             {
@@ -343,6 +389,8 @@
           ]
         },
         "Total_Current_Charges": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "110.19",
           "candidates": [
             {

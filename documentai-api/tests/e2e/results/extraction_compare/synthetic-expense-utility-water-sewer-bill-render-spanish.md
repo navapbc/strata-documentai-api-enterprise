@@ -1,7 +1,7 @@
 # synthetic-expense-utility-water-sewer-bill-render-spanish.png
 
 
-_Run: 2026-09-30 16:51 UTC_
+_Run: 2026-09-30 19:07 UTC_
 
 
 ## Durations
@@ -32,7 +32,7 @@ _By Extracted Data_
 - OCR Mapping: 95% equivalent, 95% close, 5% misses
 
 _By Geometry_
-- BDA: 4/7 exact, 3 miss
+- BDA: 4/6 exact, 2 miss
 - OCR Mapping: 4/7 exact, 3 miss
 
 

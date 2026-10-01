@@ -14,92 +14,130 @@
   "geometry": {
     "matched": {
       "trust_name": {
-        "determination_method": "manual",
+        "determination_method": "reviewed",
         "explanation": "Word-level match merging 'The Morgan E. Dalton Revocable Trust' in the Trust Information section.",
-        "page": 0,
-        "left": 0.646,
-        "top": 0.257,
-        "width": 0.253,
-        "height": 0.01
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.646,
+            "top": 0.257,
+            "width": 0.253,
+            "height": 0.01
+          }
+        ]
       },
       "trust_type": {
-        "determination_method": "manual",
+        "determination_method": "reviewed",
         "explanation": "Word-level match merging 'Revocable Living Trust' in the Trust Information section.",
-        "page": 0,
-        "left": 0.646,
-        "top": 0.327,
-        "width": 0.15,
-        "height": 0.01
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.646,
+            "top": 0.327,
+            "width": 0.15,
+            "height": 0.01
+          }
+        ]
       },
       "beneficiary_name": {
-        "determination_method": "manual",
+        "determination_method": "reviewed",
         "explanation": "Word-level match merging 'Morgan Elise Dalton' on the Primary Beneficiary line.",
-        "page": 0,
-        "left": 0.646,
-        "top": 0.31,
-        "width": 0.132,
-        "height": 0.01
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.646,
+            "top": 0.31,
+            "width": 0.132,
+            "height": 0.01
+          }
+        ]
       },
       "statement_period_end": {
-        "determination_method": "manual",
+        "determination_method": "reviewed",
         "explanation": "Word-level match for '08/31/2026' on the Ending Value header row in the account summary.",
-        "page": 0,
-        "left": 0.668,
-        "top": 0.368,
-        "width": 0.066,
-        "height": 0.008
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.668,
+            "top": 0.368,
+            "width": 0.066,
+            "height": 0.008
+          }
+        ]
       },
       "account_balance": {
-        "determination_method": "manual",
+        "determination_method": "reviewed",
         "explanation": "Word-level match for '$90,000.00' on the Ending Value row in the account summary.",
-        "page": 0,
-        "left": 0.413,
-        "top": 0.497,
-        "width": 0.075,
-        "height": 0.01
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.413,
+            "top": 0.497,
+            "width": 0.075,
+            "height": 0.01
+          }
+        ]
       },
       "distributions_during_period": {
-        "determination_method": "manual",
+        "determination_method": "reviewed",
         "explanation": "Word-level match for '$1,800.00' on the Distributions During Period sidebar row.",
-        "page": 0,
-        "left": 0.871,
-        "top": 0.396,
-        "width": 0.06,
-        "height": 0.01
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.871,
+            "top": 0.396,
+            "width": 0.06,
+            "height": 0.01
+          }
+        ]
       },
       "trustee_name": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.044921875,
-        "top": 0.2890625,
-        "width": 0.8671875,
-        "height": 0.020182291666666668
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.044921875,
+            "top": 0.2890625,
+            "width": 0.8671875,
+            "height": 0.020182291666666668
+          }
+        ]
       },
       "account_number": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.69921875,
-        "top": 0.123046875,
-        "width": 0.0966796875,
-        "height": 0.009114583333333334
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.69921875,
+            "top": 0.123046875,
+            "width": 0.0966796875,
+            "height": 0.009114583333333334
+          }
+        ]
       },
       "statement_period_start": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.0556640625,
-        "top": 0.5911458333333334,
-        "width": 0.0673828125,
-        "height": 0.007161458333333333
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.0556640625,
+            "top": 0.5911458333333334,
+            "width": 0.0673828125,
+            "height": 0.007161458333333333
+          }
+        ]
       }
     },
     "not_matched": {
       "ambiguous": {
         "asset_types": {
+          "determination_method": "pytesseract",
           "reason": "list_value",
-          "expected_value": "U.S. Equities, Fixed Income, Cash & Cash Equivalents, Alternative Investments"
+          "expected_value": "U.S. Equities, Fixed Income, Cash & Cash Equivalents, Alternative Investments",
+          "candidates": []
         }
       }
     }

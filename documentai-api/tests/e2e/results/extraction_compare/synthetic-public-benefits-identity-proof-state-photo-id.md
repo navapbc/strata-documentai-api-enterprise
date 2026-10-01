@@ -1,7 +1,7 @@
 # synthetic-public-benefits-identity-proof-state-photo-id.jpg
 
 
-_Run: 2026-09-30 16:51 UTC_
+_Run: 2026-09-30 19:07 UTC_
 
 
 ## Durations
@@ -31,7 +31,7 @@ _By Extracted Data_
 - OCR Mapping: 100% equivalent, 100% close, 0% misses
 
 _By Geometry_
-- TEXTRACT: 7/9 exact, 2 miss
+- TEXTRACT: 7/8 exact, 1 miss
 - OCR Mapping: 7/9 exact, 2 miss
 
 

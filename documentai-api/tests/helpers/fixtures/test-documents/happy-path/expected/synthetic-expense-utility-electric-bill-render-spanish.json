@@ -34,74 +34,80 @@
       "Category": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.79296875,
-        "top": 0.025390625,
-        "width": 0.10546875,
-        "height": 0.009114583333333334
-      },
-      "CountMeterIDs": {
-        "determination_method": "pytesseract",
-        "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.3349609375,
-        "top": 0.5384114583333334,
-        "width": 0.00390625,
-        "height": 0.007161458333333333
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.79296875,
+            "top": 0.025390625,
+            "width": 0.10546875,
+            "height": 0.009114583333333334
+          }
+        ]
       },
       "End Date": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.52734375,
-        "top": 0.2571614583333333,
-        "width": 0.064453125,
-        "height": 0.009114583333333334
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.52734375,
+            "top": 0.2571614583333333,
+            "width": 0.064453125,
+            "height": 0.009114583333333334
+          }
+        ]
       },
       "MeterRead.Current value": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.4443359375,
-        "top": 0.3326822916666667,
-        "width": 0.0390625,
-        "height": 0.009114583333333334
-      },
-      "MeterRead.Delta or Metered value": {
-        "determination_method": "pytesseract",
-        "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.4443359375,
-        "top": 0.3697916666666667,
-        "width": 0.01953125,
-        "height": 0.008463541666666666
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.4443359375,
+            "top": 0.3326822916666667,
+            "width": 0.0390625,
+            "height": 0.009114583333333334
+          }
+        ]
       },
       "MeterRead.Previous value": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.4443359375,
-        "top": 0.3509114583333333,
-        "width": 0.037109375,
-        "height": 0.009765625
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.4443359375,
+            "top": 0.3509114583333333,
+            "width": 0.037109375,
+            "height": 0.009765625
+          }
+        ]
       },
       "StartDate": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.4443359375,
-        "top": 0.2571614583333333,
-        "width": 0.150390625,
-        "height": 0.009114583333333334
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.4443359375,
+            "top": 0.2571614583333333,
+            "width": 0.150390625,
+            "height": 0.009114583333333334
+          }
+        ]
       },
       "Usage.usage": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.033203125,
-        "top": 0.3658854166666667,
-        "width": 0.9033203125,
-        "height": 0.012369791666666666
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.033203125,
+            "top": 0.3658854166666667,
+            "width": 0.9033203125,
+            "height": 0.012369791666666666
+          }
+        ]
       }
     },
     "not_matched": {
@@ -124,6 +130,8 @@
       },
       "ambiguous": {
         "Account Number": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "1234-5678-9012",
           "candidates": [
             {
@@ -143,6 +151,8 @@
           ]
         },
         "Address.Service address pin code": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "05401",
           "candidates": [
             {
@@ -162,6 +172,8 @@
           ]
         },
         "BalanceDue Date": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "2026-06-10",
           "candidates": [
             {
@@ -181,6 +193,8 @@
           ]
         },
         "Current Balance": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "134.28",
           "candidates": [
             {
@@ -207,6 +221,8 @@
           ]
         },
         "MeterRead.Usage Unit": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "kWh",
           "candidates": [
             {
@@ -247,6 +263,8 @@
           ]
         },
         "Previous Balance": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "118.74",
           "candidates": [
             {
@@ -266,6 +284,8 @@
           ]
         },
         "Provider": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "Cedar Grove Energy",
           "candidates": [
             {
@@ -285,6 +305,8 @@
           ]
         },
         "Total Balance Due": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "134.28",
           "candidates": [
             {

@@ -1,7 +1,7 @@
 # synthetic-public-benefits-income-proof-pay-stub.jpg
 
 
-_Run: 2026-09-30 16:51 UTC_
+_Run: 2026-09-30 19:07 UTC_
 
 
 ## Durations
@@ -32,8 +32,8 @@ _By Extracted Data_
 - OCR Mapping: 86% equivalent, 86% close, 14% misses
 
 _By Geometry_
-- BDA: 12/16 exact, 4 miss
-- OCR Mapping: 12/16 exact, 4 miss
+- BDA: 12/13 exact, 1 miss
+- OCR Mapping: 12/15 exact, 3 miss
 
 
 ## Field Comparison

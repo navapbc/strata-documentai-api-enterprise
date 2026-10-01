@@ -24,29 +24,41 @@
       "ID": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.6367403314917127,
-        "top": 0.11049723756906077,
-        "width": 0.08011049723756906,
-        "height": 0.014732965009208104
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.6367403314917127,
+            "top": 0.11049723756906077,
+            "width": 0.08011049723756906,
+            "height": 0.014732965009208104
+          }
+        ]
       },
       "SUBTOTAL": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.6015193370165746,
-        "top": 0.20626151012891344,
-        "width": 0.06975138121546962,
-        "height": 0.026703499079189688
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.6015193370165746,
+            "top": 0.20626151012891344,
+            "width": 0.06975138121546962,
+            "height": 0.026703499079189688
+          }
+        ]
       },
       "TOTAL": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.6015193370165746,
-        "top": 0.20626151012891344,
-        "width": 0.06975138121546962,
-        "height": 0.026703499079189688
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.6015193370165746,
+            "top": 0.20626151012891344,
+            "width": 0.06975138121546962,
+            "height": 0.026703499079189688
+          }
+        ]
       }
     },
     "not_matched": {
@@ -72,6 +84,8 @@
       },
       "ambiguous": {
         "VENDORNAME": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "Desert Bloom Utilities",
           "candidates": [
             {
@@ -91,6 +105,8 @@
           ]
         },
         "RECIPIENTNAME": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "Elena Martinez",
           "candidates": [
             {

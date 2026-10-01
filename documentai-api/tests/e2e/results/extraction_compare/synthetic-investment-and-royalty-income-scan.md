@@ -1,7 +1,7 @@
 # synthetic-investment-and-royalty-income-scan.jpg
 
 
-_Run: 2026-09-30 16:51 UTC_
+_Run: 2026-09-30 19:07 UTC_
 
 
 ## Durations
@@ -32,7 +32,7 @@ _By Extracted Data_
 - OCR Mapping: 67% equivalent, 67% close, 33% misses
 
 _By Geometry_
-- BDA: 1/5 exact, 4 miss
+- BDA: 1/2 exact, 1 miss
 - OCR Mapping: 3/5 exact, 2 miss
 
 

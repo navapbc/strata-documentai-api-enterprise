@@ -19,47 +19,67 @@
       "VENDORDETAILS.VENDORPHONE": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.1943359375,
-        "top": 0.146484375,
-        "width": 0.5439453125,
-        "height": 0.021484375
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.1943359375,
+            "top": 0.146484375,
+            "width": 0.5439453125,
+            "height": 0.021484375
+          }
+        ]
       },
       "RECEIPT_ID": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.755859375,
-        "top": 0.091796875,
-        "width": 0.1416015625,
-        "height": 0.010416666666666666
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.755859375,
+            "top": 0.091796875,
+            "width": 0.1416015625,
+            "height": 0.010416666666666666
+          }
+        ]
       },
       "RECEIPT_DATE": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.755859375,
-        "top": 0.11848958333333333,
-        "width": 0.09765625,
-        "height": 0.01171875
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.755859375,
+            "top": 0.11848958333333333,
+            "width": 0.09765625,
+            "height": 0.01171875
+          }
+        ]
       },
       "PAYMENTDETAILS.TOTAL": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.8115234375,
-        "top": 0.7421875,
-        "width": 0.0966796875,
-        "height": 0.014973958333333334
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.8115234375,
+            "top": 0.7421875,
+            "width": 0.0966796875,
+            "height": 0.014973958333333334
+          }
+        ]
       },
       "PAYMENTDETAILS.AMOUNTPAID": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.8115234375,
-        "top": 0.7421875,
-        "width": 0.0966796875,
-        "height": 0.014973958333333334
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.8115234375,
+            "top": 0.7421875,
+            "width": 0.0966796875,
+            "height": 0.014973958333333334
+          }
+        ]
       }
     },
     "not_matched": {
@@ -70,6 +90,8 @@
       },
       "ambiguous": {
         "VENDORDETAILS.VENDORNAME": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "Harbor County Money Services",
           "candidates": [
             {
@@ -89,6 +111,8 @@
           ]
         },
         "LINEITEMS.AMT": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "1200.00",
           "candidates": [
             {
@@ -108,6 +132,8 @@
           ]
         },
         "PAYMENTDETAILS.SUBTOTAL": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "1200.00",
           "candidates": [
             {

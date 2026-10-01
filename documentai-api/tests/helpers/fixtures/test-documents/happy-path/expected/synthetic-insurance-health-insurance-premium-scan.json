@@ -18,52 +18,74 @@
       "insurer_or_marketplace_name": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.3525390625,
-        "top": 0.0390625,
-        "width": 0.4990234375,
-        "height": 0.016276041666666668
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.3525390625,
+            "top": 0.0390625,
+            "width": 0.4990234375,
+            "height": 0.016276041666666668
+          }
+        ]
       },
       "payment_due_date": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.7890625,
-        "top": 0.10286458333333333,
-        "width": 0.0810546875,
-        "height": 0.010416666666666666
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.7890625,
+            "top": 0.10286458333333333,
+            "width": 0.0810546875,
+            "height": 0.010416666666666666
+          }
+        ]
       },
       "payment_status": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.728515625,
-        "top": 0.162109375,
-        "width": 0.056640625,
-        "height": 0.014322916666666666
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.728515625,
+            "top": 0.162109375,
+            "width": 0.056640625,
+            "height": 0.014322916666666666
+          }
+        ]
       },
       "policy_or_member_id": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.2734375,
-        "top": 0.3216145833333333,
-        "width": 0.1005859375,
-        "height": 0.009114583333333334
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.2734375,
+            "top": 0.3216145833333333,
+            "width": 0.1005859375,
+            "height": 0.009114583333333334
+          }
+        ]
       },
       "policyholder_name": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.09375,
-        "top": 0.19205729166666666,
-        "width": 0.1025390625,
-        "height": 0.011067708333333334
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.09375,
+            "top": 0.19205729166666666,
+            "width": 0.1025390625,
+            "height": 0.011067708333333334
+          }
+        ]
       }
     },
     "not_matched": {
       "ambiguous": {
         "coverage_start_date": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "2026-09-01",
           "candidates": [
             {
@@ -90,6 +112,8 @@
           ]
         },
         "coverage_end_date": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "2026-09-30",
           "candidates": [
             {
@@ -109,6 +133,8 @@
           ]
         },
         "payment_frequency": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "Monthly",
           "candidates": [
             {
@@ -135,6 +161,8 @@
           ]
         },
         "premium_amount": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "636.25",
           "candidates": [
             {
@@ -168,6 +196,8 @@
           ]
         },
         "statement_date": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "2026-09-01",
           "candidates": [
             {
@@ -194,6 +224,8 @@
           ]
         },
         "subsidy_or_tax_credit_amount": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "323.75",
           "candidates": [
             {

@@ -14,85 +14,121 @@
   "geometry": {
     "matched": {
       "cash_surrender_value": {
-        "determination_method": "manual",
+        "determination_method": "reviewed",
         "explanation": "Word-level match for '$13,000' in the policy summary table row.",
-        "page": 0,
-        "left": 0.462,
-        "top": 0.517,
-        "width": 0.091,
-        "height": 0.017
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.462,
+            "top": 0.517,
+            "width": 0.091,
+            "height": 0.017
+          }
+        ]
       },
       "death_benefit": {
-        "determination_method": "manual",
+        "determination_method": "reviewed",
         "explanation": "Word-level match for '$50,000' in the policy summary table row.",
-        "page": 0,
-        "left": 0.172,
-        "top": 0.515,
-        "width": 0.092,
-        "height": 0.017
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.172,
+            "top": 0.515,
+            "width": 0.092,
+            "height": 0.017
+          }
+        ]
       },
       "insured_name": {
-        "determination_method": "manual",
+        "determination_method": "reviewed",
         "explanation": "Word-level match for 'Jordan Rivera' in the Insured row; right-hand column of policy summary.",
-        "page": 0,
-        "left": 0.714,
-        "top": 0.394,
-        "width": 0.091,
-        "height": 0.009
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.714,
+            "top": 0.394,
+            "width": 0.091,
+            "height": 0.009
+          }
+        ]
       },
       "policyholder_name": {
-        "determination_method": "manual",
+        "determination_method": "reviewed",
         "explanation": "Word-level match for 'Jordan Rivera' in the Policyholder row; right-hand column of policy summary.",
-        "page": 0,
-        "left": 0.713,
-        "top": 0.376,
-        "width": 0.091,
-        "height": 0.008
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.713,
+            "top": 0.376,
+            "width": 0.091,
+            "height": 0.008
+          }
+        ]
       },
       "policy_type": {
-        "determination_method": "manual",
+        "determination_method": "reviewed",
         "explanation": "Word-level match merging 'Whole', 'Life', 'Insurance' words in the Policy Type row.",
-        "page": 0,
-        "left": 0.304,
-        "top": 0.392,
-        "width": 0.137,
-        "height": 0.008
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.304,
+            "top": 0.392,
+            "width": 0.137,
+            "height": 0.008
+          }
+        ]
       },
       "premium_amount": {
-        "determination_method": "manual",
+        "determination_method": "reviewed",
         "explanation": "Word-level match for '$175.00' in the Premium Amount row.",
-        "page": 0,
-        "left": 0.303,
-        "top": 0.466,
-        "width": 0.053,
-        "height": 0.01
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.303,
+            "top": 0.466,
+            "width": 0.053,
+            "height": 0.01
+          }
+        ]
       },
       "premium_frequency": {
-        "determination_method": "manual",
+        "determination_method": "reviewed",
         "explanation": "Word-level match for 'Monthly' in the policy summary table row.",
-        "page": 0,
-        "left": 0.751,
-        "top": 0.52,
-        "width": 0.087,
-        "height": 0.017
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.751,
+            "top": 0.52,
+            "width": 0.087,
+            "height": 0.017
+          }
+        ]
       },
       "insurer_name": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.0830078125,
-        "top": 0.14388020833333334,
-        "width": 0.23046875,
-        "height": 0.010416666666666666
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.0830078125,
+            "top": 0.14388020833333334,
+            "width": 0.23046875,
+            "height": 0.010416666666666666
+          }
+        ]
       },
       "policy_number": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.3037109375,
-        "top": 0.373046875,
-        "width": 0.146484375,
-        "height": 0.009114583333333334
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.3037109375,
+            "top": 0.373046875,
+            "width": 0.146484375,
+            "height": 0.009114583333333334
+          }
+        ]
       }
     },
     "not_matched": {

@@ -13,29 +13,41 @@
       "author_relationship": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.09375,
-        "top": 0.9016927083333334,
-        "width": 0.2294921875,
-        "height": 0.011067708333333334
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.09375,
+            "top": 0.9016927083333334,
+            "width": 0.2294921875,
+            "height": 0.011067708333333334
+          }
+        ]
       },
       "customer_name": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.4091796875,
-        "top": 0.3528645833333333,
-        "width": 0.109375,
-        "height": 0.009114583333333334
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.4091796875,
+            "top": 0.3528645833333333,
+            "width": 0.109375,
+            "height": 0.009114583333333334
+          }
+        ]
       },
       "statement_date": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.7333984375,
-        "top": 0.85546875,
-        "width": 0.1748046875,
-        "height": 0.008463541666666666
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.7333984375,
+            "top": 0.85546875,
+            "width": 0.1748046875,
+            "height": 0.008463541666666666
+          }
+        ]
       }
     },
     "not_matched": {
@@ -49,6 +61,8 @@
       },
       "ambiguous": {
         "author_name": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "Camila Ortega",
           "candidates": [
             {

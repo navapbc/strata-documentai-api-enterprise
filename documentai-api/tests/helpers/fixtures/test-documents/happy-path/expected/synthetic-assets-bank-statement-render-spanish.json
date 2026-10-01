@@ -18,68 +18,96 @@
   },
   "geometry": {
     "matched": {
+      "statement_start_date": {
+        "determination_method": "reviewed",
+        "explanation": "Date in header date range; pytesseract text_not_found due to format mismatch.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.669,
+            "top": 0.124,
+            "width": 0.14,
+            "height": 0.01
+          }
+        ]
+      },
+      "statement_end_date": {
+        "determination_method": "reviewed",
+        "explanation": "Date in header date range; pytesseract text_not_found due to format mismatch.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.824,
+            "top": 0.124,
+            "width": 0.139,
+            "height": 0.01
+          }
+        ]
+      },
+      "account_number": {
+        "determination_method": "reviewed",
+        "explanation": "Two OCR matches: header (top=0.180) and table row (top=0.329). Header is the field value location.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.7060546875,
+            "top": 0.1796875,
+            "width": 0.033203125,
+            "height": 0.008463541666666666
+          }
+        ]
+      },
+      "bank_name": {
+        "determination_method": "reviewed",
+        "explanation": "Two OCR matches: header row (top=0.362) and footer (top=0.913). Header row is the field value location.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.505859375,
+            "top": 0.3619791666666667,
+            "width": 0.4130859375,
+            "height": 0.016276041666666668
+          }
+        ]
+      },
       "account_holder_name": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.044921875,
-        "top": 0.181640625,
-        "width": 0.15625,
-        "height": 0.011067708333333334
-      },
-      "statement_start_date": {
-        "determination_method": "manual",
-        "explanation": "Date in header date range; pytesseract text_not_found due to format mismatch.",
-        "page": 0,
-        "left": 0.669,
-        "top": 0.124,
-        "width": 0.140,
-        "height": 0.010
-      },
-      "statement_end_date": {
-        "determination_method": "manual",
-        "explanation": "Date in header date range; pytesseract text_not_found due to format mismatch.",
-        "page": 0,
-        "left": 0.824,
-        "top": 0.124,
-        "width": 0.139,
-        "height": 0.010
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.044921875,
+            "top": 0.181640625,
+            "width": 0.15625,
+            "height": 0.011067708333333334
+          }
+        ]
       },
       "account_type": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.5048828125,
-        "top": 0.310546875,
-        "width": 0.41015625,
-        "height": 0.011067708333333334
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.5048828125,
+            "top": 0.310546875,
+            "width": 0.41015625,
+            "height": 0.011067708333333334
+          }
+        ]
       },
       "branch_transit_number": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.7109375,
-        "top": 0.3463541666666667,
-        "width": 0.083984375,
-        "height": 0.009114583333333334
-      },
-      "account_number": {
-        "determination_method": "manual",
-        "explanation": "Two OCR matches: header (top=0.180) and table row (top=0.329). Header is the field value location.",
-        "page": 0,
-        "left": 0.7060546875,
-        "top": 0.1796875,
-        "width": 0.033203125,
-        "height": 0.008463541666666666
-      },
-      "bank_name": {
-        "determination_method": "manual",
-        "explanation": "Two OCR matches: header row (top=0.362) and footer (top=0.913). Header row is the field value location.",
-        "page": 0,
-        "left": 0.505859375,
-        "top": 0.3619791666666667,
-        "width": 0.4130859375,
-        "height": 0.016276041666666668
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.7109375,
+            "top": 0.3463541666666667,
+            "width": 0.083984375,
+            "height": 0.009114583333333334
+          }
+        ]
       }
     },
     "not_matched": {

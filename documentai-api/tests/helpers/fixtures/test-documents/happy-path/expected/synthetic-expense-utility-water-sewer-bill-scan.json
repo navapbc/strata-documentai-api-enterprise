@@ -27,92 +27,132 @@
       "Account_Info.Acct_Name": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.1953125,
-        "top": 0.875,
-        "width": 0.091796875,
-        "height": 0.009765625
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.1953125,
+            "top": 0.875,
+            "width": 0.091796875,
+            "height": 0.009765625
+          }
+        ]
       },
       "Account_Info.Acct_No": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.6982421875,
-        "top": 0.2571614583333333,
-        "width": 0.1162109375,
-        "height": 0.009114583333333334
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.6982421875,
+            "top": 0.2571614583333333,
+            "width": 0.1162109375,
+            "height": 0.009114583333333334
+          }
+        ]
       },
       "Account_Info.Meter_Number": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.69921875,
-        "top": 0.2747395833333333,
-        "width": 0.09375,
-        "height": 0.008463541666666666
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.69921875,
+            "top": 0.2747395833333333,
+            "width": 0.09375,
+            "height": 0.008463541666666666
+          }
+        ]
       },
       "Curr_Meter_Reading": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.326171875,
-        "top": 0.408203125,
-        "width": 0.0400390625,
-        "height": 0.017578125
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.326171875,
+            "top": 0.408203125,
+            "width": 0.0400390625,
+            "height": 0.017578125
+          }
+        ]
       },
       "Prev_Meter_Reading": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.326171875,
-        "top": 0.4309895833333333,
-        "width": 0.0400390625,
-        "height": 0.009765625
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.326171875,
+            "top": 0.4309895833333333,
+            "width": 0.0400390625,
+            "height": 0.009765625
+          }
+        ]
       },
       "Prev_Bal": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.4306640625,
-        "top": 0.17317708333333334,
-        "width": 0.0439453125,
-        "height": 0.010416666666666666
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.4306640625,
+            "top": 0.17317708333333334,
+            "width": 0.0439453125,
+            "height": 0.010416666666666666
+          }
+        ]
       },
       "Service_Address.Building_Line 1": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.1953125,
-        "top": 0.8938802083333334,
-        "width": 0.138671875,
-        "height": 0.01171875
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.1953125,
+            "top": 0.8938802083333334,
+            "width": 0.138671875,
+            "height": 0.01171875
+          }
+        ]
       },
       "Service_Address.Street": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.1953125,
-        "top": 0.8938802083333334,
-        "width": 0.138671875,
-        "height": 0.01171875
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.1953125,
+            "top": 0.8938802083333334,
+            "width": 0.138671875,
+            "height": 0.01171875
+          }
+        ]
       },
       "Tot_Amt": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.8427734375,
-        "top": 0.8684895833333334,
-        "width": 0.0634765625,
-        "height": 0.014322916666666666
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.8427734375,
+            "top": 0.8684895833333334,
+            "width": 0.0634765625,
+            "height": 0.014322916666666666
+          }
+        ]
       },
       "Total_Current_Charges": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.8427734375,
-        "top": 0.8684895833333334,
-        "width": 0.0634765625,
-        "height": 0.014322916666666666
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.8427734375,
+            "top": 0.8684895833333334,
+            "width": 0.0634765625,
+            "height": 0.014322916666666666
+          }
+        ]
       }
     },
     "not_matched": {
@@ -138,6 +178,8 @@
       },
       "ambiguous": {
         "Provider Name": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "Harbor County Water Service",
           "candidates": [
             {
@@ -164,6 +206,8 @@
           ]
         },
         "Service_Address.City": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "Loveland",
           "candidates": [
             {
@@ -183,6 +227,8 @@
           ]
         },
         "Service_Address.State": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "CO",
           "candidates": [
             {
@@ -223,6 +269,8 @@
           ]
         },
         "Service_Address.Zip_Code": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "80538",
           "candidates": [
             {

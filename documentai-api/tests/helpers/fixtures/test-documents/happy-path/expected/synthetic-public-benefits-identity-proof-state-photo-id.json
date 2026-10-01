@@ -28,83 +28,119 @@
       "ADDRESS_DETAILS.CITY": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.4053867403314917,
-        "top": 0.4604051565377532,
-        "width": 0.3674033149171271,
-        "height": 0.06721915285451197
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.4053867403314917,
+            "top": 0.4604051565377532,
+            "width": 0.3674033149171271,
+            "height": 0.06721915285451197
+          }
+        ]
       },
       "ADDRESS_DETAILS.STATE": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.5062154696132597,
-        "top": 0.4990791896869245,
-        "width": 0.022099447513812154,
-        "height": 0.019337016574585635
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.5062154696132597,
+            "top": 0.4990791896869245,
+            "width": 0.022099447513812154,
+            "height": 0.019337016574585635
+          }
+        ]
       },
       "ADDRESS_DETAILS.STREET_ADDRESS": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.40400552486187846,
-        "top": 0.4281767955801105,
-        "width": 0.3819060773480663,
-        "height": 0.06813996316758748
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.40400552486187846,
+            "top": 0.4281767955801105,
+            "width": 0.3819060773480663,
+            "height": 0.06813996316758748
+          }
+        ]
       },
       "DATE_OF_ISSUE": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.41091160220994477,
-        "top": 0.6095764272559853,
-        "width": 0.08701657458563536,
-        "height": 0.024861878453038673
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.41091160220994477,
+            "top": 0.6095764272559853,
+            "width": 0.08701657458563536,
+            "height": 0.024861878453038673
+          }
+        ]
       },
       "EXPIRATION_DATE": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.5379834254143646,
-        "top": 0.5976058931860037,
-        "width": 0.08770718232044199,
-        "height": 0.02578268876611418
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.5379834254143646,
+            "top": 0.5976058931860037,
+            "width": 0.08770718232044199,
+            "height": 0.02578268876611418
+          }
+        ]
       },
       "ID_NUMBER": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.6346685082872928,
-        "top": 0.36279926335174956,
-        "width": 0.14019337016574585,
-        "height": 0.03314917127071823
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.6346685082872928,
+            "top": 0.36279926335174956,
+            "width": 0.14019337016574585,
+            "height": 0.03314917127071823
+          }
+        ]
       },
       "NAME_DETAILS.FIRST_NAME": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.39917127071823205,
-        "top": 0.3812154696132597,
-        "width": 0.06767955801104972,
-        "height": 0.02578268876611418
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.39917127071823205,
+            "top": 0.3812154696132597,
+            "width": 0.06767955801104972,
+            "height": 0.02578268876611418
+          }
+        ]
       },
       "NAME_DETAILS.LAST_NAME": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.47306629834254144,
-        "top": 0.3710865561694291,
-        "width": 0.10566298342541436,
-        "height": 0.029465930018416207
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.47306629834254144,
+            "top": 0.3710865561694291,
+            "width": 0.10566298342541436,
+            "height": 0.029465930018416207
+          }
+        ]
       },
       "PERSONAL_DETAILS.SEX": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.763121546961326,
-        "top": 0.4604051565377532,
-        "width": 0.009668508287292817,
-        "height": 0.020257826887661142
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.763121546961326,
+            "top": 0.4604051565377532,
+            "width": 0.009668508287292817,
+            "height": 0.020257826887661142
+          }
+        ]
       }
     },
     "not_matched": {
@@ -115,6 +151,8 @@
       },
       "ambiguous": {
         "ADDRESS_DETAILS.ZIP_CODE": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "89146",
           "candidates": [
             {
@@ -134,6 +172,8 @@
           ]
         },
         "CLASS": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "D",
           "candidates": [
             {
@@ -188,8 +228,10 @@
           ]
         },
         "RESTRICTIONS": {
+          "determination_method": "pytesseract",
           "reason": "list_value",
-          "expected_value": "NONE"
+          "expected_value": "NONE",
+          "candidates": []
         }
       }
     }

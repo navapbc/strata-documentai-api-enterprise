@@ -21,56 +21,80 @@
       "account_holder_name": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.056640625,
-        "top": 0.205078125,
-        "width": 0.1669921875,
-        "height": 0.01171875
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.056640625,
+            "top": 0.205078125,
+            "width": 0.1669921875,
+            "height": 0.01171875
+          }
+        ]
       },
       "account_number": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.7109375,
-        "top": 0.20833333333333334,
-        "width": 0.1630859375,
-        "height": 0.008463541666666666
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.7109375,
+            "top": 0.20833333333333334,
+            "width": 0.1630859375,
+            "height": 0.008463541666666666
+          }
+        ]
       },
       "account_type": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.7109375,
-        "top": 0.17447916666666666,
-        "width": 0.10546875,
-        "height": 0.0078125
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.7109375,
+            "top": 0.17447916666666666,
+            "width": 0.10546875,
+            "height": 0.0078125
+          }
+        ]
       },
       "account_balance": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.8564453125,
-        "top": 0.4231770833333333,
-        "width": 0.08203125,
-        "height": 0.009765625
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.8564453125,
+            "top": 0.4231770833333333,
+            "width": 0.08203125,
+            "height": 0.009765625
+          }
+        ]
       },
       "total_value": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.8564453125,
-        "top": 0.4231770833333333,
-        "width": 0.08203125,
-        "height": 0.009765625
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.8564453125,
+            "top": 0.4231770833333333,
+            "width": 0.08203125,
+            "height": 0.009765625
+          }
+        ]
       },
       "financial_institution": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.0458984375,
-        "top": 0.087890625,
-        "width": 0.220703125,
-        "height": 0.009765625
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.0458984375,
+            "top": 0.087890625,
+            "width": 0.220703125,
+            "height": 0.009765625
+          }
+        ]
       }
     },
     "not_matched": {
@@ -84,6 +108,8 @@
       },
       "ambiguous": {
         "tax_year": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "2025",
           "candidates": [
             {
@@ -166,6 +192,8 @@
           ]
         },
         "statement_period_start": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "2025-01-01",
           "candidates": [
             {
@@ -192,6 +220,8 @@
           ]
         },
         "statement_period_end": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "2025-12-31",
           "candidates": [
             {
@@ -225,6 +255,8 @@
           ]
         },
         "distribution_dates": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "2025-11-20",
           "candidates": [
             {

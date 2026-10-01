@@ -24,68 +24,262 @@
   },
   "geometry": {
     "matched": {
+      "Account_Info.Acct_Name": {
+        "determination_method": "reviewed",
+        "explanation": "Resolved manually — multiple valid locations.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.10866013071895425,
+            "top": 0.3194444444444444,
+            "width": 0.09068627450980392,
+            "height": 0.00946969696969697
+          },
+          {
+            "page": 0,
+            "left": 0.10866013071895425,
+            "top": 0.8200757575757576,
+            "width": 0.0915032679738562,
+            "height": 0.00946969696969697
+          }
+        ]
+      },
+      "Dates.Due_Date": {
+        "determination_method": "reviewed",
+        "explanation": "Resolved manually — multiple valid locations.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.23284313725490197,
+            "top": 0.24116161616161616,
+            "width": 0.07761437908496732,
+            "height": 0.00946969696969697
+          },
+          {
+            "page": 0,
+            "left": 0.7361111111111112,
+            "top": 0.7411616161616161,
+            "width": 0.0784313725490196,
+            "height": 0.00946969696969697
+          },
+          {
+            "page": 0,
+            "left": 0.4665032679738562,
+            "top": 0.922979797979798,
+            "width": 0.0784313725490196,
+            "height": 0.00946969696969697
+          }
+        ]
+      },
+      "Provider Name": {
+        "determination_method": "reviewed",
+        "explanation": "Resolved manually — multiple valid locations.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.10457516339869281,
+            "top": 0.023989898989898988,
+            "width": 0.7810457516339869,
+            "height": 0.023989898989898988
+          },
+          {
+            "page": 0,
+            "left": 0.10866013071895425,
+            "top": 0.7152777777777778,
+            "width": 0.6993464052287581,
+            "height": 0.01452020202020202
+          },
+          {
+            "page": 0,
+            "left": 0.2295751633986928,
+            "top": 0.9223484848484849,
+            "width": 0.5343137254901961,
+            "height": 0.011994949494949494
+          }
+        ]
+      },
+      "Tot_Amt": {
+        "determination_method": "reviewed",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.7156862745098039,
+            "top": 0.29797979797979796,
+            "width": 0.056372549019607844,
+            "height": 0.013888888888888888
+          },
+          {
+            "page": 0,
+            "left": 0.7785947712418301,
+            "top": 0.7752525252525253,
+            "width": 0.06045751633986928,
+            "height": 0.013888888888888888
+          }
+        ]
+      },
+      "Total_Current_Charges": {
+        "determination_method": "reviewed",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.7156862745098039,
+            "top": 0.2638888888888889,
+            "width": 0.0457516339869281,
+            "height": 0.011363636363636364
+          },
+          {
+            "page": 0,
+            "left": 0.7818627450980392,
+            "top": 0.6224747474747475,
+            "width": 0.0457516339869281,
+            "height": 0.010732323232323232
+          }
+        ]
+      },
+      "Prev_Bal": {
+        "determination_method": "reviewed",
+        "explanation": "Resolved from multiple candidates; selected the billing summary occurrence.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.7156862745098039,
+            "top": 0.17803030303030304,
+            "width": 0.0457516339869281,
+            "height": 0.010732323232323232
+          }
+        ]
+      },
+      "Service_Address.City": {
+        "determination_method": "reviewed",
+        "explanation": "Resolved from multiple candidates; selected the service address block, not the account holder address or footer.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.10866013071895425,
+            "top": 0.40404040404040403,
+            "width": 0.05310457516339869,
+            "height": 0.011363636363636364
+          }
+        ]
+      },
+      "Service_Address.State": {
+        "determination_method": "reviewed",
+        "explanation": "Resolved from multiple candidates; selected the service address block, not the account holder address or footer.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.16666666666666666,
+            "top": 0.4046717171717172,
+            "width": 0.01715686274509804,
+            "height": 0.008838383838383838
+          }
+        ]
+      },
+      "Service_Address.Zip_Code": {
+        "determination_method": "reviewed",
+        "explanation": "Resolved from multiple candidates; selected the service address block, not the account holder address.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.1895424836601307,
+            "top": 0.4046717171717172,
+            "width": 0.04084967320261438,
+            "height": 0.008838383838383838
+          }
+        ]
+      },
       "Account_Info.Acct_No": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.7361111111111112,
-        "top": 0.7171717171717171,
-        "width": 0.0718954248366013,
-        "height": 0.00946969696969697
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.7361111111111112,
+            "top": 0.7171717171717171,
+            "width": 0.0718954248366013,
+            "height": 0.00946969696969697
+          }
+        ]
       },
       "Account_Info.Meter_Number": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.23284313725490197,
-        "top": 0.1773989898989899,
-        "width": 0.05718954248366013,
-        "height": 0.008838383838383838
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.23284313725490197,
+            "top": 0.1773989898989899,
+            "width": 0.05718954248366013,
+            "height": 0.008838383838383838
+          }
+        ]
       },
       "Dates.Bill_From_Date": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.23284313725490197,
-        "top": 0.19823232323232323,
-        "width": 0.0784313725490196,
-        "height": 0.00946969696969697
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.23284313725490197,
+            "top": 0.19823232323232323,
+            "width": 0.0784313725490196,
+            "height": 0.00946969696969697
+          }
+        ]
       },
       "Dates.Bill_To_Date": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.3333333333333333,
-        "top": 0.19823232323232323,
-        "width": 0.0784313725490196,
-        "height": 0.010101010101010102
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.3333333333333333,
+            "top": 0.19823232323232323,
+            "width": 0.0784313725490196,
+            "height": 0.010101010101010102
+          }
+        ]
       },
       "Dates.Billing_Date": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.23284313725490197,
-        "top": 0.2196969696969697,
-        "width": 0.07761437908496732,
-        "height": 0.00946969696969697
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.23284313725490197,
+            "top": 0.2196969696969697,
+            "width": 0.07761437908496732,
+            "height": 0.00946969696969697
+          }
+        ]
       },
       "Service_Address.Building_Line 1": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.10947712418300654,
-        "top": 0.836489898989899,
-        "width": 0.15931372549019607,
-        "height": 0.00946969696969697
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.10947712418300654,
+            "top": 0.836489898989899,
+            "width": 0.15931372549019607,
+            "height": 0.00946969696969697
+          }
+        ]
       },
       "Service_Address.Street": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.10947712418300654,
-        "top": 0.836489898989899,
-        "width": 0.15931372549019607,
-        "height": 0.00946969696969697
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.10947712418300654,
+            "top": 0.836489898989899,
+            "width": 0.15931372549019607,
+            "height": 0.00946969696969697
+          }
+        ]
       }
     },
     "not_matched": {
@@ -95,263 +289,6 @@
         },
         "Line_Items.LineItemDescription": {
           "expected_value": "Water Charge, Sewer Charge, Stormwater Fee"
-        }
-      },
-      "ambiguous": {
-        "Account_Info.Acct_Name": {
-          "expected_value": "Jordan Rivera",
-          "candidates": [
-            {
-              "page": 0,
-              "left": 0.10866013071895425,
-              "top": 0.3194444444444444,
-              "width": 0.09068627450980392,
-              "height": 0.00946969696969697
-            },
-            {
-              "page": 0,
-              "left": 0.10866013071895425,
-              "top": 0.8200757575757576,
-              "width": 0.0915032679738562,
-              "height": 0.00946969696969697
-            }
-          ]
-        },
-        "Dates.Due_Date": {
-          "expected_value": "2026-09-25",
-          "candidates": [
-            {
-              "page": 0,
-              "left": 0.23284313725490197,
-              "top": 0.24116161616161616,
-              "width": 0.07761437908496732,
-              "height": 0.00946969696969697
-            },
-            {
-              "page": 0,
-              "left": 0.7361111111111112,
-              "top": 0.7411616161616161,
-              "width": 0.0784313725490196,
-              "height": 0.00946969696969697
-            },
-            {
-              "page": 0,
-              "left": 0.4665032679738562,
-              "top": 0.922979797979798,
-              "width": 0.0784313725490196,
-              "height": 0.00946969696969697
-            }
-          ]
-        },
-        "Prev_Bal": {
-          "expected_value": "62.48",
-          "candidates": [
-            {
-              "page": 0,
-              "left": 0.7156862745098039,
-              "top": 0.17803030303030304,
-              "width": 0.0457516339869281,
-              "height": 0.010732323232323232
-            },
-            {
-              "page": 0,
-              "left": 0.7156862745098039,
-              "top": 0.20202020202020202,
-              "width": 0.0457516339869281,
-              "height": 0.011363636363636364
-            }
-          ]
-        },
-        "Provider Name": {
-          "expected_value": "Harbor County Water Service",
-          "candidates": [
-            {
-              "page": 0,
-              "left": 0.10457516339869281,
-              "top": 0.023989898989898988,
-              "width": 0.7810457516339869,
-              "height": 0.023989898989898988
-            },
-            {
-              "page": 0,
-              "left": 0.10866013071895425,
-              "top": 0.7152777777777778,
-              "width": 0.6993464052287581,
-              "height": 0.01452020202020202
-            },
-            {
-              "page": 0,
-              "left": 0.2295751633986928,
-              "top": 0.9223484848484849,
-              "width": 0.5343137254901961,
-              "height": 0.011994949494949494
-            }
-          ]
-        },
-        "Service_Address.City": {
-          "expected_value": "Sedona",
-          "candidates": [
-            {
-              "page": 0,
-              "left": 0.10866013071895425,
-              "top": 0.40404040404040403,
-              "width": 0.05310457516339869,
-              "height": 0.011363636363636364
-            },
-            {
-              "page": 0,
-              "left": 0.10866013071895425,
-              "top": 0.7537878787878788,
-              "width": 0.05310457516339869,
-              "height": 0.010732323232323232
-            },
-            {
-              "page": 0,
-              "left": 0.10866013071895425,
-              "top": 0.8522727272727273,
-              "width": 0.05310457516339869,
-              "height": 0.010732323232323232
-            },
-            {
-              "page": 0,
-              "left": 0.3243464052287582,
-              "top": 0.9387626262626263,
-              "width": 0.05392156862745098,
-              "height": 0.010732323232323232
-            }
-          ]
-        },
-        "Service_Address.State": {
-          "expected_value": "AZ",
-          "candidates": [
-            {
-              "page": 0,
-              "left": 0.16666666666666666,
-              "top": 0.4046717171717172,
-              "width": 0.01715686274509804,
-              "height": 0.008838383838383838
-            },
-            {
-              "page": 0,
-              "left": 0.16666666666666666,
-              "top": 0.7537878787878788,
-              "width": 0.017973856209150325,
-              "height": 0.00946969696969697
-            },
-            {
-              "page": 0,
-              "left": 0.16666666666666666,
-              "top": 0.8529040404040404,
-              "width": 0.017973856209150325,
-              "height": 0.008838383838383838
-            },
-            {
-              "page": 0,
-              "left": 0.3831699346405229,
-              "top": 0.9387626262626263,
-              "width": 0.017973856209150325,
-              "height": 0.00946969696969697
-            }
-          ]
-        },
-        "Service_Address.Zip_Code": {
-          "expected_value": "86336",
-          "candidates": [
-            {
-              "page": 0,
-              "left": 0.1895424836601307,
-              "top": 0.4046717171717172,
-              "width": 0.04084967320261438,
-              "height": 0.008838383838383838
-            },
-            {
-              "page": 0,
-              "left": 0.1895424836601307,
-              "top": 0.8529040404040404,
-              "width": 0.04084967320261438,
-              "height": 0.008838383838383838
-            }
-          ]
-        },
-        "Tot_Amt": {
-          "expected_value": "48.76",
-          "candidates": [
-            {
-              "page": 0,
-              "left": 0.7156862745098039,
-              "top": 0.2638888888888889,
-              "width": 0.0457516339869281,
-              "height": 0.011363636363636364
-            },
-            {
-              "page": 0,
-              "left": 0.7156862745098039,
-              "top": 0.29797979797979796,
-              "width": 0.056372549019607844,
-              "height": 0.013888888888888888
-            },
-            {
-              "page": 0,
-              "left": 0.7818627450980392,
-              "top": 0.6224747474747475,
-              "width": 0.0457516339869281,
-              "height": 0.010732323232323232
-            },
-            {
-              "page": 0,
-              "left": 0.7785947712418301,
-              "top": 0.7752525252525253,
-              "width": 0.06045751633986928,
-              "height": 0.013888888888888888
-            },
-            {
-              "page": 0,
-              "left": 0.39705882352941174,
-              "top": 0.9223484848484849,
-              "width": 0.04493464052287582,
-              "height": 0.010101010101010102
-            }
-          ]
-        },
-        "Total_Current_Charges": {
-          "expected_value": "48.76",
-          "candidates": [
-            {
-              "page": 0,
-              "left": 0.7156862745098039,
-              "top": 0.2638888888888889,
-              "width": 0.0457516339869281,
-              "height": 0.011363636363636364
-            },
-            {
-              "page": 0,
-              "left": 0.7156862745098039,
-              "top": 0.29797979797979796,
-              "width": 0.056372549019607844,
-              "height": 0.013888888888888888
-            },
-            {
-              "page": 0,
-              "left": 0.7818627450980392,
-              "top": 0.6224747474747475,
-              "width": 0.0457516339869281,
-              "height": 0.010732323232323232
-            },
-            {
-              "page": 0,
-              "left": 0.7785947712418301,
-              "top": 0.7752525252525253,
-              "width": 0.06045751633986928,
-              "height": 0.013888888888888888
-            },
-            {
-              "page": 0,
-              "left": 0.39705882352941174,
-              "top": 0.9223484848484849,
-              "width": 0.04493464052287582,
-              "height": 0.010101010101010102
-            }
-          ]
         }
       }
     }

@@ -1,7 +1,7 @@
 # synthetic-assets-life-insurance-policy-render.pdf
 
 
-_Run: 2026-09-30 16:51 UTC_
+_Run: 2026-09-30 19:07 UTC_
 
 
 ## Durations
@@ -32,7 +32,7 @@ _By Extracted Data_
 
 _By Geometry_
 - BDA: 8/9 exact, 1 miss
-- OCR Mapping: 7/9 exact, 2 miss
+- OCR Mapping: 7/8 exact, 1 miss
 
 
 ## Field Comparison

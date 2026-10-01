@@ -21,29 +21,41 @@
       "account_holder_name": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.107421875,
-        "top": 0.24348958333333334,
-        "width": 0.181640625,
-        "height": 0.010416666666666666
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.107421875,
+            "top": 0.24348958333333334,
+            "width": 0.181640625,
+            "height": 0.010416666666666666
+          }
+        ]
       },
       "bank_name": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.1591796875,
-        "top": 0.9244791666666666,
-        "width": 0.20703125,
-        "height": 0.011067708333333334
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.1591796875,
+            "top": 0.9244791666666666,
+            "width": 0.20703125,
+            "height": 0.011067708333333334
+          }
+        ]
       },
       "account_type": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.283203125,
-        "top": 0.357421875,
-        "width": 0.0673828125,
-        "height": 0.01171875
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.283203125,
+            "top": 0.357421875,
+            "width": 0.0673828125,
+            "height": 0.01171875
+          }
+        ]
       }
     },
     "not_matched": {

@@ -13,20 +13,28 @@
       "author_name": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.12663398692810457,
-        "top": 0.7733585858585859,
-        "width": 0.13562091503267973,
-        "height": 0.013888888888888888
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.12663398692810457,
+            "top": 0.7733585858585859,
+            "width": 0.13562091503267973,
+            "height": 0.013888888888888888
+          }
+        ]
       },
       "author_relationship": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.12663398692810457,
-        "top": 0.7922979797979798,
-        "width": 0.14705882352941177,
-        "height": 0.013257575757575758
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.12663398692810457,
+            "top": 0.7922979797979798,
+            "width": 0.14705882352941177,
+            "height": 0.013257575757575758
+          }
+        ]
       }
     },
     "not_matched": {
@@ -43,6 +51,8 @@
       },
       "ambiguous": {
         "customer_name": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "Jordan Rivera",
           "candidates": [
             {

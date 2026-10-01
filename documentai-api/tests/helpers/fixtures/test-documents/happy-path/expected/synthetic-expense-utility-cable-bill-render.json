@@ -16,29 +16,41 @@
       "Account_Number": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.2704248366013072,
-        "top": 0.8838383838383839,
-        "width": 0.10620915032679738,
-        "height": 0.010101010101010102
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.2704248366013072,
+            "top": 0.8838383838383839,
+            "width": 0.10620915032679738,
+            "height": 0.010101010101010102
+          }
+        ]
       },
       "Balance_DueDate": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.2704248366013072,
-        "top": 0.9292929292929293,
-        "width": 0.08741830065359477,
-        "height": 0.010732323232323232
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.2704248366013072,
+            "top": 0.9292929292929293,
+            "width": 0.08741830065359477,
+            "height": 0.010732323232323232
+          }
+        ]
       },
       "Billing_Date": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
-        "page": 0,
-        "left": 0.8276143790849673,
-        "top": 0.026515151515151516,
-        "width": 0.06862745098039216,
-        "height": 0.008207070707070708
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.8276143790849673,
+            "top": 0.026515151515151516,
+            "width": 0.06862745098039216,
+            "height": 0.008207070707070708
+          }
+        ]
       }
     },
     "not_matched": {
@@ -61,6 +73,8 @@
       },
       "ambiguous": {
         "Service_Address": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
           "expected_value": "5127 Maplewood Drive, Lincoln, NE 68506",
           "candidates": [
             {

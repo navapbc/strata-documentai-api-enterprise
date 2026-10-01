@@ -1,7 +1,7 @@
 # synthetic-expense-utility-electric-bill-render-spanish.png
 
 
-_Run: 2026-09-30 16:51 UTC_
+_Run: 2026-09-30 19:07 UTC_
 
 
 ## Durations
@@ -32,8 +32,8 @@ _By Extracted Data_
 - OCR Mapping: 68% equivalent, 68% close, 32% misses
 
 _By Geometry_
-- BDA: 1/8 exact, 7 miss
-- OCR Mapping: 1/8 exact, 7 miss
+- BDA: 1/3 exact, 2 miss
+- OCR Mapping: 1/7 exact, 6 miss
 
 
 ## Field Comparison
@@ -45,7 +45,7 @@ _By Geometry_
 | BalanceDue Date | 2026-06-10 | ✅ 06/10/26 | ✅ 2026-06-10 | 0.85 | 1.0000 | - | 0.790,0.190,0.138,0.017 | 0.790,0.190,0.138,0.017 |
 | BalanceGreaterCheck | Yes | ❌ - | ❌ - | 0.92 | N/A | - | - | - |
 | Category | Electricidad | ✅ ELECTRICIDAD | ❌ Residencial R-1 | 0.47 | 0.9900 | 0.793,0.025,0.105,0.009 | ❌ 0.769,0.025,0.130,0.010 | ❌ 0.445,0.276,0.099,0.009 |
-| CountMeterIDs | 1 | ✅ 1 | ❌ - | 0.49 | N/A | 0.335,0.538,0.004,0.007 | ❌ 0.445,0.314,0.091,0.009 | ❌ - |
+| CountMeterIDs | 1 | ✅ 1 | ❌ - | 0.49 | N/A | - | 0.445,0.314,0.091,0.009 | - |
 | Current Balance | 134.28 | ❌ 105.51 | ❌ 105.51 | 0.82 | 1.0000 | - | 0.583,0.623,0.045,0.010 | 0.583,0.623,0.045,0.010 |
 | End Date | 2026-05-15 | ✅ 05/15/26 | ✅ 2026-05-15 | 0.86 | 0.9600 | 0.527,0.257,0.064,0.009 | ✅ 0.527,0.257,0.068,0.010 | ✅ 0.527,0.257,0.068,0.009 |
 | Is_NumMeterIDsListed | - | - | - | 0.28 | N/A | - | 0.445,0.314,0.091,0.009 | - |

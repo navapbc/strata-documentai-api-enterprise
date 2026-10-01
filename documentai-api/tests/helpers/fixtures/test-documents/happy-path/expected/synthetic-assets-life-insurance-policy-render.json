@@ -14,85 +14,121 @@
   "geometry": {
     "matched": {
       "cash_surrender_value": {
-        "determination_method": "manual",
+        "determination_method": "reviewed",
         "explanation": "Value-column bbox for '$9,500' cell; from previous BDA-confirmed geo match.",
-        "page": 0,
-        "left": 0.478,
-        "top": 0.474,
-        "width": 0.058,
-        "height": 0.014
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.478,
+            "top": 0.474,
+            "width": 0.058,
+            "height": 0.014
+          }
+        ]
       },
       "death_benefit": {
-        "determination_method": "manual",
+        "determination_method": "reviewed",
         "explanation": "Value-column bbox for '$100,000' cell; from previous BDA-confirmed geo match.",
-        "page": 0,
-        "left": 0.478,
-        "top": 0.438,
-        "width": 0.078,
-        "height": 0.015
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.478,
+            "top": 0.438,
+            "width": 0.078,
+            "height": 0.015
+          }
+        ]
       },
       "insurer_name": {
-        "determination_method": "manual",
+        "determination_method": "reviewed",
         "explanation": "Contact Information block at bottom of page; LLM-confirmed geo match.",
-        "page": 0,
-        "left": 0.15,
-        "top": 0.774,
-        "width": 0.307,
-        "height": 0.016
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.15,
+            "top": 0.774,
+            "width": 0.307,
+            "height": 0.016
+          }
+        ]
       },
       "policy_number": {
-        "determination_method": "manual",
+        "determination_method": "reviewed",
         "explanation": "Value-column bbox for 'XX-1234567-MD' cell; from previous BDA-confirmed geo match.",
-        "page": 0,
-        "left": 0.477,
-        "top": 0.263,
-        "width": 0.145,
-        "height": 0.011
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.477,
+            "top": 0.263,
+            "width": 0.145,
+            "height": 0.011
+          }
+        ]
       },
       "policy_type": {
-        "determination_method": "manual",
+        "determination_method": "reviewed",
         "explanation": "Value-column bbox for 'Universal Life Insurance' cell; from previous BDA-confirmed geo match.",
-        "page": 0,
-        "left": 0.477,
-        "top": 0.403,
-        "width": 0.225,
-        "height": 0.013
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.477,
+            "top": 0.403,
+            "width": 0.225,
+            "height": 0.013
+          }
+        ]
       },
       "policyholder_name": {
-        "determination_method": "manual",
+        "determination_method": "reviewed",
         "explanation": "Value-column bbox for 'Jordan Rivera' in Policyholder row; from previous BDA-confirmed geo match.",
-        "page": 0,
-        "left": 0.476,
-        "top": 0.333,
-        "width": 0.125,
-        "height": 0.015
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.476,
+            "top": 0.333,
+            "width": 0.125,
+            "height": 0.015
+          }
+        ]
       },
       "insured_name": {
-        "determination_method": "manual",
+        "determination_method": "reviewed",
         "explanation": "Value-column bbox for 'Jordan Rivera' in Insured Name row; from previous BDA-confirmed geo match.",
-        "page": 0,
-        "left": 0.476,
-        "top": 0.368,
-        "width": 0.125,
-        "height": 0.015
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.476,
+            "top": 0.368,
+            "width": 0.125,
+            "height": 0.015
+          }
+        ]
       },
       "premium_amount": {
-        "determination_method": "manual",
+        "determination_method": "reviewed",
         "explanation": "Value-column bbox for '$50.00' cell; from previous BDA-confirmed geo match.",
-        "page": 0,
-        "left": 0.478,
-        "top": 0.509,
-        "width": 0.057,
-        "height": 0.013
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.478,
+            "top": 0.509,
+            "width": 0.057,
+            "height": 0.013
+          }
+        ]
       },
       "premium_frequency": {
-        "determination_method": "manual",
+        "determination_method": "reviewed",
         "explanation": "Value-column bbox for 'Monthly' cell; from previous BDA-confirmed geo match.",
-        "page": 0,
-        "left": 0.542,
-        "top": 0.509,
-        "width": 0.087,
-        "height": 0.016
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.542,
+            "top": 0.509,
+            "width": 0.087,
+            "height": 0.016
+          }
+        ]
       }
     },
     "not_matched": {

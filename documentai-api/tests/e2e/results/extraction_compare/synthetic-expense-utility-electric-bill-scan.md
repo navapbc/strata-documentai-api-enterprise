@@ -1,7 +1,7 @@
 # synthetic-expense-utility-electric-bill-scan.jpg
 
 
-_Run: 2026-09-30 16:51 UTC_
+_Run: 2026-09-30 19:07 UTC_
 
 
 ## Durations
@@ -32,7 +32,7 @@ _By Extracted Data_
 - OCR Mapping: 72% equivalent, 72% close, 28% misses
 
 _By Geometry_
-- BDA: 1/3 exact, 2 miss
+- BDA: 1/1 exact, 0 miss
 - OCR Mapping: 3/3 exact, 0 miss
 
 
