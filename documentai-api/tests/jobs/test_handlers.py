@@ -6,8 +6,8 @@ import pytest
 
 from documentai_api.config.constants import ProcessStatus
 from documentai_api.config.env_var_names_generated import EnvVarNames
-from documentai_api.jobs.bda_result_processor.handler import handler as bda_handler
-from documentai_api.jobs.document_processor.handler import handler as doc_handler
+from documentai_api.jobs.bda_result_processor.handler import handler as bda_result_handler
+from documentai_api.jobs.document_processor.handler import handler as document_processor_handler
 from documentai_api.schemas.document_metadata import DocumentMetadata
 
 EVENTBRIDGE_S3_EVENT = {
@@ -52,25 +52,25 @@ def test_document_processor_marks_failed_on_error():
     with (
         patch(
             "documentai_api.jobs.document_processor.handler.main",
-            side_effect=RuntimeError("boom"),
+            side_effect=RuntimeError("runtime error"),
         ),
         patch("documentai_api.jobs.document_processor.handler.get_ddb_record", return_value=None),
         patch("documentai_api.jobs.document_processor.handler.classify_as_failed") as mock_fail,
+        pytest.raises(RuntimeError, match="runtime error"),
     ):
-        result = doc_handler(EVENTBRIDGE_S3_EVENT, None)
+        document_processor_handler(EVENTBRIDGE_S3_EVENT, None)
 
-        assert result["statusCode"] == 500
-        mock_fail.assert_called_once()
-        call_kwargs = mock_fail.call_args.kwargs
-        assert call_kwargs["object_key"] == "doc.pdf"
-        assert "boom" in call_kwargs["error_message"]
+    mock_fail.assert_called_once()
+    call_kwargs = mock_fail.call_args.kwargs
+    assert call_kwargs["object_key"] == "doc.pdf"
+    assert "runtime error" in call_kwargs["error_message"]
 
 
 def test_bda_result_processor_marks_failed_on_error():
     with (
         patch(
             "documentai_api.jobs.bda_result_processor.handler.main",
-            side_effect=RuntimeError("bda crash"),
+            side_effect=RuntimeError("bda failure"),
         ),
         patch(
             "documentai_api.jobs.bda_result_processor.handler.get_ddb_key_from_bda_output",
@@ -78,14 +78,14 @@ def test_bda_result_processor_marks_failed_on_error():
         ),
         patch("documentai_api.jobs.bda_result_processor.handler.get_ddb_record", return_value=None),
         patch("documentai_api.jobs.bda_result_processor.handler.classify_as_failed") as mock_fail,
+        pytest.raises(RuntimeError, match="bda failure"),
     ):
-        result = bda_handler(BDA_EVENT, None)
+        bda_result_handler(BDA_EVENT, None)
 
-        assert result["statusCode"] == 500
-        mock_fail.assert_called_once()
-        call_kwargs = mock_fail.call_args.kwargs
-        assert call_kwargs["object_key"] == BDA_DDB_FILE_NAME
-        assert "bda crash" in call_kwargs["error_message"]
+    mock_fail.assert_called_once()
+    call_kwargs = mock_fail.call_args.kwargs
+    assert call_kwargs["object_key"] == BDA_DDB_FILE_NAME
+    assert "bda failure" in call_kwargs["error_message"]
 
 
 def test_document_processor_success_does_not_mark_failed():
@@ -93,7 +93,7 @@ def test_document_processor_success_does_not_mark_failed():
         patch("documentai_api.jobs.document_processor.handler.main") as mock_main,
         patch("documentai_api.jobs.document_processor.handler.classify_as_failed") as mock_fail,
     ):
-        result = doc_handler(EVENTBRIDGE_S3_EVENT, None)
+        result = document_processor_handler(EVENTBRIDGE_S3_EVENT, None)
 
         mock_main.assert_called_once()
         mock_fail.assert_not_called()
@@ -105,7 +105,7 @@ def test_bda_result_processor_success_does_not_mark_failed():
         patch("documentai_api.jobs.bda_result_processor.handler.main") as mock_main,
         patch("documentai_api.jobs.bda_result_processor.handler.classify_as_failed") as mock_fail,
     ):
-        result = bda_handler(BDA_EVENT, None)
+        result = bda_result_handler(BDA_EVENT, None)
 
         mock_main.assert_called_once()
         mock_fail.assert_not_called()
@@ -126,17 +126,18 @@ def test_document_processor_updates_ddb_to_failed(ddb_doc_metadata_table):
         }
     )
 
-    with patch(
-        "documentai_api.jobs.document_processor.handler.main",
-        side_effect=RuntimeError("integration boom"),
+    with (
+        patch(
+            "documentai_api.jobs.document_processor.handler.main",
+            side_effect=RuntimeError("integration failure"),
+        ),
+        pytest.raises(RuntimeError, match="integration failure"),
     ):
-        result = doc_handler(EVENTBRIDGE_S3_EVENT, None)
-
-    assert result["statusCode"] == 500
+        document_processor_handler(EVENTBRIDGE_S3_EVENT, None)
 
     record = ddb_doc_metadata_table.get_item(Key={"fileName": "doc.pdf"})["Item"]
     assert record[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.FAILED.value
-    assert "integration boom" in record.get(DocumentMetadata.ERROR_MESSAGE, "")
+    assert "integration failure" in record.get(DocumentMetadata.ERROR_MESSAGE, "")
 
 
 @pytest.mark.parametrize(
@@ -156,13 +157,14 @@ def test_bda_result_processor_updates_ddb_to_failed(initial_status, ddb_doc_meta
         }
     )
 
-    with patch(
-        "documentai_api.jobs.bda_result_processor.handler.main",
-        side_effect=RuntimeError("bda integration crash"),
+    with (
+        patch(
+            "documentai_api.jobs.bda_result_processor.handler.main",
+            side_effect=RuntimeError("bda integration crash"),
+        ),
+        pytest.raises(RuntimeError, match="bda integration crash"),
     ):
-        result = bda_handler(BDA_EVENT, None)
-
-    assert result["statusCode"] == 500
+        bda_result_handler(BDA_EVENT, None)
 
     record = ddb_doc_metadata_table.get_item(Key={"fileName": BDA_DDB_FILE_NAME})["Item"]
     assert record[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.FAILED.value
@@ -185,8 +187,9 @@ def test_document_processor_passes_batch_id_to_classify_as_failed(ddb_doc_metada
             side_effect=Exception("document processor crash"),
         ),
         patch("documentai_api.jobs.document_processor.handler.classify_as_failed") as mock_fail,
+        pytest.raises(Exception, match="document processor crash"),
     ):
-        doc_handler(EVENTBRIDGE_S3_EVENT, None)
+        document_processor_handler(EVENTBRIDGE_S3_EVENT, None)
 
     assert mock_fail.call_args.kwargs["batch_id"] == "test-batch-id"
 
@@ -205,21 +208,22 @@ def test_bda_result_processor_passes_batch_id_to_classify_as_failed(ddb_doc_meta
     with (
         patch(
             "documentai_api.jobs.bda_result_processor.handler.main",
-            side_effect=Exception("bda crash"),
+            side_effect=Exception("bda failure"),
         ),
         patch(
             "documentai_api.jobs.bda_result_processor.handler.get_ddb_key_from_bda_output",
             return_value=BDA_DDB_FILE_NAME,
         ),
         patch("documentai_api.jobs.bda_result_processor.handler.classify_as_failed") as mock_fail,
+        pytest.raises(Exception, match="bda failure"),
     ):
-        bda_handler(BDA_EVENT, None)
+        bda_result_handler(BDA_EVENT, None)
 
     assert mock_fail.call_args.kwargs["batch_id"] == "test-batch-id"
 
 
 def test_bda_result_processor_returns_500_when_ddb_key_unresolvable():
-    """If get_ddb_key_from_bda_output returns None, handler still returns 500."""
+    """If get_ddb_key_from_bda_output returns None, handler still raises."""
     with (
         patch(
             "documentai_api.jobs.bda_result_processor.handler.main",
@@ -230,11 +234,11 @@ def test_bda_result_processor_returns_500_when_ddb_key_unresolvable():
             return_value=None,
         ),
         patch("documentai_api.jobs.bda_result_processor.handler.classify_as_failed") as mock_fail,
+        pytest.raises(RuntimeError, match="crash"),
     ):
-        result = bda_handler(BDA_EVENT, None)
+        bda_result_handler(BDA_EVENT, None)
 
-        assert result["statusCode"] == 500
-        mock_fail.assert_not_called()
+    mock_fail.assert_not_called()
 
 
 def test_handler_returns_500_with_original_error_when_classify_fails():
@@ -248,22 +252,21 @@ def test_handler_returns_500_with_original_error_when_classify_fails():
             "documentai_api.jobs.document_processor.handler.classify_as_failed",
             side_effect=RuntimeError("ddb update failed"),
         ),
+        pytest.raises(RuntimeError, match="original error"),
     ):
-        result = doc_handler(EVENTBRIDGE_S3_EVENT, None)
-
-    assert result["statusCode"] == 500
-    # Original error surfaces, not the cascading DDB failure
-    assert "original error" in result["body"]
+        document_processor_handler(EVENTBRIDGE_S3_EVENT, None)
 
 
 def test_malformed_event_returns_500_without_ddb_update():
     """Malformed event → extract_s3_info_from_event raises before try/except."""
     bad_event = {"garbage": "data"}
 
-    with patch("documentai_api.jobs.document_processor.handler.classify_as_failed") as mock_fail:
-        result = doc_handler(bad_event, None)
+    with (
+        patch("documentai_api.jobs.document_processor.handler.classify_as_failed") as mock_fail,
+        pytest.raises(ValueError, match="Invalid S3 event structure"),
+    ):
+        document_processor_handler(bad_event, None)
 
-    assert result["statusCode"] == 500
     mock_fail.assert_not_called()
 
 
@@ -280,12 +283,12 @@ def test_document_processor_cold_start_toggle():
     handler_mod.lifecycle["is_cold_start"] = True
 
     with patch("documentai_api.jobs.document_processor.handler.main") as mock_main:
-        doc_handler(EVENTBRIDGE_S3_EVENT, None)
+        document_processor_handler(EVENTBRIDGE_S3_EVENT, None)
         assert mock_main.call_args.kwargs["is_cold_start"] is True
 
-        doc_handler(EVENTBRIDGE_S3_EVENT, None)
+        document_processor_handler(EVENTBRIDGE_S3_EVENT, None)
         assert mock_main.call_args.kwargs["is_cold_start"] is False
 
         # Third call still False
-        doc_handler(EVENTBRIDGE_S3_EVENT, None)
+        document_processor_handler(EVENTBRIDGE_S3_EVENT, None)
         assert mock_main.call_args.kwargs["is_cold_start"] is False
