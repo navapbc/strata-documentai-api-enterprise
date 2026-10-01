@@ -1,45 +1,45 @@
 # synthetic-expense-utility-water-sewer-bill-render-spanish.png
 
 
-_Run: 2026-10-01 01:41 UTC_
+_Run: 2026-10-01 02:38 UTC_
 
 
 ## Durations
 
-- bda: 31.33s extraction
-- ocr-mapping: 5.653s extraction
+- bda: 28.97s extraction
+- ocr-mapping: 5.064s extraction
 
 
 ## Cost
 
 _By Service_
 - us.amazon.nova-lite-v1:0: $0.00012384
-- us.amazon.nova-pro-v1:0: $0.01815200
+- us.amazon.nova-pro-v1:0: $0.01816800
 - bda: $0.04000000
-- **total: $0.05827584**
+- **total: $0.05829184**
 
 _By Extraction Method_
-- shared (preclassification): $0.00928544
+- shared (preclassification): $0.00930144
 - ocr-mapping extraction: $0.00899040
 - primary (bda): $0.04000000
-- **total: $0.05827584**
+- **total: $0.05829184**
 
 
 ## Accuracy
 
 _By Extracted Data_
-- BDA: 81% equivalent, 81% close, 19% misses
-- OCR Mapping: 95% equivalent, 95% close, 5% misses
+- BDA: 18/21 (86%) equivalent match, 18/21 (86%) close, 3 misses
+- OCR Mapping: 20/21 (95%) equivalent match, 20/21 (95%) close, 1 miss
 
 _By Bounding Box_
-- BDA: 4/6 exact, 2 miss
-- OCR Mapping: 4/7 exact, 3 miss
+- BDA: 5/7 exact, 1 miss
+- OCR Mapping: 4/7 exact, 1 miss
 
 
 ## Field Comparison
 | Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Bounding Box | BDA Bounding Box | LLM Bounding Box |
 |---|---|---|---|---|---|---|---|---|
-| Account_Info.Acct_Name | Mariana López | ✅ Mariana López | ✅ Mariana López | 0.89 | 0.9800 | 0.038,0.235,0.095,0.011 | ✅ 0.039,0.235,0.094,0.011 | ✅ 0.039,0.235,0.094,0.011 |
+| Account_Info.Acct_Name | Mariana López | ✅ Mariana López | ✅ Mariana López | 0.88 | 0.9800 | 0.038,0.235,0.095,0.011 | ✅ 0.039,0.235,0.094,0.011 | ✅ 0.039,0.235,0.094,0.011 |
 | Account_Info.Acct_No | 1234-5678-90 | ✅ 1234-5678-90 | ✅ 1234-5678-90 | 0.94 | 1.0000 | 0.224,0.844,0.092,0.008 | ❌ 0.829,0.067,0.107,0.009 | ❌ 0.829,0.067,0.107,0.009 |
 | Account_Info.Meter_Number | MTR-78543210 | ✅ MTR-78543210 | ✅ MTR-78543210 | 0.91 | 0.9900 | 0.720,0.569,0.104,0.008 | ✅ 0.719,0.569,0.105,0.009 | ✅ 0.719,0.569,0.105,0.009 |
 | Curr_Meter_Reading | 68200 | ✅ 68,200 | ✅ 68,200 | 0.57 | 1.0000 | 0.806,0.625,0.046,0.008 | ✅ 0.805,0.625,0.046,0.010 | ✅ 0.806,0.625,0.046,0.010 |
@@ -50,12 +50,12 @@ _By Bounding Box_
 | Line_Items.Amount or Value | 22.50, 45.00, 12.75, 19.20, 4.50, 6.24 | ❌ - | ✅ $22.50, $45.00, $12.75, $19.20, $4.50, $6.24 | - | N/A | - | - | 0.572,0.369,0.042,0.010 |
 | Line_Items.LineItemDescription | Cargo base de agua, Uso de agua, Cargo base de alcantarillado, Cargo de alcantarillado, Tarifa de aguas pluviales, Impuesto local sobre servicios públicos (6%) | ❌ - | ✅ Cargo base de agua, Uso de agua, Cargo base de alcantarillado, Cargo de alcantarillado, Tarifa de aguas pluviales, Impuesto local sobre servicios públicos (6%) | - | N/A | - | - | 0.051,0.463,0.239,0.010 |
 | Prev_Bal | 88.03 | ✅ 88.03 | ❌ 0.00 | 0.90 | 1.0000 | - | 0.896,0.352,0.049,0.011 | 0.905,0.431,0.040,0.010 |
-| Prev_Meter_Reading | 62200 | ✅ 62,200 | ✅ 62,200 | 0.66 | 1.0000 | 0.806,0.653,0.046,0.009 | ✅ 0.806,0.653,0.045,0.010 | ✅ 0.806,0.653,0.046,0.010 |
+| Prev_Meter_Reading | 62200 | ✅ 62,200 | ✅ 62,200 | 0.65 | 1.0000 | 0.806,0.653,0.046,0.009 | ✅ 0.806,0.653,0.045,0.010 | ✅ 0.806,0.653,0.046,0.010 |
 | Provider Name | SERVICIO DE AGUA DEL CONDADO DE HARBOR | ✅ SERVICIO DE AGUA DEL CONDADO DE HARBOR | ✅ SERVICIO DE AGUA DEL CONDADO DE HARBOR | 0.88 | 0.9800 | - | 0.146,0.045,0.356,0.038 | 0.442,0.798,0.254,0.010 |
-| Service_Address.Building_Line 1 | 214 Maple Way | ✅ 214 Maple Way | ✅ 214 Maple Way | 0.61 | 1.0000 | 0.038,0.250,0.099,0.010 | ❌ 0.038,0.250,0.068,0.010 | ❌ 0.348,0.235,0.098,0.011 |
+| Service_Address.Building_Line 1 | 214 Maple Way | ✅ 214 Maple Way | ✅ 214 Maple Way | 0.61 | 1.0000 | 0.038,0.250,0.099,0.010 | 🟡 0.038,0.250,0.068,0.010 | 🟡 0.348,0.235,0.098,0.011 |
 | Service_Address.City | Pocatello | ✅ Pocatello | ✅ Pocatello | 0.86 | N/A | - | 0.038,0.264,0.062,0.010 | - |
 | Service_Address.State | ID | ✅ ID | ✅ ID | 0.91 | 0.9900 | - | 0.106,0.264,0.013,0.009 | 0.214,0.141,0.013,0.009 |
-| Service_Address.Street | 214 Maple Way | ❌ - | ✅ 214 Maple Way | 0.06 | 1.0000 | 0.038,0.250,0.099,0.010 | ❌ - | ❌ 0.348,0.235,0.098,0.011 |
+| Service_Address.Street | 214 Maple Way | ✅ 214 Maple Way | ✅ 214 Maple Way | 0.86 | 1.0000 | 0.038,0.250,0.099,0.010 | ✅ 0.038,0.250,0.099,0.011 | 🟡 0.348,0.235,0.098,0.011 |
 | Service_Address.Zip_Code | 83204 | ✅ 83204 | ✅ 83204 | 0.92 | 0.9900 | - | 0.122,0.264,0.041,0.009 | 0.432,0.250,0.041,0.009 |
 | Tot_Amt | 86.47 | ✅ 86.47 | ✅ 86.47 | 0.92 | 1.0000 | - | 0.861,0.163,0.075,0.016 | 0.861,0.163,0.075,0.016 |
 | Total_Current_Charges | 110.19 | ✅ 110.19 | ✅ 110.19 | 0.79 | 1.0000 | - | 0.557,0.494,0.057,0.011 | 0.890,0.449,0.055,0.011 |

@@ -1,39 +1,39 @@
 # synthetic-public-benefits-income-proof-pay-statement-photo.png
 
 
-_Run: 2026-10-01 01:41 UTC_
+_Run: 2026-10-01 02:38 UTC_
 
 
 ## Durations
 
-- bda: 24.61s extraction
-- ocr-mapping: 11.491s extraction
+- bda: 23.6s extraction
+- ocr-mapping: 12.303s extraction
 
 
 ## Cost
 
 _By Service_
 - us.amazon.nova-lite-v1:0: $0.00011394
-- us.amazon.nova-pro-v1:0: $0.02362160
+- us.amazon.nova-pro-v1:0: $0.02360240
 - bda: $0.04000000
-- **total: $0.06373554**
+- **total: $0.06371634**
 
 _By Extraction Method_
-- shared (preclassification): $0.00898594
-- ocr-mapping extraction: $0.01474960
+- shared (preclassification): $0.00897954
+- ocr-mapping extraction: $0.01473680
 - primary (bda): $0.04000000
-- **total: $0.06373554**
+- **total: $0.06371634**
 
 
 ## Accuracy
 
 _By Extracted Data_
-- BDA: 83% equivalent, 83% close, 17% misses
-- OCR Mapping: 91% equivalent, 91% close, 9% misses
+- BDA: 29/35 (83%) equivalent match, 29/35 (83%) close, 6 misses
+- OCR Mapping: 32/35 (91%) equivalent match, 32/35 (91%) close, 3 misses
 
 _By Bounding Box_
-- BDA: 21/25 exact, 4 miss
-- OCR Mapping: 24/29 exact, 5 miss
+- BDA: 21/31 exact, 10 miss
+- OCR Mapping: 24/31 exact, 7 miss
 
 
 ## Field Comparison

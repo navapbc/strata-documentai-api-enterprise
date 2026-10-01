@@ -1,7 +1,7 @@
 # synthetic-expense-burial-scan-corner-torn.jpg
 
 
-_Run: 2026-10-01 01:41 UTC_
+_Run: 2026-10-01 02:38 UTC_
 
 
 ## Durations
@@ -28,19 +28,19 @@ _By Extraction Method_
 ## Accuracy
 
 _By Extracted Data_
-- BDA: 67% equivalent, 67% close, 33% misses
-- OCR Mapping: 67% equivalent, 67% close, 33% misses
+- BDA: 6/9 (67%) equivalent match, 7/9 (78%) close, 2 misses
+- OCR Mapping: 6/9 (67%) equivalent match, 7/9 (78%) close, 2 misses
 
 _By Bounding Box_
 - BDA: 1/3 exact, 2 miss
-- OCR Mapping: 0/2 exact, 2 miss
+- OCR Mapping: 0/3 exact, 3 miss
 
 
 ## Field Comparison
 | Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Bounding Box | BDA Bounding Box | LLM Bounding Box |
 |---|---|---|---|---|---|---|---|---|
 | account_balance | 2750.00 | ✅ 2750 | ✅ 2750.00 | 0.93 | 1.0000 | 0.731,0.445,0.140,0.021 | ❌ 0.837,0.623,0.072,0.012 | ❌ 0.092,0.461,0.305,0.014 |
-| account_number | ***-***-7429 | ❌ ***_***-7429 | ❌ ***_***-7429 | 0.27 | 0.9700 | - | 0.696,0.261,0.085,0.010 | 0.538,0.260,0.242,0.010 |
+| account_number | ***-***-7429 | 🟡 ***_***-7429 | 🟡 ***_***-7429 | 0.27 | 0.9700 | - | 0.696,0.261,0.085,0.010 | 0.538,0.260,0.242,0.010 |
 | asset_types | Cash | ❌ - | ✅ Cash | - | 1.0000 | - | - | 0.701,0.389,0.203,0.011 |
 | beneficiary_name | Payable to Estate | ✅ Payable to Estate | ❌ - | 0.80 | N/A | 0.559,0.754,0.127,0.011 | ✅ 0.559,0.754,0.128,0.012 | ❌ - |
 | distributions_during_period | 0.00 | ❌ - | ✅ 0.00 | 0.93 | N/A | - | 0.579,0.412,0.041,0.011 | 0.743,0.404,0.120,0.010 |

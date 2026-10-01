@@ -1,38 +1,38 @@
 # synthetic-assets-life-insurance-policy-render.pdf
 
 
-_Run: 2026-10-01 01:41 UTC_
+_Run: 2026-10-01 02:38 UTC_
 
 
 ## Durations
 
-- bda: 22.86s extraction
-- ocr-mapping: 1.34s extraction
+- bda: 23.08s extraction
+- ocr-mapping: 1.538s extraction
 
 
 ## Cost
 
 _By Service_
-- us.amazon.nova-pro-v1:0: $0.01252560
+- us.amazon.nova-pro-v1:0: $0.01252880
 - bda: $0.04000000
-- **total: $0.05252560**
+- **total: $0.05252880**
 
 _By Extraction Method_
-- shared (preclassification): $0.00882720
+- shared (preclassification): $0.00883040
 - ocr-mapping extraction: $0.00369840
 - primary (bda): $0.04000000
-- **total: $0.05252560**
+- **total: $0.05252880**
 
 
 ## Accuracy
 
 _By Extracted Data_
-- BDA: 90% equivalent, 100% close, 0% misses
-- OCR Mapping: 100% equivalent, 100% close, 0% misses
+- BDA: 9/10 (90%) equivalent match, 10/10 (100%) close, 0 misses
+- OCR Mapping: 10/10 (100%) equivalent match, 10/10 (100%) close, 0 misses
 
 _By Bounding Box_
 - BDA: 8/10 exact, 2 miss
-- OCR Mapping: 7/9 exact, 2 miss
+- OCR Mapping: 7/10 exact, 2 miss
 
 
 ## Field Comparison
@@ -40,7 +40,7 @@ _By Bounding Box_
 |---|---|---|---|---|---|---|---|---|
 | cash_surrender_value | 9500 | ✅ 9500 | ✅ 9500 | 0.71 | 1.0000 | 0.478,0.474,0.058,0.014 | ✅ 0.477,0.474,0.059,0.015 | ✅ 0.477,0.473,0.059,0.015 |
 | death_benefit | 100000 | ✅ 100000 | ✅ 100000 | 0.91 | 1.0000 | 0.478,0.438,0.078,0.015 | ✅ 0.477,0.438,0.080,0.015 | ✅ 0.477,0.438,0.080,0.015 |
-| insured_name | Jordan Rivera | ✅ Jordan Rivera | ✅ Jordan Rivera | 0.92 | 1.0000 | 0.476,0.368,0.125,0.015 | ✅ 0.476,0.368,0.125,0.015 | ❌ 0.476,0.333,0.125,0.015 |
+| insured_name | Jordan Rivera | ✅ Jordan Rivera | ✅ Jordan Rivera | 0.92 | 1.0000 | 0.476,0.368,0.125,0.015 | ✅ 0.476,0.368,0.125,0.015 | 🟡 0.476,0.333,0.125,0.015 |
 | insurer_name | Northstar Life Insurance Company | 🟡 Northstar Life Insurance | ✅ Northstar Life Insurance Company | 0.41 | 1.0000 | 0.150,0.774,0.307,0.016 | ❌ 0.274,0.034,0.224,0.030 | ✅ 0.148,0.774,0.309,0.016 |
 | policy_number | XX-1234567-MD | ✅ XX-1234567-MD | ✅ XX-1234567-MD | 0.93 | 1.0000 | 0.477,0.263,0.145,0.011 | ✅ 0.477,0.262,0.145,0.012 | ✅ 0.477,0.262,0.145,0.012 |
 | policy_type | Universal Life Insurance | ✅ Universal Life Insurance | ✅ Universal Life Insurance | 0.89 | 1.0000 | 0.477,0.403,0.225,0.013 | ✅ 0.477,0.403,0.225,0.013 | ✅ 0.477,0.403,0.225,0.013 |

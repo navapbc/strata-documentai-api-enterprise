@@ -24,10 +24,11 @@ from documentai_api.config.constants import ExtractMethod, LlmUsageReason
 from documentai_api.config.env import get_env_config
 from documentai_api.models.extraction_compare import CompareFieldResult, CompareResponse
 from documentai_api.utils.extraction_compare_client import (
+    EXPECTED_EMPTY,
     ICON_APPROX,
     ICON_EXACT,
     ICON_MISS,
-    NO_VALUE,
+    NO_GROUND_TRUTH,
     field_display_values,
     match_icon,
     print_comparison,
@@ -125,7 +126,9 @@ def _load_expected(filename: str) -> dict[str, str] | None:
     if not path.exists():
         return None
     data = json.loads(path.read_text())
-    return {k: str(v) if v is not None else NO_VALUE for k, v in data.get("fields", {}).items()}
+    return {
+        k: str(v) if v is not None else EXPECTED_EMPTY for k, v in data.get("fields", {}).items()
+    }
 
 
 def _load_expected_geometry(filename: str) -> dict[str, list[str]] | None:
@@ -208,7 +211,7 @@ def test_extraction_compare(filename, compare_jwt):
 
 def _fmt_geometry(geo: list[dict[str, Any]] | None) -> str:
     if not geo:
-        return NO_VALUE
+        return EXPECTED_EMPTY
 
     bb = geo[0].get("boundingBox") or geo[0]
     left, top, w, h = bb.get("left", 0), bb.get("top", 0), bb.get("width", 0), bb.get("height", 0)
@@ -247,18 +250,20 @@ def _compute_accuracy(
     lc: Counter[str] = Counter()
 
     for field, ev in expected.items():
-        if ev == NO_VALUE:
+        if ev in (EXPECTED_EMPTY, NO_GROUND_TRUTH):
             continue
         pc[
             match_icon(
                 ev,
-                str(primary.get(field, CompareFieldResult()).value or NO_VALUE),
+                str(primary.get(field, CompareFieldResult()).value or EXPECTED_EMPTY),
                 field_name=field,
             )
         ] += 1
         lc[
             match_icon(
-                ev, str(llm.get(field, CompareFieldResult()).value or NO_VALUE), field_name=field
+                ev,
+                str(llm.get(field, CompareFieldResult()).value or EXPECTED_EMPTY),
+                field_name=field,
             )
         ] += 1
 
@@ -269,11 +274,8 @@ def _compute_accuracy(
         for field, exp_geo in expected_geo.items():
             p_geo = _fmt_geometry(primary.get(field, CompareFieldResult()).geometry)
             l_geo = _fmt_geometry(llm.get(field, CompareFieldResult()).geometry)
-            # Only score geo when the extractor returned a value; no value means no geometry to evaluate.
-            if p_geo != NO_VALUE:
-                pgc[_geo_match_icon(exp_geo, p_geo, tolerance=_GEO_TOLERANCE)] += 1
-            if l_geo != NO_VALUE:
-                lgc[_geo_match_icon(exp_geo, l_geo, tolerance=_GEO_TOLERANCE)] += 1
+            pgc[_geo_match_icon(exp_geo, p_geo, tolerance=_GEO_TOLERANCE)] += 1
+            lgc[_geo_match_icon(exp_geo, l_geo, tolerance=_GEO_TOLERANCE)] += 1
 
     result: dict[str, dict[str, int]] = {
         _ResultData.PRIMARY: {
@@ -302,21 +304,17 @@ def _compute_accuracy(
 
 
 def _avg_accuracy(exact: list[int], approx: list[int], miss: list[int]) -> _AccuracyDisplay:
-    """Return average (exact %, exact+approx %, miss %) across multiple documents."""
-    totals_per_doc = [e + ap + m for e, ap, m in zip(exact, approx, miss, strict=False)]
-    if not totals_per_doc or sum(totals_per_doc) == 0:
+    """Return pooled counts and percentage across multiple documents."""
+    total_exact = sum(exact)
+    total_loose = total_exact + sum(approx)
+    total_miss = sum(miss)
+    total = total_exact + sum(approx) + total_miss
+    if total == 0:
         return _NO_ACCURACY
-    avg_exact = sum(e / t for e, t in zip(exact, totals_per_doc, strict=False) if t) / len(
-        totals_per_doc
-    )
-    avg_loose = sum(
-        (e + ap) / t for e, ap, t in zip(exact, approx, totals_per_doc, strict=False) if t
-    ) / len(totals_per_doc)
-    avg_miss = sum(m / t for m, t in zip(miss, totals_per_doc, strict=False) if t) / len(
-        totals_per_doc
-    )
     return _AccuracyDisplay(
-        exact=f"{avg_exact:.0%}", loose=f"{avg_loose:.0%}", miss=f"{avg_miss:.0%}"
+        exact=f"{total_exact}/{total} ({total_exact / total:.0%})",
+        loose=f"{total_loose}/{total} ({total_loose / total:.0%})",
+        miss=f"{total_miss}",
     )
 
 
@@ -333,9 +331,9 @@ def _fmt_accuracy(a: dict[str, int] | None) -> _AccuracyDisplay:
     if total == 0:
         return _NO_ACCURACY
     return _AccuracyDisplay(
-        exact=f"{exact / total:.0%}",
-        loose=f"{(exact + approx) / total:.0%}",
-        miss=f"{miss / total:.0%}",
+        exact=f"{exact}/{total} ({exact / total:.0%})",
+        loose=f"{exact + approx}/{total} ({(exact + approx) / total:.0%})",
+        miss=f"{miss}",
     )
 
 
@@ -416,7 +414,7 @@ def _write_comparison_md(
     if result.durations:
         lines.append("\n## Durations\n")
         for method, d in result.durations.items():
-            extraction = d.extraction_duration_seconds or NO_VALUE
+            extraction = d.extraction_duration_seconds or EXPECTED_EMPTY
             line = f"- {method}: {extraction}s extraction"
             if d.bda_invocation_duration_seconds is not None:
                 line += f", {d.bda_invocation_duration_seconds}s BDA invocation"
@@ -460,10 +458,10 @@ def _write_comparison_md(
         lines.append("\n## Accuracy")
         lines.append("\n_By Extracted Data_")
         lines.append(
-            f"- {primary_method.upper()}: {p_acc['exact']} equivalent, {p_acc['loose']} close, {p_acc['miss']} misses"
+            f"- {primary_method.upper()}: {p_acc['exact']} equivalent match, {p_acc['loose']} close, {p_acc['miss']} {'miss' if p_acc['miss'] == '1' else 'misses'}"
         )
         lines.append(
-            f"- OCR Mapping: {l_acc['exact']} equivalent, {l_acc['loose']} close, {l_acc['miss']} misses"
+            f"- OCR Mapping: {l_acc['exact']} equivalent match, {l_acc['loose']} close, {l_acc['miss']} {'miss' if l_acc['miss'] == '1' else 'misses'}"
         )
         lines.append("\n_By Bounding Box_")
         lines.append(f"- {primary_method.upper()}: {p_geo_acc}")
@@ -502,13 +500,19 @@ def _write_comparison_md(
             f"{_geo_match_icon(exp_geo, llm_geo, tolerance=_GEO_TOLERANCE)} " if exp_geo else ""
         ) + llm_geo
         if expected is not None:
-            p_cell = f"{match_icon(exp_val, p_val, field_name=field)} {p_val}".strip()
-            llm_cell = f"{match_icon(exp_val, llm_val, field_name=field)} {llm_val}".strip()
+            p_icon = (
+                match_icon(exp_val, p_val, field_name=field) if exp_val != NO_GROUND_TRUTH else ""
+            )
+            llm_icon = (
+                match_icon(exp_val, llm_val, field_name=field) if exp_val != NO_GROUND_TRUTH else ""
+            )
+            p_cell = f"{p_icon} {p_val}".strip()
+            llm_cell = f"{llm_icon} {llm_val}".strip()
         else:
             p_cell = p_val
             llm_cell = llm_val
         lines.append(
-            f"| {field} | {exp_val} | {p_cell} | {llm_cell} | {p_conf} | {llm_conf} | {_fmt_exp_geo(exp_geo) if exp_geo else NO_VALUE} | {p_geo_cell} | {llm_geo_cell} |"
+            f"| {field} | {exp_val} | {p_cell} | {llm_cell} | {p_conf} | {llm_conf} | {_fmt_exp_geo(exp_geo) if exp_geo else EXPECTED_EMPTY} | {p_geo_cell} | {llm_geo_cell} |"
         )
     _RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     results_file.write_text("\n".join(lines) + "\n")
@@ -704,9 +708,13 @@ def _write_doc_summary_table(
         l_acc = acc.get(_ResultData.OCR_MAPPING) if acc else None
         p_fmt = _fmt_accuracy(p_acc)
         l_fmt = _fmt_accuracy(l_acc)
-        p_loose = p_acc.get(_ResultData.EXACT, 0) + p_acc.get(_ResultData.APPROX, 0) if p_acc else None
+        p_loose = (
+            p_acc.get(_ResultData.EXACT, 0) + p_acc.get(_ResultData.APPROX, 0) if p_acc else None
+        )
         p_total = sum(p_acc.values()) if p_acc else None
-        l_loose = l_acc.get(_ResultData.EXACT, 0) + l_acc.get(_ResultData.APPROX, 0) if l_acc else None
+        l_loose = (
+            l_acc.get(_ResultData.EXACT, 0) + l_acc.get(_ResultData.APPROX, 0) if l_acc else None
+        )
         l_total = sum(l_acc.values()) if l_acc else None
         if p_loose is not None and p_total and l_loose is not None and l_total:
             delta = (l_loose / l_total) - (p_loose / p_total)
@@ -858,10 +866,10 @@ def regen_comparison_md(results_dir: Path) -> None:
             lines.append("\n## Accuracy")
             lines.append("\n_By Extracted Data_")
             lines.append(
-                f"- {primary_method.upper()}: {p_acc['exact']} equivalent, {p_acc['loose']} close, {p_acc['miss']} misses"
+                f"- {primary_method.upper()}: {p_acc['exact']} equivalent match, {p_acc['loose']} close, {p_acc['miss']} {'miss' if p_acc['miss'] == '1' else 'misses'}"
             )
             lines.append(
-                f"- OCR Mapping: {l_acc['exact']} equivalent, {l_acc['loose']} close, {l_acc['miss']} misses"
+                f"- OCR Mapping: {l_acc['exact']} equivalent match, {l_acc['loose']} close, {l_acc['miss']} {'miss' if l_acc['miss'] == '1' else 'misses'}"
             )
             lines.append("\n_By Bounding Box_")
             lines.append(f"- {primary_method.upper()}: {p_geo_acc}")
@@ -900,13 +908,23 @@ def regen_comparison_md(results_dir: Path) -> None:
                 f"{_geo_match_icon(exp_geo, llm_geo, tolerance=_GEO_TOLERANCE)} " if exp_geo else ""
             ) + llm_geo
             if expected is not None:
-                p_cell = f"{match_icon(exp_val, p_val, field_name=field)} {p_val}".strip()
-                llm_cell = f"{match_icon(exp_val, llm_val, field_name=field)} {llm_val}".strip()
+                p_icon = (
+                    match_icon(exp_val, p_val, field_name=field)
+                    if exp_val != NO_GROUND_TRUTH
+                    else ""
+                )
+                llm_icon = (
+                    match_icon(exp_val, llm_val, field_name=field)
+                    if exp_val != NO_GROUND_TRUTH
+                    else ""
+                )
+                p_cell = f"{p_icon} {p_val}".strip()
+                llm_cell = f"{llm_icon} {llm_val}".strip()
             else:
                 p_cell = p_val
                 llm_cell = llm_val
             lines.append(
-                f"| {field} | {exp_val} | {p_cell} | {llm_cell} | {p_conf} | {llm_conf} | {_fmt_exp_geo(exp_geo) if exp_geo else NO_VALUE} | {p_geo_cell} | {llm_geo_cell} |"
+                f"| {field} | {exp_val} | {p_cell} | {llm_cell} | {p_conf} | {llm_conf} | {_fmt_exp_geo(exp_geo) if exp_geo else EXPECTED_EMPTY} | {p_geo_cell} | {llm_geo_cell} |"
             )
         results_file.write_text("\n".join(lines) + "\n")
 
@@ -983,6 +1001,20 @@ def write_extraction_compare_summary(results_dir: Path) -> None:
         lines.append("")
 
         lines.append("\n### Accuracy")
+        a = result["accuracy_by_method"]
+        all_exact = sum(
+            sum(v[_ResultData.L_EXACT]) + sum(v[_ResultData.L_APPROX]) + sum(v[_ResultData.L_MISS])
+            for v in a.values()
+        )
+        all_geo = sum(
+            sum(v[_ResultData.L_GEO_EXACT])
+            + sum(v[_ResultData.L_GEO_APPROX])
+            + sum(v[_ResultData.L_GEO_MISS])
+            for v in a.values()
+        )
+        lines.append(
+            f"\n_Expected field values defined for {all_exact} scored fields ({', '.join(f'{sum(v[_ResultData.L_EXACT]) + sum(v[_ResultData.L_APPROX]) + sum(v[_ResultData.L_MISS])} {k}' for k, v in a.items())}); bounding-box ground truth resolved for {all_geo} fields._\n"
+        )
         header, sep = _md_table_header(
             [
                 "Primary Method",

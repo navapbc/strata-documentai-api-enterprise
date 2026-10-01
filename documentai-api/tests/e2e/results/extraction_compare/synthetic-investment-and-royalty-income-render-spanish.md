@@ -1,39 +1,39 @@
 # synthetic-investment-and-royalty-income-render-spanish.png
 
 
-_Run: 2026-10-01 01:41 UTC_
+_Run: 2026-10-01 02:38 UTC_
 
 
 ## Durations
 
-- bda: 21.82s extraction
-- ocr-mapping: 1.652s extraction
+- bda: 22.07s extraction
+- ocr-mapping: 1.743s extraction
 
 
 ## Cost
 
 _By Service_
 - us.amazon.nova-lite-v1:0: $0.00012384
-- us.amazon.nova-pro-v1:0: $0.01302960
+- us.amazon.nova-pro-v1:0: $0.01301360
 - bda: $0.04000000
-- **total: $0.05315344**
+- **total: $0.05313744**
 
 _By Extraction Method_
-- shared (preclassification): $0.00927904
+- shared (preclassification): $0.00926304
 - ocr-mapping extraction: $0.00387440
 - primary (bda): $0.04000000
-- **total: $0.05315344**
+- **total: $0.05313744**
 
 
 ## Accuracy
 
 _By Extracted Data_
-- BDA: 42% equivalent, 50% close, 50% misses
-- OCR Mapping: 58% equivalent, 58% close, 42% misses
+- BDA: 5/12 (42%) equivalent match, 6/12 (50%) close, 6 misses
+- OCR Mapping: 7/12 (58%) equivalent match, 7/12 (58%) close, 5 misses
 
 _By Bounding Box_
-- BDA: 2/3 exact, 1 miss
-- OCR Mapping: 2/5 exact, 3 miss
+- BDA: 2/6 exact, 4 miss
+- OCR Mapping: 2/6 exact, 4 miss
 
 
 ## Field Comparison

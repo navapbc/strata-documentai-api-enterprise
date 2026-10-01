@@ -1,39 +1,39 @@
 # synthetic-public-benefits-income-proof-pay-stub.jpg
 
 
-_Run: 2026-10-01 01:41 UTC_
+_Run: 2026-10-01 02:38 UTC_
 
 
 ## Durations
 
-- bda: 27.85s extraction
-- ocr-mapping: 17.481s extraction
+- bda: 23.17s extraction
+- ocr-mapping: 11.774s extraction
 
 
 ## Cost
 
 _By Service_
 - us.amazon.nova-lite-v1:0: $0.00011328
-- us.amazon.nova-pro-v1:0: $0.02349200
+- us.amazon.nova-pro-v1:0: $0.02350480
 - bda: $0.04000000
-- **total: $0.06360528**
+- **total: $0.06361808**
 
 _By Extraction Method_
-- shared (preclassification): $0.00896768
-- ocr-mapping extraction: $0.01463760
+- shared (preclassification): $0.00897728
+- ocr-mapping extraction: $0.01464080
 - primary (bda): $0.04000000
-- **total: $0.06360528**
+- **total: $0.06361808**
 
 
 ## Accuracy
 
 _By Extracted Data_
-- BDA: 79% equivalent, 79% close, 21% misses
-- OCR Mapping: 86% equivalent, 86% close, 14% misses
+- BDA: 23/29 (79%) equivalent match, 23/29 (79%) close, 6 misses
+- OCR Mapping: 26/29 (90%) equivalent match, 26/29 (90%) close, 3 misses
 
 _By Bounding Box_
-- BDA: 12/13 exact, 1 miss
-- OCR Mapping: 12/15 exact, 3 miss
+- BDA: 12/16 exact, 4 miss
+- OCR Mapping: 12/16 exact, 4 miss
 
 
 ## Field Comparison
@@ -49,7 +49,7 @@ _By Bounding Box_
 | CompanyAddress.ZipCode | 06103 | ✅ 06103 | ✅ 06103 | 0.94 | 1.0000 | 0.198,0.285,0.028,0.012 | ✅ 0.197,0.285,0.029,0.014 | ✅ 0.197,0.285,0.029,0.014 |
 | CurrentGrossPay | 1350.00 | ✅ 1350 | ✅ 1350.00 | 0.95 | 1.0000 | - | 0.407,0.619,0.048,0.020 | 0.400,0.376,0.039,0.016 |
 | CurrentNetPay | 1037.56 | ✅ 1037.56 | ✅ 1037.56 | 0.94 | 1.0000 | 0.738,0.752,0.039,0.015 | ✅ 0.737,0.751,0.041,0.018 | ❌ 0.755,0.579,0.047,0.020 |
-| CurrentTotalDeductions | 312.44 | ✅ 312.44 | ✅ 312.44 | 0.45 | 1.0000 | 0.765,0.530,0.030,0.020 | ✅ 0.765,0.533,0.031,0.015 | ✅ 0.765,0.532,0.031,0.015 |
+| CurrentTotalDeductions | 312.44 | ✅ 312.44 | ✅ 312.44 | 0.43 | 1.0000 | 0.765,0.530,0.030,0.020 | ✅ 0.765,0.533,0.031,0.015 | ✅ 0.765,0.532,0.031,0.015 |
 | EmployeeAddress.City | - | - | - | 0.93 | N/A | - | - | - |
 | EmployeeAddress.Line1 | - | - | - | 0.94 | N/A | - | - | - |
 | EmployeeAddress.Line2 | - | - | - | 0.95 | N/A | - | - | - |
@@ -79,8 +79,8 @@ _By Bounding Box_
 | YTDGrossPay | 9450.00 | ✅ 9450 | ✅ 9450.00 | 0.96 | 1.0000 | - | 0.481,0.610,0.047,0.020 | 0.470,0.370,0.038,0.015 |
 | YTDNetPay | 6562.92 | ✅ 6562.92 | ✅ 6562.92 | 0.95 | 1.0000 | - | 0.841,0.568,0.046,0.019 | 0.841,0.568,0.046,0.020 |
 | YTDStateTax | 416.36 | ✅ 416.36 | ✅ 416.36 | 0.95 | 1.0000 | - | 0.829,0.355,0.031,0.014 | 0.829,0.355,0.031,0.014 |
-| YTDTotalDeductions | 2887.08 | ✅ 2887.08 | ✅ 2887.08 | 0.58 | 1.0000 | 0.844,0.525,0.037,0.012 | ✅ 0.844,0.523,0.037,0.016 | ✅ 0.844,0.523,0.037,0.016 |
+| YTDTotalDeductions | 2887.08 | ✅ 2887.08 | ✅ 2887.08 | 0.57 | 1.0000 | 0.844,0.525,0.037,0.012 | ✅ 0.844,0.523,0.037,0.016 | ✅ 0.844,0.523,0.037,0.016 |
 | are_field_names_sufficient | True | ✅ True | ❌ - | 0.07 | N/A | - | - | - |
-| currency | USD | ✅ USD | ❌ - | 0.92 | N/A | - | 0.182,0.288,0.013,0.012 | - |
+| currency | USD | ✅ USD | ✅ USD | 0.92 | N/A | - | 0.182,0.288,0.013,0.012 | - |
 | is_gross_pay_valid | True | ✅ True | ❌ - | 0.92 | N/A | - | 0.481,0.610,0.047,0.020 | - |
 | is_ytd_gross_pay_highest | True | ✅ True | ❌ - | 0.92 | N/A | - | 0.481,0.610,0.047,0.020 | - |

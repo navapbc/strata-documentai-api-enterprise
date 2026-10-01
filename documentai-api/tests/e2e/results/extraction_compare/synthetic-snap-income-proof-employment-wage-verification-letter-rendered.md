@@ -1,38 +1,38 @@
 # synthetic-snap-income-proof-employment-wage-verification-letter-rendered.png
 
 
-_Run: 2026-10-01 01:41 UTC_
+_Run: 2026-10-01 02:38 UTC_
 
 
 ## Durations
 
-- bda: 17.8s extraction
-- ocr-mapping: 1.637s extraction
+- bda: 17.98s extraction
+- ocr-mapping: 1.124s extraction
 
 
 ## Cost
 
 _By Service_
-- us.amazon.nova-lite-v1:0: $0.00010998
-- us.amazon.nova-pro-v1:0: $0.01175920
+- us.amazon.nova-lite-v1:0: $0.00011022
+- us.amazon.nova-pro-v1:0: $0.01171440
 - bda: $0.04000000
-- **total: $0.05186918**
+- **total: $0.05182462**
 
 _By Extraction Method_
-- shared (preclassification): $0.00892758
+- shared (preclassification): $0.00888302
 - ocr-mapping extraction: $0.00294160
 - primary (bda): $0.04000000
-- **total: $0.05186918**
+- **total: $0.05182462**
 
 
 ## Accuracy
 
 _By Extracted Data_
-- BDA: 100% equivalent, 100% close, 0% misses
-- OCR Mapping: 86% equivalent, 86% close, 14% misses
+- BDA: 7/7 (100%) equivalent match, 7/7 (100%) close, 0 misses
+- OCR Mapping: 6/7 (86%) equivalent match, 6/7 (86%) close, 1 miss
 
 _By Bounding Box_
-- BDA: 2/7 exact, 5 miss
+- BDA: 2/7 exact, 4 miss
 - OCR Mapping: 2/7 exact, 5 miss
 
 
@@ -46,4 +46,4 @@ _By Bounding Box_
 | issuer_name | Dana Whitfield | ✅ Dana Whitfield | ✅ Dana Whitfield | 0.95 | 1.0000 | 0.121,0.820,0.113,0.011 | ❌ 0.210,0.765,0.132,0.029 | ❌ 0.117,0.762,0.225,0.032 |
 | issuer_title | Human Resources Manager | ✅ Human Resources Manager | ✅ Human Resources Manager | 0.92 | 1.0000 | 0.121,0.842,0.207,0.013 | ✅ 0.121,0.841,0.209,0.014 | ✅ 0.121,0.841,0.209,0.014 |
 | job_title | Home Health Aide | ✅ Home Health Aide | ✅ Home Health Aide | 0.89 | 1.0000 | 0.121,0.466,0.390,0.015 | ❌ 0.158,0.465,0.157,0.012 | ❌ 0.158,0.466,0.157,0.012 |
-| salary_or_wage | $19.00 per hour | ✅ $19.00 per hour | ✅ $19.00 per hour | 0.35 | 1.0000 | 0.121,0.503,0.526,0.015 | ❌ 0.512,0.503,0.136,0.016 | ❌ 0.410,0.503,0.238,0.016 |
+| salary_or_wage | $19.00 per hour | ✅ $19.00 per hour | ✅ $19.00 per hour | 0.34 | 1.0000 | 0.121,0.503,0.526,0.015 | 🟡 0.512,0.503,0.136,0.016 | ❌ 0.410,0.503,0.238,0.016 |

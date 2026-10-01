@@ -1,35 +1,35 @@
 # synthetic-expense-child-support-spanish-picture.png
 
 
-_Run: 2026-10-01 01:41 UTC_
+_Run: 2026-10-01 02:38 UTC_
 
 
 ## Durations
 
-- bda: 31.07s extraction
-- ocr-mapping: 2.769s extraction
+- bda: 29.37s extraction
+- ocr-mapping: 2.512s extraction
 
 
 ## Cost
 
 _By Service_
 - us.amazon.nova-lite-v1:0: $0.00012384
-- us.amazon.nova-pro-v1:0: $0.01562160
+- us.amazon.nova-pro-v1:0: $0.01561200
 - bda: $0.04000000
-- **total: $0.05574544**
+- **total: $0.05573584**
 
 _By Extraction Method_
-- shared (preclassification): $0.00930784
+- shared (preclassification): $0.00929824
 - ocr-mapping extraction: $0.00643760
 - primary (bda): $0.04000000
-- **total: $0.05574544**
+- **total: $0.05573584**
 
 
 ## Accuracy
 
 _By Extracted Data_
-- BDA: 92% equivalent, 92% close, 8% misses
-- OCR Mapping: 92% equivalent, 92% close, 8% misses
+- BDA: 10/13 (77%) equivalent match, 12/13 (92%) close, 1 miss
+- OCR Mapping: 11/13 (85%) equivalent match, 11/13 (85%) close, 2 misses
 
 _By Bounding Box_
 - BDA: 4/6 exact, 2 miss
@@ -43,10 +43,10 @@ _By Bounding Box_
 | child_name | - | - | - | 0.88 | - | - | - | - |
 | court_name | Tribunal de Familia de la Ciudad de Norfolk | ✅ Tribunal de Familia de la Ciudad de Norfolk | ✅ Tribunal de Familia de la Ciudad de Norfolk | 0.86 | 0.9900 | - | 0.366,0.264,0.235,0.021 | 0.366,0.277,0.147,0.008 |
 | effective_end_date | - | - | - | 0.88 | - | - | - | - |
-| effective_start_date | 2021-01-05 | ✅ 2021-01-05 | ✅ 2021-01-05 | 0.74 | 0.9900 | - | 0.171,0.385,0.072,0.009 | 0.485,0.293,0.069,0.008 |
-| order_date | 2021-01-05 | ✅ 2021-01-05 | ✅ 2021-01-05 | 0.78 | 0.9900 | - | 0.485,0.293,0.069,0.009 | 0.485,0.293,0.069,0.008 |
+| effective_start_date | 2021-01-05 | 🟡 2021-05-01 | ✅ 2021-01-05 | 0.84 | 0.9900 | - | 0.171,0.385,0.072,0.009 | 0.485,0.293,0.069,0.008 |
+| order_date | 2021-01-05 | 🟡 2021-05-01 | ✅ 2021-01-05 | 0.84 | 0.9900 | - | 0.485,0.293,0.069,0.009 | 0.485,0.293,0.069,0.008 |
 | payer_name | Daniel Ortega | ✅ Daniel Ortega | ✅ Daniel Ortega | 0.88 | 1.0000 | 0.076,0.247,0.659,0.013 | ❌ 0.646,0.251,0.089,0.010 | ❌ 0.647,0.251,0.089,0.010 |
-| payment_amount | 450.00 | ✅ 450 | ✅ 450.00 | 0.73 | 1.0000 | - | 0.241,0.352,0.077,0.010 | 0.241,0.353,0.052,0.009 |
+| payment_amount | 450.00 | ✅ 450 | ❌ 550.00 | 0.73 | 0.9900 | - | 0.241,0.352,0.077,0.010 | 0.767,0.368,0.051,0.009 |
 | payment_frequency | Semanal | ✅ Semanal | ❌ Weekly | 0.90 | 1.0000 | 0.208,0.369,0.055,0.008 | ✅ 0.208,0.369,0.054,0.008 | ✅ 0.208,0.369,0.054,0.008 |
 | payment_type | Child Support | ❌ - | ✅ Child Support | 0.05 | 0.9900 | - | - | 0.366,0.232,0.181,0.008 |
 | recipient_address | 4721 Willow Crossing Drive Apt. 3B, Norfolk, VA 23513 | ✅ 4721 Willow Crossing Drive, Apt. 3B Norfolk, VA 23513 | ✅ 4721 Willow Crossing Drive, Apt. 3B, Norfolk, VA 23513 | 0.83 | 1.0000 | - | 0.074,0.262,0.220,0.023 | 0.074,0.263,0.220,0.010 |

@@ -14,21 +14,15 @@ import requests
 
 from documentai_api.models.extraction_compare import CompareFieldResult, CompareResponse
 
-NO_VALUE = "-"
+EXPECTED_EMPTY = "-"
+NO_GROUND_TRUTH = "N/A"
+NO_VALUE = EXPECTED_EMPTY  # backwards compat alias
 ICON_EXACT = "✅"
 ICON_APPROX = "🟡"
 ICON_MISS = "❌"
 ICON_NO_EXPECTED = ""
 INDICATOR_MAP = {ICON_EXACT: "=", ICON_APPROX: "~", ICON_MISS: "x", ICON_NO_EXPECTED: "-"}
 APPROX_SIMILARITY_THRESHOLD = 0.8
-SIMILARITY_FIELDS = {
-    "insurer_name",
-    "insurer_or_marketplace_name",
-    "financial_institution",
-    "trust_name",
-    "trustee_name",
-    "bank_name",
-}
 
 
 class ExtractionCompareTimeoutError(Exception):
@@ -77,19 +71,19 @@ def field_display_values(
     field: str,
 ) -> tuple[str, str, str, str, str]:
     """Return (p_val, llm_val, p_conf, llm_conf, exp_val) formatted for display."""
-    p_val = str(p.value or NO_VALUE)
-    llm_val = str(lm.value or NO_VALUE)
-    p_conf = f"{p.confidence:.2f}" if p.confidence is not None else NO_VALUE
+    p_val = str(p.value or EXPECTED_EMPTY)
+    llm_val = str(lm.value or EXPECTED_EMPTY)
+    p_conf = f"{p.confidence:.2f}" if p.confidence is not None else EXPECTED_EMPTY
 
     llm_conf = (
         "N/A"
         if lm.confidence == 0.0
         else f"{lm.confidence:.4f}"
         if lm.confidence is not None
-        else NO_VALUE
+        else EXPECTED_EMPTY
     )
 
-    exp_val = expected.get(field, NO_VALUE) if expected is not None else NO_VALUE
+    exp_val = expected.get(field, NO_GROUND_TRUTH) if expected is not None else NO_GROUND_TRUTH
     return p_val, llm_val, p_conf, llm_conf, exp_val
 
 
@@ -115,10 +109,16 @@ def normalize_value(v: str) -> str:
 
 def match_icon(expected: str, received: str, tolerance: float = 0.0, field_name: str = "") -> str:
     """Return an icon indicating exact, approximate, or no match. Tolerance applies to numeric geo coordinates."""
-    if expected in ("—", NO_VALUE) and received in ("—", NO_VALUE):
+    if expected in ("—", NO_GROUND_TRUTH):
         return ICON_NO_EXPECTED
 
-    if expected in ("—", NO_VALUE) or received in ("—", NO_VALUE):
+    if expected in ("—", EXPECTED_EMPTY) and received in ("—", EXPECTED_EMPTY):
+        return ICON_NO_EXPECTED
+
+    if received in ("—", EXPECTED_EMPTY):
+        return ICON_MISS
+
+    if expected in ("—", EXPECTED_EMPTY):
         return ICON_MISS
 
     if expected == received:
@@ -145,10 +145,7 @@ def match_icon(expected: str, received: str, tolerance: float = 0.0, field_name:
     except ValueError:
         pass
 
-    if (
-        field_name in SIMILARITY_FIELDS
-        and difflib.SequenceMatcher(None, norm_e, norm_r).ratio() >= APPROX_SIMILARITY_THRESHOLD
-    ):
+    if difflib.SequenceMatcher(None, norm_e, norm_r).ratio() >= APPROX_SIMILARITY_THRESHOLD:
         return ICON_APPROX
 
     return ICON_MISS

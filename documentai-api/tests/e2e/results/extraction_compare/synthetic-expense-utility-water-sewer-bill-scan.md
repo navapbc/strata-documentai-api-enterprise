@@ -1,39 +1,39 @@
 # synthetic-expense-utility-water-sewer-bill-scan.jpg
 
 
-_Run: 2026-10-01 01:41 UTC_
+_Run: 2026-10-01 02:38 UTC_
 
 
 ## Durations
 
-- bda: 26.17s extraction
-- ocr-mapping: 3.885s extraction
+- bda: 23.53s extraction
+- ocr-mapping: 3.768s extraction
 
 
 ## Cost
 
 _By Service_
 - us.amazon.nova-lite-v1:0: $0.00012384
-- us.amazon.nova-pro-v1:0: $0.01797040
+- us.amazon.nova-pro-v1:0: $0.01773680
 - bda: $0.04000000
-- **total: $0.05809424**
+- **total: $0.05786064**
 
 _By Extraction Method_
-- shared (preclassification): $0.00930784
-- ocr-mapping extraction: $0.00878640
+- shared (preclassification): $0.00933984
+- ocr-mapping extraction: $0.00852080
 - primary (bda): $0.04000000
-- **total: $0.05809424**
+- **total: $0.05786064**
 
 
 ## Accuracy
 
 _By Extracted Data_
-- BDA: 90% equivalent, 90% close, 10% misses
-- OCR Mapping: 100% equivalent, 100% close, 0% misses
+- BDA: 19/21 (90%) equivalent match, 19/21 (90%) close, 2 misses
+- OCR Mapping: 20/21 (95%) equivalent match, 20/21 (95%) close, 1 miss
 
 _By Bounding Box_
-- BDA: 5/14 exact, 9 miss
-- OCR Mapping: 5/14 exact, 9 miss
+- BDA: 5/14 exact, 8 miss
+- OCR Mapping: 5/14 exact, 8 miss
 
 
 ## Field Comparison
@@ -45,9 +45,9 @@ _By Bounding Box_
 | Curr_Meter_Reading | 26730 | ✅ 26,730 | ✅ 26,730 | 0.64 | 1.0000 | 0.326,0.408,0.040,0.018 | ✅ 0.326,0.413,0.042,0.010 | ✅ 0.326,0.413,0.041,0.010 |
 | Dates.Bill_From_Date | 2026-07-24 | ✅ 07/24/2026 | ✅ 2026-07-24 | 0.67 | 0.9800 | 0.078,0.344,0.362,0.011 | ❌ 0.191,0.344,0.082,0.010 | ❌ 0.191,0.344,0.183,0.009 |
 | Dates.Bill_To_Date | 2026-08-24 | ✅ 08/24/2026 | ✅ 2026-08-24 | 0.65 | 0.9800 | 0.078,0.344,0.362,0.011 | ❌ 0.288,0.345,0.086,0.010 | ❌ 0.242,0.344,0.132,0.009 |
-| Dates.Billing_Date | 2026-08-25 | ✅ 08/25/2026 | ✅ 2026-08-25 | 0.71 | 1.0000 | 0.689,0.074,0.229,0.012 | ❌ 0.824,0.074,0.094,0.012 | ❌ 0.824,0.074,0.095,0.012 |
+| Dates.Billing_Date | 2026-08-25 | ✅ 08/25/2026 | ✅ 2026-08-25 | 0.71 | 1.0000 | 0.689,0.074,0.229,0.012 | 🟡 0.824,0.074,0.094,0.012 | 🟡 0.824,0.074,0.095,0.012 |
 | Dates.Due_Date | 2026-09-15 | ✅ 09/15/2026 | ✅ 2026-09-15 | 0.72 | 1.0000 | 0.805,0.842,0.102,0.012 | ❌ 0.824,0.090,0.095,0.012 | ❌ 0.824,0.090,0.095,0.012 |
-| Line_Items.Amount or Value | 14.45, 18.99, 20.37, 17.54, 3.50, 0.04 | ❌ - | ✅ 14.45, 18.99, 20.37, 17.54, 3.50, 0.04 | - | N/A | - | - | 0.560,0.539,0.042,0.010 |
+| Line_Items.Amount or Value | 14.45, 18.99, 20.37, 17.54, 3.50, 0.04 | ❌ - | ✅ 14.45, 18.99, 20.37, 17.54, 3.50, 0.04 | - | N/A | - | - | 0.888,0.655,0.035,0.011 |
 | Line_Items.LineItemDescription | Water Service Charge, Water Usage Charge, Sewer Service Charge, Sewer Usage Charge, Stormwater Fee, Colorado Water Conservation Fee | ❌ - | ✅ Water Service Charge, Water Usage Charge, Sewer Service Charge, Sewer Usage Charge, Stormwater Fee, Colorado Water Conservation Fee | - | N/A | - | - | 0.076,0.649,0.207,0.010 |
 | Prev_Bal | 48.73 | ✅ 48.73 | ✅ 48.73 | 0.91 | 1.0000 | 0.431,0.173,0.044,0.010 | ✅ 0.431,0.173,0.045,0.011 | ✅ 0.431,0.173,0.045,0.011 |
 | Prev_Meter_Reading | 23010 | ✅ 23,010 | ✅ 23,010 | 0.73 | 1.0000 | 0.326,0.431,0.040,0.010 | ✅ 0.326,0.431,0.042,0.010 | ✅ 0.326,0.431,0.041,0.010 |
@@ -55,8 +55,8 @@ _By Bounding Box_
 | Service_Address.Building_Line 1 | 4824 Aspen Ridge Dr | ✅ 4824 Aspen Ridge Dr | ✅ 4824 Aspen Ridge Dr | 0.80 | 1.0000 | 0.195,0.894,0.139,0.012 | ❌ 0.699,0.192,0.144,0.012 | ❌ 0.699,0.192,0.144,0.012 |
 | Service_Address.City | Loveland | ✅ Loveland | ✅ Loveland | 0.84 | N/A | - | 0.699,0.206,0.065,0.011 | - |
 | Service_Address.State | CO | ✅ CO | ✅ CO | 0.89 | 0.9900 | - | 0.769,0.207,0.020,0.009 | 0.286,0.099,0.021,0.010 |
-| Service_Address.Street | 4824 Aspen Ridge Dr | ✅ 4824 Aspen Ridge Dr | ✅ 4824 Aspen Ridge Dr | 0.88 | 1.0000 | 0.195,0.894,0.139,0.012 | ❌ 0.737,0.192,0.106,0.011 | ❌ 0.699,0.192,0.144,0.012 |
+| Service_Address.Street | 4824 Aspen Ridge Dr | ✅ 4824 Aspen Ridge Dr | ❌ Loveland, CO 80538 | 0.88 | 0.9800 | 0.195,0.894,0.139,0.012 | ❌ 0.737,0.192,0.106,0.011 | ❌ 0.769,0.207,0.067,0.009 |
 | Service_Address.Zip_Code | 80538 | ✅ 80538 | ✅ 80538 | 0.90 | 0.9800 | - | 0.793,0.207,0.043,0.009 | 0.793,0.207,0.042,0.009 |
 | Tot_Amt | 64.86 | ✅ 64.86 | ✅ 64.86 | 0.90 | 1.0000 | 0.843,0.868,0.063,0.014 | ❌ 0.430,0.244,0.046,0.011 | ❌ 0.430,0.244,0.046,0.011 |
 | Total_Current_Charges | 64.86 | ✅ 64.86 | ✅ 64.86 | 0.91 | 1.0000 | 0.843,0.868,0.063,0.014 | ❌ 0.430,0.244,0.046,0.011 | ❌ 0.430,0.244,0.046,0.011 |
-| is_total_amount_greater_than_equal_to_current_charges | True | ✅ True | ✅ True | 0.89 | N/A | - | 0.430,0.244,0.046,0.011 | 0.082,0.190,0.223,0.011 |
+| is_total_amount_greater_than_equal_to_current_charges | True | ✅ True | ✅ True | 0.89 | 1.0000 | - | 0.430,0.244,0.046,0.011 | 0.087,0.286,0.116,0.011 |
