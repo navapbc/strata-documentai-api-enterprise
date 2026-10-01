@@ -38,6 +38,8 @@ jobs:
     needs: changes
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v7
+
       - name: No relevant changes
         if: needs.changes.outputs.relevant != 'true'
         run: echo "No documentai-api changes; check passes."
@@ -58,6 +60,8 @@ jobs:
     needs: changes
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v7
+
       - name: No relevant changes
         if: needs.changes.outputs.relevant != 'true'
         run: echo "No documentai-api changes; check passes."
@@ -76,6 +80,8 @@ jobs:
     needs: changes
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v7
+
       - name: No relevant changes
         if: needs.changes.outputs.relevant != 'true'
         run: echo "No documentai-api changes; check passes."
@@ -92,6 +98,8 @@ jobs:
     needs: changes
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v7
+
       - name: No relevant changes
         if: needs.changes.outputs.relevant != 'true'
         run: echo "No documentai-api changes; check passes."
@@ -120,6 +128,8 @@ jobs:
     needs: changes
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v7
+
       - name: No relevant changes
         if: needs.changes.outputs.relevant != 'true'
         run: echo "No documentai-api changes; check passes."
@@ -144,6 +154,8 @@ jobs:
     needs: changes
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v7
+
       - name: No relevant changes
         if: needs.changes.outputs.relevant != 'true'
         run: echo "No documentai-api changes; check passes."
@@ -166,6 +178,8 @@ jobs:
     needs: changes
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v7
+
       - name: No relevant changes
         if: needs.changes.outputs.relevant != 'true'
         run: echo "No documentai-api changes; check passes."

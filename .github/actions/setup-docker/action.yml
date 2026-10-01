@@ -1,11 +1,9 @@
-name: Checkout and build Docker image
-description: Checks out the repo and builds the documentai-api Docker image
+name: Build Docker image
+description: Builds the documentai-api Docker image
 
 runs:
   using: composite
   steps:
-    - uses: actions/checkout@v7
-
     - name: Build Docker image
       shell: bash
       working-directory: ./documentai-api

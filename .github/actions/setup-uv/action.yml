@@ -1,9 +1,7 @@
-name: Checkout and install uv
-description: Checks out the repo and installs uv via astral-sh/setup-uv
+name: Install uv
+description: Installs uv via astral-sh/setup-uv
 
 runs:
   using: composite
   steps:
-    - uses: actions/checkout@v7
-
     - uses: astral-sh/setup-uv@v5
