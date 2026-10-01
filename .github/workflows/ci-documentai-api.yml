@@ -38,15 +38,12 @@ jobs:
     needs: changes
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-
       - name: No relevant changes
         if: needs.changes.outputs.relevant != 'true'
         run: echo "No documentai-api changes; check passes."
 
-      - name: Build Docker image
+      - uses: ./.github/actions/setup-docker
         if: needs.changes.outputs.relevant == 'true'
-        run: make build
 
       - name: Check formatting
         if: needs.changes.outputs.relevant == 'true'
@@ -61,21 +58,30 @@ jobs:
     needs: changes
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-
       - name: No relevant changes
         if: needs.changes.outputs.relevant != 'true'
         run: echo "No documentai-api changes; check passes."
 
-      - name: Build Docker image
+      - uses: ./.github/actions/setup-docker
         if: needs.changes.outputs.relevant == 'true'
-        run: make build
 
       - name: Run tests
         if: needs.changes.outputs.relevant == 'true'
         run: |
           make test-audit
           make test-coverage args="-n auto"
+
+  test-pip-audit:
+    name: Audit dependencies
+    needs: changes
+    runs-on: ubuntu-latest
+    steps:
+      - name: No relevant changes
+        if: needs.changes.outputs.relevant != 'true'
+        run: echo "No documentai-api changes; check passes."
+
+      - uses: ./.github/actions/setup-docker
+        if: needs.changes.outputs.relevant == 'true'
 
       - name: Run pip-audit
         if: needs.changes.outputs.relevant == 'true'
@@ -86,15 +92,12 @@ jobs:
     needs: changes
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-
       - name: No relevant changes
         if: needs.changes.outputs.relevant != 'true'
         run: echo "No documentai-api changes; check passes."
 
-      - name: Build Docker image
+      - uses: ./.github/actions/setup-docker
         if: needs.changes.outputs.relevant == 'true'
-        run: make build
 
       - name: Regenerate OpenAPI spec from the app
         if: needs.changes.outputs.relevant == 'true'
@@ -117,17 +120,14 @@ jobs:
     needs: changes
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-
       - name: No relevant changes
         if: needs.changes.outputs.relevant != 'true'
         run: echo "No documentai-api changes; check passes."
 
       # Runs natively (not in Docker) because the generator reads infra/document-types/,
       # a sibling directory the app's Docker container doesn't mount.
-      - name: Install uv
+      - uses: ./.github/actions/setup-uv
         if: needs.changes.outputs.relevant == 'true'
-        uses: astral-sh/setup-uv@v5
 
       - name: Regenerate categories from infra/document-types/
         if: needs.changes.outputs.relevant == 'true'
@@ -144,15 +144,12 @@ jobs:
     needs: changes
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-
       - name: No relevant changes
         if: needs.changes.outputs.relevant != 'true'
         run: echo "No documentai-api changes; check passes."
 
-      - name: Install uv
+      - uses: ./.github/actions/setup-uv
         if: needs.changes.outputs.relevant == 'true'
-        uses: astral-sh/setup-uv@v5
 
       - name: Regenerate env var names from EnvConfig/AppConfig
         if: needs.changes.outputs.relevant == 'true'
@@ -169,17 +166,14 @@ jobs:
     needs: changes
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-
       - name: No relevant changes
         if: needs.changes.outputs.relevant != 'true'
         run: echo "No documentai-api changes; check passes."
 
       # Runs natively (not in Docker), same as the categories job above, and for
       # the same reason - infra/document-types/ isn't mounted into the container.
-      - name: Install uv
+      - uses: ./.github/actions/setup-uv
         if: needs.changes.outputs.relevant == 'true'
-        uses: astral-sh/setup-uv@v5
 
       - name: Check blueprint_schemas.json against infra/document-types/ custom blueprints
         if: needs.changes.outputs.relevant == 'true'
