@@ -1,7 +1,7 @@
 # synthetic-investment-and-royalty-income-scan.jpg
 
 
-_Run: 2026-09-30 19:07 UTC_
+_Run: 2026-10-01 01:41 UTC_
 
 
 ## Durations
@@ -31,13 +31,13 @@ _By Extracted Data_
 - BDA: 33% equivalent, 42% close, 58% misses
 - OCR Mapping: 67% equivalent, 67% close, 33% misses
 
-_By Geometry_
+_By Bounding Box_
 - BDA: 1/2 exact, 1 miss
 - OCR Mapping: 3/5 exact, 2 miss
 
 
 ## Field Comparison
-| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Geo | BDA Geometry | LLM Geometry |
+| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Bounding Box | BDA Bounding Box | LLM Bounding Box |
 |---|---|---|---|---|---|---|---|---|
 | account_balance | $46,000.00 | ❌ - | ✅ 46000.00 | - | 1.0000 | - | - | 0.726,0.299,0.147,0.020 |
 | account_holder_name | Alexis Morgan | ✅ Alexis Morgan | ✅ Alexis Morgan | 0.93 | 1.0000 | 0.053,0.145,0.101,0.011 | ✅ 0.053,0.145,0.101,0.011 | ✅ 0.053,0.145,0.101,0.011 |

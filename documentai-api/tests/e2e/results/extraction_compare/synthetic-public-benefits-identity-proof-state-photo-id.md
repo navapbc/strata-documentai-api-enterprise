@@ -1,7 +1,7 @@
 # synthetic-public-benefits-identity-proof-state-photo-id.jpg
 
 
-_Run: 2026-09-30 19:07 UTC_
+_Run: 2026-10-01 01:41 UTC_
 
 
 ## Durations
@@ -30,13 +30,13 @@ _By Extracted Data_
 - TEXTRACT: 92% equivalent, 92% close, 8% misses
 - OCR Mapping: 100% equivalent, 100% close, 0% misses
 
-_By Geometry_
-- TEXTRACT: 7/8 exact, 1 miss
-- OCR Mapping: 7/9 exact, 2 miss
+_By Bounding Box_
+- TEXTRACT: 7/9 exact, 2 miss
+- OCR Mapping: 7/10 exact, 3 miss
 
 
 ## Field Comparison
-| Field | Expected | TEXTRACT Value | LLM (via Textract) Value | TEXTRACT Conf | LLM Conf | Expected Geo | TEXTRACT Geometry | LLM Geometry |
+| Field | Expected | TEXTRACT Value | LLM (via Textract) Value | TEXTRACT Conf | LLM Conf | Expected Bounding Box | TEXTRACT Bounding Box | LLM Bounding Box |
 |---|---|---|---|---|---|---|---|---|
 | ADDRESS_DETAILS.CITY | LAS VEGAS | ✅ LAS VEGAS | ✅ LAS VEGAS | 0.97 | N/A | 0.405,0.460,0.367,0.067 | ❌ - | ❌ 0.405,0.501,0.096,0.027 |
 | ADDRESS_DETAILS.STATE | NV | ✅ NV | ✅ NV | 0.98 | 1.0000 | 0.506,0.499,0.022,0.019 | ✅ 0.505,0.498,0.024,0.021 | ✅ 0.506,0.499,0.023,0.020 |
@@ -44,7 +44,7 @@ _By Geometry_
 | ADDRESS_DETAILS.ZIP_CODE | 89146 | ✅ 89146 | ✅ 89146 | 0.98 | 1.0000 | - | 0.646,0.588,0.057,0.028 | 0.534,0.494,0.049,0.023 |
 | CLASS | D | ✅ D | ✅ D | 0.98 | 0.9700 | - | 0.353,0.730,0.012,0.020 | 0.355,0.731,0.011,0.019 |
 | COUNTY | - | - | - | 0.99 | - | - | - | - |
-| DATE_OF_BIRTH | 1996-05-14 | ✅ 1996-05-14 | ✅ 1996-05-14 | 0.96 | 1.0000 | - | 0.638,0.460,0.105,0.034 | 0.639,0.462,0.104,0.032 |
+| DATE_OF_BIRTH | 1996-05-14 | ✅ 1996-05-14 | ✅ 1996-05-14 | 0.96 | 1.0000 | 0.405,0.460,0.367,0.067 | ❌ 0.638,0.460,0.105,0.034 | ❌ 0.639,0.462,0.104,0.032 |
 | DATE_OF_ISSUE | 2021-06-18 | ✅ 2021-06-18 | ✅ 2021-06-18 | 0.98 | 1.0000 | 0.411,0.610,0.087,0.025 | ✅ 0.409,0.606,0.090,0.031 | ✅ 0.410,0.608,0.089,0.030 |
 | ENDORSEMENTS | - | - | - | 0.98 | - | - | - | - |
 | EXPIRATION_DATE | 2029-06-18 | ✅ 2029-06-18 | ✅ 2029-06-18 | 0.97 | 1.0000 | 0.538,0.598,0.088,0.026 | ✅ 0.536,0.594,0.091,0.031 | ✅ 0.537,0.596,0.090,0.030 |

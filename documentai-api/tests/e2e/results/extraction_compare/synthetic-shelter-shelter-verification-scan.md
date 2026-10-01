@@ -1,7 +1,7 @@
 # synthetic-shelter-shelter-verification-scan.jpg
 
 
-_Run: 2026-09-30 19:07 UTC_
+_Run: 2026-10-01 01:41 UTC_
 
 
 ## Durations
@@ -31,13 +31,13 @@ _By Extracted Data_
 - BDA: 80% equivalent, 80% close, 20% misses
 - OCR Mapping: 80% equivalent, 80% close, 20% misses
 
-_By Geometry_
+_By Bounding Box_
 - BDA: 4/5 exact, 1 miss
 - OCR Mapping: 4/5 exact, 1 miss
 
 
 ## Field Comparison
-| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Geo | BDA Geometry | LLM Geometry |
+| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Bounding Box | BDA Bounding Box | LLM Bounding Box |
 |---|---|---|---|---|---|---|---|---|
 | LINEITEMS.AMT | 1200.00 | ❌ - | ❌ 1200.00, 3.00 | - | N/A | - | - | 0.658,0.446,0.165,0.027 |
 | LINEITEMS.PRODUCT_CODE | - | - | - | - | N/A | - | - | - |

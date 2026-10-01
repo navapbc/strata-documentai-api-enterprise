@@ -1,7 +1,7 @@
 # synthetic-investment-and-royalty-income-render-spanish.png
 
 
-_Run: 2026-09-30 19:07 UTC_
+_Run: 2026-10-01 01:41 UTC_
 
 
 ## Durations
@@ -31,13 +31,13 @@ _By Extracted Data_
 - BDA: 42% equivalent, 50% close, 50% misses
 - OCR Mapping: 58% equivalent, 58% close, 42% misses
 
-_By Geometry_
+_By Bounding Box_
 - BDA: 2/3 exact, 1 miss
 - OCR Mapping: 2/5 exact, 3 miss
 
 
 ## Field Comparison
-| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Geo | BDA Geometry | LLM Geometry |
+| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Bounding Box | BDA Bounding Box | LLM Bounding Box |
 |---|---|---|---|---|---|---|---|---|
 | account_balance | $51,000.00 | ❌ - | ✅ $51,000.00 | - | 1.0000 | 0.856,0.423,0.082,0.010 | ❌ - | ✅ 0.857,0.423,0.082,0.011 |
 | account_holder_name | María Elena Vásquez | ✅ María Elena Vásquez | ✅ María Elena Vásquez | 0.79 | 0.9400 | 0.057,0.205,0.167,0.012 | ✅ 0.057,0.205,0.167,0.012 | ✅ 0.057,0.205,0.167,0.012 |

@@ -1,7 +1,7 @@
 # synthetic-assets-bank-statement-render-spanish.png
 
 
-_Run: 2026-09-30 19:07 UTC_
+_Run: 2026-10-01 01:41 UTC_
 
 
 ## Durations
@@ -31,13 +31,13 @@ _By Extracted Data_
 - BDA: 47% equivalent, 47% close, 53% misses
 - OCR Mapping: 73% equivalent, 73% close, 27% misses
 
-_By Geometry_
+_By Bounding Box_
 - BDA: 5/7 exact, 2 miss
 - OCR Mapping: 3/7 exact, 4 miss
 
 
 ## Field Comparison
-| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Geo | BDA Geometry | LLM Geometry |
+| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Bounding Box | BDA Bounding Box | LLM Bounding Box |
 |---|---|---|---|---|---|---|---|---|
 | account_holder_address | 217 Magnolia Circle Apt 4B, Mobile, AL 36604 | ✅ 217 Magnolia Circle Apt 4B Mobile, AL 36604 | ✅ 217 Magnolia Circle Apt 4B, Mobile, AL 36604 | 0.74 | N/A | - | 0.045,0.198,0.202,0.027 | 0.045,0.199,0.178,0.012 |
 | account_holder_name | María Elena Vásquez | ✅ María Elena Vásquez | ✅ María Elena Vásquez | 0.75 | 0.9500 | 0.045,0.182,0.156,0.011 | ✅ 0.045,0.182,0.156,0.011 | ✅ 0.045,0.182,0.156,0.011 |

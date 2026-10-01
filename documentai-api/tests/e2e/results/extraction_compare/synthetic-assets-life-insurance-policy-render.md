@@ -1,7 +1,7 @@
 # synthetic-assets-life-insurance-policy-render.pdf
 
 
-_Run: 2026-09-30 19:07 UTC_
+_Run: 2026-10-01 01:41 UTC_
 
 
 ## Durations
@@ -30,13 +30,13 @@ _By Extracted Data_
 - BDA: 90% equivalent, 100% close, 0% misses
 - OCR Mapping: 100% equivalent, 100% close, 0% misses
 
-_By Geometry_
-- BDA: 8/9 exact, 1 miss
-- OCR Mapping: 7/8 exact, 1 miss
+_By Bounding Box_
+- BDA: 8/10 exact, 2 miss
+- OCR Mapping: 7/9 exact, 2 miss
 
 
 ## Field Comparison
-| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Geo | BDA Geometry | LLM Geometry |
+| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Bounding Box | BDA Bounding Box | LLM Bounding Box |
 |---|---|---|---|---|---|---|---|---|
 | cash_surrender_value | 9500 | ✅ 9500 | ✅ 9500 | 0.71 | 1.0000 | 0.478,0.474,0.058,0.014 | ✅ 0.477,0.474,0.059,0.015 | ✅ 0.477,0.473,0.059,0.015 |
 | death_benefit | 100000 | ✅ 100000 | ✅ 100000 | 0.91 | 1.0000 | 0.478,0.438,0.078,0.015 | ✅ 0.477,0.438,0.080,0.015 | ✅ 0.477,0.438,0.080,0.015 |
@@ -47,4 +47,4 @@ _By Geometry_
 | policyholder_name | Jordan Rivera | ✅ Jordan Rivera | ✅ Jordan Rivera | 0.93 | 1.0000 | 0.476,0.333,0.125,0.015 | ✅ 0.476,0.333,0.125,0.015 | ✅ 0.476,0.333,0.125,0.015 |
 | premium_amount | 50.00 | ✅ 50 | ✅ 50.00 | 0.91 | 1.0000 | 0.478,0.509,0.057,0.013 | ✅ 0.477,0.508,0.059,0.014 | ✅ 0.477,0.508,0.059,0.014 |
 | premium_frequency | Monthly | ✅ Monthly | ✅ Monthly | 0.71 | N/A | 0.542,0.509,0.087,0.016 | ✅ 0.542,0.508,0.089,0.016 | ❌ - |
-| statement_date | 2026-08-31 | ✅ 2026-08-31 | ✅ 2026-08-31 | 0.82 | 1.0000 | - | 0.477,0.297,0.138,0.016 | 0.477,0.297,0.139,0.016 |
+| statement_date | 2026-08-31 | ✅ 2026-08-31 | ✅ 2026-08-31 | 0.82 | 1.0000 | 0.149,0.298,0.466,0.015 | ❌ 0.477,0.297,0.138,0.016 | ❌ 0.477,0.297,0.139,0.016 |

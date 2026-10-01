@@ -1,7 +1,7 @@
 # synthetic-expense-dependent-care-render.pdf
 
 
-_Run: 2026-09-30 19:07 UTC_
+_Run: 2026-10-01 01:41 UTC_
 
 
 ## Durations
@@ -30,13 +30,13 @@ _By Extracted Data_
 - BDA: 91% equivalent, 91% close, 9% misses
 - OCR Mapping: 100% equivalent, 100% close, 0% misses
 
-_By Geometry_
+_By Bounding Box_
 - BDA: 3/6 exact, 3 miss
 - OCR Mapping: 5/7 exact, 2 miss
 
 
 ## Field Comparison
-| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Geo | BDA Geometry | LLM Geometry |
+| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Bounding Box | BDA Bounding Box | LLM Bounding Box |
 |---|---|---|---|---|---|---|---|---|
 | amount_paid | 1000.00 | ✅ 1000 | ✅ 1000.00 | 0.95 | 1.0000 | - | 0.733,0.782,0.085,0.015 | 0.733,0.783,0.085,0.014 |
 | balance_due | 1000.00 | ✅ 1000 | ✅ 1000.00 | 0.95 | 1.0000 | - | 0.733,0.820,0.085,0.015 | 0.733,0.783,0.085,0.014 |

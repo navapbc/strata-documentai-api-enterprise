@@ -1,7 +1,7 @@
 # synthetic-shelter-shelter-verification-render-spanish.png
 
 
-_Run: 2026-09-30 19:07 UTC_
+_Run: 2026-10-01 01:41 UTC_
 
 
 ## Durations
@@ -31,13 +31,13 @@ _By Extracted Data_
 - BDA: 71% equivalent, 71% close, 29% misses
 - OCR Mapping: 57% equivalent, 57% close, 43% misses
 
-_By Geometry_
+_By Bounding Box_
 - BDA: 1/3 exact, 2 miss
 - OCR Mapping: 2/3 exact, 1 miss
 
 
 ## Field Comparison
-| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Geo | BDA Geometry | LLM Geometry |
+| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Bounding Box | BDA Bounding Box | LLM Bounding Box |
 |---|---|---|---|---|---|---|---|---|
 | assertion_text | Por la presente, Alaska Hills Property Management, LLC verifica que el inquilino que se indica a continuación reside en la propiedad que administramos y que es responsable del pago del alquiler en el importe y con la frecuencia que se detallan a continuación. | ❌ Alaska Hills Property Management, LLC verifica que el inquilino que se indica a continuación reside en la propiedad que administramos y que es responsable del pago del alquiler en el importe y con la frecuencia que se detallan a continuación. | ❌ Alaska Hills Property Management, LLC verifica que el inquilino que se indica a continuación reside en la propiedad que administramos y que es responsable del pago del alquiler en el importe y con la frecuencia que se detallan a continuación. | 0.59 | N/A | - | 0.103,0.269,0.767,0.047 | 0.103,0.303,0.694,0.013 |
 | author_name | Camila Ortega | ✅ Camila Ortega | ✅ Camila Ortega | 0.85 | 0.9900 | - | 0.094,0.887,0.104,0.011 | 0.096,0.845,0.275,0.041 |
@@ -45,4 +45,4 @@ _By Geometry_
 | contact_information | Tel: (907) 555-8124 Correo: cortega@alaskahillspm.com | ✅ Tel: (907) 555-8124 Correo: cortega@alaskahillspm.com | ❌ (907) 555-8124, cortega@alaskahillspm.com | 0.61 | 0.8400 | - | 0.093,0.931,0.265,0.026 | 0.607,0.062,0.312,0.012 |
 | customer_name | Mateo Salazar | ✅ Mateo Salazar | ✅ Mateo Salazar | 0.91 | 1.0000 | 0.409,0.353,0.109,0.009 | ✅ 0.409,0.353,0.110,0.010 | ✅ 0.409,0.353,0.111,0.010 |
 | has_signature | True | ✅ True | ✅ True | 0.86 | 0.9900 | - | 0.096,0.844,0.277,0.042 | 0.096,0.845,0.275,0.041 |
-| statement_date | 2026-09-08 | ✅ 2026-09-08 | ✅ 2026-09-08 | 0.73 | 0.9900 | 0.733,0.855,0.175,0.008 | ❌ 0.333,0.180,0.205,0.012 | ❌ 0.333,0.180,0.205,0.012 |
+| statement_date | 2026-09-08 | ✅ 2026-09-08 | ✅ 2026-09-08 | 0.73 | 0.9900 | 0.734,0.895,0.175,0.010 | ❌ 0.333,0.180,0.205,0.012 | ❌ 0.333,0.180,0.205,0.012 |

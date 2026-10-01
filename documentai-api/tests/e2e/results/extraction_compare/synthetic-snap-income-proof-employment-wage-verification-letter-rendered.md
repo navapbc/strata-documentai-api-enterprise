@@ -1,7 +1,7 @@
 # synthetic-snap-income-proof-employment-wage-verification-letter-rendered.png
 
 
-_Run: 2026-09-30 19:07 UTC_
+_Run: 2026-10-01 01:41 UTC_
 
 
 ## Durations
@@ -31,13 +31,13 @@ _By Extracted Data_
 - BDA: 100% equivalent, 100% close, 0% misses
 - OCR Mapping: 86% equivalent, 86% close, 14% misses
 
-_By Geometry_
+_By Bounding Box_
 - BDA: 2/7 exact, 5 miss
 - OCR Mapping: 2/7 exact, 5 miss
 
 
 ## Field Comparison
-| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Geo | BDA Geometry | LLM Geometry |
+| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Bounding Box | BDA Bounding Box | LLM Bounding Box |
 |---|---|---|---|---|---|---|---|---|
 | employee_name | Luis Mendoza | ✅ Luis Mendoza | ✅ Luis Mendoza | 0.90 | 1.0000 | 0.120,0.291,0.118,0.011 | ✅ 0.119,0.291,0.120,0.012 | ✅ 0.119,0.291,0.120,0.012 |
 | employer_name | Harbor Home Care Services | ✅ Harbor Home Care Services | ✅ Harbor Home Care Services | 0.94 | 1.0000 | 0.121,0.863,0.209,0.011 | ❌ 0.179,0.064,0.455,0.028 | ❌ 0.179,0.064,0.455,0.028 |

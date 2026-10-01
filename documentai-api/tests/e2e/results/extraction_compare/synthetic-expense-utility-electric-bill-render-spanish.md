@@ -1,7 +1,7 @@
 # synthetic-expense-utility-electric-bill-render-spanish.png
 
 
-_Run: 2026-09-30 19:07 UTC_
+_Run: 2026-10-01 01:41 UTC_
 
 
 ## Durations
@@ -31,13 +31,13 @@ _By Extracted Data_
 - BDA: 44% equivalent, 44% close, 56% misses
 - OCR Mapping: 68% equivalent, 68% close, 32% misses
 
-_By Geometry_
+_By Bounding Box_
 - BDA: 1/3 exact, 2 miss
-- OCR Mapping: 1/7 exact, 6 miss
+- OCR Mapping: 1/6 exact, 5 miss
 
 
 ## Field Comparison
-| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Geo | BDA Geometry | LLM Geometry |
+| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Bounding Box | BDA Bounding Box | LLM Bounding Box |
 |---|---|---|---|---|---|---|---|---|
 | Account Number | 1234-5678-9012 | ❌ - | ✅ 1234-5678-9012 | - | 1.0000 | - | - | 0.853,0.068,0.095,0.008 |
 | Address.Service Address | 14 Maple Lane, Burlington, VT 05401 | ✅ 14 Maple Lane Burlington, VT 05401 | ✅ 14 Maple Lane, Burlington, VT 05401 | 0.75 | N/A | - | 0.034,0.324,0.135,0.027 | 0.108,0.282,0.060,0.009 |
@@ -56,7 +56,7 @@ _By Geometry_
 | Line_Item_Charges.Line item Description | Cargo por entrega (distribución), Cargo por suministro (generación), Cargo básico de servicio, Ajuste de energía renovable, Impuesto estatal sobre ventas (6.000%), Impuesto municipal sobre energía (2.000%) | ❌ - | ✅ Cargo por entrega (distribución), Cargo por suministro (generación), Cargo básico de servicio, Ajuste de energía renovable, Impuesto estatal sobre ventas (6.000%), Impuesto municipal sobre energía (2.000%) | - | N/A | - | - | 0.038,0.598,0.231,0.010 |
 | Meter Number | MTR-72345678 | ❌ - | ✅ MTR-72345678 | - | 0.9900 | - | - | 0.445,0.314,0.091,0.009 |
 | MeterRead.Current value | 15842 | ❌ - | ✅ 15842 | - | 0.9800 | 0.444,0.333,0.039,0.009 | ❌ - | ❌ 0.445,0.332,0.069,0.010 |
-| MeterRead.Delta or Metered value | 521 | ❌ - | ✅ 521 | - | 0.9600 | 0.444,0.370,0.020,0.008 | ❌ - | ❌ 0.444,0.370,0.050,0.009 |
+| MeterRead.Delta or Metered value | 521 | ❌ - | ✅ 521 | - | 0.9600 | - | - | 0.444,0.370,0.050,0.009 |
 | MeterRead.Meter ID | MTR-72345678 | ❌ - | ✅ MTR-72345678 | - | 0.9900 | - | - | 0.445,0.314,0.091,0.009 |
 | MeterRead.Previous value | 15321 | ❌ - | ✅ 15321 | - | 0.9800 | 0.444,0.351,0.037,0.010 | ❌ - | ❌ 0.445,0.351,0.069,0.010 |
 | MeterRead.Usage Unit | kWh | ❌ - | ✅ kWh | - | 0.9800 | - | - | 0.488,0.332,0.026,0.008 |

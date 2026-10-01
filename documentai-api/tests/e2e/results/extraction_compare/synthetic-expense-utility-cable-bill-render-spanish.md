@@ -1,7 +1,7 @@
 # synthetic-expense-utility-cable-bill-render-spanish.png
 
 
-_Run: 2026-09-30 19:07 UTC_
+_Run: 2026-10-01 01:41 UTC_
 
 
 ## Durations
@@ -31,13 +31,13 @@ _By Extracted Data_
 - BDA: 70% equivalent, 70% close, 30% misses
 - OCR Mapping: 50% equivalent, 50% close, 50% misses
 
-_By Geometry_
+_By Bounding Box_
 - BDA: -
 - OCR Mapping: -
 
 
 ## Field Comparison
-| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Geo | BDA Geometry | LLM Geometry |
+| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Bounding Box | BDA Bounding Box | LLM Bounding Box |
 |---|---|---|---|---|---|---|---|---|
 | Account_Number | 8765 4321 0XXX XXXX | ✅ 8765 4321 0XXX XXXX | ❌ 8765 0XXX XXXX | 0.86 | 0.9200 | - | 0.266,0.268,0.162,0.008 | 0.127,0.267,0.301,0.009 |
 | Balance_DueDate | 2026-09-30 | ✅ 09/30/26 | ✅ 2026-09-30 | 0.85 | 0.9900 | - | 0.779,0.080,0.171,0.010 | 0.779,0.080,0.171,0.010 |

@@ -1,7 +1,7 @@
 # synthetic-insurance-health-insurance-premium-render-spanish.png
 
 
-_Run: 2026-09-30 19:07 UTC_
+_Run: 2026-10-01 01:41 UTC_
 
 
 ## Durations
@@ -31,15 +31,15 @@ _By Extracted Data_
 - BDA: 91% equivalent, 100% close, 0% misses
 - OCR Mapping: 73% equivalent, 73% close, 27% misses
 
-_By Geometry_
-- BDA: 3/5 exact, 2 miss
-- OCR Mapping: 3/5 exact, 2 miss
+_By Bounding Box_
+- BDA: 3/6 exact, 3 miss
+- OCR Mapping: 3/6 exact, 3 miss
 
 
 ## Field Comparison
-| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Geo | BDA Geometry | LLM Geometry |
+| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Bounding Box | BDA Bounding Box | LLM Bounding Box |
 |---|---|---|---|---|---|---|---|---|
-| coverage_end_date | 2026-08-31 | ✅ 2026-08-31 | ✅ 2026-08-31 | 0.69 | 0.9900 | - | 0.436,0.278,0.035,0.010 | 0.350,0.242,0.195,0.010 |
+| coverage_end_date | 2026-08-31 | ✅ 2026-08-31 | ✅ 2026-08-31 | 0.69 | 0.9900 | 0.050,0.276,0.882,0.012 | ❌ 0.436,0.278,0.035,0.010 | ❌ 0.350,0.242,0.195,0.010 |
 | coverage_start_date | 2026-08-01 | ✅ 2026-08-01 | ✅ 2026-08-01 | 0.76 | 0.9900 | - | 0.487,0.265,0.050,0.009 | 0.337,0.242,0.209,0.010 |
 | employer_name | - | - | - | 0.91 | N/A | - | - | - |
 | insurer_or_marketplace_name | Harbor Health Plan, Inc. | 🟡 Harbor Health Plan | ✅ Harbor Health Plan, Inc. | 0.26 | 1.0000 | 0.434,0.035,0.182,0.011 | ❌ 0.127,0.036,0.201,0.044 | ❌ 0.433,0.035,0.107,0.010 |

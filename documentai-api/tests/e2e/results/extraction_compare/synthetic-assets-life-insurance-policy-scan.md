@@ -1,7 +1,7 @@
 # synthetic-assets-life-insurance-policy-scan.jpg
 
 
-_Run: 2026-09-30 19:07 UTC_
+_Run: 2026-10-01 01:41 UTC_
 
 
 ## Durations
@@ -31,13 +31,13 @@ _By Extracted Data_
 - BDA: 100% equivalent, 100% close, 0% misses
 - OCR Mapping: 100% equivalent, 100% close, 0% misses
 
-_By Geometry_
+_By Bounding Box_
 - BDA: 9/9 exact, 0 miss
 - OCR Mapping: 6/9 exact, 3 miss
 
 
 ## Field Comparison
-| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Geo | BDA Geometry | LLM Geometry |
+| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Bounding Box | BDA Bounding Box | LLM Bounding Box |
 |---|---|---|---|---|---|---|---|---|
 | cash_surrender_value | 13000 | ✅ 13000 | ✅ 13000 | 0.92 | 1.0000 | 0.462,0.517,0.091,0.017 | ✅ 0.462,0.516,0.092,0.018 | ✅ 0.463,0.517,0.091,0.018 |
 | death_benefit | 50000 | ✅ 50000 | ✅ 50000 | 0.89 | 1.0000 | 0.172,0.515,0.092,0.017 | ✅ 0.172,0.515,0.092,0.018 | ✅ 0.172,0.515,0.092,0.018 |

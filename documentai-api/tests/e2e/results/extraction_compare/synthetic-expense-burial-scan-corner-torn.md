@@ -1,7 +1,7 @@
 # synthetic-expense-burial-scan-corner-torn.jpg
 
 
-_Run: 2026-09-30 19:07 UTC_
+_Run: 2026-10-01 01:41 UTC_
 
 
 ## Durations
@@ -31,13 +31,13 @@ _By Extracted Data_
 - BDA: 67% equivalent, 67% close, 33% misses
 - OCR Mapping: 67% equivalent, 67% close, 33% misses
 
-_By Geometry_
+_By Bounding Box_
 - BDA: 1/3 exact, 2 miss
 - OCR Mapping: 0/2 exact, 2 miss
 
 
 ## Field Comparison
-| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Geo | BDA Geometry | LLM Geometry |
+| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Bounding Box | BDA Bounding Box | LLM Bounding Box |
 |---|---|---|---|---|---|---|---|---|
 | account_balance | 2750.00 | ✅ 2750 | ✅ 2750.00 | 0.93 | 1.0000 | 0.731,0.445,0.140,0.021 | ❌ 0.837,0.623,0.072,0.012 | ❌ 0.092,0.461,0.305,0.014 |
 | account_number | ***-***-7429 | ❌ ***_***-7429 | ❌ ***_***-7429 | 0.27 | 0.9700 | - | 0.696,0.261,0.085,0.010 | 0.538,0.260,0.242,0.010 |

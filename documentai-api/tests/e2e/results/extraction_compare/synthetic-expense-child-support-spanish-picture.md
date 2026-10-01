@@ -1,7 +1,7 @@
 # synthetic-expense-child-support-spanish-picture.png
 
 
-_Run: 2026-09-30 19:07 UTC_
+_Run: 2026-10-01 01:41 UTC_
 
 
 ## Durations
@@ -31,13 +31,13 @@ _By Extracted Data_
 - BDA: 92% equivalent, 92% close, 8% misses
 - OCR Mapping: 92% equivalent, 92% close, 8% misses
 
-_By Geometry_
+_By Bounding Box_
 - BDA: 4/6 exact, 2 miss
 - OCR Mapping: 5/6 exact, 1 miss
 
 
 ## Field Comparison
-| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Geo | BDA Geometry | LLM Geometry |
+| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Bounding Box | BDA Bounding Box | LLM Bounding Box |
 |---|---|---|---|---|---|---|---|---|
 | case_number | CS-21-123456 | ✅ CS-21-123456 | ✅ CS-21-123456 | 0.90 | 0.9600 | 0.476,0.248,0.087,0.008 | ✅ 0.476,0.248,0.086,0.008 | ✅ 0.476,0.248,0.087,0.008 |
 | child_name | - | - | - | 0.88 | - | - | - | - |

@@ -1,7 +1,7 @@
 # synthetic-insurance-health-insurance-premium-render.pdf
 
 
-_Run: 2026-09-30 19:07 UTC_
+_Run: 2026-10-01 01:41 UTC_
 
 
 ## Durations
@@ -30,16 +30,16 @@ _By Extracted Data_
 - BDA: 100% equivalent, 100% close, 0% misses
 - OCR Mapping: 91% equivalent, 91% close, 9% misses
 
-_By Geometry_
-- BDA: 4/6 exact, 2 miss
-- OCR Mapping: 5/6 exact, 1 miss
+_By Bounding Box_
+- BDA: 5/8 exact, 3 miss
+- OCR Mapping: 6/8 exact, 2 miss
 
 
 ## Field Comparison
-| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Geo | BDA Geometry | LLM Geometry |
+| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Bounding Box | BDA Bounding Box | LLM Bounding Box |
 |---|---|---|---|---|---|---|---|---|
-| coverage_end_date | 2026-08-31 | ✅ 2026-08-31 | ✅ 2026-08-31 | 0.84 | 1.0000 | - | 0.698,0.246,0.115,0.013 | 0.697,0.246,0.115,0.013 |
-| coverage_start_date | 2026-08-01 | ✅ 2026-08-01 | ✅ 2026-08-01 | 0.84 | 0.9300 | - | 0.698,0.229,0.106,0.013 | 0.697,0.229,0.107,0.013 |
+| coverage_end_date | 2026-08-31 | ✅ 2026-08-31 | ✅ 2026-08-31 | 0.84 | 1.0000 | 0.110,0.236,0.702,0.023 | ❌ 0.698,0.246,0.115,0.013 | ❌ 0.697,0.246,0.115,0.013 |
+| coverage_start_date | 2026-08-01 | ✅ 2026-08-01 | ✅ 2026-08-01 | 0.84 | 0.9300 | 0.697,0.229,0.120,0.013 | ✅ 0.698,0.229,0.106,0.013 | ✅ 0.697,0.229,0.107,0.013 |
 | employer_name | - | - | - | 0.94 | N/A | - | - | - |
 | insurer_or_marketplace_name | Clearview Insurance Services | ✅ Clearview Insurance Services | ✅ Clearview Insurance Services | 0.89 | 1.0000 | 0.110,0.184,0.217,0.010 | ❌ 0.128,0.058,0.309,0.031 | ✅ 0.110,0.184,0.218,0.011 |
 | payment_due_date | 2026-09-20 | ✅ 2026-09-20 | ✅ 2026-09-20 | 0.93 | 1.0000 | 0.698,0.277,0.083,0.009 | ✅ 0.698,0.277,0.084,0.010 | ✅ 0.698,0.277,0.083,0.010 |

@@ -1,7 +1,7 @@
 # synthetic-insurance-health-insurance-premium-scan.jpg
 
 
-_Run: 2026-09-30 19:07 UTC_
+_Run: 2026-10-01 01:41 UTC_
 
 
 ## Durations
@@ -31,13 +31,13 @@ _By Extracted Data_
 - BDA: 91% equivalent, 100% close, 0% misses
 - OCR Mapping: 91% equivalent, 91% close, 9% misses
 
-_By Geometry_
+_By Bounding Box_
 - BDA: 4/5 exact, 1 miss
 - OCR Mapping: 3/5 exact, 2 miss
 
 
 ## Field Comparison
-| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Geo | BDA Geometry | LLM Geometry |
+| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Bounding Box | BDA Bounding Box | LLM Bounding Box |
 |---|---|---|---|---|---|---|---|---|
 | coverage_end_date | 2026-09-30 | ✅ 2026-09-30 | ✅ 2026-09-30 | 0.91 | 0.8500 | - | 0.890,0.087,0.081,0.012 | 0.890,0.087,0.081,0.012 |
 | coverage_start_date | 2026-09-01 | ✅ 2026-09-01 | ✅ 2026-09-01 | 0.83 | 1.0000 | - | - | 0.791,0.068,0.081,0.011 |

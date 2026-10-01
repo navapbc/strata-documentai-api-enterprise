@@ -1,7 +1,7 @@
 # synthetic-expense-child-support-scan.jpg
 
 
-_Run: 2026-09-30 19:07 UTC_
+_Run: 2026-10-01 01:41 UTC_
 
 
 ## Durations
@@ -31,13 +31,13 @@ _By Extracted Data_
 - BDA: 100% equivalent, 100% close, 0% misses
 - OCR Mapping: 93% equivalent, 93% close, 7% misses
 
-_By Geometry_
+_By Bounding Box_
 - BDA: 6/9 exact, 3 miss
 - OCR Mapping: 7/9 exact, 2 miss
 
 
 ## Field Comparison
-| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Geo | BDA Geometry | LLM Geometry |
+| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Bounding Box | BDA Bounding Box | LLM Bounding Box |
 |---|---|---|---|---|---|---|---|---|
 | case_number | D-2022-04567-FC | ✅ D-2022-04567-FC | ✅ D-2022-04567-FC | 0.89 | 1.0000 | 0.711,0.190,0.116,0.008 | ✅ 0.711,0.190,0.118,0.009 | ✅ 0.711,0.190,0.118,0.009 |
 | child_name | - | - | - | 0.91 | - | - | - | - |

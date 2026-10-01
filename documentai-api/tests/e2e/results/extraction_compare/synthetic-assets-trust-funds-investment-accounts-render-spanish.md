@@ -1,7 +1,7 @@
 # synthetic-assets-trust-funds-investment-accounts-render-spanish.png
 
 
-_Run: 2026-09-30 19:07 UTC_
+_Run: 2026-10-01 01:41 UTC_
 
 
 ## Durations
@@ -31,13 +31,13 @@ _By Extracted Data_
 - BDA: 80% equivalent, 90% close, 10% misses
 - OCR Mapping: 80% equivalent, 90% close, 10% misses
 
-_By Geometry_
+_By Bounding Box_
 - BDA: 1/6 exact, 5 miss
 - OCR Mapping: 2/6 exact, 4 miss
 
 
 ## Field Comparison
-| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Geo | BDA Geometry | LLM Geometry |
+| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Bounding Box | BDA Bounding Box | LLM Bounding Box |
 |---|---|---|---|---|---|---|---|---|
 | account_balance | 45000.00 | ✅ 45000 | ✅ 45000.00 | 0.94 | 1.0000 | - | 0.866,0.327,0.083,0.011 | 0.866,0.327,0.083,0.011 |
 | account_number | PTC-9***-4582 | ✅ PTC-9***-4582 | ✅ PTC-9***-4582 | 0.52 | 0.9700 | 0.258,0.285,0.104,0.008 | ✅ 0.258,0.284,0.104,0.009 | ✅ 0.258,0.284,0.104,0.009 |

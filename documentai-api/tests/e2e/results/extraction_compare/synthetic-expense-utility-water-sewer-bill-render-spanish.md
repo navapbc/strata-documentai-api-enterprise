@@ -1,7 +1,7 @@
 # synthetic-expense-utility-water-sewer-bill-render-spanish.png
 
 
-_Run: 2026-09-30 19:07 UTC_
+_Run: 2026-10-01 01:41 UTC_
 
 
 ## Durations
@@ -31,13 +31,13 @@ _By Extracted Data_
 - BDA: 81% equivalent, 81% close, 19% misses
 - OCR Mapping: 95% equivalent, 95% close, 5% misses
 
-_By Geometry_
+_By Bounding Box_
 - BDA: 4/6 exact, 2 miss
 - OCR Mapping: 4/7 exact, 3 miss
 
 
 ## Field Comparison
-| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Geo | BDA Geometry | LLM Geometry |
+| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Bounding Box | BDA Bounding Box | LLM Bounding Box |
 |---|---|---|---|---|---|---|---|---|
 | Account_Info.Acct_Name | Mariana López | ✅ Mariana López | ✅ Mariana López | 0.89 | 0.9800 | 0.038,0.235,0.095,0.011 | ✅ 0.039,0.235,0.094,0.011 | ✅ 0.039,0.235,0.094,0.011 |
 | Account_Info.Acct_No | 1234-5678-90 | ✅ 1234-5678-90 | ✅ 1234-5678-90 | 0.94 | 1.0000 | 0.224,0.844,0.092,0.008 | ❌ 0.829,0.067,0.107,0.009 | ❌ 0.829,0.067,0.107,0.009 |

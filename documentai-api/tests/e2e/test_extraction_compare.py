@@ -351,6 +351,18 @@ def _fmt_geo_accuracy(a: dict[str, int] | None) -> str:
     return f"{exact}/{total} exact, {miss} miss"
 
 
+def _fmt_geo_pct(geo_counts: str) -> str:
+    """Append percentage to a 'n/total' geo counts string, e.g. '141/238 (59%)'."""
+    if geo_counts == "-" or "/" not in geo_counts:
+        return geo_counts
+    exact_str, total_str = geo_counts.split("/", 1)
+    try:
+        exact, total = int(exact_str), int(total_str)
+        return f"{exact}/{total} ({exact / total:.0%})" if total else geo_counts
+    except ValueError:
+        return geo_counts
+
+
 # =============================================================================
 # Per-document writers
 # =============================================================================
@@ -453,7 +465,7 @@ def _write_comparison_md(
         lines.append(
             f"- OCR Mapping: {l_acc['exact']} equivalent, {l_acc['loose']} close, {l_acc['miss']} misses"
         )
-        lines.append("\n_By Geometry_")
+        lines.append("\n_By Bounding Box_")
         lines.append(f"- {primary_method.upper()}: {p_geo_acc}")
         lines.append(f"- OCR Mapping: {l_geo_acc}")
         lines.append("")
@@ -467,9 +479,9 @@ def _write_comparison_md(
             "LLM (via Textract) Value",
             f"{primary_method.upper()} Conf",
             "LLM Conf",
-            "Expected Geo",
-            f"{primary_method.upper()} Geometry",
-            "LLM Geometry",
+            "Expected Bounding Box",
+            f"{primary_method.upper()} Bounding Box",
+            "LLM Bounding Box",
         ]
     )
     lines.append(header)
@@ -664,8 +676,9 @@ def _write_doc_summary_table(
         "Primary Duration",
         "LLM Duration",
         "Duration Delta",
-        "Primary Accuracy",
-        "LLM Accuracy",
+        "Primary Match Rate (Equiv+Approx.)",
+        "LLM Match Rate (Equiv+Approx.)",
+        "Match Rate Delta",
     ]
     lines.append("\n## Document Summary")
     lines.append("\n| " + " | ".join(headers) + " |")
@@ -691,8 +704,17 @@ def _write_doc_summary_table(
         l_acc = acc.get(_ResultData.OCR_MAPPING) if acc else None
         p_fmt = _fmt_accuracy(p_acc)
         l_fmt = _fmt_accuracy(l_acc)
+        p_loose = p_acc.get(_ResultData.EXACT, 0) + p_acc.get(_ResultData.APPROX, 0) if p_acc else None
+        p_total = sum(p_acc.values()) if p_acc else None
+        l_loose = l_acc.get(_ResultData.EXACT, 0) + l_acc.get(_ResultData.APPROX, 0) if l_acc else None
+        l_total = sum(l_acc.values()) if l_acc else None
+        if p_loose is not None and p_total and l_loose is not None and l_total:
+            delta = (l_loose / l_total) - (p_loose / p_total)
+            match_rate_delta = "0%" if delta == 0 else f"{delta:+.1%}"
+        else:
+            match_rate_delta = "-"
         lines.append(
-            f"| {link} | {primary_method} | ${file_cost:.6f} | ${primary_cost:.6f} | ${llm_cost:.6f} | {cost_delta:+.6f} | {primary_dur_cell} | {llm_dur_cell} | {dur_delta} | {p_fmt['loose']} | {l_fmt['loose']} |"
+            f"| {link} | {primary_method} | ${file_cost:.6f} | ${primary_cost:.6f} | ${llm_cost:.6f} | {cost_delta:+.6f} | {primary_dur_cell} | {llm_dur_cell} | {dur_delta} | {p_fmt['loose']} | {l_fmt['loose']} | {match_rate_delta} |"
         )
     lines.append("")
 
@@ -841,7 +863,7 @@ def regen_comparison_md(results_dir: Path) -> None:
             lines.append(
                 f"- OCR Mapping: {l_acc['exact']} equivalent, {l_acc['loose']} close, {l_acc['miss']} misses"
             )
-            lines.append("\n_By Geometry_")
+            lines.append("\n_By Bounding Box_")
             lines.append(f"- {primary_method.upper()}: {p_geo_acc}")
             lines.append(f"- OCR Mapping: {l_geo_acc}")
             lines.append("")
@@ -855,9 +877,9 @@ def regen_comparison_md(results_dir: Path) -> None:
                 "LLM (via Textract) Value",
                 f"{primary_method.upper()} Conf",
                 "LLM Conf",
-                "Expected Geo",
-                f"{primary_method.upper()} Geometry",
-                "LLM Geometry",
+                "Expected Bounding Box",
+                f"{primary_method.upper()} Bounding Box",
+                "LLM Bounding Box",
             ]
         )
         lines.append(header)
@@ -944,10 +966,10 @@ def write_extraction_compare_summary(results_dir: Path) -> None:
                 "Shared (preclass)",
                 "Primary Total",
                 "LLM Total",
-                "LLM vs Primary",
+                "Cost Ratio",
                 "Median Primary Duration",
                 "Median LLM Duration",
-                "LLM vs Primary",
+                "Speed Ratio",
             ]
         )
         lines.append(header)
@@ -964,15 +986,18 @@ def write_extraction_compare_summary(results_dir: Path) -> None:
         header, sep = _md_table_header(
             [
                 "Primary Method",
-                "Equiv Match (Primary / LLM)",
-                "Close Match (Primary / LLM)",
-                "Geo Match (Primary / LLM)",
+                "Primary Match (Equiv.)",
+                "LLM Match (Equiv.)",
+                "Primary Match (Equiv+Approx.)",
+                "LLM Match (Equiv+Approx.)",
+                "Primary Bounding Box Match",
+                "LLM Bounding Box Match",
             ]
         )
         lines.append(header)
         lines.append(sep)
         lines.extend(
-            f"| {r.method} | {r.p_avg['exact']} / {r.l_avg['exact']} | {r.p_avg['loose']} / {r.l_avg['loose']} | {r.p_geo_counts} / {r.l_geo_counts} |"
+            f"| {r.method} | {r.p_avg['exact']} | {r.l_avg['exact']} | {r.p_avg['loose']} | {r.l_avg['loose']} | {_fmt_geo_pct(r.p_geo_counts)} | {_fmt_geo_pct(r.l_geo_counts)} |"
             for r in cost_rows
         )
         lines.append("")

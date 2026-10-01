@@ -1,7 +1,7 @@
 # synthetic-assets-bank-statement-render.pdf
 
 
-_Run: 2026-09-30 19:07 UTC_
+_Run: 2026-10-01 01:41 UTC_
 
 
 ## Durations
@@ -30,13 +30,13 @@ _By Extracted Data_
 - BDA: 75% equivalent, 75% close, 25% misses
 - OCR Mapping: 100% equivalent, 100% close, 0% misses
 
-_By Geometry_
+_By Bounding Box_
 - BDA: 5/6 exact, 1 miss
 - OCR Mapping: 5/6 exact, 1 miss
 
 
 ## Field Comparison
-| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Geo | BDA Geometry | LLM Geometry |
+| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Bounding Box | BDA Bounding Box | LLM Bounding Box |
 |---|---|---|---|---|---|---|---|---|
 | account_holder_address | 7429 Oak Crest Drive, Little Rock, AR 72205 | ✅ 7429 Oak Crest Drive, Little Rock, AR 72205 | ✅ 7429 Oak Crest Drive, Little Rock, AR 72205 | 0.89 | 1.0000 | 0.123,0.330,0.382,0.013 | ✅ 0.123,0.330,0.383,0.014 | ✅ 0.123,0.330,0.383,0.012 |
 | account_holder_name | Elias K. Thornton | ✅ Elias K. Thornton | ✅ Elias K. Thornton | 0.93 | 1.0000 | 0.124,0.307,0.150,0.011 | ✅ 0.124,0.306,0.151,0.013 | ✅ 0.124,0.306,0.151,0.013 |

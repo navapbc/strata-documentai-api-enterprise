@@ -1,7 +1,7 @@
 # synthetic-public-benefits-income-proof-pay-statement-rendered.png
 
 
-_Run: 2026-09-30 19:07 UTC_
+_Run: 2026-10-01 01:41 UTC_
 
 
 ## Durations
@@ -31,13 +31,13 @@ _By Extracted Data_
 - BDA: 77% equivalent, 77% close, 23% misses
 - OCR Mapping: 89% equivalent, 89% close, 11% misses
 
-_By Geometry_
+_By Bounding Box_
 - BDA: 6/23 exact, 17 miss
 - OCR Mapping: 24/29 exact, 5 miss
 
 
 ## Field Comparison
-| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Geo | BDA Geometry | LLM Geometry |
+| Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Bounding Box | BDA Bounding Box | LLM Bounding Box |
 |---|---|---|---|---|---|---|---|---|
 | CityTaxes.ItemDescription | - | - | - | - | N/A | - | - | - |
 | CityTaxes.Period | - | - | - | - | N/A | - | - | - |
