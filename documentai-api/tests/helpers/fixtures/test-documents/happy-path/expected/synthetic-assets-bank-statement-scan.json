@@ -56,6 +56,19 @@
             "height": 0.01171875
           }
         ]
+      },
+      "statement_end_date": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.6083984375,
+            "top": 0.091796875,
+            "width": 0.2568359375,
+            "height": 0.011067708333333334
+          }
+        ]
       }
     },
     "not_matched": {
@@ -71,9 +84,6 @@
         },
         "statement_start_date": {
           "expected_value": "2026-08-01"
-        },
-        "statement_end_date": {
-          "expected_value": "2026-08-31"
         },
         "account_summary.summary_desc": {
           "expected_value": "Beginning Balance, Total Deposits/Credits, Total Withdrawals/Debits, Total Fees, Ending Balance"

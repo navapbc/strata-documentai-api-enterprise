@@ -15,6 +15,32 @@
   },
   "geometry": {
     "matched": {
+      "coverage_start_date": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.6968954248366013,
+            "top": 0.22916666666666666,
+            "width": 0.12009803921568628,
+            "height": 0.012626262626262626
+          }
+        ]
+      },
+      "coverage_end_date": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.11029411764705882,
+            "top": 0.2361111111111111,
+            "width": 0.701797385620915,
+            "height": 0.022727272727272728
+          }
+        ]
+      },
       "insurer_or_marketplace_name": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
@@ -96,12 +122,6 @@
     },
     "not_matched": {
       "text_not_found": {
-        "coverage_start_date": {
-          "expected_value": "2026-08-01"
-        },
-        "coverage_end_date": {
-          "expected_value": "2026-08-31"
-        },
         "payment_status": {
           "expected_value": "Paid"
         }

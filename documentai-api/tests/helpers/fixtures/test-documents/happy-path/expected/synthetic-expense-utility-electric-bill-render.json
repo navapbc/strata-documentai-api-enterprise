@@ -129,6 +129,19 @@
           }
         ]
       },
+      "BalanceDue Date": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.744281045751634,
+            "top": 0.17234848484848486,
+            "width": 0.14052287581699346,
+            "height": 0.011363636363636364
+          }
+        ]
+      },
       "Current Balance": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
@@ -139,6 +152,19 @@
             "top": 0.2922979797979798,
             "width": 0.05065359477124183,
             "height": 0.011994949494949494
+          }
+        ]
+      },
+      "End Date": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.7581699346405228,
+            "top": 0.14835858585858586,
+            "width": 0.1111111111111111,
+            "height": 0.011363636363636364
           }
         ]
       },
@@ -194,6 +220,19 @@
           }
         ]
       },
+      "StartDate": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.630718954248366,
+            "top": 0.13257575757575757,
+            "width": 0.23937908496732027,
+            "height": 0.011363636363636364
+          }
+        ]
+      },
       "Total Balance Due": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
@@ -223,20 +262,11 @@
     },
     "not_matched": {
       "text_not_found": {
-        "BalanceDue Date": {
-          "expected_value": "2026-09-25"
-        },
-        "End Date": {
-          "expected_value": "2026-08-31"
-        },
         "Line_Item_Charges.Charge": {
           "expected_value": "78.20, 45.00, 33.20, 5.00, 3.10"
         },
         "Line_Item_Charges.Line item Description": {
           "expected_value": "Energy Consumption (920 kWh at $0.085/kWh), Delivery/Distribution Charge, Supply/Generation Charge, Wyoming Energy Surcharge, Taxes & Fees"
-        },
-        "StartDate": {
-          "expected_value": "2026-08-01"
         }
       }
     }

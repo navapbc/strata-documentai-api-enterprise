@@ -64,6 +64,19 @@
           }
         ]
       },
+      "DATE_OF_BIRTH": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.4053867403314917,
+            "top": 0.4604051565377532,
+            "width": 0.3674033149171271,
+            "height": 0.06721915285451197
+          }
+        ]
+      },
       "DATE_OF_ISSUE": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
@@ -144,11 +157,6 @@
       }
     },
     "not_matched": {
-      "text_not_found": {
-        "DATE_OF_BIRTH": {
-          "expected_value": "1996-05-14"
-        }
-      },
       "ambiguous": {
         "ADDRESS_DETAILS.ZIP_CODE": {
           "determination_method": "pytesseract",

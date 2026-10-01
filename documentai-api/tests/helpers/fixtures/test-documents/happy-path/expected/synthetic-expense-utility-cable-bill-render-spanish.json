@@ -18,12 +18,6 @@
         "Account_Number": {
           "expected_value": "8765 4321 0XXX XXXX"
         },
-        "Balance_DueDate": {
-          "expected_value": "2026-09-30"
-        },
-        "Billing_Date": {
-          "expected_value": "2026-09-11"
-        },
         "Start_Date": {
           "expected_value": "2026-08-12"
         },
@@ -41,6 +35,50 @@
         },
         "Summary_table.Amount": {
           "expected_value": "98.75, -98.75, 0.00, 102.89, 102.89"
+        }
+      },
+      "ambiguous": {
+        "Balance_DueDate": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
+          "expected_value": "2026-09-30",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.779296875,
+              "top": 0.080078125,
+              "width": 0.1708984375,
+              "height": 0.009765625
+            },
+            {
+              "page": 0,
+              "left": 0.21484375,
+              "top": 0.8483072916666666,
+              "width": 0.1708984375,
+              "height": 0.009765625
+            }
+          ]
+        },
+        "Billing_Date": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
+          "expected_value": "2026-09-11",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.7802734375,
+              "top": 0.045572916666666664,
+              "width": 0.169921875,
+              "height": 0.009114583333333334
+            },
+            {
+              "page": 0,
+              "left": 0.2158203125,
+              "top": 0.83203125,
+              "width": 0.169921875,
+              "height": 0.009765625
+            }
+          ]
         }
       }
     }

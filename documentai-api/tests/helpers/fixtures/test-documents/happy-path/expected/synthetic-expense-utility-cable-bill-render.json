@@ -51,15 +51,25 @@
             "height": 0.008207070707070708
           }
         ]
+      },
+      "End_Date": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.10947712418300654,
+            "top": 0.20202020202020202,
+            "width": 0.7761437908496732,
+            "height": 0.013888888888888888
+          }
+        ]
       }
     },
     "not_matched": {
       "text_not_found": {
         "Start_Date": {
           "expected_value": "2026-08-01"
-        },
-        "End_Date": {
-          "expected_value": "2026-08-31"
         },
         "Line_Item_table.Amount": {
           "expected_value": "54.99, 48.00, 8.00, 7.50, 4.76"

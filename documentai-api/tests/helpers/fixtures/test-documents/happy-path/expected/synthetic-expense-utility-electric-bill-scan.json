@@ -279,20 +279,83 @@
     },
     "not_matched": {
       "text_not_found": {
-        "BalanceDue Date": {
-          "expected_value": "2026-09-17"
-        },
-        "End Date": {
-          "expected_value": "2026-08-26"
-        },
         "Line_Item_Charges.Charge": {
           "expected_value": "65.52, 47.49, 5.50, 0.96, 4.18, 2.98"
         },
         "Line_Item_Charges.Line item Description": {
           "expected_value": "Supply (Generation) Charge, Delivery (Distribution) Charge, Customer Charge, Utah Clean Energy Program, State Sales Tax, Municipal Franchise Fee"
+        }
+      },
+      "ambiguous": {
+        "BalanceDue Date": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
+          "expected_value": "2026-09-17",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.05859375,
+              "top": 0.11848958333333333,
+              "width": 0.80859375,
+              "height": 0.014973958333333334
+            },
+            {
+              "page": 0,
+              "left": 0.060546875,
+              "top": 0.6419270833333334,
+              "width": 0.8408203125,
+              "height": 0.011067708333333334
+            },
+            {
+              "page": 0,
+              "left": 0.1240234375,
+              "top": 0.8248697916666666,
+              "width": 0.6337890625,
+              "height": 0.014322916666666666
+            }
+          ]
+        },
+        "End Date": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
+          "expected_value": "2026-08-26",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.44921875,
+              "top": 0.2265625,
+              "width": 0.4453125,
+              "height": 0.011067708333333334
+            },
+            {
+              "page": 0,
+              "left": 0.072265625,
+              "top": 0.40234375,
+              "width": 0.86328125,
+              "height": 0.014973958333333334
+            }
+          ]
         },
         "StartDate": {
-          "expected_value": "2026-07-28"
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
+          "expected_value": "2026-07-28",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.44921875,
+              "top": 0.2265625,
+              "width": 0.4453125,
+              "height": 0.011067708333333334
+            },
+            {
+              "page": 0,
+              "left": 0.072265625,
+              "top": 0.40234375,
+              "width": 0.86328125,
+              "height": 0.014973958333333334
+            }
+          ]
         }
       }
     }

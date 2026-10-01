@@ -28,6 +28,7 @@ import pytesseract
 import typer
 from PIL import Image
 
+from documentai_api.utils.dates import iso_to_str_variants
 from documentai_api.utils.extraction_compare_client import normalize_value as _normalize_value
 from documentai_api.utils.schemas import is_list_field
 
@@ -145,6 +146,9 @@ class _BBox:
     top: float
     width: float
     height: float
+
+
+_ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 def _normalize(value: object) -> str:
@@ -327,17 +331,24 @@ def main(
                 continue
 
             norm_expected = _normalize(value)
+            date_variants = (
+                list({_normalize(v) for v in iso_to_str_variants(str(value))})
+                if _ISO_DATE_RE.match(str(value))
+                else [norm_expected]
+            )
             # exact line match, then word match, then substring line match (last resort — line
             # bboxes span the full row including labels, so word-level is preferred when available)
             matches: list[_OcrLine | _OcrWord] = [
-                ln for ln in all_lines if _normalize(ln.text) == norm_expected
+                ln for ln in all_lines if _normalize(ln.text) in date_variants
             ]
 
             if not matches:
-                matches = [w for w in all_words if _normalize(w.text) == norm_expected]
+                matches = [w for w in all_words if _normalize(w.text) in date_variants]
 
             if not matches:
-                matches = [ln for ln in all_lines if norm_expected in _normalize(ln.text)]
+                matches = [
+                    ln for ln in all_lines if any(n in _normalize(ln.text) for n in date_variants)
+                ]
 
             if len(matches) == 1:
                 matched_geo[field] = _MatchedEntry(

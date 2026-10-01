@@ -39,6 +39,45 @@
             "height": 0.010416666666666666
           }
         ]
+      },
+      "service_start_date": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.1826171875,
+            "top": 0.134765625,
+            "width": 0.7099609375,
+            "height": 0.0234375
+          }
+        ]
+      },
+      "service_end_date": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.1865234375,
+            "top": 0.154296875,
+            "width": 0.7021484375,
+            "height": 0.015625
+          }
+        ]
+      },
+      "statement_date": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.5830078125,
+            "top": 0.126953125,
+            "width": 0.326171875,
+            "height": 0.010416666666666666
+          }
+        ]
       }
     },
     "not_matched": {
@@ -48,15 +87,6 @@
         },
         "provider_address": {
           "expected_value": "1234 Camino del Sol, Suite 100, Las Vegas, NV 89119"
-        },
-        "service_start_date": {
-          "expected_value": "2026-08-04"
-        },
-        "service_end_date": {
-          "expected_value": "2026-08-31"
-        },
-        "statement_date": {
-          "expected_value": "2026-09-05"
         }
       },
       "ambiguous": {

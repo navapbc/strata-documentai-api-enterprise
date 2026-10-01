@@ -96,9 +96,6 @@
       "text_not_found": {
         "statement_period_start": {
           "expected_value": "2026-06-01"
-        },
-        "statement_period_end": {
-          "expected_value": "2026-08-31"
         }
       },
       "ambiguous": {
@@ -156,6 +153,27 @@
           "reason": "list_value",
           "expected_value": "Acciones (Nacionales), Bonos (Renta Fija), Fondos Mutuos, Efectivo y Equivalentes",
           "candidates": []
+        },
+        "statement_period_end": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
+          "expected_value": "2026-08-31",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.041015625,
+              "top": 0.14713541666666666,
+              "width": 0.873046875,
+              "height": 0.009114583333333334
+            },
+            {
+              "page": 0,
+              "left": 0.0791015625,
+              "top": 0.408203125,
+              "width": 0.875,
+              "height": 0.01171875
+            }
+          ]
         }
       }
     }

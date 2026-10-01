@@ -15,6 +15,19 @@
   },
   "geometry": {
     "matched": {
+      "coverage_end_date": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.0498046875,
+            "top": 0.2760416666666667,
+            "width": 0.8818359375,
+            "height": 0.012369791666666666
+          }
+        ]
+      },
       "insurer_or_marketplace_name": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
@@ -83,20 +96,11 @@
     },
     "not_matched": {
       "text_not_found": {
-        "coverage_start_date": {
-          "expected_value": "2026-08-01"
-        },
-        "coverage_end_date": {
-          "expected_value": "2026-08-31"
-        },
         "payment_due_date": {
           "expected_value": "2026-08-25"
         },
         "payment_status": {
           "expected_value": "Paid"
-        },
-        "statement_date": {
-          "expected_value": "2026-09-02"
         }
       },
       "ambiguous": {
@@ -125,6 +129,55 @@
               "top": 0.80859375,
               "width": 0.0517578125,
               "height": 0.0078125
+            }
+          ]
+        },
+        "coverage_start_date": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
+          "expected_value": "2026-08-01",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.3369140625,
+              "top": 0.2421875,
+              "width": 0.2080078125,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.3369140625,
+              "top": 0.2649739583333333,
+              "width": 0.2119140625,
+              "height": 0.010416666666666666
+            },
+            {
+              "page": 0,
+              "left": 0.0498046875,
+              "top": 0.2760416666666667,
+              "width": 0.8818359375,
+              "height": 0.012369791666666666
+            }
+          ]
+        },
+        "statement_date": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
+          "expected_value": "2026-09-02",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.7314453125,
+              "top": 0.050130208333333336,
+              "width": 0.185546875,
+              "height": 0.01171875
+            },
+            {
+              "page": 0,
+              "left": 0.0810546875,
+              "top": 0.7858072916666666,
+              "width": 0.171875,
+              "height": 0.010416666666666666
             }
           ]
         }

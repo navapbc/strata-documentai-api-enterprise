@@ -129,13 +129,19 @@
             "height": 0.016
           }
         ]
-      }
-    },
-    "not_matched": {
-      "text_not_found": {
-        "statement_date": {
-          "expected_value": "2026-08-31"
-        }
+      },
+      "statement_date": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.14869281045751634,
+            "top": 0.29797979797979796,
+            "width": 0.46568627450980393,
+            "height": 0.01452020202020202
+          }
+        ]
       }
     }
   },

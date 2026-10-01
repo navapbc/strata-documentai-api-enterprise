@@ -35,6 +35,19 @@
             "height": 0.013257575757575758
           }
         ]
+      },
+      "statement_date": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.12663398692810457,
+            "top": 0.1875,
+            "width": 0.3341503267973856,
+            "height": 0.013257575757575758
+          }
+        ]
       }
     },
     "not_matched": {
@@ -44,9 +57,6 @@
         },
         "contact_information": {
           "expected_value": "Phone: (860) 555-0199 Email: cynthia.marshall@elmviewhomes.org"
-        },
-        "statement_date": {
-          "expected_value": "2026-09-05"
         }
       },
       "ambiguous": {

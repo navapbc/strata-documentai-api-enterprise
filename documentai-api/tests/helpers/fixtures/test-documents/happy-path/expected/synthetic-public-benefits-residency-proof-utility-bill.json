@@ -34,6 +34,19 @@
           }
         ]
       },
+      "DATE": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.5711325966850829,
+            "top": 0.09392265193370165,
+            "width": 0.12638121546961326,
+            "height": 0.019337016574585635
+          }
+        ]
+      },
       "SUBTOTAL": {
         "determination_method": "pytesseract",
         "explanation": "Resolved via pytesseract OCR match.",
@@ -63,9 +76,6 @@
     },
     "not_matched": {
       "text_not_found": {
-        "DATE": {
-          "expected_value": "2026-04-01"
-        },
         "VENDORADDRESS": {
           "expected_value": "PO Box 90012, Las Vegas, NV 89109-0012"
         },
