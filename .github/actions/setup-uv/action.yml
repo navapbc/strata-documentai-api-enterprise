@@ -4,4 +4,4 @@ description: Installs uv via astral-sh/setup-uv
 runs:
   using: composite
   steps:
-    - uses: astral-sh/setup-uv@v5
+    - uses: astral-sh/setup-uv@v7
