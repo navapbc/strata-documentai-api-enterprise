@@ -21,6 +21,11 @@ def clear_env_config_cache():
         ("s3://my-bucket/path/to/file.json", "my-bucket", "path/to/file.json"),
         ("s3://bucket/prefix/input/file.pdf", "bucket", "prefix/input/file.pdf"),
         ("s3://bucket", "bucket", ""),  # No key
+        (
+            "s3://my-bucket/input/tenant123/paystub_2026-09-11#-abc123.pdf",
+            "my-bucket",
+            "input/tenant123/paystub_2026-09-11#-abc123.pdf",
+        ),  # hash in key
     ],
 )
 def test_parse_s3_uri(s3_uri, expected_bucket, expected_key):
@@ -30,20 +35,10 @@ def test_parse_s3_uri(s3_uri, expected_bucket, expected_key):
     assert key == expected_key
 
 
-@pytest.mark.parametrize(
-    ("s3_location", "expected_prefix"),
-    [
-        ("s3://bucket/input", "input"),
-        ("s3://bucket/processed", "processed"),
-        ("s3://bucket/path/to/files", "path/to/files"),
-        ("s3://bucket", ""),  # No prefix
-        ("", ""),  # Empty string
-    ],
-)
-def test_get_s3_prefix_from_location(s3_location, expected_prefix):
-    """Extract prefix from S3 location."""
-    prefix = s3_util.get_s3_prefix_from_location(s3_location)
-    assert prefix == expected_prefix
+def test_parse_s3_uri_raises_on_invalid_scheme():
+    """Non-s3:// URIs raise ValueError."""
+    with pytest.raises(ValueError, match="Invalid S3 URI"):
+        s3_util.parse_s3_uri("https://bucket/key")
 
 
 # === extract_s3_info_from_event ===
