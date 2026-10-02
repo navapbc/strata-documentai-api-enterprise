@@ -137,10 +137,34 @@ def sanitize_for_s3_metadata(value: str, max_length: int = 512) -> str:
     return quote(value[:max_length], safe="")
 
 
-def sanitize_for_s3_key(value: str) -> str:
-    """Replace non-ASCII characters with underscores for use in S3 object keys.
+# Disallowed by Bedrock Data Automation's S3 URI validation regex, except
+# backslash and backtick (92, 96), which are banned defensively, not by BDA.
+_BANNED_ORDINALS = frozenset(
+    {
+        34,  # "
+        35,  # #
+        37,  # %
+        60,  # <
+        62,  # >
+        91,  # [
+        92,  # \
+        93,  # ]
+        94,  # ^
+        96,  # `
+        123,  # {
+        124,  # |
+        125,  # }
+        126,  # ~
+    }
+)
 
-    Non-ASCII bytes in keys cause URL-encoding round-trip mismatches in S3 event
-    notifications, producing a different string after unquote_plus than the original.
+
+def sanitize_for_s3_key(value: str) -> str:
+    """Replace characters unsafe for S3 object keys with underscores.
+
+    Non-ASCII bytes and control characters break the URL-encoding round-trip
+    in S3 event notifications; see the comment above _BANNED_ORDINALS for the rest.
     """
-    return "".join("_" if ord(c) > 127 else c for c in value)
+    return "".join(
+        "_" if ord(c) > 126 or ord(c) < 32 or ord(c) in _BANNED_ORDINALS else c for c in value
+    )

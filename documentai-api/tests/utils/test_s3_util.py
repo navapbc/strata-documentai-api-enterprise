@@ -166,6 +166,11 @@ def test_write_extraction_output_raises_without_tenant(monkeypatch, mocker):
         ("hello-world_2026.pdf", "hello-world_2026.pdf"),
         ("invoice-hyphen-final.PDF—copy", "invoice-hyphen-final.PDF_copy"),
         ("invoice—emdash-final.PDF—copy", "invoice_emdash-final.PDF_copy"),
+        ("Invoice March 2026.pdf", "Invoice March 2026.pdf"),  # space preserved
+        ("paystub_2026-09-11#-abc123.pdf", "paystub_2026-09-11_-abc123.pdf"),
+        ('weird{}^%][\\"><~`|name.pdf', "weird_____________name.pdf"),
+        ("\x7fdel.pdf", "_del.pdf"),  # DEL
+        ("\ttab.pdf", "_tab.pdf"),  # control char
     ],
 )
 def test_sanitize_for_s3_key(value, expected):
