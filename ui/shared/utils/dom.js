@@ -34,3 +34,14 @@ export function h(tag, attrs, ...children) {
 export function text(text) {
   return document.createTextNode(text ?? "");
 }
+
+/**
+ * Parse an SVG string into an SVGElement.
+ * @param {string} svgStr
+ * @returns {SVGElement}
+ */
+export function svgIcon(svgStr) {
+  const div = document.createElement("div");
+  div.innerHTML = svgStr.trim();
+  return div.firstElementChild;
+}
