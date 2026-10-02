@@ -82,13 +82,34 @@ describe("keys view", () => {
     expect(root.querySelector("#no-keys").classList.contains("hidden")).toBe(false);
   });
 
-  it("revoked keys show badge instead of revoke button", async () => {
+  it("revoked keys show badge-revoked status and no action button", async () => {
     mockKeysList.mockResolvedValue({ keys: [buildApiKey({ isActive: false })] });
     KeysView.mount(root);
     await flush();
     const tbody = root.querySelector("#keys-tbody");
     expect(tbody.querySelector(".badge-revoked")).toBeTruthy();
     expect(tbody.querySelector(".btn-icon-danger")).toBeFalsy();
+  });
+
+  it("active keys show badge-active status", async () => {
+    mockKeysList.mockResolvedValue({ keys: [buildApiKey({ isActive: true })] });
+    KeysView.mount(root);
+    await flush();
+    expect(root.querySelector("#keys-tbody .badge-active")).toBeTruthy();
+  });
+
+  it("active keys sort before revoked keys", async () => {
+    mockKeysList.mockResolvedValue({
+      keys: [
+        buildApiKey({ isActive: false, apiKeyName: "revoked-key" }),
+        buildApiKey({ isActive: true, apiKeyName: "active-key" }),
+      ],
+    });
+    KeysView.mount(root);
+    await flush();
+    const rows = root.querySelectorAll("#keys-tbody tr");
+    expect(rows[0].querySelector(".badge-active")).toBeTruthy();
+    expect(rows[1].querySelector(".badge-revoked")).toBeTruthy();
   });
 
   // --- Revoke interaction ---
