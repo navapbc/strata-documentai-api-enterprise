@@ -160,9 +160,7 @@ function copyKey() {
 
 function renderRow(key) {
   const isActive = key.isActive !== false;
-  const actionEl = isActive
-    ? iconBtn("discard", "Revoke", "btn-icon-danger")
-    : h("span", { className: "badge badge-revoked" }, "Revoked");
+  const actionEl = isActive ? iconBtn("discard", "Revoke", "btn-icon-danger") : null;
   const tr = h(
     "tr",
     isActive ? null : { className: "row-inactive" },
@@ -175,6 +173,15 @@ function renderRow(key) {
       "td",
       { title: key.lastUsed ? Helpers.formatDateTime(key.lastUsed) : "" },
       key.lastUsed ? Helpers.relativeTime(key.lastUsed) : "-",
+    ),
+    h(
+      "td",
+      null,
+      h(
+        "span",
+        { className: isActive ? "badge badge-active" : "badge badge-revoked" },
+        isActive ? "Active" : "Revoked",
+      ),
     ),
     h("td", null, actionEl),
   );
@@ -213,5 +220,6 @@ function applyFilters() {
   if (email) {
     filtered = filtered.filter((k) => k.emailAddress?.toLowerCase().includes(email));
   }
+  filtered = [...filtered].sort((a, b) => (b.isActive !== false) - (a.isActive !== false));
   _tableView.setRows(filtered);
 }
