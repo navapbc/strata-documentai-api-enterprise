@@ -1,6 +1,6 @@
 {
   "1099-Consolidated-Summary-Statement": {
-    "category": "self_employment_income",
+    "category": "income",
     "description": "A consolidated tax reporting statement from a financial institution summarizing 1099 forms such as 1099-DIV, 1099-INT, and 1099-MISC.",
     "document_type": "1099-Consolidated-Summary-Statement",
     "fields": [
@@ -57,7 +57,7 @@
     ]
   },
   "Alimony-Decree": {
-    "category": "dependent_income",
+    "category": "income",
     "description": "A legal document or court order detailing the financial terms, frequency, and duration of spousal support or alimony payments.",
     "document_type": "Alimony-Decree",
     "fields": [
@@ -139,7 +139,7 @@
     ]
   },
   "Annuity-Statement": {
-    "category": "retirement_income",
+    "category": "income",
     "description": "A financial statement outlining the performance, contract value, and distribution details of an annuity investment account.",
     "document_type": "Annuity-Statement",
     "fields": [
@@ -236,7 +236,7 @@
     ]
   },
   "Bank-Statement": {
-    "category": "account_statements",
+    "category": "supporting_records",
     "description": "A financial statement for a bank account listing transaction summaries for a specific duration",
     "document_type": "Bank-Statement",
     "fields": [
@@ -704,7 +704,7 @@
     ]
   },
   "Child-Support-Document": {
-    "category": "dependent_income",
+    "category": "income",
     "description": "A legal order, decree, or official ledger establishing or tracking monthly child support financial obligations.",
     "document_type": "Child-Support-Document",
     "fields": [
@@ -1000,7 +1000,7 @@
     ]
   },
   "Employment-Termination-Letter": {
-    "category": "employment_records",
+    "category": "income",
     "description": "A formal letter issued by an employer documenting the end of an employee's employment.",
     "document_type": "Employment-Termination-Letter",
     "fields": [
@@ -1052,7 +1052,7 @@
     ]
   },
   "Employment-Verification-Letter": {
-    "category": "employment_records",
+    "category": "income",
     "description": "A letter issued by an employer verifying an individual's employment history and job details.",
     "document_type": "Employment-Verification-Letter",
     "fields": [
@@ -1099,7 +1099,7 @@
     ]
   },
   "Financial-Aid-Award": {
-    "category": "education",
+    "category": "supporting_records",
     "description": "An official letter from an educational institution detailing the financial aid package, including grants, scholarships, and loans offered to a student.",
     "document_type": "Financial-Aid-Award",
     "fields": [
@@ -1166,7 +1166,7 @@
     ]
   },
   "Form-1040": {
-    "category": "employer_income",
+    "category": "income",
     "description": "The form 1040 is a tax form from the US administration for filing income.",
     "document_type": "Form-1040",
     "fields": [
@@ -1423,7 +1423,7 @@
     ]
   },
   "Form-1040-Schedule-C": {
-    "category": "employer_income",
+    "category": "income",
     "description": "This is a blueprint of Form 1040 Schedule C",
     "document_type": "Form-1040-Schedule-C",
     "fields": [
@@ -1495,7 +1495,7 @@
     ]
   },
   "Form-1099-INT": {
-    "category": "employer_income",
+    "category": "income",
     "description": "This is a blueprint of Form 1099 INT",
     "document_type": "Form-1099-INT",
     "fields": [
@@ -1577,7 +1577,7 @@
     ]
   },
   "Form-1099-Misc": {
-    "category": "employer_income",
+    "category": "income",
     "description": "This is a blueprint of Form 1099 Misc",
     "document_type": "Form-1099-Misc",
     "fields": [
@@ -1704,7 +1704,7 @@
     ]
   },
   "Health-Insurance-Premium-Statement": {
-    "category": "insurance",
+    "category": "supporting_records",
     "description": "A health insurance premium invoice, billing statement, or payment confirmation from an insurer or marketplace, showing the recurring premium amount and billing period. Used to verify health-insurance-premium expenses, distinct from a one-time insurer notice letter.",
     "document_type": "Health-Insurance-Premium-Statement",
     "fields": [
@@ -1759,19 +1759,19 @@
         "type": "string"
       },
       {
-        "description": "The amount of any premium subsidy or tax credit applied, if shown.",
-        "name": "subsidy_or_tax_credit_amount",
-        "type": "number"
-      },
-      {
         "description": "Start of the billing or coverage period. YYYY-MM-DD format.",
         "name": "coverage_start_date",
         "type": "string"
+      },
+      {
+        "description": "The amount of any premium subsidy or tax credit applied, if shown.",
+        "name": "subsidy_or_tax_credit_amount",
+        "type": "number"
       }
     ]
   },
   "Household-Contribution-Statement": {
-    "category": "shelter",
+    "category": "supporting_records",
     "description": "An informal letter, signed statement, or note from a household member or contributor verifying that they provide financial assistance to cover household expenses.",
     "document_type": "Household-Contribution-Statement",
     "fields": [
@@ -1952,7 +1952,7 @@
     ]
   },
   "IRA-Account-Document": {
-    "category": "investment_and_royalty_income",
+    "category": "income",
     "description": "A document related to an Individual Retirement Account (IRA), including account details, contributions, and distributions.",
     "document_type": "IRA-Account-Document",
     "fields": [
@@ -1999,7 +1999,7 @@
     ]
   },
   "Insurance-Company-Letter": {
-    "category": "insurance",
+    "category": "supporting_records",
     "description": "A formal letter or notice from a private insurance company (life, disability, health, or settlement) regarding policy status, claim decisions, premium changes, or benefit disbursements. Must reference an insurance policy number and be issued by a named insurance provider, not a government agency or public benefits program.",
     "document_type": "Insurance-Company-Letter",
     "fields": [
@@ -2096,7 +2096,7 @@
     ]
   },
   "Investment-Account-Statement": {
-    "category": "investment_and_royalty_income",
+    "category": "income",
     "description": "A general investment account statement, such as a brokerage statement, mutual-fund statement, or stock statement, showing the account holder, institution, and total portfolio value. Distinct from an IRA-specific account document.",
     "document_type": "Investment-Account-Statement",
     "fields": [
@@ -2153,7 +2153,7 @@
     ]
   },
   "Invoices": {
-    "category": "invoices",
+    "category": "supporting_records",
     "description": "An invoice is a document that contains the list of service rendered or items purchased from a company by a person or another company. It contains details such as when the payment is due and how much is owed.",
     "document_type": "Invoices",
     "fields": [
@@ -2349,7 +2349,7 @@
     ]
   },
   "Mortgage-Statement": {
-    "category": "shelter",
+    "category": "supporting_records",
     "description": "Structured extraction schema for a mortgage statement document.",
     "document_type": "Mortgage-Statement",
     "fields": [
@@ -2426,7 +2426,7 @@
     ]
   },
   "New-Hire-Form": {
-    "category": "employment_records",
+    "category": "income",
     "description": "An onboarding or tax form completed by a newly hired employee, establishing their employment status, starting details, and withholding selections.",
     "document_type": "New-Hire-Form",
     "fields": [
@@ -2543,7 +2543,7 @@
     ]
   },
   "Payslip": {
-    "category": "employer_income",
+    "category": "income",
     "description": "This document issued by an employer to an employee contains wages received by an employee for a given period. It usually contains the breakdown of each of the income and tax deductions items.",
     "document_type": "Payslip",
     "fields": [
@@ -2775,7 +2775,7 @@
     ]
   },
   "Pension-Verification": {
-    "category": "retirement_income",
+    "category": "income",
     "description": "An official letter or statement verifying an individual's recurring pension distribution details, usually issued by an employer or retirement board.",
     "document_type": "Pension-Verification",
     "fields": [
@@ -2867,7 +2867,7 @@
     ]
   },
   "Proof-of-Loss-of-Health-Coverage": {
-    "category": "employment_records",
+    "category": "income",
     "description": "A document providing proof that an individual's health insurance coverage has ended, including plan details and coverage dates.",
     "document_type": "Proof-of-Loss-of-Health-Coverage",
     "fields": [
@@ -2986,7 +2986,7 @@
     ]
   },
   "Receipts": {
-    "category": "receipts",
+    "category": "supporting_records",
     "description": "A document acknowledging that a person has received money or property in payment following a sale or other transfer of goods or provision of a service. All receipts must have the date of purchase on them.",
     "document_type": "Receipts",
     "fields": [
@@ -3058,7 +3058,7 @@
     ]
   },
   "Rent-Lease-Statement": {
-    "category": "shelter",
+    "category": "supporting_records",
     "description": "Structured extraction schema for lease agreements or rent statements including tenant, landlord, property, and payment terms.",
     "document_type": "Rent-Lease-Statement",
     "fields": [
@@ -3140,7 +3140,7 @@
     ]
   },
   "Royalty-Statement": {
-    "category": "investment_and_royalty_income",
+    "category": "income",
     "description": "A financial statement detailing the usage, sales, and corresponding royalty earnings generated from intellectual property or resource rights.",
     "document_type": "Royalty-Statement",
     "fields": [
@@ -3202,7 +3202,7 @@
     ]
   },
   "Shelter-Payment-Receipt": {
-    "category": "shelter",
+    "category": "supporting_records",
     "description": "An informal shelter payment record, such as a roommate payment record, money-order receipt, or arrears notice, showing an amount paid or overdue toward rent or shared housing costs.",
     "document_type": "Shelter-Payment-Receipt",
     "fields": [
@@ -3254,7 +3254,7 @@
     ]
   },
   "Shelter-Verification-Letter": {
-    "category": "shelter",
+    "category": "supporting_records",
     "description": "An informal letter, signed statement, or verbal attestation transcribed in writing from a landlord, employer, family member, neighbor, shelter, or other service provider verifying a person's living situation. Distinct from a household-contribution-statement in that it need not describe a monetary contribution.",
     "document_type": "Shelter-Verification-Letter",
     "fields": [
@@ -3323,7 +3323,7 @@
     ]
   },
   "Social-Security-Verification": {
-    "category": "retirement_income",
+    "category": "income",
     "description": "An official benefit verification letter issued by the Social Security Administration detailing an individual's monthly benefit type and payment amounts.",
     "document_type": "Social-Security-Verification",
     "fields": [
@@ -3683,7 +3683,7 @@
     ]
   },
   "Unemployment-Insurance-Claim-Form": {
-    "category": "government_benefit_income",
+    "category": "income",
     "description": "A document used to file or process a claim for unemployment insurance benefits.",
     "document_type": "Unemployment-Insurance-Claim-Form",
     "fields": [
@@ -3800,7 +3800,7 @@
     ]
   },
   "VA-Benefit-Letter": {
-    "category": "government_benefit_income",
+    "category": "income",
     "description": "An official summary or award letter issued by the Department of Veterans Affairs verifying a veteran's benefit type, disability rating, and monthly payment details.",
     "document_type": "VA-Benefit-Letter",
     "fields": [
@@ -3969,7 +3969,7 @@
     ]
   },
   "W2": {
-    "category": "employer_income",
+    "category": "income",
     "description": "This is a tax form to file personal income received from an employer in a fiscal year",
     "document_type": "W2",
     "fields": [
@@ -4248,7 +4248,7 @@
     ]
   },
   "Workers-Compensation-Form": {
-    "category": "employment_records",
+    "category": "income",
     "description": "This is a blueprint of Workers_Compensation_Form",
     "document_type": "Workers-Compensation-Form",
     "fields": [

@@ -38,7 +38,7 @@ def mock_env(monkeypatch):
     )
     monkeypatch.setenv(EnvVarNames.DOCUMENTAI_INPUT_LOCATION, "s3://test-bucket/input")
     monkeypatch.setenv(EnvVarNames.DOCUMENTAI_OUTPUT_LOCATION, "s3://test-bucket/output")
-    monkeypatch.setenv(EnvVarNames.BDA_PROJECT_ARN_ALL, "arn:aws:test")
+    monkeypatch.setenv(EnvVarNames.BDA_PROJECT_ARN, "arn:aws:test")
     monkeypatch.setenv(EnvVarNames.BDA_PROFILE_ARN, "arn:aws:test")
     monkeypatch.setenv(EnvVarNames.BDA_REGION, "us-east-1")
 

@@ -12,6 +12,8 @@ from documentai_api.config.constants import ProcessStatus
 from documentai_api.config.constants_preclassification_category_generated import (
     PreclassificationCategory,
 )
+from documentai_api.config.env import get_env_config
+from documentai_api.config.env_var_names_generated import EnvVarNames
 from documentai_api.dtos.classification import (
     BedrockClassificationResult,
     PreclassificationMatchResult,
@@ -25,6 +27,7 @@ from documentai_api.jobs.document_processor.main import (
     main,
 )
 from documentai_api.schemas.document_metadata import DocumentMetadata
+from documentai_api.utils import bda_invoker as bda_invoker_module
 from documentai_api.utils.blur_detection import BlurResult
 
 _MAIN_MODULE = "documentai_api.jobs.document_processor.main"
@@ -60,7 +63,7 @@ def mock_find_matching_blueprint(mocker):
         return_value=PreclassificationMatchResult(
             matched_document_type="w2-form",
             confidence=0.95,
-            category=PreclassificationCategory.EMPLOYER_INCOME,
+            category=PreclassificationCategory.INCOME,
         ),
     )
 
@@ -224,7 +227,7 @@ def test_main_first_time_pdf(input_pdf, mocker, ddb_doc_metadata_table, mock_inv
         input_pdf.key,
         expected_object_key,
         "test-tenant-id",
-        PreclassificationCategory.EMPLOYER_INCOME,
+        PreclassificationCategory.INCOME,
         None,
     )
 
@@ -272,7 +275,7 @@ def test_main_strips_tenant_prefix_for_ddb_key(s3_bucket, ddb_doc_metadata_table
         tenant_key,
         expected_ddb_key,
         "test-tenant-id",
-        PreclassificationCategory.EMPLOYER_INCOME,
+        PreclassificationCategory.INCOME,
         None,
     )
 
@@ -305,7 +308,7 @@ def test_main_first_time_image(input_image, mocker, ddb_doc_metadata_table, mock
         input_image.key,
         expected_object_key,
         "test-tenant-id",
-        PreclassificationCategory.EMPLOYER_INCOME,
+        PreclassificationCategory.INCOME,
         None,
     )
 
@@ -407,7 +410,7 @@ def test_main_uses_env_bucket_when_not_provided(input_pdf, mocker, mock_invoke_b
         input_pdf.key,
         "test.pdf",
         "test-tenant-id",
-        PreclassificationCategory.EMPLOYER_INCOME,
+        PreclassificationCategory.INCOME,
         None,
     )
 
@@ -665,6 +668,44 @@ def test_main_skips_bda_when_no_match_and_flag_on(input_pdf, mocker, mock_invoke
     mock_classify_no_match.assert_called_once()
 
 
+def test_main_skips_bda_when_no_category_and_no_default_project(
+    input_pdf, mocker, mock_invoke_bda, monkeypatch
+):
+    """No category matched and no default BDA project configured: skip BDA and classify as no-blueprint-matched."""
+    # Isolate the module-level ARN cache so unsetting BDA_PROJECT_ARN here doesn't
+    # leak a stale (missing-fallback) arns map into other tests in this worker.
+    mocker.patch.object(bda_invoker_module, "_project_arns_cache", None)
+    monkeypatch.delenv(EnvVarNames.BDA_PROJECT_ARN, raising=False)
+    get_env_config.cache_clear()
+
+    mock_classify_no_blueprint = mocker.patch(
+        "documentai_api.jobs.document_processor.main.classify_as_no_custom_blueprint_matched"
+    )
+
+    mock_get = mocker.patch("documentai_api.jobs.document_processor.main.get_ddb_record")
+    mock_get.return_value = {
+        DocumentMetadata.TENANT_ID: "test-tenant-id",
+        DocumentMetadata.PROCESS_STATUS: ProcessStatus.NOT_STARTED.value,
+        DocumentMetadata.PRECLASSIFICATION_CATEGORY: "w2-form",
+    }
+    mocker.patch("documentai_api.jobs.document_processor.main.upsert_initial_ddb_record")
+    mocker.patch(
+        "documentai_api.jobs.document_processor.main.set_processing_status_started",
+        return_value=True,
+    )
+    mocker.patch(
+        "documentai_api.jobs.document_processor.main.optimize_s3_image",
+        return_value=OptimizationResult(
+            crop_result=CropResult(), grayscale_applied=False, file_size_bytes=100, too_large=False
+        ),
+    )
+
+    main(input_pdf.key, input_pdf.bucket_name)
+
+    mock_invoke_bda.assert_not_called()
+    mock_classify_no_blueprint.assert_called_once()
+
+
 def test_main_invokes_bda_when_match_found(input_pdf, mocker, mock_invoke_bda):
     """When a blueprint matched, BDA is invoked with the routing category."""
     mocker.patch(
@@ -677,7 +718,7 @@ def test_main_invokes_bda_when_match_found(input_pdf, mocker, mock_invoke_bda):
         DocumentMetadata.TENANT_ID: "test-tenant-id",
         DocumentMetadata.PROCESS_STATUS: ProcessStatus.NOT_STARTED.value,
         DocumentMetadata.PRECLASSIFICATION_CATEGORY: "w2-form",
-        DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_CATEGORY: PreclassificationCategory.EMPLOYER_INCOME,
+        DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCH_CATEGORY: PreclassificationCategory.INCOME,
     }
     mocker.patch("documentai_api.jobs.document_processor.main.upsert_initial_ddb_record")
     mocker.patch(
@@ -698,7 +739,7 @@ def test_main_invokes_bda_when_match_found(input_pdf, mocker, mock_invoke_bda):
         input_pdf.key,
         "test.pdf",
         "test-tenant-id",
-        PreclassificationCategory.EMPLOYER_INCOME,
+        PreclassificationCategory.INCOME,
         None,
     )
 

@@ -416,23 +416,80 @@ module "secrets" {
   }
 }
 
-# --- Bedrock Data Automation (one project per category) ---
-
+# --- Bedrock Data Automation (one project per parent category) ---
+#
+# infra/document-types/ is organized into parent categories (identity,
+# expenses, assets, income, supporting_records) so that a single BDA project
+# per parent category stays under AWS's 40-blueprint-per-project limit as new
+# document types are added. Some parent folders contain blueprints directly
+# (e.g. identity/*.json); others group several leaf folders underneath them
+# (e.g. income/employer_income/*.json, income/dependent_income/*.json) -
+# json_paths walks both shapes recursively so either is supported.
 locals {
-  document_types_dir    = "${path.module}/../../document-types"
-  document_type_folders = toset([for f in fileset(local.document_types_dir, "*/managed_blueprints.json") : dirname(f)])
+  blueprint_path = "${path.module}/../../document-types"
+  json_paths     = fileset(local.blueprint_path, "**/*.json")
 
-  # TODO: AWS BDA enforces a 40-blueprint-per-project limit. Adding the
-  # `expenses` (5) and `assets` (5) folders pushed the `all` project's would-be
-  # total to 50, so those two categories are excluded from `all` below.
-  # Longer-term, revisit the document-types folder structure (e.g. splitting
-  # further or reorganizing by BDA project) and consider removing the `all`
-  # project altogether now that per-category routing exists, rather than
-  # continuing to special-case categories here as new ones are added.
-  all_project_excluded_folders = toset(["expenses", "assets"])
-  all_project_folders          = setsubtract(local.document_type_folders, local.all_project_excluded_folders)
+  blueprint_list = [
+    for filepath in local.json_paths : {
+      path  = filepath
+      parts = split("/", filepath)
+    }
+  ]
 
-  all_managed_blueprint_arns = distinct(flatten([for folder in local.all_project_folders : [for bp in jsondecode(file("${local.document_types_dir}/${folder}/managed_blueprints.json")) : bp.arn]]))
+  # Leaf folders: the directory immediately containing a managed_blueprints.json.
+  # Flat categories (e.g. "identity") are their own leaf; nested categories
+  # (e.g. "income/employer_income") are one leaf per subfolder.
+  leaf_folders = toset([
+    for f in local.blueprint_list : dirname(f.path)
+    if basename(f.path) == "managed_blueprints.json"
+  ])
+
+  # Custom blueprint schema files per leaf folder - the file path is passed
+  # through as-is (the document-data-extraction module reads the file itself).
+  leaf_custom_blueprint_files = {
+    for folder in local.leaf_folders : folder => [
+      for f in local.blueprint_list : "${local.blueprint_path}/${f.path}"
+      if dirname(f.path) == folder && basename(f.path) != "managed_blueprints.json"
+    ]
+  }
+
+  # AWS-managed blueprint ARNs per leaf folder - managed_blueprints.json's
+  # content (not path) is what's needed here.
+  leaf_managed_blueprint_arns = {
+    for folder in local.leaf_folders : folder => [
+      for bp in jsondecode(file("${local.blueprint_path}/${folder}/managed_blueprints.json")) : bp.arn
+    ]
+  }
+
+  # Parent folders: the top-level directory name of every leaf folder (e.g.
+  # "income/employer_income" -> "income", "identity" -> "identity"). Grouping
+  # by parent - rather than by every individual leaf - merges nested
+  # categories' blueprints into one list per parent instead of one per leaf,
+  # which is what keeps document_type_folders at exactly one BDA project per
+  # parent category.
+  parent_folders = toset([for folder in local.leaf_folders : element(split("/", folder), 0)])
+
+  # Custom files and managed ARNs stay in separate maps (rather than one
+  # combined list) because the document-data-extraction module takes them as
+  # two distinct inputs: blueprint_file_paths and blueprint_arns.
+  parent_custom_blueprint_files = {
+    for parent in local.parent_folders : parent => distinct(flatten([
+      for folder, files in local.leaf_custom_blueprint_files : files
+      if element(split("/", folder), 0) == parent
+    ]))
+  }
+
+  parent_managed_blueprint_arns = {
+    for parent in local.parent_folders : parent => distinct(flatten([
+      for folder, arns in local.leaf_managed_blueprint_arns : arns
+      if element(split("/", folder), 0) == parent
+    ]))
+  }
+
+  # One BDA project per top-level document-type category. Flat categories
+  # (identity, expenses, assets) and grouped categories (income,
+  # supporting_records) both end up keyed by their top-level folder name here.
+  document_type_folders = local.parent_folders
 }
 
 module "bedrock_data_automation" {
@@ -447,10 +504,8 @@ module "bedrock_data_automation" {
   name        = "${local.service_name}-${each.key}"
   description = "BDA project for ${replace(each.key, "_", " ")} documents"
 
-  blueprint_file_paths = [for f in fileset("${local.document_types_dir}/${each.key}", "*.json") : "${local.document_types_dir}/${each.key}/${f}"
-  if f != "managed_blueprints.json"]
-
-  blueprint_arns = [for bp in jsondecode(file("${local.document_types_dir}/${each.key}/managed_blueprints.json")) : bp.arn]
+  blueprint_file_paths = local.parent_custom_blueprint_files[each.key]
+  blueprint_arns       = local.parent_managed_blueprint_arns[each.key]
 
   standard_output_configuration = {
     document = {
@@ -476,48 +531,6 @@ module "bedrock_data_automation" {
     project     = var.project_name
     environment = var.environment
     category    = each.key
-  }
-}
-
-module "bedrock_data_automation_all" {
-  source = "../../modules/document-data-extraction"
-
-  providers = {
-    aws   = aws.bda
-    awscc = awscc.bda
-  }
-
-  name        = "${local.service_name}-all"
-  description = "BDA project for all document types"
-  blueprint_arns = concat(
-    flatten([for k, v in module.bedrock_data_automation : v.blueprint_arns if !contains(local.all_project_excluded_folders, k)]),
-    local.all_managed_blueprint_arns,
-  )
-
-  standard_output_configuration = {
-    document = {
-      extraction = {
-        granularity  = { types = ["PAGE"] }
-        bounding_box = { state = "ENABLED" }
-      }
-      output_format = {
-        additional_file_format = { state = "DISABLED" }
-        text_format            = { types = ["PLAIN_TEXT"] }
-      }
-    }
-    image = {
-      extraction = {
-        bounding_box = { state = "ENABLED" }
-        category     = { state = "ENABLED", types = ["TEXT_DETECTION", "LOGOS"] }
-      }
-      generative_field = { state = "ENABLED", types = ["IMAGE_SUMMARY"] }
-    }
-  }
-
-  tags = {
-    project     = var.project_name
-    environment = var.environment
-    category    = "all"
   }
 }
 
@@ -589,27 +602,30 @@ locals {
       DDB_RAW_DATA_TABLE_NAME                                   = module.analytics.raw_metrics_table_name
       GLUE_DATABASE_NAME                                        = module.analytics.database_name
       ATHENA_WORKGROUP_NAME                                     = module.analytics.workgroup_name
-      BDA_PROJECT_ARN_PREFIX                                    = regex("^(.*)/", module.bedrock_data_automation_all.project_arn)[0]
-      BDA_PROJECT_ARN_ALL                                       = module.bedrock_data_automation_all.project_arn
-      BDA_PROFILE_ARN                                           = module.bedrock_data_automation_all.profile_arn
-      BDA_REGION                                                = var.bda_region
-      BEDROCK_CLASSIFICATION_MODEL_ID_PARAM                     = "${local.ssm_prefix}/models/classification-model-id"
-      BEDROCK_BOUNDING_BOX_MODEL_ID_PARAM                       = "${local.ssm_prefix}/models/bounding-box-model-id"
-      BEDROCK_BLUR_QUADRANT_MODEL_ID_PARAM                      = "${local.ssm_prefix}/models/blur-quadrant-model-id"
-      BEDROCK_SUPPLEMENTAL_EXTRACTION_MODEL_ID_PARAM            = "${local.ssm_prefix}/models/supplemental-extraction-model-id"
-      SSM_PREFIX                                                = local.ssm_prefix
-      MAX_BDA_INVOKE_RETRY_ATTEMPTS                             = local.max_bda_invoke_retry_attempts
-      API_AUTH_ENABLED                                          = local.api_auth_enabled
-      API_AUTH_CACHE_TTL                                        = local.api_auth_cache_ttl
-      API_AUTH_INSECURE_SHARED_KEY_PARAM                        = "/${var.project_name}/${var.environment}/api-auth-insecure-shared-key"
-      COGNITO_USER_POOL_ID                                      = module.identity_provider.user_pool_id
-      COGNITO_CLIENT_ID                                         = module.identity_provider.client_id
-      OTEL_SDK_DISABLED                                         = tostring(!var.otel_enabled)
-      OTEL_SERVICE_NAME                                         = var.otel_service_name
-      OTEL_EXPORTER_OTLP_ENDPOINT                               = var.otel_exporter_otlp_endpoint
-      OTEL_AWS_APPLICATION_SIGNALS_ENABLED                      = tostring(var.otel_enabled)
-      OTEL_METRICS_EXPORTER                                     = "awsemf"
-      OTEL_EXPORTER_OTLP_LOGS_HEADERS                           = "x-aws-metric-namespace=${var.otel_service_name}"
+      # project_arn's prefix and profile_arn are identical across all
+      # per-category BDA projects (same account/region/profile) - any one
+      # project in the map can supply them, so the first value is used as
+      # the reference rather than hard-coding a specific category key.
+      BDA_PROJECT_ARN_PREFIX                         = regex("^(.*)/", values(module.bedrock_data_automation)[0].project_arn)[0]
+      BDA_PROFILE_ARN                                = values(module.bedrock_data_automation)[0].profile_arn
+      BDA_REGION                                     = var.bda_region
+      BEDROCK_CLASSIFICATION_MODEL_ID_PARAM          = "${local.ssm_prefix}/models/classification-model-id"
+      BEDROCK_BOUNDING_BOX_MODEL_ID_PARAM            = "${local.ssm_prefix}/models/bounding-box-model-id"
+      BEDROCK_BLUR_QUADRANT_MODEL_ID_PARAM           = "${local.ssm_prefix}/models/blur-quadrant-model-id"
+      BEDROCK_SUPPLEMENTAL_EXTRACTION_MODEL_ID_PARAM = "${local.ssm_prefix}/models/supplemental-extraction-model-id"
+      SSM_PREFIX                                     = local.ssm_prefix
+      MAX_BDA_INVOKE_RETRY_ATTEMPTS                  = local.max_bda_invoke_retry_attempts
+      API_AUTH_ENABLED                               = local.api_auth_enabled
+      API_AUTH_CACHE_TTL                             = local.api_auth_cache_ttl
+      API_AUTH_INSECURE_SHARED_KEY_PARAM             = "/${var.project_name}/${var.environment}/api-auth-insecure-shared-key"
+      COGNITO_USER_POOL_ID                           = module.identity_provider.user_pool_id
+      COGNITO_CLIENT_ID                              = module.identity_provider.client_id
+      OTEL_SDK_DISABLED                              = tostring(!var.otel_enabled)
+      OTEL_SERVICE_NAME                              = var.otel_service_name
+      OTEL_EXPORTER_OTLP_ENDPOINT                    = var.otel_exporter_otlp_endpoint
+      OTEL_AWS_APPLICATION_SIGNALS_ENABLED           = tostring(var.otel_enabled)
+      OTEL_METRICS_EXPORTER                          = "awsemf"
+      OTEL_EXPORTER_OTLP_LOGS_HEADERS                = "x-aws-metric-namespace=${var.otel_service_name}"
   })
 
   # API Lambda env: the shared worker map, minus the Athena/Glue vars that only

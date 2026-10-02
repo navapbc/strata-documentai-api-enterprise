@@ -82,7 +82,7 @@ def _minimal_success_record(s3_bucket: Any, file_name: str) -> dict[str, Any]:
             "Additional context",
             False,
             "failed",
-            None,
+            "Processing failed",
             "Test error",
             ResponseCodes.INTERNAL_PROCESSING_ERROR,
         ),
