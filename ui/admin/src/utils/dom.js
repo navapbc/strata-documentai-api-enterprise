@@ -1,4 +1,4 @@
-export { h, text } from "../../../shared/utils/dom.js";
+export { h, text, svgIcon } from "../../../shared/utils/dom.js";
 import * as Icons from "./icons.js";
 
 /**

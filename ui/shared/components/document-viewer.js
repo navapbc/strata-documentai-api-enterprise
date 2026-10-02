@@ -5,7 +5,12 @@
 
 import { mergeOverlappingBoxes } from "../utils/bbox.js";
 import { esc } from "../utils/helpers.js";
-import { h } from "../utils/dom.js";
+import { h, svgIcon } from "../utils/dom.js";
+import {
+  ICON_ZOOM_OUT,
+  ICON_ZOOM_IN,
+  ICON_RESET_ZOOM,
+} from "../utils/icons.js";
 
 export const PREVIEWABLE_TYPES = ["application/pdf", "image/jpeg", "image/png"];
 
@@ -286,20 +291,19 @@ function addImageZoom(container, img) {
   let scale = 1;
   let fitWidth = 0; // image's responsive fit width, captured on first zoom
 
-  const btn = (label, glyph) =>
-    h(
-      "button",
-      {
-        type: "button",
-        className: "zoom-btn",
-        "aria-label": label,
-        title: label,
-      },
-      glyph,
-    );
-  const out = btn("Zoom out", "−");
-  const reset = btn("Reset zoom", "↺");
-  const inn = btn("Zoom in", "+");
+  const btn = (label, icon) => {
+    const el = h("button", {
+      type: "button",
+      className: "zoom-btn",
+      "aria-label": label,
+      title: label,
+    });
+    el.appendChild(svgIcon(icon));
+    return el;
+  };
+  const out = btn("Zoom out", ICON_ZOOM_OUT);
+  const reset = btn("Reset zoom", ICON_RESET_ZOOM);
+  const inn = btn("Zoom in", ICON_ZOOM_IN);
   const controls = h(
     "div",
     { className: "preview-zoom-controls" },

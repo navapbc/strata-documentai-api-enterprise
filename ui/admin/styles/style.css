@@ -2382,6 +2382,12 @@ td {
   line-height: 1;
   cursor: pointer;
   color: #374151;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.preview-zoom-controls .zoom-btn svg {
+  flex-shrink: 0;
 }
 .preview-zoom-controls .zoom-btn:hover {
   background: rgba(0, 0, 0, 0.07);
