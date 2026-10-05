@@ -9,7 +9,10 @@ from documentai_api.logging import get_logger
 from documentai_api.services import s3 as s3_service
 from documentai_api.services.aws_client_factory import AWSClientFactory
 from documentai_api.utils.s3 import generate_s3_uri
-from documentai_api.utils.ssm import is_skip_bda_if_unclassified
+from documentai_api.utils.ssm import (
+    is_preclassification_routing_enabled,
+    is_skip_bda_if_unclassified,
+)
 
 logger = get_logger(__name__)
 tracer = trace.get_tracer(__name__)
@@ -35,31 +38,19 @@ def skip_bda_if_unclassified() -> bool:
     return is_skip_bda_if_unclassified()
 
 
-def resolve_project_arn(category: str | None) -> tuple[str | None, bool]:
+def resolve_project_arn(category: str | None) -> tuple[str, bool]:
     """Resolve BDA project ARN for a preclassification category.
 
-    A matched category must have a configured BDA project - if not, that's a
-    deploy misconfiguration and this raises. Blueprint matching often yields no
-    category for perfectly valid documents (low confidence, "OTHER", the
-    matching flag disabled, or a model error), so a None/unmatched category
-    falls back to the default project (bda_project_arn), or returns None if no
-    default is configured - a normal outcome now that there's no catch-all
-    project. Callers should check for a None return and skip BDA rather than
-    treat it as a failure.
-
-    Returns (arn, used_category_specific_project). used_category_specific_project
-    is True only when a category-specific project was used.
+    Returns (arn, used_category_specific_project) where the bool is True only
+    when a category-specific ARN was selected (routing enabled + category hit).
     """
     arns = _get_project_arns()
 
-    if category:
-        if category not in arns:
-            raise ValueError(
-                f"No BDA project configured for preclassification category: {category!r}"
-            )
+    if category and is_preclassification_routing_enabled() and category in arns:
         return arns[category], True
 
-    return get_env_config().bda_project_arn, False
+    # Routing disabled or category not found - use "all" project
+    return arns["all"], False
 
 
 def invoke_bedrock_data_automation(
@@ -71,13 +62,6 @@ def invoke_bedrock_data_automation(
 ) -> tuple[str, str, int, bool]:
     """Invoke BDA and return (invocation_arn, project_arn, pages_sent_to_bda, used_category_specific_project)."""
     bda_project_arn, used_category_specific_project = resolve_project_arn(category)
-    if bda_project_arn is None:
-        # Callers should check resolve_project_arn's return value and skip BDA
-        # before reaching here - this is a defensive guard against misuse.
-        raise ValueError(
-            "No preclassification category matched and no default BDA project "
-            "(BDA_PROJECT_ARN) is configured"
-        )
     bda_profile_arn = get_env_config().get_bda_profile_arn
     output_location = get_env_config().get_output_location
     output_uri = generate_s3_uri(output_location, tenant_id, ddb_key, ExtractMethod.BDA)
@@ -150,8 +134,4 @@ def invoke_bedrock_data_automation(
     )
 
 
-__all__ = [
-    "invoke_bedrock_data_automation",
-    "resolve_project_arn",
-    "skip_bda_if_unclassified",
-]
+__all__ = ["invoke_bedrock_data_automation", "skip_bda_if_unclassified"]
