@@ -33,10 +33,16 @@ class PreclassificationCategory(StrEnum):
 @app.command()
 def generate() -> None:
     """Regenerate constants_generated.py from infra/document-types folders."""
+    # Parent categories may hold blueprints directly (e.g. identity/*.json) or
+    # group several leaf folders underneath them (e.g.
+    # income/employer_income/*.json) - checking recursively for a nested
+    # managed_blueprints.json supports both shapes.
     folders = sorted(
         p.name
         for p in _INFRA_DOCUMENT_TYPES.iterdir()
-        if p.is_dir() and not p.name.startswith(".") and (p / "managed_blueprints.json").exists()
+        if p.is_dir()
+        and not p.name.startswith(".")
+        and next(p.rglob("managed_blueprints.json"), None) is not None
     )
 
     if not folders:
