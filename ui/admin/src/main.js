@@ -40,6 +40,7 @@ import * as DocumentsView from "./views/documents/documents.js";
 import * as DocumentSearchView from "./views/document-search/document-search.js";
 import * as UsageView from "./views/usage/usage.js";
 import * as MetricsView from "./views/metrics/metrics.js";
+import * as BlueprintsView from "./views/document-types/document-types.js";
 import * as HomeView from "./views/home/home.js";
 import * as LoginView from "./views/login/login.js";
 import * as Icons from "./utils/icons.js";
@@ -75,6 +76,7 @@ let _mainContent = null;
 // View registry: name -> { module, lazyLoad }
 const VIEWS = {
   home: { module: HomeView },
+  blueprints: { module: BlueprintsView },
   keys: { module: KeysView },
   users: { module: UsersView },
   tenants: { module: TenantsView },

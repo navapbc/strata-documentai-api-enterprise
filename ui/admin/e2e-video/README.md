@@ -8,7 +8,7 @@ deterministically, with no credentials or deployed infra**.
 
 | Spec | Flow | Output |
 |------|------|--------|
-| `admin-walkthrough.spec.js` | login -> MFA -> Console Access (Audit Log, Users) -> API Management (API Keys, Doc Categories) -> Documents -> Reporting (Metrics, Usage) | `admin-walkthrough.gif` |
+| `admin-walkthrough.spec.js` | login -> MFA -> Console Access (Audit Log, Users) -> API Management (API Keys, Doc Categories) -> Configure Document Types -> Documents -> Reporting (Metrics, Usage) | `admin-walkthrough.gif` |
 | `admin-extraction-rules-walkthrough.spec.js` | login -> MFA -> Extraction Rules -> select tenant -> browse blueprints -> toggle fields -> save | `admin-extraction-rules-walkthrough.gif` |
 | `document-viewer-walkthrough.spec.js` | login -> MFA -> Documents -> document viewer with bbox and field highlighting | `document-viewer-walkthrough.gif` |
 

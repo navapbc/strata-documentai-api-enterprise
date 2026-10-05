@@ -5,6 +5,10 @@ export async function list(activeOnly = true) {
   return adminClient.request("GET", `/v1/admin/tenants${qs}`);
 }
 
+export async function get(tenantId) {
+  return adminClient.request("GET", `/v1/admin/tenants/${encodeURIComponent(tenantId)}`);
+}
+
 export async function create(
   tenantId,
   displayName,
@@ -32,6 +36,7 @@ export async function update(
     maxWritesPerDay,
     maxWritesPerMonth,
     extractionConfidenceFloor,
+    enabledDocumentTypes,
   } = {},
 ) {
   const body = {};
@@ -42,6 +47,7 @@ export async function update(
   if (maxWritesPerMonth !== undefined) body.max_writes_per_month = maxWritesPerMonth;
   if (extractionConfidenceFloor !== undefined)
     body.extraction_confidence_floor = extractionConfidenceFloor;
+  if (enabledDocumentTypes !== undefined) body.enabled_document_types = enabledDocumentTypes;
   return adminClient.request("PATCH", `/v1/admin/tenants/${encodeURIComponent(tenantId)}`, body);
 }
 

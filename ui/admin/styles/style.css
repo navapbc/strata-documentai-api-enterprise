@@ -2197,6 +2197,78 @@ td {
   font-size: 0.875rem;
 }
 
+/* Blueprints view: hide Status column when no tenant selected */
+#blueprints-table.no-tenant th:last-child,
+#blueprints-table.no-tenant td:last-child {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  #blueprints-table th:nth-child(2),
+  #blueprints-table td:nth-child(2),
+  #blueprints-table th:nth-child(4),
+  #blueprints-table td:nth-child(4) {
+    display: none;
+  }
+}
+
+.toggle-cell {
+  text-align: center;
+  padding: 0 1rem;
+  vertical-align: middle;
+}
+
+/* Toggle switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  background: #d1d5db;
+  border-radius: 999px;
+  transition: background 0.2s;
+}
+
+.toggle-track::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch input:checked + .toggle-track {
+  background: #2e8540;
+}
+
+.toggle-switch input:checked + .toggle-track::after {
+  transform: translateX(16px);
+}
+
+.toggle-switch input:disabled + .toggle-track {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* Blueprints Screen */
 #bp-main-area {
   overflow-y: auto;

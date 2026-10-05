@@ -17,6 +17,7 @@ from documentai_api.models.dictionary import (
     DictionaryFieldsResponse,
     DictionaryResponseCodesResponse,
     DictionarySchemaDetailResponse,
+    DictionarySchemaItem,
     DictionarySchemaListResponse,
     DictionarySearchResponse,
 )
@@ -53,7 +54,20 @@ async def list_schemas(
         raise HTTPException(
             status_code=503, detail="Unable to retrieve dictionary schemas"
         ) from None
-    return DictionarySchemaListResponse(schemas=sorted(schemas.keys()))
+    return DictionarySchemaListResponse(
+        schemas=sorted(
+            [
+                DictionarySchemaItem(
+                    document_type=doc_type,
+                    description=schema.description,
+                    category=schema.category,
+                    field_count=len(schema.fields),
+                )
+                for doc_type, schema in schemas.items()
+            ],
+            key=lambda s: s.document_type,
+        )
+    )
 
 
 @router.get(

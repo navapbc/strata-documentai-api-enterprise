@@ -53,7 +53,13 @@ def test_schemas_list(mock_schemas):
     response = client.get("/v1/dictionary/schemas")
 
     assert response.status_code == 200
-    assert response.json()["schemas"] == ["Payslip", "W2"]
+    schemas = response.json()["schemas"]
+    assert [s["documentType"] for s in schemas] == ["Payslip", "W2"]
+    assert all("description" in s for s in schemas)
+    assert all("category" in s for s in schemas)
+    assert all("fieldCount" in s for s in schemas)
+    assert schemas[0]["fieldCount"] == 1  # Payslip has 1 field
+    assert schemas[1]["fieldCount"] == 2  # W2 has 2 fields
 
 
 def test_schema_all_returns_404(mock_schemas):

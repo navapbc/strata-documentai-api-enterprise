@@ -18,8 +18,15 @@ class DictionarySearchResponse(BaseApiResponse):
     fields: list[DictionaryFieldItem]
 
 
+class DictionarySchemaItem(BaseApiResponse):
+    document_type: str
+    description: str
+    category: str
+    field_count: int
+
+
 class DictionarySchemaListResponse(BaseApiResponse):
-    schemas: list[str]
+    schemas: list[DictionarySchemaItem]
 
 
 class DictionarySchemaFieldResponse(BaseApiResponse):
