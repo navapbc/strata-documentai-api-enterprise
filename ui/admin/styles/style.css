@@ -664,6 +664,13 @@ form button[type="submit"]:not(.btn-primary):not(.btn-secondary):not(.btn-outlin
   color: #92400e;
 }
 
+.badge-disabled {
+  background: #fef2f2;
+  color: #dc2626;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
 .badge-info {
   background: #eff6ff;
   color: #1d4ed8;
@@ -2267,6 +2274,43 @@ td {
 .toggle-switch input:disabled + .toggle-track {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+@keyframes blueprint-toggle-spin {
+  to {
+    transform: rotate(0.5turn);
+  }
+}
+
+.toggle-spinner {
+  width: 20px;
+  height: 20px;
+  --c: radial-gradient(farthest-side, #2e8540 92%, #0000);
+  background:
+    var(--c) 50% 0,
+    var(--c) 50% 100%,
+    var(--c) 100% 50%,
+    var(--c) 0 50%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  animation: blueprint-toggle-spin 1s infinite;
+  display: inline-block;
+}
+
+@keyframes row-saved {
+  0% {
+    background-color: transparent;
+  }
+  20% {
+    background-color: #d4edda;
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+tr.saved {
+  animation: row-saved 1s ease-out forwards;
 }
 
 /* Blueprints Screen */

@@ -8,7 +8,7 @@ import { hoverFields, expectBboxOverlay, SELECTORS } from "../../shared/e2e/help
 //
 // Drives the real SPA through the full flow:
 //   login -> MFA -> Console Access (Users, Audit Log)
-//         -> API Management (Tenants, API Keys, Doc Categories, Extraction Rules)
+//         -> API Management (Tenants, API Keys, Manage Blueprints, Doc Categories, Extraction Rules)
 //         -> Documents (Recently Processed, Search)
 //         -> Reporting (Metrics, Usage)
 //
@@ -220,33 +220,10 @@ test("admin console walkthrough", async ({
     await page.waitForTimeout(1200);
   });
 
-  // === 6. API Management: Document Categories ==============================
-  await test.step("API Management: Document Categories", async () => {
-    await page.locator('a.nav-item[data-view="doc-categories"]').click();
-    await expect(page.locator("#view-title")).toHaveText(/^Manage Document Categories/);
-    await expect(page.locator("#categories-table")).toBeVisible();
-    await page.waitForTimeout(1200);
-  });
-
-  // === 7. API Management: Extraction Rules =================================
-  await test.step("API Management: Extraction Rules", async () => {
-    await page.locator('a.nav-item[data-view="extraction-rules"]').click();
-    await expect(page.locator("#view-title")).toHaveText(/^Manage Extraction Rules/);
-    await page.locator("#tenant-select").selectOption("acme-corp");
-    await page.waitForTimeout(600);
-    await page.locator("#bp-list-pane .combobox-input").click();
-    await expect(page.locator("#bp-list-pane .combobox-option").first()).toBeVisible({ timeout: 10000 });
-    await page.locator("#bp-list-pane .combobox-option", { hasText: "US Tax Form W-2" }).click();
-    await expect(page.locator("#bp-fields-list h3")).toHaveText("US Tax Form W-2");
-    await page.waitForTimeout(1200);
-  });
-
-  // === 8. Configure Document Types ========================================
-  await test.step("Configure Document Types", async () => {
-    await page.locator('[data-section="document-types"]').click();
-    await expect(page.locator("#section-document-types")).not.toHaveClass(/hidden/);
+  // === 6. API Management: Manage Blueprints ================================
+  await test.step("API Management: Manage Blueprints", async () => {
     await page.locator('a.nav-item[data-view="blueprints"]').click();
-    await expect(page.locator("#view-title")).toHaveText(/^Document Types/);
+    await expect(page.locator("#view-title")).toHaveText(/^Manage Blueprints/);
     await expect(page.locator("#blueprints-table")).toBeVisible();
     await page.waitForTimeout(800);
 
@@ -260,6 +237,27 @@ test("admin console walkthrough", async ({
     await page.waitForTimeout(600);
     await page.locator("#blueprints-search").fill("");
     await page.waitForTimeout(600);
+  });
+
+  // === 7. API Management: Document Categories ==============================
+  await test.step("API Management: Document Categories", async () => {
+    await page.locator('a.nav-item[data-view="doc-categories"]').click();
+    await expect(page.locator("#view-title")).toHaveText(/^Manage Document Categories/);
+    await expect(page.locator("#categories-table")).toBeVisible();
+    await page.waitForTimeout(1200);
+  });
+
+  // === 8. API Management: Extraction Rules =================================
+  await test.step("API Management: Extraction Rules", async () => {
+    await page.locator('a.nav-item[data-view="extraction-rules"]').click();
+    await expect(page.locator("#view-title")).toHaveText(/^Manage Extraction Rules/);
+    await page.locator("#tenant-select").selectOption("acme-corp");
+    await page.waitForTimeout(600);
+    await page.locator("#bp-list-pane .combobox-input").click();
+    await expect(page.locator("#bp-list-pane .combobox-option").first()).toBeVisible({ timeout: 10000 });
+    await page.locator("#bp-list-pane .combobox-option", { hasText: "US Tax Form W-2" }).click();
+    await expect(page.locator("#bp-fields-list h3")).toHaveText("US Tax Form W-2");
+    await page.waitForTimeout(1200);
   });
 
   // === 9. Documents: Recently Processed ====================================

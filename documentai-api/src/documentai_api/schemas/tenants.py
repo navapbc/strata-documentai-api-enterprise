@@ -13,6 +13,7 @@ class TenantRecord:
     EXTRACTION_CONFIDENCE_FLOOR = "extractionConfidenceFloor"
     MAX_WRITES_PER_DAY = "maxWritesPerDay"
     MAX_WRITES_PER_MONTH = "maxWritesPerMonth"
+    DISABLED_BLUEPRINT_LIST = "disabledBlueprintList"
     CREATED_AT = "createdAt"
     UPDATED_AT = "updatedAt"
 
@@ -29,6 +30,7 @@ class TenantsTable(BaseCrudTable):
             TenantRecord.EXTRACTION_CONFIDENCE_FLOOR,
             TenantRecord.MAX_WRITES_PER_DAY,
             TenantRecord.MAX_WRITES_PER_MONTH,
+            TenantRecord.DISABLED_BLUEPRINT_LIST,
         }
     )
     super_admin_protected_fields: frozenset[str] = frozenset(

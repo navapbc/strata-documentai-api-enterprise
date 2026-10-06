@@ -4,14 +4,15 @@ import * as TenantContext from "../../utils/tenant-context.js";
 import { h } from "../../utils/dom.js";
 import { tpl } from "../../utils/tpl.js";
 import { TableView } from "../../utils/table-view.js";
-import html from "./document-types.html";
+import * as Toast from "../../utils/toast.js";
+import html from "./blueprints.html";
 
 const tmpl = tpl(html);
 
 let _root, _tenantUnsub, _tableView;
 let _searchInput;
 let _allSchemas = [];
-let _enabledSet = null; // null = all enabled, Set = explicit opt-in list
+let _disabledSet = null; // null = none disabled, Set = disabled document types
 let _currentTenantId = null;
 
 function humanizeCategory(cat) {
@@ -60,7 +61,7 @@ async function load() {
   _tableView.showLoading();
 
   if (!_currentTenantId) {
-    _enabledSet = null;
+    _disabledSet = null;
     try {
       const schemasResp = await SchemasService.list();
       _allSchemas = schemasResp.schemas || [];
@@ -82,8 +83,8 @@ async function load() {
 
     _allSchemas = schemasResp.schemas || [];
 
-    const raw = tenantResp.enabledDocumentTypes ?? tenantResp.enabled_document_types;
-    _enabledSet = Array.isArray(raw) ? new Set(raw) : null;
+    const raw = tenantResp.disabledBlueprintList ?? tenantResp.disabled_blueprint_list;
+    _disabledSet = Array.isArray(raw) ? new Set(raw) : null;
 
     applyFilters();
   } catch (e) {
@@ -105,12 +106,60 @@ function applyFilters() {
 }
 
 function isEnabled(documentType) {
-  return _enabledSet === null || _enabledSet.has(documentType);
+  return _disabledSet === null || !_disabledSet.has(documentType);
+}
+
+async function handleToggle(documentType, enabled, checkbox) {
+  if (!_currentTenantId) return;
+
+  if (!enabled) {
+    _disabledSet = _disabledSet
+      ? new Set([..._disabledSet, documentType])
+      : new Set([documentType]);
+  } else {
+    _disabledSet?.delete(documentType);
+  }
+
+  const row = checkbox.closest("tr");
+  const toggleCell = row?.cells[row.cells.length - 1];
+  const toggleEl = toggleCell?.firstChild;
+  if (toggleCell) toggleCell.replaceChildren(h("div", { className: "toggle-spinner" }));
+  if (row) {
+    row.classList.remove("saved");
+    void row.offsetWidth;
+    row.classList.add("saved");
+  }
+
+  try {
+    await Promise.all([
+      TenantsService.update(_currentTenantId, {
+        disabledBlueprintList: _disabledSet && _disabledSet.size > 0 ? [..._disabledSet] : [],
+      }),
+      new Promise((r) => setTimeout(r, 500)),
+    ]);
+  } catch (e) {
+    // Revert on failure
+    if (!enabled) {
+      _disabledSet?.delete(documentType);
+    } else {
+      _disabledSet = _disabledSet
+        ? new Set([..._disabledSet, documentType])
+        : new Set([documentType]);
+    }
+    Toast.show(e.message);
+    _tableView.setRows([..._allSchemas]);
+  } finally {
+    if (toggleCell && toggleEl) toggleCell.replaceChildren(toggleEl);
+  }
 }
 
 function renderRow(schema) {
   const enabled = isEnabled(schema.documentType);
-  const checkbox = h("input", { type: "checkbox", checked: enabled, disabled: true });
+  const checkbox = h("input", { type: "checkbox" });
+  checkbox.checked = enabled;
+  checkbox.addEventListener("change", () =>
+    handleToggle(schema.documentType, checkbox.checked, checkbox),
+  );
   const toggle = h(
     "label",
     { className: "toggle-switch" },

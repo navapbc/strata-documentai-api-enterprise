@@ -1,10 +1,11 @@
 class ResponseCodes:
     SUCCESS = "000"
     # 001 is a legacy code from the prior platform contract and is not used here
-    SKIPPED_PER_PRECLASSIFICATION = "005"
+    NO_BLUEPRINT_MATCHED = "002"
     AI_CONSENT_DECLINED = "003"
     PROCESSING_EXCLUDED = "004"
-    NO_BLUEPRINT_MATCHED = "002"
+    SKIPPED_PER_PRECLASSIFICATION = "005"
+    BLUEPRINT_DISABLED = "006"
     MISSING_FIELDS = "101"
     MISCATEGORIZED = "102"
     NO_DOCUMENT_DETECTED = "103"
@@ -22,6 +23,7 @@ class ResponseCodes:
             cls.SUCCESS: "Document validation passed",
             cls.PROCESSING_EXCLUDED: "Document not chosen for extraction",
             cls.SKIPPED_PER_PRECLASSIFICATION: "Skipped per preclassification",
+            cls.BLUEPRINT_DISABLED: "Tenant disabled blueprint",
             cls.NO_BLUEPRINT_MATCHED: "No matching blueprint found",
             cls.AI_CONSENT_DECLINED: "Document not processed - AI consent not provided",
             cls.MISSING_FIELDS: "Missing fields",

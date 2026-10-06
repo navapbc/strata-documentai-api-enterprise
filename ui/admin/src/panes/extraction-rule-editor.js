@@ -5,6 +5,7 @@
  */
 import * as Store from "../state/blueprint-store.js";
 import * as RulesService from "../services/rules.js";
+import * as TenantsService from "../services/tenants.js";
 import * as TenantContext from "../utils/tenant-context.js";
 import * as Toast from "../utils/toast.js";
 import { h } from "../utils/dom.js";
@@ -26,6 +27,7 @@ export function mount(root) {
   if (tenantId) {
     Store.set({ tenantId });
     loadAllRules(tenantId);
+    loadDisabledBlueprints(tenantId);
   }
 
   _tenantUnsub = TenantContext.onChange((tid) => {
@@ -35,10 +37,14 @@ export function mount(root) {
       ruleExists: false,
       dirty: false,
       allRules: [],
+      disabledBlueprints: new Set(),
     });
     _lastRulesKey = null;
     _localRules = {};
-    if (tid) loadAllRules(tid);
+    if (tid) {
+      loadAllRules(tid);
+      loadDisabledBlueprints(tid);
+    }
   });
 
   _storeUnsub = Store.subscribe(render);
@@ -56,6 +62,16 @@ function unmount() {
     _tenantUnsub = null;
   }
   if (_root) _root.replaceChildren();
+}
+
+async function loadDisabledBlueprints(tenantId) {
+  try {
+    const data = await TenantsService.get(tenantId);
+    const list = data.disabledBlueprintList ?? data.disabled_blueprint_list ?? [];
+    Store.set({ disabledBlueprints: new Set(list) });
+  } catch {
+    Store.set({ disabledBlueprints: new Set() });
+  }
 }
 
 async function loadAllRules(tenantId) {
@@ -105,14 +121,15 @@ function renderDocTypeSection(
   onSave,
   onDiscard,
   dirty,
+  disabled = false,
 ) {
   const section = h("div", { className: "doc-type-section" });
 
-  const header = h(
-    "div",
-    { className: "fields-list-header-row" },
-    h("h3", { className: "fields-list-header" }, docType),
-  );
+  const heading = h("h3", { className: "fields-list-header" }, docType);
+  if (disabled) {
+    heading.appendChild(h("span", { className: "badge badge-disabled" }, "Disabled"));
+  }
+  const header = h("div", { className: "fields-list-header-row" }, heading);
 
   if (editable) {
     const saveBtn = h("button", { className: "btn-primary btn-sm" }, "Save");
@@ -188,7 +205,16 @@ function renderDocTypeSection(
 
 function render(state) {
   if (!_root) return;
-  const { schemas, schemasLoading, activeDocType, rules, dirty, tenantId, allRules = [] } = state;
+  const {
+    schemas,
+    schemasLoading,
+    activeDocType,
+    rules,
+    dirty,
+    tenantId,
+    allRules = [],
+    disabledBlueprints = new Set(),
+  } = state;
 
   if (!activeDocType) {
     if (schemasLoading) {
@@ -224,10 +250,20 @@ function render(state) {
         local.ruleExists,
         !!tenantId,
         (fieldName, value) =>
-          onChangeLocal(fieldsList, docType, fields, allRules, tenantId, fieldName, value),
+          onChangeLocal(
+            fieldsList,
+            docType,
+            fields,
+            allRules,
+            tenantId,
+            disabledBlueprints,
+            fieldName,
+            value,
+          ),
         (dt) => saveDocType(dt),
         (dt) => discardDocType(dt, baseRules, ruleExists),
         local.dirty,
+        disabledBlueprints.has(docType),
       );
       section.dataset.docType = docType;
       fieldsList.appendChild(section);
@@ -263,6 +299,7 @@ function render(state) {
       () => saveRules(),
       () => discardChanges(),
       dirty,
+      disabledBlueprints.has(activeDocType),
     ),
   );
 
@@ -274,7 +311,16 @@ function render(state) {
   _root.replaceChildren(fieldsList);
 }
 
-function onChangeLocal(fieldsList, docType, fields, allRules, tenantId, fieldName, value) {
+function onChangeLocal(
+  fieldsList,
+  docType,
+  fields,
+  allRules,
+  tenantId,
+  disabledBlueprints,
+  fieldName,
+  value,
+) {
   const updated = { ...(_localRules[docType]?.rules || {}) };
   updated[fieldName] = value;
   _localRules[docType] = { ...(_localRules[docType] || {}), rules: updated, dirty: true };
@@ -292,10 +338,12 @@ function onChangeLocal(fieldsList, docType, fields, allRules, tenantId, fieldNam
     updated,
     ruleExists,
     !!tenantId,
-    (fn, v) => onChangeLocal(fieldsList, docType, fields, allRules, tenantId, fn, v),
+    (fn, v) =>
+      onChangeLocal(fieldsList, docType, fields, allRules, tenantId, disabledBlueprints, fn, v),
     (dt) => saveDocType(dt),
     (dt) => discardDocType(dt, baseRules, ruleExists),
     true,
+    disabledBlueprints.has(docType),
   );
   next.dataset.docType = docType;
   if (existing) fieldsList.replaceChild(next, existing);
