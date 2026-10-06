@@ -7,6 +7,7 @@ import pytest
 from documentai_api.config.env_var_names_generated import EnvVarNames
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils import auth as auth_util
+from documentai_api.utils.schemas import DocumentSchema
 
 TENANT_A = "tenant-a"
 TENANT_B = "tenant-b"
@@ -81,7 +82,10 @@ def test_all_non_public_routes_require_auth():
 
 def test_verify_api_key_valid(api_client, api_skeleton_key, mocker):
     """Test allows request with valid API key."""
-    mocker.patch("documentai_api.routers.dictionary.get_all_schemas", return_value={"test": {}})
+    mocker.patch(
+        "documentai_api.routers.dictionary.get_all_schemas",
+        return_value={"test": DocumentSchema(document_type="test", description="", fields=[])},
+    )
 
     response = api_client.get("/v1/dictionary/schemas", headers={"API-Key": api_skeleton_key})
     assert response.status_code == 200
@@ -97,7 +101,10 @@ def test_ddb_auth_valid_key(api_client, monkeypatch, mocker, api_keys_table):
     import hashlib
 
     monkeypatch.setenv(EnvVarNames.API_AUTH_ENABLED, "true")
-    mocker.patch("documentai_api.routers.dictionary.get_all_schemas", return_value={"test": {}})
+    mocker.patch(
+        "documentai_api.routers.dictionary.get_all_schemas",
+        return_value={"test": DocumentSchema(document_type="test", description="", fields=[])},
+    )
 
     raw_key = "docai_" + "a" * 32
     key_hash = hashlib.sha256(raw_key.encode()).hexdigest()

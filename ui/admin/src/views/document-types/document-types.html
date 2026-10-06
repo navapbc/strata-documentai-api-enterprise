@@ -1,0 +1,31 @@
+<div class="filter-layout">
+  <div class="filter-sidebar">
+    <div class="filter-field">
+      <label class="filter-field-label">Tenant</label>
+      <select id="tenant-select">
+        <option value="">— Select tenant —</option>
+      </select>
+    </div>
+    <div class="filter-field">
+      <label class="filter-field-label">Filter</label>
+      <input type="search" id="blueprints-search" placeholder="Name or description…" />
+    </div>
+  </div>
+  <div class="filter-main filter-main--table">
+    <div class="table-scroll">
+      <p id="no-blueprints" class="empty-state hidden">No blueprints found.</p>
+      <table id="blueprints-table" class="hidden">
+        <thead>
+          <tr>
+            <th data-col="documentType">Document Type</th>
+            <th data-col="description">Description</th>
+            <th data-col="category">Category</th>
+            <th data-col="fieldCount" style="width: 1px; white-space: nowrap">Number of Fields</th>
+            <th style="width: 1px; white-space: nowrap">Enabled</th>
+          </tr>
+        </thead>
+        <tbody id="blueprints-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>

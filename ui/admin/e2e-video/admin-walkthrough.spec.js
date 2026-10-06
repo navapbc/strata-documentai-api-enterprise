@@ -102,6 +102,14 @@ const USAGE_RESP = {
   ],
 };
 
+const SCHEMAS = [
+  { documentType: "W2", description: "A tax form to file personal income received from an employer in a fiscal year", category: "employer_income", fieldCount: 12 },
+  { documentType: "Payslip", description: "A document issued by an employer containing wages received for a given period.", category: "employer_income", fieldCount: 8 },
+  { documentType: "Bank-Statement", description: "A financial statement listing transaction summaries for a specific duration", category: "account_statements", fieldCount: 10 },
+  { documentType: "US-drivers-licenses", description: "US driving license from any US state", category: "identity", fieldCount: 14 },
+  { documentType: "US-passports", description: "A passport from the United States of America", category: "identity", fieldCount: 9 },
+];
+
 // ---------------------------------------------------------------------------
 
 test("admin console walkthrough", async ({
@@ -129,6 +137,9 @@ test("admin console walkthrough", async ({
   // --- API: all admin endpoints --------------------------------------------
   await page.route("**/v1/admin/api-keys**", (route) =>
     route.fulfill(json({ keys: KEYS })),
+  );
+  await page.route("**/v1/admin/tenants/acme-corp", (route) =>
+    route.fulfill(json({ ...TENANTS[0], enabledDocumentTypes: null })),
   );
   await page.route("**/v1/admin/tenants**", (route) =>
     route.fulfill(json({ tenants: TENANTS })),
@@ -158,6 +169,9 @@ test("admin console walkthrough", async ({
     if (route.request().url().includes("/dictionary/fields")) {
       return route.fulfill(json({ fields: EXTRACTION_FIELDS }));
     }
+    if (route.request().url().includes("/dictionary/schemas")) {
+      return route.fulfill(json({ schemas: SCHEMAS }));
+    }
     return route.fulfill(json({ fields: [] }));
   });
   await page.route("**/v1/config/extraction-rules**", (route) => route.fulfill(json({ rules: [{ requiredFields: ["wages", "federalIncomeTaxWithheld"], optionalFields: ["employerName", "employeeName", "taxYear"] }] })));
@@ -171,7 +185,7 @@ test("admin console walkthrough", async ({
 
   // === 2. Console Access: Users ==========================================
   await test.step("Console Access: Users", async () => {
-    await expect(page.locator("#view-title")).toHaveText("");
+    await expect(page.locator("#view-title")).toHaveText("Home");
     await page.locator('[data-section="console-access"]').click();
     await expect(page.locator("#section-console-access")).not.toHaveClass(/hidden/);
     await page.locator('a.nav-item[data-view="users"]').click();
@@ -227,38 +241,48 @@ test("admin console walkthrough", async ({
     await page.waitForTimeout(1200);
   });
 
-  // === 8. Documents: Recently Processed ====================================
+  // === 8. Configure Document Types ========================================
+  await test.step("Configure Document Types", async () => {
+    await page.locator('[data-section="document-types"]').click();
+    await expect(page.locator("#section-document-types")).not.toHaveClass(/hidden/);
+    await page.locator('a.nav-item[data-view="blueprints"]').click();
+    await expect(page.locator("#view-title")).toHaveText(/^Document Types/);
+    await expect(page.locator("#blueprints-table")).toBeVisible();
+    await page.waitForTimeout(800);
+
+    // Select a tenant to show the Enabled toggles
+    await page.locator("#tenant-select").selectOption("acme-corp");
+    await expect(page.locator("#blueprints-table")).toBeVisible();
+    await page.waitForTimeout(1200);
+
+    // Search filter
+    await page.locator("#blueprints-search").fill("identity");
+    await page.waitForTimeout(600);
+    await page.locator("#blueprints-search").fill("");
+    await page.waitForTimeout(600);
+  });
+
+  // === 9. Documents: Recently Processed ====================================
   await test.step("Documents: Recently Processed", async () => {
     await page.locator('[data-section="docs"]').click();
     await expect(page.locator("#section-docs")).not.toHaveClass(/hidden/);
     await page.locator('a.nav-item[data-view="documents"]').click();
     await expect(page.locator("#view-title")).toHaveText(/^Recently Processed/);
     await expect(page.locator("#document-status-filter")).toBeVisible();
-    await page.waitForTimeout(600);
-
     await page.locator(SELECTORS.tenantSelect).selectOption("acme-corp");
     await expect(page.locator("#documents-list .doc-list-item").first()).toBeVisible();
-    await page.waitForTimeout(900);
-
-    await page.locator("#documents-list").evaluate((el) => el.scrollTo({ top: el.scrollHeight, behavior: "smooth" }));
     await page.waitForTimeout(800);
-    await page.locator("#documents-list").evaluate((el) => el.scrollTo({ top: 0, behavior: "smooth" }));
-    await page.waitForTimeout(600);
 
     await page.locator(`[data-job-id="${JOB_ID}"]`).click();
     await expect(page.locator(SELECTORS.detailPane)).toBeVisible();
     await expectBboxOverlay(page, expect, SELECTORS.bboxOverlay);
-    await page.waitForTimeout(1000);
-
-    await hoverFields(page, ["wages", "federalIncomeTaxWithheld", "employerName"], SELECTORS.fieldRows);
-
-    await page.locator("#document-status-filter").selectOption("success");
-    await page.waitForTimeout(1000);
-    await page.locator("#document-status-filter").selectOption("");
     await page.waitForTimeout(800);
+
+    await hoverFields(page, ["wages", "federalIncomeTaxWithheld"], SELECTORS.fieldRows);
+    await page.waitForTimeout(600);
   });
 
-  // === 9. Reporting: Metrics ==============================================
+  // === 10. Reporting: Metrics ==============================================
   await test.step("Reporting: Metrics Dashboard", async () => {
     await page.locator('[data-section="reporting"]').click();
     await expect(page.locator("#section-reporting")).not.toHaveClass(/hidden/);

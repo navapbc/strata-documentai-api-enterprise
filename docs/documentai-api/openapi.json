@@ -5747,11 +5747,39 @@
         ],
         "title": "DictionaryBlueprintField"
       },
+      "DictionarySchemaItem": {
+        "properties": {
+          "documentType": {
+            "type": "string",
+            "title": "Documenttype"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "fieldCount": {
+            "type": "integer",
+            "title": "Fieldcount"
+          }
+        },
+        "type": "object",
+        "required": [
+          "documentType",
+          "description",
+          "category",
+          "fieldCount"
+        ],
+        "title": "DictionarySchemaItem"
+      },
       "DictionarySchemaListResponse": {
         "properties": {
           "schemas": {
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/DictionarySchemaItem"
             },
             "type": "array",
             "title": "Schemas"
