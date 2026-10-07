@@ -55,11 +55,15 @@ def write(
         if project_arns_json:
             arns = json.loads(project_arns_json)
         else:
-            single = os.environ.get("BDA_PROJECT_ARN_ALL")
-            if single:
-                arns = {"default": single}
-            else:
-                typer.echo("Error: No project ARN provided and BDA_PROJECT_ARNS not set.", err=True)
+            from documentai_api.config.env import get_env_config
+
+            arns = get_env_config().get_bda_project_arns()
+            if not arns:
+                typer.echo(
+                    "Error: No project ARN provided and no BDA_PROJECT_ARNS/"
+                    "BDA_PROJECT_ID_{CATEGORY} env vars set.",
+                    err=True,
+                )
                 raise typer.Exit(code=1)
 
     LABELS_DIR.mkdir(parents=True, exist_ok=True)

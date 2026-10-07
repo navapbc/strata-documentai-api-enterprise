@@ -11,7 +11,7 @@ runner = CliRunner()
 
 def test_generate_writes_categories(tmp_path):
     """Generates a valid Python file from a directory of category folders."""
-    folders = ["employer_income", "identity", "shelter"]
+    folders = ["expenses", "identity", "assets"]
     for name in folders:
         d = tmp_path / name
         d.mkdir()
@@ -28,14 +28,34 @@ def test_generate_writes_categories(tmp_path):
     assert result.exit_code == 0
     content = output.read_text()
     assert "class PreclassificationCategory(StrEnum):" in content
-    assert 'EMPLOYER_INCOME = "employer_income"' in content
+    assert 'EXPENSES = "expenses"' in content
     assert 'IDENTITY = "identity"' in content
-    assert 'SHELTER = "shelter"' in content
+    assert 'ASSETS = "assets"' in content
+
+
+def test_generate_collapses_nested_leaf_folders_to_parent_category(tmp_path):
+    """A nested leaf folder (e.g. income/employer_income) yields its parent category, not the leaf name."""
+    leaf = tmp_path / "income" / "employer_income"
+    leaf.mkdir(parents=True)
+    (leaf / "managed_blueprints.json").write_text("[]")
+
+    output = tmp_path / "out.py"
+
+    with (
+        patch("documentai_api.cli.generate_categories._INFRA_DOCUMENT_TYPES", tmp_path),
+        patch("documentai_api.cli.generate_categories._OUTPUT", output),
+    ):
+        result = runner.invoke(app)
+
+    assert result.exit_code == 0
+    content = output.read_text()
+    assert 'INCOME = "income"' in content
+    assert "EMPLOYER_INCOME" not in content
 
 
 def test_generate_excludes_hidden_dirs(tmp_path):
     """Hidden directories and folders without managed_blueprints.json are not included."""
-    d = tmp_path / "employer_income"
+    d = tmp_path / "expenses"
     d.mkdir()
     (d / "managed_blueprints.json").write_text("[]")
     (tmp_path / ".hidden").mkdir()
@@ -71,7 +91,7 @@ def test_generate_exits_when_no_folders(tmp_path):
 
 def test_generate_output_is_sorted(tmp_path):
     """Categories are written in alphabetical order."""
-    for name in ["shelter", "identity", "employer_income"]:
+    for name in ["supporting_records", "identity", "expenses"]:
         d = tmp_path / name
         d.mkdir()
         (d / "managed_blueprints.json").write_text("[]")

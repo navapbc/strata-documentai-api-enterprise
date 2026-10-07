@@ -40,6 +40,7 @@
 	test-e2e \
 	test-e2e-routing \
 	test-integration \
+	test-regression \
 	metrics-agg \
 	metrics-agg-last-n-days \
 	usage-report \
@@ -178,6 +179,9 @@ test-pip-audit: ## Run pip-audit dependency vulnerability scan
 test-integration: ## Run integration tests
 	$(PY_RUN_CMD) pytest -m "integration" $(args)
 
+test-regression: ## Re-run the document-type regression suite against canned BDA results (mocked AWS via moto)
+	$(PY_RUN_CMD) pytest -m "regression" $(args)
+
 test-e2e: .env.e2e
 test-e2e: ## Run e2e tests
 	@set -a && . ./.env.e2e && set +a && uv run --frozen pytest tests/e2e -m "e2e and not e2e_routing" -n 4 $(args)
@@ -205,8 +209,7 @@ test-e2e-routing: ## Run e2e routing tests
 # dev AWS resources - excludes API_AUTH_ENABLED and the Cognito/SSM/CORS vars
 # the deployed Lambda has, since those would flip auth away from the
 # API_AUTH_INSECURE_SHARED_KEY (local-dev-key) bypass local dev relies on.
-ENV_FROM_AWS_KEEP := ^(BDA_PROJECT_ARN_ALL\
-|BDA_PROJECT_ARN_PREFIX\
+ENV_FROM_AWS_KEEP := ^(BDA_PROJECT_ARN_PREFIX\
 |BDA_PROJECT_ID_[A-Z_]+\
 |BDA_PROFILE_ARN\
 |BDA_REGION\
@@ -217,9 +220,9 @@ ENV_FROM_AWS_KEEP := ^(BDA_PROJECT_ARN_ALL\
 |DOCUMENTAI_OUTPUT_LOCATION\
 |DOCUMENTAI_PREPROCESSING_LOCATION)=
 
-# Backslash-continued lines join with a space, (e.g. "BDA_PROJECT_ARN_ALL |BDA_PROFILE_ARN |..."),;
+# Backslash-continued lines join with a space, (e.g. "BDA_PROJECT_ARN_PREFIX |BDA_PROFILE_ARN |..."),;
 # this breaks the regex above. Remove blank space to create in the desired regex:
-# ^(BDA_PROJECT_ARN_ALL|BDA_PROFILE_ARN|...)=
+# ^(BDA_PROJECT_ARN_PREFIX|BDA_PROFILE_ARN|...)=
 ENV_FROM_AWS_KEEP := $(shell echo '$(ENV_FROM_AWS_KEEP)' | tr -d ' ')
 
 env-from-aws: _require-jq ## Append real dev AWS resource identifiers to .env for live local document processing

@@ -22,6 +22,7 @@ from documentai_api.classifiers.document_classification import (
     classify_as_ai_consent_declined,
     classify_as_extraction_not_configured,
     classify_as_failed,
+    classify_as_no_custom_blueprint_matched,
     classify_as_not_implemented,
 )
 from documentai_api.config.constants import (
@@ -43,6 +44,7 @@ from documentai_api.services import s3 as s3_service
 from documentai_api.services.exceptions import is_retryable
 from documentai_api.utils.bda_invoker import (
     invoke_bedrock_data_automation,
+    resolve_project_arn,
     skip_bda_if_unclassified,
 )
 from documentai_api.utils.dates import strip_time
@@ -330,12 +332,7 @@ def _invoke_bda_path(
         ddb_key, opt.crop_result, opt.grayscale_applied, opt.file_size_bytes, opt_result=opt
     )
 
-    if _should_invoke_bda(preclassification_document_type):
-        invoke_bda(bucket_name, object_key, ddb_key, tenant_id, routing_category, batch_id)
-
-        if apply_grayscale:
-            logger.info(f"Optimized {ddb_key} and invoked BDA")
-    else:
+    if not _should_invoke_bda(preclassification_document_type):
         logger.info(f"{ddb_key} preclassified as other_document; skipping BDA (flag on)")
         classify_as_extraction_not_configured(
             object_key=ddb_key,
@@ -344,6 +341,22 @@ def _invoke_bda_path(
             ),
             batch_id=batch_id,
         )
+    elif resolve_project_arn(routing_category)[0] is None:
+        # No category matched and no default BDA project configured.
+        logger.info(f"{ddb_key} has no category match and no default BDA project; skipping BDA")
+        classify_as_no_custom_blueprint_matched(
+            object_key=ddb_key,
+            data=ClassificationData(
+                additional_info="No category matched by blueprint matching and no default "
+                "BDA project configured; BDA skipped"
+            ),
+            batch_id=batch_id,
+        )
+    else:
+        invoke_bda(bucket_name, object_key, ddb_key, tenant_id, routing_category, batch_id)
+
+        if apply_grayscale:
+            logger.info(f"Optimized {ddb_key} and invoked BDA")
 
 
 def _dispatch_document_processor(

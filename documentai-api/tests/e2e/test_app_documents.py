@@ -23,6 +23,7 @@ class ExpectedResult:
     is_password_protected: bool = False
     bda_matched_document_class: str | None = None
     content_type: str | None = None
+    skip_bda: bool = False
 
 
 @dataclass
@@ -44,6 +45,7 @@ def load_test_cases() -> list[Any]:
                     is_password_protected=expected.get("isPasswordProtected", False),
                     bda_matched_document_class=expected.get("bdaMatchedDocumentClass"),
                     content_type=expected.get("content_type"),
+                    skip_bda=expected.get("skip_bda", False),
                 ),
             ),
             marks=(
@@ -122,12 +124,16 @@ def test_post_document(test_case, base_url, api_key):
     if expected_result.preclassification_category is not None:
         expect_not_none.append(DocumentMetadata.PRECLASSIFICATION_CATEGORY)
 
-    # Password-protected, blurry, and multi-document docs short-circuit before BDA, so BDA
-    # output and the processed-date timestamp are never written.
+    # Password-protected, blurry, and multi-document docs short-circuit before BDA,
+    # so BDA output and the processed-date timestamp are never written. skip_bda
+    # covers the same case for no-category-matched docs with no default BDA project
+    # configured (see resolve_project_arn) - the resulting responseCode (002) is
+    # otherwise identical to a BDA run that found no matching blueprint.
     short_circuits_before_bda = (
         expected_result.is_blurry
         or expected_result.is_password_protected
         or expected_result.response_code in {"400", "401"}
+        or expected_result.skip_bda
     )
     if not short_circuits_before_bda:
         expect_not_none += [
