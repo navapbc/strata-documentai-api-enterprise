@@ -322,6 +322,7 @@ def test_ddb_verify_valid_key_passes(api_keys_table):
         Item={
             ApiKeyRecord.KEY_HASH: key_hash,
             ApiKeyRecord.API_KEY_NAME: "test-client",
+            ApiKeyRecord.TENANT_ID: "test-tenant",
             ApiKeyRecord.IS_ACTIVE: True,
         }
     )
@@ -335,6 +336,7 @@ def test_ddb_verify_uses_cache_on_second_call(api_keys_table):
         Item={
             ApiKeyRecord.KEY_HASH: key_hash,
             ApiKeyRecord.API_KEY_NAME: "test-client",
+            ApiKeyRecord.TENANT_ID: "test-tenant",
             ApiKeyRecord.IS_ACTIVE: True,
         }
     )
@@ -501,6 +503,41 @@ def test_deactivate_api_key_invalidates_cache(seed_api_key):
 
 
 ##############################################################################
+# deactivate_keys_for_tenant (moto-backed)
+##############################################################################
+
+
+def test_deactivate_keys_for_tenant_deactivates_all_active_keys(seed_api_key, api_keys_table):
+    seed_api_key(api_key_name="key-1", tenant_id="tenant-x")
+    seed_api_key(api_key_name="key-2", tenant_id="tenant-x")
+
+    count = auth_util.deactivate_keys_for_tenant("tenant-x")
+
+    assert count == 2
+    items = api_keys_table.scan()["Items"]
+    tenant_items = [i for i in items if i.get(ApiKeyRecord.TENANT_ID) == "tenant-x"]
+    assert all(i[ApiKeyRecord.IS_ACTIVE] is False for i in tenant_items)
+
+
+def test_deactivate_keys_for_tenant_invalidates_cache(seed_api_key, api_keys_table):
+    _, key_hash = seed_api_key(tenant_id="tenant-y")
+    get_cache().add(key_hash, {ApiKeyRecord.IS_ACTIVE: True}, ttl_minutes=5)
+
+    auth_util.deactivate_keys_for_tenant("tenant-y")
+
+    assert get_cache().get(key_hash) is None
+
+
+def test_deactivate_keys_for_tenant_skips_already_inactive(seed_api_key, api_keys_table):
+    _, key_hash = seed_api_key(tenant_id="tenant-z")
+    auth_util.deactivate_api_key(key_hash)  # already inactive
+
+    count = auth_util.deactivate_keys_for_tenant("tenant-z")
+
+    assert count == 0
+
+
+##############################################################################
 # get_active_keys_by_name (moto-backed)
 ##############################################################################
 
@@ -616,6 +653,50 @@ def test_verify_api_key_disabled_by_default(monkeypatch):
 
 
 ##############################################################################
+# _get_user_context_from_api_key_from_ddb - inactive / missing tenant
+##############################################################################
+
+
+def test_get_user_context_rejects_inactive_tenant(seed_api_key, api_keys_table, monkeypatch):
+    """Deactivating a tenant's keys causes auth to reject them with 401."""
+    monkeypatch.setenv(EnvVarNames.API_AUTH_ENABLED, "true")
+    api_key, key_hash = seed_api_key(tenant_id="inactive-tenant")
+    auth_util.deactivate_api_key(key_hash)
+
+    with pytest.raises(HTTPException) as exc_info:
+        auth_util._get_user_context_from_api_key_from_ddb(api_key)
+    assert exc_info.value.status_code == 401
+
+
+def test_get_user_context_rejects_missing_tenant_id(api_keys_table, monkeypatch):
+    """API key record with no tenantId must be rejected with 401."""
+    monkeypatch.setenv(EnvVarNames.API_AUTH_ENABLED, "true")
+    raw_key = "docai_" + "z" * 32
+    key_hash = auth_util._hash_key(raw_key)
+    api_keys_table.put_item(
+        Item={
+            ApiKeyRecord.KEY_HASH: key_hash,
+            ApiKeyRecord.API_KEY_NAME: "no-tenant-key",
+            ApiKeyRecord.IS_ACTIVE: True,
+            # intentionally no TENANT_ID
+        }
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        auth_util._get_user_context_from_api_key_from_ddb(raw_key)
+    assert exc_info.value.status_code == 401
+
+
+def test_get_user_context_allows_active_tenant(seed_api_key, api_keys_table, monkeypatch):
+    """Active API key with a valid tenant_id must succeed."""
+    monkeypatch.setenv(EnvVarNames.API_AUTH_ENABLED, "true")
+    api_key, _ = seed_api_key(tenant_id="active-tenant")
+
+    ctx = auth_util._get_user_context_from_api_key_from_ddb(api_key)
+    assert ctx.tenant_id == "active-tenant"
+
+
+##############################################################################
 # verify_api_key end-to-end (moto-backed)
 ##############################################################################
 
@@ -623,7 +704,6 @@ def test_verify_api_key_disabled_by_default(monkeypatch):
 def test_verify_api_key_end_to_end_with_moto(seed_api_key, monkeypatch):
     """Test full verify_api_key → _verify_with_ddb → DDB flow using moto."""
     monkeypatch.setenv(EnvVarNames.API_AUTH_ENABLED, "true")
-
     api_key, _ = seed_api_key()
 
     auth_util.verify_api_key(api_key)  # should not raise

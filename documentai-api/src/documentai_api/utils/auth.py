@@ -228,8 +228,12 @@ def _is_valid_key_format(api_key: str) -> bool:
     )
 
 
-def _verify_with_ddb(api_key: str) -> None:
-    """Validate API key against DynamoDB table with in-memory caching."""
+def _authenticate(api_key: str) -> tuple[dict[str, Any], str]:
+    """Validate an API key end-to-end and return (record, tenant_id).
+
+    Raises HTTP 401 if the key is malformed, unknown, inactive/expired,
+    or has no tenant.
+    """
     if not _is_valid_key_format(api_key):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
 
@@ -253,9 +257,22 @@ def _verify_with_ddb(api_key: str) -> None:
         )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
 
+    tenant_id = record.get(ApiKeyRecord.TENANT_ID)
+
+    if not tenant_id:
+        logger.error(f"API key missing tenantId for key: {record.get(ApiKeyRecord.API_KEY_NAME)}")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
+
     threading.Thread(
         target=_update_last_used, args=(key_hash,), name=_LAST_USED_THREAD_NAME, daemon=True
     ).start()
+
+    return record, tenant_id
+
+
+def _verify_with_ddb(api_key: str) -> None:
+    """Validate API key against DynamoDB table with in-memory caching."""
+    _authenticate(api_key)
 
 
 def _verify_with_insecure_shared_key(api_key: str) -> None:
@@ -482,6 +499,47 @@ def deactivate_api_key(key_hash: str) -> bool:
     return True
 
 
+def deactivate_keys_for_tenant(tenant_id: str) -> int:
+    """Deactivate all active API keys for a tenant and evict them from the local cache.
+
+    Called when a tenant is deactivated so its keys stop working as soon as
+    possible. Because the auth cache is in-memory and per-container, other warm
+    Lambda containers will continue to honour cached keys until their TTL expires
+    (default 5 minutes). This is a known limitation of the in-process cache.
+
+    Note: reactivating a tenant does not restore its keys. New keys must be issued.
+
+    Returns the number of keys deactivated.
+    """
+    from documentai_api.services import ddb as ddb_service
+
+    config = get_env_config()
+    table_name = config.api_keys_table_name
+    index_name = config.api_keys_tenant_index_name
+
+    if not table_name or not index_name:
+        logger.warning("Cannot deactivate tenant keys: table or index env var not set")
+        return 0
+
+    items = ddb_service.query_by_key(table_name, index_name, ApiKeyRecord.TENANT_ID, tenant_id)
+    active = [item for item in items if item.get(ApiKeyRecord.IS_ACTIVE, False)]
+
+    count = 0
+    for item in active:
+        key_hash = item.get(ApiKeyRecord.KEY_HASH)
+        if key_hash:
+            try:
+                deactivate_api_key(key_hash)
+                count += 1
+            except Exception as e:
+                logger.error(f"Failed to deactivate key {key_hash} for tenant {tenant_id}: {e}")
+
+    if count:
+        logger.info(f"Deactivated {count} API key(s) for tenant: {tenant_id}")
+
+    return count
+
+
 def verify_api_key(api_key: str = Depends(api_key_header)) -> None:
     """Verify the API key from the request header.
 
@@ -517,39 +575,7 @@ def get_user_context_from_api_key(api_key: str = Depends(api_key_header)) -> Use
 
 def _get_user_context_from_api_key_from_ddb(api_key: str) -> UserContext:
     """Validate API key and return UserContext from DDB record."""
-    if not _is_valid_key_format(api_key):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
-
-    key_hash = _compute_key_hash(api_key)
-
-    cache = get_cache()
-    record = cache.get(key_hash)
-
-    if record is None:
-        record = _lookup_and_maybe_migrate(api_key)
-        if record:
-            cache.add(key_hash, record, ttl_minutes=_get_cache_ttl_minutes())
-
-    if not record:
-        logger.warning("API key not found in DynamoDB")
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
-
-    if not _validate_key_record(record):
-        logger.warning(
-            f"API key validation failed for key: {record.get(ApiKeyRecord.API_KEY_NAME, 'unknown')}"
-        )
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
-
-    tenant_id = record.get(ApiKeyRecord.TENANT_ID)
-
-    if not tenant_id:
-        logger.error(f"API key missing tenantId for key: {record.get(ApiKeyRecord.API_KEY_NAME)}")
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
-
-    threading.Thread(
-        target=_update_last_used, args=(key_hash,), name=_LAST_USED_THREAD_NAME, daemon=True
-    ).start()
-
+    record, tenant_id = _authenticate(api_key)
     return UserContext(
         tenant_id=tenant_id,
         api_key_name=record.get(ApiKeyRecord.API_KEY_NAME, "unknown"),
