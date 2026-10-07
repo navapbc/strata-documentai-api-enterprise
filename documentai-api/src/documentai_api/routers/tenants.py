@@ -26,6 +26,7 @@ from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
 from documentai_api.schemas.tenants import TenantRecord
 from documentai_api.utils import tenants as tenants_util
 from documentai_api.utils.audit_log import log_event
+from documentai_api.utils.auth import deactivate_keys_for_tenant
 from documentai_api.utils.dates import get_month_prefix, get_today_iso
 from documentai_api.utils.jwt_auth import is_super_admin, tenant_scope
 from documentai_api.utils.strings import camel_to_snake
@@ -198,13 +199,18 @@ async def update_tenant(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
+    metadata: dict[str, Any] = {"changed_fields": list(allowed)}
+
+    if set_fields.get(camel_to_snake(TenantRecord.IS_ACTIVE)) is False:
+        metadata["revoked_key_count"] = deactivate_keys_for_tenant(tenant_id)
+
     log_event(
         claims,
         action=AuditAction.TENANT_UPDATE,
         target_type=AuditTargetType.TENANT,
         target_id=tenant_id,
         tenant_id=tenant_id,
-        metadata={"changed_fields": list(allowed)},
+        metadata=metadata,
     )
     return _to_item(updated)
 
@@ -237,13 +243,17 @@ async def delete_tenant(
     claims: SuperAdminClaims,
 ) -> DeleteTenantResponse:
     """Deactivate a tenant (soft delete). Super-admin only."""
+    revoked = deactivate_keys_for_tenant(tenant_id)
+
     if not tenants_util.deactivate_tenant(tenant_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant not found")
+
     log_event(
         claims,
         action=AuditAction.TENANT_DEACTIVATE,
         target_type=AuditTargetType.TENANT,
         target_id=tenant_id,
         tenant_id=tenant_id,
+        metadata={"revoked_key_count": revoked},
     )
     return DeleteTenantResponse(deleted=True, tenant_id=tenant_id)

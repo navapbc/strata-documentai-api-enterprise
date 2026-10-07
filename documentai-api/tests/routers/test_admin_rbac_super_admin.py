@@ -71,6 +71,17 @@ def test_keys_create_nonexistent_tenant_returns_400(api_client, api_keys_table, 
     assert "does not exist" in response.json()["detail"]
 
 
+def test_keys_create_inactive_tenant_returns_400(api_client, api_keys_table, tenants_table):
+    override_jwt(make_claims(groups=[SUPER_ADMIN]))
+    api_client.post(TENANTS_URL, json=NEW_TENANT)
+    api_client.delete(f"{TENANTS_URL}/{TENANT_ID}")
+    response = api_client.post(
+        KEYS_URL, json={"api_key_name": "test", "environment": "dev", "tenant_id": TENANT_ID}
+    )
+    assert response.status_code == 400
+    assert "inactive" in response.json()["detail"]
+
+
 def test_keys_create_missing_api_key_name_returns_422(api_client, api_keys_table):
     override_jwt(make_claims(groups=[SUPER_ADMIN]))
     response = api_client.post(KEYS_URL, json={})
@@ -244,6 +255,19 @@ def test_tenants_super_admin_delete_returns_200(api_client, tenants_table, audit
     assert AuditAction.TENANT_DEACTIVATE in actions
 
 
+def test_tenants_delete_revokes_keys(api_client, api_keys_table, tenants_table):
+    override_jwt(make_claims(groups=[SUPER_ADMIN]))
+    api_client.post(TENANTS_URL, json=NEW_TENANT)
+    api_client.post(
+        KEYS_URL, json={"api_key_name": "test-key", "environment": "dev", "tenant_id": TENANT_ID}
+    )
+    assert any(i.get("isActive") is True for i in api_keys_table.scan()["Items"])
+
+    api_client.delete(f"{TENANTS_URL}/{TENANT_ID}")
+
+    assert not any(i.get("isActive") is True for i in api_keys_table.scan()["Items"])
+
+
 def test_tenants_super_admin_delete_not_found_returns_404(api_client, tenants_table):
     override_jwt(make_claims(groups=[SUPER_ADMIN]))
     response = api_client.delete(f"{TENANTS_URL}/{MISSING_TENANT_ID}")
@@ -341,6 +365,24 @@ def test_tenants_update_deactivated_tenant(api_client, seed_tenant):
     response = api_client.patch(f"{TENANTS_URL}/{TENANT_ID}", json={"is_active": True})
     assert response.status_code == 200
     assert response.json()["isActive"] is True
+
+
+def test_tenants_patch_is_active_false_revokes_keys(
+    api_client, api_keys_table, tenants_table, seed_tenant
+):
+    override_jwt(make_claims(groups=[SUPER_ADMIN]))
+    # Create a key for the tenant
+    api_client.post(
+        KEYS_URL, json={"api_key_name": "test-key", "environment": "dev", "tenant_id": TENANT_ID}
+    )
+    active_before = [i for i in api_keys_table.scan()["Items"] if i.get("isActive") is True]
+    assert len(active_before) == 1
+
+    response = api_client.patch(f"{TENANTS_URL}/{TENANT_ID}", json={"is_active": False})
+    assert response.status_code == 200
+
+    active_after = [i for i in api_keys_table.scan()["Items"] if i.get("isActive") is True]
+    assert len(active_after) == 0
 
 
 def test_tenants_update_writes_audit_event(api_client, tenants_table, audit_events_table):
