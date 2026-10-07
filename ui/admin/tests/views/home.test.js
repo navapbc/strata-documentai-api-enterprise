@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import NAV_SECTIONS from "../../src/config/nav.js";
 
 let HomeView, Session;
 
@@ -33,6 +34,19 @@ describe("home view", () => {
     expect(root.querySelector('a[href="#documents"]')).toBeTruthy();
     expect(root.querySelector('a[href="#keys"]')).toBeTruthy();
     expect(root.querySelector('a[href="#metrics"]')).toBeTruthy();
+    expect(root.querySelector('a[href="#blueprints"]')).toBeTruthy();
+  });
+
+  it("renders a card for each nav section", () => {
+    HomeView.mount(root);
+    expect(root.querySelectorAll(".home-card").length).toBe(NAV_SECTIONS.length);
+  });
+
+  it("injects an icon into each home card", () => {
+    HomeView.mount(root);
+    root.querySelectorAll(".home-card-icon").forEach((el) => {
+      expect(el.querySelector("svg")).toBeTruthy();
+    });
   });
 
   it("hides super-admin-only links for non-super-admins", () => {

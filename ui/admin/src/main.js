@@ -12,7 +12,8 @@ import * as HttpClient from "./services/http.js";
 import * as Auth from "./services/auth.js";
 import * as Audit from "./services/audit.js";
 
-import BADGES from "./badges.json";
+import BADGES from "./config/badges.json";
+import NAV_SECTIONS from "./config/nav.js";
 
 const _now = new Date();
 function getBadge(view) {
@@ -114,7 +115,34 @@ function showDashboard(session) {
     // eslint-disable-next-line no-unsanitized/method -- icon is always a hardcoded trusted constant from the Icons module
     if (icon) el.insertAdjacentHTML("afterbegin", icon);
   });
+
   _mainContent = app.querySelector("#main-content");
+  // Render nav items from config
+  const isSuper = Session.isSuperAdmin();
+
+  NAV_SECTIONS.forEach(({ id, items }) => {
+    const body = app.querySelector(`#section-${id}`);
+    if (!body) return;
+
+    items.forEach(({ view, label, superAdmin }) => {
+      const a = document.createElement("a");
+      a.className = "nav-item" + (superAdmin ? " super-admin-only" : "");
+      a.dataset.view = view;
+      a.dataset.title = label;
+
+      if (superAdmin && !isSuper) {
+        a.classList.add("hidden");
+      }
+
+      a.append(label, " ");
+
+      const badge = document.createElement("span");
+      badge.id = `${view}-nav-badge`;
+      a.appendChild(badge);
+      body.appendChild(a);
+    });
+  });
+
   app.querySelectorAll("[id$='-nav-badge']").forEach((b) => {
     const view = b.id.replace("-nav-badge", "");
     const cfg = getBadge(view);
@@ -147,12 +175,6 @@ function showDashboard(session) {
 
   // Kick off tenant list fetch so it's cached before views mount
   TenantContext.load();
-
-  // Super-admin nav visibility
-  const isSuper = Session.isSuperAdmin();
-  app
-    .querySelectorAll(".super-admin-only")
-    .forEach((el) => el.classList.toggle("hidden", !isSuper));
 
   // Sidebar section toggles
   app.querySelectorAll(".nav-section-header").forEach((/** @type {HTMLElement} */ header) => {
