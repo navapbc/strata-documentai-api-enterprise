@@ -16,7 +16,7 @@ let _disabledSet = null; // null = none disabled, Set = disabled document types
 let _currentTenantId = null;
 
 function humanizeCategory(cat) {
-  return cat ? cat.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "—";
+  return cat ? cat.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "-";
 }
 
 export function mount(root) {
@@ -33,7 +33,7 @@ export function mount(root) {
   ).bindSortHeaders(root.querySelector("thead"));
 
   TenantContext.mountSelect(root.querySelector("#tenant-select"), {
-    placeholder: "— Select tenant —",
+    placeholder: "- Select tenant -",
   });
   _tenantUnsub = TenantContext.onChange((tenantId) => {
     _currentTenantId = tenantId;
@@ -171,9 +171,9 @@ function renderRow(schema) {
     "tr",
     null,
     h("td", null, schema.documentType),
-    h("td", null, schema.description || "—"),
+    h("td", null, schema.description || "-"),
     h("td", null, humanizeCategory(schema.category)),
-    h("td", { style: "text-align:right" }, String(schema.fieldCount ?? "—")),
+    h("td", { style: "text-align:right" }, String(schema.fieldCount ?? "-")),
     h("td", { className: "toggle-cell" }, toggle),
   );
 }
