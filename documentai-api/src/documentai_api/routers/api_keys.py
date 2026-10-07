@@ -72,6 +72,7 @@ async def create_api_key(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Tenant '{effective_tenant}' does not exist.",
         )
+
     if not tenant_record.get(TenantRecord.IS_ACTIVE, True):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

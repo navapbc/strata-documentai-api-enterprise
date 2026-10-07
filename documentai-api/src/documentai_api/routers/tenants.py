@@ -200,7 +200,7 @@ async def update_tenant(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
     metadata: dict[str, Any] = {"changed_fields": list(allowed)}
-    
+
     if set_fields.get(camel_to_snake(TenantRecord.IS_ACTIVE)) is False:
         metadata["revoked_key_count"] = deactivate_keys_for_tenant(tenant_id)
 

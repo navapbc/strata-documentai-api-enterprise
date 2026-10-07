@@ -18,7 +18,15 @@ from documentai_api.config.constants import API_AUTH_KEY_HEADER_NAME
 from documentai_api.config.env import get_app_config, get_env_config
 from documentai_api.logging import get_logger
 from documentai_api.schemas.api_key import ApiKeyRecord
+from documentai_api.services import ddb as ddb_service
 from documentai_api.utils.cache import get_cache
+from documentai_api.utils.jwt_auth import (
+    SUPER_ADMIN,
+    _decode_and_verify,
+    get_tenant_id,
+    is_super_admin,
+    require_role,
+)
 
 logger = get_logger(__name__)
 
@@ -100,8 +108,6 @@ def _lookup_and_maybe_migrate(api_key: str) -> dict[str, Any] | None:
 
 def _migrate_key_hash(old_hash: str, new_hash: str) -> None:
     """Replace an old key hash with a new one in DDB. Best-effort - failures are logged."""
-    from documentai_api.services import ddb as ddb_service
-
     table_name = get_env_config().api_keys_table_name
 
     if not table_name:
@@ -136,8 +142,6 @@ def _get_cache_ttl_minutes() -> int:
 
 def _lookup_key_in_ddb(key_hash: str) -> dict[str, Any] | None:
     """Look up an API key record from DynamoDB by its hash."""
-    from documentai_api.services import ddb as ddb_service
-
     table_name = get_env_config().api_keys_table_name
 
     if not table_name:
@@ -195,8 +199,6 @@ def _update_last_used(key_hash: str) -> None:
             _last_used_written_at.popitem(last=False)
 
     try:
-        from documentai_api.services import ddb as ddb_service
-
         table_name = get_env_config().api_keys_table_name
 
         if not table_name:
@@ -296,8 +298,6 @@ def get_active_keys_by_name(
     If ``tenant_id`` is provided, only keys belonging to that tenant are returned;
     otherwise keys are matched by name across all tenants.
     """
-    from documentai_api.services import ddb as ddb_service
-
     config = get_env_config()
     table_name = config.api_keys_table_name
 
@@ -336,8 +336,6 @@ def get_active_keys_by_name(
 
 def is_duplicate_key_name(tenant_id: str, api_key_name: str) -> bool:
     """Check if a key with this name has ever existed for the tenant (active or inactive)."""
-    from documentai_api.services import ddb as ddb_service
-
     config = get_env_config()
     table_name = config.api_keys_table_name
 
@@ -387,8 +385,6 @@ def generate_api_key(
         Tuple of (plaintext API key, list of existing active records for this client).
         The caller should warn the user if existing_keys is non-empty.
     """
-    from documentai_api.services import ddb as ddb_service
-
     existing_keys = get_active_keys_by_name(api_key_name, tenant_id)
 
     random_part = secrets.token_urlsafe(32)[:32]
@@ -434,8 +430,6 @@ def find_api_key_by_prefix(prefix: str, tenant_id: str | None = None) -> str | N
     Raises ValueError if more than one active key matches the prefix within
     the scoped set.
     """
-    from documentai_api.services import ddb as ddb_service
-
     table_name = get_env_config().api_keys_table_name
 
     if not table_name:
@@ -469,8 +463,6 @@ def deactivate_api_key(key_hash: str) -> bool:
     Returns:
         True if the key was found and deactivated, False if not found.
     """
-    from documentai_api.services import ddb as ddb_service
-
     table_name = get_env_config().api_keys_table_name
 
     if not table_name:
@@ -511,8 +503,6 @@ def deactivate_keys_for_tenant(tenant_id: str) -> int:
 
     Returns the number of keys deactivated.
     """
-    from documentai_api.services import ddb as ddb_service
-
     config = get_env_config()
     table_name = config.api_keys_table_name
     index_name = config.api_keys_tenant_index_name
@@ -592,14 +582,6 @@ async def get_user_context_with_fallback(
     Returns a UserContext in both cases. Used for endpoints that need to
     serve both machine clients (API key) and admin UI users (JWT).
     """
-    from documentai_api.utils.jwt_auth import (
-        SUPER_ADMIN,
-        _decode_and_verify,
-        get_tenant_id,
-        is_super_admin,
-        require_role,
-    )
-
     # Try API key first
     if api_key:
         try:
@@ -659,8 +641,6 @@ def resolve_tenant_from_context(
         return auth.tenant_id
 
     # JWT caller
-    from documentai_api.utils.jwt_auth import SUPER_ADMIN
-
     if auth.tenant_id == SUPER_ADMIN:
         return requested_tenant_id
 
