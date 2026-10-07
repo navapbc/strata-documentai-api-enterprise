@@ -98,7 +98,9 @@ export function mount(root) {
       _tenantMsg.classList.remove("hidden");
       return;
     }
-    if (!validateDates()) return;
+    if (!validateDates()) {
+      return;
+    }
     resetResults();
     runSearch();
   });
@@ -122,7 +124,9 @@ export function mount(root) {
           _tenantMsg.classList.remove("hidden");
           return;
         }
-        if (!validateDates()) return;
+        if (!validateDates()) {
+          return;
+        }
         resetResults();
         runSearch();
       }
@@ -156,7 +160,9 @@ export function unmount(root) {
     _unsubTenant = null;
   }
   const tenantSelect = root.querySelector("#tenant-select");
-  if (tenantSelect) TenantContext.unmountSelect(tenantSelect);
+  if (tenantSelect) {
+    TenantContext.unmountSelect(tenantSelect);
+  }
   root.replaceChildren();
 }
 
@@ -183,7 +189,9 @@ async function loadBlueprints() {
 async function loadCategories() {
   const tenantId = TenantContext.getTenantId();
   _docTypeInput.innerHTML = '<option value="">Any</option>';
-  if (!tenantId) return;
+  if (!tenantId) {
+    return;
+  }
   try {
     const resp = await CategoriesService.list(tenantId);
     const current = _docTypeInput.value;
@@ -252,7 +260,9 @@ async function runSearch({ append = false } = {}) {
       }
     }
 
-    if (append) _noDocuments.classList.add("hidden");
+    if (append) {
+      _noDocuments.classList.add("hidden");
+    }
 
     _loadMoreBtn.classList.toggle("hidden", !_nextCursor);
     _resultsTab.textContent = `Results (${_searchResults.length}${_nextCursor ? "+" : ""})`;

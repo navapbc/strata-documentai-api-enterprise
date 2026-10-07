@@ -13,7 +13,9 @@ export function mount(root) {
 
   const session = Session.get();
   const emailEl = root.querySelector("#home-email");
-  if (emailEl) emailEl.textContent = session?.email || "";
+  if (emailEl) {
+    emailEl.textContent = session?.email || "";
+  }
 
   const isSuper = Session.isSuperAdmin();
   const grid = root.querySelector("#home-grid");
@@ -24,8 +26,9 @@ export function mount(root) {
 
     const iconEl = document.createElement("span");
     iconEl.className = "home-card-icon";
-    // eslint-disable-next-line no-unsanitized/property -- icon is always a hardcoded trusted constant from the Icons module
-    if (Icons[icon]) iconEl.innerHTML = Icons[icon];
+    if (Icons[icon]) {
+      iconEl.innerHTML = Icons[icon]; // eslint-disable-line no-unsanitized/property -- icon is always a hardcoded trusted constant from the Icons module
+    }
 
     const h3 = document.createElement("h3");
     h3.textContent = label;

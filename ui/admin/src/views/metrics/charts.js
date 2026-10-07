@@ -63,7 +63,9 @@ export function buildVolumeChartConfig(dailyStats) {
           ctx.fillStyle = "#6b7280";
           ctx.textAlign = "center";
           data.datasets[0].data.forEach((val, i) => {
-            if (!val) return;
+            if (!val) {
+              return;
+            }
             const xPos = x.getPixelForValue(i);
             const yPos = y.getPixelForValue(val) - 4;
             ctx.fillText(val.toLocaleString(), xPos, yPos);
@@ -81,11 +83,15 @@ export function buildHourHeatmapEl(dailyStats) {
   const grid = Array.from({ length: 7 }, () => Array(24).fill(0));
 
   for (const d of dailyStats) {
-    if (!d.byHour || !d.date) continue;
+    if (!d.byHour || !d.date) {
+      continue;
+    }
     const dow = new Date(d.date + "T00:00:00").getDay();
     for (let utcHr = 0; utcHr < 24; utcHr++) {
       const count = d.byHour[String(utcHr)] ?? 0;
-      if (!count) continue;
+      if (!count) {
+        continue;
+      }
       const localHr = _utcHourToLocal(utcHr, d.date, tz);
       grid[dow][localHr] += count;
     }
@@ -94,7 +100,9 @@ export function buildHourHeatmapEl(dailyStats) {
   const max = Math.max(...grid.flat());
 
   function intensity(count) {
-    if (!count || max === 0) return 0;
+    if (!count || max === 0) {
+      return 0;
+    }
     return Math.ceil((count / max) * 4);
   }
 
@@ -275,7 +283,9 @@ export function buildDowTimingGridEl(dailyStats) {
   );
 
   function totalColor(val) {
-    if (val === null) return "";
+    if (val === null) {
+      return "";
+    }
     return val < 15 ? "timing-good" : val < 30 ? "timing-warn" : "timing-bad";
   }
 
@@ -306,10 +316,16 @@ export function computeBarData(
   { filterNull = false, sortByKey = false, nullLabel = null } = {},
 ) {
   let items = Object.entries(entries);
-  if (filterNull) items = items.filter(([k]) => k !== "null");
-  else if (nullLabel) items = items.map(([k, v]) => [k === "null" ? nullLabel : k, v]);
-  if (sortByKey) items.sort((a, b) => a[0].localeCompare(b[0]));
-  else items.sort((a, b) => b[1] - a[1]);
+  if (filterNull) {
+    items = items.filter(([k]) => k !== "null");
+  } else if (nullLabel) {
+    items = items.map(([k, v]) => [k === "null" ? nullLabel : k, v]);
+  }
+  if (sortByKey) {
+    items.sort((a, b) => a[0].localeCompare(b[0]));
+  } else {
+    items.sort((a, b) => b[1] - a[1]);
+  }
   const max = items.length > 0 ? Math.max(...items.map(([, c]) => c)) : 1;
   return items.map(([label, count]) => ({
     label,
@@ -319,8 +335,14 @@ export function computeBarData(
 }
 
 export function getResponseCodeClass(code) {
-  if (code.startsWith("000")) return "success";
-  if (code.startsWith("0")) return "warn";
-  if (code.startsWith("1")) return "warn";
+  if (code.startsWith("000")) {
+    return "success";
+  }
+  if (code.startsWith("0")) {
+    return "warn";
+  }
+  if (code.startsWith("1")) {
+    return "warn";
+  }
   return "danger";
 }

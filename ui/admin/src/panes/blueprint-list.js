@@ -17,7 +17,9 @@ export function mount(root) {
       const base = location.hash.split("/")[0];
       location.hash = `${base}/${docType}`;
       const mainArea = document.querySelector("#bp-main-area");
-      if (mainArea) mainArea.scrollTop = 0;
+      if (mainArea) {
+        mainArea.scrollTop = 0;
+      }
     },
   });
 
@@ -35,13 +37,19 @@ function unmount() {
     _combobox.destroy();
     _combobox = null;
   }
-  if (_root) _root.replaceChildren();
+  if (_root) {
+    _root.replaceChildren();
+  }
 }
 
 function render(state) {
-  if (!_combobox) return;
+  if (!_combobox) {
+    return;
+  }
   const { schemas, activeDocType } = state;
   const docTypes = Object.keys(schemas).sort();
   _combobox.setItems(docTypes);
-  if (activeDocType !== null) _combobox.setValue(activeDocType || "");
+  if (activeDocType !== null) {
+    _combobox.setValue(activeDocType || "");
+  }
 }

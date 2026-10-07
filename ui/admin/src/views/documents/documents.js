@@ -32,7 +32,9 @@ export function mount(root) {
   _pane.hide();
 
   const savedLimit = sessionStorage.getItem(STORAGE_KEY_LIMIT);
-  if (savedLimit) _limitFilter.value = savedLimit;
+  if (savedLimit) {
+    _limitFilter.value = savedLimit;
+  }
 
   _statusFilter.addEventListener("change", () => load());
   _limitFilter.addEventListener("change", () => {
@@ -61,7 +63,9 @@ export function unmount(root) {
     _unsubTenant = null;
   }
   const tenantSelect = root.querySelector("#tenant-select");
-  if (tenantSelect) TenantContext.unmountSelect(tenantSelect);
+  if (tenantSelect) {
+    TenantContext.unmountSelect(tenantSelect);
+  }
   root.replaceChildren();
 }
 

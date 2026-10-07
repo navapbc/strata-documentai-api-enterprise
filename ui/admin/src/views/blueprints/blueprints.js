@@ -53,7 +53,9 @@ export function unmount(root) {
     _tenantUnsub = null;
   }
   const sel = root.querySelector("#tenant-select");
-  if (sel) TenantContext.unmountSelect(sel);
+  if (sel) {
+    TenantContext.unmountSelect(sel);
+  }
   root.replaceChildren();
 }
 
@@ -110,7 +112,9 @@ function isEnabled(documentType) {
 }
 
 async function handleToggle(documentType, enabled, checkbox) {
-  if (!_currentTenantId) return;
+  if (!_currentTenantId) {
+    return;
+  }
 
   if (!enabled) {
     _disabledSet = _disabledSet
@@ -123,7 +127,9 @@ async function handleToggle(documentType, enabled, checkbox) {
   const row = checkbox.closest("tr");
   const toggleCell = row?.cells[row.cells.length - 1];
   const toggleEl = toggleCell?.firstChild;
-  if (toggleCell) toggleCell.replaceChildren(h("div", { className: "toggle-spinner" }));
+  if (toggleCell) {
+    toggleCell.replaceChildren(h("div", { className: "toggle-spinner" }));
+  }
   if (row) {
     row.classList.remove("saved");
     void row.offsetWidth;
@@ -149,7 +155,9 @@ async function handleToggle(documentType, enabled, checkbox) {
     Toast.show(e.message);
     _tableView.setRows([..._allSchemas]);
   } finally {
-    if (toggleCell && toggleEl) toggleCell.replaceChildren(toggleEl);
+    if (toggleCell && toggleEl) {
+      toggleCell.replaceChildren(toggleEl);
+    }
   }
 }
 

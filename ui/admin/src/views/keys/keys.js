@@ -78,7 +78,9 @@ export function unmount(root) {
     _tenantUnsub = null;
   }
   const tenantSelect = root.querySelector("#tenant-select");
-  if (tenantSelect) TenantContext.unmountSelect(tenantSelect);
+  if (tenantSelect) {
+    TenantContext.unmountSelect(tenantSelect);
+  }
   _tableView.unbind();
   root.replaceChildren();
 }
@@ -89,9 +91,15 @@ function openRevokeModal(key) {
   const nameEl = _revokeModal.querySelector("#revoke-key-name");
   const tenantEl = _revokeModal.querySelector("#revoke-key-tenant");
   const envEl = _revokeModal.querySelector("#revoke-key-env");
-  if (nameEl) nameEl.textContent = key.apiKeyName || "-";
-  if (tenantEl) tenantEl.textContent = key.tenantId || "-";
-  if (envEl) envEl.textContent = key.environment || "-";
+  if (nameEl) {
+    nameEl.textContent = key.apiKeyName || "-";
+  }
+  if (tenantEl) {
+    tenantEl.textContent = key.tenantId || "-";
+  }
+  if (envEl) {
+    envEl.textContent = key.environment || "-";
+  }
   openModal(_revokeModal);
 }
 
@@ -101,7 +109,9 @@ function closeRevokeModal() {
 }
 
 async function handleConfirmRevoke() {
-  if (!_pendingRevokeKey) return;
+  if (!_pendingRevokeKey) {
+    return;
+  }
   const keyPrefix = _pendingRevokeKey;
   closeRevokeModal();
   try {

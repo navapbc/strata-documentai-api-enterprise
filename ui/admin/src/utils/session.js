@@ -28,7 +28,9 @@ export function save({ accessToken, idToken, refreshToken, email, expiresIn }) {
 
 export function update({ accessToken, idToken, expiresIn }) {
   const session = get();
-  if (!session) return null;
+  if (!session) {
+    return null;
+  }
   session.accessToken = accessToken;
   session.idToken = idToken;
   session.expiresAt = Date.now() + expiresIn * 1000;
@@ -44,7 +46,9 @@ export function clear() {
 
 export function isExpired() {
   const session = get();
-  if (!session) return true;
+  if (!session) {
+    return true;
+  }
   return Date.now() >= session.expiresAt;
 }
 
@@ -70,10 +74,14 @@ function decodeJwt(token) {
 
 export function getRoles() {
   const session = get();
-  if (!session?.idToken) return [];
+  if (!session?.idToken) {
+    return [];
+  }
   const claims = decodeJwt(session.idToken);
   const groups = claims?.["cognito:groups"];
-  if (!groups) return [];
+  if (!groups) {
+    return [];
+  }
   return Array.isArray(groups) ? groups : [groups];
 }
 
@@ -103,7 +111,9 @@ function resetInactivityTimer() {
       }
     }
     clear();
-    if (_onExpire) _onExpire();
+    if (_onExpire) {
+      _onExpire();
+    }
   }, INACTIVITY_TIMEOUT_MS);
 }
 
@@ -124,7 +134,9 @@ function _onActivity() {
 }
 
 function _startActivityListeners() {
-  if (_activityListenersActive) return;
+  if (_activityListenersActive) {
+    return;
+  }
   ["click", "keydown", "mousemove", "scroll"].forEach((event) => {
     document.addEventListener(event, _onActivity, { passive: true });
   });
@@ -132,7 +144,9 @@ function _startActivityListeners() {
 }
 
 function _stopActivityListeners() {
-  if (!_activityListenersActive) return;
+  if (!_activityListenersActive) {
+    return;
+  }
   ["click", "keydown", "mousemove", "scroll"].forEach((event) => {
     document.removeEventListener(event, _onActivity);
   });

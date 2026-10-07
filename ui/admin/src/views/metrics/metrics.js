@@ -76,8 +76,11 @@ export function mount(root) {
   const hashTab = location.hash.replace("#", "").split("/")[1];
   _activeTab = validTabs.includes(hashTab) ? hashTab : "volume";
   root.querySelectorAll(".metrics-tab").forEach((btn) => {
-    if (btn.dataset.tab === _activeTab) btn.classList.add("active");
-    else btn.classList.remove("active");
+    if (btn.dataset.tab === _activeTab) {
+      btn.classList.add("active");
+    } else {
+      btn.classList.remove("active");
+    }
   });
   root.querySelectorAll(".filter-tab-panel").forEach((p) => p.classList.add("hidden"));
   root.querySelector(`#metrics-tab-${_activeTab}`)?.classList.remove("hidden");
@@ -105,13 +108,17 @@ export function unmount(_root) {
     _tenantUnsub = null;
   }
   const tenantSelect = _root?.querySelector("#tenant-select");
-  if (tenantSelect) TenantContext.unmountSelect(tenantSelect);
+  if (tenantSelect) {
+    TenantContext.unmountSelect(tenantSelect);
+  }
   _root = null;
 }
 
 async function load() {
   const { dateFrom: startDate, dateTo: endDate } = _datePicker.getRange();
-  if (!startDate) return;
+  if (!startDate) {
+    return;
+  }
   if (endDate && startDate > endDate) {
     Toast.show("End date must be after start date.", "error");
     return;
@@ -138,7 +145,9 @@ async function load() {
       tenantId: TenantContext.getTenantId(),
     });
 
-    if (thisLoad !== _loadId) return;
+    if (thisLoad !== _loadId) {
+      return;
+    }
 
     const summary = resp.summary;
     if (!summary || summary.totalRecords === 0) {
@@ -152,7 +161,9 @@ async function load() {
     renderOutcomes(summary, summary.byClassification, summary.byResponseCode);
     renderTiming(summary.timingStats, dailyStats);
   } catch (e) {
-    if (thisLoad !== _loadId) return;
+    if (thisLoad !== _loadId) {
+      return;
+    }
     _emptyEl.textContent = `Failed to load: ${e.message}`;
     Toast.show(`Metrics load failed: ${e.message}`, "error");
   }
@@ -364,7 +375,9 @@ function buildBarCol(data, label, opts = {}) {
 function renderOutcomes(summary, byClassification, byResponseCode) {
   const byCode = summary.byResponseCode || {};
 
-  if (!byResponseCode || Object.keys(byResponseCode).length === 0) return;
+  if (!byResponseCode || Object.keys(byResponseCode).length === 0) {
+    return;
+  }
 
   // Row 1: summary cards | response codes | (empty)
   const successCount2 = _codeCount(byCode, "0");
@@ -414,7 +427,9 @@ function renderOutcomes(summary, byClassification, byResponseCode) {
           ctx.textBaseline = "middle";
           dataset.data.forEach((arc, i) => {
             const val = data.datasets[0].data[i];
-            if (!val || val / donutTotal < 0.05) return;
+            if (!val || val / donutTotal < 0.05) {
+              return;
+            }
             const label = pct(val);
             const angle = (arc.startAngle + arc.endAngle) / 2;
             const r = (arc.innerRadius + arc.outerRadius) / 2;
