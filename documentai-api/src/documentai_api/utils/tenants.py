@@ -69,8 +69,8 @@ def update_tenant(
 ) -> dict[str, Any]:
     """Update tenant fields. Returns updated record. Raises ValueError if not found.
 
-    Pass clear_fields (python field names) to explicitly remove nullable overrides.
-    Only fields in TenantsTable.clearable_fields are accepted; others are silently ignored.
+    clear_fields: python field names to REMOVE from DynamoDB (e.g. clearing an override back
+    to the platform default). Only fields in TenantsTable.clearable_fields are accepted.
     """
     ddb_fields = _table.to_ddb_fields(**{k: v for k, v in fields.items() if v is not None})
     ddb_clear = {
@@ -78,6 +78,7 @@ def update_tenant(
         for k in (clear_fields or set())
         if snake_to_camel(k) in _table.clearable_fields
     }
+
     if not ddb_fields and not ddb_clear:
         raise ValueError("No fields to update")
 

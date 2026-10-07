@@ -5,7 +5,7 @@
       "description": "",
       "item": [
         {
-          "id": "c319e807-a9b9-4dbe-8bf7-c6b8dd9c41b6",
+          "id": "85fc82fc-2917-457c-a1d5-27726fa2684f",
           "name": "Create Document",
           "request": {
             "name": "Create Document",
@@ -62,7 +62,7 @@
                     "type": "text/plain"
                   },
                   "key": "category",
-                  "value": "f12",
+                  "value": "-xfdjsax",
                   "type": "text"
                 },
                 {
@@ -71,7 +71,7 @@
                     "type": "text/plain"
                   },
                   "key": "external_document_id",
-                  "value": "j1qwG4X5GNc",
+                  "value": "mD",
                   "type": "text"
                 },
                 {
@@ -80,7 +80,7 @@
                     "type": "text/plain"
                   },
                   "key": "external_system_id",
-                  "value": "7f8o1YV8fI",
+                  "value": "IGn0bFgBdA2",
                   "type": "text"
                 },
                 {
@@ -98,7 +98,7 @@
                     "type": "text/plain"
                   },
                   "key": "upload_source",
-                  "value": "mobile",
+                  "value": "desktop",
                   "type": "text"
                 }
               ]
@@ -123,7 +123,7 @@
           },
           "response": [
             {
-              "id": "6e55d2ee-0660-4324-8b01-42064bc160b9",
+              "id": "f379b17f-23db-4b37-a880-2336411d97af",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -183,7 +183,7 @@
                         "type": "text/plain"
                       },
                       "key": "category",
-                      "value": "f12",
+                      "value": "-xfdjsax",
                       "type": "text"
                     },
                     {
@@ -192,7 +192,7 @@
                         "type": "text/plain"
                       },
                       "key": "external_document_id",
-                      "value": "j1qwG4X5GNc",
+                      "value": "mD",
                       "type": "text"
                     },
                     {
@@ -201,7 +201,7 @@
                         "type": "text/plain"
                       },
                       "key": "external_system_id",
-                      "value": "7f8o1YV8fI",
+                      "value": "IGn0bFgBdA2",
                       "type": "text"
                     },
                     {
@@ -219,7 +219,7 @@
                         "type": "text/plain"
                       },
                       "key": "upload_source",
-                      "value": "mobile",
+                      "value": "desktop",
                       "type": "text"
                     }
                   ]
@@ -238,7 +238,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "0e584b9a-f049-406a-ba0c-af3f96cc41c9",
+              "id": "a7eebdf2-c15c-4c00-a814-54990a5c755b",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -298,7 +298,7 @@
                         "type": "text/plain"
                       },
                       "key": "category",
-                      "value": "f12",
+                      "value": "-xfdjsax",
                       "type": "text"
                     },
                     {
@@ -307,7 +307,7 @@
                         "type": "text/plain"
                       },
                       "key": "external_document_id",
-                      "value": "j1qwG4X5GNc",
+                      "value": "mD",
                       "type": "text"
                     },
                     {
@@ -316,7 +316,7 @@
                         "type": "text/plain"
                       },
                       "key": "external_system_id",
-                      "value": "7f8o1YV8fI",
+                      "value": "IGn0bFgBdA2",
                       "type": "text"
                     },
                     {
@@ -334,7 +334,7 @@
                         "type": "text/plain"
                       },
                       "key": "upload_source",
-                      "value": "mobile",
+                      "value": "desktop",
                       "type": "text"
                     }
                   ]
@@ -359,7 +359,7 @@
           }
         },
         {
-          "id": "6bce4b40-fed8-4fde-9417-8e1074a6cbc9",
+          "id": "813cf47f-11db-479c-9c6b-c0201c7657f2",
           "name": "Create Document Wait",
           "request": {
             "name": "Create Document Wait",
@@ -445,7 +445,7 @@
                     "type": "text/plain"
                   },
                   "key": "category",
-                  "value": "axlck2rw4mi",
+                  "value": "y",
                   "type": "text"
                 },
                 {
@@ -454,7 +454,7 @@
                     "type": "text/plain"
                   },
                   "key": "external_document_id",
-                  "value": "pbEu/l",
+                  "value": "rQLhac5-W/e",
                   "type": "text"
                 },
                 {
@@ -463,7 +463,7 @@
                     "type": "text/plain"
                   },
                   "key": "external_system_id",
-                  "value": "ihY",
+                  "value": "UsofgTZ",
                   "type": "text"
                 },
                 {
@@ -506,7 +506,7 @@
           },
           "response": [
             {
-              "id": "ddc274bf-3e32-405b-bb9f-22815ea007bf",
+              "id": "0972a1f5-9eb7-41ee-9eb4-8642f22593fd",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -595,7 +595,7 @@
                         "type": "text/plain"
                       },
                       "key": "category",
-                      "value": "axlck2rw4mi",
+                      "value": "y",
                       "type": "text"
                     },
                     {
@@ -604,7 +604,7 @@
                         "type": "text/plain"
                       },
                       "key": "external_document_id",
-                      "value": "pbEu/l",
+                      "value": "rQLhac5-W/e",
                       "type": "text"
                     },
                     {
@@ -613,7 +613,7 @@
                         "type": "text/plain"
                       },
                       "key": "external_system_id",
-                      "value": "ihY",
+                      "value": "UsofgTZ",
                       "type": "text"
                     },
                     {
@@ -650,7 +650,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "10f75707-f1bb-44b2-b28d-391c41be3d81",
+              "id": "6e441af7-79d9-47f7-85bb-3f5e5edb7f1e",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -739,7 +739,7 @@
                         "type": "text/plain"
                       },
                       "key": "category",
-                      "value": "axlck2rw4mi",
+                      "value": "y",
                       "type": "text"
                     },
                     {
@@ -748,7 +748,7 @@
                         "type": "text/plain"
                       },
                       "key": "external_document_id",
-                      "value": "pbEu/l",
+                      "value": "rQLhac5-W/e",
                       "type": "text"
                     },
                     {
@@ -757,7 +757,7 @@
                         "type": "text/plain"
                       },
                       "key": "external_system_id",
-                      "value": "ihY",
+                      "value": "UsofgTZ",
                       "type": "text"
                     },
                     {
@@ -800,7 +800,7 @@
           }
         },
         {
-          "id": "6448d10f-5a5a-4f06-a1c3-dda44833266a",
+          "id": "13bf3901-41df-4d00-ae85-413b8401edf7",
           "name": "Upload Document Batch",
           "request": {
             "name": "Upload Document Batch",
@@ -868,7 +868,7 @@
                     "type": "text/plain"
                   },
                   "key": "category",
-                  "value": "q"
+                  "value": "2t80yb-_ll"
                 },
                 {
                   "disabled": false,
@@ -919,7 +919,7 @@
           },
           "response": [
             {
-              "id": "5136430c-de3f-4cb6-ad42-881761d16348",
+              "id": "105136c9-8cb9-4bca-9879-92f7a671b8f1",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -990,7 +990,7 @@
                         "type": "text/plain"
                       },
                       "key": "category",
-                      "value": "q"
+                      "value": "2t80yb-_ll"
                     },
                     {
                       "disabled": false,
@@ -1035,7 +1035,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "154bd6f6-5cfd-488a-a900-cbddccafa6b2",
+              "id": "c5d83310-9b12-40dc-a787-6da0ee746991",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -1106,7 +1106,7 @@
                         "type": "text/plain"
                       },
                       "key": "category",
-                      "value": "q"
+                      "value": "2t80yb-_ll"
                     },
                     {
                       "disabled": false,
@@ -1157,7 +1157,7 @@
           }
         },
         {
-          "id": "41615f5b-8de3-4d25-b91a-ba396a45124e",
+          "id": "6e50a2f8-c567-4f3a-9e47-4e4e77083b32",
           "name": "Upload Zip Batch",
           "request": {
             "name": "Upload Zip Batch",
@@ -1217,7 +1217,7 @@
                     "type": "text/plain"
                   },
                   "key": "category",
-                  "value": "w6ca"
+                  "value": "rrp1_s"
                 },
                 {
                   "disabled": false,
@@ -1268,7 +1268,7 @@
           },
           "response": [
             {
-              "id": "36793d38-10a1-4413-9af1-ab4cb7ec07dd",
+              "id": "0b7fdfa5-2a81-4ccf-bc37-87e3975c103a",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -1331,7 +1331,7 @@
                         "type": "text/plain"
                       },
                       "key": "category",
-                      "value": "w6ca"
+                      "value": "rrp1_s"
                     },
                     {
                       "disabled": false,
@@ -1376,7 +1376,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "d791c4e5-3191-469b-8ef0-bd6a188afd38",
+              "id": "a57485be-eb8f-469c-8de0-4bf44675bfbd",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -1439,7 +1439,7 @@
                         "type": "text/plain"
                       },
                       "key": "category",
-                      "value": "w6ca"
+                      "value": "rrp1_s"
                     },
                     {
                       "disabled": false,
@@ -1490,7 +1490,7 @@
           }
         },
         {
-          "id": "1060cc5a-a961-4c98-8d61-abafe9588c56",
+          "id": "2410acc2-89bf-418b-ac93-fabb48592592",
           "name": "Create Presigned Upload Url",
           "request": {
             "name": "Create Presigned Upload Url",
@@ -1558,7 +1558,7 @@
                     "type": "text/plain"
                   },
                   "key": "category",
-                  "value": "mapj3fa5f"
+                  "value": "s_d"
                 },
                 {
                   "disabled": false,
@@ -1567,7 +1567,7 @@
                     "type": "text/plain"
                   },
                   "key": "external_document_id",
-                  "value": "0v/D"
+                  "value": "LZMieE9"
                 },
                 {
                   "disabled": false,
@@ -1585,7 +1585,7 @@
                     "type": "text/plain"
                   },
                   "key": "external_system_id",
-                  "value": "wl8776"
+                  "value": "Nl12"
                 },
                 {
                   "disabled": false,
@@ -1618,7 +1618,7 @@
           },
           "response": [
             {
-              "id": "f5015cc1-fc38-4469-8a58-7afa263d1853",
+              "id": "577a08fe-a6a9-4860-ae5e-572580c7226d",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -1689,7 +1689,7 @@
                         "type": "text/plain"
                       },
                       "key": "category",
-                      "value": "mapj3fa5f"
+                      "value": "s_d"
                     },
                     {
                       "disabled": false,
@@ -1698,7 +1698,7 @@
                         "type": "text/plain"
                       },
                       "key": "external_document_id",
-                      "value": "0v/D"
+                      "value": "LZMieE9"
                     },
                     {
                       "disabled": false,
@@ -1716,7 +1716,7 @@
                         "type": "text/plain"
                       },
                       "key": "external_system_id",
-                      "value": "wl8776"
+                      "value": "Nl12"
                     },
                     {
                       "disabled": false,
@@ -1743,7 +1743,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "c4ee5ebe-3c25-44f4-a3de-5f35c265a7cd",
+              "id": "a99c6872-fb16-4960-a09e-714c379d5843",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -1814,7 +1814,7 @@
                         "type": "text/plain"
                       },
                       "key": "category",
-                      "value": "mapj3fa5f"
+                      "value": "s_d"
                     },
                     {
                       "disabled": false,
@@ -1823,7 +1823,7 @@
                         "type": "text/plain"
                       },
                       "key": "external_document_id",
-                      "value": "0v/D"
+                      "value": "LZMieE9"
                     },
                     {
                       "disabled": false,
@@ -1841,7 +1841,7 @@
                         "type": "text/plain"
                       },
                       "key": "external_system_id",
-                      "value": "wl8776"
+                      "value": "Nl12"
                     },
                     {
                       "disabled": false,
@@ -1880,7 +1880,7 @@
       "description": "",
       "item": [
         {
-          "id": "befe7ba4-9113-4593-a71b-2f71a30fa5aa",
+          "id": "bb9b91f4-8fff-423e-864a-db739a0c50c8",
           "name": "Get Document Results",
           "request": {
             "name": "Get Document Results",
@@ -1967,7 +1967,7 @@
           },
           "response": [
             {
-              "id": "d160ce59-26f4-4c23-9278-503f4e09cce9",
+              "id": "82a629cb-002e-4dac-897d-55b0d1aee98c",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -2051,7 +2051,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "907b077b-5343-4b3a-9b85-20b08830983d",
+              "id": "c66bf113-9a02-48b0-934c-4e884884166d",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -2141,7 +2141,7 @@
           }
         },
         {
-          "id": "4c8ae4b6-321e-4670-bdb7-a96eaf0e46d5",
+          "id": "45c87dd4-2044-4ee0-93a1-8fc3deb0ae35",
           "name": "Search Documents",
           "request": {
             "name": "Search Documents",
@@ -2202,7 +2202,7 @@
           },
           "response": [
             {
-              "id": "71f08ca8-75af-49b7-8de7-4033f61e4320",
+              "id": "c5d2bc33-760e-43b4-a763-d05c8280f8cc",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -2255,12 +2255,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"results\": [\n    {\n      \"jobId\": \"<string>\",\n      \"jobStatus\": \"<string>\",\n      \"message\": \"<string>\",\n      \"createdAt\": \"<dateTime>\",\n      \"completedAt\": \"<dateTime>\",\n      \"totalProcessingTimeSeconds\": \"<number>\",\n      \"matchedDocumentClass\": \"<string>\",\n      \"fields\": {\n        \"key_0\": 1326,\n        \"key_1\": 7154\n      },\n      \"error\": \"<string>\",\n      \"additionalInfo\": \"<string>\",\n      \"responseCode\": \"<string>\",\n      \"responseMessage\": \"<string>\",\n      \"missingRequiredFieldList\": [\n        \"<string>\",\n        \"<string>\"\n      ],\n      \"belowExtractionConfidenceFloor\": \"<boolean>\",\n      \"userProvidedDocumentCategory\": \"<string>\",\n      \"inferredDocumentType\": \"<string>\"\n    },\n    {\n      \"jobId\": \"<string>\",\n      \"jobStatus\": \"<string>\",\n      \"message\": \"<string>\",\n      \"createdAt\": \"<dateTime>\",\n      \"completedAt\": \"<dateTime>\",\n      \"totalProcessingTimeSeconds\": \"<number>\",\n      \"matchedDocumentClass\": \"<string>\",\n      \"fields\": {\n        \"key_0\": 3133.05457303789\n      },\n      \"error\": \"<string>\",\n      \"additionalInfo\": \"<string>\",\n      \"responseCode\": \"<string>\",\n      \"responseMessage\": \"<string>\",\n      \"missingRequiredFieldList\": [\n        \"<string>\",\n        \"<string>\"\n      ],\n      \"belowExtractionConfidenceFloor\": \"<boolean>\",\n      \"userProvidedDocumentCategory\": \"<string>\",\n      \"inferredDocumentType\": \"<string>\"\n    }\n  ]\n}",
+              "body": "{\n  \"results\": [\n    {\n      \"jobId\": \"<string>\",\n      \"jobStatus\": \"<string>\",\n      \"message\": \"<string>\",\n      \"createdAt\": \"<dateTime>\",\n      \"completedAt\": \"<dateTime>\",\n      \"totalProcessingTimeSeconds\": \"<number>\",\n      \"matchedDocumentClass\": \"<string>\",\n      \"fields\": {\n        \"key_0\": 7202\n      },\n      \"error\": \"<string>\",\n      \"additionalInfo\": \"<string>\",\n      \"responseCode\": \"<string>\",\n      \"responseMessage\": \"<string>\",\n      \"missingRequiredFieldList\": [\n        \"<string>\",\n        \"<string>\"\n      ],\n      \"belowExtractionConfidenceFloor\": \"<boolean>\",\n      \"userProvidedDocumentCategory\": \"<string>\",\n      \"inferredDocumentType\": \"<string>\"\n    },\n    {\n      \"jobId\": \"<string>\",\n      \"jobStatus\": \"<string>\",\n      \"message\": \"<string>\",\n      \"createdAt\": \"<dateTime>\",\n      \"completedAt\": \"<dateTime>\",\n      \"totalProcessingTimeSeconds\": \"<number>\",\n      \"matchedDocumentClass\": \"<string>\",\n      \"fields\": {\n        \"key_0\": 4065.5787388081267,\n        \"key_1\": true,\n        \"key_2\": \"string\",\n        \"key_3\": 8033.540613343282\n      },\n      \"error\": \"<string>\",\n      \"additionalInfo\": \"<string>\",\n      \"responseCode\": \"<string>\",\n      \"responseMessage\": \"<string>\",\n      \"missingRequiredFieldList\": [\n        \"<string>\",\n        \"<string>\"\n      ],\n      \"belowExtractionConfidenceFloor\": \"<boolean>\",\n      \"userProvidedDocumentCategory\": \"<string>\",\n      \"inferredDocumentType\": \"<string>\"\n    }\n  ]\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "972b9157-93eb-4e08-8dbe-7830618cbfd7",
+              "id": "90bd73d6-917c-4728-b794-025edf269af7",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -2324,7 +2324,7 @@
           }
         },
         {
-          "id": "19d9e013-3b78-4e27-844f-9dcf8c6275da",
+          "id": "9c4539d6-ea4d-4cf5-b8ec-f9752100de47",
           "name": "Get Batch Status",
           "request": {
             "name": "Get Batch Status",
@@ -2383,7 +2383,7 @@
           },
           "response": [
             {
-              "id": "0d10279e-1851-41a6-98f7-ff2dd9fe07c7",
+              "id": "1cda65be-6344-4812-984d-594fc5c8c8f1",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -2439,7 +2439,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "992d796d-c7de-4cfe-bc9c-ca4ccdaf2386",
+              "id": "1ac68466-636a-4bd1-85d1-03acd9844b4f",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -2501,7 +2501,7 @@
           }
         },
         {
-          "id": "65b6cd2e-c638-463e-b679-381eec414b43",
+          "id": "b3e5c412-84c0-4942-a6be-e2747479a363",
           "name": "Get Metrics",
           "request": {
             "name": "Get Metrics",
@@ -2543,7 +2543,7 @@
                     "type": "text/plain"
                   },
                   "key": "granularity",
-                  "value": "daily"
+                  "value": "monthly"
                 },
                 {
                   "disabled": false,
@@ -2585,7 +2585,7 @@
           },
           "response": [
             {
-              "id": "45c85a8c-5941-4b7e-86ed-6313f8b29ccc",
+              "id": "5c244431-c538-495c-99be-2bec9ebf12d1",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -2622,7 +2622,7 @@
                         "type": "text/plain"
                       },
                       "key": "granularity",
-                      "value": "daily"
+                      "value": "monthly"
                     },
                     {
                       "disabled": false,
@@ -2661,12 +2661,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"startDate\": \"<string>\",\n  \"endDate\": \"<string>\",\n  \"granularity\": \"<string>\",\n  \"summary\": {\n    \"totalRecords\": 0,\n    \"totalBdaInvocations\": 0,\n    \"totalTextractExtractions\": 0,\n    \"totalExtractionInvocations\": 0,\n    \"totalDocumentsRecognized\": 0,\n    \"byStatus\": {\n      \"key_0\": \"<integer>\",\n      \"key_1\": \"<integer>\",\n      \"key_2\": \"<integer>\"\n    },\n    \"byClassification\": {\n      \"key_0\": \"<integer>\",\n      \"key_1\": \"<integer>\"\n    },\n    \"byResponseCode\": {\n      \"key_0\": \"<integer>\",\n      \"key_1\": \"<integer>\"\n    },\n    \"byFileType\": {\n      \"key_0\": \"<integer>\"\n    },\n    \"byUserCategory\": {\n      \"key_0\": \"<integer>\"\n    },\n    \"byUploadMethod\": {\n      \"key_0\": \"<integer>\",\n      \"key_1\": \"<integer>\"\n    },\n    \"byHour\": {\n      \"key_0\": \"<integer>\"\n    },\n    \"timingStats\": {\n      \"totalProcessingTimeAvg\": 0,\n      \"totalProcessingTimeSum\": 0,\n      \"totalProcessingTimeCount\": 0,\n      \"bdaProcessingTimeAvg\": 0,\n      \"bdaProcessingTimeSum\": 0,\n      \"bdaProcessingTimeCount\": 0,\n      \"bdaWaitTimeAvg\": 0,\n      \"bdaWaitTimeSum\": 0,\n      \"bdaWaitTimeCount\": 0\n    },\n    \"usageStats\": {\n      \"totalFileSizeBytes\": 0,\n      \"totalPages\": 0,\n      \"totalBdaPages\": 0,\n      \"totalBedrockInputTokens\": 0,\n      \"totalBedrockOutputTokens\": 0\n    }\n  },\n  \"dailyStats\": [\n    {\n      \"date\": \"<string>\",\n      \"month\": \"<string>\",\n      \"totalRecords\": 0,\n      \"totalBdaInvocations\": 0,\n      \"totalTextractExtractions\": 0,\n      \"totalExtractionInvocations\": 0,\n      \"totalDocumentsRecognized\": 0,\n      \"byStatus\": {\n        \"key_0\": \"<integer>\"\n      },\n      \"byClassification\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\"\n      },\n      \"byResponseCode\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\",\n        \"key_2\": \"<integer>\",\n        \"key_3\": \"<integer>\"\n      },\n      \"byFileType\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\"\n      },\n      \"byUserCategory\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\",\n        \"key_2\": \"<integer>\"\n      },\n      \"byUploadMethod\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\",\n        \"key_2\": \"<integer>\",\n        \"key_3\": \"<integer>\"\n      },\n      \"byHour\": {\n        \"key_0\": \"<integer>\"\n      },\n      \"timingStats\": {\n        \"totalProcessingTimeAvg\": 0,\n        \"totalProcessingTimeSum\": 0,\n        \"totalProcessingTimeCount\": 0,\n        \"bdaProcessingTimeAvg\": 0,\n        \"bdaProcessingTimeSum\": 0,\n        \"bdaProcessingTimeCount\": 0,\n        \"bdaWaitTimeAvg\": 0,\n        \"bdaWaitTimeSum\": 0,\n        \"bdaWaitTimeCount\": 0\n      },\n      \"usageStats\": {\n        \"totalFileSizeBytes\": 0,\n        \"totalPages\": 0,\n        \"totalBdaPages\": 0,\n        \"totalBedrockInputTokens\": 0,\n        \"totalBedrockOutputTokens\": 0\n      }\n    },\n    {\n      \"date\": \"<string>\",\n      \"month\": \"<string>\",\n      \"totalRecords\": 0,\n      \"totalBdaInvocations\": 0,\n      \"totalTextractExtractions\": 0,\n      \"totalExtractionInvocations\": 0,\n      \"totalDocumentsRecognized\": 0,\n      \"byStatus\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\"\n      },\n      \"byClassification\": {\n        \"key_0\": \"<integer>\"\n      },\n      \"byResponseCode\": {\n        \"key_0\": \"<integer>\"\n      },\n      \"byFileType\": {\n        \"key_0\": \"<integer>\"\n      },\n      \"byUserCategory\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\",\n        \"key_2\": \"<integer>\",\n        \"key_3\": \"<integer>\"\n      },\n      \"byUploadMethod\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\"\n      },\n      \"byHour\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\",\n        \"key_2\": \"<integer>\"\n      },\n      \"timingStats\": {\n        \"totalProcessingTimeAvg\": 0,\n        \"totalProcessingTimeSum\": 0,\n        \"totalProcessingTimeCount\": 0,\n        \"bdaProcessingTimeAvg\": 0,\n        \"bdaProcessingTimeSum\": 0,\n        \"bdaProcessingTimeCount\": 0,\n        \"bdaWaitTimeAvg\": 0,\n        \"bdaWaitTimeSum\": 0,\n        \"bdaWaitTimeCount\": 0\n      },\n      \"usageStats\": {\n        \"totalFileSizeBytes\": 0,\n        \"totalPages\": 0,\n        \"totalBdaPages\": 0,\n        \"totalBedrockInputTokens\": 0,\n        \"totalBedrockOutputTokens\": 0\n      }\n    }\n  ],\n  \"monthlyStats\": [\n    {\n      \"date\": \"<string>\",\n      \"month\": \"<string>\",\n      \"totalRecords\": 0,\n      \"totalBdaInvocations\": 0,\n      \"totalTextractExtractions\": 0,\n      \"totalExtractionInvocations\": 0,\n      \"totalDocumentsRecognized\": 0,\n      \"byStatus\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\"\n      },\n      \"byClassification\": {\n        \"key_0\": \"<integer>\"\n      },\n      \"byResponseCode\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\"\n      },\n      \"byFileType\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\"\n      },\n      \"byUserCategory\": {\n        \"key_0\": \"<integer>\"\n      },\n      \"byUploadMethod\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\",\n        \"key_2\": \"<integer>\",\n        \"key_3\": \"<integer>\"\n      },\n      \"byHour\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\"\n      },\n      \"timingStats\": {\n        \"totalProcessingTimeAvg\": 0,\n        \"totalProcessingTimeSum\": 0,\n        \"totalProcessingTimeCount\": 0,\n        \"bdaProcessingTimeAvg\": 0,\n        \"bdaProcessingTimeSum\": 0,\n        \"bdaProcessingTimeCount\": 0,\n        \"bdaWaitTimeAvg\": 0,\n        \"bdaWaitTimeSum\": 0,\n        \"bdaWaitTimeCount\": 0\n      },\n      \"usageStats\": {\n        \"totalFileSizeBytes\": 0,\n        \"totalPages\": 0,\n        \"totalBdaPages\": 0,\n        \"totalBedrockInputTokens\": 0,\n        \"totalBedrockOutputTokens\": 0\n      }\n    },\n    {\n      \"date\": \"<string>\",\n      \"month\": \"<string>\",\n      \"totalRecords\": 0,\n      \"totalBdaInvocations\": 0,\n      \"totalTextractExtractions\": 0,\n      \"totalExtractionInvocations\": 0,\n      \"totalDocumentsRecognized\": 0,\n      \"byStatus\": {\n        \"key_0\": \"<integer>\"\n      },\n      \"byClassification\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\"\n      },\n      \"byResponseCode\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\",\n        \"key_2\": \"<integer>\",\n        \"key_3\": \"<integer>\"\n      },\n      \"byFileType\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\"\n      },\n      \"byUserCategory\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\"\n      },\n      \"byUploadMethod\": {\n        \"key_0\": \"<integer>\"\n      },\n      \"byHour\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\",\n        \"key_2\": \"<integer>\"\n      },\n      \"timingStats\": {\n        \"totalProcessingTimeAvg\": 0,\n        \"totalProcessingTimeSum\": 0,\n        \"totalProcessingTimeCount\": 0,\n        \"bdaProcessingTimeAvg\": 0,\n        \"bdaProcessingTimeSum\": 0,\n        \"bdaProcessingTimeCount\": 0,\n        \"bdaWaitTimeAvg\": 0,\n        \"bdaWaitTimeSum\": 0,\n        \"bdaWaitTimeCount\": 0\n      },\n      \"usageStats\": {\n        \"totalFileSizeBytes\": 0,\n        \"totalPages\": 0,\n        \"totalBdaPages\": 0,\n        \"totalBedrockInputTokens\": 0,\n        \"totalBedrockOutputTokens\": 0\n      }\n    }\n  ]\n}",
+              "body": "{\n  \"startDate\": \"<string>\",\n  \"endDate\": \"<string>\",\n  \"granularity\": \"<string>\",\n  \"summary\": {\n    \"totalRecords\": 0,\n    \"totalBdaInvocations\": 0,\n    \"totalTextractExtractions\": 0,\n    \"totalExtractionInvocations\": 0,\n    \"totalDocumentsRecognized\": 0,\n    \"byStatus\": {\n      \"key_0\": \"<integer>\",\n      \"key_1\": \"<integer>\"\n    },\n    \"byClassification\": {\n      \"key_0\": \"<integer>\"\n    },\n    \"byResponseCode\": {\n      \"key_0\": \"<integer>\",\n      \"key_1\": \"<integer>\"\n    },\n    \"byFileType\": {\n      \"key_0\": \"<integer>\",\n      \"key_1\": \"<integer>\",\n      \"key_2\": \"<integer>\"\n    },\n    \"byUserCategory\": {\n      \"key_0\": \"<integer>\",\n      \"key_1\": \"<integer>\"\n    },\n    \"byUploadMethod\": {\n      \"key_0\": \"<integer>\"\n    },\n    \"byHour\": {\n      \"key_0\": \"<integer>\",\n      \"key_1\": \"<integer>\",\n      \"key_2\": \"<integer>\"\n    },\n    \"timingStats\": {\n      \"totalProcessingTimeAvg\": 0,\n      \"totalProcessingTimeSum\": 0,\n      \"totalProcessingTimeCount\": 0,\n      \"bdaProcessingTimeAvg\": 0,\n      \"bdaProcessingTimeSum\": 0,\n      \"bdaProcessingTimeCount\": 0,\n      \"bdaWaitTimeAvg\": 0,\n      \"bdaWaitTimeSum\": 0,\n      \"bdaWaitTimeCount\": 0\n    },\n    \"usageStats\": {\n      \"totalFileSizeBytes\": 0,\n      \"totalPages\": 0,\n      \"totalBdaPages\": 0,\n      \"totalBedrockInputTokens\": 0,\n      \"totalBedrockOutputTokens\": 0\n    }\n  },\n  \"dailyStats\": [\n    {\n      \"date\": \"<string>\",\n      \"month\": \"<string>\",\n      \"totalRecords\": 0,\n      \"totalBdaInvocations\": 0,\n      \"totalTextractExtractions\": 0,\n      \"totalExtractionInvocations\": 0,\n      \"totalDocumentsRecognized\": 0,\n      \"byStatus\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\"\n      },\n      \"byClassification\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\",\n        \"key_2\": \"<integer>\",\n        \"key_3\": \"<integer>\"\n      },\n      \"byResponseCode\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\",\n        \"key_2\": \"<integer>\"\n      },\n      \"byFileType\": {\n        \"key_0\": \"<integer>\"\n      },\n      \"byUserCategory\": {\n        \"key_0\": \"<integer>\"\n      },\n      \"byUploadMethod\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\"\n      },\n      \"byHour\": {\n        \"key_0\": \"<integer>\"\n      },\n      \"timingStats\": {\n        \"totalProcessingTimeAvg\": 0,\n        \"totalProcessingTimeSum\": 0,\n        \"totalProcessingTimeCount\": 0,\n        \"bdaProcessingTimeAvg\": 0,\n        \"bdaProcessingTimeSum\": 0,\n        \"bdaProcessingTimeCount\": 0,\n        \"bdaWaitTimeAvg\": 0,\n        \"bdaWaitTimeSum\": 0,\n        \"bdaWaitTimeCount\": 0\n      },\n      \"usageStats\": {\n        \"totalFileSizeBytes\": 0,\n        \"totalPages\": 0,\n        \"totalBdaPages\": 0,\n        \"totalBedrockInputTokens\": 0,\n        \"totalBedrockOutputTokens\": 0\n      }\n    },\n    {\n      \"date\": \"<string>\",\n      \"month\": \"<string>\",\n      \"totalRecords\": 0,\n      \"totalBdaInvocations\": 0,\n      \"totalTextractExtractions\": 0,\n      \"totalExtractionInvocations\": 0,\n      \"totalDocumentsRecognized\": 0,\n      \"byStatus\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\"\n      },\n      \"byClassification\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\"\n      },\n      \"byResponseCode\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\",\n        \"key_2\": \"<integer>\",\n        \"key_3\": \"<integer>\",\n        \"key_4\": \"<integer>\"\n      },\n      \"byFileType\": {\n        \"key_0\": \"<integer>\"\n      },\n      \"byUserCategory\": {\n        \"key_0\": \"<integer>\"\n      },\n      \"byUploadMethod\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\",\n        \"key_2\": \"<integer>\"\n      },\n      \"byHour\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\"\n      },\n      \"timingStats\": {\n        \"totalProcessingTimeAvg\": 0,\n        \"totalProcessingTimeSum\": 0,\n        \"totalProcessingTimeCount\": 0,\n        \"bdaProcessingTimeAvg\": 0,\n        \"bdaProcessingTimeSum\": 0,\n        \"bdaProcessingTimeCount\": 0,\n        \"bdaWaitTimeAvg\": 0,\n        \"bdaWaitTimeSum\": 0,\n        \"bdaWaitTimeCount\": 0\n      },\n      \"usageStats\": {\n        \"totalFileSizeBytes\": 0,\n        \"totalPages\": 0,\n        \"totalBdaPages\": 0,\n        \"totalBedrockInputTokens\": 0,\n        \"totalBedrockOutputTokens\": 0\n      }\n    }\n  ],\n  \"monthlyStats\": [\n    {\n      \"date\": \"<string>\",\n      \"month\": \"<string>\",\n      \"totalRecords\": 0,\n      \"totalBdaInvocations\": 0,\n      \"totalTextractExtractions\": 0,\n      \"totalExtractionInvocations\": 0,\n      \"totalDocumentsRecognized\": 0,\n      \"byStatus\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\"\n      },\n      \"byClassification\": {\n        \"key_0\": \"<integer>\"\n      },\n      \"byResponseCode\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\",\n        \"key_2\": \"<integer>\",\n        \"key_3\": \"<integer>\"\n      },\n      \"byFileType\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\"\n      },\n      \"byUserCategory\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\"\n      },\n      \"byUploadMethod\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\",\n        \"key_2\": \"<integer>\"\n      },\n      \"byHour\": {\n        \"key_0\": \"<integer>\"\n      },\n      \"timingStats\": {\n        \"totalProcessingTimeAvg\": 0,\n        \"totalProcessingTimeSum\": 0,\n        \"totalProcessingTimeCount\": 0,\n        \"bdaProcessingTimeAvg\": 0,\n        \"bdaProcessingTimeSum\": 0,\n        \"bdaProcessingTimeCount\": 0,\n        \"bdaWaitTimeAvg\": 0,\n        \"bdaWaitTimeSum\": 0,\n        \"bdaWaitTimeCount\": 0\n      },\n      \"usageStats\": {\n        \"totalFileSizeBytes\": 0,\n        \"totalPages\": 0,\n        \"totalBdaPages\": 0,\n        \"totalBedrockInputTokens\": 0,\n        \"totalBedrockOutputTokens\": 0\n      }\n    },\n    {\n      \"date\": \"<string>\",\n      \"month\": \"<string>\",\n      \"totalRecords\": 0,\n      \"totalBdaInvocations\": 0,\n      \"totalTextractExtractions\": 0,\n      \"totalExtractionInvocations\": 0,\n      \"totalDocumentsRecognized\": 0,\n      \"byStatus\": {\n        \"key_0\": \"<integer>\"\n      },\n      \"byClassification\": {\n        \"key_0\": \"<integer>\"\n      },\n      \"byResponseCode\": {\n        \"key_0\": \"<integer>\"\n      },\n      \"byFileType\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\",\n        \"key_2\": \"<integer>\"\n      },\n      \"byUserCategory\": {\n        \"key_0\": \"<integer>\"\n      },\n      \"byUploadMethod\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\"\n      },\n      \"byHour\": {\n        \"key_0\": \"<integer>\",\n        \"key_1\": \"<integer>\"\n      },\n      \"timingStats\": {\n        \"totalProcessingTimeAvg\": 0,\n        \"totalProcessingTimeSum\": 0,\n        \"totalProcessingTimeCount\": 0,\n        \"bdaProcessingTimeAvg\": 0,\n        \"bdaProcessingTimeSum\": 0,\n        \"bdaProcessingTimeCount\": 0,\n        \"bdaWaitTimeAvg\": 0,\n        \"bdaWaitTimeSum\": 0,\n        \"bdaWaitTimeCount\": 0\n      },\n      \"usageStats\": {\n        \"totalFileSizeBytes\": 0,\n        \"totalPages\": 0,\n        \"totalBdaPages\": 0,\n        \"totalBedrockInputTokens\": 0,\n        \"totalBedrockOutputTokens\": 0\n      }\n    }\n  ]\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "f87800db-85be-465a-a745-9cfd2110ba3b",
+              "id": "7850cabd-1adf-46aa-b4bd-ef7d8c0382ec",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -2703,7 +2703,7 @@
                         "type": "text/plain"
                       },
                       "key": "granularity",
-                      "value": "daily"
+                      "value": "monthly"
                     },
                     {
                       "disabled": false,
@@ -2753,7 +2753,7 @@
           }
         },
         {
-          "id": "0ce1c2e0-a821-4580-8cd9-97e16d13caa5",
+          "id": "07f94b16-2891-4e3d-a1e7-23af4177c109",
           "name": "Get Document Evaluation",
           "request": {
             "name": "Get Document Evaluation",
@@ -2813,7 +2813,7 @@
           },
           "response": [
             {
-              "id": "7afa2d3a-5511-4780-9cb4-b4765f5676be",
+              "id": "bbf1b9ff-5c48-434c-9e88-52425c4a90ab",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -2865,12 +2865,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"jobId\": \"<string>\",\n  \"createdAt\": \"<string>\",\n  \"responseCode\": \"<string>\",\n  \"responseCodeDescription\": \"<string>\",\n  \"evaluations\": {\n    \"key_0\": {\n      \"status\": \"<string>\",\n      \"reason\": \"<string>\"\n    }\n  }\n}",
+              "body": "{\n  \"jobId\": \"<string>\",\n  \"createdAt\": \"<string>\",\n  \"responseCode\": \"<string>\",\n  \"responseCodeDescription\": \"<string>\",\n  \"evaluations\": {\n    \"key_0\": {\n      \"status\": \"<string>\",\n      \"reason\": \"<string>\"\n    },\n    \"key_1\": {\n      \"status\": \"<string>\",\n      \"reason\": \"<string>\"\n    }\n  }\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "2f4949ee-fff1-4c55-ad5a-d29ace98092b",
+              "id": "b7913b17-343b-4ee9-ac0b-b6c3916d2156",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -2939,7 +2939,7 @@
       "description": "",
       "item": [
         {
-          "id": "1ce94055-f96a-4739-abd8-f29d3f343a7b",
+          "id": "ab657ead-dba5-4098-a2cf-99e303ce6fbd",
           "name": "Delete Document",
           "request": {
             "name": "Delete Document",
@@ -3008,7 +3008,7 @@
           },
           "response": [
             {
-              "id": "a61e0171-5f7b-4856-9a31-011d3212c42b",
+              "id": "8616b64b-147a-4baa-9ed6-53c4b54c2a74",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -3074,7 +3074,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "c3e7c39c-b556-4b34-86ef-71f016961893",
+              "id": "4052f1ae-03e8-4af6-8f66-8dd5302880e0",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -3152,7 +3152,7 @@
       "description": "",
       "item": [
         {
-          "id": "6d2f32e3-d1a2-4506-b11e-df23dd73f5cf",
+          "id": "a9e99635-0843-4d56-9d8f-1cf1a7fab1f7",
           "name": "Create Build",
           "request": {
             "name": "Create Build",
@@ -3201,7 +3201,7 @@
                     "type": "text/plain"
                   },
                   "key": "category",
-                  "value": "8ml 1wx"
+                  "value": "940gpuc"
                 },
                 {
                   "disabled": false,
@@ -3237,7 +3237,7 @@
                     "type": "text/plain"
                   },
                   "key": "upload_source",
-                  "value": "desktop"
+                  "value": "mobile"
                 }
               ]
             },
@@ -3261,7 +3261,7 @@
           },
           "response": [
             {
-              "id": "1cbe23bf-6ab9-4720-ae33-64cf87ad0b62",
+              "id": "712b33f1-659c-411b-a999-2385f4da076f",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -3313,7 +3313,7 @@
                         "type": "text/plain"
                       },
                       "key": "category",
-                      "value": "8ml 1wx"
+                      "value": "940gpuc"
                     },
                     {
                       "disabled": false,
@@ -3349,7 +3349,7 @@
                         "type": "text/plain"
                       },
                       "key": "upload_source",
-                      "value": "desktop"
+                      "value": "mobile"
                     }
                   ]
                 }
@@ -3367,7 +3367,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "9b7fa1db-5e43-4375-afcd-97a22f2fb07d",
+              "id": "f07332ea-253f-4342-9650-37531ff9db0d",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -3419,7 +3419,7 @@
                         "type": "text/plain"
                       },
                       "key": "category",
-                      "value": "8ml 1wx"
+                      "value": "940gpuc"
                     },
                     {
                       "disabled": false,
@@ -3455,7 +3455,7 @@
                         "type": "text/plain"
                       },
                       "key": "upload_source",
-                      "value": "desktop"
+                      "value": "mobile"
                     }
                   ]
                 }
@@ -3479,7 +3479,7 @@
           }
         },
         {
-          "id": "7b37d131-bc4c-417b-a4fd-58583e90dbba",
+          "id": "a6eb3eb6-91d1-407a-b349-b63988b897cb",
           "name": "Submit Document Build",
           "request": {
             "name": "Submit Document Build",
@@ -3548,7 +3548,7 @@
           },
           "response": [
             {
-              "id": "c938d114-2f31-41be-9287-faed519e9fc1",
+              "id": "097b2c7b-9fe8-4e6c-b772-7dcbb86d4d85",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -3614,7 +3614,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "8c02e371-9b24-40eb-86e4-83f5319a9050",
+              "id": "d452b88f-cbe2-4dbe-8c5d-bfbaea43ab70",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -3686,7 +3686,7 @@
           }
         },
         {
-          "id": "7aa2b3dc-b0cb-4077-b29b-ed6ab9f3c605",
+          "id": "7664b7ca-70ed-4d23-995d-054ad8426b4b",
           "name": "Submit Document Build Wait",
           "request": {
             "name": "Submit Document Build Wait",
@@ -3775,7 +3775,7 @@
           },
           "response": [
             {
-              "id": "55796b02-5001-4f9f-93a1-7cfc055c06ad",
+              "id": "94eaa37b-fe23-4e82-b5fd-bfe312ddd561",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -3861,7 +3861,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "810ac84a-ff8f-4bb8-b887-ab521129932b",
+              "id": "f5326e53-b88e-4b3c-90f3-d5680c0ef0cc",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -3953,7 +3953,7 @@
           }
         },
         {
-          "id": "fb93d7b1-0919-47d1-82e8-9a5c0ad3bb58",
+          "id": "ba235f60-3df4-42a2-9a4e-bfb470405d01",
           "name": "Delete Document Build Endpoint",
           "request": {
             "name": "Delete Document Build Endpoint",
@@ -4012,7 +4012,7 @@
           },
           "response": [
             {
-              "id": "b898970e-cf31-4156-9a1a-99692e3e9a5a",
+              "id": "e349e515-0921-4ace-93c3-4096838e6235",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -4068,7 +4068,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "17ecb3f6-6c1f-49f0-95c5-9b60e0122187",
+              "id": "62abb710-702e-44a1-bff2-4ad6ac567341",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -4136,7 +4136,7 @@
       "description": "",
       "item": [
         {
-          "id": "9c8559cf-f6bf-47dd-927f-e78074412702",
+          "id": "97d84299-3232-43f3-8a01-aeaa1b6c83c5",
           "name": "Upload Document Build Page",
           "request": {
             "name": "Upload Document Build Page",
@@ -4224,7 +4224,7 @@
                     "type": "text/plain"
                   },
                   "key": "category",
-                  "value": "zq3",
+                  "value": "g7lr-",
                   "type": "text"
                 }
               ]
@@ -4249,7 +4249,7 @@
           },
           "response": [
             {
-              "id": "00aae935-9d92-47aa-bb3d-fae20502dec2",
+              "id": "3928b8c1-4041-4b9a-bebd-c5c9901e5c5d",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -4340,7 +4340,7 @@
                         "type": "text/plain"
                       },
                       "key": "category",
-                      "value": "zq3",
+                      "value": "g7lr-",
                       "type": "text"
                     }
                   ]
@@ -4359,7 +4359,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "ed513cfa-556a-4e68-99ce-2cba72d9c88d",
+              "id": "c71884e6-c27b-4a05-bb8c-b8547807e114",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -4450,7 +4450,7 @@
                         "type": "text/plain"
                       },
                       "key": "category",
-                      "value": "zq3",
+                      "value": "g7lr-",
                       "type": "text"
                     }
                   ]
@@ -4475,7 +4475,7 @@
           }
         },
         {
-          "id": "9abcbf6b-1602-4c6b-a46f-bcc8bbee90a9",
+          "id": "69660ea2-0aa3-4748-bdb2-94b3e73defd5",
           "name": "Upload Document Build Pages Batch",
           "request": {
             "name": "Upload Document Build Pages Batch",
@@ -4546,7 +4546,7 @@
                     "type": "text/plain"
                   },
                   "key": "category",
-                  "value": "d1v0_cqe",
+                  "value": "lbncd969",
                   "type": "text"
                 }
               ]
@@ -4571,7 +4571,7 @@
           },
           "response": [
             {
-              "id": "cc9cedbd-98d9-4839-ab3c-8cac1e60672e",
+              "id": "b90f7acc-ccc8-412f-9d89-20f5dc846bb2",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -4645,7 +4645,7 @@
                         "type": "text/plain"
                       },
                       "key": "category",
-                      "value": "d1v0_cqe",
+                      "value": "lbncd969",
                       "type": "text"
                     }
                   ]
@@ -4664,7 +4664,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "5854ea92-782d-499a-bba5-f1baaf29d50f",
+              "id": "79a17388-8402-43ab-a847-e8d9f81e9167",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -4738,7 +4738,7 @@
                         "type": "text/plain"
                       },
                       "key": "category",
-                      "value": "d1v0_cqe",
+                      "value": "lbncd969",
                       "type": "text"
                     }
                   ]
@@ -4763,7 +4763,7 @@
           }
         },
         {
-          "id": "c3f8947c-c5a9-4a2b-b024-5f25ac00ef48",
+          "id": "af36f5c1-b4a3-42f7-8000-72f4b28723df",
           "name": "Delete Document Build Page Endpoint",
           "request": {
             "name": "Delete Document Build Page Endpoint",
@@ -4834,7 +4834,7 @@
           },
           "response": [
             {
-              "id": "e8db63a3-a0fc-40dd-b29c-f12fe4cf57d5",
+              "id": "bcd0088c-eb43-4d0e-985f-9760091aa6c2",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -4902,7 +4902,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "b7b48ec5-f380-4881-8e44-ca758fc8460d",
+              "id": "a5f29857-11af-4c2c-a1b1-e5ead794628d",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -4982,7 +4982,7 @@
       "description": "",
       "item": [
         {
-          "id": "35c04d0c-b405-4a23-b328-6bd338ef0bfe",
+          "id": "6fb291f4-6c7b-4517-bb34-8ac382aafdd6",
           "name": "Get Document Build",
           "request": {
             "name": "Get Document Build",
@@ -5041,7 +5041,7 @@
           },
           "response": [
             {
-              "id": "237e5c8a-9aa8-4a49-bf11-d447759094a4",
+              "id": "89f8b779-53a0-4765-b8f8-e0c4bf4473a8",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -5097,7 +5097,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "70e55ed0-8581-49f7-9abb-f57ade6d7b40",
+              "id": "20e58808-84e9-4816-9ac3-ab7233dc2695",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -5165,7 +5165,7 @@
       "description": "",
       "item": [
         {
-          "id": "c5e4fbb3-da76-4a30-90cc-0759cc682cc8",
+          "id": "743c7f21-4687-44a2-bd78-ad6d2f420289",
           "name": "List Schemas",
           "request": {
             "name": "List Schemas",
@@ -5213,7 +5213,7 @@
           },
           "response": [
             {
-              "id": "7437d96f-50d5-485f-8767-39b7f7a467f5",
+              "id": "8330fddb-3e11-4b60-a616-6e0a971f2eca",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -5264,7 +5264,7 @@
           }
         },
         {
-          "id": "15a854f7-7d7b-4157-90ad-dec3329382b7",
+          "id": "b10cf5ef-4fcb-4aa1-af4d-5b023072d288",
           "name": "Get Schema Detail",
           "request": {
             "name": "Get Schema Detail",
@@ -5334,7 +5334,7 @@
           },
           "response": [
             {
-              "id": "82700489-eb32-4b49-8d21-bddb148b345d",
+              "id": "8c8e41b2-4aad-46f9-aaec-e0c7a6c9573e",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -5401,7 +5401,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "1331e087-2611-46b3-b28d-8d02e901399f",
+              "id": "2634bcdb-f411-4b15-8ad7-04f5c6414f90",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -5480,7 +5480,7 @@
       "description": "",
       "item": [
         {
-          "id": "23dffbab-059b-4c73-a025-e0846c647d80",
+          "id": "4a1b330d-9b90-45a0-ba50-82b32c503c11",
           "name": "Get All Schema Fields",
           "request": {
             "name": "Get All Schema Fields",
@@ -5538,7 +5538,7 @@
           },
           "response": [
             {
-              "id": "87bb157d-0ec9-4268-9aa5-42de598a3d0c",
+              "id": "4f82ade7-1984-4798-920d-36d8f9520d4f",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -5593,7 +5593,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "000904e2-fe99-4510-b61d-b42e40905c18",
+              "id": "7f575276-3c5d-4a99-9826-8fc40dd7b06f",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -5654,7 +5654,7 @@
           }
         },
         {
-          "id": "d9ab258c-cecb-42a7-9175-7ffdd65f7778",
+          "id": "8716004d-79d7-4f84-b66d-972e6234ba35",
           "name": "Search Schema Fields",
           "request": {
             "name": "Search Schema Fields",
@@ -5688,7 +5688,7 @@
                     "type": "text/plain"
                   },
                   "key": "field",
-                  "value": "name"
+                  "value": "description"
                 },
                 {
                   "disabled": false,
@@ -5730,7 +5730,7 @@
           },
           "response": [
             {
-              "id": "88621bce-1c00-44a3-9633-cb01dcbb5639",
+              "id": "28a4cd10-8a26-4bdb-b4af-61da1508d54f",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -5759,7 +5759,7 @@
                         "type": "text/plain"
                       },
                       "key": "field",
-                      "value": "name"
+                      "value": "description"
                     },
                     {
                       "disabled": false,
@@ -5803,7 +5803,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "aa4c9dbb-bfde-46e7-9c48-0610c438d6c3",
+              "id": "c6256f90-e0d0-4ef8-948d-c259c1096f57",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -5832,7 +5832,7 @@
                         "type": "text/plain"
                       },
                       "key": "field",
-                      "value": "name"
+                      "value": "description"
                     },
                     {
                       "disabled": false,
@@ -5888,7 +5888,7 @@
       "description": "",
       "item": [
         {
-          "id": "3556fa84-0b2e-4028-9e28-d07b5ffdd129",
+          "id": "e1fce9c2-e763-4469-a58d-d783bc445479",
           "name": "Get Response Codes",
           "request": {
             "name": "Get Response Codes",
@@ -5946,7 +5946,7 @@
           },
           "response": [
             {
-              "id": "d746b956-3b59-4e64-9f83-305489664ee1",
+              "id": "22cedcea-ca7a-4cae-9005-937a93ca755b",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -6001,7 +6001,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "fe3dcc8d-b6cb-442f-898a-a3f033981ae5",
+              "id": "3a42513a-cac8-4d2a-8c30-f21a7e01cb7a",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -6068,7 +6068,7 @@
       "description": "",
       "item": [
         {
-          "id": "02718777-3ffc-490c-9dff-fa1a5c2f81fb",
+          "id": "71a92ea0-a3ae-48a8-a795-ef998bfa0c1e",
           "name": "Get Extraction Rules",
           "request": {
             "name": "Get Extraction Rules",
@@ -6135,7 +6135,7 @@
           },
           "response": [
             {
-              "id": "d9441985-d142-490d-aafc-33ec638efb7d",
+              "id": "75f6b5e0-454f-45ed-bdde-2e32e9cae134",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -6199,7 +6199,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "281049fb-c530-44f6-aa9b-98ba1d9289ce",
+              "id": "e10df57d-d3fc-4cf0-aef8-a0b7860173e9",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -6269,7 +6269,7 @@
           }
         },
         {
-          "id": "099e234a-ec38-407c-8d9b-ad965c4dae27",
+          "id": "3e3b31cd-8cfd-4a5c-a83f-864d0c156f91",
           "name": "Put Extraction Rule",
           "request": {
             "name": "Put Extraction Rule",
@@ -6330,7 +6330,7 @@
           },
           "response": [
             {
-              "id": "d381196d-0e91-417c-90cf-32510aa5b07a",
+              "id": "27279708-79a7-42c4-b8b6-2beb4f42dc30",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -6388,7 +6388,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "419e33e0-a0ef-4767-8159-2ce82173dcbe",
+              "id": "f30b9a28-e338-4133-9c22-0739262887fb",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -6452,7 +6452,7 @@
           }
         },
         {
-          "id": "8e14424e-8b11-4d30-8c00-3a23595e67d2",
+          "id": "1b534426-8b47-4492-b644-60dd598a259f",
           "name": "Delete Extraction Rule",
           "request": {
             "name": "Delete Extraction Rule",
@@ -6519,7 +6519,7 @@
           },
           "response": [
             {
-              "id": "7904ee59-4ff7-4478-971e-d3891eb5dfa9",
+              "id": "0bf6b0e5-d655-4196-96a5-4e343589fa4f",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -6583,7 +6583,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "72e19f5d-3b57-4926-b5e8-4510c4fb3bfa",
+              "id": "faf7c1ef-8e79-44dc-923e-bc58d5fd871d",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -6659,7 +6659,7 @@
       "description": "",
       "item": [
         {
-          "id": "e4ed1aaf-9fe2-482f-9927-000f6db31ab2",
+          "id": "f8915beb-8c92-44e4-b1f1-6e4d1d1c62d7",
           "name": "Create Api Key",
           "request": {
             "name": "Create Api Key",
@@ -6692,7 +6692,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"apiKeyName\": \"me8gn0x-bh0\",\n  \"environment\": \"dev\",\n  \"emailAddress\": \"<string>\",\n  \"expiresAt\": \"<dateTime>\",\n  \"tenantId\": \"<string>\"\n}",
+              "raw": "{\n  \"apiKeyName\": \"qvnc1\",\n  \"environment\": \"dev\",\n  \"emailAddress\": \"<string>\",\n  \"expiresAt\": \"<dateTime>\",\n  \"tenantId\": \"<string>\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -6712,7 +6712,7 @@
           },
           "response": [
             {
-              "id": "abd4759b-52ef-41c9-a826-fedcfe6836ac",
+              "id": "9ecc1719-f0f7-465d-94d7-e23f47cb6852",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -6748,7 +6748,7 @@
                 "method": "POST",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"apiKeyName\": \"me8gn0x-bh0\",\n  \"environment\": \"dev\",\n  \"emailAddress\": \"<string>\",\n  \"expiresAt\": \"<dateTime>\",\n  \"tenantId\": \"<string>\"\n}",
+                  "raw": "{\n  \"apiKeyName\": \"qvnc1\",\n  \"environment\": \"dev\",\n  \"emailAddress\": \"<string>\",\n  \"expiresAt\": \"<dateTime>\",\n  \"tenantId\": \"<string>\"\n}",
                   "options": {
                     "raw": {
                       "headerFamily": "json",
@@ -6770,7 +6770,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "5251785f-21be-45dc-af73-5280f5f10bc3",
+              "id": "f22c8c52-be3f-4bcb-bec5-28b998bb92e3",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -6806,7 +6806,7 @@
                 "method": "POST",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"apiKeyName\": \"me8gn0x-bh0\",\n  \"environment\": \"dev\",\n  \"emailAddress\": \"<string>\",\n  \"expiresAt\": \"<dateTime>\",\n  \"tenantId\": \"<string>\"\n}",
+                  "raw": "{\n  \"apiKeyName\": \"qvnc1\",\n  \"environment\": \"dev\",\n  \"emailAddress\": \"<string>\",\n  \"expiresAt\": \"<dateTime>\",\n  \"tenantId\": \"<string>\"\n}",
                   "options": {
                     "raw": {
                       "headerFamily": "json",
@@ -6834,7 +6834,7 @@
           }
         },
         {
-          "id": "9a9f9459-cce4-4ed1-ac13-cf171a7fa7e5",
+          "id": "0cc9546c-b668-4c37-a2b2-bf59e77718bb",
           "name": "List Api Keys",
           "request": {
             "name": "List Api Keys",
@@ -6902,7 +6902,7 @@
           },
           "response": [
             {
-              "id": "470a6d2a-b029-4f09-bbfa-a72bf9eb3b29",
+              "id": "9867865e-ac6d-4e18-a48c-22844ebc04fe",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -6975,7 +6975,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "7f41647d-5d68-4037-9504-7fed3b88e5e7",
+              "id": "85d8d59f-b21a-40b6-ad74-2f1af72d855f",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -7054,7 +7054,7 @@
           }
         },
         {
-          "id": "b3859f78-8595-40de-9a27-c14fe2454a2c",
+          "id": "bb1ca653-0f85-4a1c-b18f-daa5e5dc5a30",
           "name": "Delete Api Key",
           "request": {
             "name": "Delete Api Key",
@@ -7106,7 +7106,7 @@
           },
           "response": [
             {
-              "id": "bfe6fe93-7fdd-4269-8148-3cdf6d23f864",
+              "id": "a663b8f1-bd4a-417b-a90c-db1f07c3b434",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -7163,7 +7163,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "cbeb0e52-2647-41d7-a5b4-3a24afa6a9a1",
+              "id": "b35c783c-7570-4bb3-9fe4-6a0bc477eccb",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -7232,7 +7232,7 @@
       "description": "",
       "item": [
         {
-          "id": "c56dedef-1cda-4519-ae92-ff96a3907b8a",
+          "id": "116ab93c-fdef-4449-a41f-e88dbe99632f",
           "name": "Create Tenant",
           "request": {
             "name": "Create Tenant",
@@ -7265,7 +7265,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"tenantId\": \"8cp57\",\n  \"displayName\": \"<string>\",\n  \"primaryContact\": \"<string>\",\n  \"extractionConfidenceFloor\": \"<number>\",\n  \"maxWritesPerDay\": \"<integer>\",\n  \"maxWritesPerMonth\": \"<integer>\"\n}",
+              "raw": "{\n  \"tenantId\": \"bwfwirvysl\",\n  \"displayName\": \"<string>\",\n  \"primaryContact\": \"<string>\",\n  \"extractionConfidenceFloor\": \"<number>\",\n  \"maxWritesPerDay\": \"<integer>\",\n  \"maxWritesPerMonth\": \"<integer>\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -7285,7 +7285,7 @@
           },
           "response": [
             {
-              "id": "1b357dee-0984-412d-8b76-cbc39d36533e",
+              "id": "fe6b9002-0bcf-41ef-8643-8c5c981709e9",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -7321,7 +7321,7 @@
                 "method": "POST",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"tenantId\": \"8cp57\",\n  \"displayName\": \"<string>\",\n  \"primaryContact\": \"<string>\",\n  \"extractionConfidenceFloor\": \"<number>\",\n  \"maxWritesPerDay\": \"<integer>\",\n  \"maxWritesPerMonth\": \"<integer>\"\n}",
+                  "raw": "{\n  \"tenantId\": \"bwfwirvysl\",\n  \"displayName\": \"<string>\",\n  \"primaryContact\": \"<string>\",\n  \"extractionConfidenceFloor\": \"<number>\",\n  \"maxWritesPerDay\": \"<integer>\",\n  \"maxWritesPerMonth\": \"<integer>\"\n}",
                   "options": {
                     "raw": {
                       "headerFamily": "json",
@@ -7338,12 +7338,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"tenantId\": \"<string>\",\n  \"displayName\": \"<string>\",\n  \"primaryContact\": \"<string>\",\n  \"isActive\": true,\n  \"extractionConfidenceFloor\": \"<number>\",\n  \"maxWritesPerDay\": \"<integer>\",\n  \"maxWritesPerMonth\": \"<integer>\",\n  \"createdAt\": \"<string>\",\n  \"updatedAt\": \"<string>\"\n}",
+              "body": "{\n  \"tenantId\": \"<string>\",\n  \"displayName\": \"<string>\",\n  \"primaryContact\": \"<string>\",\n  \"isActive\": true,\n  \"extractionConfidenceFloor\": \"<number>\",\n  \"maxWritesPerDay\": \"<integer>\",\n  \"maxWritesPerMonth\": \"<integer>\",\n  \"disabledBlueprintList\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"createdAt\": \"<string>\",\n  \"updatedAt\": \"<string>\"\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "1ad0533a-6c79-4b2a-a823-98295fa75238",
+              "id": "c7019044-dcb6-46d0-af7c-05d79fc38e38",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -7379,7 +7379,7 @@
                 "method": "POST",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"tenantId\": \"8cp57\",\n  \"displayName\": \"<string>\",\n  \"primaryContact\": \"<string>\",\n  \"extractionConfidenceFloor\": \"<number>\",\n  \"maxWritesPerDay\": \"<integer>\",\n  \"maxWritesPerMonth\": \"<integer>\"\n}",
+                  "raw": "{\n  \"tenantId\": \"bwfwirvysl\",\n  \"displayName\": \"<string>\",\n  \"primaryContact\": \"<string>\",\n  \"extractionConfidenceFloor\": \"<number>\",\n  \"maxWritesPerDay\": \"<integer>\",\n  \"maxWritesPerMonth\": \"<integer>\"\n}",
                   "options": {
                     "raw": {
                       "headerFamily": "json",
@@ -7407,7 +7407,7 @@
           }
         },
         {
-          "id": "0de85b3b-0799-46ca-b0eb-e4d3aa176c5e",
+          "id": "8f4fefe0-1feb-4762-9e2b-f481b363a394",
           "name": "List Tenants",
           "request": {
             "name": "List Tenants",
@@ -7457,7 +7457,7 @@
           },
           "response": [
             {
-              "id": "3501a304-0877-4e74-b96f-d5d6363c8b13",
+              "id": "3cd95072-e831-4c4a-b3bc-b94cc7797b3c",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -7507,12 +7507,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"tenants\": [\n    {\n      \"tenantId\": \"<string>\",\n      \"displayName\": \"<string>\",\n      \"primaryContact\": \"<string>\",\n      \"isActive\": true,\n      \"extractionConfidenceFloor\": \"<number>\",\n      \"maxWritesPerDay\": \"<integer>\",\n      \"maxWritesPerMonth\": \"<integer>\",\n      \"createdAt\": \"<string>\",\n      \"updatedAt\": \"<string>\"\n    },\n    {\n      \"tenantId\": \"<string>\",\n      \"displayName\": \"<string>\",\n      \"primaryContact\": \"<string>\",\n      \"isActive\": true,\n      \"extractionConfidenceFloor\": \"<number>\",\n      \"maxWritesPerDay\": \"<integer>\",\n      \"maxWritesPerMonth\": \"<integer>\",\n      \"createdAt\": \"<string>\",\n      \"updatedAt\": \"<string>\"\n    }\n  ],\n  \"count\": \"<integer>\"\n}",
+              "body": "{\n  \"tenants\": [\n    {\n      \"tenantId\": \"<string>\",\n      \"displayName\": \"<string>\",\n      \"primaryContact\": \"<string>\",\n      \"isActive\": true,\n      \"extractionConfidenceFloor\": \"<number>\",\n      \"maxWritesPerDay\": \"<integer>\",\n      \"maxWritesPerMonth\": \"<integer>\",\n      \"disabledBlueprintList\": [\n        \"<string>\",\n        \"<string>\"\n      ],\n      \"createdAt\": \"<string>\",\n      \"updatedAt\": \"<string>\"\n    },\n    {\n      \"tenantId\": \"<string>\",\n      \"displayName\": \"<string>\",\n      \"primaryContact\": \"<string>\",\n      \"isActive\": true,\n      \"extractionConfidenceFloor\": \"<number>\",\n      \"maxWritesPerDay\": \"<integer>\",\n      \"maxWritesPerMonth\": \"<integer>\",\n      \"disabledBlueprintList\": [\n        \"<string>\",\n        \"<string>\"\n      ],\n      \"createdAt\": \"<string>\",\n      \"updatedAt\": \"<string>\"\n    }\n  ],\n  \"count\": \"<integer>\"\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "547ad3a8-77ea-44d1-900c-80b1e3a691e8",
+              "id": "00502bbb-cca8-4bed-8ed6-e448b14b0b15",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -7573,7 +7573,7 @@
           }
         },
         {
-          "id": "83d31b71-8476-4e2e-b9ca-d478cba92d24",
+          "id": "4f02d4cc-d5c2-4a59-a8fe-bfdc5860fa9f",
           "name": "Get Tenant",
           "request": {
             "name": "Get Tenant",
@@ -7625,7 +7625,7 @@
           },
           "response": [
             {
-              "id": "5edde726-0feb-4cac-a72b-c9b2bac960df",
+              "id": "1106de9e-27b9-48c2-a943-6e90991f3f71",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -7677,12 +7677,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"tenantId\": \"<string>\",\n  \"displayName\": \"<string>\",\n  \"primaryContact\": \"<string>\",\n  \"isActive\": true,\n  \"extractionConfidenceFloor\": \"<number>\",\n  \"maxWritesPerDay\": \"<integer>\",\n  \"maxWritesPerMonth\": \"<integer>\",\n  \"createdAt\": \"<string>\",\n  \"updatedAt\": \"<string>\"\n}",
+              "body": "{\n  \"tenantId\": \"<string>\",\n  \"displayName\": \"<string>\",\n  \"primaryContact\": \"<string>\",\n  \"isActive\": true,\n  \"extractionConfidenceFloor\": \"<number>\",\n  \"maxWritesPerDay\": \"<integer>\",\n  \"maxWritesPerMonth\": \"<integer>\",\n  \"disabledBlueprintList\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"createdAt\": \"<string>\",\n  \"updatedAt\": \"<string>\"\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "d764032e-53fd-43d0-a20f-5ce4e259c873",
+              "id": "bbb03aac-b635-46a7-a0b8-25a6072b4890",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -7745,7 +7745,7 @@
           }
         },
         {
-          "id": "7f52e990-1c00-446d-8a13-39f4577b329b",
+          "id": "e7df66ef-8fb7-4572-acd1-cd287be4e2d2",
           "name": "Update Tenant",
           "request": {
             "name": "Update Tenant",
@@ -7790,7 +7790,7 @@
             "method": "PATCH",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"displayName\": \"<string>\",\n  \"primaryContact\": \"<string>\",\n  \"isActive\": \"<boolean>\",\n  \"extractionConfidenceFloor\": \"<number>\",\n  \"maxWritesPerDay\": \"<integer>\",\n  \"maxWritesPerMonth\": \"<integer>\"\n}",
+              "raw": "{\n  \"displayName\": \"<string>\",\n  \"primaryContact\": \"<string>\",\n  \"isActive\": \"<boolean>\",\n  \"extractionConfidenceFloor\": \"<number>\",\n  \"maxWritesPerDay\": \"<integer>\",\n  \"maxWritesPerMonth\": \"<integer>\",\n  \"disabledBlueprintList\": [\n    \"<string>\",\n    \"<string>\"\n  ]\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -7810,7 +7810,7 @@
           },
           "response": [
             {
-              "id": "eb7f1896-2325-4c26-9906-38d9ea445680",
+              "id": "b8941115-85f6-43c9-b37a-9f1a3c8c2fdf",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -7858,7 +7858,7 @@
                 "method": "PATCH",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"displayName\": \"<string>\",\n  \"primaryContact\": \"<string>\",\n  \"isActive\": \"<boolean>\",\n  \"extractionConfidenceFloor\": \"<number>\",\n  \"maxWritesPerDay\": \"<integer>\",\n  \"maxWritesPerMonth\": \"<integer>\"\n}",
+                  "raw": "{\n  \"displayName\": \"<string>\",\n  \"primaryContact\": \"<string>\",\n  \"isActive\": \"<boolean>\",\n  \"extractionConfidenceFloor\": \"<number>\",\n  \"maxWritesPerDay\": \"<integer>\",\n  \"maxWritesPerMonth\": \"<integer>\",\n  \"disabledBlueprintList\": [\n    \"<string>\",\n    \"<string>\"\n  ]\n}",
                   "options": {
                     "raw": {
                       "headerFamily": "json",
@@ -7875,12 +7875,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"tenantId\": \"<string>\",\n  \"displayName\": \"<string>\",\n  \"primaryContact\": \"<string>\",\n  \"isActive\": true,\n  \"extractionConfidenceFloor\": \"<number>\",\n  \"maxWritesPerDay\": \"<integer>\",\n  \"maxWritesPerMonth\": \"<integer>\",\n  \"createdAt\": \"<string>\",\n  \"updatedAt\": \"<string>\"\n}",
+              "body": "{\n  \"tenantId\": \"<string>\",\n  \"displayName\": \"<string>\",\n  \"primaryContact\": \"<string>\",\n  \"isActive\": true,\n  \"extractionConfidenceFloor\": \"<number>\",\n  \"maxWritesPerDay\": \"<integer>\",\n  \"maxWritesPerMonth\": \"<integer>\",\n  \"disabledBlueprintList\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"createdAt\": \"<string>\",\n  \"updatedAt\": \"<string>\"\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "122ee2fb-7be6-4aff-adef-f55db214a78f",
+              "id": "4b608dde-9e0b-4c4c-a134-9442420aff4c",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -7928,7 +7928,7 @@
                 "method": "PATCH",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"displayName\": \"<string>\",\n  \"primaryContact\": \"<string>\",\n  \"isActive\": \"<boolean>\",\n  \"extractionConfidenceFloor\": \"<number>\",\n  \"maxWritesPerDay\": \"<integer>\",\n  \"maxWritesPerMonth\": \"<integer>\"\n}",
+                  "raw": "{\n  \"displayName\": \"<string>\",\n  \"primaryContact\": \"<string>\",\n  \"isActive\": \"<boolean>\",\n  \"extractionConfidenceFloor\": \"<number>\",\n  \"maxWritesPerDay\": \"<integer>\",\n  \"maxWritesPerMonth\": \"<integer>\",\n  \"disabledBlueprintList\": [\n    \"<string>\",\n    \"<string>\"\n  ]\n}",
                   "options": {
                     "raw": {
                       "headerFamily": "json",
@@ -7956,7 +7956,7 @@
           }
         },
         {
-          "id": "033a02fd-b50f-4678-b9a7-3b3c2048d384",
+          "id": "0eaa5a3e-7ed9-4ba5-a662-e77ec26f1981",
           "name": "Delete Tenant",
           "request": {
             "name": "Delete Tenant",
@@ -8008,7 +8008,7 @@
           },
           "response": [
             {
-              "id": "b96f3cd1-2ef5-4e3e-b7de-0892bb9fe0b2",
+              "id": "0673eddf-398a-4c3d-a89a-b148a0fe2ecc",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -8065,7 +8065,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "a7690ef8-401c-42c1-a79a-8c5be4fed8be",
+              "id": "532c6fc3-111e-4fdb-b8c7-cdc1c78fbb55",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -8128,7 +8128,7 @@
           }
         },
         {
-          "id": "27e0868a-debc-45ac-9eb2-6529194df00a",
+          "id": "40f7ff8d-deb4-4482-8b34-637d54109ae2",
           "name": "Get Tenant Request Counts",
           "request": {
             "name": "Get Tenant Request Counts",
@@ -8155,7 +8155,7 @@
                     "type": "text/plain"
                   },
                   "key": "month",
-                  "value": "3447-05"
+                  "value": "0338-24"
                 }
               ],
               "variable": [
@@ -8191,7 +8191,7 @@
           },
           "response": [
             {
-              "id": "62161c92-809e-4190-84be-20be639d64f5",
+              "id": "9a78d273-4ab6-4b81-9c39-cd13d67c2b4a",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -8213,7 +8213,7 @@
                         "type": "text/plain"
                       },
                       "key": "month",
-                      "value": "3447-05"
+                      "value": "0338-24"
                     }
                   ],
                   "variable": [
@@ -8259,7 +8259,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "7686534f-a939-440b-9bc0-7b554f1c5ba9",
+              "id": "093e2b01-424b-47de-a389-d82e62a7ebfd",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -8281,7 +8281,7 @@
                         "type": "text/plain"
                       },
                       "key": "month",
-                      "value": "3447-05"
+                      "value": "0338-24"
                     }
                   ],
                   "variable": [
@@ -8339,7 +8339,7 @@
       "description": "",
       "item": [
         {
-          "id": "0e9ea177-c173-49a0-a65a-1c7841bae5f1",
+          "id": "757c24f5-86fd-4dc1-9092-90d39f93783d",
           "name": "List Users",
           "request": {
             "name": "List Users",
@@ -8379,7 +8379,7 @@
           },
           "response": [
             {
-              "id": "82378d48-cdb1-4bb3-ae78-594fed58c188",
+              "id": "2b52f2f9-0013-413f-84b4-4fb49bbdeed5",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -8430,7 +8430,7 @@
           }
         },
         {
-          "id": "d5b51c8e-4015-4e58-ae18-3c0a6cd724c8",
+          "id": "eca39c07-9490-4135-b184-9aaa7d64e7dc",
           "name": "Approve User",
           "request": {
             "name": "Approve User",
@@ -8476,7 +8476,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"role\": \"super-admin\",\n  \"tenant_id\": \"<string>\"\n}",
+              "raw": "{\n  \"role\": \"tenant-admin\",\n  \"tenant_id\": \"<string>\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -8496,7 +8496,7 @@
           },
           "response": [
             {
-              "id": "c13ab7de-3f68-4199-8c07-c392abfad627",
+              "id": "cc6725f6-3580-475b-84f8-4ca2e14e4613",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -8545,7 +8545,7 @@
                 "method": "POST",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"role\": \"super-admin\",\n  \"tenant_id\": \"<string>\"\n}",
+                  "raw": "{\n  \"role\": \"tenant-admin\",\n  \"tenant_id\": \"<string>\"\n}",
                   "options": {
                     "raw": {
                       "headerFamily": "json",
@@ -8562,12 +8562,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"key_0\": 6974.766286485486,\n  \"key_1\": 661.2456857478488\n}",
+              "body": "{\n  \"key_0\": 7398,\n  \"key_1\": \"string\",\n  \"key_2\": 1288.1077036436661\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "d84ffd68-9b7b-4d9c-bc67-44145f445aa3",
+              "id": "911ce004-63df-4b92-bf4c-46a342b2e486",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -8616,7 +8616,7 @@
                 "method": "POST",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"role\": \"super-admin\",\n  \"tenant_id\": \"<string>\"\n}",
+                  "raw": "{\n  \"role\": \"tenant-admin\",\n  \"tenant_id\": \"<string>\"\n}",
                   "options": {
                     "raw": {
                       "headerFamily": "json",
@@ -8644,7 +8644,7 @@
           }
         },
         {
-          "id": "74f61597-175f-4e1b-9856-0643f8ee6192",
+          "id": "43caaa02-f543-4895-bcd6-dbf922f2d71e",
           "name": "Change Role",
           "request": {
             "name": "Change Role",
@@ -8690,7 +8690,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"role\": \"super-admin\",\n  \"tenant_id\": \"<string>\"\n}",
+              "raw": "{\n  \"role\": \"tenant-admin\",\n  \"tenant_id\": \"<string>\"\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -8710,7 +8710,7 @@
           },
           "response": [
             {
-              "id": "3e3a1e6c-91da-42c8-ba31-fd9719409923",
+              "id": "eae1d987-70fb-4027-87d5-e0221cefbff1",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -8759,7 +8759,7 @@
                 "method": "POST",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"role\": \"super-admin\",\n  \"tenant_id\": \"<string>\"\n}",
+                  "raw": "{\n  \"role\": \"tenant-admin\",\n  \"tenant_id\": \"<string>\"\n}",
                   "options": {
                     "raw": {
                       "headerFamily": "json",
@@ -8776,12 +8776,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"key_0\": 1188.76175270356\n}",
+              "body": "{\n  \"key_0\": 8321,\n  \"key_1\": false,\n  \"key_2\": 5385\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "fb6ca071-4b0d-4457-95ce-ae2890103554",
+              "id": "e84b91f2-c7a9-4880-a411-3d2952303b13",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -8830,7 +8830,7 @@
                 "method": "POST",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"role\": \"super-admin\",\n  \"tenant_id\": \"<string>\"\n}",
+                  "raw": "{\n  \"role\": \"tenant-admin\",\n  \"tenant_id\": \"<string>\"\n}",
                   "options": {
                     "raw": {
                       "headerFamily": "json",
@@ -8858,7 +8858,7 @@
           }
         },
         {
-          "id": "ac2259a9-2467-41e8-a787-0e26d7ce981a",
+          "id": "fa6997d6-7873-4988-a364-97adaa81eee9",
           "name": "Change Tenant",
           "request": {
             "name": "Change Tenant",
@@ -8924,7 +8924,7 @@
           },
           "response": [
             {
-              "id": "47d93c7f-af5c-472c-b1ce-c00728430465",
+              "id": "a85bc400-e53c-4584-8b59-3aa71f17cdad",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -8995,7 +8995,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "e7915948-4774-493d-ae7b-2a683168f194",
+              "id": "3b1d0f24-2bb2-4aeb-bc24-119862a44c8b",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -9072,7 +9072,7 @@
           }
         },
         {
-          "id": "0f9dd580-aaf4-4213-9922-0f2dd92c2994",
+          "id": "c19e1199-a76c-42a8-8dbd-586a75b55b0c",
           "name": "Delete User",
           "request": {
             "name": "Delete User",
@@ -9124,7 +9124,7 @@
           },
           "response": [
             {
-              "id": "24bc706f-c15c-47c7-bebf-1bc80bb3e1d0",
+              "id": "6df2dc19-700f-47a9-bd62-bba45e19b4f0",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -9176,12 +9176,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"key_0\": \"string\",\n  \"key_1\": true,\n  \"key_2\": 4391.207782257032\n}",
+              "body": "{\n  \"key_0\": 221.06699367199667,\n  \"key_1\": \"string\",\n  \"key_2\": \"string\"\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "3406b55e-7cf5-41bf-b11b-a9e9836c1c15",
+              "id": "dd011213-0faa-445e-b1e8-3d248db5229f",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -9250,7 +9250,7 @@
       "description": "",
       "item": [
         {
-          "id": "a7d7e12d-cc67-431f-9306-107a3ac07300",
+          "id": "2f822ef1-ad6b-4c59-ba9f-5e66c822263c",
           "name": "Get Audit Actors",
           "request": {
             "name": "Get Audit Actors",
@@ -9301,7 +9301,7 @@
           },
           "response": [
             {
-              "id": "3dba2b0d-dd12-4632-8dde-f054cef6898d",
+              "id": "37e09ee3-d47c-4c2b-b8d0-6415438e8de9",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -9357,7 +9357,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "b53ba799-86df-438d-8c71-0c1a041fcc24",
+              "id": "dcadbf9c-a46b-4e2f-bf51-41a331ad2da2",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -9419,7 +9419,7 @@
           }
         },
         {
-          "id": "36ff16c0-0dcc-49d9-a3f3-00af4df8f63b",
+          "id": "a6e5cb75-7386-4fbc-87f7-f15158d4a902",
           "name": "Get Audit Actions",
           "request": {
             "name": "Get Audit Actions",
@@ -9460,7 +9460,7 @@
           },
           "response": [
             {
-              "id": "db2e9280-4741-418c-93f2-2b4025b083ae",
+              "id": "f403e46e-5146-4e2c-a49d-a1eeebba3d82",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -9512,7 +9512,7 @@
           }
         },
         {
-          "id": "93a1748f-ee79-4e5e-b9b6-b127328abf81",
+          "id": "00aff99b-5c4f-42cb-9a39-693f44fa0a9f",
           "name": "Get Audit Log",
           "request": {
             "name": "Get Audit Log",
@@ -9564,7 +9564,7 @@
                     "type": "text/plain"
                   },
                   "key": "start_date",
-                  "value": "1945-40-18"
+                  "value": "6791-57-20"
                 },
                 {
                   "disabled": false,
@@ -9573,7 +9573,7 @@
                     "type": "text/plain"
                   },
                   "key": "end_date",
-                  "value": "1945-40-18"
+                  "value": "6791-57-20"
                 },
                 {
                   "disabled": false,
@@ -9616,7 +9616,7 @@
           },
           "response": [
             {
-              "id": "0d163696-2b50-46e5-b6c9-82e1a9532cb3",
+              "id": "f2a0f077-9fde-4876-8086-53541bd031ab",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -9663,7 +9663,7 @@
                         "type": "text/plain"
                       },
                       "key": "start_date",
-                      "value": "1945-40-18"
+                      "value": "6791-57-20"
                     },
                     {
                       "disabled": false,
@@ -9672,7 +9672,7 @@
                         "type": "text/plain"
                       },
                       "key": "end_date",
-                      "value": "1945-40-18"
+                      "value": "6791-57-20"
                     },
                     {
                       "disabled": false,
@@ -9720,12 +9720,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"events\": [\n    {\n      \"eventId\": \"<string>\",\n      \"tenantId\": \"<string>\",\n      \"actorSub\": \"<string>\",\n      \"actorEmail\": \"<string>\",\n      \"action\": \"<string>\",\n      \"targetType\": \"<string>\",\n      \"targetId\": \"<string>\",\n      \"timestamp\": \"<string>\",\n      \"metadata\": {\n        \"key_0\": false\n      }\n    },\n    {\n      \"eventId\": \"<string>\",\n      \"tenantId\": \"<string>\",\n      \"actorSub\": \"<string>\",\n      \"actorEmail\": \"<string>\",\n      \"action\": \"<string>\",\n      \"targetType\": \"<string>\",\n      \"targetId\": \"<string>\",\n      \"timestamp\": \"<string>\",\n      \"metadata\": {\n        \"key_0\": 7993.687736566985,\n        \"key_1\": 2654.7807267134835,\n        \"key_2\": false\n      }\n    }\n  ],\n  \"count\": \"<integer>\",\n  \"nextCursor\": \"<string>\"\n}",
+              "body": "{\n  \"events\": [\n    {\n      \"eventId\": \"<string>\",\n      \"tenantId\": \"<string>\",\n      \"actorSub\": \"<string>\",\n      \"actorEmail\": \"<string>\",\n      \"action\": \"<string>\",\n      \"targetType\": \"<string>\",\n      \"targetId\": \"<string>\",\n      \"timestamp\": \"<string>\",\n      \"metadata\": {\n        \"key_0\": 5203.855095559624\n      }\n    },\n    {\n      \"eventId\": \"<string>\",\n      \"tenantId\": \"<string>\",\n      \"actorSub\": \"<string>\",\n      \"actorEmail\": \"<string>\",\n      \"action\": \"<string>\",\n      \"targetType\": \"<string>\",\n      \"targetId\": \"<string>\",\n      \"timestamp\": \"<string>\",\n      \"metadata\": {\n        \"key_0\": 3691.5037796242923\n      }\n    }\n  ],\n  \"count\": \"<integer>\",\n  \"nextCursor\": \"<string>\"\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "97c78cb7-9a6a-4eb6-b70e-77a508b60437",
+              "id": "57c6dfad-f3f7-4388-8cf6-d6bf0563f657",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -9772,7 +9772,7 @@
                         "type": "text/plain"
                       },
                       "key": "start_date",
-                      "value": "1945-40-18"
+                      "value": "6791-57-20"
                     },
                     {
                       "disabled": false,
@@ -9781,7 +9781,7 @@
                         "type": "text/plain"
                       },
                       "key": "end_date",
-                      "value": "1945-40-18"
+                      "value": "6791-57-20"
                     },
                     {
                       "disabled": false,
@@ -9840,7 +9840,7 @@
           }
         },
         {
-          "id": "bf7e89e6-95c1-4a16-82fd-cb97e21fbcc5",
+          "id": "cba373fb-3048-4ae1-bfb8-3bdcaab6aeb0",
           "name": "Report Auth Event",
           "request": {
             "name": "Report Auth Event",
@@ -9901,7 +9901,7 @@
           },
           "response": [
             {
-              "id": "e88c8765-e6be-42b3-95e3-1a570fbf8599",
+              "id": "04b3e405-e7c8-4724-9977-2c89c6fdce4f",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -9949,7 +9949,7 @@
               "_postman_previewlanguage": "text"
             },
             {
-              "id": "82343189-4203-4175-967e-e286e7079fb5",
+              "id": "a33c1e9b-dc48-4c47-b227-375eec4d3383",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -10019,7 +10019,7 @@
       "description": "",
       "item": [
         {
-          "id": "da1292f4-b1be-4eff-aebe-398eb81da0e5",
+          "id": "39e2104a-d2ca-47ee-93b3-73d2215dccda",
           "name": "List Documents",
           "request": {
             "name": "List Documents",
@@ -10105,7 +10105,7 @@
           },
           "response": [
             {
-              "id": "92434875-00b3-4a36-86ac-20a67b0c102b",
+              "id": "fd5a0ddb-da1f-438e-8c03-3dc14dbf263c",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -10196,7 +10196,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "fb242d2f-db02-4367-9465-91553d8457ce",
+              "id": "b63aebe0-510c-4009-82be-d401c54ac744",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -10293,7 +10293,7 @@
           }
         },
         {
-          "id": "b3c32cab-7a90-444b-a7c3-d8fb429bc7f1",
+          "id": "af919cf2-ed46-47d0-a12b-bafe49e8ae0e",
           "name": "Get Document",
           "request": {
             "name": "Get Document",
@@ -10364,7 +10364,7 @@
           },
           "response": [
             {
-              "id": "54efaed2-6e6a-49d3-9156-805684eab1b5",
+              "id": "3accfb18-2a24-43ca-a793-4416f46658a2",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -10435,12 +10435,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"jobId\": \"<string>\",\n  \"fileName\": \"<string>\",\n  \"tenantId\": \"<string>\",\n  \"apiKeyName\": \"<string>\",\n  \"processStatus\": \"<string>\",\n  \"documentCategory\": \"<string>\",\n  \"matchedBlueprint\": \"<string>\",\n  \"matchedDocumentClass\": \"<string>\",\n  \"createdAt\": \"<string>\",\n  \"processedDate\": \"<string>\",\n  \"contentType\": \"<string>\",\n  \"bdaRegionUsed\": \"<string>\",\n  \"externalDocumentId\": \"<string>\",\n  \"batchId\": \"<string>\",\n  \"matchedBlueprintConfidence\": \"<number>\",\n  \"errorMessage\": \"<string>\",\n  \"fileSizeBytes\": \"<integer>\",\n  \"pagesDetected\": \"<integer>\",\n  \"totalProcessingTimeSeconds\": \"<number>\",\n  \"bdaProcessingTimeSeconds\": \"<number>\",\n  \"retryCount\": 0,\n  \"fieldConfidenceScores\": [\n    {\n      \"key_0\": \"string\"\n    },\n    {\n      \"key_0\": false\n    }\n  ],\n  \"fields\": {\n    \"key_0\": true,\n    \"key_1\": false\n  }\n}",
+              "body": "{\n  \"jobId\": \"<string>\",\n  \"fileName\": \"<string>\",\n  \"tenantId\": \"<string>\",\n  \"apiKeyName\": \"<string>\",\n  \"processStatus\": \"<string>\",\n  \"documentCategory\": \"<string>\",\n  \"matchedBlueprint\": \"<string>\",\n  \"matchedDocumentClass\": \"<string>\",\n  \"createdAt\": \"<string>\",\n  \"processedDate\": \"<string>\",\n  \"contentType\": \"<string>\",\n  \"bdaRegionUsed\": \"<string>\",\n  \"externalDocumentId\": \"<string>\",\n  \"batchId\": \"<string>\",\n  \"matchedBlueprintConfidence\": \"<number>\",\n  \"errorMessage\": \"<string>\",\n  \"fileSizeBytes\": \"<integer>\",\n  \"pagesDetected\": \"<integer>\",\n  \"totalProcessingTimeSeconds\": \"<number>\",\n  \"bdaProcessingTimeSeconds\": \"<number>\",\n  \"retryCount\": 0,\n  \"fieldConfidenceScores\": [\n    {\n      \"key_0\": \"string\"\n    },\n    {\n      \"key_0\": true\n    }\n  ],\n  \"fields\": {\n    \"key_0\": \"string\",\n    \"key_1\": \"string\"\n  }\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "cbcdfeca-e322-4c38-bd75-36a6480453ba",
+              "id": "b23ba2e6-d8b8-4ac9-9e73-30e9212fc6ec",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -10522,7 +10522,7 @@
           }
         },
         {
-          "id": "9a428f5f-c0a1-4f27-b93b-b563f8dc7a26",
+          "id": "90d1eb20-9d79-4ad4-b374-bc78d624ac53",
           "name": "Get Document Preview",
           "request": {
             "name": "Get Document Preview",
@@ -10575,7 +10575,7 @@
           },
           "response": [
             {
-              "id": "9569d3c5-1c21-4684-adba-672ede7138be",
+              "id": "749af35d-0b22-4f19-8a45-5e48dcd2f063",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -10633,7 +10633,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "a3c1dae2-6fc2-4caa-8b2d-e92052ac52e2",
+              "id": "cb0dbdf0-44c1-402d-9cd7-28221ec39289",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -10697,7 +10697,7 @@
           }
         },
         {
-          "id": "f3b251bd-9620-4418-b038-af9a704ab685",
+          "id": "057fe0f7-386d-467a-b7cd-1b8f2ed385da",
           "name": "Search Documents",
           "request": {
             "name": "Search Documents",
@@ -10811,7 +10811,7 @@
           },
           "response": [
             {
-              "id": "69545464-414c-4381-845b-1045f3535a98",
+              "id": "db5876ed-04a8-4836-bc9b-ec9d76983517",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -10930,7 +10930,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "fa2cbd50-425e-415c-b01b-926f4027fdd6",
+              "id": "0c243ebe-8c3c-4b09-8bf9-6445bbe866b1",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -11057,7 +11057,7 @@
       ]
     },
     {
-      "id": "4eb5e1fc-bc85-4d11-91ad-06878c2ad680",
+      "id": "72504eca-c7bd-4272-9a9a-3cf912b8f394",
       "name": "Get Usage",
       "request": {
         "name": "Get Usage",
@@ -11100,7 +11100,7 @@
                 "type": "text/plain"
               },
               "key": "granularity",
-              "value": "daily"
+              "value": "monthly"
             },
             {
               "disabled": false,
@@ -11134,7 +11134,7 @@
       },
       "response": [
         {
-          "id": "d2293b7f-a9e7-4c59-902a-550252694a7a",
+          "id": "3ead9857-9516-44b2-b2cb-9b2164a491f6",
           "name": "Successful Response",
           "originalRequest": {
             "url": {
@@ -11172,7 +11172,7 @@
                     "type": "text/plain"
                   },
                   "key": "granularity",
-                  "value": "daily"
+                  "value": "monthly"
                 },
                 {
                   "disabled": false,
@@ -11216,7 +11216,7 @@
           "_postman_previewlanguage": "json"
         },
         {
-          "id": "076cf9de-e2b5-4db0-8737-fdd84227056a",
+          "id": "b64d192f-c2c5-4994-b16b-131b7c241c3a",
           "name": "Validation Error",
           "originalRequest": {
             "url": {
@@ -11254,7 +11254,7 @@
                     "type": "text/plain"
                   },
                   "key": "granularity",
-                  "value": "daily"
+                  "value": "monthly"
                 },
                 {
                   "disabled": false,
@@ -11308,7 +11308,7 @@
       "description": "",
       "item": [
         {
-          "id": "0c4c2ae8-1bed-4e07-8e1b-78a2ba795a88",
+          "id": "39da4c50-cc1e-4f0c-8443-30d66f2c59c1",
           "name": "List Document Categories",
           "request": {
             "name": "List Document Categories",
@@ -11367,7 +11367,7 @@
           },
           "response": [
             {
-              "id": "7b2eba50-2b6c-4b8b-bd49-de25ec6dd6e3",
+              "id": "adc49f88-ddfb-4a6c-b140-fa518d9973e6",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -11431,7 +11431,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "a6735c06-f5bb-412a-80d0-ceafaa655053",
+              "id": "9e3fc8e1-c5ff-4409-ad1d-3547051065fd",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -11501,7 +11501,7 @@
           }
         },
         {
-          "id": "309192fa-7798-44f8-931d-0e1b216d63b5",
+          "id": "bae700c3-e5f7-4309-9c77-910086ebb32c",
           "name": "Create Document Category",
           "request": {
             "name": "Create Document Category",
@@ -11544,7 +11544,7 @@
             "method": "POST",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"categoryName\": \"6j5xq\",\n  \"displayName\": \"<string>\",\n  \"description\": \"<string>\",\n  \"processingPercentage\": 1\n}",
+              "raw": "{\n  \"categoryName\": \"ik\",\n  \"displayName\": \"<string>\",\n  \"description\": \"<string>\",\n  \"processingPercentage\": 1\n}",
               "options": {
                 "raw": {
                   "headerFamily": "json",
@@ -11564,7 +11564,7 @@
           },
           "response": [
             {
-              "id": "a176c47c-e2d3-4592-af2d-3971f28e5ee8",
+              "id": "97a16b2d-05bb-4da2-bea4-e0274087fba6",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -11610,7 +11610,7 @@
                 "method": "POST",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"categoryName\": \"6j5xq\",\n  \"displayName\": \"<string>\",\n  \"description\": \"<string>\",\n  \"processingPercentage\": 1\n}",
+                  "raw": "{\n  \"categoryName\": \"ik\",\n  \"displayName\": \"<string>\",\n  \"description\": \"<string>\",\n  \"processingPercentage\": 1\n}",
                   "options": {
                     "raw": {
                       "headerFamily": "json",
@@ -11632,7 +11632,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "656ab972-5435-45c3-8bbf-0a5f4d38d2bc",
+              "id": "4a1a334e-c3fa-4ca9-adfc-d893c3572ebe",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -11678,7 +11678,7 @@
                 "method": "POST",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"categoryName\": \"6j5xq\",\n  \"displayName\": \"<string>\",\n  \"description\": \"<string>\",\n  \"processingPercentage\": 1\n}",
+                  "raw": "{\n  \"categoryName\": \"ik\",\n  \"displayName\": \"<string>\",\n  \"description\": \"<string>\",\n  \"processingPercentage\": 1\n}",
                   "options": {
                     "raw": {
                       "headerFamily": "json",
@@ -11706,7 +11706,7 @@
           }
         },
         {
-          "id": "d61bf2f8-1acd-4987-a043-5e4351fa8802",
+          "id": "a055f75c-5848-4f9b-9bbe-57d24fc4ff1a",
           "name": "Get Document Category",
           "request": {
             "name": "Get Document Category",
@@ -11768,7 +11768,7 @@
           },
           "response": [
             {
-              "id": "6c738285-1603-4775-8d25-59fd769528a9",
+              "id": "d948d104-6743-455d-aabe-f22b18bd395f",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -11835,7 +11835,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "e00e849f-3315-4f41-a878-478e2af2752b",
+              "id": "14c7f44d-081b-4e5e-a9b9-70c6e498de37",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -11908,7 +11908,7 @@
           }
         },
         {
-          "id": "bff23d1b-07a5-4fa8-996f-4e3830f369ce",
+          "id": "c63db2cc-5a3c-4ee0-887d-3b493ee6d47e",
           "name": "Update Document Category",
           "request": {
             "name": "Update Document Category",
@@ -11983,7 +11983,7 @@
           },
           "response": [
             {
-              "id": "20094114-1509-4451-9af9-7dc68c59f3d8",
+              "id": "589a29e5-ae00-4a9a-b6b5-b0c026abd176",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -12063,7 +12063,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "d6ee8ac4-f615-4308-b894-80f1f19e516a",
+              "id": "b5ad193b-70c8-418f-a040-18304ad98c64",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -12149,7 +12149,7 @@
           }
         },
         {
-          "id": "fe97ba85-a948-43c6-8dd8-58aa64497ac6",
+          "id": "617e0094-3f57-470b-b036-c42aa6f7c8be",
           "name": "Delete Document Category",
           "request": {
             "name": "Delete Document Category",
@@ -12211,7 +12211,7 @@
           },
           "response": [
             {
-              "id": "9218839f-d5c9-46a7-ab39-dbbc77252dd8",
+              "id": "035e2fd1-8034-40d9-9bbc-583775229bd5",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -12268,7 +12268,7 @@
               "_postman_previewlanguage": "text"
             },
             {
-              "id": "03444d5d-9eaf-4f43-9dac-9a9ecbefe492",
+              "id": "0149c1bf-f006-4c54-8559-97b904108a1c",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -12347,7 +12347,7 @@
       "description": "",
       "item": [
         {
-          "id": "fe06b048-fd9e-4513-89f7-fff9c76fde51",
+          "id": "9af937a3-5b10-4088-b43f-a14c6c225145",
           "name": "Start Blueprint Test",
           "request": {
             "name": "Start Blueprint Test",
@@ -12432,7 +12432,7 @@
           },
           "response": [
             {
-              "id": "bc90e9e0-403e-4581-8c50-864cf3245f6c",
+              "id": "7c4ae6d6-1a01-455e-940c-acf864b74cdf",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -12522,7 +12522,7 @@
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "aeab31c9-4860-44f9-bed9-5c1c0f0213c9",
+              "id": "889d74e6-9860-40ee-a71b-48197cb87dff",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -12618,7 +12618,7 @@
           }
         },
         {
-          "id": "2301bcb7-fd83-409d-b653-3752120bedb4",
+          "id": "b1977ca5-1bf7-4aa5-8329-29b9950b7326",
           "name": "Get Blueprint Test Result",
           "request": {
             "name": "Get Blueprint Test Result",
@@ -12671,7 +12671,7 @@
           },
           "response": [
             {
-              "id": "846ee457-e9a1-4492-b06a-caf77e419569",
+              "id": "18a40fc5-1d24-450b-b6f1-cd044c4d748c",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -12724,12 +12724,12 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"testId\": \"<string>\",\n  \"status\": \"<string>\",\n  \"documentType\": \"<string>\",\n  \"matchedBlueprint\": \"<string>\",\n  \"matchedConfidence\": \"<number>\",\n  \"extractedFields\": {\n    \"key_0\": \"string\",\n    \"key_1\": 5693\n  },\n  \"fieldConfidences\": {\n    \"key_0\": \"<number>\"\n  },\n  \"filteredFields\": {\n    \"key_0\": 3543,\n    \"key_1\": 7484,\n    \"key_2\": false\n  },\n  \"missingRequiredFields\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"hasRules\": false,\n  \"error\": \"<string>\"\n}",
+              "body": "{\n  \"testId\": \"<string>\",\n  \"status\": \"<string>\",\n  \"documentType\": \"<string>\",\n  \"matchedBlueprint\": \"<string>\",\n  \"matchedConfidence\": \"<number>\",\n  \"extractedFields\": {\n    \"key_0\": 5526.603406124888\n  },\n  \"fieldConfidences\": {\n    \"key_0\": \"<number>\",\n    \"key_1\": \"<number>\",\n    \"key_2\": \"<number>\",\n    \"key_3\": \"<number>\"\n  },\n  \"filteredFields\": {\n    \"key_0\": 5556.263252101592\n  },\n  \"missingRequiredFields\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"hasRules\": false,\n  \"error\": \"<string>\"\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             },
             {
-              "id": "4623cf77-938c-4580-8403-ee5086974bfc",
+              "id": "64541843-526b-4733-8af7-c5e4f8f638ed",
               "name": "Validation Error",
               "originalRequest": {
                 "url": {
@@ -12795,7 +12795,7 @@
       ]
     },
     {
-      "id": "d873f326-0f18-4334-b029-3e2955ad990b",
+      "id": "eb739b63-e5e4-4256-b5de-25217330af00",
       "name": "Create Demo Document",
       "request": {
         "name": "Create Demo Document",
@@ -12860,7 +12860,7 @@
       },
       "response": [
         {
-          "id": "8916d118-2a16-470f-86af-79d99c66c098",
+          "id": "568e4bcd-1e40-47ee-9138-7b25c6454d51",
           "name": "Successful Response",
           "originalRequest": {
             "url": {
@@ -12922,7 +12922,7 @@
           "_postman_previewlanguage": "json"
         },
         {
-          "id": "18a0b005-4bc6-4267-87c6-0c5ab65ca082",
+          "id": "b688a441-4f96-4900-bd72-f0c82a3a762a",
           "name": "Validation Error",
           "originalRequest": {
             "url": {
@@ -12990,7 +12990,7 @@
       }
     },
     {
-      "id": "5d9b0df4-8ddd-4d8e-9b92-f19d2211a88b",
+      "id": "a7b49424-e67c-4d2c-8826-54b6d1fea0f7",
       "name": "List Demo Documents",
       "request": {
         "name": "List Demo Documents",
@@ -13057,7 +13057,7 @@
       },
       "response": [
         {
-          "id": "04717ed5-ddae-4b0e-b8dc-87e6a4153c28",
+          "id": "de97191d-8469-4c1c-84af-6d410b0be75d",
           "name": "Successful Response",
           "originalRequest": {
             "url": {
@@ -13121,7 +13121,7 @@
           "_postman_previewlanguage": "json"
         },
         {
-          "id": "7786742a-9b8f-4536-aace-ea0fc2b101d0",
+          "id": "3bc36d9b-1261-43d5-8ba2-b9a02ad97958",
           "name": "Validation Error",
           "originalRequest": {
             "url": {
@@ -13191,7 +13191,7 @@
       }
     },
     {
-      "id": "53753a95-449d-4117-afee-b47a2d801b97",
+      "id": "b1511b10-aca0-4d1e-a844-83caf4cb49b1",
       "name": "Get Demo Document",
       "request": {
         "name": "Get Demo Document",
@@ -13270,7 +13270,7 @@
       },
       "response": [
         {
-          "id": "6542a2d0-efca-4116-9c09-6de8d6f9934e",
+          "id": "ebca6317-1d62-44b8-93b0-f60d796e1389",
           "name": "Successful Response",
           "originalRequest": {
             "url": {
@@ -13341,12 +13341,12 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n  \"jobId\": \"<string>\",\n  \"fileName\": \"<string>\",\n  \"tenantId\": \"<string>\",\n  \"apiKeyName\": \"<string>\",\n  \"processStatus\": \"<string>\",\n  \"documentCategory\": \"<string>\",\n  \"matchedBlueprint\": \"<string>\",\n  \"matchedDocumentClass\": \"<string>\",\n  \"createdAt\": \"<string>\",\n  \"processedDate\": \"<string>\",\n  \"contentType\": \"<string>\",\n  \"bdaRegionUsed\": \"<string>\",\n  \"externalDocumentId\": \"<string>\",\n  \"batchId\": \"<string>\",\n  \"matchedBlueprintConfidence\": \"<number>\",\n  \"errorMessage\": \"<string>\",\n  \"fileSizeBytes\": \"<integer>\",\n  \"pagesDetected\": \"<integer>\",\n  \"totalProcessingTimeSeconds\": \"<number>\",\n  \"bdaProcessingTimeSeconds\": \"<number>\",\n  \"retryCount\": 0,\n  \"fieldConfidenceScores\": [\n    {\n      \"key_0\": \"string\"\n    },\n    {\n      \"key_0\": false\n    }\n  ],\n  \"fields\": {\n    \"key_0\": true,\n    \"key_1\": false\n  }\n}",
+          "body": "{\n  \"jobId\": \"<string>\",\n  \"fileName\": \"<string>\",\n  \"tenantId\": \"<string>\",\n  \"apiKeyName\": \"<string>\",\n  \"processStatus\": \"<string>\",\n  \"documentCategory\": \"<string>\",\n  \"matchedBlueprint\": \"<string>\",\n  \"matchedDocumentClass\": \"<string>\",\n  \"createdAt\": \"<string>\",\n  \"processedDate\": \"<string>\",\n  \"contentType\": \"<string>\",\n  \"bdaRegionUsed\": \"<string>\",\n  \"externalDocumentId\": \"<string>\",\n  \"batchId\": \"<string>\",\n  \"matchedBlueprintConfidence\": \"<number>\",\n  \"errorMessage\": \"<string>\",\n  \"fileSizeBytes\": \"<integer>\",\n  \"pagesDetected\": \"<integer>\",\n  \"totalProcessingTimeSeconds\": \"<number>\",\n  \"bdaProcessingTimeSeconds\": \"<number>\",\n  \"retryCount\": 0,\n  \"fieldConfidenceScores\": [\n    {\n      \"key_0\": \"string\"\n    },\n    {\n      \"key_0\": true\n    }\n  ],\n  \"fields\": {\n    \"key_0\": \"string\",\n    \"key_1\": \"string\"\n  }\n}",
           "cookie": [],
           "_postman_previewlanguage": "json"
         },
         {
-          "id": "583ffd46-c53c-4e8f-99f2-7b6363e818ac",
+          "id": "da236ee1-df0c-4f94-9cdd-a1e910c9900e",
           "name": "Validation Error",
           "originalRequest": {
             "url": {
@@ -13428,7 +13428,7 @@
       }
     },
     {
-      "id": "fe56b4b0-6843-4374-ac48-48deff56c8b3",
+      "id": "c84cfceb-dab4-4a49-9d8a-66f9b4847e32",
       "name": "Get Demo Document Preview",
       "request": {
         "name": "Get Demo Document Preview",
@@ -13489,7 +13489,7 @@
       },
       "response": [
         {
-          "id": "36a2adb8-126e-49a1-8b74-15ac2b2c49af",
+          "id": "b1fc2f25-4c64-4785-9453-dbd0b6821a97",
           "name": "Successful Response",
           "originalRequest": {
             "url": {
@@ -13547,7 +13547,7 @@
           "_postman_previewlanguage": "json"
         },
         {
-          "id": "5360c266-e744-4f7d-8724-86242ebe1b26",
+          "id": "e2e2e743-3880-4263-835b-851f13a78e55",
           "name": "Validation Error",
           "originalRequest": {
             "url": {
@@ -13615,7 +13615,7 @@
       "description": "",
       "item": [
         {
-          "id": "cb611e4f-1e89-48cd-98d0-a7dcb06f995b",
+          "id": "719c554e-87a5-47ef-814d-be37ff79aae5",
           "name": "Get Me",
           "request": {
             "name": "Get Me",
@@ -13662,7 +13662,7 @@
           },
           "response": [
             {
-              "id": "47e8182f-c721-48be-916c-955b726f0345",
+              "id": "8051f251-5f16-4146-b569-76af73d92eda",
               "name": "Successful Response",
               "originalRequest": {
                 "url": {
@@ -13701,7 +13701,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"tenantId\": \"<string>\",\n  \"principal\": \"<string>\",\n  \"authMethod\": \"api_key\"\n}",
+              "body": "{\n  \"tenantId\": \"<string>\",\n  \"principal\": \"<string>\",\n  \"authMethod\": \"jwt\"\n}",
               "cookie": [],
               "_postman_previewlanguage": "json"
             }
@@ -13714,7 +13714,7 @@
       ]
     },
     {
-      "id": "7e426d76-8fcf-4448-9bd0-a40c4d558c0a",
+      "id": "9410092a-e17d-46c5-82ba-9a8b7846f048",
       "name": "Root",
       "request": {
         "name": "Root",
@@ -13741,7 +13741,7 @@
       },
       "response": [
         {
-          "id": "813fe6ad-a892-417a-85e1-805cebd72630",
+          "id": "30305b1d-83bf-4ae1-b53d-4b5912f241d7",
           "name": "Successful Response",
           "originalRequest": {
             "url": {
@@ -13771,7 +13771,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n  \"key_0\": 1203,\n  \"key_1\": true,\n  \"key_2\": 4071\n}",
+          "body": "{\n  \"key_0\": false\n}",
           "cookie": [],
           "_postman_previewlanguage": "json"
         }
@@ -13782,7 +13782,7 @@
       }
     },
     {
-      "id": "1124fa69-ce0b-42ea-ab8a-cdcea6c98a07",
+      "id": "1b6b1ae6-2dd0-47d8-80f8-e6acd38bb0f1",
       "name": "Health",
       "request": {
         "name": "Health",
@@ -13809,7 +13809,7 @@
       },
       "response": [
         {
-          "id": "1376d5b8-b3b7-4132-aace-22738417a7ba",
+          "id": "daa6cf75-17dd-4100-af6a-0f4da519dfa7",
           "name": "Successful Response",
           "originalRequest": {
             "url": {
@@ -13850,7 +13850,7 @@
       }
     },
     {
-      "id": "5eee1e5a-05ce-40de-861e-9dd019285fdf",
+      "id": "4640a18e-b593-442c-8615-2eb7d3797f35",
       "name": "Get Config",
       "request": {
         "name": "Get Config",
@@ -13893,7 +13893,7 @@
       },
       "response": [
         {
-          "id": "489c1d2e-73cb-480d-89d4-16a1cbcda0d9",
+          "id": "77750020-2148-467d-b02a-e7489d43ab82",
           "name": "Successful Response",
           "originalRequest": {
             "url": {
@@ -13931,7 +13931,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n  \"apiUrl\": \"<string>\",\n  \"version\": \"<string>\",\n  \"imageTag\": \"<string>\",\n  \"environment\": \"<string>\",\n  \"endpoints\": {\n    \"key_0\": \"<string>\",\n    \"key_1\": \"<string>\"\n  },\n  \"supportedFileTypes\": [\n    \"<string>\",\n    \"<string>\"\n  ]\n}",
+          "body": "{\n  \"apiUrl\": \"<string>\",\n  \"version\": \"<string>\",\n  \"imageTag\": \"<string>\",\n  \"environment\": \"<string>\",\n  \"endpoints\": {\n    \"key_0\": \"<string>\",\n    \"key_1\": \"<string>\",\n    \"key_2\": \"<string>\"\n  },\n  \"supportedFileTypes\": [\n    \"<string>\",\n    \"<string>\"\n  ]\n}",
           "cookie": [],
           "_postman_previewlanguage": "json"
         }
@@ -13956,7 +13956,7 @@
     }
   ],
   "info": {
-    "_postman_id": "180b4022-21e4-4abb-8dc4-e26cf4ee3db7",
+    "_postman_id": "6a0ced16-98c5-43a3-af6f-bcdc66a32300",
     "name": "Document AI API",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "description": "DocumentAI API collection, generated from docs/documentai-api/openapi.json.\n\nQuick start (local dev):\n1. Start the API: `cd documentai-api && cp local.env.example .env && make init && make start` (serves http://localhost:8000).\n2. This collection sends `API-Key: {{apiKey}}` on every request; the default matches the local dev key.\n3. Admin (`/v1/admin/*`) routes require a Cognito JWT and will 401/403 with only the API key.\n\nRegenerate with `make postman`."

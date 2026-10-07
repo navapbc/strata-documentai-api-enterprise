@@ -62,9 +62,13 @@ test("extraction rules walkthrough", async ({ page }) => {
   );
 
   // --- API ------------------------------------------------------------------
-  await page.route("**/v1/admin/tenants**", (route) =>
-    route.fulfill(json({ tenants: [{ tenantId: TENANT_ID, displayName: "Acme Corporation", isActive: true }] })),
-  );
+  await page.route("**/v1/admin/tenants**", (route) => {
+    const url = route.request().url();
+    if (url.includes(`/tenants/${TENANT_ID}`)) {
+      return route.fulfill(json({ tenantId: TENANT_ID, displayName: "Acme Corporation", isActive: true, disabled_blueprint_list: [] }));
+    }
+    return route.fulfill(json({ tenants: [{ tenantId: TENANT_ID, displayName: "Acme Corporation", isActive: true }] }));
+  });
   await page.route("**/v1/dictionary/**", (route) => route.fulfill(json({ fields: [] })));
   await page.route("**/v1/dictionary/fields*", (route) =>
     route.fulfill(json({ fields: FIELDS })),

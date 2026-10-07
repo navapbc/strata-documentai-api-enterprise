@@ -7102,6 +7102,20 @@
             ],
             "title": "Maxwritespermonth"
           },
+          "disabledBlueprintList": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disabledblueprintlist"
+          },
           "createdAt": {
             "anyOf": [
               {
@@ -7362,6 +7376,20 @@
               }
             ],
             "title": "Maxwritespermonth"
+          },
+          "disabledBlueprintList": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disabledblueprintlist"
           }
         },
         "type": "object",

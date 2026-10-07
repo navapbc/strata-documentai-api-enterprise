@@ -11,6 +11,7 @@ Every processed document result includes a `responseCode` field. Codes are group
 | `003` | AI consent declined | Document not processed - AI consent was not provided. |
 | `004` | Processing excluded | Document excluded by sampling configuration for the tenant/category. |
 | `005` | Skipped per preclassification | Preclassification returned `other_document` and `SKIP_BDA_IF_UNCLASSIFIED` is enabled. |
+| `006` | Blueprint disabled | Preclassification matched a blueprint that has been disabled for the tenant. |
 
 ## 1xx - Extraction issues
 

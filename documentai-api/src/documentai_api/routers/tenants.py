@@ -50,6 +50,7 @@ def _to_item(record: dict[str, Any]) -> TenantItem:
         extraction_confidence_floor=record.get(TenantRecord.EXTRACTION_CONFIDENCE_FLOOR),
         max_writes_per_day=record.get(TenantRecord.MAX_WRITES_PER_DAY),
         max_writes_per_month=record.get(TenantRecord.MAX_WRITES_PER_MONTH),
+        disabled_blueprint_list=record.get(TenantRecord.DISABLED_BLUEPRINT_LIST),
         created_at=record.get(TenantRecord.CREATED_AT),
         updated_at=record.get(TenantRecord.UPDATED_AT),
     )
@@ -141,14 +142,30 @@ async def update_tenant(
     allowed = set(body.model_fields_set)
     super_admin_only = {camel_to_snake(f) for f in SUPER_ADMIN_PROTECTED_FIELDS}
     restricted = allowed & super_admin_only
+
     if not is_super_admin(claims) and restricted:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"Only super-admins may modify: {', '.join(sorted(restricted))}",
         )
 
+    # Handle the special case for the disabled blueprint list field.
+    # disabled_blueprint_list has special semantics:
+    #    - [] means REMOVE
+    #    - None means leave unchanged
+    #    - non-empty means SET
+    _dbl = camel_to_snake(TenantRecord.DISABLED_BLUEPRINT_LIST)
+
+    #  Discard disabled_blueprint_list as its fate will be determined separately.
+    allowed.discard(_dbl)
+
     set_fields = {f: getattr(body, f) for f in allowed if getattr(body, f) is not None}
     clear_fields = {f for f in allowed if getattr(body, f) is None}
+
+    if body.disabled_blueprint_list == []:
+        clear_fields.add(_dbl)
+    elif body.disabled_blueprint_list is not None:
+        set_fields[_dbl] = body.disabled_blueprint_list
 
     _day = camel_to_snake(TenantRecord.MAX_WRITES_PER_DAY)
     _month = camel_to_snake(TenantRecord.MAX_WRITES_PER_MONTH)

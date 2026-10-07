@@ -36,7 +36,7 @@ export async function update(
     maxWritesPerDay,
     maxWritesPerMonth,
     extractionConfidenceFloor,
-    enabledDocumentTypes,
+    disabledBlueprintList,
   } = {},
 ) {
   const body = {};
@@ -47,7 +47,7 @@ export async function update(
   if (maxWritesPerMonth !== undefined) body.max_writes_per_month = maxWritesPerMonth;
   if (extractionConfidenceFloor !== undefined)
     body.extraction_confidence_floor = extractionConfidenceFloor;
-  if (enabledDocumentTypes !== undefined) body.enabled_document_types = enabledDocumentTypes;
+  if (disabledBlueprintList !== undefined) body.disabled_blueprint_list = disabledBlueprintList;
   return adminClient.request("PATCH", `/v1/admin/tenants/${encodeURIComponent(tenantId)}`, body);
 }
 

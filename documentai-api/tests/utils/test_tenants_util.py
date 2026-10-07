@@ -103,6 +103,26 @@ def test_update_tenant_no_fields(tenants_table):
         tenants_util.update_tenant("test-tenant")
 
 
+def test_update_tenant_disabled_blueprint_list_set(tenants_table):
+    _add_tenant(tenants_table, "test-tenant")
+    result = tenants_util.update_tenant("test-tenant", disabled_blueprint_list=["w2", "1099"])
+    assert result[TenantRecord.DISABLED_BLUEPRINT_LIST] == ["w2", "1099"]
+
+
+def test_update_tenant_disabled_blueprint_list_cleared(tenants_table):
+    _add_tenant(tenants_table, "test-tenant")
+    tenants_util.update_tenant("test-tenant", disabled_blueprint_list=["w2"])
+    result = tenants_util.update_tenant("test-tenant", clear_fields={"disabled_blueprint_list"})
+    assert TenantRecord.DISABLED_BLUEPRINT_LIST not in result
+
+
+def test_update_tenant_disabled_blueprint_list_omitted_leaves_unchanged(tenants_table):
+    _add_tenant(tenants_table, "test-tenant")
+    tenants_util.update_tenant("test-tenant", disabled_blueprint_list=["w2"])
+    result = tenants_util.update_tenant("test-tenant", display_name="Updated")
+    assert result[TenantRecord.DISABLED_BLUEPRINT_LIST] == ["w2"]
+
+
 def test_deactivate_tenant_success(tenants_table):
     _add_tenant(tenants_table, "test-tenant", "Tenant Name", is_active=True)
     assert tenants_util.deactivate_tenant("test-tenant") is True
