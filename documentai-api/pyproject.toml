@@ -137,12 +137,13 @@ exclude_lines = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "-m 'not audit and not integration and not e2e'"
+addopts = "-m 'not audit and not integration and not e2e and not regression'"
 markers = [
     "audit: mark a test as a security audit log test, to be run isolated from other tests",
     "integration: tests that use moto or real external services",
     "e2e: end-to-end tests against real deployed AWS infrastructure (require .env.e2e)",
     "e2e_routing: e2e tests for preclassification-based BDA project routing (run isolated, no -n)",
+    "regression: document-type regression suite against canned BDA results (moto-mocked AWS, see tests/regression/)",
     "flaky: mark a test as flaky with automatic reruns",
 ]
 

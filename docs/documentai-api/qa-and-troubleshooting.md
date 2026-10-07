@@ -95,6 +95,24 @@ When QA or troubleshooting uncovers a meaningful new case:
 
 When an unfamiliar case teaches something reusable, add that learning back to the reference library or this guide
 
+## Regression testing across document types
+
+`make test-regression` (see `documentai-api/Makefile`) re-runs the pipeline against a representative document for each category in `infra/document-types/`, without needing a deployed AWS environment or a live BDA job. It works by seeding mocked S3/DynamoDB (via `moto`) with canned BDA output at the same S3 JSON boundary the real pipeline reads from, then asserting on the same DynamoDB record the API itself relies on - including the final response code, matched document class, and missing-required-field list.
+
+The suite lives in `documentai-api/tests/regression/`:
+
+- `document_type_manifest.json` - one blueprint/document type per category, with expected fields, required/optional fields, and expected outcome
+- `conftest.py` - seeds mocked S3/DynamoDB per case and writes a triage report on session finish
+- `test_document_type_regression.py` - the parametrized test cases plus an edge case for an unmatched blueprint
+
+After a run, check `documentai-api/tests/regression/.regression_report.json` for a structured summary of every case's pass/fail status and observed values - useful for triaging unexpected results without re-running the suite.
+
+**Workflow for re-testing after a change:**
+
+- After a blueprint or extraction-rule configuration change, re-run `make test-regression` and review any failures against the manifest's expected values.
+- After a real BDA blueprint schema change, also re-run `make pull-blueprint-schemas` per [ADR-2026-08-25](../decisions/2026-08-25-blueprint-schema-preload.md) before re-testing.
+- If a failure reflects an intentional behavior change, update the manifest's expected values; if it's unexpected, treat it the same as any other diagnosed regression using the guidance above.
+
 ## When to stop troubleshooting
 
 If the checks above do not explain the result:
