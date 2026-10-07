@@ -40,14 +40,27 @@ export async function update(
   } = {},
 ) {
   const body = {};
-  if (displayName !== undefined) body.display_name = displayName;
-  if (primaryContact !== undefined) body.primary_contact = primaryContact;
-  if (isActive !== undefined) body.is_active = isActive;
-  if (maxWritesPerDay !== undefined) body.max_writes_per_day = maxWritesPerDay;
-  if (maxWritesPerMonth !== undefined) body.max_writes_per_month = maxWritesPerMonth;
-  if (extractionConfidenceFloor !== undefined)
+  if (displayName !== undefined) {
+    body.display_name = displayName;
+  }
+  if (primaryContact !== undefined) {
+    body.primary_contact = primaryContact;
+  }
+  if (isActive !== undefined) {
+    body.is_active = isActive;
+  }
+  if (maxWritesPerDay !== undefined) {
+    body.max_writes_per_day = maxWritesPerDay;
+  }
+  if (maxWritesPerMonth !== undefined) {
+    body.max_writes_per_month = maxWritesPerMonth;
+  }
+  if (extractionConfidenceFloor !== undefined) {
     body.extraction_confidence_floor = extractionConfidenceFloor;
-  if (disabledBlueprintList !== undefined) body.disabled_blueprint_list = disabledBlueprintList;
+  }
+  if (disabledBlueprintList !== undefined) {
+    body.disabled_blueprint_list = disabledBlueprintList;
+  }
   return adminClient.request("PATCH", `/v1/admin/tenants/${encodeURIComponent(tenantId)}`, body);
 }
 

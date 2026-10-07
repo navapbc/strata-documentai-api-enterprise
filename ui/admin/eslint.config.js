@@ -14,6 +14,7 @@ export default [
         argsIgnorePattern: "^_",
         caughtErrorsIgnorePattern: "^_",
       }],
+      "curly": "error",
     },
   },
 ];

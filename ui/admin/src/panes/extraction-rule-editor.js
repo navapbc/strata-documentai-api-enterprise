@@ -61,7 +61,9 @@ function unmount() {
     _tenantUnsub();
     _tenantUnsub = null;
   }
-  if (_root) _root.replaceChildren();
+  if (_root) {
+    _root.replaceChildren();
+  }
 }
 
 async function loadDisabledBlueprints(tenantId) {
@@ -84,14 +86,20 @@ async function loadAllRules(tenantId) {
 }
 
 async function loadRules(tenantId, docType) {
-  if (!tenantId || !docType) return;
+  if (!tenantId || !docType) {
+    return;
+  }
   try {
     const data = await RulesService.get(tenantId, docType);
     const rule = data.rules?.[0];
     const ruleExists = (data.rules?.length ?? 0) > 0;
     const rules = {};
-    for (const f of rule?.requiredFields || []) rules[f] = "required";
-    for (const f of rule?.optionalFields || []) rules[f] = "optional";
+    for (const f of rule?.requiredFields || []) {
+      rules[f] = "required";
+    }
+    for (const f of rule?.optionalFields || []) {
+      rules[f] = "optional";
+    }
     Store.set({ rules, ruleExists });
   } catch {
     Store.set({ rules: {}, ruleExists: false });
@@ -100,8 +108,12 @@ async function loadRules(tenantId, docType) {
 
 function makeToggle(radioName, fieldName, value, label, cls, currentState, editable, onChange) {
   const input = h("input", { type: "radio", name: radioName, value });
-  if (editable && currentState === value) input.checked = true;
-  if (!editable) input.disabled = true;
+  if (editable && currentState === value) {
+    input.checked = true;
+  }
+  if (!editable) {
+    input.disabled = true;
+  }
   input.addEventListener("change", () => onChange(fieldName, value));
   return h(
     "label",
@@ -204,7 +216,9 @@ function renderDocTypeSection(
 }
 
 function render(state) {
-  if (!_root) return;
+  if (!_root) {
+    return;
+  }
   const {
     schemas,
     schemasLoading,
@@ -231,10 +245,12 @@ function render(state) {
     )) {
       const docRule = allRules.find((r) => (r.documentType || r.document_type) === docType);
       const baseRules = {};
-      for (const f of docRule?.requiredFields || docRule?.required_fields || [])
+      for (const f of docRule?.requiredFields || docRule?.required_fields || []) {
         baseRules[f] = "required";
-      for (const f of docRule?.optionalFields || docRule?.optional_fields || [])
+      }
+      for (const f of docRule?.optionalFields || docRule?.optional_fields || []) {
         baseRules[f] = "optional";
+      }
       const ruleExists = !!docRule;
 
       if (!_localRules[docType] || !_localRules[docType].dirty) {
@@ -292,8 +308,11 @@ function render(state) {
       editable,
       (fieldName, value) => {
         const updated = { ...Store.get().rules };
-        if (value === "excluded") delete updated[fieldName];
-        else updated[fieldName] = value;
+        if (value === "excluded") {
+          delete updated[fieldName];
+        } else {
+          updated[fieldName] = value;
+        }
         Store.set({ rules: updated, dirty: true });
       },
       () => saveRules(),
@@ -326,10 +345,12 @@ function onChangeLocal(
   _localRules[docType] = { ...(_localRules[docType] || {}), rules: updated, dirty: true };
   const docRule = allRules.find((r) => (r.documentType || r.document_type) === docType);
   const baseRules = {};
-  for (const f of docRule?.requiredFields || docRule?.required_fields || [])
+  for (const f of docRule?.requiredFields || docRule?.required_fields || []) {
     baseRules[f] = "required";
-  for (const f of docRule?.optionalFields || docRule?.optional_fields || [])
+  }
+  for (const f of docRule?.optionalFields || docRule?.optional_fields || []) {
     baseRules[f] = "optional";
+  }
   const ruleExists = !!docRule;
   const existing = fieldsList.querySelector(`[data-doc-type="${docType}"]`);
   const next = renderDocTypeSection(
@@ -346,20 +367,29 @@ function onChangeLocal(
     disabledBlueprints.has(docType),
   );
   next.dataset.docType = docType;
-  if (existing) fieldsList.replaceChild(next, existing);
+  if (existing) {
+    fieldsList.replaceChild(next, existing);
+  }
 }
 
 async function saveDocType(docType) {
   const { tenantId } = Store.get();
-  if (!tenantId) return;
+  if (!tenantId) {
+    return;
+  }
   const local = _localRules[docType];
-  if (!local) return;
+  if (!local) {
+    return;
+  }
 
   const requiredFields = [];
   const optionalFields = [];
   for (const [field, rule] of Object.entries(local.rules)) {
-    if (rule === "required") requiredFields.push(field);
-    else if (rule === "optional") optionalFields.push(field);
+    if (rule === "required") {
+      requiredFields.push(field);
+    } else if (rule === "optional") {
+      optionalFields.push(field);
+    }
   }
 
   try {
@@ -381,13 +411,18 @@ function discardDocType(docType, baseRules, ruleExists) {
 
 async function saveRules() {
   const { tenantId, activeDocType, rules, dirty } = Store.get();
-  if (!tenantId || !activeDocType || !dirty) return;
+  if (!tenantId || !activeDocType || !dirty) {
+    return;
+  }
 
   const requiredFields = [];
   const optionalFields = [];
   for (const [field, rule] of Object.entries(rules)) {
-    if (rule === "required") requiredFields.push(field);
-    else if (rule === "optional") optionalFields.push(field);
+    if (rule === "required") {
+      requiredFields.push(field);
+    } else if (rule === "optional") {
+      optionalFields.push(field);
+    }
   }
 
   try {
@@ -403,6 +438,8 @@ function discardChanges() {
   const { tenantId, activeDocType } = Store.get();
   Store.set({ dirty: false });
   _lastRulesKey = null;
-  if (tenantId && activeDocType) loadRules(tenantId, activeDocType);
+  if (tenantId && activeDocType) {
+    loadRules(tenantId, activeDocType);
+  }
   Toast.show("Changes discarded");
 }

@@ -37,7 +37,9 @@ export function mount(root) {
 
   // Use global tenant context
   const tenantId = TenantContext.getTenantId();
-  if (tenantId) Store.set({ tenantId });
+  if (tenantId) {
+    Store.set({ tenantId });
+  }
 
   _tenantUnsub = TenantContext.onChange((tid) => {
     Store.set({ tenantId: tid || null, rules: {}, dirty: false });
@@ -58,17 +60,25 @@ function unmount() {
     _tenantUnsub();
     _tenantUnsub = null;
   }
-  if (_root) _root.replaceChildren();
+  if (_root) {
+    _root.replaceChildren();
+  }
 }
 
 async function loadRules(tenantId, docType) {
-  if (!tenantId || !docType) return;
+  if (!tenantId || !docType) {
+    return;
+  }
   try {
     const data = await RulesService.get(tenantId, docType);
     const rule = data.rules?.[0] || {};
     const rules = {};
-    for (const f of rule.requiredFields || []) rules[f] = "required";
-    for (const f of rule.optionalFields || []) rules[f] = "optional";
+    for (const f of rule.requiredFields || []) {
+      rules[f] = "required";
+    }
+    for (const f of rule.optionalFields || []) {
+      rules[f] = "optional";
+    }
     Store.set({ rules });
   } catch {
     Store.set({ rules: {} });
@@ -76,12 +86,16 @@ async function loadRules(tenantId, docType) {
 }
 
 function render(state) {
-  if (!_root) return;
+  if (!_root) {
+    return;
+  }
   const { schemas, activeDocType, rules, dirty, tenantId } = state;
   const title = _root.querySelector("#bp-editor-title");
   const fieldsList = _root.querySelector("#bp-fields-list");
 
-  if (!title || !fieldsList) return;
+  if (!title || !fieldsList) {
+    return;
+  }
 
   title.textContent = activeDocType || "Select a blueprint";
   _saveBtn.disabled = !dirty || !tenantId;
@@ -107,11 +121,16 @@ function render(state) {
 
     function makeToggle(value, label, cls) {
       const input = h("input", { type: "radio", name: radioName, value });
-      if (fieldState === value) input.checked = true;
+      if (fieldState === value) {
+        input.checked = true;
+      }
       input.addEventListener("change", () => {
         const updated = { ...Store.get().rules };
-        if (value === "excluded") delete updated[field.name];
-        else updated[field.name] = value;
+        if (value === "excluded") {
+          delete updated[field.name];
+        } else {
+          updated[field.name] = value;
+        }
         Store.set({ rules: updated, dirty: true });
       });
       return h(
@@ -152,13 +171,18 @@ function render(state) {
 
 async function saveRules() {
   const { tenantId, activeDocType, rules } = Store.get();
-  if (!tenantId || !activeDocType) return;
+  if (!tenantId || !activeDocType) {
+    return;
+  }
 
   const requiredFields = [];
   const optionalFields = [];
   for (const [field, rule] of Object.entries(rules)) {
-    if (rule === "required") requiredFields.push(field);
-    else if (rule === "optional") optionalFields.push(field);
+    if (rule === "required") {
+      requiredFields.push(field);
+    } else if (rule === "optional") {
+      optionalFields.push(field);
+    }
   }
 
   try {
@@ -174,6 +198,8 @@ function discardChanges() {
   const { tenantId, activeDocType } = Store.get();
   Store.set({ dirty: false });
   _lastRulesKey = null;
-  if (tenantId && activeDocType) loadRules(tenantId, activeDocType);
+  if (tenantId && activeDocType) {
+    loadRules(tenantId, activeDocType);
+  }
   Toast.show("Changes discarded");
 }

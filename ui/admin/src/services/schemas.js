@@ -16,7 +16,9 @@ export function groupFieldsByDocType(data) {
   const schemas = {};
   for (const field of data.fields || []) {
     const docType = field.documentType;
-    if (!schemas[docType]) schemas[docType] = [];
+    if (!schemas[docType]) {
+      schemas[docType] = [];
+    }
     schemas[docType].push(field);
   }
   return schemas;

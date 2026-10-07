@@ -2,8 +2,12 @@ import { adminClient } from "./http.js";
 
 export async function list(tenantId, activeOnly = true) {
   const params = new URLSearchParams();
-  if (tenantId) params.set("tenant_id", tenantId);
-  if (!activeOnly) params.set("active_only", "false");
+  if (tenantId) {
+    params.set("tenant_id", tenantId);
+  }
+  if (!activeOnly) {
+    params.set("active_only", "false");
+  }
   const qs = params.toString() ? `?${params}` : "";
   return adminClient.request("GET", `/v1/admin/document-categories${qs}`);
 }
@@ -31,10 +35,18 @@ export async function update(
 ) {
   const params = tenantId ? `?tenant_id=${encodeURIComponent(tenantId)}` : "";
   const body = {};
-  if (displayName !== undefined) body.display_name = displayName;
-  if (description !== undefined) body.description = description;
-  if (isActive !== undefined) body.is_active = isActive;
-  if (processingPercentage !== undefined) body.processing_percentage = processingPercentage;
+  if (displayName !== undefined) {
+    body.display_name = displayName;
+  }
+  if (description !== undefined) {
+    body.description = description;
+  }
+  if (isActive !== undefined) {
+    body.is_active = isActive;
+  }
+  if (processingPercentage !== undefined) {
+    body.processing_percentage = processingPercentage;
+  }
   return adminClient.request(
     "PATCH",
     `/v1/admin/document-categories/${encodeURIComponent(categoryName)}${params}`,

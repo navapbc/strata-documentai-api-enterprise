@@ -36,7 +36,9 @@ export function mount(root) {
       _dirty = false;
       _searchRules = {};
       const editor = document.querySelector("#extraction-rule-editor-pane");
-      if (editor) editor.classList.remove("hidden");
+      if (editor) {
+        editor.classList.remove("hidden");
+      }
     }
   });
 
@@ -48,15 +50,21 @@ function unmount() {
     _unsub();
     _unsub = null;
   }
-  if (_root) _root.replaceChildren();
+  if (_root) {
+    _root.replaceChildren();
+  }
 }
 
 function rulesForDocType(docType) {
   const { allRules = [] } = Store.get();
   const docRule = allRules.find((r) => (r.documentType || r.document_type) === docType);
   const rules = {};
-  for (const f of docRule?.requiredFields || docRule?.required_fields || []) rules[f] = "required";
-  for (const f of docRule?.optionalFields || docRule?.optional_fields || []) rules[f] = "optional";
+  for (const f of docRule?.requiredFields || docRule?.required_fields || []) {
+    rules[f] = "required";
+  }
+  for (const f of docRule?.optionalFields || docRule?.optional_fields || []) {
+    rules[f] = "optional";
+  }
   return rules;
 }
 
@@ -67,8 +75,12 @@ function search(query) {
     _dirty = false;
     _searchRules = {};
     const actionsEl = document.querySelector("#bp-search-actions");
-    if (actionsEl) actionsEl.style.display = "none";
-    if (editor) editor.classList.remove("hidden");
+    if (actionsEl) {
+      actionsEl.style.display = "none";
+    }
+    if (editor) {
+      editor.classList.remove("hidden");
+    }
     return;
   }
 
@@ -87,7 +99,9 @@ function search(query) {
     }
   }
 
-  if (editor) editor.classList.add("hidden");
+  if (editor) {
+    editor.classList.add("hidden");
+  }
 
   if (matches.length === 0) {
     _results.replaceChildren(h("p", { className: "empty-state" }, "No fields found."));
@@ -97,7 +111,9 @@ function search(query) {
   // Group by docType
   const grouped = {};
   for (const m of matches) {
-    if (!grouped[m.docType]) grouped[m.docType] = [];
+    if (!grouped[m.docType]) {
+      grouped[m.docType] = [];
+    }
     grouped[m.docType].push(m.field);
   }
 
@@ -126,7 +142,9 @@ function renderResults(grouped) {
     saveBtn.onclick = async () => {
       await saveAllRules();
       saveBtn.disabled = true;
-      if (actionsEl) actionsEl.style.display = "none";
+      if (actionsEl) {
+        actionsEl.style.display = "none";
+      }
       _dirty = false;
       Toast.show("Rules saved");
     };
@@ -139,13 +157,21 @@ function renderResults(grouped) {
     };
   }
 
-  if (actionsEl) actionsEl.style.display = "none";
+  if (actionsEl) {
+    actionsEl.style.display = "none";
+  }
 
   function markDirty() {
     _dirty = true;
-    if (actionsEl) actionsEl.style.display = "flex";
-    if (saveBtn) saveBtn.disabled = false;
-    if (discardBtn) discardBtn.classList.remove("hidden");
+    if (actionsEl) {
+      actionsEl.style.display = "flex";
+    }
+    if (saveBtn) {
+      saveBtn.disabled = false;
+    }
+    if (discardBtn) {
+      discardBtn.classList.remove("hidden");
+    }
   }
 
   for (const [docType, fields] of Object.entries(grouped)) {
@@ -162,12 +188,21 @@ function renderResults(grouped) {
 
       function makeToggle(value, label, cls) {
         const input = h("input", { type: "radio", name: radioName, value });
-        if (editable && fieldState === value) input.checked = true;
-        if (!editable) input.disabled = true;
+        if (editable && fieldState === value) {
+          input.checked = true;
+        }
+        if (!editable) {
+          input.disabled = true;
+        }
         input.addEventListener("change", () => {
-          if (!_searchRules[docType]) _searchRules[docType] = {};
-          if (value === "excluded") delete _searchRules[docType][field.name];
-          else _searchRules[docType][field.name] = value;
+          if (!_searchRules[docType]) {
+            _searchRules[docType] = {};
+          }
+          if (value === "excluded") {
+            delete _searchRules[docType][field.name];
+          } else {
+            _searchRules[docType][field.name] = value;
+          }
           markDirty();
         });
         return h(
@@ -204,14 +239,19 @@ function renderResults(grouped) {
 
 async function saveAllRules() {
   const tenantId = TenantContext.getTenantId();
-  if (!tenantId) return;
+  if (!tenantId) {
+    return;
+  }
 
   for (const [docType, rules] of Object.entries(_searchRules)) {
     const requiredFields = [];
     const optionalFields = [];
     for (const [field, rule] of Object.entries(rules)) {
-      if (rule === "required") requiredFields.push(field);
-      else if (rule === "optional") optionalFields.push(field);
+      if (rule === "required") {
+        requiredFields.push(field);
+      } else if (rule === "optional") {
+        optionalFields.push(field);
+      }
     }
     try {
       await RulesService.put(tenantId, docType, requiredFields, optionalFields);

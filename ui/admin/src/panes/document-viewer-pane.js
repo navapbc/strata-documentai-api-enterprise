@@ -88,15 +88,20 @@ export function mount(root) {
       const d = new Date(doc.createdAt);
       d.setHours(0, 0, 0, 0);
       let label;
-      if (d.getTime() === today.getTime()) label = "Today";
-      else if (d.getTime() === yesterday.getTime()) label = "Yesterday";
-      else
+      if (d.getTime() === today.getTime()) {
+        label = "Today";
+      } else if (d.getTime() === yesterday.getTime()) {
+        label = "Yesterday";
+      } else {
         label = d.toLocaleDateString(undefined, {
           month: "short",
           day: "numeric",
           year: d.getFullYear() !== today.getFullYear() ? "numeric" : undefined,
         });
-      if (!groups.has(label)) groups.set(label, []);
+      }
+      if (!groups.has(label)) {
+        groups.set(label, []);
+      }
       groups.get(label).push(doc);
     }
     return groups;
@@ -183,7 +188,9 @@ export function mount(root) {
         includeExtractedData: true,
         includeBoundingBox: true,
       });
-      if (detail.fields) fieldGeometry = extractGeometry(detail.fields);
+      if (detail.fields) {
+        fieldGeometry = extractGeometry(detail.fields);
+      }
       renderDetail(detail);
       await loadPreview(jobId, detail.contentType, detail.processStatus);
       if (fieldGeometry) {
@@ -285,7 +292,9 @@ export function mount(root) {
           `<tr><td class="detail-label">${Helpers.esc(label)}</td><td>${Helpers.esc(String(val))}</td></tr>`,
       )
       .join("");
-    if (!rows) return "";
+    if (!rows) {
+      return "";
+    }
     return `<table class="detail-table"><thead><tr><th colspan="2">${Helpers.esc(title)}</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 

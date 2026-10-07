@@ -18,7 +18,9 @@ export async function put(
     required_fields: requiredFields,
     optional_fields: optionalFields,
   };
-  if (blueprintArn) body.blueprint_arn = blueprintArn;
+  if (blueprintArn) {
+    body.blueprint_arn = blueprintArn;
+  }
   return adminClient.request("PUT", "/v1/config/extraction-rules", body);
 }
 

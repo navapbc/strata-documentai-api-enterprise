@@ -19,16 +19,28 @@ const tmpl = tpl(html);
 const POLL_INTERVAL_MS = 3000;
 
 function formatRelativeDate(iso) {
-  if (!iso) return "-";
+  if (!iso) {
+    return "-";
+  }
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) {
+    return "just now";
+  }
+  if (mins < 60) {
+    return `${mins}m ago`;
+  }
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) {
+    return `${hours}h ago`;
+  }
   const days = Math.floor(hours / 24);
-  if (days === 1) return "yesterday";
-  if (days < 7) return `${days} days ago`;
+  if (days === 1) {
+    return "yesterday";
+  }
+  if (days < 7) {
+    return `${days} days ago`;
+  }
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
@@ -70,7 +82,9 @@ function initTabs(root) {
 }
 
 function switchTab(name) {
-  if (!_tabs) return;
+  if (!_tabs) {
+    return;
+  }
   _tabs.forEach((btn) => btn.classList.toggle("active", btn.dataset.tab === name));
   _root.querySelectorAll("[data-tab-panel]").forEach((el) => {
     el.classList.toggle("tab-active", el.dataset.tabPanel === name);
@@ -95,7 +109,9 @@ export function mount(root) {
 
   root.querySelector("#demo-user-email").textContent = Session.getEmail() || "";
   root.querySelector("#demo-logout-btn").addEventListener("click", () => {
-    if (_onLogout) _onLogout();
+    if (_onLogout) {
+      _onLogout();
+    }
   });
 
   _fileInput = root.querySelector("#demo-file-input");
@@ -121,12 +137,16 @@ export function mount(root) {
   linkFieldHighlighting(_results, _previewPanel);
 
   _dropzone.addEventListener("click", (e) => {
-    if (e.target === _fileClear || _fileClear.contains(e.target)) return;
+    if (e.target === _fileClear || _fileClear.contains(e.target)) {
+      return;
+    }
     _fileInput.click();
   });
 
   _fileInput.addEventListener("change", () => {
-    if (_fileInput.files[0]) setFile(_fileInput.files[0]);
+    if (_fileInput.files[0]) {
+      setFile(_fileInput.files[0]);
+    }
   });
 
   _fileClear.addEventListener("click", (e) => {
@@ -142,7 +162,9 @@ export function mount(root) {
   _dropzone.addEventListener("drop", (e) => {
     e.preventDefault();
     _dropzone.classList.remove("drag-over");
-    if (e.dataTransfer?.files[0]) setFile(e.dataTransfer.files[0]);
+    if (e.dataTransfer?.files[0]) {
+      setFile(e.dataTransfer.files[0]);
+    }
   });
 
   _runBtn.addEventListener("click", runExtraction);
@@ -150,8 +172,12 @@ export function mount(root) {
 }
 
 export function unmount() {
-  if (_abortController) _abortController.abort();
-  if (_elapsedTimer) clearInterval(_elapsedTimer);
+  if (_abortController) {
+    _abortController.abort();
+  }
+  if (_elapsedTimer) {
+    clearInterval(_elapsedTimer);
+  }
 }
 
 function setFile(file) {
@@ -192,7 +218,9 @@ function clearFile() {
 }
 
 async function loadHistory(activeJobId = null) {
-  if (!_historyList) return;
+  if (!_historyList) {
+    return;
+  }
   _historyList.replaceChildren(h("li", { className: "empty-state" }, "Loading documents…"));
   try {
     const resp = await Documents.list({ isDemo: true, limit: 20 });
@@ -222,7 +250,9 @@ async function loadHistory(activeJobId = null) {
         loadDocument(doc.jobId);
         switchTab("results");
       });
-      if (activeJobId && doc.jobId === activeJobId) li.classList.add("active");
+      if (activeJobId && doc.jobId === activeJobId) {
+        li.classList.add("active");
+      }
       _historyList.appendChild(li);
     }
   } catch {
@@ -233,7 +263,9 @@ async function loadHistory(activeJobId = null) {
 
 async function runExtraction() {
   const file = _selectedFile;
-  if (!file) return;
+  if (!file) {
+    return;
+  }
 
   _runBtn.disabled = true;
   _elapsed.classList.remove("hidden");
@@ -274,15 +306,21 @@ async function pollForCompletion(jobId) {
   ]);
 
   while (Date.now() < deadline) {
-    if (_abortController?.signal.aborted) throw new DOMException("Aborted", "AbortError");
+    if (_abortController?.signal.aborted) {
+      throw new DOMException("Aborted", "AbortError");
+    }
     await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
-    if (_abortController?.signal.aborted) throw new DOMException("Aborted", "AbortError");
+    if (_abortController?.signal.aborted) {
+      throw new DOMException("Aborted", "AbortError");
+    }
 
     const doc = await Documents.get(jobId, {
       includeExtractedData: true,
       includeBoundingBox: true,
     });
-    if (!PENDING.has(doc.processStatus)) return doc;
+    if (!PENDING.has(doc.processStatus)) {
+      return doc;
+    }
   }
 
   throw new Error("Timed out waiting for results");
@@ -304,7 +342,9 @@ async function loadDocument(jobId) {
 }
 
 function updateElapsed() {
-  if (!_startTime) return;
+  if (!_startTime) {
+    return;
+  }
   _elapsed.textContent = `Processing… ${Math.floor((Date.now() - _startTime) / 1000)}s`;
 }
 
