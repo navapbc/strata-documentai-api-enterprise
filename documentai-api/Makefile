@@ -41,6 +41,7 @@
 	test-e2e \
 	test-e2e-routing \
 	test-integration \
+	test-regression \
 	metrics-agg \
 	metrics-agg-last-n-days \
 	usage-report \
@@ -182,6 +183,9 @@ test-integration: ## Run integration tests
 test-smoke: .env.e2e
 test-smoke: ## Run IAM and worker smoke tests
 	@set -a && . ./.env.e2e && set +a && E2E_WIPE_TENANT=1 uv run --frozen pytest tests/e2e/test_smoke_iam.py tests/e2e/test_smoke_workers.py -m e2e -v $(args)
+
+test-regression: ## Re-run the document-type regression suite against canned BDA results (mocked AWS via moto)
+	$(PY_RUN_CMD) pytest -m "regression" $(args)
 
 test-e2e: .env.e2e
 test-e2e: ## Run e2e tests
