@@ -13,8 +13,8 @@ KEYS_URL = "/v1/admin/api-keys"
 TENANTS_URL = "/v1/admin/tenants"
 USERS_URL = "/v1/admin/users"
 
-TENANT_ID = "test-tenant"
-OTHER_TENANT_ID = "other-tenant"
+TENANT_ID = "test-tenant-id"
+OTHER_TENANT_ID = "test-other-tenant"
 MISSING_TENANT_ID = "missing"
 NEW_TENANT = {"tenant_id": TENANT_ID, "display_name": "Test Tenant"}
 
@@ -44,12 +44,13 @@ def test_keys_super_admin_create_returns_200(
     override_jwt(make_claims(groups=[SUPER_ADMIN]))
     api_client.post(TENANTS_URL, json={"tenant_id": TENANT_ID, "display_name": "Test"})
     response = api_client.post(
-        KEYS_URL, json={"api_key_name": "test-client", "environment": "dev", "tenant_id": TENANT_ID}
+        KEYS_URL,
+        json={"api_key_name": "test-api-key-name", "environment": "dev", "tenant_id": TENANT_ID},
     )
     assert response.status_code == 200
     data = response.json()
     assert "apiKey" in data
-    assert data["apiKeyName"] == "test-client"
+    assert data["apiKeyName"] == "test-api-key-name"
     items = audit_events_table.scan()["Items"]
     actions = [i[AuditEventRecord.ACTION] for i in items]
     assert AuditAction.KEY_CREATE in actions

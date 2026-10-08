@@ -1,5 +1,7 @@
 """Tests for document build endpoints."""
 
+import io
+import uuid
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -7,7 +9,12 @@ from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from documentai_api.app import app
+from documentai_api.config.constants import MAX_PAGES_PER_BUILD, UploadMethod
 from documentai_api.dtos.processing import PageMetadata
+from documentai_api.models.job_status import JobStatusResponse
+from documentai_api.schemas.document_builds import DocumentBuilds
+from documentai_api.utils.auth import UserContext, get_user_context_from_api_key
+from documentai_api.utils.tenant_access import validate_build_tenant_access
 from documentai_api.utils.uploads import ImageConversionError
 
 client = TestClient(app)
@@ -45,8 +52,6 @@ def mock_document_build_upload():
 @pytest.fixture
 def mock_document_build_submit():
     """Mock common document build submit dependencies."""
-    import io
-
     with (
         patch("documentai_api.routers.build.get_build_metadata", return_value=None),
         patch("documentai_api.routers.build.get_document_build_pages") as mock_get_pages,
@@ -150,6 +155,7 @@ def test_upload_document_build_page_builds(
         assert result["buildId"] == expected_build
     assert result["pageNumber"] == page_number
     assert "uploaded successfully" in result["message"].lower()
+    assert mock_document_build_upload["upload"].call_args.kwargs["tenant_id"] == "test-tenant-id"
 
 
 @pytest.mark.parametrize(
@@ -224,8 +230,6 @@ def test_submit_document_build_not_found(document_build_ddb_table, mock_document
 
 def test_submit_document_build_synchronous(document_build_ddb_table, mock_document_build_submit):
     """Test synchronous document build submission via /submit/wait."""
-    from documentai_api.models.job_status import JobStatusResponse
-
     with patch(
         "documentai_api.pipeline.jobs.poll_for_completion",
         new_callable=AsyncMock,
@@ -321,6 +325,7 @@ def test_submit_document_build_success(document_build_ddb_table, mock_document_b
 
     # verify build was marked as submitted
     mock_document_build_submit["mark_submitted"].assert_called_with("test-build-id")
+    assert mock_document_build_submit["upload"].call_args.kwargs["tenant_id"] == "test-tenant-id"
 
 
 def test_submit_document_build_stamps_tenant_on_job_record(
@@ -339,8 +344,8 @@ def test_submit_document_build_stamps_tenant_on_job_record(
 
     mock_document_build_submit["insert"].assert_called_once()
     record = mock_document_build_submit["insert"].call_args.args[0]
-    assert record.tenant_id == "test-tenant"
-    assert record.api_key_name == "test-client"
+    assert record.tenant_id == "test-tenant-id"
+    assert record.api_key_name == "test-api-key-name"
     # ddb_key must equal the uploaded object's basename so the doc-processor's
     # basename-keyed upsert updates this row in place.
     assert record.job_id == response.json()["jobId"]
@@ -348,7 +353,7 @@ def test_submit_document_build_stamps_tenant_on_job_record(
 
     # merged PDF is also written under the tenant prefix
     dest_path = mock_document_build_submit["upload"].call_args.kwargs["dest_path"]
-    assert "/test-tenant/" in dest_path
+    assert "/test-tenant-id/" in dest_path
 
 
 @pytest.mark.parametrize("upload_source", ["desktop", "mobile", None])
@@ -356,10 +361,6 @@ def test_submit_propagates_upload_source_from_build_metadata(
     document_build_ddb_table, upload_source
 ):
     """Submit reads upload_source from build metadata and stamps it on the job record."""
-    import io
-
-    from documentai_api.schemas.document_builds import DocumentBuilds
-
     build_metadata = {DocumentBuilds.UPLOAD_SOURCE: upload_source}
 
     with (
@@ -613,9 +614,6 @@ def test_upload_document_build_page_max_pages_cap(
     document_build_ddb_table, mock_document_build_upload
 ):
     """Upload rejects when build already has MAX_PAGES_PER_BUILD pages."""
-    from documentai_api.config.constants import MAX_PAGES_PER_BUILD
-    from documentai_api.dtos.processing import PageMetadata
-
     existing_pages = [
         PageMetadata(
             page_number=i,
@@ -640,8 +638,6 @@ def test_upload_document_build_pages_batch_max_pages_cap(
     document_build_ddb_table, mock_document_build_upload
 ):
     """Batch upload rejects when total would exceed MAX_PAGES_PER_BUILD."""
-    from documentai_api.config.constants import MAX_PAGES_PER_BUILD
-
     # Cheap pre-check: more files than the cap
     files = [
         ("files", (f"page{i}.pdf", b"fake pdf", "application/pdf"))
@@ -810,8 +806,6 @@ def test_upload_document_build_page_trace_id_generated(
     document_build_ddb_table, mock_document_build_upload
 ):
     """X-Trace-ID is generated when not supplied."""
-    import uuid
-
     files = {"file": ("page.pdf", b"fake pdf", "application/pdf")}
     data = _form(page_number=1)
     response = client.post("/v1/builds/test-build-id/pages", files=files, data=data)
@@ -835,13 +829,7 @@ def test_upload_document_build_page_trace_id_generated(
 )
 def test_tenant_access_enforced_on_all_build_routes(method, path, document_build_ddb_table):
     """All build endpoints with {build_id} enforce tenant access via dependency."""
-    from fastapi.testclient import TestClient
-
-    from documentai_api.app import app
-    from documentai_api.utils.auth import UserContext, get_user_context_from_api_key
-    from documentai_api.utils.tenant_access import validate_build_tenant_access
-
-    mock_context = UserContext(tenant_id="any-tenant", api_key_name="test-client")
+    mock_context = UserContext(tenant_id="any-tenant", api_key_name="test-api-key-name")
     called = []
 
     def _reject_tenant():
@@ -907,8 +895,6 @@ def test_create_build_trace_id_echoed(document_build_ddb_table):
 
 def test_create_build_trace_id_generated(document_build_ddb_table):
     """create_build generates X-Trace-ID when not supplied."""
-    import uuid
-
     with patch("documentai_api.routers.build.create_document_build"):
         response = client.post("/v1/builds")
 
@@ -978,7 +964,7 @@ def test_upload_build_page_uses_tenant_prefix(document_build_ddb_table, mock_doc
 
     assert response.status_code == 200
     dest_path = mock_document_build_upload["upload"].call_args.kwargs["dest_path"]
-    assert "/test-tenant/" in dest_path
+    assert "/test-tenant-id/" in dest_path
 
 
 def test_batch_upload_with_category(document_build_ddb_table, mock_document_build_upload):
@@ -1020,14 +1006,11 @@ def test_submit_document_build_rollback_failure_still_returns_500(
 
 def test_submit_build_ai_consent_declined(document_build_ddb_table):
     """When ai_consent_flag=False on build metadata, submit creates a DDB record and returns terminal status."""
-    from documentai_api.config.constants import UploadMethod
-    from documentai_api.schemas.document_builds import DocumentBuilds
-
     build_metadata = {
         DocumentBuilds.BUILD_ID: "test-build-id",
         DocumentBuilds.AI_CONSENT_FLAG: False,
-        DocumentBuilds.TENANT_ID: "test-tenant",
-        DocumentBuilds.API_KEY_NAME: "test-client",
+        DocumentBuilds.TENANT_ID: "test-tenant-id",
+        DocumentBuilds.API_KEY_NAME: "test-api-key-name",
         DocumentBuilds.CATEGORY: "income",
         DocumentBuilds.EXTERNAL_DOCUMENT_ID: "ext-doc",
         DocumentBuilds.EXTERNAL_SYSTEM_ID: "ext-sys",
@@ -1059,8 +1042,8 @@ def test_submit_build_ai_consent_declined(document_build_ddb_table):
     record = mock_insert.call_args[0][0]
     assert record.upload_method == UploadMethod.BUILD
     assert record.ai_consent_flag is False
-    assert record.tenant_id == "test-tenant"
-    assert record.api_key_name == "test-client"
+    assert record.tenant_id == "test-tenant-id"
+    assert record.api_key_name == "test-api-key-name"
     assert record.external_document_id == "ext-doc"
     assert record.system_document_id == record.job_id
     assert record.external_system_id == "ext-sys"
@@ -1094,13 +1077,11 @@ def test_submit_build_ai_consent_none_proceeds(
 
 def test_build_submit_wait_consent_declined_skips_poll(document_build_ddb_table):
     """Build /submit/wait returns immediately without polling on consent decline."""
-    from documentai_api.schemas.document_builds import DocumentBuilds
-
     build_metadata = {
         DocumentBuilds.BUILD_ID: "test-build-id",
         DocumentBuilds.AI_CONSENT_FLAG: False,
-        DocumentBuilds.TENANT_ID: "test-tenant",
-        DocumentBuilds.API_KEY_NAME: "test-client",
+        DocumentBuilds.TENANT_ID: "test-tenant-id",
+        DocumentBuilds.API_KEY_NAME: "test-api-key-name",
     }
 
     with (
@@ -1128,8 +1109,6 @@ def test_build_submit_wait_forwards_include_extracted_data(
     document_build_ddb_table, mock_document_build_submit
 ):
     """Build /submit/wait passes include_extracted_data to poll_for_completion."""
-    from documentai_api.models.job_status import JobStatusResponse
-
     with patch(
         "documentai_api.pipeline.jobs.poll_for_completion",
         new_callable=AsyncMock,

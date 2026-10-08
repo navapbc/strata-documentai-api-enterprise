@@ -1,15 +1,19 @@
 """Tests for utils/auth.py."""
 
 import hashlib
-from unittest.mock import patch
+import threading
+from collections import OrderedDict
+from datetime import UTC, datetime, timedelta
+from unittest.mock import call, patch
 
 import pytest
 from fastapi import HTTPException
 
 from documentai_api.config.env_var_names_generated import EnvVarNames
 from documentai_api.schemas.api_key import ApiKeyRecord
+from documentai_api.services import ddb as ddb_service
 from documentai_api.utils import auth as auth_util
-from documentai_api.utils.cache import get_cache
+from documentai_api.utils.cache import CacheItem, get_cache
 
 
 @pytest.fixture(autouse=True)
@@ -30,7 +34,10 @@ def seed_api_key(api_keys_table):
     """Factory fixture to create an API key and return (raw_key, key_hash)."""
 
     def _seed(
-        api_key_name="test-client", environment="prod", expires_at=None, tenant_id="test-tenant"
+        api_key_name="test-api-key-name",
+        environment="prod",
+        expires_at=None,
+        tenant_id="test-tenant-id",
     ):
         api_key, _ = auth_util.generate_api_key(
             api_key_name, environment, tenant_id=tenant_id, expires_at=expires_at
@@ -151,10 +158,6 @@ def test_cache_hit_returns_record():
 
 
 def test_cache_expired_returns_none():
-    from datetime import UTC, datetime, timedelta
-
-    from documentai_api.utils.cache import CacheItem
-
     record = {ApiKeyRecord.KEY_HASH: "abc", ApiKeyRecord.IS_ACTIVE: True}
     get_cache().add("abc", record, ttl_minutes=5)
 
@@ -184,8 +187,6 @@ def test_validate_key_record_missing_is_active():
 
 
 def test_validate_key_record_not_expired():
-    from datetime import UTC, datetime, timedelta
-
     future = (datetime.now(UTC) + timedelta(days=1)).isoformat()
     assert (
         auth_util._validate_key_record(
@@ -196,8 +197,6 @@ def test_validate_key_record_not_expired():
 
 
 def test_validate_key_record_expired():
-    from datetime import UTC, datetime, timedelta
-
     past = (datetime.now(UTC) - timedelta(days=1)).isoformat()
     assert (
         auth_util._validate_key_record(
@@ -306,7 +305,7 @@ def test_ddb_verify_inactive_key_raises_401(api_keys_table):
     api_keys_table.put_item(
         Item={
             ApiKeyRecord.KEY_HASH: key_hash,
-            ApiKeyRecord.API_KEY_NAME: "test-client",
+            ApiKeyRecord.API_KEY_NAME: "test-api-key-name",
             ApiKeyRecord.IS_ACTIVE: False,
         }
     )
@@ -321,8 +320,8 @@ def test_ddb_verify_valid_key_passes(api_keys_table):
     api_keys_table.put_item(
         Item={
             ApiKeyRecord.KEY_HASH: key_hash,
-            ApiKeyRecord.API_KEY_NAME: "test-client",
-            ApiKeyRecord.TENANT_ID: "test-tenant",
+            ApiKeyRecord.API_KEY_NAME: "test-api-key-name",
+            ApiKeyRecord.TENANT_ID: "test-tenant-id",
             ApiKeyRecord.IS_ACTIVE: True,
         }
     )
@@ -335,8 +334,8 @@ def test_ddb_verify_uses_cache_on_second_call(api_keys_table):
     api_keys_table.put_item(
         Item={
             ApiKeyRecord.KEY_HASH: key_hash,
-            ApiKeyRecord.API_KEY_NAME: "test-client",
-            ApiKeyRecord.TENANT_ID: "test-tenant",
+            ApiKeyRecord.API_KEY_NAME: "test-api-key-name",
+            ApiKeyRecord.TENANT_ID: "test-tenant-id",
             ApiKeyRecord.IS_ACTIVE: True,
         }
     )
@@ -393,9 +392,6 @@ def test_update_last_used_silently_ignores_errors(pinned_api_keys_config):
 
 def test_update_last_used_dict_is_bounded(pinned_api_keys_config, monkeypatch):
     """The lastUsed debounce map must not grow without bound (one entry per key)."""
-    import threading
-    from collections import OrderedDict
-
     # Redirect the module attribute first, then drain any straggler threads that
     # captured the original dict reference before the redirect. After the drain
     # no thread holds either the old or new dict, so the loop below is the sole
@@ -445,7 +441,7 @@ def test_generate_api_key_warns_existing_via_ddb(seed_api_key, api_keys_table):
     """Test generate_api_key detects existing active keys via real DDB scan."""
     seed_api_key(api_key_name="my-service")
 
-    _, existing = auth_util.generate_api_key("my-service", "prod", "test-tenant")
+    _, existing = auth_util.generate_api_key("my-service", "prod", "test-tenant-id")
 
     assert len(existing) == 1
     assert existing[0][ApiKeyRecord.API_KEY_NAME] == "my-service"
@@ -461,8 +457,6 @@ def test_generate_api_key_existing_warning_is_tenant_scoped(seed_api_key, api_ke
 
 
 def test_generate_api_key_with_expires_at(seed_api_key, api_keys_table):
-    from datetime import UTC, datetime, timedelta
-
     expires = datetime.now(UTC) + timedelta(days=90)
     _, key_hash = seed_api_key(api_key_name="my-service", expires_at=expires)
 
@@ -741,7 +735,7 @@ def test_lookup_key_in_ddb_found(api_keys_table):
     api_keys_table.put_item(
         Item={
             ApiKeyRecord.KEY_HASH: key_hash,
-            ApiKeyRecord.API_KEY_NAME: "test-client",
+            ApiKeyRecord.API_KEY_NAME: "test-api-key-name",
             ApiKeyRecord.IS_ACTIVE: True,
         }
     )
@@ -749,7 +743,7 @@ def test_lookup_key_in_ddb_found(api_keys_table):
     result = auth_util._lookup_key_in_ddb(key_hash)
 
     assert result is not None
-    assert result[ApiKeyRecord.API_KEY_NAME] == "test-client"
+    assert result[ApiKeyRecord.API_KEY_NAME] == "test-api-key-name"
     assert result[ApiKeyRecord.IS_ACTIVE] is True
 
 
@@ -812,10 +806,6 @@ def test_is_duplicate_key_name_true_even_when_inactive(api_keys_table):
 
 def test_scan_returns_all_pages(api_keys_table):
     """Test that scan() retrieves all items across multiple DynamoDB pages."""
-    from unittest.mock import call
-
-    from documentai_api.services import ddb as ddb_service
-
     page1 = {"Items": [{"keyHash": "a"}], "LastEvaluatedKey": {"keyHash": "a"}}
     page2 = {"Items": [{"keyHash": "b"}], "LastEvaluatedKey": {"keyHash": "b"}}
     page3 = {"Items": [{"keyHash": "c"}]}

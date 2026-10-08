@@ -1,9 +1,14 @@
+import json
 from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 
 from documentai_api.app import app
+from documentai_api.routers.extraction_rules import ExtractionRuleRequest
+from documentai_api.utils.auth import UserContext, get_user_context_with_fallback
+from documentai_api.utils.extraction_rules import get_rules, upsert_rule
 
 client = TestClient(app)
 
@@ -14,7 +19,7 @@ def _disable_auth(disable_auth):
 
 
 MOCK_RULE = {
-    "tenantId": "test-tenant",
+    "tenantId": "test-tenant-id",
     "documentType": "W2",
     "requiredFields": ["ssn", "wages"],
     "optionalFields": ["employer_name"],
@@ -30,7 +35,7 @@ def test_get_extraction_rules():
     assert response.status_code == 200
     rules = response.json()["rules"]
     assert len(rules) == 1
-    assert rules[0]["tenantId"] == "test-tenant"
+    assert rules[0]["tenantId"] == "test-tenant-id"
     assert rules[0]["documentType"] == "W2"
     assert rules[0]["requiredFields"] == ["ssn", "wages"]
     assert rules[0]["optionalFields"] == ["employer_name"]
@@ -53,7 +58,7 @@ def test_get_extraction_rules_not_found():
 
 def test_put_extraction_rule():
     rule = {
-        "tenantId": "test-tenant",
+        "tenantId": "test-tenant-id",
         "documentType": "W2",
         "requiredFields": ["ssn", "wages"],
         "optionalFields": ["employer_name"],
@@ -112,7 +117,7 @@ def test_delete_extraction_rule():
         response = client.delete("/v1/config/extraction-rules?document_type=W2")
 
     assert response.status_code == 200
-    mock_delete.assert_called_once_with("test-tenant", "W2")
+    mock_delete.assert_called_once_with("test-tenant-id", "W2")
 
 
 def test_delete_extraction_rule_not_found():
@@ -137,7 +142,7 @@ def test_put_extraction_rule_uses_auth_tenant(mocker):
     """PUT derives tenant_id from auth, not from request body."""
     mock_upsert = mocker.patch("documentai_api.utils.extraction_rules.upsert_rule")
     mock_upsert.return_value = {
-        "tenantId": "test-tenant",
+        "tenantId": "test-tenant-id",
         "documentType": "W2",
         "requiredFields": ["ssn"],
         "optionalFields": [],
@@ -160,7 +165,7 @@ def test_put_extraction_rule_uses_auth_tenant(mocker):
     assert response.status_code == 200
     # Verify upsert was called with auth tenant, not any client-supplied value
     call_args = mock_upsert.call_args
-    assert call_args[0][0] == "test-tenant"
+    assert call_args[0][0] == "test-tenant-id"
 
 
 def test_put_extraction_rule_rejects_non_string_list():
@@ -191,8 +196,6 @@ def mock_valid_fields(mocker):
 
 
 def test_validator_deduplicates_required_fields(mock_valid_fields):
-    from documentai_api.routers.extraction_rules import ExtractionRuleRequest
-
     req = ExtractionRuleRequest(
         document_type="w2", required_fields=["ssn", "ssn", "wages"], optional_fields=[]
     )
@@ -201,8 +204,6 @@ def test_validator_deduplicates_required_fields(mock_valid_fields):
 
 
 def test_validator_deduplicates_case_insensitive_within_list(mock_valid_fields):
-    from documentai_api.routers.extraction_rules import ExtractionRuleRequest
-
     req = ExtractionRuleRequest(
         document_type="w2", required_fields=["SSN", "ssn", "wages"], optional_fields=[]
     )
@@ -212,8 +213,6 @@ def test_validator_deduplicates_case_insensitive_within_list(mock_valid_fields):
 
 
 def test_validator_preserves_mixed_case_field_names(mock_valid_fields):
-    from documentai_api.routers.extraction_rules import ExtractionRuleRequest
-
     req = ExtractionRuleRequest(
         document_type="w2", required_fields=["SSN", "wages"], optional_fields=["employer_name"]
     )
@@ -224,8 +223,6 @@ def test_validator_preserves_mixed_case_field_names(mock_valid_fields):
 
 
 def test_validator_deduplicates_optional_fields(mock_valid_fields):
-    from documentai_api.routers.extraction_rules import ExtractionRuleRequest
-
     req = ExtractionRuleRequest(
         document_type="w2",
         required_fields=["ssn"],
@@ -239,19 +236,11 @@ def test_validator_rejects_unknown_document_type(mocker):
         "documentai_api.routers.extraction_rules.get_valid_fields",
         return_value=None,
     )
-    from pydantic import ValidationError
-
-    from documentai_api.routers.extraction_rules import ExtractionRuleRequest
-
     with pytest.raises(ValidationError, match="Unknown document type"):
         ExtractionRuleRequest(document_type="unknown", required_fields=["ssn"], optional_fields=[])
 
 
 def test_validator_rejects_invalid_field_names(mock_valid_fields):
-    from pydantic import ValidationError
-
-    from documentai_api.routers.extraction_rules import ExtractionRuleRequest
-
     with pytest.raises(ValidationError, match="Unknown fields"):
         ExtractionRuleRequest(
             document_type="w2", required_fields=["not_a_field"], optional_fields=[]
@@ -259,10 +248,6 @@ def test_validator_rejects_invalid_field_names(mock_valid_fields):
 
 
 def test_validator_rejects_overlapping_fields(mock_valid_fields):
-    from pydantic import ValidationError
-
-    from documentai_api.routers.extraction_rules import ExtractionRuleRequest
-
     with pytest.raises(ValidationError, match="both required and optional"):
         ExtractionRuleRequest(document_type="w2", required_fields=["ssn"], optional_fields=["ssn"])
 
@@ -270,7 +255,7 @@ def test_validator_rejects_overlapping_fields(mock_valid_fields):
 def test_put_deduplicates_fields():
     """PUT silently deduplicates fields and returns 200."""
     rule = {
-        "tenantId": "test-tenant",
+        "tenantId": "test-tenant-id",
         "documentType": "w2",
         "requiredFields": ["ssn"],
         "optionalFields": ["wages"],
@@ -368,7 +353,7 @@ def test_put_normalizes_fields_before_persisting(mocker):
     """Mixed-case input is rewritten to blueprint casing before upsert_rule is called."""
     mock_upsert = mocker.patch("documentai_api.utils.extraction_rules.upsert_rule")
     mock_upsert.return_value = {
-        "tenantId": "test-tenant",
+        "tenantId": "test-tenant-id",
         "documentType": "payslip",
         "requiredFields": ["EmployeeName.FirstName", "CurrentGrossPay"],
         "optionalFields": ["PayDate"],
@@ -401,15 +386,13 @@ def test_put_normalizes_fields_before_persisting(mocker):
 
 def test_put_normalizes_fields_via_real_labels_dir(tmp_path, monkeypatch, mocker):
     """Contract test: incorrect-case input is normalized to blueprint casing using the real get_valid_fields path."""
-    import json
-
     labels = {"EmployeeName.FirstName": "Employee First Name", "GrossPay": "Gross Pay"}
     (tmp_path / "payslip.json").write_text(json.dumps(labels))
     monkeypatch.setattr("documentai_api.utils.field_labels.LABELS_DIR", tmp_path)
 
     mock_upsert = mocker.patch("documentai_api.utils.extraction_rules.upsert_rule")
     mock_upsert.return_value = {
-        "tenantId": "test-tenant",
+        "tenantId": "test-tenant-id",
         "documentType": "payslip",
         "requiredFields": ["EmployeeName.FirstName"],
         "optionalFields": ["GrossPay"],
@@ -439,9 +422,6 @@ def test_put_normalizes_fields_via_real_labels_dir(tmp_path, monkeypatch, mocker
 
 def test_put_super_admin_missing_tenant_id_returns_400():
     """Super-admin (tenant_id=__admin__) must provide tenant_id in body."""
-    from documentai_api.app import app
-    from documentai_api.utils.auth import UserContext, get_user_context_with_fallback
-
     admin_context = UserContext(tenant_id="__admin__", api_key_name="admin-user")
     app.dependency_overrides[get_user_context_with_fallback] = lambda: admin_context
     try:
@@ -460,9 +440,6 @@ def test_put_super_admin_missing_tenant_id_returns_400():
 
 def test_delete_super_admin_missing_tenant_id_returns_400():
     """Super-admin DELETE without tenant_id query param returns 400."""
-    from documentai_api.app import app
-    from documentai_api.utils.auth import UserContext, get_user_context_with_fallback
-
     admin_context = UserContext(tenant_id="__admin__", api_key_name="admin-user")
     app.dependency_overrides[get_user_context_with_fallback] = lambda: admin_context
     try:
@@ -477,7 +454,7 @@ def test_put_tenant_admin_body_tenant_id_ignored(mocker):
     """Tenant-admin's auth tenant is used regardless of body tenant_id."""
     mock_upsert = mocker.patch("documentai_api.utils.extraction_rules.upsert_rule")
     mock_upsert.return_value = {
-        "tenantId": "test-tenant",
+        "tenantId": "test-tenant-id",
         "documentType": "W2",
         "requiredFields": ["ssn"],
         "optionalFields": [],
@@ -488,7 +465,7 @@ def test_put_tenant_admin_body_tenant_id_ignored(mocker):
         "documentai_api.routers.extraction_rules.get_valid_fields", return_value={"ssn": "ssn"}
     )
 
-    # Body says "other-tenant" but auth is "test-tenant" - auth wins
+    # Body says "other-tenant" but auth is "test-tenant-id" - auth wins
     response = client.put(
         "/v1/config/extraction-rules",
         json={
@@ -500,18 +477,12 @@ def test_put_tenant_admin_body_tenant_id_ignored(mocker):
     )
 
     assert response.status_code == 200
-    assert mock_upsert.call_args[0][0] == "test-tenant"
+    assert mock_upsert.call_args[0][0] == "test-tenant-id"
 
 
 @pytest.mark.integration
 def test_extraction_rules_tenant_isolation(extraction_rules_table):
     """End-to-end: tenant A cannot see or delete tenant B's rules."""
-    from fastapi.testclient import TestClient
-
-    from documentai_api.app import app
-    from documentai_api.utils.auth import UserContext, get_user_context_with_fallback
-    from documentai_api.utils.extraction_rules import upsert_rule
-
     # Seed a rule for tenant B directly in DDB
     upsert_rule("tenant-b", "W2", ["ssn"], ["wages"])
 
@@ -543,8 +514,6 @@ def test_extraction_rules_tenant_isolation(extraction_rules_table):
         assert response.json()["tenantId"] == "tenant-a"
 
         # Verify tenant B's rule is untouched
-        from documentai_api.utils.extraction_rules import get_rules
-
         b_rules = get_rules("tenant-b", "W2")
         assert len(b_rules) == 1
         assert b_rules[0]["requiredFields"] == ["ssn"]

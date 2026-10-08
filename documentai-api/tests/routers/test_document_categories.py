@@ -1,14 +1,17 @@
 """Tests for document categories CRUD with tenant scoping."""
 
+import boto3
 import pytest
+from moto import mock_aws
 
 from documentai_api.config.env_var_names_generated import EnvVarNames
+from documentai_api.utils.document_categories import auto_register_category
 from tests.helpers.fixtures.claims import SUPER_ADMIN, TENANT_ADMIN, make_claims, override_jwt
 
 CATEGORIES_URL = "/v1/admin/document-categories"
 
-TENANT_ID = "test-tenant"
-OTHER_TENANT_ID = "other-tenant"
+TENANT_ID = "test-tenant-id"
+OTHER_TENANT_ID = "test-other-tenant-id"
 CATEGORY_NAME = "income"
 NEW_CATEGORY = {
     "category_name": CATEGORY_NAME,
@@ -22,9 +25,6 @@ NEW_CATEGORY = {
 
 @pytest.fixture
 def document_categories_table(aws_credentials, monkeypatch):
-    import boto3
-    from moto import mock_aws
-
     with mock_aws():
         dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
         table = dynamodb.create_table(
@@ -422,8 +422,6 @@ def test_categories_manual_create_sets_is_auto_registered_false(
 
 
 def test_categories_auto_register_does_not_overwrite_manual(document_categories_table, api_client):
-    from documentai_api.utils.document_categories import auto_register_category
-
     # Create manually first
     override_jwt(make_claims(groups=[SUPER_ADMIN]))
     api_client.post(CATEGORIES_URL, params={"tenant_id": TENANT_ID}, json=NEW_CATEGORY)

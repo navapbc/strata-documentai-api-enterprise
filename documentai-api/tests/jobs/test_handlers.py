@@ -7,13 +7,14 @@ import pytest
 from documentai_api.config.constants import ProcessStatus
 from documentai_api.config.env_var_names_generated import EnvVarNames
 from documentai_api.jobs.bda_result_processor.handler import handler as bda_result_handler
+from documentai_api.jobs.document_processor import handler as handler_mod
 from documentai_api.jobs.document_processor.handler import handler as document_processor_handler
 from documentai_api.schemas.document_metadata import DocumentMetadata
 
 EVENTBRIDGE_S3_EVENT = {
     "detail": {
         "bucket": {"name": "test-bucket"},
-        "object": {"key": "input/test-tenant/doc.pdf"},
+        "object": {"key": "input/test-tenant-id/doc.pdf"},
     }
 }
 
@@ -22,11 +23,11 @@ BDA_EVENT = {
     "detail": {
         "bucket": {"name": "output-bucket"},
         "object": {
-            "key": f"processed/input/test-tenant/doc.pdf/{BDA_INVOCATION_ID}/0/custom_output/job_metadata.json"
+            "key": f"processed/input/test-tenant-id/doc.pdf/{BDA_INVOCATION_ID}/0/custom_output/job_metadata.json"
         },
     }
 }
-BDA_DDB_FILE_NAME = "input/test-tenant/doc.pdf"
+BDA_DDB_FILE_NAME = "input/test-tenant-id/doc.pdf"
 
 
 @pytest.fixture(autouse=True)
@@ -277,8 +278,6 @@ def test_malformed_event_returns_500_without_ddb_update():
 
 def test_document_processor_cold_start_toggle():
     """First handler() passes is_cold_start=True to main, second passes False."""
-    from documentai_api.jobs.document_processor import handler as handler_mod
-
     # Reset module-level state to simulate fresh container
     handler_mod.lifecycle["is_cold_start"] = True
 

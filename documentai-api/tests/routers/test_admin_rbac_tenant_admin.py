@@ -10,8 +10,8 @@ KEYS_URL = "/v1/admin/api-keys"
 TENANTS_URL = "/v1/admin/tenants"
 USERS_URL = "/v1/admin/users"
 
-TENANT_ID = "test-tenant"
-OTHER_TENANT_ID = "other-tenant"
+TENANT_ID = "test-tenant-id"
+OTHER_TENANT_ID = "test-other-tenant-id"
 NEW_TENANT = {"tenant_id": TENANT_ID, "display_name": "Test Tenant"}
 
 

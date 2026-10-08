@@ -33,13 +33,13 @@ def test_me_invalid_bearer_returns_401(api_client):
 
 def test_me_api_key_context(api_client):
     app.dependency_overrides[get_user_context_with_fallback] = lambda: UserContext(
-        tenant_id="test-tenant", api_key_name="my-service"
+        tenant_id="test-tenant-id", api_key_name="my-service"
     )
     response = api_client.get(ME_URL)
     assert response.status_code == 200
     data = response.json()
     assert set(data.keys()) == EXPECTED_KEYS
-    assert data["tenantId"] == "test-tenant"
+    assert data["tenantId"] == "test-tenant-id"
     assert data["principal"] == "my-service"
     assert data["authMethod"] == "api_key"
 
@@ -60,12 +60,12 @@ def test_me_jwt_context(api_client):
 def test_me_tenant_admin_jwt_context(api_client):
     """Tenant-admin JWT correctly reports auth_method=jwt."""
     app.dependency_overrides[get_user_context_with_fallback] = lambda: UserContext(
-        tenant_id="test-tenant", api_key_name="user@test-tenant.com", auth_method="jwt"
+        tenant_id="test-tenant-id", api_key_name="user@test-tenant.com", auth_method="jwt"
     )
     response = api_client.get(ME_URL)
     assert response.status_code == 200
     data = response.json()
-    assert data["tenantId"] == "test-tenant"
+    assert data["tenantId"] == "test-tenant-id"
     assert data["authMethod"] == "jwt"
 
 

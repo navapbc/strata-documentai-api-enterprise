@@ -1,13 +1,30 @@
 """Tests for utils/uploads.py helper functions."""
 
 import io
+import logging
+import os
 from pathlib import Path
+from urllib.parse import quote, unquote_plus
 
 import pytest
 from fastapi import HTTPException, UploadFile
+from starlette.datastructures import Headers
 
+from documentai_api.config.constants import ExtractMethod
 from documentai_api.config.env_var_names_generated import EnvVarNames
-from documentai_api.utils.uploads import generate_unique_filename
+from documentai_api.utils.s3 import (
+    extract_s3_info_from_event,
+    get_bucket_and_key,
+    write_extraction_output,
+)
+from documentai_api.utils.uploads import (
+    _save_original_to_preprocessing,
+    generate_unique_filename,
+    purge_document_s3_artifacts,
+    validate_file_type,
+    validate_s3_object_is_bda_native,
+    validate_upload,
+)
 from tests.helpers.documents import generate_ooxml_with_deep_entry
 
 FIXTURES_DIR = Path(__file__).parent.parent / "helpers" / "fixtures" / "test-documents"
@@ -49,8 +66,6 @@ def test_generate_unique_filename_non_ascii_replaced():
 
 @pytest.mark.asyncio
 async def test_validate_file_type_supported(runtime_required_env, blank_pdf_bytes):
-    from documentai_api.utils.uploads import validate_file_type
-
     file = UploadFile(filename="test.pdf", file=io.BytesIO(blank_pdf_bytes))
     content_type = await validate_file_type(file)
     assert content_type == "application/pdf"
@@ -58,8 +73,6 @@ async def test_validate_file_type_supported(runtime_required_env, blank_pdf_byte
 
 @pytest.mark.asyncio
 async def test_validate_file_type_unsupported(runtime_required_env, empty_zip_bytes):
-    from documentai_api.utils.uploads import validate_file_type
-
     file = UploadFile(filename="test.zip", file=io.BytesIO(empty_zip_bytes))
     with pytest.raises(HTTPException) as exc_info:
         await validate_file_type(file)
@@ -69,8 +82,6 @@ async def test_validate_file_type_unsupported(runtime_required_env, empty_zip_by
 
 @pytest.mark.asyncio
 async def test_validate_file_type_docx_accepted(runtime_required_env, blank_docx_bytes):
-    from documentai_api.utils.uploads import validate_file_type
-
     file = UploadFile(filename="test.docx", file=io.BytesIO(blank_docx_bytes))
     content_type = await validate_file_type(file)
     assert content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -79,8 +90,6 @@ async def test_validate_file_type_docx_accepted(runtime_required_env, blank_docx
 @pytest.mark.asyncio
 async def test_validate_file_type_docx_deep_entry_accepted(runtime_required_env):
     """A docx whose word/ entry is past the header window is still detected (not zip)."""
-    from documentai_api.utils.uploads import validate_file_type
-
     file = UploadFile(
         filename="deep.docx", file=io.BytesIO(generate_ooxml_with_deep_entry("word/document.xml"))
     )
@@ -100,8 +109,6 @@ async def test_validate_file_type_xlsx_pptx_rejected_not_misdetected_as_docx(
     runtime_required_env, member, detected_subtype
 ):
     """xlsx/pptx resolve to their own subtype and are rejected - never treated as docx."""
-    from documentai_api.utils.uploads import validate_file_type
-
     file = UploadFile(filename="deep.bin", file=io.BytesIO(generate_ooxml_with_deep_entry(member)))
     with pytest.raises(HTTPException) as exc_info:
         await validate_file_type(file)
@@ -118,8 +125,6 @@ async def test_validate_file_type_password_protected_docx_accepted(runtime_requi
 
     Acceptance is required so the async classifier can mark it PASSWORD_PROTECTED.
     """
-    from documentai_api.utils.uploads import validate_file_type
-
     data = (FIXTURES_DIR_HAPPY_PATH / "synthetic-password-protected.docx").read_bytes()
     file = UploadFile(filename="pw.docx", file=io.BytesIO(data))
     content_type = await validate_file_type(file)
@@ -128,8 +133,6 @@ async def test_validate_file_type_password_protected_docx_accepted(runtime_requi
 
 @pytest.mark.asyncio
 async def test_validate_file_type_odt_rejected_with_hint(runtime_required_env, blank_odt_bytes):
-    from documentai_api.utils.uploads import validate_file_type
-
     file = UploadFile(filename="test.odt", file=io.BytesIO(blank_odt_bytes))
     with pytest.raises(HTTPException) as exc_info:
         await validate_file_type(file)
@@ -140,8 +143,6 @@ async def test_validate_file_type_odt_rejected_with_hint(runtime_required_env, b
 
 @pytest.mark.asyncio
 async def test_validate_file_type_doc_accepted(runtime_required_env, blank_doc_bytes):
-    from documentai_api.utils.uploads import validate_file_type
-
     file = UploadFile(filename="test.doc", file=io.BytesIO(blank_doc_bytes))
     content_type = await validate_file_type(file)
     assert content_type == "application/msword"
@@ -150,8 +151,6 @@ async def test_validate_file_type_doc_accepted(runtime_required_env, blank_doc_b
 @pytest.mark.asyncio
 async def test_validate_file_type_resets_pointer(runtime_required_env, blank_pdf_bytes):
     """Verify the file pointer is reset after validation."""
-    from documentai_api.utils.uploads import validate_file_type
-
     file = UploadFile(filename="test.pdf", file=io.BytesIO(blank_pdf_bytes))
     await validate_file_type(file)
     content = await file.read()
@@ -160,8 +159,6 @@ async def test_validate_file_type_resets_pointer(runtime_required_env, blank_pdf
 
 @pytest.mark.asyncio
 async def test_validate_upload_missing_filename(runtime_required_env):
-    from documentai_api.utils.uploads import validate_upload
-
     file = UploadFile(filename="", file=io.BytesIO(b"fake"))
     with pytest.raises(HTTPException) as exc_info:
         await validate_upload(file)
@@ -174,12 +171,6 @@ async def test_validate_upload_mime_mismatch_logs_warning(
     runtime_required_env, blank_pdf_bytes, caplog
 ):
     """Test that MIME mismatch between declared and detected types logs a warning."""
-    import logging
-
-    from starlette.datastructures import Headers
-
-    from documentai_api.utils.uploads import validate_upload
-
     file = UploadFile(
         filename="test.pdf",
         file=io.BytesIO(blank_pdf_bytes),
@@ -194,33 +185,19 @@ async def test_validate_upload_mime_mismatch_logs_warning(
 
 def test_save_original_to_preprocessing_tenant_scoped(mocker, monkeypatch):
     """The upload-time original is stored under the tenant's preprocessing prefix."""
-    from documentai_api.utils.uploads import _save_original_to_preprocessing
-
     monkeypatch.setenv(EnvVarNames.DOCUMENTAI_PREPROCESSING_LOCATION, "s3://bucket/preprocessing")
     mock_upload = mocker.patch("documentai_api.services.s3.upload_file")
 
-    _save_original_to_preprocessing(b"data", "doc-uuid.png", "image/png", tenant_id="test-tenant")
+    _save_original_to_preprocessing(
+        b"data", "doc-uuid.png", "image/png", tenant_id="test-tenant-id"
+    )
 
     assert mock_upload.call_args.args[0] == "bucket"
-    assert mock_upload.call_args.args[1] == "preprocessing/test-tenant/doc-uuid.png"
-
-
-def test_save_original_to_preprocessing_without_tenant_falls_back(mocker, monkeypatch):
-    """No tenant_id keeps the legacy un-scoped key (e.g. document-build flow)."""
-    from documentai_api.utils.uploads import _save_original_to_preprocessing
-
-    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_PREPROCESSING_LOCATION, "s3://bucket/preprocessing")
-    mock_upload = mocker.patch("documentai_api.services.s3.upload_file")
-
-    _save_original_to_preprocessing(b"data", "doc-uuid.png", "image/png")
-
-    assert mock_upload.call_args.args[1] == "preprocessing/doc-uuid.png"
+    assert mock_upload.call_args.args[1] == "preprocessing/test-tenant-id/doc-uuid.png"
 
 
 def test_validate_s3_object_is_bda_native_accepts_pdf(s3_bucket, blank_pdf_bytes):
     """A genuine PDF object passes content sniffing."""
-    from documentai_api.utils.uploads import validate_s3_object_is_bda_native
-
     s3_bucket.put_object(Key="input/doc.pdf", Body=blank_pdf_bytes, ContentType="application/pdf")
 
     assert validate_s3_object_is_bda_native(s3_bucket.name, "input/doc.pdf") == "application/pdf"
@@ -232,8 +209,6 @@ def test_validate_s3_object_is_bda_native_rejects_disguised_content(s3_bucket, e
     Covers SEC-HIGH-05: S3's presigned POST policy only enforces the declared
     Content-Type, so the actual bytes must be re-sniffed after upload.
     """
-    from documentai_api.utils.uploads import validate_s3_object_is_bda_native
-
     s3_bucket.put_object(Key="input/evil.pdf", Body=empty_zip_bytes, ContentType="application/pdf")
 
     with pytest.raises(ValueError, match="not a supported document type"):
@@ -247,55 +222,46 @@ def test_purge_document_s3_artifacts_output_is_tenant_scoped(mocker, monkeypatch
     tenant_id, so the delete_prefix call targeted the wrong path and left the
     tenant's actual output on S3.
     """
-    from documentai_api.utils.uploads import purge_document_s3_artifacts
-
     monkeypatch.setenv(EnvVarNames.DOCUMENTAI_INPUT_LOCATION, "s3://bucket/input")
     monkeypatch.setenv(EnvVarNames.DOCUMENTAI_OUTPUT_LOCATION, "s3://bucket/output")
     mock_delete_prefix = mocker.patch("documentai_api.services.s3.delete_prefix")
     mocker.patch("documentai_api.services.s3.delete_object")
 
-    purge_document_s3_artifacts("doc.pdf", "test-tenant")
+    purge_document_s3_artifacts("doc.pdf", "test-tenant-id")
 
     prefixes_deleted = [call.args[1] for call in mock_delete_prefix.call_args_list]
-    assert prefixes_deleted == ["output/test-tenant/doc.pdf/"]
+    assert prefixes_deleted == ["output/test-tenant-id/doc.pdf/"]
     # Old (broken) un-scoped prefix must not appear.
     assert "output/doc.pdf/" not in prefixes_deleted
 
 
 def test_purge_bda_output_deletes_bda_invoker_output(s3_bucket, monkeypatch):
     """purge_document_s3_artifacts removes the object that invoke_bedrock_data_automation would write."""
-    from documentai_api.config.constants import ExtractMethod
-    from documentai_api.utils.s3 import get_bucket_and_key
-    from documentai_api.utils.uploads import purge_document_s3_artifacts
-
     monkeypatch.setenv(EnvVarNames.DOCUMENTAI_INPUT_LOCATION, f"s3://{s3_bucket.name}/input")
     monkeypatch.setenv(EnvVarNames.DOCUMENTAI_OUTPUT_LOCATION, f"s3://{s3_bucket.name}/output")
 
     output_uri = f"s3://{s3_bucket.name}/output"
     _, key = get_bucket_and_key(
-        output_uri, "test-tenant", f"doc.pdf/{ExtractMethod.BDA}/invocation-id/result.json"
+        output_uri, "test-tenant-id", f"doc.pdf/{ExtractMethod.BDA}/invocation-id/result.json"
     )
     s3_bucket.put_object(Key=key, Body=b"bda output")
 
-    purge_document_s3_artifacts("doc.pdf", "test-tenant")
+    purge_document_s3_artifacts("doc.pdf", "test-tenant-id")
 
-    remaining = [o.key for o in s3_bucket.objects.filter(Prefix="output/test-tenant/doc.pdf/")]
+    remaining = [o.key for o in s3_bucket.objects.filter(Prefix="output/test-tenant-id/doc.pdf/")]
     assert remaining == []
 
 
 def test_purge_textract_output_deletes_write_extraction_output(s3_bucket, monkeypatch):
     """purge_document_s3_artifacts removes the object that write_extraction_output writes."""
-    from documentai_api.utils.s3 import write_extraction_output
-    from documentai_api.utils.uploads import purge_document_s3_artifacts
-
     monkeypatch.setenv(EnvVarNames.DOCUMENTAI_INPUT_LOCATION, f"s3://{s3_bucket.name}/input")
     monkeypatch.setenv(EnvVarNames.DOCUMENTAI_OUTPUT_LOCATION, f"s3://{s3_bucket.name}/output")
 
-    write_extraction_output("test-tenant", "textract", "id.jpg", b"{}")
+    write_extraction_output("test-tenant-id", "textract", "id.jpg", b"{}")
 
-    purge_document_s3_artifacts("id.jpg", "test-tenant")
+    purge_document_s3_artifacts("id.jpg", "test-tenant-id")
 
-    remaining = [o.key for o in s3_bucket.objects.filter(Prefix="output/test-tenant/id.jpg/")]
+    remaining = [o.key for o in s3_bucket.objects.filter(Prefix="output/test-tenant-id/id.jpg/")]
     assert remaining == []
 
 
@@ -306,9 +272,6 @@ def test_generate_unique_filename_survives_s3_url_encoding_round_trip():
     with unquote_plus. A non-ASCII key decodes to a different string, causing a
     DDB key mismatch and a duplicate row.
     """
-    import os
-    from urllib.parse import quote, unquote_plus
-
     filename = "Aug 3, 2026\xe2\x80\x94Aug 16, 2026 - Local Infusion, Inc.pdf"
     key = generate_unique_filename(filename, "test-job-id")
     round_tripped = os.path.basename(unquote_plus(quote(key, safe="")))
@@ -322,17 +285,11 @@ def test_generate_unique_filename_ddb_key_matches_after_s3_event_round_trip(s3_b
     URL-encoded key in the S3 event that decoded to a different string, causing
     get_ddb_record to miss and upsert_initial_ddb_record to create a second row.
     """
-    import os
-    from urllib.parse import quote
-
-    from documentai_api.utils.s3 import extract_s3_info_from_event
-    from documentai_api.utils.uploads import generate_unique_filename
-
     filename = "Aug 3, 2026\xe2\x80\x94Aug 16, 2026 - Local Infusion, Inc.pdf"
     job_id = "test-job-id"
 
     ddb_key = generate_unique_filename(filename, job_id)
-    object_key = f"input/test-tenant/{ddb_key}"
+    object_key = f"input/test-tenant-id/{ddb_key}"
 
     s3_bucket.put_object(Key=object_key, Body=b"%PDF-1.4", ContentType="application/pdf")
 

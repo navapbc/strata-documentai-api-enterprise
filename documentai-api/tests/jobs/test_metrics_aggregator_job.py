@@ -1,10 +1,12 @@
 """Tests for metrics_aggregator."""
 
 import json
+import logging
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
+from botocore.exceptions import ClientError
 from moto import mock_aws
 
 from documentai_api.config.constants import (
@@ -12,9 +14,14 @@ from documentai_api.config.constants import (
     METRICS_AGG_DDB_MONTHLY_S3_PREFIX,
 )
 from documentai_api.jobs.metrics_aggregator.main import (
+    _aggregate_monthly,
     _aggregate_records,
     _build_deduplication_query,
     _check_if_previously_aggregated,
+    _get_athena_results,
+    _get_daily_stats_for_month,
+    _initialize_stats,
+    _process_record,
     _write_aggregated_stats,
     main,
 )
@@ -26,7 +33,7 @@ def create_record(
     classification: str = "W2",
     total_time: float | None = None,
     bda_time: float | None = None,
-    tenant_id: str | None = "test-tenant",
+    tenant_id: str | None = "test-tenant-id",
 ) -> dict[str, Any]:
     """Factory function to create test records with defaults."""
     record = {
@@ -185,7 +192,7 @@ def test_aggregate_records_single_record():
 
     stats = _aggregate_records([record], "2026-02-20")
     global_stats = stats["__global__"]
-    tenant_stats = stats["test-tenant"]
+    tenant_stats = stats["test-tenant-id"]
 
     # Global stats
     assert global_stats["total_records"] == 1
@@ -285,10 +292,6 @@ def test_check_if_previously_aggregated_not_exists(s3_client, s3_bucket):
 
 def test_check_if_previously_aggregated_reraises_non_404(s3_client, s3_bucket):
     """Test that non-404 S3 errors are re-raised rather than swallowed."""
-    from unittest.mock import MagicMock, patch
-
-    from botocore.exceptions import ClientError
-
     error_response = {"Error": {"Code": "AccessDenied", "Message": "Access Denied"}}
     mock_s3 = MagicMock()
     mock_s3.head_object.side_effect = ClientError(error_response, "HeadObject")  # type: ignore[arg-type]
@@ -311,7 +314,7 @@ def test_write_aggregated_stats(s3_client, s3_bucket):
     tenant_stats = create_aggregated_stats(total_records=5)
     stats_by_tenant = {
         "__global__": global_stats,
-        "test-tenant": tenant_stats,
+        "test-tenant-id": tenant_stats,
     }
 
     s3_key = _write_aggregated_stats("test-bucket", stats_by_tenant, "2026-02-20")
@@ -325,7 +328,7 @@ def test_write_aggregated_stats(s3_client, s3_bucket):
     assert "total_records" in content
 
     # verify tenant file was written
-    tenant_key = f"{METRICS_AGG_DDB_DAILY_S3_PREFIX}=2026-02-20/tenant=test-tenant/stats.json"
+    tenant_key = f"{METRICS_AGG_DDB_DAILY_S3_PREFIX}=2026-02-20/tenant=test-tenant-id/stats.json"
     obj = s3_client.get_object(Bucket="test-bucket", Key=tenant_key)
     content = obj["Body"].read().decode()
     assert "total_records" in content
@@ -333,8 +336,6 @@ def test_write_aggregated_stats(s3_client, s3_bucket):
 
 def test_get_daily_stats_for_month_empty(s3_client, s3_bucket):
     """Test reading daily stats when none exist."""
-    from documentai_api.jobs.metrics_aggregator.main import _get_daily_stats_for_month
-
     daily_stats = _get_daily_stats_for_month("test-bucket", "2026-02")
 
     assert daily_stats == {}
@@ -342,8 +343,6 @@ def test_get_daily_stats_for_month_empty(s3_client, s3_bucket):
 
 def test_get_daily_stats_for_month_multiple_days(s3_client, s3_bucket):
     """Test reading daily stats for multiple days, grouped by tenant."""
-    from documentai_api.jobs.metrics_aggregator.main import _get_daily_stats_for_month
-
     create_daily_stats(s3_client, "2026-02-01", total_records=10)
     create_daily_stats(s3_client, "2026-02-02", total_records=15)
     create_daily_stats(s3_client, "2026-02-03", total_records=12)
@@ -362,8 +361,6 @@ def test_get_daily_stats_for_month_multiple_days(s3_client, s3_bucket):
 
 def test_aggregate_monthly_no_daily_stats(s3_client, s3_bucket):
     """Test monthly aggregation when no daily stats exist."""
-    from documentai_api.jobs.metrics_aggregator.main import _aggregate_monthly
-
     result = _aggregate_monthly("test-bucket", "2026-02")
 
     assert result is None
@@ -371,8 +368,6 @@ def test_aggregate_monthly_no_daily_stats(s3_client, s3_bucket):
 
 def test_aggregate_monthly_success(s3_client, s3_bucket):
     """Test successful monthly aggregation."""
-    from documentai_api.jobs.metrics_aggregator.main import _aggregate_monthly
-
     create_daily_stats(s3_client, "2026-02-01", total_records=10)
     create_daily_stats(s3_client, "2026-02-02", total_records=15)
     create_daily_stats(s3_client, "2026-02-03", total_records=12)
@@ -399,8 +394,6 @@ def test_aggregate_monthly_success(s3_client, s3_bucket):
 
 def test_aggregate_monthly_multi_tenant(s3_client, s3_bucket):
     """Test monthly aggregation writes a per-tenant file alongside the global one."""
-    from documentai_api.jobs.metrics_aggregator.main import _aggregate_monthly
-
     # global daily stats
     create_daily_stats(s3_client, "2026-02-01", total_records=10)
     create_daily_stats(s3_client, "2026-02-02", total_records=15)
@@ -483,8 +476,6 @@ def test_main_already_aggregated_still_runs_monthly(
 
 def test_get_athena_results_timeout():
     """Test that Athena polling raises after timeout rather than looping forever."""
-    from unittest.mock import MagicMock, patch
-
     mock_athena = MagicMock()
     mock_athena.get_query_execution.return_value = {
         "QueryExecution": {"Status": {"State": "RUNNING"}}
@@ -497,19 +488,13 @@ def test_get_athena_results_timeout():
         ),
         patch("documentai_api.jobs.metrics_aggregator.main.ATHENA_QUERY_TIMEOUT_SECONDS", 3),
         patch("documentai_api.jobs.metrics_aggregator.main.time.sleep"),
+        pytest.raises(Exception, match="did not complete within"),
     ):
-        from documentai_api.jobs.metrics_aggregator.main import _get_athena_results
-
-        with pytest.raises(Exception, match="did not complete within"):
-            _get_athena_results("fake-execution-id")
+        _get_athena_results("fake-execution-id")
 
 
 def test_process_record_logs_warning_for_invalid_timing(caplog):
     """Test that records with unparseable timing values emit warnings and skip those fields."""
-    import logging
-
-    from documentai_api.jobs.metrics_aggregator.main import _process_record
-
     record = {
         "file_name": "bad-record.pdf",
         "process_status": "success",
@@ -694,8 +679,6 @@ def test_main_first_day_of_month(s3_client, s3_bucket, mock_metrics_aggregator_e
 
 def test_aggregate_records_counts_textract_in_extraction_invocations():
     """Textract records increment total_extraction_invocations but not total_bda_invocations."""
-    from documentai_api.jobs.metrics_aggregator.main import _initialize_stats, _process_record
-
     stats = _initialize_stats("2026-02-20")
     records = [
         {
@@ -722,8 +705,6 @@ def test_aggregate_records_counts_textract_in_extraction_invocations():
 
 def test_process_record_usage_stats():
     """Test _process_record accumulates usage_stats fields including both token legs."""
-    from documentai_api.jobs.metrics_aggregator.main import _initialize_stats, _process_record
-
     stats = _initialize_stats("2026-02-20")
     record = {
         "file_name": "test.pdf",
@@ -751,8 +732,6 @@ def test_process_record_usage_stats():
 
 def test_process_record_usage_stats_invalid_values_skipped():
     """Test _process_record skips invalid usage values via contextlib.suppress."""
-    from documentai_api.jobs.metrics_aggregator.main import _initialize_stats, _process_record
-
     stats = _initialize_stats("2026-02-20")
     record = {
         "file_name": "bad.pdf",
@@ -774,8 +753,6 @@ def test_process_record_usage_stats_invalid_values_skipped():
 
 def test_process_record_usage_stats_multiple_records():
     """Test _process_record accumulates across multiple records."""
-    from documentai_api.jobs.metrics_aggregator.main import _initialize_stats, _process_record
-
     stats = _initialize_stats("2026-02-20")
 
     records = [
