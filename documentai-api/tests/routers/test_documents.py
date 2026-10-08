@@ -881,12 +881,13 @@ def test_purge_document_s3_artifacts_deletes_all_locations(monkeypatch, mocker):
 
     assert failures == []  # every location purged cleanly
 
-    # Original upload and preprocessing copy are tenant-scoped single objects.
+    # Original upload and truncated copy are tenant-scoped single objects.
     deleted = [c.args for c in mock_delete.mock_calls]
     assert ("bucket", "input/test-tenant-id/doc-uuid.pdf") in deleted
+    assert ("bucket", "input/test-tenant-id/doc-uuid_truncated.pdf") in deleted
     assert ("bucket", "preprocessing/test-tenant-id/doc-uuid.pdf") in deleted
 
-    # All extraction output (BDA + Textract) is under one tenant-scoped prefix.
+    # All extraction output (BDA and Textract) is under one tenant-scoped prefix.
     prefixes = [c.args for c in mock_delete_prefix.mock_calls]
     assert prefixes == [("bucket", "output/test-tenant-id/doc-uuid.pdf/")]
 
@@ -902,7 +903,10 @@ def test_purge_document_s3_artifacts_skips_unset_locations(monkeypatch, mocker):
 
     purge_document_s3_artifacts(object_key="doc-uuid.pdf", tenant_id="test-tenant-id")
 
-    mock_delete.assert_called_once_with("bucket", "input/test-tenant-id/doc-uuid.pdf")
+    # input + input_truncated use delete_object; preprocessing is unset so skipped
+    deleted = [c.args for c in mock_delete.mock_calls]
+    assert ("bucket", "input/test-tenant-id/doc-uuid.pdf") in deleted
+    assert ("bucket", "input/test-tenant-id/doc-uuid_truncated.pdf") in deleted
     mock_delete_prefix.assert_not_called()
 
 
@@ -912,15 +916,17 @@ def test_purge_document_s3_artifacts_reports_failed_locations(monkeypatch, mocke
     monkeypatch.setenv(EnvVarNames.DOCUMENTAI_PREPROCESSING_LOCATION, "s3://bucket/preprocessing")
     monkeypatch.setenv(EnvVarNames.DOCUMENTAI_OUTPUT_LOCATION, "s3://bucket/output")
 
-    # input delete fails; preprocessing + output succeed
+    # input delete_object fails; preprocessing + output use delete_prefix and succeed
     mocker.patch("documentai_api.services.s3.delete_object", side_effect=Exception("denied"))
     mock_delete_prefix = mocker.patch("documentai_api.services.s3.delete_prefix")
 
     failures = purge_document_s3_artifacts(object_key="doc-uuid.pdf", tenant_id="test-tenant-id")
 
+    # input, input_truncated, and preprocessing all use delete_object (patched to raise)
     assert "input" in failures
-    assert "preprocessing" in failures  # delete_object also drives preprocessing
-    # output uses delete_prefix (not patched to fail), so it succeeds and isn't reported
+    assert "input_truncated" in failures
+    assert "preprocessing" in failures
+    # output uses delete_prefix (succeeds), so not reported
     assert "output" not in failures
     mock_delete_prefix.assert_called()
 

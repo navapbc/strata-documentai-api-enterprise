@@ -357,8 +357,11 @@ async def delete_document(
     """Delete a document by job ID.
 
     soft_delete=True (default): retain the S3 files, mark the record DELETED
-    (recoverable). soft_delete=False: also purge every S3 copy of the document -
-    original upload, preprocessing copies, and BDA output (hard delete).
+    (recoverable). soft_delete=False: purge the document's S3 copies (original
+    upload, truncated copy, preprocessing original, and extraction output) and
+    mark the record DELETED (hard delete). Build page images uploaded via the
+    builds API are not covered; they are subject to the preprocessing bucket's
+    S3 lifecycle rules.
     """
     from documentai_api.utils.uploads import purge_document_s3_artifacts
 

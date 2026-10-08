@@ -1,3 +1,4 @@
+import os
 from typing import Any
 from urllib.parse import quote, unquote_plus
 
@@ -126,6 +127,17 @@ def write_extraction_output(
     )
     s3_service.put_object(bucket, key, body, content_type)
     return f"s3://{bucket}/{key}"
+
+
+def get_truncated_object_key(object_key: str) -> str:
+    """Return the key used for the truncated copy of an oversized document.
+
+    bda_invoker writes a truncated copy back to the input bucket when a document
+    exceeds MAX_PAGES_PER_DOCUMENT. This helper centralises the naming convention
+    so the invoker and the hard-delete purge can't drift apart.
+    """
+    base, ext = os.path.splitext(object_key)
+    return f"{base}_truncated{ext}"
 
 
 def sanitize_for_s3_metadata(value: str, max_length: int = 512) -> str:

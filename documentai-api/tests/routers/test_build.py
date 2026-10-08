@@ -151,11 +151,14 @@ def test_upload_document_build_page_builds(
     assert response.status_code == 200
     result = response.json()
     assert "buildId" in result
+
     if expected_build:
         assert result["buildId"] == expected_build
+
     assert result["pageNumber"] == page_number
     assert "uploaded successfully" in result["message"].lower()
     assert mock_document_build_upload["upload"].call_args.kwargs["tenant_id"] == "test-tenant-id"
+    assert "test-build-id-page-" in mock_document_build_upload["upsert"].call_args.kwargs["s3_path"]
 
 
 @pytest.mark.parametrize(
