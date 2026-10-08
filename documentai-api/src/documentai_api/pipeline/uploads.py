@@ -26,7 +26,7 @@ async def dispatch_upload(
     job_id: str,
     trace_id: str,
     ddb_key: str,
-    tenant_id: str | None = None,
+    tenant_id: str,
 ) -> None:
     """Upload file to S3. Classifies DDB record on failure."""
     try:

@@ -240,7 +240,7 @@ async def validate_upload(file: UploadFile) -> str:
 
 
 def _save_original_to_preprocessing(
-    file_bytes: bytes, object_key: str, content_type: str, tenant_id: str | None = None
+    file_bytes: bytes, object_key: str, content_type: str, tenant_id: str
 ) -> None:
     """Save original file to preprocessing location for audit trail.
 
@@ -268,12 +268,12 @@ async def upload_document_for_processing(
     dest_path: str,
     original_file_name: str,
     content_type: str,
+    tenant_id: str,
     user_provided_document_category: str | None = None,
     job_id: str | None = None,
     trace_id: str | None = None,
     batch_id: str | None = None,
     build_id: str | None = None,
-    tenant_id: str | None = None,
 ) -> None:
     """Upload a document file to S3 with traceability metadata.
 

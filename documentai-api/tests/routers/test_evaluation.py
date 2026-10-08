@@ -3,7 +3,12 @@
 import pytest
 
 from documentai_api.schemas.document_metadata import DocumentMetadata
-from documentai_api.utils.evaluations import EvaluationKey, EvaluationStatus, NotEvaluatedReason
+from documentai_api.utils.evaluations import (
+    EVALUATION_PIPELINE,
+    EvaluationKey,
+    EvaluationStatus,
+    NotEvaluatedReason,
+)
 from documentai_api.utils.jobs import JobStatus
 from documentai_api.utils.response_codes import ResponseCodes
 
@@ -33,7 +38,7 @@ def _disable_auth(disable_auth):
 
 def _job(response_code: str, extra_ddb: dict[str, object] | None = None) -> JobStatus:
     ddb = {
-        DocumentMetadata.TENANT_ID: "test-tenant",
+        DocumentMetadata.TENANT_ID: "test-tenant-id",
         DocumentMetadata.FILE_NAME: "test.pdf",
         DocumentMetadata.RESPONSE_CODE: response_code,
         DocumentMetadata.CREATED_AT: "2024-01-01T00:00:00Z",
@@ -61,7 +66,7 @@ def test_evaluation_not_found(api_client, mocker):
 
 def test_evaluation_still_processing(api_client, mocker):
     mocker.patch("documentai_api.routers.evaluation.get_job_status").return_value = JobStatus(
-        ddb_record={DocumentMetadata.TENANT_ID: "test-tenant"},
+        ddb_record={DocumentMetadata.TENANT_ID: "test-tenant-id"},
         object_key="test.pdf",
         process_status="started",
         v1_response_json=None,
@@ -294,8 +299,6 @@ def test_evaluation_success_password_protected_pass_reason(api_client, mocker):
 def test_evaluation_stop_code_structure(
     api_client, mocker, response_code, stop_key, not_evaluated_reason
 ):
-    from documentai_api.utils.evaluations import EVALUATION_PIPELINE
-
     mocker.patch("documentai_api.routers.evaluation.get_job_status").return_value = _job(
         response_code
     )

@@ -8,8 +8,10 @@ import pytest
 from fastapi import HTTPException
 
 from documentai_api import app as app_module
+from documentai_api.config.constants import ProcessStatus
 from documentai_api.config.env_var_names_generated import EnvVarNames
 from documentai_api.pipeline.jobs import poll_for_completion
+from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.jobs import JobStatus, get_job_status
 from documentai_api.utils.uploads import upload_document_for_processing
 
@@ -57,9 +59,6 @@ def test_root(api_client):
 
 def test_get_job_status_found(ddb_doc_metadata_table):
     """Test get_job_status when job exists."""
-    from documentai_api.config.constants import ProcessStatus
-    from documentai_api.schemas.document_metadata import DocumentMetadata
-
     ddb_record = {
         DocumentMetadata.FILE_NAME: "test.pdf",
         DocumentMetadata.JOB_ID: "test-job-id",
@@ -96,6 +95,7 @@ async def test_upload_document_for_processing_success(
         dest_path=f"s3://{s3_bucket.name}/input/test-unique.pdf",
         original_file_name="test.pdf",
         content_type="application/pdf",
+        tenant_id="test-tenant-id",
         user_provided_document_category="income",
         job_id="test-job-id",
         trace_id="test-trace-id",
@@ -119,13 +119,14 @@ async def test_upload_always_saves_original_to_preprocessing(
         dest_path=f"s3://{s3_bucket.name}/input/test-unique.pdf",
         original_file_name="test.pdf",
         content_type="application/pdf",
+        tenant_id="test-tenant-id",
         user_provided_document_category="income",
         job_id="test-job-id",
         trace_id="test-trace-id",
     )
 
     # Original saved to preprocessing
-    preprocessing_obj = s3_bucket.Object("preprocessing/test-unique.pdf")
+    preprocessing_obj = s3_bucket.Object("preprocessing/test-tenant-id/test-unique.pdf")
     assert preprocessing_obj.get()["Body"].read() == blank_pdf_file.read_bytes()
 
     # And also uploaded to input
@@ -224,6 +225,7 @@ async def test_upload_document_for_processing_s3_failure(
             dest_path=f"s3://{s3_bucket.name}-foo/input/test.pdf",
             original_file_name="test.pdf",
             content_type="application/pdf",
+            tenant_id="test-tenant-id",
         )
 
     assert exc_info.value.status_code == 500
@@ -241,6 +243,7 @@ async def test_upload_document_for_processing_invalid_category_type(
             dest_path=f"s3://{s3_bucket}-foo/input/test.pdf",
             original_file_name="test.pdf",
             content_type="application/pdf",
+            tenant_id="test-tenant-id",
             user_provided_document_category="invalid_string",  # should be enum
         )
 

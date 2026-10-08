@@ -105,6 +105,7 @@ async def add_page_to_build(
         user_provided_document_category=category,
         trace_id=trace_id,
         build_id=build_id,
+        tenant_id=tenant_id,
     )
 
     _, prefix = parse_s3_uri(s3_location)
@@ -442,6 +443,7 @@ async def _submit_build(
             dest_path=f"{input_location}/{tenant_id}/{unique_file_name}",
             original_file_name=unique_file_name,
             content_type="application/pdf",
+            tenant_id=tenant_id,
             user_provided_document_category=category,
             job_id=job_id,
             trace_id=trace_id,

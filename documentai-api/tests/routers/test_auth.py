@@ -1,12 +1,21 @@
 """Tests for API authentication."""
 
+import hashlib
 from typing import Any
 
 import pytest
 
+from documentai_api.app import app, iter_api_routes
+from documentai_api.config.env import get_app_config
 from documentai_api.config.env_var_names_generated import EnvVarNames
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils import auth as auth_util
+from documentai_api.utils.auth import (
+    get_user_context_from_api_key,
+    get_user_context_with_fallback,
+    verify_api_key,
+)
+from documentai_api.utils.jwt_auth import verify_jwt
 from documentai_api.utils.schemas import DocumentSchema
 
 TENANT_A = "tenant-a"
@@ -20,8 +29,6 @@ TENANT_A_DOC_ID = "aaaaaaaa-1111-1111-1111-111111111111"
 
 def test_verify_api_key_missing_env_var(api_client, monkeypatch):
     """Test returns 401 when API_AUTH_INSECURE_SHARED_KEY not set."""
-    from documentai_api.config.env import get_app_config
-
     monkeypatch.delenv(EnvVarNames.API_AUTH_INSECURE_SHARED_KEY, raising=False)
     get_app_config.cache_clear()
     response = api_client.get("/v1/dictionary/schemas")
@@ -48,14 +55,6 @@ def test_all_non_public_routes_require_auth():
     Locks in the auth posture at the structural level: if someone adds a new
     endpoint and forgets the dependency, this test fails immediately.
     """
-    from documentai_api.app import app, iter_api_routes
-    from documentai_api.utils.auth import (
-        get_user_context_from_api_key,
-        get_user_context_with_fallback,
-        verify_api_key,
-    )
-    from documentai_api.utils.jwt_auth import verify_jwt
-
     public = {"/", "/health", "/openapi.json", "/docs", "/redoc"}
     auth_deps = {
         verify_api_key,
@@ -98,8 +97,6 @@ def test_verify_api_key_valid(api_client, api_skeleton_key, mocker):
 
 def test_ddb_auth_valid_key(api_client, monkeypatch, mocker, api_keys_table):
     """Test allows request when API key is valid in DDB."""
-    import hashlib
-
     monkeypatch.setenv(EnvVarNames.API_AUTH_ENABLED, "true")
     mocker.patch(
         "documentai_api.routers.dictionary.get_all_schemas",
@@ -111,8 +108,8 @@ def test_ddb_auth_valid_key(api_client, monkeypatch, mocker, api_keys_table):
     api_keys_table.put_item(
         Item={
             "keyHash": key_hash,
-            "apiKeyName": "test-client",
-            "tenantId": "test-tenant",
+            "apiKeyName": "test-api-key-name",
+            "tenantId": "test-tenant-id",
             "environment": "dev",
             "isActive": True,
             "createdAt": "2025-01-01T00:00:00Z",

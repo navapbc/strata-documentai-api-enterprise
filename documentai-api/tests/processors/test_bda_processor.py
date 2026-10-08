@@ -2,15 +2,18 @@ from unittest.mock import patch
 
 import pytest
 
+from documentai_api.classifiers.document_classification import classify_extraction_result
 from documentai_api.config.constants import ProcessStatus
+from documentai_api.dtos.extraction import ExtractionResult
 from documentai_api.dtos.processing import ProcessorResult
 from documentai_api.processors import bda as bda_processor
+from documentai_api.utils.bda import MatchedBlueprintInfo
 
-MOCK_S3_URI = "s3://test-bucket/processed/input/test-tenant/file-name.pdf/de8464af-d53e-44dc-a9f7-ad5360530210/0/custom_output/0/result.json"
-MOCK_DDB_RECORD = {"fileName": "input/test-tenant/file-name.pdf", "tenantId": "test-tenant"}
+MOCK_S3_URI = "s3://test-bucket/processed/input/test-tenant-id/file-name.pdf/de8464af-d53e-44dc-a9f7-ad5360530210/0/custom_output/0/result.json"
+MOCK_DDB_RECORD = {"fileName": "input/test-tenant-id/file-name.pdf", "tenantId": "test-tenant-id"}
 
 BDA_OUTPUT_BUCKET = "output-bucket"
-BDA_OUTPUT_KEY = "processed/input/test-tenant/file-name.pdf/de8464af-d53e-44dc-a9f7-ad5360530210/0/custom_output/job_metadata.json"
+BDA_OUTPUT_KEY = "processed/input/test-tenant-id/file-name.pdf/de8464af-d53e-44dc-a9f7-ad5360530210/0/custom_output/job_metadata.json"
 
 
 def test_process_bda_result_blueprint_matched_returns_extraction_result():
@@ -30,9 +33,6 @@ def test_process_bda_result_blueprint_matched_returns_extraction_result():
             "document_class": {"type": "invoice"},
             "explainability_info": [{"field": {"confidence": 0.9, "value": "test"}}],
         }
-        from documentai_api.dtos.extraction import ExtractionResult
-        from documentai_api.utils.bda import MatchedBlueprintInfo
-
         extraction_result = ExtractionResult(document_type="invoice")
         mock_extract.return_value = (
             extraction_result,
@@ -44,8 +44,8 @@ def test_process_bda_result_blueprint_matched_returns_extraction_result():
         assert isinstance(result, ProcessorResult)
         assert result.extraction_result is extraction_result
         assert result.status is None
-        assert result.tenant_id == "test-tenant"
-        assert result.object_key == "input/test-tenant/file-name.pdf"
+        assert result.tenant_id == "test-tenant-id"
+        assert result.object_key == "input/test-tenant-id/file-name.pdf"
 
 
 @pytest.mark.parametrize(
@@ -73,8 +73,6 @@ def test_process_bda_result_no_matching_blueprint(text, expected_status):
             "document_class": {"type": "unknown"},
         }
         mock_get_text.return_value = text
-        from documentai_api.utils.bda import MatchedBlueprintInfo
-
         mock_extract.return_value = (None, MatchedBlueprintInfo(name="unknown", confidence=0.1))
 
         result = bda_processor.process_bda_result(BDA_OUTPUT_BUCKET, BDA_OUTPUT_KEY)
@@ -104,9 +102,6 @@ def test_process_bda_result_no_matching_blueprint(text, expected_status):
 def test_classify_extraction_result_below_floor(
     field_confidence_map_list, empty_fields, floor, expected_below
 ):
-    from documentai_api.classifiers.document_classification import classify_extraction_result
-    from documentai_api.dtos.extraction import ExtractionResult
-
     result = ExtractionResult(
         document_type="invoice",
         field_confidence_scores=field_confidence_map_list,

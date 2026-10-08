@@ -23,9 +23,10 @@ async def test_dispatch_upload_http_exception_classifies_and_reraises(mocker):
             original_file_name="test.pdf",
             content_type="application/pdf",
             category=None,
-            job_id="job-1",
-            trace_id="trace-1",
-            ddb_key="test-job-1.pdf",
+            job_id="test-job-id",
+            trace_id="test-trace-id",
+            ddb_key="test-ddb-key.pdf",
+            tenant_id="test-tenant-id",
         )
 
     assert exc_info.value.status_code == 500
@@ -49,9 +50,10 @@ async def test_dispatch_upload_generic_exception_classifies_and_raises_500(mocke
             original_file_name="test.pdf",
             content_type="application/pdf",
             category=None,
-            job_id="job-1",
-            trace_id="trace-1",
-            ddb_key="test-job-1.pdf",
+            job_id="test-job-id",
+            trace_id="test-trace-id",
+            ddb_key="test-ddb-key.pdf",
+            tenant_id="test-tenant-id",
         )
 
     assert exc_info.value.status_code == 500
@@ -76,9 +78,10 @@ async def test_dispatch_upload_conversion_error_classifies_and_reraises(mocker):
             original_file_name="test.pdf",
             content_type="application/pdf",
             category=None,
-            job_id="job-1",
-            trace_id="trace-1",
-            ddb_key="test-job-1.pdf",
+            job_id="test-job-id",
+            trace_id="test-trace-id",
+            ddb_key="test-ddb-key.pdf",
+            tenant_id="test-tenant-id",
         )
 
     mock_classify.assert_called_once()
