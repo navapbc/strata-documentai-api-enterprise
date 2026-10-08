@@ -1,5 +1,3 @@
-import os
-
 from opentelemetry import trace
 
 import documentai_api.utils.documents as document_utils
@@ -8,7 +6,7 @@ from documentai_api.config.env import get_env_config
 from documentai_api.logging import get_logger
 from documentai_api.services import s3 as s3_service
 from documentai_api.services.aws_client_factory import AWSClientFactory
-from documentai_api.utils.s3 import generate_s3_uri
+from documentai_api.utils.s3 import generate_s3_uri, get_truncated_object_key
 from documentai_api.utils.ssm import (
     is_preclassification_routing_enabled,
     is_skip_bda_if_unclassified,
@@ -91,12 +89,7 @@ def invoke_bedrock_data_automation(
                 file_bytes, max_pages=int(ConfigDefaults.MAX_PAGES_PER_DOCUMENT)
             )
 
-            # create new truncated file name
-            base_name, extension = os.path.splitext(source_object_name)
-            extension = extension or ""  # handle None/empty extension
-            source_object_name = f"{base_name}_truncated{extension}"
-
-            # upload truncated version to S3
+            source_object_name = get_truncated_object_key(source_object_name)
             s3_service.put_object(
                 bucket=source_bucket_name, key=source_object_name, body=truncated_bytes
             )

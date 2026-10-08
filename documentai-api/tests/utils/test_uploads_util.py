@@ -21,6 +21,7 @@ from documentai_api.utils.uploads import (
     _save_original_to_preprocessing,
     generate_unique_filename,
     purge_document_s3_artifacts,
+    upload_document_for_processing,
     validate_file_type,
     validate_s3_object_is_bda_native,
     validate_upload,
@@ -303,3 +304,86 @@ def test_generate_unique_filename_ddb_key_matches_after_s3_event_round_trip(s3_b
 
     returned_key, *_ = extract_s3_info_from_event(event)
     assert os.path.basename(returned_key) == ddb_key
+
+
+@pytest.mark.asyncio
+async def test_purge_removes_build_sourced_merged_pdf(s3_bucket, monkeypatch, blank_pdf_bytes):
+    """Merged PDF from a build submit lands where purge_document_s3_artifacts looks.
+
+    _submit_build calls upload_document_for_processing with tenant_id, writing
+    the merged PDF to input/{tenant}/{unique_file_name}. This pins that the purge
+    finds and removes it - the mocked tenant_id tests only prove the arg is passed.
+    """
+    tenant_id = "test-tenant-id"
+    unique_file_name = "document-build-build-uuid-job-uuid.pdf"
+    input_location = f"s3://{s3_bucket.name}/input"
+    preprocessing_location = f"s3://{s3_bucket.name}/preprocessing"
+
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_INPUT_LOCATION, input_location)
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_PREPROCESSING_LOCATION, preprocessing_location)
+
+    await upload_document_for_processing(
+        src_file=io.BytesIO(blank_pdf_bytes),
+        dest_path=f"{input_location}/{tenant_id}/{unique_file_name}",
+        original_file_name=unique_file_name,
+        content_type="application/pdf",
+        tenant_id=tenant_id,
+    )
+
+    failures = purge_document_s3_artifacts(unique_file_name, tenant_id)
+
+    assert failures == []
+    remaining = [o.key for o in s3_bucket.objects.all()]
+    assert remaining == []
+
+
+def test_purge_preprocessing_deletes_original(s3_bucket, monkeypatch):
+    """purge_document_s3_artifacts removes the single object written by _save_original_to_preprocessing."""
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_INPUT_LOCATION, f"s3://{s3_bucket.name}/input")
+    monkeypatch.setenv(
+        EnvVarNames.DOCUMENTAI_PREPROCESSING_LOCATION, f"s3://{s3_bucket.name}/preprocessing"
+    )
+
+    s3_bucket.put_object(Key="preprocessing/test-tenant-id/doc.pdf", Body=b"%PDF")
+
+    purge_document_s3_artifacts("doc.pdf", "test-tenant-id")
+
+    remaining = [o.key for o in s3_bucket.objects.filter(Prefix="preprocessing/test-tenant-id/")]
+    assert remaining == []
+
+
+def test_purge_preprocessing_uses_delete_object(mocker, monkeypatch):
+    """Preprocessing original is a single object deleted with delete_object, not delete_prefix."""
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_INPUT_LOCATION, "s3://bucket/input")
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_PREPROCESSING_LOCATION, "s3://bucket/preprocessing")
+    mock_delete = mocker.patch("documentai_api.services.s3.delete_object")
+    mocker.patch("documentai_api.services.s3.delete_prefix")
+
+    purge_document_s3_artifacts("doc.pdf", "test-tenant-id")
+
+    deleted = [c.args for c in mock_delete.mock_calls]
+    assert ("bucket", "preprocessing/test-tenant-id/doc.pdf") in deleted
+
+
+def test_purge_deletes_truncated_copy(s3_bucket, monkeypatch):
+    """purge_document_s3_artifacts removes the _truncated copy written by bda_invoker."""
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_INPUT_LOCATION, f"s3://{s3_bucket.name}/input")
+
+    s3_bucket.put_object(Key="input/test-tenant-id/doc.pdf", Body=b"%PDF")
+    s3_bucket.put_object(Key="input/test-tenant-id/doc_truncated.pdf", Body=b"%PDF truncated")
+
+    purge_document_s3_artifacts("doc.pdf", "test-tenant-id")
+
+    remaining = [o.key for o in s3_bucket.objects.filter(Prefix="input/test-tenant-id/")]
+    assert remaining == []
+
+
+def test_purge_truncated_copy_missing_does_not_fail(s3_bucket, monkeypatch):
+    """Missing truncated copy is not reported as a failure."""
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_INPUT_LOCATION, f"s3://{s3_bucket.name}/input")
+
+    s3_bucket.put_object(Key="input/test-tenant-id/doc.pdf", Body=b"%PDF")
+
+    failures = purge_document_s3_artifacts("doc.pdf", "test-tenant-id")
+
+    assert failures == []

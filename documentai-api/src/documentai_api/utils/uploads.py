@@ -4,6 +4,7 @@ import asyncio
 import os
 import zipfile
 from collections.abc import Callable
+from dataclasses import dataclass, field
 from io import BytesIO
 from typing import Any, BinaryIO
 
@@ -20,7 +21,12 @@ from documentai_api.logging import get_logger
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils.document_categories import auto_register_category
 from documentai_api.utils.file_conversion import convert_file
-from documentai_api.utils.s3 import get_bucket_and_key, parse_s3_uri, sanitize_for_s3_key
+from documentai_api.utils.s3 import (
+    get_bucket_and_key,
+    get_truncated_object_key,
+    parse_s3_uri,
+    sanitize_for_s3_key,
+)
 
 logger = get_logger(__name__)
 
@@ -76,6 +82,14 @@ def _detect_mime(data: bytes) -> str:
     return filetype.guess_mime(data) or "application/octet-stream"
 
 
+@dataclass
+class _PurgeLocation:
+    label: str
+    location: str | None
+    delete_fn: Callable[[str, str], Any]
+    key: str | None = field(default=None)
+
+
 class ImageConversionError(Exception):
     """Raised when image format conversion fails."""
 
@@ -85,9 +99,9 @@ def purge_document_s3_artifacts(object_key: str, tenant_id: str) -> list[str]:
 
     Covers all locations a document's bytes can land:
        1. original upload (input)
-       2. preprocessing copies
-       3. BDA output tree
-       4. Textract output
+       2. truncated copy written by bda_invoker for oversized docs (input)
+       3. preprocessing original (single object written by _save_original_to_preprocessing)
+       4. BDA output tree
 
     Attempts all locations regardless of individual failures (so one error doesn't
     strand the rest), and returns the names of any locations that could NOT be purged.
@@ -100,28 +114,34 @@ def purge_document_s3_artifacts(object_key: str, tenant_id: str) -> list[str]:
     failures: list[str] = []
     env = get_env_config()
 
-    # (label, location, delete_fn)
-    # Output uses delete_prefix to cover the full extraction tree;
-    # input and preprocessing are single-object deletes.
-    locations: list[tuple[str, str | None, Callable[[str, str], Any]]] = [
-        ("input", env.documentai_input_location, s3_service.delete_object),
-        ("preprocessing", env.documentai_preprocessing_location, s3_service.delete_object),
-        (
+    locations = [
+        _PurgeLocation("input", env.documentai_input_location, s3_service.delete_object),
+        _PurgeLocation(
+            "input_truncated",
+            env.documentai_input_location,
+            s3_service.delete_object,
+            key=get_truncated_object_key(object_key),
+        ),
+        _PurgeLocation(
+            "preprocessing", env.documentai_preprocessing_location, s3_service.delete_object
+        ),
+        _PurgeLocation(
             "output",
             env.documentai_output_location,
             lambda b, k: s3_service.delete_prefix(b, f"{k}/"),
         ),
     ]
 
-    for label, location, delete_fn in locations:
-        if not location:
+    for pl in locations:
+        if not pl.location:
             continue
+
         try:
-            bucket, key = get_bucket_and_key(location, tenant_id, object_key)
-            delete_fn(bucket, key)
+            bucket, key = get_bucket_and_key(pl.location, tenant_id, pl.key or object_key)
+            pl.delete_fn(bucket, key)
         except Exception as e:
-            logger.warning(f"Failed to delete {label} object for {object_key}: {e}")
-            failures.append(label)
+            logger.warning(f"Failed to delete {pl.label} object for {object_key}: {e}")
+            failures.append(pl.label)
 
     return failures
 
