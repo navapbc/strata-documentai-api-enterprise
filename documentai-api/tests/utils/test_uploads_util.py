@@ -1,5 +1,6 @@
 """Tests for utils/uploads.py helper functions."""
 
+import asyncio
 import io
 import logging
 import os
@@ -195,6 +196,46 @@ def test_save_original_to_preprocessing_tenant_scoped(mocker, monkeypatch):
 
     assert mock_upload.call_args.args[0] == "bucket"
     assert mock_upload.call_args.args[1] == "preprocessing/test-tenant-id/doc-uuid.png"
+
+
+def test_upload_document_for_processing_skips_preprocessing_save_when_dest_is_preprocessing(
+    mocker, monkeypatch
+):
+    """No redundant write when dest is already preprocessing (build page case)."""
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_PREPROCESSING_LOCATION, "s3://bucket/preprocessing")
+    mock_save = mocker.patch("documentai_api.utils.uploads._save_original_to_preprocessing")
+    mocker.patch("documentai_api.services.s3.upload_file")
+
+    asyncio.run(
+        upload_document_for_processing(
+            src_file=io.BytesIO(b"data"),
+            dest_path="s3://bucket/preprocessing/tenant/build-id-page-1.pdf",
+            original_file_name="page.pdf",
+            content_type="application/pdf",
+            tenant_id="tenant",
+        )
+    )
+
+    mock_save.assert_not_called()
+
+
+def test_upload_document_for_processing_saves_preprocessing_when_dest_is_input(mocker, monkeypatch):
+    """Preprocessing backup is written when dest is input (normal upload / submit case)."""
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_PREPROCESSING_LOCATION, "s3://bucket/preprocessing")
+    mock_save = mocker.patch("documentai_api.utils.uploads._save_original_to_preprocessing")
+    mocker.patch("documentai_api.services.s3.upload_file")
+
+    asyncio.run(
+        upload_document_for_processing(
+            src_file=io.BytesIO(b"data"),
+            dest_path="s3://bucket/input/tenant/doc.pdf",
+            original_file_name="doc.pdf",
+            content_type="application/pdf",
+            tenant_id="tenant",
+        )
+    )
+
+    mock_save.assert_called_once()
 
 
 def test_validate_s3_object_is_bda_native_accepts_pdf(s3_bucket, blank_pdf_bytes):

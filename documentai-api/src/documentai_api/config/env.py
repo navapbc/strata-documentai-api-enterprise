@@ -60,6 +60,27 @@ class EnvConfig(PydanticBaseEnvConfig):
     documentai_preprocessing_location: str | None = None
     documentai_build_table_name: str | None = None
 
+    def _parse_preprocessing_location(self) -> tuple[str, str] | None:
+        loc = self.documentai_preprocessing_location
+
+        if not loc:
+            return None
+
+        if not loc.startswith("s3://"):
+            raise ValueError(f"Invalid S3 URI: {loc}")
+        bucket, _, prefix = loc.removeprefix("s3://").partition("/")
+        return bucket, prefix
+
+    @property
+    def preprocessing_bucket(self) -> str | None:
+        parsed = self._parse_preprocessing_location()
+        return parsed[0] if parsed else None
+
+    @property
+    def preprocessing_prefix(self) -> str | None:
+        parsed = self._parse_preprocessing_location()
+        return parsed[1] if parsed else None
+
     # Auth / API keys
     api_keys_table_name: str | None = None
     api_keys_tenant_index_name: str | None = None

@@ -92,7 +92,7 @@ async def add_page_to_build(
 
     file.file.seek(0)
     file_extension = FileValidation.get_extension(content_type)
-    unique_file_name = f"{tenant_id}/{build_id}/page-{page_number}.{file_extension}"
+    unique_file_name = f"{tenant_id}/{build_id}-page-{page_number}.{file_extension}"
 
     s3_location = get_env_config().documentai_preprocessing_location or ""
     dest_path = f"{s3_location}/{unique_file_name}"

@@ -265,8 +265,8 @@ def _save_original_to_preprocessing(
     """Save original file to preprocessing location for audit trail.
 
     Stored under the owning tenant's prefix (mirroring the input layout) so
-    preprocessing artifacts are tenant-scoped. ``object_key`` is the bare file
-    name; the tenant prefix is added here.
+    preprocessing artifacts are tenant-scoped. ``object_key`` is the bare
+    filename; the tenant prefix is added here.
 
     Raises if DOCUMENTAI_PREPROCESSING_LOCATION is unset or the write fails -
     the upload must not proceed without a guaranteed original backup.
@@ -297,17 +297,30 @@ async def upload_document_for_processing(
 ) -> None:
     """Upload a document file to S3 with traceability metadata.
 
-    The original file is always saved to the preprocessing location for audit.
+    Saves the original to preprocessing for audit unless the destination is
+    already preprocessing (e.g. build pages written directly there).
     If the file requires format conversion (HEIC, WebP, GIF, BMP), a converted
     PNG is uploaded to the destination path; otherwise the original is uploaded.
     """
     bucket_name, object_key = parse_s3_uri(dest_path)
 
-    # Always save the original to preprocessing for audit trail
     file_bytes = await asyncio.to_thread(src_file.read)
-    _save_original_to_preprocessing(
-        file_bytes, os.path.basename(object_key), content_type, tenant_id=tenant_id
+    env = get_env_config()
+    pre_bucket = env.preprocessing_bucket
+    pre_prefix = env.preprocessing_prefix
+
+    dest_is_preprocessing = (
+        pre_bucket is not None
+        and pre_prefix is not None
+        and bucket_name == pre_bucket
+        and (object_key == pre_prefix or object_key.startswith(pre_prefix + "/"))
     )
+
+    # Skip if dest is already preprocessing - the main upload below is the write.
+    if not dest_is_preprocessing:
+        _save_original_to_preprocessing(
+            file_bytes, os.path.basename(object_key), content_type, tenant_id=tenant_id
+        )
 
     if user_provided_document_category and tenant_id:
         try:
