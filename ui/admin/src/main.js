@@ -14,6 +14,7 @@ import * as Audit from "./services/audit.js";
 
 import BADGES from "./config/badges.json";
 import NAV_SECTIONS from "./config/nav.js";
+import { BUILD_DATE } from "./config/build-info.js";
 
 const _now = new Date();
 function getBadge(view) {
@@ -178,7 +179,21 @@ function showDashboard(session) {
   });
 
   // Connected info
-  app.querySelector("#connected-url").textContent = session.email;
+  app.querySelector("#user-email").textContent = session.email;
+
+  // Build date (injected at build time)
+  const buildDateEl = app.querySelector("#build-date");
+  if (buildDateEl) {
+    const formatted = new Date(BUILD_DATE).toLocaleString(undefined, {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      timeZoneName: "short",
+    });
+    buildDateEl.textContent = `Built ${formatted}`;
+  }
 
   // Kick off tenant list fetch so it's cached before views mount
   TenantContext.load();
