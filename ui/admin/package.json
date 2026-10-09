@@ -7,8 +7,8 @@
     "node": ">=20.19"
   },
   "scripts": {
-    "dev": "esbuild src/main.js --bundle --outfile=dist/bundle.js --sourcemap --watch --serve=3000 --servedir=. --loader:.html=text",
-    "build": "esbuild src/main.js --bundle --outfile=dist/bundle.js --minify --loader:.html=text",
+    "dev": "esbuild bundle=src/main.js style=styles/style.css --bundle --outdir=dist --sourcemap --watch --serve=3000 --servedir=. --loader:.html=text",
+    "build": "esbuild bundle=src/main.js style=styles/style.css --bundle --outdir=dist --minify --loader:.html=text",
     "lint": "eslint src/ tests/ e2e/",
     "test": "vitest run",
     "test:watch": "vitest",

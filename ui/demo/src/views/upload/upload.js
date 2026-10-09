@@ -382,15 +382,19 @@ async function loadPreview(doc) {
     return;
   }
 
+  _previewPanel._bboxRerender = null; // drop the previous document's overlay
   renderPreview(_previewPanel, {
     url: previewUrl,
     contentType: doc.contentType,
     watermarkEmail: Session.getEmail() || "",
+    onRotate: () => _previewPanel._bboxRerender?.(),
   });
 
   const geo = extractGeometry(doc.fields || {});
   if (geo) {
-    _resizeObserver = renderBboxOverlay(_previewPanel, geo);
+    const { observer, rerender } = renderBboxOverlay(_previewPanel, geo);
+    _resizeObserver = observer;
+    _previewPanel._bboxRerender = rerender;
   } else if (doc.fields && Object.keys(doc.fields).length) {
     const note = document.createElement("p");
     note.className = "empty-state bbox-unavailable-note";
