@@ -1,3 +1,5 @@
+@import "../../shared/styles/document-viewer.css";
+
 :root {
   --color-primary: #2563eb;
   --color-primary-light: #eff6ff;
@@ -2046,6 +2048,9 @@ td {
 
 .documents-preview-panel {
   overflow: auto;
+  /* Keep clientWidth constant whether or not a scrollbar shows, so the rotated
+     image's fit width doesn't change when zooming in/out toggles it. */
+  scrollbar-gutter: stable;
   border-right: 1px solid var(--color-border);
   padding: 0 1rem;
   display: flex;
@@ -2464,91 +2469,6 @@ tr.saved {
   border-radius: 4px;
   user-select: none;
   -webkit-user-drag: none;
-}
-
-.preview-zoom-controls {
-  position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  z-index: 3;
-  display: flex;
-  gap: 2px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  padding: 2px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-  will-change: transform;
-}
-.documents-preview-panel.preview-zoomed,
-.documents-preview-panel.preview-zoomed .bbox-overlay rect {
-  cursor: grab;
-}
-.documents-preview-panel.preview-dragging,
-.documents-preview-panel.preview-dragging .bbox-overlay rect {
-  cursor: grabbing;
-}
-.preview-zoom-controls .zoom-btn {
-  width: 28px;
-  height: 28px;
-  border: none;
-  background: transparent;
-  border-radius: 4px;
-  font-size: 16px;
-  line-height: 1;
-  cursor: pointer;
-  color: #374151;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.preview-zoom-controls .zoom-btn svg {
-  flex-shrink: 0;
-}
-.preview-zoom-controls .zoom-btn:hover {
-  background: rgba(0, 0, 0, 0.07);
-}
-
-.bbox-overlay-wrap {
-  position: absolute;
-  pointer-events: none;
-  z-index: 2;
-}
-
-.bbox-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-
-.bbox-overlay rect {
-  pointer-events: all;
-  cursor: pointer;
-  transition: stroke-width 0.1s;
-}
-
-/* Highlight a box on direct hover, or when its field row is hovered. */
-.bbox-overlay rect:hover,
-.bbox-overlay rect.bbox-highlight {
-  fill: rgba(255, 214, 0, 0.35);
-  stroke: #f5c000;
-  stroke-width: 0.006;
-}
-
-.bbox-tooltip {
-  position: absolute;
-  background: rgba(0, 0, 0, 0.8);
-  color: #fff;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  white-space: pre-line;
-  pointer-events: none;
-  z-index: 10;
-  max-width: 300px;
 }
 
 /* Field rows whose value is locatable in the preview: a left accent (at rest)

@@ -1,6 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
   extractGeometry,
+  renderBboxOverlay,
+  renderPreview,
   renderExtractedData,
   markFieldsWithGeometry,
   linkFieldHighlighting,
@@ -352,5 +354,171 @@ describe("linkFieldHighlighting", () => {
 
     const nameRow = tableContainer.querySelector('tr[data-field="name"]');
     expect(nameRow.classList.contains("row-highlight")).toBe(false);
+  });
+});
+
+describe("image preview rotate and zoom", () => {
+  let container;
+  let img;
+  let onRotate;
+
+  const button = (title) =>
+    [...container.querySelectorAll("button")].find((b) => b.title === title);
+
+  // jsdom has no layout: give the image and panel real sizes so the zoom
+  // math has something to work with.
+  const stubSizes = ({ natW, natH, panelW }) => {
+    Object.defineProperty(img, "naturalWidth", { value: natW, configurable: true });
+    Object.defineProperty(img, "naturalHeight", { value: natH, configurable: true });
+    Object.defineProperty(container, "clientWidth", { value: panelW, configurable: true });
+  };
+
+  beforeEach(() => {
+    vi.stubGlobal("requestAnimationFrame", (fn) => fn());
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe() {}
+        disconnect() {}
+      },
+    );
+    onRotate = vi.fn();
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    renderPreview(container, {
+      url: "https://example.test/doc.png",
+      contentType: "image/png",
+      onRotate,
+    });
+    img = container.querySelector("img");
+  });
+
+  afterEach(() => {
+    container.remove();
+    vi.unstubAllGlobals();
+  });
+
+  it("rotates right in 90 degree steps and wraps at 360", () => {
+    for (const deg of [90, 180, 270, 0]) {
+      button("Rotate right").click();
+      expect(container._previewRotation).toBe(deg);
+    }
+    expect(img.style.transform).toBe("");
+  });
+
+  it("rotates left from 0 to 270", () => {
+    button("Rotate left").click();
+    expect(container._previewRotation).toBe(270);
+    expect(img.style.transform).toBe("rotate(270deg)");
+  });
+
+  it("notifies the caller after a rotation", () => {
+    button("Rotate right").click();
+    expect(onRotate).toHaveBeenCalledTimes(1);
+  });
+
+  it("pads sideways images so the layout box matches the rotated footprint", () => {
+    stubSizes({ natW: 1000, natH: 2000, panelW: 500 });
+    button("Rotate right").click();
+    // Fit by visual width: 500 wide after rotation -> 250x500 layout box.
+    expect(img.style.width).toBe("250px");
+    expect(img.style.height).toBe("500px");
+    expect(img.style.margin).toBe("-125px 125px");
+  });
+
+  it("does not pad upright images", () => {
+    stubSizes({ natW: 1000, natH: 2000, panelW: 500 });
+    button("Rotate right").click();
+    button("Rotate right").click();
+    expect(img.style.margin).toBe("");
+  });
+
+  it("disables zoom out at fit and zoom in at the natural size", () => {
+    stubSizes({ natW: 1000, natH: 2000, panelW: 500 });
+    expect(button("Zoom out").disabled).toBe(true);
+    expect(button("Zoom in").disabled).toBe(false);
+
+    for (let i = 0; i < 10; i++) button("Zoom in").click();
+    expect(button("Zoom in").disabled).toBe(true);
+    expect(button("Zoom out").disabled).toBe(false);
+    expect(img.style.width).toBe("1000px");
+
+    for (let i = 0; i < 10; i++) button("Zoom out").click();
+    expect(button("Zoom out").disabled).toBe(true);
+    expect(img.style.width).toBe("");
+  });
+
+  it("caps zoom by the rotated natural size", () => {
+    stubSizes({ natW: 1000, natH: 2000, panelW: 500 });
+    button("Rotate right").click();
+    for (let i = 0; i < 10; i++) button("Zoom in").click();
+    // Sideways, the visual width is the natural height.
+    expect(img.style.height).toBe("2000px");
+    expect(button("Zoom in").disabled).toBe(true);
+  });
+
+  it("resets zoom when rotating", () => {
+    stubSizes({ natW: 1000, natH: 2000, panelW: 500 });
+    button("Zoom in").click();
+    expect(container.classList.contains("preview-zoomed")).toBe(true);
+    button("Rotate right").click();
+    expect(container.classList.contains("preview-zoomed")).toBe(false);
+    expect(button("Zoom out").disabled).toBe(true);
+  });
+});
+
+describe("renderBboxOverlay", () => {
+  const geometry = {
+    name: {
+      geometry: [{ page: 1, boundingBox: { left: 0.1, top: 0.1, width: 0.2, height: 0.05 } }],
+      fieldType: "string",
+    },
+  };
+  let container;
+
+  beforeEach(() => {
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe() {}
+        disconnect() {}
+      },
+    );
+    container = document.createElement("div");
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    container.remove();
+    vi.unstubAllGlobals();
+  });
+
+  it("returns an inert handle when there is no geometry or no image", () => {
+    container.innerHTML = '<img src="x.png" />';
+    for (const [c, g] of [
+      [container, null],
+      [document.createElement("div"), geometry],
+    ]) {
+      const handle = renderBboxOverlay(c, g);
+      expect(handle.observer).toBeNull();
+      expect(() => handle.rerender()).not.toThrow();
+    }
+  });
+
+  it("returns an observer and a rerender that rotates the overlay", () => {
+    container.innerHTML = '<img src="x.png" />';
+    const img = container.querySelector("img");
+    Object.defineProperty(img, "complete", { value: true });
+    Object.defineProperty(img, "naturalWidth", { value: 100 });
+
+    const { observer, rerender } = renderBboxOverlay(container, geometry);
+    expect(observer).not.toBeNull();
+    expect(container.querySelector(".bbox-overlay-wrap").style.transform).toBe("");
+
+    container._previewRotation = 90;
+    rerender();
+    const wraps = container.querySelectorAll(".bbox-overlay-wrap");
+    expect(wraps).toHaveLength(1);
+    expect(wraps[0].style.transform).toBe("rotate(90deg)");
   });
 });

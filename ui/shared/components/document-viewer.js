@@ -9,7 +9,8 @@ import { h, svgIcon } from "../utils/dom.js";
 import {
   ICON_ZOOM_OUT,
   ICON_ZOOM_IN,
-  ICON_RESET_ZOOM,
+  ICON_ROTATE_LEFT,
+  ICON_ROTATE_RIGHT,
 } from "../utils/icons.js";
 
 export const PREVIEWABLE_TYPES = ["application/pdf", "image/jpeg", "image/png"];
@@ -93,25 +94,33 @@ export function extractGeometry(fields) {
  * @param {Object} fieldGeometry - output of extractGeometry()
  * @param {object} [options]
  * @param {number} [options.page=1] - which page to render boxes for
- * @returns {ResizeObserver|null} - observer to disconnect on cleanup
+ * @returns {{observer: ResizeObserver|null, rerender: () => void}} - observer
+ *   to disconnect on cleanup; rerender redraws the overlay (e.g. after rotate)
  */
 export function renderBboxOverlay(container, fieldGeometry, { page = 1 } = {}) {
   clearBboxOverlay(container);
-  if (!fieldGeometry) return null;
+  const none = { observer: null, rerender: () => {} };
+  if (!fieldGeometry) return none;
 
   const img = container.querySelector("img");
-  if (!img) return null;
+  if (!img) return none;
 
   let resizeObserver = null;
 
   const doRender = () => {
     clearBboxOverlay(container);
+    const rotation = container._previewRotation || 0;
+
     const wrap = document.createElement("div");
     wrap.className = "bbox-overlay-wrap";
     wrap.style.width = img.offsetWidth + "px";
     wrap.style.height = img.offsetHeight + "px";
     wrap.style.top = img.offsetTop + "px";
     wrap.style.left = img.offsetLeft + "px";
+    if (rotation) {
+      wrap.style.transform = `rotate(${rotation}deg)`;
+      wrap.style.transformOrigin = "center center";
+    }
 
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.classList.add("bbox-overlay");
@@ -209,7 +218,7 @@ export function renderBboxOverlay(container, fieldGeometry, { page = 1 } = {}) {
   });
   resizeObserver.observe(img);
 
-  return resizeObserver;
+  return { observer: resizeObserver, rerender: doRender };
 }
 
 /**
@@ -285,11 +294,10 @@ export function renderExtractedData(
  * @param {HTMLElement} container
  * @param {HTMLImageElement} img
  */
-function addImageZoom(container, img) {
+function addImageZoom(container, img, { onRotate } = {}) {
   const STEP = 1.25;
-  const MAX = 5;
   let scale = 1;
-  let fitWidth = 0; // image's responsive fit width, captured on first zoom
+  let rotation = 0;
 
   const btn = (label, icon) => {
     const el = h("button", {
@@ -302,13 +310,17 @@ function addImageZoom(container, img) {
     return el;
   };
   const out = btn("Zoom out", ICON_ZOOM_OUT);
-  const reset = btn("Reset zoom", ICON_RESET_ZOOM);
   const inn = btn("Zoom in", ICON_ZOOM_IN);
+  out.disabled = true;
+  const rotL = btn("Rotate left", ICON_ROTATE_LEFT);
+  const rotR = btn("Rotate right", ICON_ROTATE_RIGHT);
   const controls = h(
     "div",
     { className: "preview-zoom-controls" },
+    rotL,
+    rotR,
+    h("div", { className: "preview-controls-sep" }),
     out,
-    reset,
     inn,
   );
   container.appendChild(controls);
@@ -319,25 +331,111 @@ function addImageZoom(container, img) {
     controls.style.transform = `translate(${container.scrollLeft}px, ${container.scrollTop}px)`;
   };
 
-  const setZoom = (next) => {
-    scale = Math.min(MAX, Math.max(1, next));
-    if (scale === 1) {
+  // CSS transforms don't affect layout, so a 90/270 rotated image would keep
+  // its unrotated box: wrong scroll extents, and the overflow past the top/left
+  // edge is unreachable (the "chopped" document). Size the image explicitly in
+  // terms of its *visual* width and pad the layout box with margins so it
+  // matches the rotated footprint.
+  const applyLayout = () => {
+    // The bbox overlay is absolutely positioned inside the scroll container, so
+    // its stale (old-size) box keeps inflating the scroll extents until it
+    // re-renders a frame later. Hide it so the scroll math below and the
+    // browser's clamping see only the resized image.
+    container
+      .querySelector(".bbox-overlay-wrap")
+      ?.style.setProperty("display", "none");
+    // Same for the pinned controls: translated by the old scroll offset they
+    // stretch the scrollable area. pin() re-applies it once scroll is restored.
+    controls.style.transform = "";
+    const sideways = rotation === 90 || rotation === 270;
+    img.style.margin = "";
+    if (scale === 1 && !sideways) {
       img.style.width = "";
+      img.style.height = "";
       img.style.maxWidth = "";
-      fitWidth = 0;
-    } else {
-      if (!fitWidth) fitWidth = img.clientWidth;
-      if (!fitWidth) return; // image not laid out yet
+      img.style.maxHeight = "";
+      img.style.flexShrink = "";
+    } else if (img.naturalWidth) {
+      const cs = getComputedStyle(container);
+      const avail =
+        container.clientWidth -
+        parseFloat(cs.paddingLeft) -
+        parseFloat(cs.paddingRight);
+      const natVis = sideways ? img.naturalHeight : img.naturalWidth;
+      const vis = Math.min(avail, natVis) * scale;
+      const aspect = img.naturalWidth / img.naturalHeight;
+      const w = Math.round(sideways ? vis * aspect : vis);
+      const h = Math.round(sideways ? vis : vis / aspect);
       img.style.maxWidth = "none";
-      img.style.width = Math.round(fitWidth * scale) + "px";
+      img.style.maxHeight = "none";
+      img.style.flexShrink = "0";
+      img.style.width = w + "px";
+      img.style.height = h + "px";
+      if (sideways) {
+        img.style.margin = `${(w - h) / 2}px ${(h - w) / 2}px`;
+      }
     }
+    img.style.transform = rotation ? `rotate(${rotation}deg)` : "";
+    container._previewRotation = rotation;
     container.classList.toggle("preview-zoomed", scale > 1);
+    requestAnimationFrame(() => onRotate?.());
+  };
+
+  const maxScale = () => {
+    const sideways = rotation === 90 || rotation === 270;
+    const cs = getComputedStyle(container);
+    const avail =
+      container.clientWidth -
+      parseFloat(cs.paddingLeft) -
+      parseFloat(cs.paddingRight);
+    const natVis = sideways ? img.naturalHeight : img.naturalWidth;
+    const fit = Math.min(avail, natVis);
+    return fit > 0 ? natVis / fit : 1;
+  };
+
+  const setZoom = (next) => {
+    if (!img.naturalWidth) return; // image not loaded yet
+    const max = maxScale();
+    // Preserve how far through the pannable range the view is (0 = left/top
+    // edge, 1 = right/bottom edge). Anchoring on the viewport center instead
+    // lets a view scrolled to an edge drift off it when zooming out, which
+    // reads as the image jumping.
+    const frac = (pos, size, view) => (size > view ? pos / (size - view) : 0);
+    const fx = frac(
+      container.scrollLeft,
+      container.scrollWidth,
+      container.clientWidth,
+    );
+    const fy = frac(
+      container.scrollTop,
+      container.scrollHeight,
+      container.clientHeight,
+    );
+    scale = Math.min(max, Math.max(1, next));
+    out.disabled = scale <= 1;
+    inn.disabled = scale >= max;
+    applyLayout();
+    container.scrollLeft = fx * (container.scrollWidth - container.clientWidth);
+    container.scrollTop =
+      fy * (container.scrollHeight - container.clientHeight);
+    pin();
+  };
+
+  const setRotation = (deg) => {
+    rotation = ((deg % 360) + 360) % 360;
+    scale = 1;
+    out.disabled = true;
+    inn.disabled = maxScale() <= 1;
+    applyLayout();
+    container.scrollLeft = 0;
+    container.scrollTop = 0;
     pin();
   };
 
   out.addEventListener("click", () => setZoom(scale / STEP));
-  reset.addEventListener("click", () => setZoom(1));
   inn.addEventListener("click", () => setZoom(scale * STEP));
+  rotL.addEventListener("click", () => setRotation(rotation - 90));
+  rotR.addEventListener("click", () => setRotation(rotation + 90));
   container.addEventListener("scroll", pin);
 
   container.addEventListener(
@@ -398,8 +496,9 @@ function addImageZoom(container, img) {
  */
 export function renderPreview(
   container,
-  { url, contentType, watermarkEmail = "" },
+  { url, contentType, watermarkEmail = "", onRotate } = {},
 ) {
+  const options = { onRotate };
   if (contentType === "application/pdf") {
     // eslint-disable-next-line no-unsanitized/property -- URL escaped with esc()
     container.innerHTML = `<object data="${esc(url)}" type="application/pdf" class="document-preview-frame"><p class=\"empty-state\">Preview unavailable</p></object>`;
@@ -409,7 +508,7 @@ export function renderPreview(
     container.classList.add("watermark-block");
     const img = container.querySelector("img");
     if (img) {
-      addImageZoom(container, img);
+      addImageZoom(container, img, { onRotate: options.onRotate });
       // Lets responsive layouts split preview + extracted-data side by side
       // for a wide/landscape document but stack them for a tall/portrait one
       // (a portrait page squeezed into a half-width column reads worse than

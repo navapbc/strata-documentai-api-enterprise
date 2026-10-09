@@ -194,7 +194,9 @@ export function mount(root) {
       renderDetail(detail);
       await loadPreview(jobId, detail.contentType, detail.processStatus);
       if (fieldGeometry) {
-        resizeObserver = renderBboxOverlay(previewPanel, fieldGeometry);
+        const { observer, rerender } = renderBboxOverlay(previewPanel, fieldGeometry);
+        resizeObserver = observer;
+        previewPanel._bboxRerender = rerender;
         markFieldsWithGeometry(detailContent, fieldGeometry);
       } else {
         if (!detailContent.querySelector(".bbox-unavailable-note")) {
@@ -210,6 +212,7 @@ export function mount(root) {
   }
 
   async function loadPreview(jobId, contentType, processStatus) {
+    previewPanel._bboxRerender = null; // drop the previous document's overlay
     if (processStatus === "password_protected") {
       previewPanel.innerHTML =
         '<p class="empty-state">Preview unavailable - document is password protected</p>';
@@ -227,6 +230,7 @@ export function mount(root) {
         url: resp.url,
         contentType,
         watermarkEmail: Session.getEmail() || "",
+        onRotate: () => previewPanel._bboxRerender?.(),
       });
     } catch {
       previewPanel.innerHTML = '<p class="empty-state">Preview unavailable</p>';
