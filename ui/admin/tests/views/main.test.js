@@ -4,7 +4,7 @@ function flush() {
   return new Promise((r) => setTimeout(r, 0));
 }
 
-const SIDEBAR_MOCK = `<div id="connected-url"></div><select id="global-tenant-select"></select>
+const SIDEBAR_MOCK = `<div id="user-email"></div><p id="build-date"></p><select id="global-tenant-select"></select>
   <div id="main-content"></div><h2 id="view-title"></h2><div id="view-actions"></div>
   <button id="logout-btn"></button>
   <div class="nav-section" id="nav-section-console-access"><button class="nav-section-header" data-section="console-access"><span class="nav-arrow">▸</span></button><div class="nav-section-body hidden" id="section-console-access"></div></div>
@@ -118,7 +118,8 @@ describe("main.js router", () => {
     // Dashboard rendered - no default view mounted
     expect(KeysView.mount).not.toHaveBeenCalled();
     expect(TenantContext.load).toHaveBeenCalled();
-    expect(document.querySelector("#connected-url").textContent).toBe("a@b.com");
+    expect(document.querySelector("#user-email").textContent).toBe("a@b.com");
+    expect(document.querySelector("#build-date").textContent).toMatch(/^Built /);
   });
 
   it("shows pending card when session valid but not approved", async () => {
