@@ -10,7 +10,6 @@ from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
 
-from documentai_api.app import app
 from documentai_api.config.env import AppConfig, EnvConfig, get_app_config, get_env_config
 from documentai_api.config.env_var_names_generated import EnvVarNames
 from documentai_api.routers.demo import _resolve_demo_context
@@ -150,18 +149,34 @@ def runtime_required_env(monkeypatch, s3_bucket, ddb_doc_metadata_table):
 @pytest.fixture
 def api_client(runtime_required_env):
     """Create test client."""
+    # NOTE: intentionally imported here rather than at the module level. A
+    # module-level import breaks e2e tests as environment settings are read
+    # before the test setup clears them via reset_env.
+    from documentai_api.app import app
+
     return TestClient(app)
 
 
 @pytest.fixture(autouse=True)
 def _cleanup_jwt():
     yield
+
+    # NOTE: intentionally imported here rather than at the module level. A
+    # module-level import breaks e2e tests as environment settings are read
+    # before the test setup clears them via reset_env.
+    from documentai_api.app import app
+
     app.dependency_overrides.pop(verify_jwt, None)
 
 
 @pytest.fixture
 def disable_auth():
     """Disable API key authentication and tenant validation for tests."""
+    # NOTE: intentionally imported here rather than at the module level. A
+    # module-level import breaks e2e tests as environment settings are read
+    # before the test setup clears them via reset_env.
+    from documentai_api.app import app
+
     mock_context = UserContext(tenant_id="test-tenant-id", api_key_name="test-api-key-name")
     mock_demo_context = UserContext(
         tenant_id="test-demo-tenant-id", api_key_name="test-demo-api-key-name"
