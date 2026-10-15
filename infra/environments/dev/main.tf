@@ -88,12 +88,12 @@ module "input_bucket" {
     {
       id              = "expire-processed"
       prefix          = "${local.input_prefix}/"
-      expiration_days = 7
+      expiration_days = 30
     },
     {
       id              = "expire-demo-uploads"
       prefix          = "${local.demo_input_prefix}/"
-      expiration_days = 7
+      expiration_days = 30
     },
     {
       id              = "expire-preprocessing-originals"
@@ -103,7 +103,7 @@ module "input_bucket" {
     {
       id              = "expire-test-runner"
       prefix          = "test-runner/"
-      expiration_days = 7
+      expiration_days = 30
     },
   ]
 }
@@ -120,7 +120,7 @@ module "output_bucket" {
     {
       id              = "expire-demo-results"
       prefix          = "${local.demo_output_prefix}"
-      expiration_days = 7
+      expiration_days = 30
   }]
 }
 
