@@ -498,6 +498,8 @@ export function renderPreview(
   container,
   { url, contentType, watermarkEmail = "", onRotate } = {},
 ) {
+  // The panel is reused across documents; a new preview starts unrotated.
+  container._previewRotation = 0;
   const options = { onRotate };
   if (contentType === "application/pdf") {
     // eslint-disable-next-line no-unsanitized/property -- URL escaped with esc()
