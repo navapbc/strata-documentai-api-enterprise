@@ -406,6 +406,16 @@ describe("image preview rotate and zoom", () => {
     expect(img.style.transform).toBe("");
   });
 
+  it("starts unrotated when the panel is reused for a new document", () => {
+    button("Rotate right").click();
+    expect(container._previewRotation).toBe(90);
+    renderPreview(container, {
+      url: "https://example.test/other.png",
+      contentType: "image/png",
+    });
+    expect(container._previewRotation).toBe(0);
+  });
+
   it("rotates left from 0 to 270", () => {
     button("Rotate left").click();
     expect(container._previewRotation).toBe(270);
