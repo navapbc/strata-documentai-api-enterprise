@@ -22,8 +22,3 @@ output "google_enabled" {
   description = "Whether Google SSO is configured."
   value       = nonsensitive(local.google_enabled)
 }
-
-output "access_policy_arn" {
-  description = "ARN of the IAM policy granting access to the user pool."
-  value       = aws_iam_policy.access.arn
-}

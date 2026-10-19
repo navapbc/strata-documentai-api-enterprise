@@ -111,3 +111,4 @@ variable "google_allowed_domains" {
   description = "Email domains allowed for Google SSO (e.g. ['example.com']). Empty list allows all domains."
   default     = []
 }
+

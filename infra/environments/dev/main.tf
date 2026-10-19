@@ -578,8 +578,8 @@ locals {
       AUDIT_EVENTS_TABLE_NAME                                   = module.audit_events.table_name
       EXTRACTION_RULES_TABLE_NAME                               = module.extraction_rules.table_name
       DOCUMENT_CATEGORIES_TABLE_NAME                            = module.document_categories.table_name
-      DOCUMENTAI_BATCH_TABLE_NAME                               = module.document_batches.table_name
-      DOCUMENTAI_DOCUMENT_BUILD_TABLE_NAME                      = module.document_builds.table_name
+      DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME                    = module.document_batches.table_name
+      DOCUMENTAI_BUILD_TABLE_NAME                               = module.document_builds.table_name
       DOCUMENTAI_INPUT_LOCATION                                 = "s3://${module.input_bucket.bucket_name}/${local.input_prefix}"
       DOCUMENTAI_DEMO_INPUT_LOCATION                            = "s3://${module.input_bucket.bucket_name}/${local.demo_input_prefix}"
       DOCUMENTAI_PREPROCESSING_LOCATION                         = "s3://${module.input_bucket.bucket_name}/preprocessing"
@@ -647,11 +647,36 @@ locals {
     pipeline = aws_iam_policy.pipeline_api.arn
   }
 
-  lambda_policy_arns = {
-    ddb      = aws_iam_policy.ddb_access.arn
-    s3       = aws_iam_policy.s3_worker.arn
-    bedrock  = aws_iam_policy.bedrock_worker.arn
-    pipeline = aws_iam_policy.pipeline_worker.arn
+  worker_policy_arns = {
+    "document-processor" = {
+      ddb      = aws_iam_policy.ddb_access.arn
+      s3       = aws_iam_policy.s3_document_read_write.arn
+      bedrock  = aws_iam_policy.document_processor.arn
+      pipeline = aws_iam_policy.metrics_producer.arn
+    }
+    "bda-result-processor" = {
+      ddb      = aws_iam_policy.ddb_access.arn
+      s3       = aws_iam_policy.s3_document_read_write.arn
+      bedrock  = aws_iam_policy.bda_result_processor.arn
+      pipeline = aws_iam_policy.metrics_producer.arn
+    }
+    "metrics-processor" = {
+      s3       = aws_iam_policy.s3_metrics_write.arn
+      pipeline = aws_iam_policy.cloudwatch_ssm.arn
+    }
+    "metrics-aggregator" = {
+      s3       = aws_iam_policy.s3_metrics_read_write.arn
+      pipeline = aws_iam_policy.metrics_aggregator.arn
+    }
+    "usage-report" = {
+      s3       = aws_iam_policy.s3_metrics_read_write.arn
+      pipeline = aws_iam_policy.metrics_aggregator.arn
+    }
+    "document-reaper" = {
+      ddb      = aws_iam_policy.ddb_reaper.arn
+      bedrock  = aws_iam_policy.bedrock_reaper.arn
+      pipeline = aws_iam_policy.cloudwatch_ssm.arn
+    }
   }
 }
 
@@ -728,7 +753,7 @@ module "workers" {
   timeout               = 300
   memory_size           = 1024
   environment_variables = each.key == "document-processor" ? local.lambda_env_vars : local.worker_env_vars_without_bda_project_ids
-  policy_arns           = local.lambda_policy_arns
+  policy_arns           = local.worker_policy_arns[each.key]
 
   s3_trigger = lookup({
     "document-processor"   = { source_bucket = module.input_bucket.bucket_name, path_prefix = "input/" }

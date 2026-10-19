@@ -9,7 +9,7 @@ data "aws_kms_alias" "ssm" {
 }
 
 locals {
-  # All DynamoDB table + index ARNs, shared across both ddb policies.
+  # All DynamoDB table and index ARNs, shared across both ddb policies.
   ddb_table_arns = [
     "${module.document_metadata.table_arn}",
     "${module.document_metadata.table_arn}/index/*",
@@ -31,7 +31,7 @@ locals {
     "${module.audit_events.table_arn}/index/*",
   ]
 
-  # KMS keys required for DDB + S3 + SSM access, shared across both ddb policies.
+  # KMS keys required for DDB, S3, SSM access, shared across both ddb policies.
   ddb_kms_key_arns = concat(
     [for m in [
       module.document_metadata, module.api_keys, module.tenants,
@@ -47,7 +47,7 @@ locals {
 
 # --- DynamoDB ---
 
-# Shared by API Lambda and all workers.
+# Shared by API Lambda, document-processor, and bda-result-processor.
 data "aws_iam_policy_document" "ddb_access" {
   statement {
     actions = [
@@ -79,9 +79,43 @@ resource "aws_iam_policy" "ddb_access" {
   policy = data.aws_iam_policy_document.ddb_access.json
 }
 
+# document-reaper: document_metadata table only (query stale records, update status).
+data "aws_iam_policy_document" "ddb_reaper" {
+  statement {
+    actions = [
+      "dynamodb:GetItem",
+      "dynamodb:Query",
+      "dynamodb:UpdateItem",
+    ]
+    resources = [
+      module.document_metadata.table_arn,
+      "${module.document_metadata.table_arn}/index/*",
+      module.document_batches.table_arn,
+      "${module.document_batches.table_arn}/index/*",
+    ]
+  }
+
+  statement {
+    actions = [
+      "kms:Decrypt",
+      "kms:DescribeKey",
+      "kms:GenerateDataKey",
+    ]
+    resources = [
+      module.document_metadata.kms_key_arn,
+      module.document_batches.kms_key_arn,
+    ]
+  }
+}
+
+resource "aws_iam_policy" "ddb_reaper" {
+  name   = "${local.service_name}-ddb-reaper"
+  policy = data.aws_iam_policy_document.ddb_reaper.json
+}
+
 # --- S3 ---
 
-# API Lambda: input + output buckets (full access) + metrics bucket (read-only).
+# API Lambda: input and output buckets (full access), metrics bucket (read-only).
 # No Athena results bucket — only workers query Athena.
 data "aws_iam_policy_document" "s3_api" {
   statement {
@@ -117,9 +151,9 @@ resource "aws_iam_policy" "s3_api" {
   policy = data.aws_iam_policy_document.s3_api.json
 }
 
-# Workers: all four buckets — document-processor deletes originals,
-# metrics workers write/read metrics + Athena results.
-data "aws_iam_policy_document" "s3_worker" {
+# document-processor and bda-result-processor: input and output buckets (full access).
+# document-processor deletes originals after processing; bda-result-processor reads output.
+data "aws_iam_policy_document" "s3_document_read_write" {
   statement {
     actions = [
       "s3:GetObject",
@@ -133,6 +167,45 @@ data "aws_iam_policy_document" "s3_worker" {
       "${module.input_bucket.bucket_arn}/*",
       module.output_bucket.bucket_arn,
       "${module.output_bucket.bucket_arn}/*",
+    ]
+  }
+}
+
+resource "aws_iam_policy" "s3_document_read_write" {
+  name   = "${local.service_name}-s3-worker"
+  policy = data.aws_iam_policy_document.s3_document_read_write.json
+}
+
+# metrics-processor: write raw records to metrics bucket only.
+data "aws_iam_policy_document" "s3_metrics_write" {
+  statement {
+    actions = [
+      "s3:PutObject",
+      "s3:ListBucket",
+      "s3:GetBucketLocation",
+    ]
+    resources = [
+      module.metrics_bucket.bucket_arn,
+      "${module.metrics_bucket.bucket_arn}/*",
+    ]
+  }
+}
+
+resource "aws_iam_policy" "s3_metrics_write" {
+  name   = "${local.service_name}-s3-metrics-write"
+  policy = data.aws_iam_policy_document.s3_metrics_write.json
+}
+
+# metrics-aggregator and usage-report: metrics bucket (read,  write), Athena results bucket.
+data "aws_iam_policy_document" "s3_metrics_read_write" {
+  statement {
+    actions = [
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:ListBucket",
+      "s3:GetBucketLocation",
+    ]
+    resources = [
       module.metrics_bucket.bucket_arn,
       "${module.metrics_bucket.bucket_arn}/*",
       module.analytics.results_bucket_arn,
@@ -141,21 +214,27 @@ data "aws_iam_policy_document" "s3_worker" {
   }
 }
 
-resource "aws_iam_policy" "s3_worker" {
-  name   = "${local.service_name}-s3-worker"
-  policy = data.aws_iam_policy_document.s3_worker.json
+resource "aws_iam_policy" "s3_metrics_read_write" {
+  name   = "${local.service_name}-s3-metrics-read-write"
+  policy = data.aws_iam_policy_document.s3_metrics_read_write.json
 }
 
-# --- Bedrock + Textract ---
+# --- Bedrock and Textract ---
 
-# API Lambda: GetDataAutomationStatus only (blueprint_test router).
+# API Lambda: blueprint_test router calls InvokeDataAutomationAsync (POST /v1/admin/blueprints/test)
+# and GetDataAutomationStatus (GET /v1/admin/blueprints/test/{id}).
 # InvokeModel/Converse are worker-only — preclassification, bbox, and blur
 # are all called from upsert_initial_ddb_record, which only document_processor invokes.
 data "aws_iam_policy_document" "bedrock_api" {
   statement {
-    actions = ["bedrock:GetDataAutomationStatus"]
+    actions = [
+      "bedrock:InvokeDataAutomationAsync",
+      "bedrock:GetDataAutomationStatus",
+    ]
     resources = [
+      "arn:aws:bedrock:*:${local.account_id}:data-automation-project/*",
       "arn:aws:bedrock:*:${local.account_id}:data-automation-invocation/*",
+      "arn:aws:bedrock:*:*:data-automation-profile/*",
     ]
   }
 }
@@ -165,8 +244,8 @@ resource "aws_iam_policy" "bedrock_api" {
   policy = data.aws_iam_policy_document.bedrock_api.json
 }
 
-# Workers: full BDA invoke + job management + Converse + Textract.
-data "aws_iam_policy_document" "bedrock_worker" {
+# document-processor: full BDA invoke, job management, Converse, Textract.
+data "aws_iam_policy_document" "document_processor" {
   statement {
     actions = [
       "bedrock:InvokeDataAutomationAsync",
@@ -205,9 +284,42 @@ data "aws_iam_policy_document" "bedrock_worker" {
   }
 }
 
-resource "aws_iam_policy" "bedrock_worker" {
+resource "aws_iam_policy" "document_processor" {
   name   = "${local.service_name}-bedrock-worker"
-  policy = data.aws_iam_policy_document.bedrock_worker.json
+  policy = data.aws_iam_policy_document.document_processor.json
+}
+
+# bda-result-processor: check job status and read blueprints only.
+data "aws_iam_policy_document" "bda_result_processor" {
+  statement {
+    actions = [
+      "bedrock:GetDataAutomationStatus",
+      "bedrock:GetBlueprint",
+    ]
+    resources = [
+      "arn:aws:bedrock:*:${local.account_id}:data-automation-invocation/*",
+      "arn:aws:bedrock:*:*:blueprint/*",
+      "arn:aws:bedrock:*:*:data-automation-profile/*",
+    ]
+  }
+}
+
+resource "aws_iam_policy" "bda_result_processor" {
+  name   = "${local.service_name}-bedrock-bda-result"
+  policy = data.aws_iam_policy_document.bda_result_processor.json
+}
+
+# document-reaper: check BDA job status only.
+data "aws_iam_policy_document" "bedrock_reaper" {
+  statement {
+    actions   = ["bedrock:GetDataAutomationStatus"]
+    resources = ["arn:aws:bedrock:*:${local.account_id}:data-automation-invocation/*"]
+  }
+}
+
+resource "aws_iam_policy" "bedrock_reaper" {
+  name   = "${local.service_name}-bedrock-reaper"
+  policy = data.aws_iam_policy_document.bedrock_reaper.json
 }
 
 # --- Cognito ---
@@ -236,9 +348,9 @@ resource "aws_iam_policy" "cognito_user_mgmt" {
   policy = data.aws_iam_policy_document.cognito_user_mgmt.json
 }
 
-# --- Operational services (SSM + SQS + CloudWatch) ---
+# --- Operational services (SSM, SQS, CloudWatch) ---
 
-# API Lambda: SSM read + SQS send-only + CloudWatch.
+# API Lambda: SSM read, SQS send-only, CloudWatch.
 # No SQS receive/delete (the API only enqueues metrics events, never polls).
 data "aws_iam_policy_document" "pipeline_api" {
   statement {
@@ -266,21 +378,39 @@ resource "aws_iam_policy" "pipeline_api" {
   policy = data.aws_iam_policy_document.pipeline_api.json
 }
 
-# Workers: SSM read + SQS full + CloudWatch + Athena + Glue. No Cognito.
-data "aws_iam_policy_document" "pipeline_worker" {
+# document-processor and bda-result-processor: SQS send, CloudWatch, SSM.
+# SQS receive/delete for metrics-processor is handled by the worker module's inline sqs_access policy.
+data "aws_iam_policy_document" "metrics_producer" {
   statement {
     actions   = ["cloudwatch:PutMetricData"]
     resources = ["*"]
   }
 
   statement {
-    actions = [
-      "sqs:SendMessage",
-      "sqs:ReceiveMessage",
-      "sqs:DeleteMessage",
-      "sqs:GetQueueAttributes",
-    ]
+    actions   = ["sqs:SendMessage"]
     resources = [module.metrics_queue.queue_arn]
+  }
+
+  statement {
+    actions = [
+      "ssm:GetParameter",
+      "ssm:GetParameters",
+      "ssm:GetParametersByPath",
+    ]
+    resources = ["arn:aws:ssm:${var.region}:${local.account_id}:parameter${local.ssm_prefix}/*"]
+  }
+}
+
+resource "aws_iam_policy" "metrics_producer" {
+  name   = "${local.service_name}-metrics-producer"
+  policy = data.aws_iam_policy_document.metrics_producer.json
+}
+
+# metrics-aggregator and usage-report: Athena, Glue, CloudWatch, SSM. No SQS.
+data "aws_iam_policy_document" "metrics_aggregator" {
+  statement {
+    actions   = ["cloudwatch:PutMetricData"]
+    resources = ["*"]
   }
 
   statement {
@@ -316,7 +446,29 @@ data "aws_iam_policy_document" "pipeline_worker" {
   }
 }
 
-resource "aws_iam_policy" "pipeline_worker" {
-  name   = "${local.service_name}-pipeline-worker"
-  policy = data.aws_iam_policy_document.pipeline_worker.json
+resource "aws_iam_policy" "metrics_aggregator" {
+  name   = "${local.service_name}-pipeline-metrics-aggregator"
+  policy = data.aws_iam_policy_document.metrics_aggregator.json
+}
+
+# metrics-processor, document-reaper: CloudWatch and SSM only.
+data "aws_iam_policy_document" "cloudwatch_ssm" {
+  statement {
+    actions   = ["cloudwatch:PutMetricData"]
+    resources = ["*"]
+  }
+
+  statement {
+    actions = [
+      "ssm:GetParameter",
+      "ssm:GetParameters",
+      "ssm:GetParametersByPath",
+    ]
+    resources = ["arn:aws:ssm:${var.region}:${local.account_id}:parameter${local.ssm_prefix}/*"]
+  }
+}
+
+resource "aws_iam_policy" "cloudwatch_ssm" {
+  name   = "${local.service_name}-pipeline-cloudwatch-ssm"
+  policy = data.aws_iam_policy_document.cloudwatch_ssm.json
 }

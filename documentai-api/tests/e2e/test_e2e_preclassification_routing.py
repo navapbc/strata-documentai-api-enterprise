@@ -125,13 +125,12 @@ def _enable_preclassification_routing(reset_env, monkeypatch_session):
 
 
 @pytest.mark.parametrize(("file_path", "expected_category"), ROUTING_CASES)
-def test_routing_writes_per_category_match(file_path, expected_category, base_url, api_key):
+def test_routing_writes_per_category_match(file_path, expected_category, client):
     """Blueprint match category is a per-category slug, never 'all'."""
     from documentai_api.config.env import get_env_config
     from documentai_api.services import ddb as ddb_service
-    from tests.e2e.test_app_documents import _upload_and_wait
 
-    body = _upload_and_wait(base_url, api_key, file_path)
+    body = client.upload_and_wait(file_path)
     job_id = body["jobId"]
 
     cfg = get_env_config()

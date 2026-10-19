@@ -1,17 +1,13 @@
 import json
-import os
-import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import pytest
-import requests
 
 from documentai_api.schemas.document_metadata import DocumentMetadata
+from tests.helpers.fixtures.paths import TEST_DOCS_DIR
 
-BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
-TEST_DOCS_DIR = Path(__file__).parent.parent / "helpers" / "fixtures" / "test-documents"
 CLASSIFICATIONS = TEST_DOCS_DIR / "expected.json"
 
 
@@ -58,45 +54,9 @@ def load_test_cases() -> list[Any]:
     ]
 
 
-def _upload_and_wait(
-    base_url: str, api_key: str, file_path: Path, timeout: int = 75, interval: int = 2
-) -> dict[str, Any]:
-    with file_path.open("rb") as f:
-        response = requests.post(
-            f"{base_url}/v1/documents",
-            headers={"API-Key": api_key},
-            files={"file": f},
-            timeout=30,
-        )
-    assert response.status_code == 202, f"upload failed {response.status_code}: {response.text}"
-    job_id = response.json()["jobId"]
-
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        r = requests.get(
-            f"{base_url}/v1/documents/{job_id}",
-            headers={"API-Key": api_key},
-            timeout=30,
-        )
-        assert r.status_code == 200, f"poll failed {r.status_code}: {r.text}"
-        body = r.json()
-
-        # responseCode is always present in the serialized response (it's an
-        # optional model field that defaults to null during processing). It only
-        # becomes non-null once the v1 response is persisted, i.e. the job is
-        # done - including terminal states that never invoke BDA (password
-        # protected, blurry), where completedAt is never set.
-        if body.get("responseCode") is not None:
-            return body  # type: ignore[no-any-return]
-
-        time.sleep(interval)
-
-    pytest.fail(f"job {job_id} did not complete within {timeout}s")
-
-
 @pytest.mark.parametrize("test_case", load_test_cases())
-def test_post_document(test_case, base_url, api_key):
-    body = _upload_and_wait(base_url, api_key, test_case.file_path)
+def test_post_document(test_case, client):
+    body = client.upload_and_wait(test_case.file_path)
     expected_result = test_case.expected_result
 
     from documentai_api.config.env import get_env_config

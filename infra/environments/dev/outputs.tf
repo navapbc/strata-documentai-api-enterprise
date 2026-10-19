@@ -102,3 +102,7 @@ output "cognito_domain" {
 output "cognito_google_enabled" {
   value = nonsensitive(module.identity_provider.google_enabled)
 }
+
+output "lambda_function_prefix" {
+  value = local.service_name
+}
