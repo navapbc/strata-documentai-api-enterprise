@@ -58,7 +58,7 @@ class EnvConfig(PydanticBaseEnvConfig):
     documentai_demo_input_location: str | None = None
     documentai_output_location: str | None = None
     documentai_preprocessing_location: str | None = None
-    documentai_build_table_name: str | None = None
+    documentai_document_build_table_name: str | None = None
 
     def _parse_preprocessing_location(self) -> tuple[str, str] | None:
         loc = self.documentai_preprocessing_location
@@ -176,7 +176,8 @@ class EnvConfig(PydanticBaseEnvConfig):
     @property
     def document_build_table_name(self) -> str:
         return self._require(
-            self.documentai_build_table_name, EnvVarNames.DOCUMENTAI_BUILD_TABLE_NAME
+            self.documentai_document_build_table_name,
+            EnvVarNames.DOCUMENTAI_DOCUMENT_BUILD_TABLE_NAME,
         )
 
     # _required suffix avoids shadowing the bda_profile_arn Pydantic field

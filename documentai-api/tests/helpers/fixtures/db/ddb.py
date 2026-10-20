@@ -102,7 +102,7 @@ def document_build_ddb_table(aws_credentials, monkeypatch):
             ],
             BillingMode="PAY_PER_REQUEST",
         )
-        monkeypatch.setenv(EnvVarNames.DOCUMENTAI_BUILD_TABLE_NAME, table.name)
+        monkeypatch.setenv(EnvVarNames.DOCUMENTAI_DOCUMENT_BUILD_TABLE_NAME, table.name)
         monkeypatch.setenv(
             EnvVarNames.DOCUMENTAI_PREPROCESSING_LOCATION, "s3://test-bucket/preprocessing"
         )
