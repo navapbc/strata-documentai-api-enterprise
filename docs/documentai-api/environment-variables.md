@@ -23,7 +23,7 @@ Environment variables are set at deploy time via Terraform. Unlike [feature flag
 | `DOCUMENTAI_DOCUMENT_METADATA_TENANT_INDEX_NAME` | Yes | GSI name for tenant-scoped queries. |
 | `DOCUMENTAI_DOCUMENT_METADATA_BATCH_ID_INDEX_NAME` | Yes | GSI name for batch ID lookups. |
 | `DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME` | Yes | DynamoDB table for document batches. |
-| `DOCUMENTAI_BUILD_TABLE_NAME` | Yes | DynamoDB table for build records. |
+| `DOCUMENTAI_DOCUMENT_BUILD_TABLE_NAME` | Yes | DynamoDB table for build records. |
 | `DOCUMENTAI_INPUT_LOCATION` | Yes | S3 URI prefix for document input storage. |
 | `DOCUMENTAI_DEMO_INPUT_LOCATION` | No | S3 URI prefix for demo document input. |
 | `DOCUMENTAI_OUTPUT_LOCATION` | Yes | S3 URI prefix for processed document output. |

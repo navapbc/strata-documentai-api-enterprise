@@ -38,7 +38,7 @@ def generate() -> None:
         lines.append(f'    {name} = "{name}"\n')
 
     _OUTPUT.write_text("".join(lines))
-    typer.echo(f"Written {len(fields)} env var names to {_OUTPUT}")
+    typer.echo(f"Wrote {len(fields)} env var names to {_OUTPUT}")
 
 
 if __name__ == "__main__":

@@ -579,7 +579,7 @@ locals {
       EXTRACTION_RULES_TABLE_NAME                               = module.extraction_rules.table_name
       DOCUMENT_CATEGORIES_TABLE_NAME                            = module.document_categories.table_name
       DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME                    = module.document_batches.table_name
-      DOCUMENTAI_BUILD_TABLE_NAME                               = module.document_builds.table_name
+      DOCUMENTAI_DOCUMENT_BUILD_TABLE_NAME                      = module.document_builds.table_name
       DOCUMENTAI_INPUT_LOCATION                                 = "s3://${module.input_bucket.bucket_name}/${local.input_prefix}"
       DOCUMENTAI_DEMO_INPUT_LOCATION                            = "s3://${module.input_bucket.bucket_name}/${local.demo_input_prefix}"
       DOCUMENTAI_PREPROCESSING_LOCATION                         = "s3://${module.input_bucket.bucket_name}/preprocessing"
