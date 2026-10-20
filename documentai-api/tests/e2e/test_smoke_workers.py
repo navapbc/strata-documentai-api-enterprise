@@ -79,11 +79,13 @@ def test_worker_document_reaper(lambda_client, reset_env):
         ), f"document not resolved: {doc.get(DocumentMetadata.PROCESS_STATUS)!s}"
 
         batch = batches_table.get_item(Key={DocumentBatches.BATCH_ID: batch_id}).get("Item", {})
-        # resolvedCount is incremented before the batch-id GSI lookup (infra follow-up
-        # adds that index), so this proves UpdateItem + CMK access on document_batches.
         resolved = batch.get(DocumentBatches.RESOLVED_COUNT, 0)
         assert int(str(resolved)) == 1, f"batch counter not updated: {batch}"
-        # TODO: assert terminal batch status once the batch-id GSI is added.
+        assert batch.get(DocumentBatches.BATCH_STATUS) in (
+            BatchStatus.COMPLETED,
+            BatchStatus.FAILED,
+            BatchStatus.PARTIAL,
+        ), f"batch not finalized: {batch.get(DocumentBatches.BATCH_STATUS)!s}"
     finally:
         metadata_table.delete_item(Key={DocumentMetadata.FILE_NAME: file_name})
         batches_table.delete_item(Key={DocumentBatches.BATCH_ID: batch_id})
