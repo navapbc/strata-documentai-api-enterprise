@@ -534,7 +534,7 @@ module "api_gateway" {
 
   environment_variables = local.api_lambda_env_vars
 
-  policy_arns = local.lambda_policy_arns
+  policy_arns = local.api_policy_arns
 }
 
 # --- Lambda Workers ---
@@ -578,8 +578,8 @@ locals {
       AUDIT_EVENTS_TABLE_NAME                                   = module.audit_events.table_name
       EXTRACTION_RULES_TABLE_NAME                               = module.extraction_rules.table_name
       DOCUMENT_CATEGORIES_TABLE_NAME                            = module.document_categories.table_name
-      DOCUMENTAI_BATCH_TABLE_NAME                               = module.document_batches.table_name
-      DOCUMENTAI_DOCUMENT_BUILD_TABLE_NAME                      = module.document_builds.table_name
+      DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME                    = module.document_batches.table_name
+      DOCUMENTAI_BUILD_TABLE_NAME                               = module.document_builds.table_name
       DOCUMENTAI_INPUT_LOCATION                                 = "s3://${module.input_bucket.bucket_name}/${local.input_prefix}"
       DOCUMENTAI_DEMO_INPUT_LOCATION                            = "s3://${module.input_bucket.bucket_name}/${local.demo_input_prefix}"
       DOCUMENTAI_PREPROCESSING_LOCATION                         = "s3://${module.input_bucket.bucket_name}/preprocessing"
@@ -639,11 +639,44 @@ locals {
     if !startswith(k, "BDA_PROJECT_ID_")
   }
 
-  lambda_policy_arns = {
-    data_access         = aws_iam_policy.data_access.arn
-    storage_access      = aws_iam_policy.storage_access.arn
-    bedrock_access      = aws_iam_policy.bedrock_all.arn
-    supporting_services = aws_iam_policy.supporting_services.arn
+  api_policy_arns = {
+    ddb      = aws_iam_policy.ddb_access.arn
+    s3       = aws_iam_policy.s3_api.arn
+    bedrock  = aws_iam_policy.bedrock_api.arn
+    cognito  = aws_iam_policy.cognito_user_mgmt.arn
+    pipeline = aws_iam_policy.pipeline_api.arn
+  }
+
+  worker_policy_arns = {
+    "document-processor" = {
+      ddb      = aws_iam_policy.ddb_access.arn
+      s3       = aws_iam_policy.s3_document_read_write.arn
+      bedrock  = aws_iam_policy.document_processor.arn
+      pipeline = aws_iam_policy.metrics_producer.arn
+    }
+    "bda-result-processor" = {
+      ddb      = aws_iam_policy.ddb_access.arn
+      s3       = aws_iam_policy.s3_document_read_write.arn
+      bedrock  = aws_iam_policy.bda_result_processor.arn
+      pipeline = aws_iam_policy.metrics_producer.arn
+    }
+    "metrics-processor" = {
+      s3       = aws_iam_policy.s3_metrics_write.arn
+      pipeline = aws_iam_policy.cloudwatch_ssm.arn
+    }
+    "metrics-aggregator" = {
+      s3       = aws_iam_policy.s3_metrics_read_write.arn
+      pipeline = aws_iam_policy.metrics_aggregator.arn
+    }
+    "usage-report" = {
+      s3       = aws_iam_policy.s3_metrics_read_write.arn
+      pipeline = aws_iam_policy.metrics_aggregator.arn
+    }
+    "document-reaper" = {
+      ddb      = aws_iam_policy.ddb_reaper.arn
+      bedrock  = aws_iam_policy.bedrock_reaper.arn
+      pipeline = aws_iam_policy.cloudwatch_ssm.arn
+    }
   }
 }
 
@@ -693,235 +726,7 @@ module "monitoring" {
   bda_output_dlq_name         = module.workers["bda-result-processor"].dlq_name
 }
 
-# --- Consolidated IAM Policies (4 policies instead of 15+) ---
-
-# AWS-managed key ARNs for SSE-KMS access (buckets use aws/s3, SecureString
-# params use aws/ssm), resolved so the data-access policy can scope to them.
-data "aws_kms_alias" "s3" {
-  name = "alias/aws/s3"
-}
-
-data "aws_kms_alias" "ssm" {
-  name = "alias/aws/ssm"
-}
-
-data "aws_iam_policy_document" "data_access" {
-  # All DynamoDB tables + KMS keys
-  statement {
-    actions = [
-      "dynamodb:BatchWriteItem",
-      "dynamodb:DeleteItem",
-      "dynamodb:PutItem",
-      "dynamodb:UpdateItem",
-      "dynamodb:BatchGetItem",
-      "dynamodb:GetItem",
-      "dynamodb:Query",
-      "dynamodb:Scan",
-      "dynamodb:DescribeTable",
-    ]
-    resources = [
-      "${module.document_metadata.table_arn}",
-      "${module.document_metadata.table_arn}/index/*",
-      "${module.api_keys.table_arn}",
-      "${module.api_keys.table_arn}/index/*",
-      "${module.tenants.table_arn}",
-      "${module.tenants.table_arn}/index/*",
-      "${module.tenant_request_counts.table_arn}",
-      "${module.tenant_request_counts.table_arn}/index/*",
-      "${module.extraction_rules.table_arn}",
-      "${module.extraction_rules.table_arn}/index/*",
-      "${module.document_categories.table_arn}",
-      "${module.document_categories.table_arn}/index/*",
-      "${module.document_batches.table_arn}",
-      "${module.document_batches.table_arn}/index/*",
-      "${module.document_builds.table_arn}",
-      "${module.document_builds.table_arn}/index/*",
-      "${module.audit_events.table_arn}",
-      "${module.audit_events.table_arn}/index/*",
-    ]
-  }
-
-  # Scoped to exactly the keys this role touches: the per-table DynamoDB CMKs,
-  # the AWS-managed aws/s3 key (SSE-KMS buckets) and the aws/ssm key (SecureString
-  # params - API-auth key, Cognito client secret). Dropping any of these breaks
-  # table/bucket/param access, so verify after applying.
-  statement {
-    actions = [
-      "kms:Decrypt",
-      "kms:DescribeKey",
-      "kms:GenerateDataKey",
-    ]
-    resources = concat(
-      [for m in [
-        module.document_metadata, module.api_keys, module.tenants,
-        module.tenant_request_counts, module.extraction_rules, module.document_categories,
-        module.document_batches, module.document_builds, module.audit_events,
-      ] : m.kms_key_arn],
-      [
-        data.aws_kms_alias.s3.target_key_arn,
-        data.aws_kms_alias.ssm.target_key_arn,
-      ],
-    )
-  }
-}
-
-resource "aws_iam_policy" "data_access" {
-  name   = "${local.service_name}-data-access"
-  policy = data.aws_iam_policy_document.data_access.json
-}
-
-data "aws_iam_policy_document" "storage_access" {
-  statement {
-    actions = [
-      "s3:GetObject",
-      "s3:PutObject",
-      "s3:DeleteObject",
-      "s3:ListBucket",
-      "s3:GetBucketLocation",
-    ]
-    resources = [
-      module.input_bucket.bucket_arn,
-      "${module.input_bucket.bucket_arn}/*",
-      module.output_bucket.bucket_arn,
-      "${module.output_bucket.bucket_arn}/*",
-      module.metrics_bucket.bucket_arn,
-      "${module.metrics_bucket.bucket_arn}/*",
-      module.analytics.results_bucket_arn,
-      "${module.analytics.results_bucket_arn}/*",
-    ]
-  }
-}
-
-resource "aws_iam_policy" "storage_access" {
-  name   = "${local.service_name}-storage-access"
-  policy = data.aws_iam_policy_document.storage_access.json
-}
-
-data "aws_iam_policy_document" "bedrock_all" {
-  # BDA project access
-  statement {
-    actions = [
-      "bedrock:InvokeDataAutomationAsync",
-      "bedrock:GetDataAutomationProject",
-      "bedrock:GetDataAutomationStatus",
-      "bedrock:GetBlueprint",
-      "bedrock:StartDataAutomationJob",
-      "bedrock:GetDataAutomationJob",
-      "bedrock:ListDataAutomationJobs",
-    ]
-    resources = [
-      "arn:aws:bedrock:*:${local.account_id}:data-automation-project/*",
-      "arn:aws:bedrock:*:${local.account_id}:data-automation-invocation/*",
-      "arn:aws:bedrock:*:*:blueprint/*",
-      "arn:aws:bedrock:*:*:data-automation-profile/*",
-    ]
-  }
-
-  # Bedrock Runtime (Converse API)
-  statement {
-    actions = [
-      "bedrock:InvokeModel",
-      "bedrock:Converse",
-    ]
-    resources = [
-      "arn:aws:bedrock:${var.region}:*:inference-profile/*",
-      "arn:aws:bedrock:*::foundation-model/*",
-    ]
-  }
-
-  # Textract (AnalyzeID for identity documents, DetectDocumentText for blur detection)
-  statement {
-    actions = [
-      "textract:AnalyzeID",
-      "textract:DetectDocumentText",
-    ]
-    resources = ["*"]
-  }
-}
-
-resource "aws_iam_policy" "bedrock_all" {
-  name   = "${local.service_name}-bedrock-access"
-  policy = data.aws_iam_policy_document.bedrock_all.json
-}
-
-data "aws_iam_policy_document" "supporting_services" {
-  # CloudWatch
-  statement {
-    actions   = ["cloudwatch:PutMetricData"]
-    resources = ["*"]
-  }
-
-  # SQS
-  statement {
-    actions = [
-      "sqs:SendMessage",
-      "sqs:ReceiveMessage",
-      "sqs:DeleteMessage",
-      "sqs:GetQueueAttributes",
-    ]
-    resources = [module.metrics_queue.queue_arn]
-  }
-
-  # SSM
-  statement {
-    actions = [
-      "ssm:GetParameter",
-      "ssm:GetParameters",
-      "ssm:GetParametersByPath",
-    ]
-    resources = ["arn:aws:ssm:${var.region}:${local.account_id}:parameter${local.ssm_prefix}/*"]
-  }
-
-  # Athena
-  statement {
-    actions = [
-      "athena:StartQueryExecution",
-      "athena:GetQueryExecution",
-      "athena:GetQueryResults",
-      "athena:StopQueryExecution",
-    ]
-    resources = ["arn:aws:athena:${var.region}:${local.account_id}:workgroup/${local.service_name}-analytics"]
-  }
-
-  # Cognito
-  statement {
-    actions = [
-      "cognito-idp:AdminInitiateAuth",
-      "cognito-idp:AdminGetUser",
-      "cognito-idp:AdminCreateUser",
-      "cognito-idp:AdminSetUserPassword",
-      "cognito-idp:ListUsers",
-      # User-management endpoints (super-admin only):
-      "cognito-idp:ListUsersInGroup",
-      "cognito-idp:AdminListGroupsForUser",
-      "cognito-idp:AdminAddUserToGroup",
-      "cognito-idp:AdminRemoveUserFromGroup",
-      "cognito-idp:AdminUpdateUserAttributes",
-      "cognito-idp:AdminDeleteUserAttributes",
-      "cognito-idp:AdminDeleteUser",
-    ]
-    resources = ["arn:aws:cognito-idp:${var.region}:${local.account_id}:userpool/*"]
-  }
-
-  # Glue
-  statement {
-    actions = [
-      "glue:GetTable",
-      "glue:GetDatabase",
-      "glue:GetPartitions",
-    ]
-    resources = [
-      "arn:aws:glue:${var.region}:${local.account_id}:catalog",
-      "arn:aws:glue:${var.region}:${local.account_id}:database/*",
-      "arn:aws:glue:${var.region}:${local.account_id}:table/*/*",
-    ]
-  }
-}
-
-resource "aws_iam_policy" "supporting_services" {
-  name   = "${local.service_name}-supporting-services"
-  policy = data.aws_iam_policy_document.supporting_services.json
-}
+# --- IAM Policies (see policies.tf) ---
 
 # Workers share all config except their command and trigger. The trigger types
 # differ (S3 / SQS / schedule), so they can't live in one map value without making
@@ -948,7 +753,7 @@ module "workers" {
   timeout               = 300
   memory_size           = 1024
   environment_variables = each.key == "document-processor" ? local.lambda_env_vars : local.worker_env_vars_without_bda_project_ids
-  policy_arns           = local.lambda_policy_arns
+  policy_arns           = local.worker_policy_arns[each.key]
 
   s3_trigger = lookup({
     "document-processor"   = { source_bucket = module.input_bucket.bucket_name, path_prefix = "input/" }

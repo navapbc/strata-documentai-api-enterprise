@@ -1,13 +1,20 @@
 # tests/e2e/conftest.py
+import json
 import os
 import secrets
+import time
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any
 
+import boto3
 import pytest
+import requests
 
 from documentai_api.logging import get_logger
 from documentai_api.services.aws_client_factory import AWSClientFactory
 from documentai_api.utils.auth import _hash_key, deactivate_api_key, generate_api_key
+from tests.e2e.http import api_request
 
 E2E_TENANT_BASE = "e2e-test-tenant"
 logger = get_logger(__name__)
@@ -95,6 +102,192 @@ def base_url(reset_env):
     return reset_env.get("BASE_URL", "http://localhost:8000")
 
 
+@pytest.fixture(scope="session")
+def client(base_url, api_key):
+    class Client:
+        def __call__(
+            self, method: str, path: str, expected_status: int = 200, **kwargs: Any
+        ) -> requests.Response:
+            return api_request(method, base_url, path, api_key, expected_status, **kwargs)
+
+        def upload_and_wait(
+            self, file_path: Path, timeout: int = 75, interval: int = 2
+        ) -> dict[str, Any]:
+            """Upload a document and block until processing completes. Returns the final poll body."""
+            with file_path.open("rb") as f:
+                r = self("POST", "/v1/documents", expected_status=202, files={"file": f})
+            job_id = r.json()["jobId"]
+
+            deadline = time.monotonic() + timeout
+            while time.monotonic() < deadline:
+                body = self("GET", f"/v1/documents/{job_id}").json()
+                if body.get("responseCode") is not None:
+                    return body  # type: ignore[no-any-return]
+                time.sleep(interval)
+
+            pytest.fail(f"job {job_id} did not complete within {timeout}s")
+
+    return Client()
+
+
+@pytest.fixture(scope="session")
+def _sweep_stale_e2e_users(reset_env):
+    """Delete e2e Cognito users orphaned by prior crashed runs.
+
+    Looks for users with email matching 'e2e-admin-*@example.com' created
+    more than 1 hour ago.
+    """
+    user_pool_id = reset_env.get("COGNITO_USER_POOL_ID")
+    if not user_pool_id:
+        return
+
+    cognito = boto3.client("cognito-idp", region_name=reset_env.get("AWS_REGION", "us-east-1"))
+    cutoff = datetime.now(UTC) - timedelta(hours=1)
+    swept = 0
+
+    paginator = cognito.get_paginator("list_users")
+    for page in paginator.paginate(UserPoolId=user_pool_id, Filter='email ^= "e2e-admin-"'):
+        for user in page["Users"]:
+            if user["UserCreateDate"].replace(tzinfo=UTC) < cutoff:
+                try:
+                    cognito.admin_delete_user(UserPoolId=user_pool_id, Username=user["Username"])
+                    swept += 1
+                except Exception as e:
+                    logger.warning(f"e2e: failed to sweep Cognito user {user['Username']}: {e}")
+
+    if swept:
+        logger.info(f"e2e: swept {swept} orphaned Cognito users")
+
+
+@pytest.fixture(scope="session")
+def jwt_client(_sweep_stale_e2e_users, base_url, reset_env):
+    """Client fixture that authenticates via Cognito JWT instead of API key.
+
+    Creates a temporary super-admin Cognito user for the session and deletes it
+    on teardown. Requires COGNITO_USER_POOL_ID and COGNITO_CLIENT_ID in the
+    environment (both present in .env.e2e). Skipped if either is missing.
+    """
+    user_pool_id = reset_env.get("COGNITO_USER_POOL_ID")
+    client_id = reset_env.get("COGNITO_CLIENT_ID")
+
+    if not (user_pool_id and client_id):
+        pytest.skip("COGNITO_USER_POOL_ID / COGNITO_CLIENT_ID not set")
+
+    region = reset_env.get("AWS_REGION", "us-east-1")
+    cognito = boto3.client("cognito-idp", region_name=region)
+
+    username = f"e2e-admin-{secrets.token_hex(4)}@example.com"
+    password = secrets.token_urlsafe(16) + "!1Aa"
+
+    try:
+        cognito.admin_create_user(
+            UserPoolId=user_pool_id,
+            Username=username,
+            UserAttributes=[
+                {"Name": "email", "Value": username},
+                {"Name": "email_verified", "Value": "true"},
+            ],
+            MessageAction="SUPPRESS",
+        )
+        cognito.admin_set_user_password(
+            UserPoolId=user_pool_id, Username=username, Password=password, Permanent=True
+        )
+        cognito.admin_add_user_to_group(
+            UserPoolId=user_pool_id, Username=username, GroupName="super-admin"
+        )
+
+        resp = cognito.initiate_auth(
+            AuthFlow="USER_PASSWORD_AUTH",
+            AuthParameters={"USERNAME": username, "PASSWORD": password},
+            ClientId=client_id,
+        )
+        id_token = resp["AuthenticationResult"]["IdToken"]
+        headers = {"Authorization": f"Bearer {id_token}"}
+
+        class Client:
+            def __init__(self, username: str) -> None:
+                self.username = username
+
+            def __call__(
+                self, method: str, path: str, expected_status: int = 200, **kwargs: Any
+            ) -> requests.Response:
+                return api_request(
+                    method,
+                    base_url,
+                    path,
+                    expected_status=expected_status,
+                    headers=headers,
+                    **kwargs,
+                )
+
+        yield Client(username=username)
+    finally:
+        try:
+            cognito.admin_delete_user(UserPoolId=user_pool_id, Username=username)
+        except Exception as e:
+            logger.warning(f"e2e: failed to delete Cognito user {username}: {e}")
+
+
+@pytest.fixture(scope="session")
+def lambda_client(reset_env):
+    """Boto3 Lambda invoke wrapper for direct worker smoke tests.
+
+    Requires LAMBDA_FUNCTION_PREFIX in the environment (e.g. docai-dev-123456789012).
+    Fails the test if not set. Invokes synchronously and fails the test on FunctionError.
+    """
+    prefix = reset_env.get("LAMBDA_FUNCTION_PREFIX")
+    if not prefix:
+        pytest.fail("LAMBDA_FUNCTION_PREFIX not set - run 'make .env.e2e' first")
+
+    region = reset_env.get("AWS_REGION", "us-east-1")
+    lam = boto3.client("lambda", region_name=region)
+
+    def invoke(worker: str, payload: dict[str, Any]) -> dict[str, Any]:
+        resp = lam.invoke(
+            FunctionName=f"{prefix}-{worker}",
+            InvocationType="RequestResponse",
+            Payload=json.dumps(payload).encode(),
+        )
+        if resp.get("FunctionError"):
+            body = resp["Payload"].read().decode()
+            pytest.fail(f"{worker} invocation error: {body}")
+        return dict(json.loads(resp["Payload"].read()))
+
+    return invoke
+
+
+@pytest.fixture(scope="session")
+def ephemeral_cognito_user(jwt_client, reset_env):
+    """Create a bare (no group) Cognito user for write-permission tests, delete on teardown.
+
+    Uses the runner's credentials directly — the API has no user-creation endpoint.
+    Named e2e-ephemeral-* so _sweep_stale_e2e_users won't touch it (different prefix).
+    """
+    user_pool_id = reset_env.get("COGNITO_USER_POOL_ID")
+    region = reset_env.get("AWS_REGION", "us-east-1")
+    cognito = boto3.client("cognito-idp", region_name=region)
+
+    username = f"e2e-ephemeral-{secrets.token_hex(4)}@example.com"
+    try:
+        cognito.admin_create_user(
+            UserPoolId=user_pool_id,
+            Username=username,
+            UserAttributes=[
+                {"Name": "email", "Value": username},
+                {"Name": "email_verified", "Value": "true"},
+            ],
+            MessageAction="SUPPRESS",
+        )
+        yield username
+    finally:
+        try:
+            cognito.admin_delete_user(UserPoolId=user_pool_id, Username=username)
+        except cognito.exceptions.UserNotFoundException:
+            pass  # test already deleted the user through the API
+        except Exception as e:
+            logger.warning(f"e2e: failed to delete ephemeral Cognito user {username}: {e}")
+
+
 def _wipe_e2e_tenant(tenant_id: str) -> None:
     """Delete every document and S3 object owned by the given e2e tenant.
 
@@ -104,8 +297,6 @@ def _wipe_e2e_tenant(tenant_id: str) -> None:
     if not os.environ.get("E2E_WIPE_TENANT"):
         logger.info("e2e wipe skipped - E2E_WIPE_TENANT not set")
         return
-
-    import boto3
 
     from documentai_api.config.env import get_env_config
     from documentai_api.schemas.document_metadata import DocumentMetadata
@@ -224,8 +415,6 @@ def _sweep_stale_e2e_keys():
 
     Runs once before any tests. Looks for keys named 'e2e-*' older than 1 hour.
     """
-    from datetime import UTC, datetime, timedelta
-
     from documentai_api.config.env import get_env_config
     from documentai_api.schemas.api_key import ApiKeyRecord
     from documentai_api.services import ddb as ddb_service

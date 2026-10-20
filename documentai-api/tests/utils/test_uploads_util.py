@@ -4,7 +4,6 @@ import asyncio
 import io
 import logging
 import os
-from pathlib import Path
 from urllib.parse import quote, unquote_plus
 
 import pytest
@@ -28,9 +27,7 @@ from documentai_api.utils.uploads import (
     validate_upload,
 )
 from tests.helpers.documents import generate_ooxml_with_deep_entry
-
-FIXTURES_DIR = Path(__file__).parent.parent / "helpers" / "fixtures" / "test-documents"
-FIXTURES_DIR_HAPPY_PATH = FIXTURES_DIR / "happy-path"
+from tests.helpers.fixtures.paths import TEST_DOCS_DIR_HAPPY_PATH
 
 
 def test_generate_unique_filename_simple():
@@ -127,7 +124,7 @@ async def test_validate_file_type_password_protected_docx_accepted(runtime_requi
 
     Acceptance is required so the async classifier can mark it PASSWORD_PROTECTED.
     """
-    data = (FIXTURES_DIR_HAPPY_PATH / "synthetic-password-protected.docx").read_bytes()
+    data = (TEST_DOCS_DIR_HAPPY_PATH / "synthetic-password-protected.docx").read_bytes()
     file = UploadFile(filename="pw.docx", file=io.BytesIO(data))
     content_type = await validate_file_type(file)
     assert content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"

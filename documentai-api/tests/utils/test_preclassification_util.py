@@ -19,6 +19,7 @@ from documentai_api.utils.preclassification import (
     preclassify_document,
 )
 from documentai_api.utils.schemas import DocumentSchema, SchemaField
+from tests.helpers.fixtures.paths import TEST_DOCS_DIR, TEST_DOCS_DIR_HAPPY_PATH
 
 SAMPLE_IMAGE = b"\x89PNG\r\n" + b"\x00" * 100
 
@@ -577,9 +578,7 @@ def test_find_matching_blueprint_uses_pdf_document_block(monkeypatch):
 # Integration tests - call real Bedrock API
 # =============================================================================
 
-FIXTURES_DIR = Path(__file__).parent.parent / "helpers" / "fixtures" / "test-documents"
-FIXTURES_DIR_HAPPY_PATH = FIXTURES_DIR / "happy-path"
-EXPECTED_FILE = FIXTURES_DIR / "expected.json"
+EXPECTED_FILE = TEST_DOCS_DIR / "expected.json"
 
 CONTENT_TYPE_MAP = {
     ".jpg": "image/jpeg",
@@ -619,7 +618,7 @@ def test_preclassify_real_document(filename, expected_category, monkeypatch, rea
         lambda: "us.amazon.nova-lite-v1:0",
     )
 
-    filepath = FIXTURES_DIR / filename
+    filepath = TEST_DOCS_DIR / filename
     if not filepath.exists():
         pytest.skip(f"Test fixture not found: {filepath}")
 
@@ -721,7 +720,7 @@ def test_find_matching_blueprint_real(
         lambda: "us.amazon.nova-lite-v1:0",
     )
 
-    filepath = FIXTURES_DIR_HAPPY_PATH / filename
+    filepath = TEST_DOCS_DIR_HAPPY_PATH / filename
     if not filepath.exists():
         pytest.skip(f"Test fixture not found: {filepath}")
 

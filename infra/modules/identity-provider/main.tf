@@ -276,21 +276,3 @@ resource "aws_lambda_permission" "pre_signup" {
   principal     = "cognito-idp.amazonaws.com"
   source_arn    = aws_cognito_user_pool.this.arn
 }
-
-# --- IAM Policy ---
-
-data "aws_caller_identity" "current" {}
-data "aws_region" "current" {}
-
-data "aws_iam_policy_document" "access" {
-  statement {
-    actions   = ["cognito-idp:*"]
-    effect    = "Allow"
-    resources = ["arn:aws:cognito-idp:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:userpool/${aws_cognito_user_pool.this.id}"]
-  }
-}
-
-resource "aws_iam_policy" "access" {
-  name   = "${var.name}-cognito-access"
-  policy = data.aws_iam_policy_document.access.json
-}
