@@ -60,8 +60,8 @@ def invoke_bedrock_data_automation(
 ) -> tuple[str, str, int, bool]:
     """Invoke BDA and return (invocation_arn, project_arn, pages_sent_to_bda, used_category_specific_project)."""
     bda_project_arn, used_category_specific_project = resolve_project_arn(category)
-    bda_profile_arn = get_env_config().get_bda_profile_arn
-    output_location = get_env_config().get_output_location
+    bda_profile_arn = get_env_config().bda_profile_arn_required
+    output_location = get_env_config().output_location
     output_uri = generate_s3_uri(output_location, tenant_id, ddb_key, ExtractMethod.BDA)
 
     logger.info(f"BDA_PROJECT_ARN: {bda_project_arn}")
