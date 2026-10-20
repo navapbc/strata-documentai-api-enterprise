@@ -64,6 +64,7 @@ locals {
   gsi_bda_invocation_id     = "BdaInvocationIdIndex"
   gsi_tenant_id             = "TenantIdIndex"
   gsi_status_created_at     = "StatusCreatedAtIndex"
+  gsi_batch_id              = "BatchIdIndex"
   gsi_tenant_batches        = "TenantIndex"
   gsi_tenant_builds         = "TenantIndex"
   gsi_external_ref_id       = "ExternalReferenceIdIndex"
@@ -161,6 +162,11 @@ module "document_metadata" {
       hash_key_type = "S"
       sort_key      = "createdAt"
       sort_key_type = "S"
+    },
+    {
+      name          = local.gsi_batch_id
+      hash_key      = "batchId"
+      hash_key_type = "S"
     },
   ]
 }
@@ -571,6 +577,7 @@ locals {
       DOCUMENTAI_DOCUMENT_METADATA_BDA_INVOCATION_ID_INDEX_NAME = local.gsi_bda_invocation_id
       DOCUMENTAI_DOCUMENT_METADATA_TENANT_INDEX_NAME            = local.gsi_tenant_id
       DOCUMENTAI_DOCUMENT_METADATA_STATUS_CREATED_AT_INDEX_NAME = local.gsi_status_created_at
+      DOCUMENTAI_DOCUMENT_METADATA_BATCH_ID_INDEX_NAME          = local.gsi_batch_id
       API_KEYS_TABLE_NAME                                       = module.api_keys.table_name
       API_KEYS_TENANT_INDEX_NAME                                = local.gsi_api_keys_tenant_index
       TENANTS_TABLE_NAME                                        = module.tenants.table_name
