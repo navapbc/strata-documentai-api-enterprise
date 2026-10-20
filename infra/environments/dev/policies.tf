@@ -47,12 +47,55 @@ locals {
 
 # --- DynamoDB ---
 
-# Shared by API Lambda, document-processor, and bda-result-processor.
-data "aws_iam_policy_document" "ddb_access" {
+# API Lambda: full write access, but DeleteItem only on tables that have delete routes.
+# Tables with delete routes: api_keys (key rotation), document_builds (build page deletion),
+# extraction_rules, document_categories. No delete routes exist for: document_metadata,
+# tenant_request_counts, document_batches, tenants, audit_events.
+data "aws_iam_policy_document" "ddb_access_api" {
   statement {
     actions = [
       "dynamodb:BatchWriteItem",
-      "dynamodb:DeleteItem",
+      "dynamodb:PutItem",
+      "dynamodb:UpdateItem",
+      "dynamodb:BatchGetItem",
+      "dynamodb:GetItem",
+      "dynamodb:Query",
+      "dynamodb:Scan",
+      "dynamodb:DescribeTable",
+    ]
+    resources = local.ddb_table_arns
+  }
+
+  statement {
+    actions = ["dynamodb:DeleteItem"]
+    resources = [
+      module.api_keys.table_arn,
+      module.document_builds.table_arn,
+      module.extraction_rules.table_arn,
+      module.document_categories.table_arn,
+    ]
+  }
+
+  statement {
+    actions = [
+      "kms:Decrypt",
+      "kms:DescribeKey",
+      "kms:GenerateDataKey",
+    ]
+    resources = local.ddb_kms_key_arns
+  }
+}
+
+resource "aws_iam_policy" "ddb_access_api" {
+  name   = "${local.service_name}-ddb-access-api"
+  policy = data.aws_iam_policy_document.ddb_access_api.json
+}
+
+# document-processor and bda-result-processor: no delete routes - DeleteItem omitted.
+data "aws_iam_policy_document" "ddb_access_workers" {
+  statement {
+    actions = [
+      "dynamodb:BatchWriteItem",
       "dynamodb:PutItem",
       "dynamodb:UpdateItem",
       "dynamodb:BatchGetItem",
@@ -74,9 +117,9 @@ data "aws_iam_policy_document" "ddb_access" {
   }
 }
 
-resource "aws_iam_policy" "ddb_access" {
-  name   = "${local.service_name}-ddb-access"
-  policy = data.aws_iam_policy_document.ddb_access.json
+resource "aws_iam_policy" "ddb_access_workers" {
+  name   = "${local.service_name}-ddb-access-workers"
+  policy = data.aws_iam_policy_document.ddb_access_workers.json
 }
 
 # document-reaper: document_metadata table only (query stale records, update status).
@@ -116,7 +159,7 @@ resource "aws_iam_policy" "ddb_reaper" {
 # --- S3 ---
 
 # API Lambda: input and output buckets (full access), metrics bucket (read-only).
-# No Athena results bucket — only workers query Athena.
+# No Athena results bucket - only workers query Athena.
 data "aws_iam_policy_document" "s3_api" {
   statement {
     actions = [
@@ -221,9 +264,16 @@ resource "aws_iam_policy" "s3_metrics_read_write" {
 
 # --- Bedrock and Textract ---
 
+locals {
+  bda_project_arns = concat(
+    [for k, v in module.bedrock_data_automation : v.project_arn],
+    [module.bedrock_data_automation_all.project_arn],
+  )
+}
+
 # API Lambda: blueprint_test router calls InvokeDataAutomationAsync (POST /v1/admin/blueprints/test)
 # and GetDataAutomationStatus (GET /v1/admin/blueprints/test/{id}).
-# InvokeModel/Converse are worker-only — preclassification, bbox, and blur
+# InvokeModel/Converse are worker-only - preclassification, bbox, and blur
 # are all called from upsert_initial_ddb_record, which only document_processor invokes.
 data "aws_iam_policy_document" "bedrock_api" {
   statement {
@@ -231,11 +281,13 @@ data "aws_iam_policy_document" "bedrock_api" {
       "bedrock:InvokeDataAutomationAsync",
       "bedrock:GetDataAutomationStatus",
     ]
-    resources = [
-      "arn:aws:bedrock:*:${local.account_id}:data-automation-project/*",
-      "arn:aws:bedrock:*:${local.account_id}:data-automation-invocation/*",
-      "arn:aws:bedrock:*:*:data-automation-profile/*",
-    ]
+    resources = concat(
+      local.bda_project_arns,
+      [
+        "arn:aws:bedrock:*:${local.account_id}:data-automation-invocation/*",
+        "arn:aws:bedrock:*:*:data-automation-profile/*",
+      ],
+    )
   }
 }
 
@@ -256,12 +308,14 @@ data "aws_iam_policy_document" "document_processor" {
       "bedrock:GetDataAutomationJob",
       "bedrock:ListDataAutomationJobs",
     ]
-    resources = [
-      "arn:aws:bedrock:*:${local.account_id}:data-automation-project/*",
-      "arn:aws:bedrock:*:${local.account_id}:data-automation-invocation/*",
-      "arn:aws:bedrock:*:*:blueprint/*",
-      "arn:aws:bedrock:*:*:data-automation-profile/*",
-    ]
+    resources = concat(
+      local.bda_project_arns,
+      [
+        "arn:aws:bedrock:*:${local.account_id}:data-automation-invocation/*",
+        "arn:aws:bedrock:*:*:blueprint/*",
+        "arn:aws:bedrock:*:*:data-automation-profile/*",
+      ],
+    )
   }
 
   statement {
@@ -324,9 +378,9 @@ resource "aws_iam_policy" "bedrock_reaper" {
 
 # --- Cognito ---
 
-# API Lambda only — workers have no user-management paths.
+# API Lambda only - workers have no user-management paths.
 # AdminGetUser, AdminCreateUser, AdminSetUserPassword, AdminInitiateAuth
-# are not called anywhere in src — omitted intentionally.
+# are not called anywhere in src - omitted intentionally.
 data "aws_iam_policy_document" "cognito_user_mgmt" {
   statement {
     actions = [
