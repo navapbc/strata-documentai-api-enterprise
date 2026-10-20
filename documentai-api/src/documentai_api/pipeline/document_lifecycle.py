@@ -131,7 +131,7 @@ def set_processing_status_started(object_key: str, expected_status: str) -> bool
     """
     from documentai_api.services import ddb as ddb_service
 
-    table_name = get_env_config().get_document_metadata_table_name
+    table_name = get_env_config().document_metadata_table_name
     try:
         ddb_service.update_item(
             table_name,

@@ -121,7 +121,7 @@ def write_extraction_output(
     if not tenant_id:
         raise ValueError("tenant_id is required for extraction output")
 
-    output_location = get_env_config().get_output_location
+    output_location = get_env_config().output_location
     bucket, key = get_bucket_and_key(
         output_location, tenant_id, f"{file_name}/{extraction_method}/result.json"
     )

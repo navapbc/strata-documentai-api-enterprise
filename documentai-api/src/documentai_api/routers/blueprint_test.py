@@ -86,7 +86,7 @@ async def start_blueprint_test(
         import json as json_mod
 
         bda_runtime = AWSClientFactory.get_bda_runtime_client()
-        output_location = get_env_config().get_output_location.replace("s3://", "")
+        output_location = get_env_config().output_location.replace("s3://", "")
 
         # Look up project ARN for the category
         project_arns_json = os.environ.get("BDA_PROJECT_ARNS")
@@ -99,9 +99,9 @@ async def start_blueprint_test(
                     detail=f"Unknown document category: {document_category}",
                 )
         else:
-            bda_project_arn = get_env_config().get_bda_project_arn_all
+            bda_project_arn = get_env_config().bda_project_arn_all_required
 
-        bda_profile_arn = get_env_config().get_bda_profile_arn
+        bda_profile_arn = get_env_config().bda_profile_arn_required
 
         logger.info(f"Blueprint test {test_id}: invoking BDA project={bda_project_arn}")
         response = bda_runtime.invoke_data_automation_async(

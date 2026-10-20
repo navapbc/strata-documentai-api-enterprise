@@ -182,7 +182,7 @@ def _persist_optimization_metrics(
             values[param] = value
 
     if updates:
-        table_name = get_env_config().get_document_metadata_table_name
+        table_name = get_env_config().document_metadata_table_name
         ddb_service.update_item(
             table_name, {"fileName": ddb_key}, "SET " + ", ".join(updates), values
         )
@@ -439,7 +439,7 @@ def main(
     """Process uploaded document: fetch from S3, preclassify, dispatch to extraction."""
     processor_started_at = datetime.now(UTC)
     if bucket_name is None:
-        input_location = get_env_config().get_input_location
+        input_location = get_env_config().input_location
         bucket_name, _ = parse_s3_uri(input_location)
 
     logger.info(f"Processing document: s3://{bucket_name}/{object_key}")
