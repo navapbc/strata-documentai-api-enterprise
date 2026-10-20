@@ -647,7 +647,7 @@ locals {
   }
 
   api_policy_arns = {
-    ddb      = aws_iam_policy.ddb_access.arn
+    ddb      = aws_iam_policy.ddb_access_api.arn
     s3       = aws_iam_policy.s3_api.arn
     bedrock  = aws_iam_policy.bedrock_api.arn
     cognito  = aws_iam_policy.cognito_user_mgmt.arn
@@ -656,13 +656,13 @@ locals {
 
   worker_policy_arns = {
     "document-processor" = {
-      ddb      = aws_iam_policy.ddb_access.arn
+      ddb      = aws_iam_policy.ddb_access_workers.arn
       s3       = aws_iam_policy.s3_document_read_write.arn
       bedrock  = aws_iam_policy.document_processor.arn
       pipeline = aws_iam_policy.metrics_producer.arn
     }
     "bda-result-processor" = {
-      ddb      = aws_iam_policy.ddb_access.arn
+      ddb      = aws_iam_policy.ddb_access_workers.arn
       s3       = aws_iam_policy.s3_document_read_write.arn
       bedrock  = aws_iam_policy.bda_result_processor.arn
       pipeline = aws_iam_policy.metrics_producer.arn
