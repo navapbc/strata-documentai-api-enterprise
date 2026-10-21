@@ -50,6 +50,7 @@ A client uploads a document via the API. It's stored in S3 and queued for proces
 ## Features
 
 - **[Document upload and processing](docs/documentai-api/document-processing.md)** - Bedrock Data Automation blueprints, with Textract AnalyzeID for IDs and passports; supports typed and handwritten documents in English and other configured languages
+- **[Blueprint QA workflow](docs/documentai-api/qa-and-troubleshooting.md#adding-or-configuring-a-new-blueprint)** - repeatable process for adding/configuring blueprints, QA-ing them with synthetic documents, and building a reusable reference library
 - **[Document viewer](docs/documentai-api/document-viewer.md)** - extracted fields with bounding box overlay linked to the source image
 - **[Configurable extraction rules engine](docs/documentai-api/extraction-rules.md)** - required, optional, and excluded fields per tenant and document type with structured codes for issues
 - **[Multi-tenancy with role-based access](docs/documentai-api/access-control.md)** - tenant-admin and super-admin roles, tenant-scoped API keys

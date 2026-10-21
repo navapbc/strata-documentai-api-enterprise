@@ -5,9 +5,11 @@ from typing import Any, cast
 
 import pytest
 
-from documentai_api.config.constants import BdaJobStatus, ProcessStatus
+from documentai_api.config.constants import BatchStatus, BdaJobStatus, ProcessStatus
 from documentai_api.jobs.document_reaper.main import main
+from documentai_api.schemas.document_batches import DocumentBatches
 from documentai_api.schemas.document_metadata import DocumentMetadata
+from documentai_api.utils import batch_operations as batch_util
 
 STALE_CREATED_AT = (datetime.now(UTC) - timedelta(hours=2)).isoformat()
 FRESH_CREATED_AT = datetime.now(UTC).isoformat()
@@ -195,11 +197,7 @@ def test_reap_error_counted(mock_env, ddb_doc_metadata_table, create_stale_recor
 def test_reaper_increments_batch_resolved_count(
     mock_env, ddb_doc_metadata_table, ddb_batches_table, create_stale_record, mocker
 ):
-    """Reaped record with a batch_id triggers increment_resolved_count."""
-    from documentai_api.config.constants import BatchStatus
-    from documentai_api.schemas.document_batches import DocumentBatches
-    from documentai_api.utils import batch_operations as batch_util
-
+    """Reaped record with a batch_id triggers increment_resolved_count and finalizes the batch."""
     batch_util.create_batch("test-batch-id", 1, None)
     batch_util.update_batch_status("test-batch-id", BatchStatus.PROCESSING)
 
@@ -216,6 +214,10 @@ def test_reaper_increments_batch_resolved_count(
 
     batch = ddb_batches_table.get_item(Key={"batchId": "test-batch-id"})["Item"]
     assert batch[DocumentBatches.BATCH_STATUS] == BatchStatus.FAILED.value
+    assert (
+        _get_record(ddb_doc_metadata_table, "batched.pdf")[DocumentMetadata.PROCESS_STATUS]
+        == ProcessStatus.TIMED_OUT
+    )
 
 
 def test_pipeline_race_not_clobbered(mock_env, ddb_doc_metadata_table, create_stale_record):

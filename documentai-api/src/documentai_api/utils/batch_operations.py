@@ -26,7 +26,7 @@ def create_batch(
     api_key_name: str | None = None,
 ) -> str:
     """Create batch record in DynamoDB. Returns the createdAt timestamp."""
-    table_name = get_env_config().get_document_batches_table_name
+    table_name = get_env_config().document_batches_table_name
 
     created_at = datetime.now(UTC).isoformat()
     item: dict[str, Any] = {
@@ -76,7 +76,7 @@ def update_batch_status(
     condition_values: dict[str, Any] | None = None,
 ) -> None:
     """Update batch status (and optionally errorMessage)."""
-    table_name = get_env_config().get_document_batches_table_name
+    table_name = get_env_config().document_batches_table_name
     key = {DocumentBatches.BATCH_ID: batch_id}
 
     update_expr = f"SET {DocumentBatches.BATCH_STATUS} = :batchStatus, {DocumentBatches.UPDATED_AT} = :updatedAt"
@@ -109,15 +109,15 @@ def update_batch_status(
 
 def get_batch(batch_id: str) -> dict[str, Any] | None:
     """Get batch record by batch ID."""
-    table_name = get_env_config().get_document_batches_table_name
+    table_name = get_env_config().document_batches_table_name
     key = {DocumentBatches.BATCH_ID: batch_id}
     return ddb_service.get_item(table_name, key)
 
 
 def query_jobs_by_batch_id(batch_id: str) -> list[dict[str, Any]]:
     """Query the document-metadata table for all jobs in a batch via the batch-id GSI."""
-    table_name = get_env_config().get_document_metadata_table_name
-    index_name = get_env_config().get_document_metadata_batch_id_index_name
+    table_name = get_env_config().document_metadata_table_name
+    index_name = get_env_config().document_metadata_batch_id_index_name
     return ddb_service.query_by_key(table_name, index_name, DocumentMetadata.BATCH_ID, batch_id)
 
 
@@ -127,7 +127,7 @@ def increment_resolved_count(batch_id: str) -> None:
     Swallows all exceptions - a counter failure must never abort the job that triggered it.
     """
     try:
-        table_name = get_env_config().get_document_batches_table_name
+        table_name = get_env_config().document_batches_table_name
         from documentai_api.services.aws_client_factory import AWSClientFactory
 
         table = AWSClientFactory.get_ddb_table(table_name)

@@ -702,3 +702,48 @@ def test_upsert_initial_ddb_record_single_page_inconsistency_not_flagged(
 
     item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
     assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.NOT_STARTED
+
+
+# =============================================================================
+# Disabled blueprint list
+# =============================================================================
+
+
+def test_upsert_initial_ddb_record_blueprint_disabled_skips_extraction(
+    ddb_doc_metadata_table, s3_bucket, lifecycle_mocks, mocker
+):
+    """When the matched blueprint is in the tenant's disabled list, extraction is skipped."""
+    lifecycle_mocks[_Mock.IS_BLUR_DETECTION_ENABLED].return_value = False
+    lifecycle_mocks[_Mock.FIND_MATCHING_BLUEPRINT].return_value = PreclassificationMatchResult(
+        matched_document_type="W2", confidence=0.92
+    )
+    mocker.patch(f"{_LIFECYCLE_MODULE}.is_selected_for_processing", return_value=(True, 1.0, None))
+    mocker.patch(
+        f"{_LIFECYCLE_MODULE}.get_tenant",
+        return_value={"tenantId": "t1", "disabledBlueprintList": ["W2", "pay_stub"]},
+    )
+
+    _upsert(s3_bucket, tenant_id="t1")
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
+    assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.BLUEPRINT_DISABLED
+
+
+def test_upsert_initial_ddb_record_blueprint_not_disabled_proceeds(
+    ddb_doc_metadata_table, s3_bucket, lifecycle_mocks, mocker
+):
+    """When the matched blueprint is not in the disabled list, extraction proceeds normally."""
+    lifecycle_mocks[_Mock.IS_BLUR_DETECTION_ENABLED].return_value = False
+    lifecycle_mocks[_Mock.FIND_MATCHING_BLUEPRINT].return_value = PreclassificationMatchResult(
+        matched_document_type="W2", confidence=0.92
+    )
+    mocker.patch(f"{_LIFECYCLE_MODULE}.is_selected_for_processing", return_value=(True, 1.0, None))
+    mocker.patch(
+        f"{_LIFECYCLE_MODULE}.get_tenant",
+        return_value={"tenantId": "t1", "disabledBlueprintList": ["pay_stub"]},
+    )
+
+    _upsert(s3_bucket, tenant_id="t1")
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
+    assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.NOT_STARTED

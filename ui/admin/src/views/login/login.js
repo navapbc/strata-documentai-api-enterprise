@@ -30,7 +30,9 @@ export function mount(root, ssoConfig = {}) {
       ssoBtn.classList.remove("hidden");
       ssoBtn.addEventListener("click", handleGoogleSignIn);
     }
-    if (divider) divider.classList.remove("hidden");
+    if (divider) {
+      divider.classList.remove("hidden");
+    }
   }
 
   root.querySelector("#sign-in-form").addEventListener("submit", handleSignIn);
@@ -74,7 +76,9 @@ export function mount(root, ssoConfig = {}) {
   root.querySelectorAll(".show-password").forEach((btn) => {
     btn.addEventListener("click", () => {
       const input = root.querySelector(`#${btn.dataset.target}`);
-      if (!input) return;
+      if (!input) {
+        return;
+      }
       const showing = input.type === "text";
       input.type = showing ? "password" : "text";
       btn.textContent = showing ? "Show password" : "Hide password";
@@ -136,7 +140,9 @@ async function generateCodeChallenge(verifier) {
 }
 
 function reset() {
-  if (!_root) return;
+  if (!_root) {
+    return;
+  }
   _root.querySelector("#sign-in-card").classList.remove("hidden");
   _root.querySelector("#sign-up-card").classList.add("hidden");
   _root.querySelector("#confirm-card").classList.add("hidden");
@@ -154,7 +160,9 @@ function reset() {
     "reset-password-form",
   ].forEach((id) => {
     const form = _root.querySelector(`#${id}`);
-    if (form) form.reset();
+    if (form) {
+      form.reset();
+    }
   });
   [
     "sign-in-error",
@@ -166,7 +174,9 @@ function reset() {
     "reset-password-error",
   ].forEach((id) => {
     const el = _root.querySelector(`#${id}`);
-    if (el) el.classList.add("hidden");
+    if (el) {
+      el.classList.add("hidden");
+    }
   });
   _pendingEmail = null;
   _mfaSession = null;
@@ -204,7 +214,9 @@ async function handleSignIn(e) {
       expiresIn: result.expiresIn,
       email,
     });
-    if (_onLogin) _onLogin();
+    if (_onLogin) {
+      _onLogin();
+    }
   } catch (err) {
     if (err.code === "NotAuthorizedException" || err.code === "UserNotFoundException") {
       error.textContent = "Incorrect email or password";
@@ -286,7 +298,9 @@ async function handleConfirm(e) {
       expiresIn: result.expiresIn,
       email: _pendingEmail,
     });
-    if (_onLogin) _onLogin();
+    if (_onLogin) {
+      _onLogin();
+    }
   } catch (_err) {
     error.textContent = "That code didn't work. Please check your email and try again.";
     error.classList.remove("hidden");
@@ -333,7 +347,9 @@ async function handleMfaVerify(e) {
   try {
     const tokens = await Auth.respondToMfaChallenge(_mfaSession, code, _pendingEmail);
     Session.save({ ...tokens, email: _pendingEmail });
-    if (_onLogin) _onLogin();
+    if (_onLogin) {
+      _onLogin();
+    }
   } catch (err) {
     if (err.code === "NotAuthorizedException") {
       error.textContent = "Session expired. Please sign in again.";
@@ -359,7 +375,9 @@ async function handleMfaSetupVerify(e) {
   try {
     const tokens = await Auth.verifySoftwareToken(_mfaSession, code, _pendingEmail);
     Session.save({ ...tokens, email: _pendingEmail });
-    if (_onLogin) _onLogin();
+    if (_onLogin) {
+      _onLogin();
+    }
   } catch (err) {
     if (err.code === "NotAuthorizedException") {
       error.textContent = "Session expired. Please sign in again.";
@@ -436,7 +454,9 @@ async function handleResetPassword(e) {
     }
 
     Session.save({ ...result, email: _pendingEmail });
-    if (_onLogin) _onLogin();
+    if (_onLogin) {
+      _onLogin();
+    }
   } catch (err) {
     if (err.code === "CodeMismatchException" || err.code === "ExpiredCodeException") {
       error.textContent = "Invalid or expired code. Please request a new one.";

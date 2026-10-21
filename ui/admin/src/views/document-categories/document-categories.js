@@ -89,7 +89,9 @@ export function unmount(root) {
     _tenantUnsub = null;
   }
   const tenantSelect = root.querySelector("#tenant-select");
-  if (tenantSelect) TenantContext.unmountSelect(tenantSelect);
+  if (tenantSelect) {
+    TenantContext.unmountSelect(tenantSelect);
+  }
   _tableView.unbind();
   root.replaceChildren();
 }
@@ -126,16 +128,27 @@ function applyFilters() {
     );
   }
 
-  if (source === "system") filtered = filtered.filter((c) => c.isAutoRegistered);
-  else if (source === "manual") filtered = filtered.filter((c) => !c.isAutoRegistered);
+  if (source === "system") {
+    filtered = filtered.filter((c) => c.isAutoRegistered);
+  } else if (source === "manual") {
+    filtered = filtered.filter((c) => !c.isAutoRegistered);
+  }
 
   if (rate) {
     filtered = filtered.filter((c) => {
       const pct = Math.round((c.processingPercentage ?? 1) * 100);
-      if (rate === "0") return pct === 0;
-      if (rate === "100") return pct === 100;
-      if (rate === "1-50") return pct >= 1 && pct <= 50;
-      if (rate === "51-99") return pct >= 51 && pct <= 99;
+      if (rate === "0") {
+        return pct === 0;
+      }
+      if (rate === "100") {
+        return pct === 100;
+      }
+      if (rate === "1-50") {
+        return pct >= 1 && pct <= 50;
+      }
+      if (rate === "51-99") {
+        return pct >= 51 && pct <= 99;
+      }
       return true;
     });
   }
@@ -182,7 +195,9 @@ function populateTenantSelect(selectedTenantId, disabled) {
     const opt = document.createElement("option");
     opt.value = value;
     opt.textContent = label;
-    if (value === selectedTenantId) opt.selected = true;
+    if (value === selectedTenantId) {
+      opt.selected = true;
+    }
     _tenantSelect.appendChild(opt);
   }
   _tenantSelect.disabled = disabled;
@@ -277,7 +292,9 @@ function closeDeactivateModal() {
 }
 
 async function handleDeactivate() {
-  if (!_pendingDeactivate) return;
+  if (!_pendingDeactivate) {
+    return;
+  }
   _deactivateError.classList.add("hidden");
   try {
     await CategoriesService.remove(_pendingDeactivateTenantId, _pendingDeactivate);

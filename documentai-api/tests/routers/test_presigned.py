@@ -1,5 +1,7 @@
 """Tests for presigned URL endpoints."""
 
+import uuid
+
 import pytest
 
 from documentai_api.config.constants import ProcessStatus, UploadMethod
@@ -154,8 +156,6 @@ def test_create_presigned_url_no_input_location(api_client, mocker):
 
 def test_create_presigned_url_invalid_trace_id_generates_new(api_client, mocker):
     """Non-UUID trace ID is replaced with a generated UUID."""
-    import uuid
-
     mocker.patch("documentai_api.routers.presigned.insert_minimal_ddb_record")
     mock_generate = mocker.patch("documentai_api.services.s3.generate_presigned_post")
     mock_generate.return_value = {
@@ -189,8 +189,8 @@ def test_create_presigned_url_tenant_in_s3_key(api_client, mocker):
     api_client.post("/v1/documents/presigned-url", data=data)
 
     call_kwargs = mock_generate.call_args.kwargs
-    # Key should contain the tenant_id (from disable_auth fixture: "test-tenant")
-    assert "test-tenant" in call_kwargs["key"]
+    # Key should contain the tenant_id (from disable_auth fixture: "test-tenant-id")
+    assert "test-tenant-id" in call_kwargs["key"]
 
 
 def test_s3_error_does_not_write_ddb(api_client, mocker):
@@ -321,7 +321,7 @@ def test_path_traversal_filename_contained(api_client, mocker):
     call_kwargs = mock_generate.call_args.kwargs
     s3_key = call_kwargs["key"]
     # Key must contain tenant_id and not have ../ traversal
-    assert "test-tenant" in s3_key
+    assert "test-tenant-id" in s3_key
     assert "../" not in s3_key
 
 
@@ -362,8 +362,6 @@ def test_success_response_contains_s3_url(api_client, mocker):
 
 def test_success_response_job_id_is_valid_uuid(api_client, mocker):
     """JobId in response is a valid UUID."""
-    import uuid
-
     mocker.patch("documentai_api.routers.presigned.insert_minimal_ddb_record")
     mocker.patch(
         "documentai_api.services.s3.generate_presigned_post",
@@ -395,8 +393,8 @@ def test_tenant_id_propagated_to_ddb(api_client, mocker):
     api_client.post("/v1/documents/presigned-url", data=data)
 
     record = mock_insert.call_args[0][0]
-    assert record.tenant_id == "test-tenant"
-    assert record.api_key_name == "test-client"
+    assert record.tenant_id == "test-tenant-id"
+    assert record.api_key_name == "test-api-key-name"
     assert record.system_document_id == record.job_id
 
 

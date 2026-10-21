@@ -1,0 +1,10 @@
+name: Build Docker image
+description: Builds the documentai-api Docker image
+
+runs:
+  using: composite
+  steps:
+    - name: Build Docker image
+      shell: bash
+      working-directory: ./documentai-api
+      run: make build

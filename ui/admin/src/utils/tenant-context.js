@@ -15,7 +15,9 @@ const _selects = new Set();
 const STORAGE_KEY = "docai_selected_tenant";
 
 export async function load() {
-  if (_loaded || _loading) return;
+  if (_loaded || _loading) {
+    return;
+  }
   _loading = true;
   try {
     const resp = await TenantsService.list();
@@ -51,7 +53,9 @@ function _populateSelect(el) {
 }
 
 export function mountSelect(el, { placeholder } = {}) {
-  if (placeholder) el.dataset.placeholder = placeholder;
+  if (placeholder) {
+    el.dataset.placeholder = placeholder;
+  }
   _populateSelect(el);
   _selects.add(el);
   el.addEventListener("change", _onSelectChange);
@@ -78,7 +82,9 @@ export function onChange(fn) {
   _listeners.push(fn);
   return () => {
     const idx = _listeners.indexOf(fn);
-    if (idx >= 0) _listeners.splice(idx, 1);
+    if (idx >= 0) {
+      _listeners.splice(idx, 1);
+    }
   };
 }
 

@@ -1,8 +1,9 @@
 """Tests for batch upload endpoints."""
 
-import os
+import uuid
 from io import BytesIO
 from unittest.mock import AsyncMock, MagicMock, patch
+from zipfile import ZipFile
 
 import pytest
 from fastapi import HTTPException
@@ -10,6 +11,8 @@ from fastapi import HTTPException
 from documentai_api.config.constants import BatchStatus
 from documentai_api.config.env_var_names_generated import EnvVarNames
 from documentai_api.schemas.document_batches import DocumentBatches
+from documentai_api.utils.batch_operations import get_batch, query_jobs_by_batch_id
+from documentai_api.utils.uploads import ImageConversionError
 
 
 @pytest.fixture(autouse=True)
@@ -20,6 +23,11 @@ def _disable_auth(disable_auth):
 @pytest.fixture(autouse=True)
 def _mock_quota(mocker):
     mocker.patch("documentai_api.routers.batch.increment_and_check")
+
+
+@pytest.fixture(autouse=True)
+def _set_batches_table(monkeypatch):
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME, "test-batches-table")
 
 
 @pytest.fixture
@@ -39,8 +47,6 @@ def zip_with_pdfs():
     """Factory that builds a ZIP archive containing the given PDF filenames."""
 
     def _create(filenames: list[str]) -> BytesIO:
-        from zipfile import ZipFile
-
         zip_buffer = BytesIO()
         with ZipFile(zip_buffer, "w") as zip_file:
             for filename in filenames:
@@ -64,10 +70,6 @@ def test_config_includes_batch_endpoints(api_client):
 def test_batch_upload_success(api_client, pdf_file):
     """Successful multi-file batch upload returns per-file job info."""
     with (
-        patch.dict(
-            os.environ,
-            {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"},
-        ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch(
             "documentai_api.routers.batch.upload_document_for_processing", new_callable=AsyncMock
@@ -96,10 +98,6 @@ def test_batch_upload_success(api_client, pdf_file):
 def test_batch_upload_with_external_fields(api_client, pdf_file):
     """Batch upload passes external fields to insert_minimal_ddb_record."""
     with (
-        patch.dict(
-            os.environ,
-            {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"},
-        ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch(
             "documentai_api.routers.batch.upload_document_for_processing", new_callable=AsyncMock
@@ -131,10 +129,6 @@ def test_batch_upload_with_external_fields(api_client, pdf_file):
 def test_batch_upload_ai_consent_declined(api_client, pdf_file):
     """Batch upload with ai_consent_flag=false skips S3 upload and marks as declined."""
     with (
-        patch.dict(
-            os.environ,
-            {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"},
-        ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch(
             "documentai_api.routers.batch.upload_document_for_processing", new_callable=AsyncMock
@@ -166,10 +160,6 @@ def test_batch_upload_no_files(api_client):
 def test_batch_upload_invalid_file_type(api_client):
     """Batch upload with unsupported content type fails 400."""
     with (
-        patch.dict(
-            os.environ,
-            {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"},
-        ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="text/plain"),
         patch("documentai_api.routers.batch.create_batch", return_value="2026-03-02T20:00:00Z"),
         patch("documentai_api.routers.batch.update_batch_status"),
@@ -184,7 +174,6 @@ def test_batch_upload_invalid_file_type(api_client):
 def test_zip_upload_success(api_client, zip_with_pdfs):
     """Successful ZIP upload returns batch info."""
     with (
-        patch.dict(os.environ, {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-table"}),
         patch(
             "documentai_api.routers.batch.extract_files_from_zip", new_callable=AsyncMock
         ) as mock_extract,
@@ -220,7 +209,6 @@ def test_zip_upload_success(api_client, zip_with_pdfs):
 def test_zip_upload_empty(api_client):
     """ZIP upload with no valid files fails 400."""
     with (
-        patch.dict(os.environ, {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-table"}),
         patch(
             "documentai_api.routers.batch.extract_files_from_zip", new_callable=AsyncMock
         ) as mock_extract,
@@ -290,13 +278,7 @@ def test_get_batch_status_reflects_atomic_counter_result(api_client):
 
 def test_batch_upload_returns_uuid_batch_id(api_client, pdf_file):
     """Batch upload returns a server-generated UUID batch_id."""
-    import uuid
-
     with (
-        patch.dict(
-            os.environ,
-            {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"},
-        ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch(
             "documentai_api.routers.batch.upload_document_for_processing", new_callable=AsyncMock
@@ -317,7 +299,7 @@ def test_batch_upload_returns_uuid_batch_id(api_client, pdf_file):
     # batch_id is tenant-prefixed: "{tenant_id}/{uuid}"
     tenant_prefix, sep, uuid_part = batch_id.partition("/")
     assert sep == "/"
-    assert tenant_prefix == "test-tenant"
+    assert tenant_prefix == "test-tenant-id"
     # Verify the suffix is a valid UUID
     uuid.UUID(uuid_part)
 
@@ -341,10 +323,6 @@ def test_upload_document_batch_exceeds_max_size(api_client, monkeypatch):
 def test_batch_upload_classify_as_failed_on_upload_error(api_client, pdf_file):
     """When upload_document_for_processing raises HTTPException, classify_as_failed is called."""
     with (
-        patch.dict(
-            os.environ,
-            {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"},
-        ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch(
             "documentai_api.routers.batch.upload_document_for_processing", new_callable=AsyncMock
@@ -368,13 +346,7 @@ def test_batch_upload_classify_as_failed_on_upload_error(api_client, pdf_file):
 
 def test_batch_upload_classify_as_conversion_failed(api_client, pdf_file):
     """When upload raises ImageConversionError, classify_as_conversion_failed is called."""
-    from documentai_api.utils.uploads import ImageConversionError
-
     with (
-        patch.dict(
-            os.environ,
-            {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"},
-        ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch(
             "documentai_api.routers.batch.upload_document_for_processing", new_callable=AsyncMock
@@ -405,10 +377,6 @@ def test_batch_upload_classify_as_conversion_failed(api_client, pdf_file):
 def test_batch_upload_partial_success(api_client, pdf_file):
     """When one file fails with a non-HTTP error, batch is marked FAILED but siblings' DDB records persist."""
     with (
-        patch.dict(
-            os.environ,
-            {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"},
-        ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch(
             "documentai_api.routers.batch.upload_document_for_processing", new_callable=AsyncMock
@@ -442,10 +410,6 @@ def test_batch_upload_partial_success(api_client, pdf_file):
 def test_batch_upload_create_batch_fails(api_client, pdf_file):
     """When create_batch itself fails, batch status is not updated (no batch exists)."""
     with (
-        patch.dict(
-            os.environ,
-            {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"},
-        ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch("documentai_api.routers.batch.create_batch") as mock_create,
         patch("documentai_api.routers.batch.update_batch_status") as mock_update_status,
@@ -463,13 +427,7 @@ def test_batch_upload_create_batch_fails(api_client, pdf_file):
 
 def test_batch_upload_trace_id_generated(api_client, pdf_file):
     """Response includes a generated X-Trace-ID when none is provided."""
-    import uuid
-
     with (
-        patch.dict(
-            os.environ,
-            {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"},
-        ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch(
             "documentai_api.routers.batch.upload_document_for_processing", new_callable=AsyncMock
@@ -494,10 +452,6 @@ def test_batch_upload_trace_id_generated(api_client, pdf_file):
 def test_batch_upload_trace_id_echoed(api_client, pdf_file):
     """Client-supplied X-Trace-ID is echoed unchanged in response."""
     with (
-        patch.dict(
-            os.environ,
-            {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"},
-        ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch(
             "documentai_api.routers.batch.upload_document_for_processing", new_callable=AsyncMock
@@ -522,10 +476,6 @@ def test_batch_upload_trace_id_echoed(api_client, pdf_file):
 def test_batch_upload_tenant_propagation(api_client, pdf_file):
     """Tenant ID and client name are passed to create_batch and insert_minimal_ddb_record."""
     with (
-        patch.dict(
-            os.environ,
-            {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"},
-        ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch(
             "documentai_api.routers.batch.upload_document_for_processing", new_callable=AsyncMock
@@ -546,21 +496,17 @@ def test_batch_upload_tenant_propagation(api_client, pdf_file):
     assert response.status_code == 200
     # create_batch receives tenant info
     create_kwargs = mock_create.call_args.kwargs
-    assert create_kwargs["tenant_id"] == "test-tenant"
-    assert create_kwargs["api_key_name"] == "test-client"
+    assert create_kwargs["tenant_id"] == "test-tenant-id"
+    assert create_kwargs["api_key_name"] == "test-api-key-name"
     # insert_minimal_ddb_record receives tenant info
     record = mock_insert.call_args[0][0]
-    assert record.tenant_id == "test-tenant"
-    assert record.api_key_name == "test-client"
+    assert record.tenant_id == "test-tenant-id"
+    assert record.api_key_name == "test-api-key-name"
 
 
 def test_batch_upload_uploads_under_tenant_prefix(api_client, pdf_file):
     """Each batch file is written to S3 under the caller's tenant prefix."""
     with (
-        patch.dict(
-            os.environ,
-            {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"},
-        ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch(
             "documentai_api.routers.batch.upload_document_for_processing", new_callable=AsyncMock
@@ -578,16 +524,13 @@ def test_batch_upload_uploads_under_tenant_prefix(api_client, pdf_file):
 
     assert response.status_code == 200
     dest_path = mock_upload.call_args.kwargs["dest_path"]
-    assert "/test-tenant/" in dest_path
+    assert "/test-tenant-id/" in dest_path
+    assert mock_upload.call_args.kwargs["tenant_id"] == "test-tenant-id"
 
 
 def test_batch_upload_category_propagation(api_client, pdf_file):
     """Category is passed through to create_batch and insert_minimal_ddb_record."""
     with (
-        patch.dict(
-            os.environ,
-            {EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME: "test-batches-table"},
-        ),
         patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf"),
         patch(
             "documentai_api.routers.batch.upload_document_for_processing", new_callable=AsyncMock
@@ -626,10 +569,6 @@ def test_post_then_get_batch_end_to_end(
     api_client, pdf_file, ddb_batches_table, ddb_doc_metadata_table, mocker
 ):
     """POST /v1/documents/batch → GET /v1/batches/{id} round-trip against real DDB."""
-    from documentai_api.config.constants import BatchStatus
-    from documentai_api.schemas.document_batches import DocumentBatches
-    from documentai_api.utils.batch_operations import get_batch, query_jobs_by_batch_id
-
     mocker.patch("documentai_api.utils.uploads.filetype.guess_mime", return_value="application/pdf")
     mocker.patch(
         "documentai_api.routers.batch.upload_document_for_processing", new_callable=AsyncMock
@@ -653,16 +592,16 @@ def test_post_then_get_batch_end_to_end(
     # Verify batch record in DDB has tenant info
     batch_record = get_batch(batch_id)
     assert batch_record is not None
-    assert batch_record[DocumentBatches.TENANT_ID] == "test-tenant"
-    assert batch_record[DocumentBatches.API_KEY_NAME] == "test-client"
+    assert batch_record[DocumentBatches.TENANT_ID] == "test-tenant-id"
+    assert batch_record[DocumentBatches.API_KEY_NAME] == "test-api-key-name"
     assert batch_record[DocumentBatches.BATCH_STATUS] == BatchStatus.PROCESSING.value
 
     # Verify job records in DDB via GSI
     job_records = query_jobs_by_batch_id(batch_id)
     assert len(job_records) == 2
     for record in job_records:
-        assert record["tenantId"] == "test-tenant"
-        assert record["apiKeyName"] == "test-client"
+        assert record["tenantId"] == "test-tenant-id"
+        assert record["apiKeyName"] == "test-api-key-name"
         assert record["batchId"] == batch_id
 
     # GET batch status

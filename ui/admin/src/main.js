@@ -12,12 +12,16 @@ import * as HttpClient from "./services/http.js";
 import * as Auth from "./services/auth.js";
 import * as Audit from "./services/audit.js";
 
-import BADGES from "./badges.json";
+import BADGES from "./config/badges.json";
+import NAV_SECTIONS from "./config/nav.js";
+import { BUILD_DATE } from "./config/build-info.js";
 
 const _now = new Date();
 function getBadge(view) {
   const cfg = BADGES[view];
-  if (!cfg || _now >= new Date(cfg.expiry)) return null;
+  if (!cfg || _now >= new Date(cfg.expiry)) {
+    return null;
+  }
   return cfg;
 }
 
@@ -40,6 +44,8 @@ import * as DocumentsView from "./views/documents/documents.js";
 import * as DocumentSearchView from "./views/document-search/document-search.js";
 import * as UsageView from "./views/usage/usage.js";
 import * as MetricsView from "./views/metrics/metrics.js";
+import * as BlueprintsView from "./views/blueprints/blueprints.js";
+import * as HomeView from "./views/home/home.js";
 import * as LoginView from "./views/login/login.js";
 import * as Icons from "./utils/icons.js";
 
@@ -73,6 +79,8 @@ let _mainContent = null;
 
 // View registry: name -> { module, lazyLoad }
 const VIEWS = {
+  home: { module: HomeView },
+  blueprints: { module: BlueprintsView },
   keys: { module: KeysView },
   users: { module: UsersView },
   tenants: { module: TenantsView },
@@ -107,10 +115,40 @@ function showDashboard(session) {
   app.replaceChildren(dashboardTmpl());
   app.querySelectorAll("[data-icon]").forEach((el) => {
     const icon = Icons[el.dataset.icon];
-    // eslint-disable-next-line no-unsanitized/method -- icon is always a hardcoded trusted constant from the Icons module
-    if (icon) el.insertAdjacentHTML("afterbegin", icon);
+    if (icon) {
+      el.insertAdjacentHTML("afterbegin", icon); // eslint-disable-line no-unsanitized/method -- icon is always a hardcoded trusted constant from the Icons module
+    }
   });
+
   _mainContent = app.querySelector("#main-content");
+  // Render nav items from config
+  const isSuper = Session.isSuperAdmin();
+
+  NAV_SECTIONS.forEach(({ id, items }) => {
+    const body = app.querySelector(`#section-${id}`);
+    if (!body) {
+      return;
+    }
+
+    items.forEach(({ view, label, superAdmin }) => {
+      const a = document.createElement("a");
+      a.className = "nav-item" + (superAdmin ? " super-admin-only" : "");
+      a.dataset.view = view;
+      a.dataset.title = label;
+
+      if (superAdmin && !isSuper) {
+        a.classList.add("hidden");
+      }
+
+      a.append(label, " ");
+
+      const badge = document.createElement("span");
+      badge.id = `${view}-nav-badge`;
+      a.appendChild(badge);
+      body.appendChild(a);
+    });
+  });
+
   app.querySelectorAll("[id$='-nav-badge']").forEach((b) => {
     const view = b.id.replace("-nav-badge", "");
     const cfg = getBadge(view);
@@ -126,7 +164,9 @@ function showDashboard(session) {
     const hasActiveBadge = [...section.querySelectorAll(".nav-item")].some((item) =>
       getBadge(item.dataset.view),
     );
-    if (!hasActiveBadge) return;
+    if (!hasActiveBadge) {
+      return;
+    }
     const header = section.querySelector(".nav-section-header");
     if (header && !header.querySelector(".nav-section-badge-dot")) {
       const hasNew = [...section.querySelectorAll(".nav-item")].some(
@@ -139,16 +179,24 @@ function showDashboard(session) {
   });
 
   // Connected info
-  app.querySelector("#connected-url").textContent = session.email;
+  app.querySelector("#user-email").textContent = session.email;
+
+  // Build date (injected at build time)
+  const buildDateEl = app.querySelector("#build-date");
+  if (buildDateEl) {
+    const formatted = new Date(BUILD_DATE).toLocaleString(undefined, {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      timeZoneName: "short",
+    });
+    buildDateEl.textContent = `Built ${formatted}`;
+  }
 
   // Kick off tenant list fetch so it's cached before views mount
   TenantContext.load();
-
-  // Super-admin nav visibility
-  const isSuper = Session.isSuperAdmin();
-  app
-    .querySelectorAll(".super-admin-only")
-    .forEach((el) => el.classList.toggle("hidden", !isSuper));
 
   // Sidebar section toggles
   app.querySelectorAll(".nav-section-header").forEach((/** @type {HTMLElement} */ header) => {
@@ -200,11 +248,14 @@ function showDashboard(session) {
     app.querySelector("#mobile-menu-admin")?.classList.remove("hidden");
   }
 
-  // Restore view from hash, or default to documents on non-mobile
+  // Restore view from hash, or default to the home page
   const initialHash = location.hash.replace("#", "");
   const initialView = initialHash.split("/")[0];
-  if (VIEWS[initialView]) activateNavItem(initialView);
-  else if (window.innerWidth <= 768) activateNavItem("documents");
+  if (VIEWS[initialView]) {
+    activateNavItem(initialView);
+  } else {
+    activateNavItem("home");
+  }
 
   // Preload blueprint schemas so extraction-rules view renders instantly
   SchemasService.getAllFields()
@@ -221,11 +272,15 @@ function navigateTo(viewName) {
 
   // Clear actions before mounting new view
   const viewActions = document.querySelector("#view-actions");
-  if (viewActions) viewActions.replaceChildren();
+  if (viewActions) {
+    viewActions.replaceChildren();
+  }
 
   const entry = VIEWS[viewName];
 
-  if (!entry) return;
+  if (!entry) {
+    return;
+  }
 
   // Preserve sub-path if navigating to the same view (e.g. extraction-rules/pay_stub)
   const currentBase = location.hash.replace("#", "").split("/")[0];
@@ -239,7 +294,9 @@ function navigateTo(viewName) {
 
 function activateNavItem(viewName) {
   const navItem = app.querySelector(`[data-view="${viewName}"]`);
-  if (!navItem) return;
+  if (!navItem) {
+    return;
+  }
 
   app.querySelectorAll(".nav-item").forEach((i) => i.classList.remove("active"));
   navItem.classList.add("active");
@@ -257,7 +314,9 @@ function activateNavItem(viewName) {
     const header = sectionBody.previousElementSibling;
     if (header) {
       const arrow = header.querySelector(".nav-arrow");
-      if (arrow) arrow.textContent = "▾";
+      if (arrow) {
+        arrow.textContent = "▾";
+      }
       header.classList.add("active");
     }
   }
@@ -278,8 +337,9 @@ function activateNavItem(viewName) {
 
 window.addEventListener("hashchange", () => {
   const viewName = location.hash.replace("#", "").split("/")[0];
-  if (VIEWS[viewName] && _mainContent && _currentView !== VIEWS[viewName].module)
+  if (VIEWS[viewName] && _mainContent && _currentView !== VIEWS[viewName].module) {
     activateNavItem(viewName);
+  }
 });
 
 // --- Auth flow ---

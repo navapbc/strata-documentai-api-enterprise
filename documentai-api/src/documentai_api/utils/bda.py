@@ -99,8 +99,8 @@ def get_ddb_record_from_bda_output(
 
     bda_invocation_id = str(uuid_mod.UUID(uuid_matches[-1]))
 
-    table_name = get_env_config().get_document_metadata_table_name
-    index_name = get_env_config().get_document_metadata_bda_invocation_id_index_name
+    table_name = get_env_config().document_metadata_table_name
+    index_name = get_env_config().document_metadata_bda_invocation_id_index_name
 
     items = ddb_service.query_by_key(
         table_name, index_name, DocumentMetadata.BDA_INVOCATION_ID, bda_invocation_id

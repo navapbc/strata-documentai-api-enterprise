@@ -54,9 +54,12 @@ export function mount(root, { placeholder = "Any date", defaultPreset = "" } = {
 
   function getRange() {
     const val = preset.value;
-    if (!val) return { dateFrom: null, dateTo: null };
-    if (val === "custom")
+    if (!val) {
+      return { dateFrom: null, dateTo: null };
+    }
+    if (val === "custom") {
       return { dateFrom: fromInput.value || null, dateTo: toInput.value || null };
+    }
     const end = new Date();
     const start = new Date();
     if (val === "1") {
@@ -75,7 +78,9 @@ export function mount(root, { placeholder = "Any date", defaultPreset = "" } = {
 
   preset.addEventListener("change", () => {
     customEl.classList.toggle("hidden", preset.value !== "custom");
-    if (preset.value !== "custom") notify();
+    if (preset.value !== "custom") {
+      notify();
+    }
   });
 
   fromInput.addEventListener("change", notify);

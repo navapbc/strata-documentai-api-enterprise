@@ -279,7 +279,6 @@ def test_handler_explicit_month(monkeypatch):
 
 
 def test_handler_missing_month():
-    """Test handler returns error when month is not provided."""
-    result = handler({}, None)
-    assert result["statusCode"] == 500
-    assert "month" in result["body"]
+    """Test handler raises when month is not provided."""
+    with pytest.raises(ValueError, match="month"):
+        handler({}, None)

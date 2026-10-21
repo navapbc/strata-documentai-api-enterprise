@@ -2,8 +2,12 @@ import { adminClient } from "../../../shared/services/http.js";
 
 export async function list({ limit, cursor } = {}) {
   const params = new URLSearchParams();
-  if (limit) params.set("limit", String(limit));
-  if (cursor) params.set("cursor", cursor);
+  if (limit) {
+    params.set("limit", String(limit));
+  }
+  if (cursor) {
+    params.set("cursor", cursor);
+  }
   const qs = params.toString() ? `?${params}` : "";
   return adminClient.request("GET", `/v1/demo/documents${qs}`);
 }
@@ -13,8 +17,12 @@ export async function get(
   { includeExtractedData = false, includeBoundingBox = false } = {},
 ) {
   const params = new URLSearchParams();
-  if (includeExtractedData) params.set("include_extracted_data", "true");
-  if (includeBoundingBox) params.set("include_bounding_box", "true");
+  if (includeExtractedData) {
+    params.set("include_extracted_data", "true");
+  }
+  if (includeBoundingBox) {
+    params.set("include_bounding_box", "true");
+  }
   const qs = params.toString() ? `?${params}` : "";
   return adminClient.request("GET", `/v1/demo/documents/${encodeURIComponent(jobId)}${qs}`);
 }

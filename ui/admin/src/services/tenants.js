@@ -5,6 +5,10 @@ export async function list(activeOnly = true) {
   return adminClient.request("GET", `/v1/admin/tenants${qs}`);
 }
 
+export async function get(tenantId) {
+  return adminClient.request("GET", `/v1/admin/tenants/${encodeURIComponent(tenantId)}`);
+}
+
 export async function create(
   tenantId,
   displayName,
@@ -32,16 +36,31 @@ export async function update(
     maxWritesPerDay,
     maxWritesPerMonth,
     extractionConfidenceFloor,
+    disabledBlueprintList,
   } = {},
 ) {
   const body = {};
-  if (displayName !== undefined) body.display_name = displayName;
-  if (primaryContact !== undefined) body.primary_contact = primaryContact;
-  if (isActive !== undefined) body.is_active = isActive;
-  if (maxWritesPerDay !== undefined) body.max_writes_per_day = maxWritesPerDay;
-  if (maxWritesPerMonth !== undefined) body.max_writes_per_month = maxWritesPerMonth;
-  if (extractionConfidenceFloor !== undefined)
+  if (displayName !== undefined) {
+    body.display_name = displayName;
+  }
+  if (primaryContact !== undefined) {
+    body.primary_contact = primaryContact;
+  }
+  if (isActive !== undefined) {
+    body.is_active = isActive;
+  }
+  if (maxWritesPerDay !== undefined) {
+    body.max_writes_per_day = maxWritesPerDay;
+  }
+  if (maxWritesPerMonth !== undefined) {
+    body.max_writes_per_month = maxWritesPerMonth;
+  }
+  if (extractionConfidenceFloor !== undefined) {
     body.extraction_confidence_floor = extractionConfidenceFloor;
+  }
+  if (disabledBlueprintList !== undefined) {
+    body.disabled_blueprint_list = disabledBlueprintList;
+  }
   return adminClient.request("PATCH", `/v1/admin/tenants/${encodeURIComponent(tenantId)}`, body);
 }
 

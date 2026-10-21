@@ -4,6 +4,7 @@ import json
 from typing import Any
 
 import pytest
+from botocore.exceptions import ClientError
 
 from documentai_api.app import app
 from documentai_api.config.env_var_names_generated import EnvVarNames
@@ -31,7 +32,7 @@ def as_super_admin(api_client):
 def as_tenant_admin(api_client):
     """Authenticate as tenant-admin (JWT)."""
     app.dependency_overrides[get_user_context_with_fallback] = lambda: UserContext(
-        tenant_id="test-tenant", api_key_name="user@example.com", auth_method="jwt"
+        tenant_id="test-tenant-id", api_key_name="user@example.com", auth_method="jwt"
     )
     return api_client
 
@@ -40,7 +41,7 @@ def as_tenant_admin(api_client):
 def as_api_key(api_client):
     """Authenticate as API key caller."""
     app.dependency_overrides[get_user_context_with_fallback] = lambda: UserContext(
-        tenant_id="test-tenant", api_key_name="tenant-ingest", auth_method="api_key"
+        tenant_id="test-tenant-id", api_key_name="tenant-ingest", auth_method="api_key"
     )
     return api_client
 
@@ -104,11 +105,11 @@ def seeded_metrics(metrics_bucket):
     _put_daily_stats(metrics_bucket, "2026-01-16", _make_stats("2026-01-16", 30))
     # Tenant-scoped stats for the same date (separate S3 key path)
     _put_daily_stats(
-        metrics_bucket, "2026-01-15", _make_stats("2026-01-15", 10), tenant_id="test-tenant"
+        metrics_bucket, "2026-01-15", _make_stats("2026-01-15", 10), tenant_id="test-tenant-id"
     )
     _put_monthly_stats(metrics_bucket, "2026-01", _make_stats("2026-01", 100))
     _put_monthly_stats(
-        metrics_bucket, "2026-01", _make_stats("2026-01", 25), tenant_id="test-tenant"
+        metrics_bucket, "2026-01", _make_stats("2026-01", 25), tenant_id="test-tenant-id"
     )
 
 
@@ -201,7 +202,7 @@ def test_super_admin_partial_data(as_super_admin, seeded_metrics):
 
 def test_super_admin_can_filter_by_tenant(as_super_admin, seeded_metrics):
     response = as_super_admin.get(
-        METRICS_URL, params={"start_date": "2026-01-15", "tenant_id": "test-tenant"}
+        METRICS_URL, params={"start_date": "2026-01-15", "tenant_id": "test-tenant-id"}
     )
     assert response.status_code == 200
     data = response.json()
@@ -243,7 +244,7 @@ def test_super_admin_monthly_with_tenant(as_super_admin, seeded_metrics):
             "start_date": "2026-01-01",
             "end_date": "2026-01-31",
             "granularity": "monthly",
-            "tenant_id": "test-tenant",
+            "tenant_id": "test-tenant-id",
         },
     )
     assert response.status_code == 200
@@ -281,7 +282,7 @@ def test_tenant_admin_sees_own_metrics(as_tenant_admin, seeded_metrics):
 def test_tenant_admin_own_tenant_explicit(as_tenant_admin, seeded_metrics):
     """Tenant-admin passing their own tenant_id succeeds."""
     response = as_tenant_admin.get(
-        METRICS_URL, params={"start_date": "2026-01-15", "tenant_id": "test-tenant"}
+        METRICS_URL, params={"start_date": "2026-01-15", "tenant_id": "test-tenant-id"}
     )
     assert response.status_code == 200
     assert response.json()["dailyStats"][0]["totalRecords"] == 10
@@ -390,7 +391,6 @@ def test_monthly_range_too_large(as_super_admin, metrics_bucket):
 
 def test_s3_non_nosuchkey_error_returns_500(as_super_admin, metrics_bucket, monkeypatch):
     """Non-NoSuchKey S3 errors propagate as 500."""
-    from botocore.exceptions import ClientError
 
     def _raise_access_denied(*args, **kwargs):
         raise ClientError({"Error": {"Code": "AccessDenied", "Message": "Forbidden"}}, "GetObject")

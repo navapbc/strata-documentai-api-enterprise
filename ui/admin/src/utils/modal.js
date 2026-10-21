@@ -18,7 +18,9 @@ export function openModal(modal, onClose) {
 
   // Focus first focusable element
   const focusable = getFocusable(modal);
-  if (focusable.length) focusable[0].focus();
+  if (focusable.length) {
+    focusable[0].focus();
+  }
 
   // ESC to close
   _keyHandler = (e) => {
@@ -29,7 +31,9 @@ export function openModal(modal, onClose) {
     // Tab trap
     if (e.key === "Tab") {
       const els = getFocusable(modal);
-      if (els.length === 0) return;
+      if (els.length === 0) {
+        return;
+      }
       const first = els[0];
       const last = els[els.length - 1];
       if (e.shiftKey && document.activeElement === first) {

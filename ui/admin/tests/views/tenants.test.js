@@ -16,7 +16,9 @@ function submitTenantForm(
   maxPerDay = "",
   maxPerMonth = "",
 ) {
-  if (id !== undefined) root.querySelector("#tenant-id").value = id;
+  if (id !== undefined) {
+    root.querySelector("#tenant-id").value = id;
+  }
   root.querySelector("#tenant-name").value = name;
   root.querySelector("#tenant-contact").value = contact;
   root.querySelector("#tenant-confidence-floor").value = confidenceFloorPct;

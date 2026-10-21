@@ -58,7 +58,28 @@ class EnvConfig(PydanticBaseEnvConfig):
     documentai_demo_input_location: str | None = None
     documentai_output_location: str | None = None
     documentai_preprocessing_location: str | None = None
-    documentai_build_table_name: str | None = None
+    documentai_document_build_table_name: str | None = None
+
+    def _parse_preprocessing_location(self) -> tuple[str, str] | None:
+        loc = self.documentai_preprocessing_location
+
+        if not loc:
+            return None
+
+        if not loc.startswith("s3://"):
+            raise ValueError(f"Invalid S3 URI: {loc}")
+        bucket, _, prefix = loc.removeprefix("s3://").partition("/")
+        return bucket, prefix
+
+    @property
+    def preprocessing_bucket(self) -> str | None:
+        parsed = self._parse_preprocessing_location()
+        return parsed[0] if parsed else None
+
+    @property
+    def preprocessing_prefix(self) -> str | None:
+        parsed = self._parse_preprocessing_location()
+        return parsed[1] if parsed else None
 
     # Auth / API keys
     api_keys_table_name: str | None = None
@@ -101,69 +122,72 @@ class EnvConfig(PydanticBaseEnvConfig):
         return arns
 
     @property
-    def get_input_location(self) -> str:
+    def input_location(self) -> str:
         return self._require(self.documentai_input_location, EnvVarNames.DOCUMENTAI_INPUT_LOCATION)
 
     @property
-    def get_output_location(self) -> str:
+    def output_location(self) -> str:
         return self._require(
             self.documentai_output_location, EnvVarNames.DOCUMENTAI_OUTPUT_LOCATION
         )
 
     @property
-    def get_preprocessing_location(self) -> str:
+    def preprocessing_location(self) -> str:
         return self._require(
             self.documentai_preprocessing_location,
             EnvVarNames.DOCUMENTAI_PREPROCESSING_LOCATION,
         )
 
     @property
-    def get_document_metadata_table_name(self) -> str:
+    def document_metadata_table_name(self) -> str:
         return self._require(
             self.documentai_document_metadata_table_name,
             EnvVarNames.DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME,
         )
 
     @property
-    def get_document_metadata_job_id_index_name(self) -> str:
+    def document_metadata_job_id_index_name(self) -> str:
         return self._require(
             self.documentai_document_metadata_job_id_index_name,
             EnvVarNames.DOCUMENTAI_DOCUMENT_METADATA_JOB_ID_INDEX_NAME,
         )
 
     @property
-    def get_document_metadata_batch_id_index_name(self) -> str:
+    def document_metadata_batch_id_index_name(self) -> str:
         return self._require(
             self.documentai_document_metadata_batch_id_index_name,
             EnvVarNames.DOCUMENTAI_DOCUMENT_METADATA_BATCH_ID_INDEX_NAME,
         )
 
     @property
-    def get_document_metadata_bda_invocation_id_index_name(self) -> str:
+    def document_metadata_bda_invocation_id_index_name(self) -> str:
         return self._require(
             self.documentai_document_metadata_bda_invocation_id_index_name,
             EnvVarNames.DOCUMENTAI_DOCUMENT_METADATA_BDA_INVOCATION_ID_INDEX_NAME,
         )
 
     @property
-    def get_document_batches_table_name(self) -> str:
+    def document_batches_table_name(self) -> str:
         return self._require(
             self.documentai_document_batches_table_name,
             EnvVarNames.DOCUMENTAI_DOCUMENT_BATCHES_TABLE_NAME,
         )
 
     @property
-    def get_document_build_table_name(self) -> str:
+    def document_build_table_name(self) -> str:
         return self._require(
-            self.documentai_build_table_name, EnvVarNames.DOCUMENTAI_BUILD_TABLE_NAME
+            self.documentai_document_build_table_name,
+            EnvVarNames.DOCUMENTAI_DOCUMENT_BUILD_TABLE_NAME,
         )
 
+    # _required suffix avoids shadowing the bda_profile_arn Pydantic field
     @property
-    def get_bda_profile_arn(self) -> str:
+    def bda_profile_arn_required(self) -> str:
         return self._require(self.bda_profile_arn, EnvVarNames.BDA_PROFILE_ARN)
 
+    # _required suffix avoids shadowing the bda_project_arn_all Pydantic field
     @property
-    def get_bda_project_arn_all(self) -> str:
+    def bda_project_arn_all_required(self) -> str:
         return self._require(
             self.bda_project_arn_all or self.bda_project_arn,
             EnvVarNames.BDA_PROJECT_ARN_ALL

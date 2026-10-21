@@ -19,6 +19,7 @@ from documentai_api.utils.preclassification import (
     preclassify_document,
 )
 from documentai_api.utils.schemas import DocumentSchema, SchemaField
+from tests.helpers.fixtures.paths import TEST_DOCS_DIR, TEST_DOCS_DIR_HAPPY_PATH
 
 SAMPLE_IMAGE = b"\x89PNG\r\n" + b"\x00" * 100
 
@@ -156,7 +157,10 @@ def test_invocation_failure_returns_default(monkeypatch):
 def test_invalid_json_response_returns_default(monkeypatch):
     monkeypatch.setattr(
         "documentai_api.utils.preclassification.invoke_model",
-        lambda **kwargs: {"content": [{"text": "not valid json"}]},
+        lambda **kwargs: {
+            "output": {"message": {"content": [{"text": "not valid json"}]}},
+            "usage": {"inputTokens": 1, "outputTokens": 1},
+        },
     )
 
     result = preclassify_document(SAMPLE_IMAGE, "image/png")
@@ -400,11 +404,16 @@ def test_invoke_uses_max_tokens(monkeypatch):
         captured["model_id"] = model_id
         captured["temperature"] = temperature
         return {
-            "content": [
-                {
-                    "text": '{"document_type": "tax_documents", "confidence": 0.9, "max_document_count_on_page": 1}'
+            "output": {
+                "message": {
+                    "content": [
+                        {
+                            "text": '{"document_type": "tax_documents", "confidence": 0.9, "max_document_count_on_page": 1}'
+                        }
+                    ]
                 }
-            ]
+            },
+            "usage": {"inputTokens": 1, "outputTokens": 1},
         }
 
     monkeypatch.setattr("documentai_api.utils.preclassification.invoke_model", mock_invoke_model)
@@ -569,9 +578,7 @@ def test_find_matching_blueprint_uses_pdf_document_block(monkeypatch):
 # Integration tests - call real Bedrock API
 # =============================================================================
 
-FIXTURES_DIR = Path(__file__).parent.parent / "helpers" / "fixtures" / "test-documents"
-FIXTURES_DIR_HAPPY_PATH = FIXTURES_DIR / "happy-path"
-EXPECTED_FILE = FIXTURES_DIR / "expected.json"
+EXPECTED_FILE = TEST_DOCS_DIR / "expected.json"
 
 CONTENT_TYPE_MAP = {
     ".jpg": "image/jpeg",
@@ -611,7 +618,7 @@ def test_preclassify_real_document(filename, expected_category, monkeypatch, rea
         lambda: "us.amazon.nova-lite-v1:0",
     )
 
-    filepath = FIXTURES_DIR / filename
+    filepath = TEST_DOCS_DIR / filename
     if not filepath.exists():
         pytest.skip(f"Test fixture not found: {filepath}")
 
@@ -713,7 +720,7 @@ def test_find_matching_blueprint_real(
         lambda: "us.amazon.nova-lite-v1:0",
     )
 
-    filepath = FIXTURES_DIR_HAPPY_PATH / filename
+    filepath = TEST_DOCS_DIR_HAPPY_PATH / filename
     if not filepath.exists():
         pytest.skip(f"Test fixture not found: {filepath}")
 

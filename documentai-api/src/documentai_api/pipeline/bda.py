@@ -30,14 +30,19 @@ def run_bda_result_pipeline(
 
 def _classify(result: ProcessorResult) -> dict[str, Any]:
     if result.extraction_result is not None:
-        return classify_extraction_result(
-            ddb_key=result.object_key,
-            result=result.extraction_result,
-            output_uri=result.output_uri,
-            tenant_id=result.tenant_id,
-            batch_id=result.batch_id,
-            result_processor_started_at=result.result_processor_started_at,
-        )
+        try:
+            return classify_extraction_result(
+                ddb_key=result.object_key,
+                result=result.extraction_result,
+                output_uri=result.output_uri,
+                tenant_id=result.tenant_id,
+                batch_id=result.batch_id,
+                result_processor_started_at=result.result_processor_started_at,
+            )
+        except Exception as e:
+            raise RuntimeError(
+                f"Extraction succeeded for {result.object_key} but failed to persist result: {e}"
+            ) from e
 
     if result.status is not None and result.classification_data is not None:
         from documentai_api.config.constants import ProcessStatus

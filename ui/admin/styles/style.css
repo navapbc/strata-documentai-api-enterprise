@@ -1,3 +1,5 @@
+@import "../../shared/styles/document-viewer.css";
+
 :root {
   --color-primary: #2563eb;
   --color-primary-light: #eff6ff;
@@ -233,15 +235,27 @@ form button[type="submit"]:not(.btn-primary):not(.btn-secondary):not(.btn-outlin
   margin-bottom: 0.25rem;
 }
 
-.sidebar-header span {
+#user-email {
   font-size: 0.7rem;
   color: #888;
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .sidebar-nav {
   flex: 1;
   overflow-y: auto;
   padding: 0.5rem 0;
+  scrollbar-width: thin;
+  scrollbar-color: #f5f5f5 transparent;
+}
+
+.nav-home-link {
+  padding: 0.625rem 1rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
 }
 
 .sidebar-footer {
@@ -256,7 +270,15 @@ form button[type="submit"]:not(.btn-primary):not(.btn-secondary):not(.btn-outlin
 }
 
 .sidebar-footer .btn-secondary:hover {
-  background: #3a3a5a;
+  background: #4a4a6a;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.sidebar-build-date {
+  margin-bottom: 0.5rem;
+  font-size: 0.65rem;
+  color: #888;
+  text-align: center;
 }
 
 /* Nav Sections */
@@ -489,6 +511,106 @@ form button[type="submit"]:not(.btn-primary):not(.btn-secondary):not(.btn-outlin
   flex-wrap: nowrap;
 }
 
+/* Home */
+.main-content.main-content--home {
+  padding-top: 3rem;
+}
+
+.home-view {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.home-hero {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.home-hero h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.home-subtitle {
+  margin-top: 0.5rem;
+  color: var(--color-text-secondary);
+  font-size: 0.95rem;
+}
+
+.home-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+}
+
+@media (max-width: 900px) {
+  .home-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .home-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.home-card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 1.5rem;
+}
+
+.home-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-secondary);
+  margin-bottom: 1rem;
+}
+
+.home-card-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.home-card h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 0.375rem;
+}
+
+.home-card > p {
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.home-card-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.home-card-link {
+  color: var(--color-primary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.home-card-link:hover {
+  text-decoration: underline;
+}
+
 .inline-checkbox {
   display: inline-flex;
   align-items: center;
@@ -556,6 +678,13 @@ form button[type="submit"]:not(.btn-primary):not(.btn-secondary):not(.btn-outlin
 .badge-warning {
   background: #fef3c7;
   color: #92400e;
+}
+
+.badge-disabled {
+  background: #fef2f2;
+  color: #dc2626;
+  margin-left: 0.5rem;
+  vertical-align: middle;
 }
 
 .badge-info {
@@ -1933,6 +2062,9 @@ td {
 
 .documents-preview-panel {
   overflow: auto;
+  /* Keep clientWidth constant whether or not a scrollbar shows, so the rotated
+     image's fit width doesn't change when zooming in/out toggles it. */
+  scrollbar-gutter: stable;
   border-right: 1px solid var(--color-border);
   padding: 0 1rem;
   display: flex;
@@ -2091,6 +2223,115 @@ td {
   font-size: 0.875rem;
 }
 
+/* Blueprints view: hide Status column when no tenant selected */
+#blueprints-table.no-tenant th:last-child,
+#blueprints-table.no-tenant td:last-child {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  #blueprints-table th:nth-child(2),
+  #blueprints-table td:nth-child(2),
+  #blueprints-table th:nth-child(4),
+  #blueprints-table td:nth-child(4) {
+    display: none;
+  }
+}
+
+.toggle-cell {
+  text-align: center;
+  padding: 0 1rem;
+  vertical-align: middle;
+}
+
+/* Toggle switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  background: #d1d5db;
+  border-radius: 999px;
+  transition: background 0.2s;
+}
+
+.toggle-track::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch input:checked + .toggle-track {
+  background: #2e8540;
+}
+
+.toggle-switch input:checked + .toggle-track::after {
+  transform: translateX(16px);
+}
+
+.toggle-switch input:disabled + .toggle-track {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+@keyframes blueprint-toggle-spin {
+  to {
+    transform: rotate(0.5turn);
+  }
+}
+
+.toggle-spinner {
+  width: 20px;
+  height: 20px;
+  --c: radial-gradient(farthest-side, #2e8540 92%, #0000);
+  background:
+    var(--c) 50% 0,
+    var(--c) 50% 100%,
+    var(--c) 100% 50%,
+    var(--c) 0 50%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  animation: blueprint-toggle-spin 1s infinite;
+  display: inline-block;
+}
+
+@keyframes row-saved {
+  0% {
+    background-color: transparent;
+  }
+  20% {
+    background-color: #d4edda;
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+tr.saved {
+  animation: row-saved 1s ease-out forwards;
+}
+
 /* Blueprints Screen */
 #bp-main-area {
   overflow-y: auto;
@@ -2242,85 +2483,6 @@ td {
   border-radius: 4px;
   user-select: none;
   -webkit-user-drag: none;
-}
-
-.preview-zoom-controls {
-  position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  z-index: 3;
-  display: flex;
-  gap: 2px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  padding: 2px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-  will-change: transform;
-}
-.documents-preview-panel.preview-zoomed,
-.documents-preview-panel.preview-zoomed .bbox-overlay rect {
-  cursor: grab;
-}
-.documents-preview-panel.preview-dragging,
-.documents-preview-panel.preview-dragging .bbox-overlay rect {
-  cursor: grabbing;
-}
-.preview-zoom-controls .zoom-btn {
-  width: 28px;
-  height: 28px;
-  border: none;
-  background: transparent;
-  border-radius: 4px;
-  font-size: 16px;
-  line-height: 1;
-  cursor: pointer;
-  color: #374151;
-}
-.preview-zoom-controls .zoom-btn:hover {
-  background: rgba(0, 0, 0, 0.07);
-}
-
-.bbox-overlay-wrap {
-  position: absolute;
-  pointer-events: none;
-  z-index: 2;
-}
-
-.bbox-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-
-.bbox-overlay rect {
-  pointer-events: all;
-  cursor: pointer;
-  transition: stroke-width 0.1s;
-}
-
-/* Highlight a box on direct hover, or when its field row is hovered. */
-.bbox-overlay rect:hover,
-.bbox-overlay rect.bbox-highlight {
-  fill: rgba(255, 214, 0, 0.35);
-  stroke: #f5c000;
-  stroke-width: 0.006;
-}
-
-.bbox-tooltip {
-  position: absolute;
-  background: rgba(0, 0, 0, 0.8);
-  color: #fff;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  white-space: pre-line;
-  pointer-events: none;
-  z-index: 10;
-  max-width: 300px;
 }
 
 /* Field rows whose value is locatable in the preview: a left accent (at rest)
@@ -3566,6 +3728,19 @@ td {
     padding: 1rem;
     padding-top: calc(3.25rem + var(--content-header-height) + 1rem);
     padding-bottom: calc(var(--content-header-height) + 1rem);
+  }
+
+  /* Home has no content-header, just clear the mobile top bar */
+  .main-content.main-content--home {
+    padding-top: calc(3.25rem + 1.5rem);
+  }
+
+  .home-hero h1 {
+    font-size: 1.25rem;
+  }
+
+  .home-subtitle {
+    font-size: 0.85rem;
   }
 
   .content-header {

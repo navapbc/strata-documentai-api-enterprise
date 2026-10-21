@@ -15,14 +15,18 @@ function getFilterSidebar() {
 /** Call once after mounting a new view (its .filter-sidebar is a fresh element). */
 export function attach() {
   const filterSidebar = getFilterSidebar();
-  if (!filterSidebar) return;
+  if (!filterSidebar) {
+    return;
+  }
 
   filterSidebar.classList.remove("filter-sidebar-collapsed");
 
   // Only the filter controls collapse. Some views (e.g. Documents) also keep
   // a results list as a direct child of .filter-sidebar - that must stay put.
   const fieldEls = filterSidebar.querySelectorAll(":scope > .filter-field, :scope > .metrics-tabs");
-  if (fieldEls.length === 0) return;
+  if (fieldEls.length === 0) {
+    return;
+  }
 
   const fieldsWrap = document.createElement("div");
   fieldsWrap.className = "filter-sidebar-fields";

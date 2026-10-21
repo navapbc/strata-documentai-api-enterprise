@@ -102,7 +102,7 @@ def test_demo_upload_output_key_starts_with_expected_prefix(monkeypatch):
     bda_invocation_arn = "arn:aws:invocation:demo-test"
     demo_source_object = "input/demo/test-tenant-id/doc-uuid.pdf"
     demo_ddb_key = "doc-uuid.pdf"
-    tenant_id = "demo-test-sub"
+    tenant_id = "test-demo-tenant-id"
 
     monkeypatch.setenv(EnvVarNames.DOCUMENTAI_OUTPUT_LOCATION, "s3://output-bucket/processed")
     get_env_config.cache_clear()
@@ -131,8 +131,8 @@ def test_demo_upload_output_key_starts_with_expected_prefix(monkeypatch):
         call_kwargs = mock_bda.invoke_data_automation_async.call_args.kwargs
         output_s3_uri = call_kwargs["outputConfiguration"]["s3Uri"]
         output_key = output_s3_uri.replace("s3://output-bucket/", "")
-        assert output_key.startswith("processed/demo-"), (
-            f"Demo output key '{output_key}' does not start with 'processed/demo-'. "
+        assert output_key.startswith("processed/test-demo-tenant"), (
+            f"Demo output key '{output_key}' does not start with 'processed/test-demo-tenant'. "
             "This means the infra S3 lifecycle rule (expire-demo-results) won't match."
         )
 

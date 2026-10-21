@@ -78,7 +78,9 @@ export function unmount(root) {
     _tenantUnsub = null;
   }
   const tenantSelect = root.querySelector("#tenant-select");
-  if (tenantSelect) TenantContext.unmountSelect(tenantSelect);
+  if (tenantSelect) {
+    TenantContext.unmountSelect(tenantSelect);
+  }
   _tableView.unbind();
   root.replaceChildren();
 }
@@ -89,9 +91,15 @@ function openRevokeModal(key) {
   const nameEl = _revokeModal.querySelector("#revoke-key-name");
   const tenantEl = _revokeModal.querySelector("#revoke-key-tenant");
   const envEl = _revokeModal.querySelector("#revoke-key-env");
-  if (nameEl) nameEl.textContent = key.apiKeyName || "-";
-  if (tenantEl) tenantEl.textContent = key.tenantId || "-";
-  if (envEl) envEl.textContent = key.environment || "-";
+  if (nameEl) {
+    nameEl.textContent = key.apiKeyName || "-";
+  }
+  if (tenantEl) {
+    tenantEl.textContent = key.tenantId || "-";
+  }
+  if (envEl) {
+    envEl.textContent = key.environment || "-";
+  }
   openModal(_revokeModal);
 }
 
@@ -101,7 +109,9 @@ function closeRevokeModal() {
 }
 
 async function handleConfirmRevoke() {
-  if (!_pendingRevokeKey) return;
+  if (!_pendingRevokeKey) {
+    return;
+  }
   const keyPrefix = _pendingRevokeKey;
   closeRevokeModal();
   try {
@@ -160,9 +170,7 @@ function copyKey() {
 
 function renderRow(key) {
   const isActive = key.isActive !== false;
-  const actionEl = isActive
-    ? iconBtn("discard", "Revoke", "btn-icon-danger")
-    : h("span", { className: "badge badge-revoked" }, "Revoked");
+  const actionEl = isActive ? iconBtn("discard", "Revoke", "btn-icon-danger") : null;
   const tr = h(
     "tr",
     isActive ? null : { className: "row-inactive" },
@@ -175,6 +183,15 @@ function renderRow(key) {
       "td",
       { title: key.lastUsed ? Helpers.formatDateTime(key.lastUsed) : "" },
       key.lastUsed ? Helpers.relativeTime(key.lastUsed) : "-",
+    ),
+    h(
+      "td",
+      null,
+      h(
+        "span",
+        { className: isActive ? "badge badge-active" : "badge badge-revoked" },
+        isActive ? "Active" : "Revoked",
+      ),
     ),
     h("td", null, actionEl),
   );
@@ -213,5 +230,6 @@ function applyFilters() {
   if (email) {
     filtered = filtered.filter((k) => k.emailAddress?.toLowerCase().includes(email));
   }
+  filtered = [...filtered].sort((a, b) => (b.isActive !== false) - (a.isActive !== false));
   _tableView.setRows(filtered);
 }

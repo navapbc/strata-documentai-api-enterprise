@@ -43,7 +43,9 @@ export function mount(root) {
   const filterSidebar = root.querySelector(".filter-sidebar");
   const updateStickyOffset = () => {
     const contentHeader = document.querySelector(".content-header");
-    if (!filterSidebar || !contentHeader) return;
+    if (!filterSidebar || !contentHeader) {
+      return;
+    }
     const top = contentHeader.getBoundingClientRect().bottom + filterSidebar.offsetHeight;
     document.documentElement.style.setProperty("--fields-header-top", `${top}px`);
   };
@@ -58,7 +60,9 @@ export function mount(root) {
 
 export function unmount(root) {
   const tenantSelect = root.querySelector("#tenant-select");
-  if (tenantSelect) TenantContext.unmountSelect(tenantSelect);
+  if (tenantSelect) {
+    TenantContext.unmountSelect(tenantSelect);
+  }
   _unsubs.forEach((u) => u && u());
   _unsubs = [];
   if (_resizeObserver) {
@@ -78,7 +82,9 @@ export function getActiveDocType() {
 }
 
 async function loadSchemas() {
-  if (Object.keys(Store.get().schemas).length > 0) return;
+  if (Object.keys(Store.get().schemas).length > 0) {
+    return;
+  }
   try {
     const data = await SchemasService.getAllFields();
     Store.set({ schemas: SchemasService.groupFieldsByDocType(data), schemasLoading: false });

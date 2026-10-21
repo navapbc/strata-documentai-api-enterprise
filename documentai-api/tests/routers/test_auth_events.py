@@ -10,7 +10,7 @@ from documentai_api.utils.auth import UserContext, get_user_context_with_fallbac
 
 client = TestClient(app)
 
-MOCK_CONTEXT = UserContext(tenant_id="test-tenant", api_key_name="test-client")
+MOCK_CONTEXT = UserContext(tenant_id="test-tenant-id", api_key_name="test-api-key-name")
 MOCK_CLAIMS = {
     "sub": "user-123",
     "email": "admin@test.com",
@@ -54,11 +54,11 @@ def test_report_login_event(mock_log_event):
 
     assert response.status_code == 204
     mock_log_event.assert_called_once_with(
-        claims={"sub": "test-client", "email": "test-client"},
+        claims={"sub": "test-api-key-name", "email": "test-api-key-name"},
         action=AuditAction.AUTH_LOGIN,
         target_type=AuditTargetType.SESSION,
-        target_id="test-client",
-        tenant_id="test-tenant",
+        target_id="test-api-key-name",
+        tenant_id="test-tenant-id",
         metadata=None,
     )
 
@@ -70,11 +70,11 @@ def test_report_logout_event(mock_log_event):
 
     assert response.status_code == 204
     mock_log_event.assert_called_once_with(
-        claims={"sub": "test-client", "email": "test-client"},
+        claims={"sub": "test-api-key-name", "email": "test-api-key-name"},
         action=AuditAction.AUTH_LOGOUT,
         target_type=AuditTargetType.SESSION,
-        target_id="test-client",
-        tenant_id="test-tenant",
+        target_id="test-api-key-name",
+        tenant_id="test-tenant-id",
         metadata=None,
     )
 
@@ -104,8 +104,8 @@ def test_report_event_without_email_uses_api_key_name(mock_log_event):
     assert response.status_code == 204
     mock_log_event.assert_called_once()
     call_kwargs = mock_log_event.call_args[1]
-    assert call_kwargs["target_id"] == "test-client"
-    assert call_kwargs["claims"] == {"sub": "test-client", "email": "test-client"}
+    assert call_kwargs["target_id"] == "test-api-key-name"
+    assert call_kwargs["claims"] == {"sub": "test-api-key-name", "email": "test-api-key-name"}
 
 
 # =============================================================================
@@ -117,7 +117,7 @@ def test_create_category_logs_audit(mock_log_event_categories, mocker):
     mocker.patch(
         "documentai_api.routers.document_categories.categories_util.create_category",
         return_value={
-            "tenantId": "test-tenant",
+            "tenantId": "test-tenant-id",
             "categoryName": "tax",
             "displayName": "Tax",
             "description": "",
@@ -128,7 +128,7 @@ def test_create_category_logs_audit(mock_log_event_categories, mocker):
     )
 
     response = client.post(
-        "/v1/admin/document-categories?tenant_id=test-tenant",
+        "/v1/admin/document-categories?tenant_id=test-tenant-id",
         json={"category_name": "tax", "display_name": "Tax"},
     )
 
@@ -138,7 +138,7 @@ def test_create_category_logs_audit(mock_log_event_categories, mocker):
         action=AuditAction.DOCUMENT_CATEGORY_CREATE,
         target_type=AuditTargetType.DOCUMENT_CATEGORY,
         target_id="tax",
-        tenant_id="test-tenant",
+        tenant_id="test-tenant-id",
     )
 
 
@@ -148,7 +148,7 @@ def test_delete_category_logs_audit(mock_log_event_categories, mocker):
         return_value=True,
     )
 
-    response = client.delete("/v1/admin/document-categories/tax?tenant_id=test-tenant")
+    response = client.delete("/v1/admin/document-categories/tax?tenant_id=test-tenant-id")
 
     assert response.status_code == 204
     mock_log_event_categories.assert_called_once_with(
@@ -156,7 +156,7 @@ def test_delete_category_logs_audit(mock_log_event_categories, mocker):
         action=AuditAction.DOCUMENT_CATEGORY_DEACTIVATE,
         target_type=AuditTargetType.DOCUMENT_CATEGORY,
         target_id="tax",
-        tenant_id="test-tenant",
+        tenant_id="test-tenant-id",
     )
 
 
@@ -173,7 +173,7 @@ def test_put_extraction_rule_logs_audit(mock_log_event_rules, mocker):
     mocker.patch(
         "documentai_api.utils.extraction_rules.upsert_rule",
         return_value={
-            "tenant_id": "test-tenant",
+            "tenant_id": "test-tenant-id",
             "document_type": "W2",
             "required_fields": ["ssn"],
             "optional_fields": [],
@@ -185,7 +185,7 @@ def test_put_extraction_rule_logs_audit(mock_log_event_rules, mocker):
     response = client.put(
         "/v1/config/extraction-rules",
         json={
-            "tenant_id": "test-tenant",
+            "tenant_id": "test-tenant-id",
             "document_type": "W2",
             "required_fields": ["ssn"],
             "optional_fields": [],
@@ -194,11 +194,11 @@ def test_put_extraction_rule_logs_audit(mock_log_event_rules, mocker):
 
     assert response.status_code == 200
     mock_log_event_rules.assert_called_once_with(
-        claims={"sub": "test-client", "email": "test-client"},
+        claims={"sub": "test-api-key-name", "email": "test-api-key-name"},
         action=AuditAction.EXTRACTION_RULE_UPDATE,
         target_type=AuditTargetType.EXTRACTION_RULE,
         target_id="W2",
-        tenant_id="test-tenant",
+        tenant_id="test-tenant-id",
     )
 
 
@@ -208,15 +208,17 @@ def test_delete_extraction_rule_logs_audit(mock_log_event_rules, mocker):
         return_value=True,
     )
 
-    response = client.delete("/v1/config/extraction-rules?document_type=W2&tenant_id=test-tenant")
+    response = client.delete(
+        "/v1/config/extraction-rules?document_type=W2&tenant_id=test-tenant-id"
+    )
 
     assert response.status_code == 200
     mock_log_event_rules.assert_called_once_with(
-        claims={"sub": "test-client", "email": "test-client"},
+        claims={"sub": "test-api-key-name", "email": "test-api-key-name"},
         action=AuditAction.EXTRACTION_RULE_DELETE,
         target_type=AuditTargetType.EXTRACTION_RULE,
         target_id="W2",
-        tenant_id="test-tenant",
+        tenant_id="test-tenant-id",
     )
 
 
@@ -224,7 +226,7 @@ def test_update_category_logs_audit(mock_log_event_categories, mocker):
     mocker.patch(
         "documentai_api.routers.document_categories.categories_util.update_category",
         return_value={
-            "tenantId": "test-tenant",
+            "tenantId": "test-tenant-id",
             "categoryName": "tax",
             "displayName": "Tax Updated",
             "description": "",
@@ -235,7 +237,7 @@ def test_update_category_logs_audit(mock_log_event_categories, mocker):
     )
 
     response = client.patch(
-        "/v1/admin/document-categories/tax?tenant_id=test-tenant",
+        "/v1/admin/document-categories/tax?tenant_id=test-tenant-id",
         json={"display_name": "Tax Updated"},
     )
 
@@ -245,7 +247,7 @@ def test_update_category_logs_audit(mock_log_event_categories, mocker):
         action=AuditAction.DOCUMENT_CATEGORY_UPDATE,
         target_type=AuditTargetType.DOCUMENT_CATEGORY,
         target_id="tax",
-        tenant_id="test-tenant",
+        tenant_id="test-tenant-id",
     )
 
 
@@ -261,7 +263,7 @@ def test_create_category_no_audit_on_conflict(mock_log_event_categories, mocker)
     )
 
     response = client.post(
-        "/v1/admin/document-categories?tenant_id=test-tenant",
+        "/v1/admin/document-categories?tenant_id=test-tenant-id",
         json={"category_name": "tax", "display_name": "Tax"},
     )
 
@@ -275,7 +277,7 @@ def test_delete_category_no_audit_on_not_found(mock_log_event_categories, mocker
         return_value=False,
     )
 
-    response = client.delete("/v1/admin/document-categories/missing?tenant_id=test-tenant")
+    response = client.delete("/v1/admin/document-categories/missing?tenant_id=test-tenant-id")
 
     assert response.status_code == 404
     mock_log_event_categories.assert_not_called()
@@ -287,7 +289,9 @@ def test_delete_extraction_rule_no_audit_on_not_found(mock_log_event_rules, mock
         return_value=False,
     )
 
-    response = client.delete("/v1/config/extraction-rules?document_type=W2&tenant_id=test-tenant")
+    response = client.delete(
+        "/v1/config/extraction-rules?document_type=W2&tenant_id=test-tenant-id"
+    )
 
     assert response.status_code == 404
     mock_log_event_rules.assert_not_called()
@@ -338,7 +342,7 @@ def test_category_audit_failure_does_not_break_create(mocker):
     mocker.patch(
         "documentai_api.routers.document_categories.categories_util.create_category",
         return_value={
-            "tenantId": "test-tenant",
+            "tenantId": "test-tenant-id",
             "categoryName": "tax",
             "displayName": "Tax",
             "description": "",
@@ -353,7 +357,7 @@ def test_category_audit_failure_does_not_break_create(mocker):
     )
 
     response = client.post(
-        "/v1/admin/document-categories?tenant_id=test-tenant",
+        "/v1/admin/document-categories?tenant_id=test-tenant-id",
         json={"category_name": "tax", "display_name": "Tax"},
     )
 

@@ -1,5 +1,6 @@
+import os
 from typing import Any
-from urllib.parse import quote, unquote_plus, urlparse
+from urllib.parse import quote, unquote_plus
 
 from documentai_api.config.constants import ExtractMethod
 from documentai_api.config.env import get_env_config
@@ -15,26 +16,11 @@ def parse_s3_uri(s3_uri: str) -> tuple[str, str]:
     Returns:
         Tuple of (bucket, key)
     """
-    parts = urlparse(s3_uri)
-    bucket_name = parts.netloc
-    prefix = parts.path.lstrip("/")
+    if not s3_uri.startswith("s3://"):
+        raise ValueError(f"Invalid S3 URI: {s3_uri}")
+
+    bucket_name, _, prefix = s3_uri.removeprefix("s3://").partition("/")
     return (bucket_name, prefix)
-
-
-def get_s3_prefix_from_location(s3_location: str) -> str:
-    """Extract S3 prefix from location environment variable.
-
-    Args:
-        s3_location: Environment variable value (e.g. "s3://bucket/input")
-
-    Returns:
-        The prefix portion (e.g. "input"), or empty string if no prefix
-    """
-    if not s3_location:
-        return ""
-
-    _, prefix = parse_s3_uri(s3_location)
-    return prefix
 
 
 def extract_s3_info_from_event(
@@ -135,12 +121,23 @@ def write_extraction_output(
     if not tenant_id:
         raise ValueError("tenant_id is required for extraction output")
 
-    output_location = get_env_config().get_output_location
+    output_location = get_env_config().output_location
     bucket, key = get_bucket_and_key(
         output_location, tenant_id, f"{file_name}/{extraction_method}/result.json"
     )
     s3_service.put_object(bucket, key, body, content_type)
     return f"s3://{bucket}/{key}"
+
+
+def get_truncated_object_key(object_key: str) -> str:
+    """Return the key used for the truncated copy of an oversized document.
+
+    bda_invoker writes a truncated copy back to the input bucket when a document
+    exceeds MAX_PAGES_PER_DOCUMENT. This helper centralises the naming convention
+    so the invoker and the hard-delete purge can't drift apart.
+    """
+    base, ext = os.path.splitext(object_key)
+    return f"{base}_truncated{ext}"
 
 
 def sanitize_for_s3_metadata(value: str, max_length: int = 512) -> str:
@@ -152,10 +149,34 @@ def sanitize_for_s3_metadata(value: str, max_length: int = 512) -> str:
     return quote(value[:max_length], safe="")
 
 
-def sanitize_for_s3_key(value: str) -> str:
-    """Replace non-ASCII characters with underscores for use in S3 object keys.
+# Disallowed by Bedrock Data Automation's S3 URI validation regex, except
+# backslash and backtick (92, 96), which are banned defensively, not by BDA.
+_BANNED_ORDINALS = frozenset(
+    {
+        34,  # "
+        35,  # #
+        37,  # %
+        60,  # <
+        62,  # >
+        91,  # [
+        92,  # \
+        93,  # ]
+        94,  # ^
+        96,  # `
+        123,  # {
+        124,  # |
+        125,  # }
+        126,  # ~
+    }
+)
 
-    Non-ASCII bytes in keys cause URL-encoding round-trip mismatches in S3 event
-    notifications, producing a different string after unquote_plus than the original.
+
+def sanitize_for_s3_key(value: str) -> str:
+    """Replace characters unsafe for S3 object keys with underscores.
+
+    Non-ASCII bytes and control characters break the URL-encoding round-trip
+    in S3 event notifications; see the comment above _BANNED_ORDINALS for the rest.
     """
-    return "".join("_" if ord(c) > 127 else c for c in value)
+    return "".join(
+        "_" if ord(c) > 126 or ord(c) < 32 or ord(c) in _BANNED_ORDINALS else c for c in value
+    )

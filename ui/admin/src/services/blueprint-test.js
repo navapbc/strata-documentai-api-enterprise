@@ -7,9 +7,15 @@ export async function run(file, tenantId, category, documentType, signal) {
   // Start the test
   const formData = new FormData();
   formData.append("file", file);
-  if (tenantId) formData.append("tenant_id", tenantId);
-  if (category) formData.append("document_category", category);
-  if (documentType) formData.append("document_type", documentType);
+  if (tenantId) {
+    formData.append("tenant_id", tenantId);
+  }
+  if (category) {
+    formData.append("document_category", category);
+  }
+  if (documentType) {
+    formData.append("document_type", documentType);
+  }
 
   const baseUrl = adminClient.getBaseUrl();
   const session = JSON.parse(sessionStorage.getItem("docai_console_session") || "{}");
@@ -32,11 +38,15 @@ export async function run(file, tenantId, category, documentType, signal) {
   // Poll for results with timeout
   const deadline = Date.now() + POLL_TIMEOUT_MS;
   while (Date.now() < deadline) {
-    if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
+    if (signal?.aborted) {
+      throw new DOMException("Aborted", "AbortError");
+    }
 
     await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
 
-    if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
+    if (signal?.aborted) {
+      throw new DOMException("Aborted", "AbortError");
+    }
 
     const pollRes = await fetch(`${baseUrl}/v1/admin/blueprints/test/${testId}`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -49,8 +59,12 @@ export async function run(file, tenantId, category, documentType, signal) {
 
     const result = await pollRes.json();
 
-    if (result.status === "COMPLETED") return result;
-    if (result.status === "FAILED") throw new Error(result.error || "Extraction failed");
+    if (result.status === "COMPLETED") {
+      return result;
+    }
+    if (result.status === "FAILED") {
+      throw new Error(result.error || "Extraction failed");
+    }
     // Otherwise keep polling (PROCESSING)
   }
 

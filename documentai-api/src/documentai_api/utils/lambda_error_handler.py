@@ -18,6 +18,6 @@ def handle_lambda_errors(handler_func: Callable[..., Any]) -> Callable[..., Any]
         except Exception as e:
             logger.error(f"Handler {handler_func.__name__} failed: {e}")
             logger.error(traceback.format_exc())
-            return {"statusCode": 500, "body": str(e)}
+            raise
 
     return wrapper

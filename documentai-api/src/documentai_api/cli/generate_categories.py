@@ -49,7 +49,7 @@ def generate() -> None:
         lines.append(f'    {constant} = "{folder}"\n')
 
     _OUTPUT.write_text("".join(lines))
-    typer.echo(f"Written {len(folders)} categories to {_OUTPUT}")
+    typer.echo(f"Wrote {len(folders)} categories to {_OUTPUT}")
 
 
 if __name__ == "__main__":

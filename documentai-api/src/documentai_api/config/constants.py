@@ -317,6 +317,7 @@ class ProcessStatus(StrEnum):
     PASSWORD_PROTECTED = "password_protected"
     PENDING_IMAGE_OPTIMIZATION = "pending_image_optimization"
     PENDING_UPLOAD = "pending_upload"
+    BLUEPRINT_DISABLED = "blueprint_disabled"
     PROCESSING_EXCLUDED = "processing_excluded"
     STARTED = "started"
     SUCCESS = "success"
@@ -326,6 +327,7 @@ class ProcessStatus(StrEnum):
     def is_completed(cls, value: str) -> bool:
         return value in [
             cls.AI_CONSENT_DECLINED,
+            cls.BLUEPRINT_DISABLED,
             cls.CONVERSION_FAILED,
             cls.PROCESSING_EXCLUDED,
             cls.SUCCESS,
@@ -339,6 +341,7 @@ class ProcessStatus(StrEnum):
     def is_classified(cls, value: str) -> bool:
         return value in [
             cls.AI_CONSENT_DECLINED,
+            cls.BLUEPRINT_DISABLED,
             cls.BLURRY_DOCUMENT_DETECTED,
             cls.CONVERSION_FAILED,
             cls.DELETED,

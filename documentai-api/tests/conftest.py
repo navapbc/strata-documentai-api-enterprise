@@ -1,11 +1,32 @@
 """Shared test fixtures."""
 
 import os
+import threading
+import time
+import warnings
 from collections.abc import Generator
+from unittest.mock import patch
 
 import pytest
+from fastapi.testclient import TestClient
 
+from documentai_api.config.env import AppConfig, EnvConfig, get_app_config, get_env_config
 from documentai_api.config.env_var_names_generated import EnvVarNames
+from documentai_api.routers.demo import _resolve_demo_context
+from documentai_api.utils import auth as auth_util
+from documentai_api.utils.auth import (
+    UserContext,
+    _get_pepper,
+    get_user_context_from_api_key,
+    get_user_context_with_fallback,
+    verify_api_key,
+)
+from documentai_api.utils.document_categories import _registered_categories
+from documentai_api.utils.jwt_auth import verify_jwt
+from documentai_api.utils.tenant_access import (
+    validate_batch_tenant_access,
+    validate_build_tenant_access,
+)
 
 #############################################################################
 # Autouse fixtures                                                          #
@@ -54,10 +75,6 @@ def real_aws_credentials(reset_env):
 
 @pytest.fixture(autouse=True)
 def clear_config_cache(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
-    from documentai_api.config.env import AppConfig, EnvConfig, get_app_config, get_env_config
-    from documentai_api.utils.auth import _get_pepper
-    from documentai_api.utils.document_categories import _registered_categories
-
     # Disable .env file so monkeypatch.delenv reliably removes values
     # (pydantic-settings falls back to .env when a var is absent from os.environ)
     monkeypatch.setitem(EnvConfig.model_config, "env_file", None)
@@ -84,11 +101,6 @@ def drain_lastused_threads():
     ordering. Applied suite-wide as most requests authenticate via the
     FastAPI test client.
     """
-    import threading
-    import time
-    import warnings
-
-    from documentai_api.utils import auth as auth_util
 
     def _drain(timeout: float = 2.0) -> None:
         deadline = time.monotonic() + timeout
@@ -137,8 +149,9 @@ def runtime_required_env(monkeypatch, s3_bucket, ddb_doc_metadata_table):
 @pytest.fixture
 def api_client(runtime_required_env):
     """Create test client."""
-    from fastapi.testclient import TestClient
-
+    # NOTE: intentionally imported here rather than at the module level. A
+    # module-level import breaks e2e tests as environment settings are read
+    # before the test setup clears them via reset_env.
     from documentai_api.app import app
 
     return TestClient(app)
@@ -147,8 +160,11 @@ def api_client(runtime_required_env):
 @pytest.fixture(autouse=True)
 def _cleanup_jwt():
     yield
+
+    # NOTE: intentionally imported here rather than at the module level. A
+    # module-level import breaks e2e tests as environment settings are read
+    # before the test setup clears them via reset_env.
     from documentai_api.app import app
-    from documentai_api.utils.jwt_auth import verify_jwt
 
     app.dependency_overrides.pop(verify_jwt, None)
 
@@ -156,21 +172,15 @@ def _cleanup_jwt():
 @pytest.fixture
 def disable_auth():
     """Disable API key authentication and tenant validation for tests."""
+    # NOTE: intentionally imported here rather than at the module level. A
+    # module-level import breaks e2e tests as environment settings are read
+    # before the test setup clears them via reset_env.
     from documentai_api.app import app
-    from documentai_api.routers.demo import _resolve_demo_context
-    from documentai_api.utils.auth import (
-        UserContext,
-        get_user_context_from_api_key,
-        get_user_context_with_fallback,
-        verify_api_key,
-    )
-    from documentai_api.utils.tenant_access import (
-        validate_batch_tenant_access,
-        validate_build_tenant_access,
-    )
 
-    mock_context = UserContext(tenant_id="test-tenant", api_key_name="test-client")
-    mock_demo_context = UserContext(tenant_id="demo-test-sub", api_key_name="test@example.com")
+    mock_context = UserContext(tenant_id="test-tenant-id", api_key_name="test-api-key-name")
+    mock_demo_context = UserContext(
+        tenant_id="test-demo-tenant-id", api_key_name="test-demo-api-key-name"
+    )
     app.dependency_overrides[verify_api_key] = lambda: mock_context
     app.dependency_overrides[get_user_context_from_api_key] = lambda: mock_context
     app.dependency_overrides[get_user_context_with_fallback] = lambda: mock_context
@@ -231,9 +241,6 @@ def clear_env_vars():
     you want it cleaner you can use this. Pytest may internally still set some
     environment variables.
     """
-    import os
-    from unittest.mock import patch
-
     with patch.dict(os.environ, {}, clear=True):
         yield
 

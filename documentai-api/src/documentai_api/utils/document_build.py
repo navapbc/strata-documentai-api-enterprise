@@ -15,7 +15,7 @@ _METADATA_PAGE_NUMBER = 0
 
 
 def get_document_build_table() -> str:
-    return get_env_config().get_document_build_table_name
+    return get_env_config().document_build_table_name
 
 
 def _page_key(build_id: str, page_number: int) -> dict[str, Any]:

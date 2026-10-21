@@ -9,6 +9,7 @@ export default [
     rules: {
       "no-unsanitized/method": "error",
       "no-unsanitized/property": "error",
+      "curly": "error",
     },
   },
 ];

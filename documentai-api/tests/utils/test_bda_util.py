@@ -6,10 +6,8 @@ from documentai_api.utils import bda as bda_util
 
 BDA_INVOCATION_UUID = "de8464af-d53e-44dc-a9f7-ad5360530210"
 BDA_OUTPUT_BUCKET = "output-bucket"
-BDA_OUTPUT_KEY = (
-    f"processed/input/test-tenant/doc.pdf/{BDA_INVOCATION_UUID}/0/custom_output/job_metadata.json"
-)
-BDA_DDB_FILE_NAME = "input/test-tenant/doc.pdf"
+BDA_OUTPUT_KEY = f"processed/input/test-tenant-id/doc.pdf/{BDA_INVOCATION_UUID}/0/custom_output/job_metadata.json"
+BDA_DDB_FILE_NAME = "input/test-tenant-id/doc.pdf"
 
 
 @pytest.mark.parametrize(
@@ -84,7 +82,7 @@ def test_get_ddb_record_from_bda_output_returns_record(ddb_doc_metadata_table):
         Item={
             DocumentMetadata.FILE_NAME: BDA_DDB_FILE_NAME,
             DocumentMetadata.BDA_INVOCATION_ID: BDA_INVOCATION_UUID,
-            DocumentMetadata.TENANT_ID: "test-tenant",
+            DocumentMetadata.TENANT_ID: "test-tenant-id",
             DocumentMetadata.PROCESS_STATUS: ProcessStatus.STARTED.value,
         }
     )
@@ -92,7 +90,7 @@ def test_get_ddb_record_from_bda_output_returns_record(ddb_doc_metadata_table):
     result = bda_util.get_ddb_record_from_bda_output(BDA_OUTPUT_BUCKET, BDA_OUTPUT_KEY)
     assert result is not None
     assert result[DocumentMetadata.FILE_NAME] == BDA_DDB_FILE_NAME
-    assert result[DocumentMetadata.TENANT_ID] == "test-tenant"
+    assert result[DocumentMetadata.TENANT_ID] == "test-tenant-id"
     assert result[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.STARTED.value
 
 

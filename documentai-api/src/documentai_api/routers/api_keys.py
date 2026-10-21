@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from documentai_api.annotations import AdminClaims
 from documentai_api.config.constants import ApiVisualizationTag
+from documentai_api.config.env import get_env_config
 from documentai_api.logging import get_logger
 from documentai_api.models.api_key import (
     ApiKeyItem,
@@ -16,13 +17,17 @@ from documentai_api.models.api_key import (
 )
 from documentai_api.schemas.api_key import ApiKeyRecord
 from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
+from documentai_api.schemas.tenants import TenantRecord
+from documentai_api.services import ddb as ddb_service
 from documentai_api.utils.audit_log import log_event
 from documentai_api.utils.auth import (
     deactivate_api_key,
     find_api_key_by_prefix,
     generate_api_key,
+    is_duplicate_key_name,
 )
 from documentai_api.utils.jwt_auth import resolve_tenant, tenant_scope, verify_jwt
+from documentai_api.utils.tenants import get_tenant
 
 logger = get_logger(__name__)
 
@@ -60,18 +65,21 @@ async def create_api_key(
             detail="tenant_id is required when creating keys as super-admin.",
         )
 
-    # Validate tenant exists
-    from documentai_api.utils.tenants import get_tenant
-
-    if not get_tenant(effective_tenant):
+    # Validate tenant exists and is active
+    tenant_record = get_tenant(effective_tenant)
+    if not tenant_record:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Tenant '{effective_tenant}' does not exist.",
         )
 
-    # Check for duplicate key name within the same tenant
-    from documentai_api.utils.auth import is_duplicate_key_name
+    if not tenant_record.get(TenantRecord.IS_ACTIVE, True):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Tenant '{effective_tenant}' is inactive.",
+        )
 
+    # Check for duplicate key name within the same tenant
     if is_duplicate_key_name(effective_tenant, api_key_name):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -93,6 +101,7 @@ async def create_api_key(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to generate API key",
         ) from e
+
     log_event(
         claims,
         action=AuditAction.KEY_CREATE,
@@ -128,9 +137,6 @@ async def list_api_keys(
     By default returns only active keys. Pass ``include_inactive=true`` to
     return both active and revoked keys.
     """
-    from documentai_api.config.env import get_env_config
-    from documentai_api.services import ddb as ddb_service
-
     effective_tenant = resolve_tenant(claims, tenant_id)
 
     try:
@@ -196,9 +202,6 @@ async def delete_api_key(
         # For a full-hash delete, still enforce tenant scoping by reading the
         # record and rejecting if the caller isn't allowed to touch it.
         if caller_tenant is not None:
-            from documentai_api.config.env import get_env_config
-            from documentai_api.services import ddb as ddb_service
-
             table_name = get_env_config().api_keys_table_name
             if not table_name:
                 logger.error("Required table not configured: api_keys_table_name")

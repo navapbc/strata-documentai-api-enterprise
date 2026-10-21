@@ -224,6 +224,30 @@ def test_update_tenant_write_limit_null_clears_limit(api_client, tenants_table):
     assert response.json()["maxWritesPerDay"] is None
 
 
+def test_update_tenant_disabled_blueprint_list_set(api_client, tenants_table):
+    api_client.post(URL, json={"tenant_id": "t1", "display_name": "T1"})
+    response = api_client.patch(f"{URL}/t1", json={"disabled_blueprint_list": ["w2", "1099"]})
+    assert response.status_code == 200
+    assert response.json()["disabledBlueprintList"] == ["w2", "1099"]
+
+
+def test_update_tenant_disabled_blueprint_list_cleared(api_client, tenants_table):
+    """Passing [] removes the list entirely."""
+    _seed_tenant(tenants_table, "t1")
+    api_client.patch(f"{URL}/t1", json={"disabled_blueprint_list": ["w2"]})
+    response = api_client.patch(f"{URL}/t1", json={"disabled_blueprint_list": []})
+    assert response.status_code == 200
+    assert response.json()["disabledBlueprintList"] is None
+
+
+def test_update_tenant_disabled_blueprint_list_omitted_leaves_unchanged(api_client, tenants_table):
+    api_client.post(URL, json={"tenant_id": "t1", "display_name": "T1"})
+    api_client.patch(f"{URL}/t1", json={"disabled_blueprint_list": ["w2"]})
+    response = api_client.patch(f"{URL}/t1", json={"display_name": "Updated"})
+    assert response.status_code == 200
+    assert response.json()["disabledBlueprintList"] == ["w2"]
+
+
 def test_delete_tenant(api_client, tenants_table):
     api_client.post(URL, json={"tenant_id": "t1", "display_name": "T1"})
     response = api_client.delete(f"{URL}/t1")

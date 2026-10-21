@@ -8,6 +8,7 @@ import pytest
 
 from documentai_api.config.constants import ConfigDefaults
 from documentai_api.utils.bbox_detection import detect_document_bbox
+from tests.helpers.fixtures.paths import TEST_DOCS_DIR, TEST_DOCS_DIR_HAPPY_PATH
 
 SAMPLE_IMAGE = b"\x89PNG\r\n" + b"\x00" * 100
 
@@ -195,9 +196,6 @@ def test_bbox_detection_uses_bbox_model_id(monkeypatch):
 # Integration tests - call real Bedrock API
 # =============================================================================
 
-FIXTURES_DIR = Path(__file__).parent.parent / "helpers" / "fixtures" / "test-documents"
-FIXTURES_DIR_HAPPY_PATH = FIXTURES_DIR / "happy-path"
-
 CONTENT_TYPE_MAP = {
     ".jpg": "image/jpeg",
     ".jpeg": "image/jpeg",
@@ -219,7 +217,7 @@ BBOX_SAMPLES = [
     "synthetic-snap-income-proof-self-employment-ledger-photo.png",
 ]
 
-BBOX_OUTPUT_DIR = FIXTURES_DIR / "_bbox_output"
+BBOX_OUTPUT_DIR = TEST_DOCS_DIR / "_bbox_output"
 
 
 @pytest.mark.integration
@@ -234,7 +232,7 @@ def test_detect_document_bbox_real(filename, monkeypatch, real_aws_credentials):
         lambda: "us.amazon.nova-lite-v1:0",
     )
 
-    filepath = FIXTURES_DIR_HAPPY_PATH / filename
+    filepath = TEST_DOCS_DIR_HAPPY_PATH / filename
     if not filepath.exists():
         pytest.skip(f"Test fixture not found: {filepath}")
 
@@ -284,7 +282,7 @@ def test_detect_document_bbox_oversized_real(monkeypatch, real_aws_credentials):
     )
 
     filename = BBOX_SAMPLES[0]
-    filepath = FIXTURES_DIR_HAPPY_PATH / filename
+    filepath = TEST_DOCS_DIR_HAPPY_PATH / filename
     if not filepath.exists():
         pytest.skip(f"Test fixture not found: {filepath}")
 

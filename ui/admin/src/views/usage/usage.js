@@ -54,7 +54,9 @@ export function unmount(_root) {
     _tenantUnsub = null;
   }
   const tenantSelect = _root?.querySelector("#tenant-select");
-  if (tenantSelect) TenantContext.unmountSelect(tenantSelect);
+  if (tenantSelect) {
+    TenantContext.unmountSelect(tenantSelect);
+  }
   _root = null;
   _currentData = [];
 }
@@ -74,7 +76,9 @@ async function load() {
   try {
     const resp = await UsageService.get({ month, granularity: _currentGranularity, tenantId });
 
-    if (thisLoad !== _loadId) return;
+    if (thisLoad !== _loadId) {
+      return;
+    }
 
     if (_currentGranularity === "daily") {
       _currentData = _fillDailyGaps(month, resp.days || []);
@@ -168,7 +172,9 @@ function renderTable() {
 }
 
 function formatCell(key, value) {
-  if (value == null) return "-";
+  if (value == null) {
+    return "-";
+  }
   if (key === "totalFileSizeBytes") {
     return `${(value / 1024 / 1024).toFixed(1)} MB`;
   }
@@ -188,7 +194,9 @@ export function _fillDailyGaps(month, days) {
   const lastDay = isCurrentMonth ? today.getDate() : daysInMonth;
 
   const byDate = {};
-  for (const d of days) byDate[d.date] = d;
+  for (const d of days) {
+    byDate[d.date] = d;
+  }
 
   const result = [];
   for (let day = 1; day <= lastDay; day++) {
@@ -208,7 +216,9 @@ export function _fillDailyGaps(month, days) {
 }
 
 function downloadCsv() {
-  if (!_currentData.length) return;
+  if (!_currentData.length) {
+    return;
+  }
 
   const columns =
     _currentGranularity === "daily"

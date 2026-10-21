@@ -24,7 +24,9 @@ import {
 
 beforeAll(() => {
   // jsdom doesn't implement createElementNS SVG fully but enough for attribute checks
-  if (!globalThis.document) return;
+  if (!globalThis.document) {
+    return;
+  }
 });
 
 describe("getResponseCodeClass", () => {

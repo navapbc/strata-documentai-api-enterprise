@@ -53,6 +53,7 @@ class UpdateTenantRequest(BaseApiResponse):
     extraction_confidence_floor: ConfidenceFloor | None = None
     max_writes_per_day: WriteLimit | None = None
     max_writes_per_month: WriteLimit | None = None
+    disabled_blueprint_list: list[str] | None = None
 
     # @model_validator intentionally omitted: a PATCH may set only one limit,
     # resulting in the model only seeing a single value. Day/month max write
@@ -75,6 +76,7 @@ class TenantItem(BaseApiResponse):
     )
     max_writes_per_day: int | None = None
     max_writes_per_month: int | None = None
+    disabled_blueprint_list: list[str] | None = None
     created_at: str | None = None
     updated_at: str | None = None
 

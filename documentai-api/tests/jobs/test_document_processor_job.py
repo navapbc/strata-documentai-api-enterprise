@@ -80,6 +80,12 @@ def mock_is_selected_for_processing(mocker):
 
 
 @pytest.fixture(autouse=True)
+def mock_get_tenant(mocker):
+    """Prevent tenants table lookup. No blueprints disabled by default."""
+    return mocker.patch(f"{_LIFECYCLE_MODULE}.get_tenant", return_value=None)
+
+
+@pytest.fixture(autouse=True)
 def mock_detect_bbox(mocker):
     """Patch detection to a no-op so the crop step never reaches Bedrock."""
     return mocker.patch(

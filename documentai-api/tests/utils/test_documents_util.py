@@ -1,11 +1,7 @@
 """Tests for utils/documents.py detection helpers."""
 
-from pathlib import Path
-
 from documentai_api.utils.documents import is_password_protected
-
-FIXTURES_DIR = Path(__file__).parent.parent / "helpers" / "fixtures" / "test-documents"
-FIXTURES_DIR_HAPPY_PATH = FIXTURES_DIR / "happy-path"
+from tests.helpers.fixtures.paths import TEST_DOCS_DIR_HAPPY_PATH
 
 # OLE2/Compound File magic shared by legacy .doc/.xls and encrypted OOXML.
 _OLE2_MAGIC = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"
@@ -13,7 +9,7 @@ _OLE2_MAGIC = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"
 
 def test_is_password_protected_encrypted_ooxml():
     """An ECMA-376-encrypted docx (OLE2-wrapped) is detected as password protected."""
-    data = (FIXTURES_DIR_HAPPY_PATH / "synthetic-password-protected.docx").read_bytes()
+    data = (TEST_DOCS_DIR_HAPPY_PATH / "synthetic-password-protected.docx").read_bytes()
     assert is_password_protected(data) is True
 
 

@@ -21,6 +21,7 @@ from documentai_api.dtos.ddb import InitialDdbRecord, PreClassificationDdbFields
 from documentai_api.dtos.processing import InternalApiResponse, PreExtractionResult
 from documentai_api.logging import get_logger
 from documentai_api.models.document_record import DocumentRecord
+from documentai_api.schemas.tenants import TenantRecord
 from documentai_api.services import cloudwatch as cloudwatch_service
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils.bbox_detection import BboxResult
@@ -37,6 +38,7 @@ from documentai_api.utils.ssm import (
     is_blur_rejection_enforced,
     is_multipage_document_flagging_enabled,
 )
+from documentai_api.utils.tenants import get_tenant
 
 logger = get_logger(__name__)
 tracer = trace.get_tracer(__name__)
@@ -129,7 +131,7 @@ def set_processing_status_started(object_key: str, expected_status: str) -> bool
     """
     from documentai_api.services import ddb as ddb_service
 
-    table_name = get_env_config().get_document_metadata_table_name
+    table_name = get_env_config().document_metadata_table_name
     try:
         ddb_service.update_item(
             table_name,
@@ -232,6 +234,7 @@ def _run_preclassification(
     user_provided_document_category: str | None,
     pages_detected: int | None,
     ddb_key: str,
+    tenant_id: str | None = None,
 ) -> _PreclassificationOutcome:
     """Run preclassification and blueprint matching concurrently.
 
@@ -250,9 +253,24 @@ def _run_preclassification(
             blueprint_future: Future[PreclassificationMatchResult] = submit_with_otel_context(
                 executor, find_matching_blueprint, file_bytes, content_type
             )
-            preclassification = preclassify_document(
-                file_bytes, content_type, user_provided_document_category or None
-            )
+
+            try:
+                preclassification = preclassify_document(
+                    file_bytes, content_type, user_provided_document_category or None
+                )
+            except Exception as e:
+                logger.error(f"Preclassification failed for {ddb_key}, falling through to BDA: {e}")
+                process_status = (
+                    ProcessStatus.PENDING_IMAGE_OPTIMIZATION
+                    if content_type in FileValidation.GRAYSCALE_CONVERTIBLE
+                    else ProcessStatus.NOT_STARTED
+                )
+                return _PreclassificationOutcome(
+                    process_status,
+                    ResponseCodes.SUCCESS,
+                    pre_classification=None,
+                    is_identity_document=False,
+                )
 
     if preclassification.max_document_count_on_page > 1:
         return _PreclassificationOutcome(
@@ -275,7 +293,29 @@ def _run_preclassification(
             is_identity_document=False,
         )
 
-    blueprint_match = blueprint_future.result()
+    try:
+        blueprint_match = blueprint_future.result()
+    except Exception as e:
+        logger.error(f"Blueprint matching failed for {ddb_key}, continuing without match: {e}")
+        blueprint_match = PreclassificationMatchResult()
+
+    if blueprint_match.matched_document_type and tenant_id:
+        tenant = get_tenant(tenant_id)
+        disabled = tenant.get(TenantRecord.DISABLED_BLUEPRINT_LIST) if tenant else None
+
+        if disabled and blueprint_match.matched_document_type in disabled:
+            logger.info(
+                f"Blueprint '{blueprint_match.matched_document_type}' is disabled for tenant {tenant_id}, skipping extraction"
+            )
+            return _PreclassificationOutcome(
+                ProcessStatus.BLUEPRINT_DISABLED,
+                ResponseCodes.BLUEPRINT_DISABLED,
+                pre_classification=PreClassificationDdbFields.from_results(
+                    preclassification, blueprint_match
+                ),
+                is_identity_document=False,
+            )
+
     pre_classification = PreClassificationDdbFields.from_results(preclassification, blueprint_match)
     logger.info(
         "Blueprint match result",
@@ -413,6 +453,7 @@ def upsert_initial_ddb_record(
                         user_provided_document_category,
                         pages_detected,
                         ddb_key,
+                        tenant_id,
                     )
                 )
                 bbox_future: Future[BboxResult | None] = submit_with_otel_context(

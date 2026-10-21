@@ -20,13 +20,27 @@ export async function list({
   cursor,
 } = {}) {
   const params = new URLSearchParams();
-  if (tenantId) params.set("tenant_id", tenantId);
-  if (action) params.set("action", action);
-  if (actorEmail) params.set("actor_email", actorEmail);
-  if (startDate) params.set("start_date", startDate);
-  if (endDate) params.set("end_date", endDate);
-  if (limit) params.set("limit", String(limit));
-  if (cursor) params.set("cursor", cursor);
+  if (tenantId) {
+    params.set("tenant_id", tenantId);
+  }
+  if (action) {
+    params.set("action", action);
+  }
+  if (actorEmail) {
+    params.set("actor_email", actorEmail);
+  }
+  if (startDate) {
+    params.set("start_date", startDate);
+  }
+  if (endDate) {
+    params.set("end_date", endDate);
+  }
+  if (limit) {
+    params.set("limit", String(limit));
+  }
+  if (cursor) {
+    params.set("cursor", cursor);
+  }
   const qs = params.toString() ? `?${params}` : "";
   return adminClient.request("GET", `/v1/admin/audit-log${qs}`);
 }

@@ -156,7 +156,7 @@ def preclassify_document(
 
         return classification
     except Exception as e:
-        logger.warning(f"Document classification failed: {e}")
+        logger.error(f"Document preclassification error for content_type={content_type}: {e}")
         return BedrockClassificationResult(
             document_type="other_document", confidence=0.0, max_document_count_on_page=1
         )
@@ -295,5 +295,5 @@ def find_matching_blueprint(
             duration_seconds=Decimal(str(elapsed)),
         )
     except Exception as e:
-        logger.warning(f"Blueprint matching failed: {e}")
+        logger.error(f"Blueprint matching error: {e}")
         return PreclassificationMatchResult()

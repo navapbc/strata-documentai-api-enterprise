@@ -85,7 +85,9 @@ export function unmount(root) {
     _tenantUnsub = null;
   }
   const tenantSelect = root.querySelector("#tenant-select");
-  if (tenantSelect) TenantContext.unmountSelect(tenantSelect);
+  if (tenantSelect) {
+    TenantContext.unmountSelect(tenantSelect);
+  }
   root.replaceChildren();
 }
 
@@ -96,7 +98,9 @@ function resetPagination() {
 }
 
 async function loadActions() {
-  if (_actionsLoaded) return;
+  if (_actionsLoaded) {
+    return;
+  }
   try {
     const resp = await AuditLogService.listActions();
     _actionFilter.innerHTML = '<option value="">All actions</option>';
@@ -121,7 +125,9 @@ async function loadActors() {
       const opt = document.createElement("option");
       opt.value = actor;
       opt.textContent = actor;
-      if (actor === current) opt.selected = true;
+      if (actor === current) {
+        opt.selected = true;
+      }
       _actorFilter.appendChild(opt);
     }
   } catch {
@@ -176,7 +182,9 @@ export async function load() {
     _prevBtn.disabled = _cursorStack.length === 0;
     const hasPagination = hasMore || _cursorStack.length > 0;
     _pagination.classList.toggle("hidden", !hasPagination);
-    if (_pageIndicator) _pageIndicator.textContent = events.length > 0 ? `Page ${_pageNum}` : "";
+    if (_pageIndicator) {
+      _pageIndicator.textContent = events.length > 0 ? `Page ${_pageNum}` : "";
+    }
   } catch (e) {
     _tbody.innerHTML = "";
     _noEvents.textContent = e.message;
@@ -186,7 +194,9 @@ export async function load() {
 
 function loadNext() {
   const next = _nextBtn.dataset.cursor;
-  if (!next) return;
+  if (!next) {
+    return;
+  }
   _cursorStack.push(_cursor);
   _cursor = next;
   _pageNum++;
@@ -194,7 +204,9 @@ function loadNext() {
 }
 
 function loadPrev() {
-  if (_cursorStack.length === 0) return;
+  if (_cursorStack.length === 0) {
+    return;
+  }
   _cursor = _cursorStack.pop();
   _pageNum--;
   load();

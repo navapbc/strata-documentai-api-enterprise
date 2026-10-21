@@ -5,6 +5,7 @@ import json
 import pytest
 
 from documentai_api.config.env_var_names_generated import EnvVarNames
+from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from tests.helpers.fixtures.claims import (
     SUPER_ADMIN_CLAIMS,
@@ -25,7 +26,7 @@ def seeded_docs(ddb_doc_metadata_table):
             DocumentMetadata.JOB_ID: "test-job-id-1",
             DocumentMetadata.ORIGINAL_FILE_NAME: "invoice.pdf",
             DocumentMetadata.TENANT_ID: TENANT_ADMIN_ID,
-            DocumentMetadata.API_KEY_NAME: "test-api-key",
+            DocumentMetadata.API_KEY_NAME: "test-api-key-name",
             DocumentMetadata.PROCESS_STATUS: "completed",
             DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY: "expenses",
             DocumentMetadata.BDA_MATCHED_BLUEPRINT_NAME: "invoice",
@@ -39,7 +40,7 @@ def seeded_docs(ddb_doc_metadata_table):
             DocumentMetadata.JOB_ID: "test-job-id-2",
             DocumentMetadata.ORIGINAL_FILE_NAME: "w2.pdf",
             DocumentMetadata.TENANT_ID: TENANT_ADMIN_ID,
-            DocumentMetadata.API_KEY_NAME: "test-api-key",
+            DocumentMetadata.API_KEY_NAME: "test-api-key-name",
             DocumentMetadata.PROCESS_STATUS: "completed",
             DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY: "income",
             DocumentMetadata.BDA_MATCHED_BLUEPRINT_NAME: "w2-form",
@@ -68,8 +69,8 @@ def seeded_docs(ddb_doc_metadata_table):
             DocumentMetadata.FILE_NAME: "passport-test-job-id-3.pdf",
             DocumentMetadata.JOB_ID: "test-job-id-3",
             DocumentMetadata.ORIGINAL_FILE_NAME: "passport.pdf",
-            DocumentMetadata.TENANT_ID: "other-tenant",
-            DocumentMetadata.API_KEY_NAME: "other-key",
+            DocumentMetadata.TENANT_ID: "test-other-tenant-id",
+            DocumentMetadata.API_KEY_NAME: "test-other-api-key",
             DocumentMetadata.PROCESS_STATUS: "failed",
             DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY: "identity",
             DocumentMetadata.ERROR_MESSAGE: "Processing timeout",
@@ -82,7 +83,7 @@ def seeded_docs(ddb_doc_metadata_table):
             DocumentMetadata.JOB_ID: "test-job-id-4",
             DocumentMetadata.ORIGINAL_FILE_NAME: "alt-key.pdf",
             DocumentMetadata.TENANT_ID: TENANT_ADMIN_ID,
-            DocumentMetadata.API_KEY_NAME: "test-api-key",
+            DocumentMetadata.API_KEY_NAME: "test-api-key-name",
             DocumentMetadata.PROCESS_STATUS: "completed",
             DocumentMetadata.CREATED_AT: "2026-01-04T00:00:00Z",
             DocumentMetadata.V1_API_RESPONSE_JSON: json.dumps(
@@ -102,7 +103,7 @@ def seeded_docs(ddb_doc_metadata_table):
             DocumentMetadata.JOB_ID: "test-job-id-5",
             DocumentMetadata.ORIGINAL_FILE_NAME: "corrupt.pdf",
             DocumentMetadata.TENANT_ID: TENANT_ADMIN_ID,
-            DocumentMetadata.API_KEY_NAME: "test-api-key",
+            DocumentMetadata.API_KEY_NAME: "test-api-key-name",
             DocumentMetadata.PROCESS_STATUS: "failed",
             DocumentMetadata.CREATED_AT: "2026-01-05T00:00:00Z",
             DocumentMetadata.V1_API_RESPONSE_JSON: "not-valid-json{{",
@@ -337,7 +338,7 @@ def seeded_docs_with_content_type(ddb_doc_metadata_table, monkeypatch):
             DocumentMetadata.ORIGINAL_FILE_NAME: "invoice.pdf",
             DocumentMetadata.ORIGINAL_FILE_NAME_LOWER: "invoice.pdf",
             DocumentMetadata.TENANT_ID: TENANT_ADMIN_ID,
-            DocumentMetadata.API_KEY_NAME: "test-api-key",
+            DocumentMetadata.API_KEY_NAME: "test-api-key-name",
             DocumentMetadata.PROCESS_STATUS: "completed",
             DocumentMetadata.CONTENT_TYPE: "application/pdf",
             DocumentMetadata.CREATED_AT: "2026-01-01T00:00:00Z",
@@ -350,7 +351,7 @@ def seeded_docs_with_content_type(ddb_doc_metadata_table, monkeypatch):
             DocumentMetadata.ORIGINAL_FILE_NAME: "photo.jpg",
             DocumentMetadata.ORIGINAL_FILE_NAME_LOWER: "photo.jpg",
             DocumentMetadata.TENANT_ID: TENANT_ADMIN_ID,
-            DocumentMetadata.API_KEY_NAME: "test-api-key",
+            DocumentMetadata.API_KEY_NAME: "test-api-key-name",
             DocumentMetadata.PROCESS_STATUS: "completed",
             DocumentMetadata.CONTENT_TYPE: "image/jpeg",
             DocumentMetadata.CREATED_AT: "2026-01-02T00:00:00Z",
@@ -363,7 +364,7 @@ def seeded_docs_with_content_type(ddb_doc_metadata_table, monkeypatch):
             DocumentMetadata.ORIGINAL_FILE_NAME: "data.csv",
             DocumentMetadata.ORIGINAL_FILE_NAME_LOWER: "data.csv",
             DocumentMetadata.TENANT_ID: TENANT_ADMIN_ID,
-            DocumentMetadata.API_KEY_NAME: "test-api-key",
+            DocumentMetadata.API_KEY_NAME: "test-api-key-name",
             DocumentMetadata.PROCESS_STATUS: "completed",
             DocumentMetadata.CONTENT_TYPE: "text/csv",
             DocumentMetadata.CREATED_AT: "2026-01-03T00:00:00Z",
@@ -438,8 +439,6 @@ def test_preview_tenant_admin_cannot_view_other(api_client, seeded_docs_with_con
 
 
 def test_preview_logs_audit_event(api_client, seeded_docs_with_content_type, mocker):
-    from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
-
     mock_log = mocker.patch("documentai_api.routers.admin_documents.log_event")
     override_jwt(SUPER_ADMIN_CLAIMS)
 
@@ -468,8 +467,6 @@ def test_preview_not_found_does_not_log_audit_event(
 
 
 def test_list_logs_audit_event(api_client, seeded_docs, mocker):
-    from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
-
     mock_log = mocker.patch("documentai_api.routers.admin_documents.log_event")
     override_jwt(SUPER_ADMIN_CLAIMS)
 
@@ -487,8 +484,6 @@ def test_list_logs_audit_event(api_client, seeded_docs, mocker):
 
 
 def test_get_document_logs_search_and_view(api_client, seeded_docs, mocker):
-    from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
-
     mock_log = mocker.patch("documentai_api.routers.admin_documents.log_event")
     override_jwt(SUPER_ADMIN_CLAIMS)
 
@@ -512,8 +507,6 @@ def test_get_document_logs_search_and_view(api_client, seeded_docs, mocker):
 
 
 def test_get_document_not_found_logs_search_only(api_client, ddb_doc_metadata_table, mocker):
-    from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
-
     mock_log = mocker.patch("documentai_api.routers.admin_documents.log_event")
     override_jwt(SUPER_ADMIN_CLAIMS)
 

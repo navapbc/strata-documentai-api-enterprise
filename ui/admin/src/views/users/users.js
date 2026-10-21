@@ -72,7 +72,9 @@ export function unmount(root) {
     _tenantUnsub = null;
   }
   const tenantSelect = root.querySelector("#tenant-select");
-  if (tenantSelect) TenantContext.unmountSelect(tenantSelect);
+  if (tenantSelect) {
+    TenantContext.unmountSelect(tenantSelect);
+  }
   _tableView.unbind();
   root.replaceChildren();
 }
@@ -95,11 +97,19 @@ function applyFilters() {
   const statusQ = _statusFilter?.value;
 
   let filtered = tenantId ? _allUsers.filter((u) => u.tenantId === tenantId) : _allUsers;
-  if (emailQ) filtered = filtered.filter((u) => u.email?.toLowerCase().includes(emailQ));
-  if (roleQ === "pending") filtered = filtered.filter((u) => !u.groups || u.groups.length === 0);
-  else if (roleQ) filtered = filtered.filter((u) => u.groups?.includes(roleQ));
-  if (statusQ === "active") filtered = filtered.filter((u) => u.enabled !== false);
-  else if (statusQ === "inactive") filtered = filtered.filter((u) => u.enabled === false);
+  if (emailQ) {
+    filtered = filtered.filter((u) => u.email?.toLowerCase().includes(emailQ));
+  }
+  if (roleQ === "pending") {
+    filtered = filtered.filter((u) => !u.groups || u.groups.length === 0);
+  } else if (roleQ) {
+    filtered = filtered.filter((u) => u.groups?.includes(roleQ));
+  }
+  if (statusQ === "active") {
+    filtered = filtered.filter((u) => u.enabled !== false);
+  } else if (statusQ === "inactive") {
+    filtered = filtered.filter((u) => u.enabled === false);
+  }
 
   filtered = filtered.map((u) => ({ ...u, role: u.groups?.[0] || "pending" }));
 
@@ -145,7 +155,9 @@ async function openAssignModal(user) {
       const opt = document.createElement("option");
       opt.value = t.tenantId;
       opt.textContent = t.displayName || t.tenantId;
-      if (t.tenantId === user.tenantId) opt.selected = true;
+      if (t.tenantId === user.tenantId) {
+        opt.selected = true;
+      }
       _assignTenantSelect.appendChild(opt);
     }
   } catch {

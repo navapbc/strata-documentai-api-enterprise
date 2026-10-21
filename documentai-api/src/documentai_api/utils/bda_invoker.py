@@ -1,5 +1,3 @@
-import os
-
 from opentelemetry import trace
 
 import documentai_api.utils.documents as document_utils
@@ -8,7 +6,7 @@ from documentai_api.config.env import get_env_config
 from documentai_api.logging import get_logger
 from documentai_api.services import s3 as s3_service
 from documentai_api.services.aws_client_factory import AWSClientFactory
-from documentai_api.utils.s3 import generate_s3_uri
+from documentai_api.utils.s3 import generate_s3_uri, get_truncated_object_key
 from documentai_api.utils.ssm import (
     is_preclassification_routing_enabled,
     is_skip_bda_if_unclassified,
@@ -62,8 +60,8 @@ def invoke_bedrock_data_automation(
 ) -> tuple[str, str, int, bool]:
     """Invoke BDA and return (invocation_arn, project_arn, pages_sent_to_bda, used_category_specific_project)."""
     bda_project_arn, used_category_specific_project = resolve_project_arn(category)
-    bda_profile_arn = get_env_config().get_bda_profile_arn
-    output_location = get_env_config().get_output_location
+    bda_profile_arn = get_env_config().bda_profile_arn_required
+    output_location = get_env_config().output_location
     output_uri = generate_s3_uri(output_location, tenant_id, ddb_key, ExtractMethod.BDA)
 
     logger.info(f"BDA_PROJECT_ARN: {bda_project_arn}")
@@ -91,16 +89,15 @@ def invoke_bedrock_data_automation(
                 file_bytes, max_pages=int(ConfigDefaults.MAX_PAGES_PER_DOCUMENT)
             )
 
-            # create new truncated file name
-            base_name, extension = os.path.splitext(source_object_name)
-            extension = extension or ""  # handle None/empty extension
-            source_object_name = f"{base_name}_truncated{extension}"
-
-            # upload truncated version to S3
+            source_object_name = get_truncated_object_key(source_object_name)
             s3_service.put_object(
                 bucket=source_bucket_name, key=source_object_name, body=truncated_bytes
             )
+    except Exception as e:
+        logger.error(f"BDA pre-invoke preparation failed for {source_object_name}: {e}")
+        raise
 
+    try:
         # considered moving to services/bda.py instead of calling runtime client
         # directly. ultimately decided not to. services/bda.py does not have
         # tracing/span. moving the call would mean either introducing
@@ -118,16 +115,16 @@ def invoke_bedrock_data_automation(
                 outputConfiguration={"s3Uri": output_uri},
             )
         logger.info(f"BDA response: {response}")
-
-        return (
-            str(response.get("invocationArn")),
-            bda_project_arn,
-            pages_sent,
-            used_category_specific_project,
-        )
     except Exception as e:
-        logger.error(f"BDA API call failed: {e}")
+        logger.error(f"BDA API call failed for {source_object_name}: {e}")
         raise
+
+    return (
+        str(response.get("invocationArn")),
+        bda_project_arn,
+        pages_sent,
+        used_category_specific_project,
+    )
 
 
 __all__ = ["invoke_bedrock_data_automation", "skip_bda_if_unclassified"]

@@ -15,6 +15,7 @@ let _state = {
   dirty: false, // unsaved changes in editor
   tenantId: null, // selected tenant for rules
   allRules: [], // all rules for selected tenant
+  disabledBlueprints: new Set(), // blueprints disabled for selected tenant
 };
 
 export function get() {
@@ -41,5 +42,6 @@ export function reset() {
     dirty: false,
     tenantId: null,
     allRules: [],
+    disabledBlueprints: new Set(),
   };
 }

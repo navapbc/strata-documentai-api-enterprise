@@ -4,6 +4,9 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+from documentai_api.app import app
+from documentai_api.config.constants import ConfigDefaults
+from documentai_api.routers.demo import _resolve_demo_context
 from documentai_api.schemas.document_metadata import DocumentMetadata
 
 
@@ -45,8 +48,6 @@ def test_demo_upload_sets_is_demo_true(api_client, blank_pdf_bytes, mocker):
 
 def test_demo_upload_sets_ttl(api_client, blank_pdf_bytes, mocker):
     """POST /v1/demo/documents sets 3-day TTL on the record."""
-    from documentai_api.config.constants import ConfigDefaults
-
     mock_insert = mocker.patch("documentai_api.routers.documents.insert_minimal_ddb_record")
     mocker.patch("documentai_api.routers.documents.dispatch_upload", new_callable=AsyncMock)
 
@@ -74,7 +75,7 @@ def test_demo_list_filters_to_is_demo(api_client, ddb_doc_metadata_table):
         Item={
             DocumentMetadata.FILE_NAME: "demo-doc.pdf",
             DocumentMetadata.JOB_ID: "job-demo",
-            DocumentMetadata.TENANT_ID: "demo-test-sub",
+            DocumentMetadata.TENANT_ID: "test-demo-tenant-id",
             DocumentMetadata.IS_DEMO: True,
             DocumentMetadata.ORIGINAL_FILE_NAME: "demo-doc.pdf",
             DocumentMetadata.PROCESS_STATUS: "success",
@@ -86,7 +87,7 @@ def test_demo_list_filters_to_is_demo(api_client, ddb_doc_metadata_table):
         Item={
             DocumentMetadata.FILE_NAME: "real-doc.pdf",
             DocumentMetadata.JOB_ID: "job-real",
-            DocumentMetadata.TENANT_ID: "demo-test-sub",
+            DocumentMetadata.TENANT_ID: "test-demo-tenant-id",
             DocumentMetadata.IS_DEMO: False,
             DocumentMetadata.ORIGINAL_FILE_NAME: "real-doc.pdf",
             DocumentMetadata.PROCESS_STATUS: "success",
@@ -134,7 +135,7 @@ def test_demo_get_success(api_client, ddb_doc_metadata_table):
         Item={
             DocumentMetadata.FILE_NAME: "mine.pdf",
             DocumentMetadata.JOB_ID: "job-mine",
-            DocumentMetadata.TENANT_ID: "demo-test-sub",
+            DocumentMetadata.TENANT_ID: "test-demo-tenant-id",
             DocumentMetadata.ORIGINAL_FILE_NAME: "mine.pdf",
             DocumentMetadata.PROCESS_STATUS: "success",
             DocumentMetadata.CREATED_AT: "2024-01-01T00:00:00Z",
@@ -169,9 +170,6 @@ def test_demo_preview_wrong_tenant_returns_404(api_client, ddb_doc_metadata_tabl
 
 def test_demo_upload_rejects_without_auth(api_client, blank_pdf_bytes):
     """POST /v1/demo/documents returns 401 without valid credentials."""
-    from documentai_api.app import app
-    from documentai_api.routers.demo import _resolve_demo_context
-
     # Remove the auth override so the real dependency runs
     app.dependency_overrides.pop(_resolve_demo_context, None)
 

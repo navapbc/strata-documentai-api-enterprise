@@ -1,0 +1,36 @@
+name: CI gif-check
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    paths:
+      - ui/admin/src/**
+      - ui/shared/**
+      - ui/demo/src/**
+      - .github/workflows/ci-gif-check.yml
+
+concurrency:
+  group: ci-gif-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check-gifs:
+    name: GIF update check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Warn if UI source changed without updating GIFs
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          # Keep path args in sync with on.pull_request.paths above.
+          UI_CHANGED=$(git diff --name-only "$BASE"...HEAD -- ui/admin/src ui/shared ui/demo/src)
+          GIF_CHANGED=$(git diff --name-only "$BASE"...HEAD -- 'docs/documentai-api/media/*.gif')
+          if [ -n "$UI_CHANGED" ] && [ -z "$GIF_CHANGED" ]; then
+            echo "::warning::UI source changed but no GIFs were updated in docs/documentai-api/media/. Run 'make record-ui' (or the relevant record-* target) if the walkthroughs need updating."
+          fi

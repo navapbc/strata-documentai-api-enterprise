@@ -1,0 +1,98 @@
+/* Document viewer: zoom/rotate controls and bounding-box overlay. Shared by
+   the admin and demo UIs; panel layout stays in each app's stylesheet. */
+.preview-zoom-controls {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 3;
+  display: flex;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  will-change: transform;
+}
+.preview-zoomed,
+.preview-zoomed .bbox-overlay rect {
+  cursor: grab;
+}
+.preview-dragging,
+.preview-dragging .bbox-overlay rect {
+  cursor: grabbing;
+}
+.preview-zoom-controls .zoom-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.preview-zoom-controls .zoom-btn svg {
+  flex-shrink: 0;
+}
+.preview-zoom-controls .zoom-btn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.07);
+}
+
+.preview-zoom-controls .zoom-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.preview-controls-sep {
+  width: 1px;
+  margin: 3px 2px;
+  background: var(--color-border);
+  align-self: stretch;
+}
+
+.bbox-overlay-wrap {
+  position: absolute;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.bbox-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.bbox-overlay rect {
+  pointer-events: all;
+  cursor: pointer;
+  transition: stroke-width 0.1s;
+}
+
+/* Highlight a box on direct hover, or when its field row is hovered. */
+.bbox-overlay rect:hover,
+.bbox-overlay rect.bbox-highlight {
+  fill: rgba(255, 214, 0, 0.35);
+  stroke: #f5c000;
+  stroke-width: 0.006;
+}
+
+.bbox-tooltip {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: pre-line;
+  pointer-events: none;
+  z-index: 10;
+  max-width: 300px;
+}
