@@ -39,6 +39,13 @@ const NAV_SECTIONS = [
     ],
   },
   {
+    id: "testing",
+    label: "Testing",
+    icon: "documents",
+    description: "Test extraction against live documents",
+    items: [{ view: "extraction-test-runner", label: "Extraction Test Runner" }],
+  },
+  {
     id: "reporting",
     label: "Reporting",
     icon: "chart",

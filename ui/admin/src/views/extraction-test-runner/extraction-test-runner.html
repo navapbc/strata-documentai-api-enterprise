@@ -1,0 +1,52 @@
+<div class="filter-layout filter-layout--doc-viewer">
+  <div class="filter-sidebar">
+    <div class="filter-field">
+      <label class="filter-field-label">Tenant</label>
+      <select id="tenant-select">
+        <option value="">- Select tenant -</option>
+      </select>
+    </div>
+    <div class="filter-field">
+      <label class="filter-field-label">Document</label>
+      <div class="demo-dropzone" id="extraction-test-dropzone">
+        <input
+          type="file"
+          id="extraction-test-file"
+          accept=".pdf,.png,.jpg,.jpeg,.tiff,.tif,.webp"
+        />
+        <div id="extraction-test-dropzone-idle">
+          <div class="demo-dropzone-icon">⬆</div>
+          <p class="demo-dropzone-hint">
+            Drop a document here or <span class="demo-dropzone-link">browse</span>
+          </p>
+          <p class="demo-dropzone-formats">PDF, PNG, JPG, TIFF, WEBP</p>
+        </div>
+        <div id="extraction-test-dropzone-selected" class="hidden">
+          <p class="demo-dropzone-filename" id="extraction-test-file-name"></p>
+          <button type="button" class="demo-dropzone-clear" id="extraction-test-file-clear">
+            ✕ Clear
+          </button>
+        </div>
+      </div>
+    </div>
+    <button id="extraction-test-run-btn" class="btn-primary btn-block" disabled>
+      Run Extraction
+    </button>
+    <label class="filter-field-label" style="margin-top: 1.5rem">Recent Test Runs</label>
+    <p id="extraction-test-history-empty" class="empty-state hidden">No test runs yet.</p>
+    <ul id="extraction-test-history" class="documents-compact-list"></ul>
+  </div>
+  <div class="filter-main">
+    <button type="button" class="doc-viewer-back-btn" id="extraction-test-back">← Back</button>
+    <p id="extraction-test-empty" class="empty-state">
+      Select a tenant and upload a document to run an extraction test.
+    </p>
+    <div id="extraction-test-status" style="display:none"></div>
+    <div id="extraction-test-results" class="hidden">
+      <div class="extraction-result-card">
+        <div class="extraction-result-header" id="extraction-test-result-header"></div>
+        <div id="extraction-test-result-fields"></div>
+      </div>
+    </div>
+  </div>
+</div>

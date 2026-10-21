@@ -58,7 +58,17 @@ def test_demo_upload_sets_ttl(api_client, blank_pdf_bytes, mocker):
     assert record.ttl_days == ConfigDefaults.DEMO_DOCUMENT_TTL_DAYS
 
 
-def test_demo_list_returns_empty(api_client, ddb_doc_metadata_table):
+def test_demo_upload_does_not_increment_quota(api_client, blank_pdf_bytes, mocker):
+    """POST /v1/demo/documents must not count against the tenant's request quota."""
+    mock_increment = mocker.patch("documentai_api.routers.documents.increment_and_check")
+    mocker.patch("documentai_api.routers.documents.insert_minimal_ddb_record")
+    mocker.patch("documentai_api.routers.documents.dispatch_upload", new_callable=AsyncMock)
+
+    files = {"file": ("test.pdf", blank_pdf_bytes, "application/pdf")}
+    api_client.post("/v1/demo/documents", files=files)
+
+    mock_increment.assert_not_called()
+
     """GET /v1/demo/documents returns empty list when no demo docs exist."""
     response = api_client.get("/v1/demo/documents")
 

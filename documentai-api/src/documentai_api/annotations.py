@@ -109,3 +109,5 @@ ApiKeyNameStr = Annotated[
     str, StringConstraints(pattern=r"^[a-z0-9-]+$", min_length=1, max_length=64)
 ]
 WriteLimit = Annotated[int, Field(gt=0, description="Maximum number of write requests allowed.")]
+
+TenantIdField = Annotated[str, Form(description="Tenant identifier")]

@@ -3,7 +3,7 @@
 import json
 from typing import Any
 
-from documentai_api.config.constants import ProcessStatus
+from documentai_api.config.constants import ProcessStatus, V1JobStatus
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.logging import get_logger
 from documentai_api.readers.extraction import read_output
@@ -16,54 +16,54 @@ logger = get_logger(__name__)
 
 _TERMINAL_STATUS_RESPONSES: dict[str, dict[str, Any]] = {
     ProcessStatus.NO_CUSTOM_BLUEPRINT_MATCHED.value: {
-        "jobStatus": "completed",
+        "jobStatus": V1JobStatus.COMPLETED,
         "message": "No matching blueprint found",
         "fields": {},
         "responseCode": ResponseCodes.NO_BLUEPRINT_MATCHED,
         "responseMessage": ResponseCodes.get_message(ResponseCodes.NO_BLUEPRINT_MATCHED),
     },
     ProcessStatus.FAILED.value: {
-        "jobStatus": "failed",
+        "jobStatus": V1JobStatus.FAILED,
         "error": "Processing failed",
         "responseCode": ResponseCodes.INTERNAL_PROCESSING_ERROR,
         "responseMessage": ResponseCodes.get_message(ResponseCodes.INTERNAL_PROCESSING_ERROR),
     },
     ProcessStatus.NO_DOCUMENT_DETECTED.value: {
-        "jobStatus": "completed",
+        "jobStatus": V1JobStatus.COMPLETED,
         "message": "Unable to extract meaningful document content",
         "responseCode": ResponseCodes.NO_DOCUMENT_DETECTED,
         "responseMessage": ResponseCodes.get_message(ResponseCodes.NO_DOCUMENT_DETECTED),
     },
     ProcessStatus.BLURRY_DOCUMENT_DETECTED.value: {
-        "jobStatus": "completed",
+        "jobStatus": V1JobStatus.COMPLETED,
         "message": "Document is blurry",
         "responseCode": ResponseCodes.BLURRY_DOCUMENT_DETECTED,
         "responseMessage": ResponseCodes.get_message(ResponseCodes.BLURRY_DOCUMENT_DETECTED),
     },
     ProcessStatus.AI_CONSENT_DECLINED.value: {
-        "jobStatus": "ai_consent_declined",
+        "jobStatus": V1JobStatus.AI_CONSENT_DECLINED,
         "message": "Document not processed - AI consent not provided",
         "responseCode": ResponseCodes.AI_CONSENT_DECLINED,
         "responseMessage": ResponseCodes.get_message(ResponseCodes.AI_CONSENT_DECLINED),
     },
     ProcessStatus.DELETED.value: {
-        "jobStatus": "deleted",
+        "jobStatus": V1JobStatus.DELETED,
         "message": "Document has been deleted",
     },
     ProcessStatus.CONVERSION_FAILED.value: {
-        "jobStatus": "conversion_failed",
+        "jobStatus": V1JobStatus.CONVERSION_FAILED,
         "message": "Image format conversion failed",
         "responseCode": ResponseCodes.INTERNAL_PROCESSING_ERROR,
         "responseMessage": ResponseCodes.get_message(ResponseCodes.INTERNAL_PROCESSING_ERROR),
     },
     ProcessStatus.PASSWORD_PROTECTED.value: {
-        "jobStatus": "completed",
+        "jobStatus": V1JobStatus.COMPLETED,
         "message": "Document type not supported",
         "responseCode": ResponseCodes.PASSWORD_PROTECTED,
         "responseMessage": ResponseCodes.get_message(ResponseCodes.PASSWORD_PROTECTED),
     },
     ProcessStatus.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE.value: {
-        "jobStatus": "completed",
+        "jobStatus": V1JobStatus.COMPLETED,
         "message": "Document type not supported",
         "responseCode": ResponseCodes.MULTIPLE_DOCUMENTS_ON_SINGLE_PAGE,
         "responseMessage": ResponseCodes.get_message(
@@ -71,13 +71,13 @@ _TERMINAL_STATUS_RESPONSES: dict[str, dict[str, Any]] = {
         ),
     },
     ProcessStatus.MULTIPLE_DOCUMENTS_IN_MULTIPAGE.value: {
-        "jobStatus": "completed",
+        "jobStatus": V1JobStatus.COMPLETED,
         "message": "Document type not supported",
         "responseCode": ResponseCodes.MULTIPLE_DOCUMENTS_IN_MULTIPAGE,
         "responseMessage": ResponseCodes.get_message(ResponseCodes.MULTIPLE_DOCUMENTS_IN_MULTIPAGE),
     },
     ProcessStatus.PROCESSING_EXCLUDED.value: {
-        "jobStatus": "completed",
+        "jobStatus": V1JobStatus.COMPLETED,
         "message": "Document not chosen for extraction",
         "responseCode": ResponseCodes.PROCESSING_EXCLUDED,
         "responseMessage": ResponseCodes.get_message(ResponseCodes.PROCESSING_EXCLUDED),
@@ -280,7 +280,7 @@ def build_v1_api_response(
         if response_code is None:
             raise ValueError("_resolve_response_code returned no code for a SUCCESS job_status")
 
-        base_response["jobStatus"] = "completed"
+        base_response["jobStatus"] = V1JobStatus.COMPLETED
         base_response["message"] = "Document processed successfully"
         base_response["responseCode"] = response_code
         base_response["responseMessage"] = ResponseCodes.get_message(response_code)
@@ -307,7 +307,7 @@ def build_v1_api_response(
 
     else:
         base_response.update(
-            {"jobStatus": "processing", "message": "Document processing in progress"}
+            {"jobStatus": V1JobStatus.PROCESSING, "message": "Document processing in progress"}
         )
 
     return {k: v for k, v in base_response.items() if v is not None}

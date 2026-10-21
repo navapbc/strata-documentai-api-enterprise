@@ -202,6 +202,27 @@ def test_list_status_filter_no_match(api_client, seeded_docs):
     assert response.json()["count"] == 0
 
 
+def test_list_default_includes_records_without_is_test_run(api_client, ddb_doc_metadata_table):
+    """Records written before isTestRun existed (attribute absent) must appear in the default list."""
+    ddb_doc_metadata_table.put_item(
+        Item={
+            DocumentMetadata.FILE_NAME: "legacy-job-legacy-1.pdf",
+            DocumentMetadata.JOB_ID: "legacy-job-1",
+            DocumentMetadata.ORIGINAL_FILE_NAME: "legacy.pdf",
+            DocumentMetadata.TENANT_ID: TENANT_ADMIN_ID,
+            DocumentMetadata.API_KEY_NAME: "test-api-key-name",
+            DocumentMetadata.PROCESS_STATUS: "completed",
+            DocumentMetadata.CREATED_AT: "2025-01-01T00:00:00Z",
+            # intentionally no IS_TEST_RUN attribute
+        }
+    )
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(DOCUMENTS_URL, params={"tenant_id": TENANT_ADMIN_ID})
+    assert response.status_code == 200
+    job_ids = [d["jobId"] for d in response.json()["documents"]]
+    assert "legacy-job-1" in job_ids
+
+
 def test_invalid_cursor_returns_400(api_client, ddb_doc_metadata_table):
     override_jwt(SUPER_ADMIN_CLAIMS)
     response = api_client.get(

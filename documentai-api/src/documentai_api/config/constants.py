@@ -114,6 +114,7 @@ class ConfigDefaults:
     DOCUMENT_BUILDS_TTL_DAYS = 30
     DOCUMENT_METADATA_TTL_DAYS = 180
     DEMO_DOCUMENT_TTL_DAYS = 7
+    TEST_RUN_DOCUMENT_TTL_DAYS = 7
     PROCESSING_REAPER_STALE_THRESHOLD_HOURS = 1
     TENANT_REQUEST_COUNTS_TTL_DAYS = 365 * 5
     BDA_DOCUMENT_DETECTION_MIN_CHAR_LENGTH = 50
@@ -410,6 +411,21 @@ class ProcessStatus(StrEnum):
         placeholders = ", ".join(values)
         condition = f"attribute_not_exists(processStatus) OR processStatus IN ({placeholders})"
         return condition, values
+
+
+class V1JobStatus:
+    """jobStatus values used in v1 API responses.
+
+    These are the external-facing status strings written into v1ApiResponseJson
+    and returned by the v1 API. Distinct from the internal ProcessStatus enum.
+    """
+
+    AI_CONSENT_DECLINED = "ai_consent_declined"
+    COMPLETED = "completed"
+    CONVERSION_FAILED = "conversion_failed"
+    DELETED = "deleted"
+    FAILED = "failed"
+    PROCESSING = "processing"
 
 
 class S3MetadataKeys:

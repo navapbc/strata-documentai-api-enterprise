@@ -58,7 +58,7 @@ function createClient(buildAuthHeaders) {
         if (res.status === 401 && !_retried) {
           const refreshed = await _tryRefresh();
           if (refreshed) return this.request(method, path, body, true);
-          return;
+          throw new Error("Session expired");
         }
         const respBody = await res
           .json()

@@ -4,6 +4,7 @@ import * as Documents from "../../services/documents.js";
 import { h } from "../../../../shared/utils/dom.js";
 import { tpl } from "../../../../shared/utils/tpl.js";
 import { esc } from "../../../../shared/utils/helpers.js";
+import { createElapsedTimer } from "../../../../shared/utils/elapsed-timer.js";
 import {
   extractGeometry,
   renderBboxOverlay,
@@ -95,9 +96,8 @@ function switchTab(name) {
 }
 let _selectedFile = null;
 let _abortController = null;
-let _startTime = null;
-let _elapsedTimer = null;
 let _onLogout = null;
+let _elapsedTimer = null;
 
 export function onLogout(callback) {
   _onLogout = callback;
@@ -176,7 +176,7 @@ export function unmount() {
     _abortController.abort();
   }
   if (_elapsedTimer) {
-    clearInterval(_elapsedTimer);
+    _elapsedTimer.stop();
   }
 }
 
@@ -270,10 +270,8 @@ async function runExtraction() {
   _runBtn.disabled = true;
   _elapsed.classList.remove("hidden");
   _results.classList.add("hidden");
-  _startTime = Date.now();
-  _abortController = new AbortController();
-  _elapsedTimer = setInterval(updateElapsed, 1000);
-  updateElapsed();
+  _elapsedTimer = createElapsedTimer((s) => (_elapsed.textContent = `Processing… ${s}s`));
+  _elapsedTimer.start();
 
   try {
     const { jobId } = await Documents.upload(file);
@@ -288,8 +286,7 @@ async function runExtraction() {
       Toast.show(`Extraction failed: ${e.message}`);
     }
   } finally {
-    clearInterval(_elapsedTimer);
-    _elapsedTimer = null;
+    _elapsedTimer.stop();
     _elapsed.classList.add("hidden");
     _runBtn.disabled = !_selectedFile;
     _abortController = null;
@@ -341,12 +338,6 @@ async function loadDocument(jobId) {
   }
 }
 
-function updateElapsed() {
-  if (!_startTime) {
-    return;
-  }
-  _elapsed.textContent = `Processing… ${Math.floor((Date.now() - _startTime) / 1000)}s`;
-}
 
 let _resizeObserver = null;
 

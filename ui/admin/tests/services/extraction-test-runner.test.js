@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-describe("blueprint-test service", () => {
-  let BlueprintTestService;
+describe("extraction-test service", () => {
+  let ExtractionTestRunnerService;
   let fetchMock;
 
   beforeEach(async () => {
@@ -28,7 +28,7 @@ describe("blueprint-test service", () => {
     fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
-    BlueprintTestService = await import("../../src/services/blueprint-test.js");
+    ExtractionTestRunnerService = await import("../../src/services/extraction-test-runner.js");
   });
 
   afterEach(() => {
@@ -36,43 +36,66 @@ describe("blueprint-test service", () => {
     vi.unstubAllGlobals();
   });
 
-  it("posts FormData and polls until COMPLETED", async () => {
+  it("posts FormData and polls until success", async () => {
     fetchMock
-      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ testId: "t-1" }) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ jobId: "j-1" }) })
       .mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ status: "COMPLETED", fields: {} }),
+        json: () => Promise.resolve({ jobStatus: "success", isCompleted: true, extractedData: {} }),
       });
 
     const file = new File(["pdf"], "test.pdf", { type: "application/pdf" });
-    const promise = BlueprintTestService.run(file, "acme", "tax", null, null);
+    const promise = ExtractionTestRunnerService.run(file, "acme", null);
 
     await vi.advanceTimersByTimeAsync(3000);
     const result = await promise;
 
-    expect(result.status).toBe("COMPLETED");
+    expect(result.jobStatus).toBe("success");
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(fetchMock.mock.calls[0][0]).toBe("http://localhost:8000/v1/admin/blueprints/test");
+    expect(fetchMock.mock.calls[0][0]).toBe("http://localhost:8000/v1/admin/extraction-test");
     expect(fetchMock.mock.calls[0][1].method).toBe("POST");
+    expect(fetchMock.mock.calls[1][0]).toContain("include_extracted_data=true");
   });
 
-  it("throws on FAILED status", async () => {
+  it("throws on failed status", async () => {
     fetchMock
-      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ testId: "t-2" }) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ jobId: "j-2" }) })
       .mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ status: "FAILED", error: "bad doc" }),
+        json: () =>
+          Promise.resolve({
+            jobStatus: "failed",
+            isCompleted: true,
+            isFailed: true,
+            message: "bad doc",
+          }),
       });
 
     const file = new File(["pdf"], "test.pdf");
-    const promise = BlueprintTestService.run(file, "acme", "tax", null, null);
+    const promise = ExtractionTestRunnerService.run(file, "acme", null);
 
-    // Attach catch immediately to prevent unhandled rejection
     const caught = promise.catch((e) => e);
     await vi.advanceTimersByTimeAsync(3000);
     const err = await caught;
     expect(err).toBeInstanceOf(Error);
     expect(err.message).toBe("bad doc");
+  });
+
+  it("resolves on terminal non-success statuses", async () => {
+    fetchMock
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ jobId: "j-3" }) })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () =>
+          Promise.resolve({ jobStatus: "no_custom_blueprint_matched", isCompleted: true }),
+      });
+
+    const file = new File(["pdf"], "test.pdf");
+    const promise = ExtractionTestRunnerService.run(file, "acme", null);
+
+    await vi.advanceTimersByTimeAsync(3000);
+    const result = await promise;
+    expect(result.jobStatus).toBe("no_custom_blueprint_matched");
   });
 
   it("throws on non-ok start response", async () => {
@@ -83,21 +106,19 @@ describe("blueprint-test service", () => {
     });
 
     const file = new File(["pdf"], "test.pdf");
-    await expect(BlueprintTestService.run(file, "acme", "tax", null, null)).rejects.toThrow(
-      "Invalid file",
-    );
+    await expect(ExtractionTestRunnerService.run(file, "acme", null)).rejects.toThrow("Invalid file");
   });
 
   it("includes auth header from session", async () => {
     fetchMock
-      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ testId: "t-4" }) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ jobId: "j-4" }) })
       .mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ status: "COMPLETED", fields: {} }),
+        json: () => Promise.resolve({ jobStatus: "success", isCompleted: true, extractedData: {} }),
       });
 
     const file = new File(["pdf"], "test.pdf");
-    const promise = BlueprintTestService.run(file, "acme", "tax", null, null);
+    const promise = ExtractionTestRunnerService.run(file, "acme", null);
     await vi.advanceTimersByTimeAsync(3000);
     await promise;
 
