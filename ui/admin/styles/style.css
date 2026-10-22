@@ -1,4 +1,5 @@
 @import "../../shared/styles/document-viewer.css";
+@import "../../shared/styles/dropzone.css";
 
 :root {
   --color-primary: #2563eb;
@@ -2162,6 +2163,16 @@ td {
   width: 4rem;
 }
 
+/* In wider contexts (e.g. extraction test result card) give confidence room */
+.extraction-result-card .extracted-data-table col.ed-col-conf {
+  width: 7rem;
+}
+
+.extraction-result-card .extracted-data-table th:last-child,
+.extraction-result-card .extracted-data-table td:last-child {
+  white-space: nowrap;
+}
+
 /* Field names and values are arbitrary length under fixed layout - wrap instead
    of overflowing the column. */
 .extracted-data-table .detail-label,
@@ -3852,5 +3863,84 @@ tr.saved {
   .field-toggles .toggle-badge {
     display: block;
     text-align: center;
+  }
+}
+
+/* Extraction test result card */
+.extraction-result-card {
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 8px;
+}
+
+.extraction-result-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--color-surface-raised, #f9fafb);
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+  flex-wrap: wrap;
+  border-radius: 8px 8px 0 0;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.extraction-result-filename {
+  font-weight: 600;
+  font-size: 0.9rem;
+  flex: 1;
+  min-width: 0;
+  word-break: break-all;
+}
+
+.extraction-result-meta {
+  display: contents;
+}
+
+.extraction-result-date,
+.extraction-result-time {
+  font-size: 0.78rem;
+  color: var(--color-text-muted, #6b7280);
+  white-space: nowrap;
+}
+
+.extraction-result-date {
+  margin-left: 0.75rem;
+}
+
+#extraction-test-status {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem 1rem;
+  font-size: 1.1rem;
+}
+
+#extraction-test-result-fields {
+  padding: 16px;
+}
+
+#extraction-test-result-fields .empty-state {
+  margin: 0;
+}
+
+@media (max-width: 1024px) {
+  .extraction-result-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .extraction-result-filename {
+    flex: none;
+  }
+
+  .extraction-result-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
   }
 }

@@ -1,7 +1,8 @@
 from typing import Any, Self
 
-from pydantic import AwareDatetime
+from pydantic import AwareDatetime, model_validator
 
+from documentai_api.config.constants import ProcessStatus, V1JobStatus
 from documentai_api.models.base import BaseApiResponse
 from documentai_api.utils.response_builder import present_v1_response
 
@@ -28,7 +29,19 @@ class JobStatusResponse(BaseApiResponse):
     missing_required_field_list: list[str] | None = None
     below_extraction_confidence_floor: bool | None = None
     user_provided_document_category: str | None = None
+    is_completed: bool = False
+    is_failed: bool = False
     inferred_document_type: str | None = None
+
+    @model_validator(mode="after")
+    def _set_completion_flags(self) -> Self:
+        # job_status in v1 API responses uses "completed" rather than the internal
+        # ProcessStatus values — treat it as terminal.
+        self.is_completed = (
+            ProcessStatus.is_completed(self.job_status) or self.job_status == V1JobStatus.COMPLETED
+        )
+        self.is_failed = self.job_status == ProcessStatus.FAILED
+        return self
 
     @classmethod
     def from_v1(cls, v1_response: dict[str, Any]) -> Self:

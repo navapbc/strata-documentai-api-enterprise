@@ -3,7 +3,7 @@
 import json
 from typing import Any
 
-from boto3.dynamodb.conditions import Attr
+from boto3.dynamodb.conditions import Attr, ConditionBase
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from documentai_api.annotations import AdminClaims, PageLimit, verify_jwt_with_role
@@ -22,7 +22,7 @@ from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils.audit_log import log_event
 from documentai_api.utils.document_metadata_table import DocumentMetadataTable
-from documentai_api.utils.jwt_auth import tenant_scope
+from documentai_api.utils.jwt_auth import assert_tenant_scope, tenant_scope
 from documentai_api.utils.pagination import decode_cursor, encode_cursor
 from documentai_api.utils.response_builder import nest_fields
 from documentai_api.utils.s3 import get_bucket_and_key
@@ -115,6 +115,17 @@ def _parse_confidence_scores(record: dict[str, Any]) -> list[dict[str, Any]] | N
     return result_raw
 
 
+def _fetch_scoped_record(job_id: str, scope: str | None) -> dict[str, Any]:
+    """Fetch a DDB record by job ID, enforcing tenant scope. Raises 404 if missing or out of scope."""
+    record = _table.query_by_job_id(job_id)
+
+    if not record:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+
+    assert_tenant_scope(record, scope, DocumentMetadata.TENANT_ID)
+    return record
+
+
 def _parse_extracted_data(record: dict[str, Any]) -> dict[str, Any] | None:
     """Parse the v1 API response JSON to extract field values."""
     raw = record.get(DocumentMetadata.V1_API_RESPONSE_JSON)
@@ -136,6 +147,7 @@ async def list_documents(
     tenant_id: str | None = None,
     status_filter: str | None = None,
     is_demo: bool | None = None,
+    is_test_run: bool | None = False,
     limit: PageLimit = 50,
     cursor: str | None = None,
 ) -> DocumentListResponse:
@@ -164,11 +176,16 @@ async def list_documents(
 
     try:
         exclusive_start_key = decode_cursor(cursor) if cursor else None
-        filter_parts = []
+        filter_parts: list[ConditionBase] = []
         if status_filter:
             filter_parts.append(Attr(DocumentMetadata.PROCESS_STATUS).eq(status_filter))
+
         if is_demo is not None:
             filter_parts.append(Attr(DocumentMetadata.IS_DEMO).eq(is_demo))
+
+        if is_test_run is not None:
+            attr = Attr(DocumentMetadata.IS_TEST_RUN)
+            filter_parts.append(attr.eq(True) if is_test_run else attr.ne(True))
 
         filter_expr = None
         if filter_parts:
@@ -222,6 +239,7 @@ async def get_document(
     """
     if include_bounding_box:
         include_extracted_data = True
+
     scope = tenant_scope(claims)
 
     log_event(
@@ -232,15 +250,7 @@ async def get_document(
     )
 
     try:
-        record = _table.query_by_job_id(job_id)
-        if not record:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
-
-        # Tenant-admin scoping - returns 404 to avoid existence disclosure.
-        if scope is not None and record.get(DocumentMetadata.TENANT_ID) != scope:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
-
-        # jobId is unique by design (UUID generated upstream); first match is safe.
+        record = _fetch_scoped_record(job_id, scope)
         detail = _record_to_detail(record, include_extracted_data, include_bounding_box)
 
         action = (
@@ -280,13 +290,7 @@ async def get_document_preview(
     scope = tenant_scope(claims)
 
     try:
-        record = _table.query_by_job_id(job_id)
-        if not record:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
-
-        if scope is not None and record.get(DocumentMetadata.TENANT_ID) != scope:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
-
+        record = _fetch_scoped_record(job_id, scope)
         content_type = record.get(DocumentMetadata.CONTENT_TYPE, "")
         if content_type not in FileValidation.PREVIEWABLE_TYPES:
             raise HTTPException(

@@ -1,6 +1,5 @@
 import { test, expect } from "@playwright/test";
 import { JOB_ID, COMPLETED_DOC, previewDataUrl } from "../../shared/e2e/fixtures/recording/w2-document.js";
-import { loginWithMfa } from "../../shared/e2e/helpers/login.js";
 import { hoverFields, expectBboxOverlay } from "../../shared/e2e/helpers/document-viewer.js";
 
 // ---------------------------------------------------------------------------
@@ -78,9 +77,16 @@ test("demo walkthrough: login -> upload -> extraction with bounding boxes", asyn
     return route.fulfill(json({ ...HISTORY, documents: docs }));
   });
 
-  // === 1. Login + MFA ======================================================
+  // === 1. Start logged in ==================================================
   await page.goto("/");
-  await loginWithMfa(page, { email: "demo@example.com", password: "DemoPassword123!", groups: [], expect });
+  const payload = btoa(JSON.stringify({ "cognito:groups": [], email: "demo@example.com" }));
+  await page.evaluate((p) => {
+    sessionStorage.setItem("docai_console_session", JSON.stringify({
+      accessToken: "fake-at", idToken: `h.${p}.s`, refreshToken: "fake-rt",
+      email: "demo@example.com", expiresAt: Date.now() + 3600000,
+    }));
+  }, payload);
+  await page.goto("/");
 
   // === 3. Upload view ======================================================
   await expect(page.locator("#demo-dropzone")).toBeVisible();

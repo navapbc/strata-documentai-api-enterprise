@@ -1,6 +1,6 @@
 import { adminClient } from "./http.js";
 
-export async function list({ tenantId, status, isDemo, limit, cursor } = {}) {
+export async function list({ tenantId, status, isDemo, isTestRun, limit, cursor } = {}) {
   const params = new URLSearchParams();
   if (tenantId) {
     params.set("tenant_id", tenantId);
@@ -10,6 +10,9 @@ export async function list({ tenantId, status, isDemo, limit, cursor } = {}) {
   }
   if (isDemo != null) {
     params.set("is_demo", String(isDemo));
+  }
+  if (isTestRun != null) {
+    params.set("is_test_run", String(isTestRun));
   }
   if (limit) {
     params.set("limit", String(limit));

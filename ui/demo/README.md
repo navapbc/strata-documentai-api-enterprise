@@ -37,11 +37,10 @@ Deploy from the repo root: `make deploy-demo-ui`
 Requires `ffmpeg` (`brew install ffmpeg`) and Chromium (`make playwright-install`).
 
 ```bash
-make record-demo-ui    # demo UI walkthrough -> demo-walkthrough.gif
-make record-ui         # all videos (admin + rules + demo)
+make record-ui   # records every e2e-video/*.spec.js in both UIs
 ```
 
-The spec lives in `e2e-video/demo-walkthrough.spec.js`. See [e2e-video/README.md](e2e-video/README.md) for what to edit.
+The spec filename stem becomes the GIF name (e.g. `demo-walkthrough.spec.js` → `demo-walkthrough.gif`). The spec lives in `e2e-video/demo-walkthrough.spec.js`. See [e2e-video/README.md](e2e-video/README.md) for what to edit.
 
 ## Project structure
 

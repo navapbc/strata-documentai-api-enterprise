@@ -189,7 +189,7 @@ See `/docs` for the complete list. Routes grouped by auth method:
 - `/v1/builds`
 
 **Cognito JWT** (admin console):
-- `/v1/admin/*` - api-keys, tenants, users, audit-log, documents, document-categories, blueprints/test
+- `/v1/admin/*` - api-keys, tenants, users, audit-log, documents, document-categories, extraction-test
 
 **Dual auth (either)**:
 - `/v1/config/extraction-rules`
@@ -290,7 +290,7 @@ src/documentai_api/
 │   ├── admin_documents.py          # Document viewer endpoints
 │   ├── document_categories.py      # Category admin endpoints
 │   ├── extraction_rules.py         # Extraction rule config endpoints
-│   ├── blueprint_test.py           # BDA test runner endpoints
+│   ├── extraction_test_runner.py   # Extraction test runner endpoints
 │   ├── dictionary.py               # Schema/field dictionary endpoints
 │   ├── metrics.py                  # Metrics query endpoints
 │   ├── demo.py                     # Demo endpoints

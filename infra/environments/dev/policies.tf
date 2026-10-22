@@ -271,8 +271,8 @@ locals {
   )
 }
 
-# API Lambda: blueprint_test router calls InvokeDataAutomationAsync (POST /v1/admin/blueprints/test)
-# and GetDataAutomationStatus (GET /v1/admin/blueprints/test/{id}).
+# API Lambda: extraction_test_runner router calls InvokeDataAutomationAsync and
+# GetDataAutomationStatus via the standard document pipeline (POST /v1/admin/extraction-test).
 # InvokeModel/Converse are worker-only - preclassification, bbox, and blur
 # are all called from upsert_initial_ddb_record, which only document_processor invokes.
 data "aws_iam_policy_document" "bedrock_api" {

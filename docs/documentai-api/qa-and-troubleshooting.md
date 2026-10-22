@@ -32,9 +32,9 @@ Use this section whenever you:
 
 Follow ["Before you test"](#before-you-test) below: create a synthetic document (see [test-documents/README.md](../../documentai-api/tests/helpers/fixtures/test-documents/README.md) for naming/watermarking conventions - no real data, ever), and decide the expected blueprint, key fields/values, and any intentional condition under test *before* you run anything. This applies just as much to a brand-new blueprint as to troubleshooting an existing one.
 
-### Step 3: Iterate with the blueprint test endpoint
+### Step 3: Iterate with the Extraction Test Runner
 
-Follow ["Executing a test"](#executing-a-test) below and use the blueprint test endpoint (`POST /v1/admin/blueprints/test` + `GET /v1/admin/blueprints/test/{test_id}`) to compare the actual matched blueprint, confidence, and extracted fields against what you decided in Step 2. Repeat until they match - only then move to Step 4. This keeps churn out of the reusable reference library described below.
+Follow ["Executing a test"](#executing-a-test) below and use the Extraction Test Runner view in the admin console to compare the actual extracted fields and per-field confidence against what you decided in Step 2. Repeat until they match - only then move to Step 4. This keeps churn out of the reusable reference library described below.
 
 ### Step 4: Promote the case to automated coverage
 
@@ -72,7 +72,7 @@ Follow ["Executing a test"](#executing-a-test) below and use the blueprint test 
 
 1. Configure the blueprint under `infra/document-types/`, apply Terraform, `make -C documentai-api pull-blueprint-schemas` / `pull-blueprint-fields`, `make -C documentai-api check-blueprint-schemas`.
 2. Create a synthetic document; decide the expected blueprint, fields, and any intentional condition.
-3. Iterate with `POST`/`GET /v1/admin/blueprints/test` until actual matches expected.
+3. Iterate with the Extraction Test Runner until actual matches expected.
 4. Add the document + an `expected.json` entry (and a `ROUTING_CASES` entry if routing-relevant); run `make -C documentai-api test-e2e` / `make -C documentai-api test-e2e-routing`.
 5. Leave the reference library (below) better than you found it.
 
@@ -95,16 +95,7 @@ For a quick picture of what happens after a document is submitted, see the repos
 
 For manual testing, use the repository's [Postman collection](postman/DocumentAI.postman_collection.json).
 
-For testing a document against a blueprint, use the blueprint test endpoint (`POST /v1/admin/blueprints/test`, admin-only; implemented in `documentai-api/src/documentai_api/app_blueprint_test.py`).
-
-The blueprint test response can help you compare the expected and actual:
-
-- Matched blueprint
-- Blueprint confidence
-- Extracted fields
-- Field confidence
-- Filtered fields
-- Missing required fields
+For testing a document against a blueprint, use the **Extraction Test Runner** view in the admin console (admin-only). See [extraction-test-runner.md](extraction-test-runner.md) for a full description and walkthrough.
 
 ## Diagnosing unexpected results
 

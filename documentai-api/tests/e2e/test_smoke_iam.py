@@ -16,8 +16,7 @@ API Lambda (api-key auth):
 API Lambda (Cognito JWT - skipped if COGNITO_USER_POOL_ID / COGNITO_CLIENT_ID unset):
   - tenant create/delete   -> ddb:PutItem / UpdateItem (tenants, request-counts tables, KMS)
   - category create/delete -> ddb:PutItem / UpdateItem (categories table, KMS)
-  - blueprint test         -> s3:PutObject, bedrock:InvokeDataAutomationAsync,
-                              bedrock:GetDataAutomationStatus
+  - extraction test       -> s3:PutObject, ddb:PutItem (document metadata table)
   - admin usage monthly    -> s3:GetObject, s3:ListBucket (metrics bucket, monthly)
   - admin usage daily      -> s3:GetObject, s3:ListBucket (metrics bucket, daily prefix)
   - list users             -> cognito-idp:ListUsers (super-admin only)
@@ -34,9 +33,6 @@ from datetime import UTC, datetime
 
 import pytest
 
-from documentai_api.config.constants_preclassification_category_generated import (
-    PreclassificationCategory,
-)
 from documentai_api.utils.field_labels import get_valid_fields
 from documentai_api.utils.jwt_auth import TENANT_ADMIN
 from tests.helpers.fixtures.paths import SMALL_PDF
@@ -218,33 +214,30 @@ def test_category_create_and_delete(jwt_client, smoke_tenant):
         )
 
 
-def test_blueprint_test(jwt_client, smoke_tenant):
-    """POST /v1/admin/blueprints/test, then poll GET until non-PROCESSING.
+def test_extraction_test_runner(jwt_client, smoke_tenant):
+    """POST /v1/admin/extraction-test, then poll GET until non-PROCESSING.
 
-    Validates s3:PutObject on the input bucket (test-runner/ prefix),
-    bedrock:InvokeDataAutomationAsync, and bedrock:GetDataAutomationStatus.
+    Validates s3:PutObject on the input bucket, the full extraction pipeline
+    (preclassify → BDA/Textract), and ddb:PutItem on the document metadata table.
     Does not wait for COMPLETED - PROCESSING is sufficient to confirm the
     invoke succeeded and the status check is authorized.
     """
     with SMALL_PDF.open("rb") as f:
         response = jwt_client(
             "POST",
-            "/v1/admin/blueprints/test",
+            "/v1/admin/extraction-test",
             files={"file": (SMALL_PDF.name, f, "application/pdf")},
-            data={
-                "document_category": next(iter(PreclassificationCategory)),
-                "tenant_id": smoke_tenant,
-            },
+            data={"tenant_id": smoke_tenant},
         )
-    test_id = response.json()["testId"]
+    job_id = response.json()["jobId"]
 
     deadline = time.monotonic() + 30
     while time.monotonic() < deadline:
-        result = jwt_client("GET", f"/v1/admin/blueprints/test/{test_id}").json()
-        if result["status"] != "PROCESSING":
+        result = jwt_client("GET", f"/v1/admin/extraction-test/{job_id}").json()
+        if result["jobStatus"] != "not_started":
             break
         time.sleep(2)
-    # Any non-5xx status (PROCESSING, COMPLETED, FAILED) confirms IAM is correct.
+    # Any non-5xx status confirms IAM is correct.
 
 
 def test_admin_usage(jwt_client):

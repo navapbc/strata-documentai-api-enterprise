@@ -164,6 +164,15 @@ def require_role(claims: dict[str, Any]) -> None:
         )
 
 
+def assert_tenant_scope(record: dict[str, Any], scope: str | None, tenant_id_key: str) -> None:
+    """Raise 404 if the record's tenant doesn't match the caller's scope.
+
+    No-op for super-admins (scope is None).
+    """
+    if scope is not None and record.get(tenant_id_key) != scope:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+
+
 def tenant_scope(claims: dict[str, Any]) -> str | None:
     """Return the tenant filter to apply for this caller.
 

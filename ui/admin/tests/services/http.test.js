@@ -62,9 +62,9 @@ describe("http client", () => {
             Promise.resolve({ __type: "NotAuthorizedException", message: "Invalid refresh token" }),
         });
 
-      const result = await adminClient.request("GET", "/v1/admin/api-keys");
-
-      expect(result).toBeUndefined();
+      await expect(adminClient.request("GET", "/v1/admin/api-keys")).rejects.toThrow(
+        "Session expired",
+      );
       expect(sessionStorage.getItem("docai_console_session")).toBeNull();
       expect(window.location.reload).toHaveBeenCalled();
     });
