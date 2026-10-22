@@ -1,4 +1,6 @@
 import json
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -19,6 +21,7 @@ class ExpectedResult:
     is_password_protected: bool = False
     bda_matched_document_class: str | None = None
     content_type: str | None = None
+    required_fields_for_extraction: list[str] | None = None
     skip_bda: bool = False
 
 
@@ -41,6 +44,7 @@ def load_test_cases() -> list[Any]:
                     is_password_protected=expected.get("isPasswordProtected", False),
                     bda_matched_document_class=expected.get("bdaMatchedDocumentClass"),
                     content_type=expected.get("content_type"),
+                    required_fields_for_extraction=expected.get("requiredFieldsForExtraction"),
                     skip_bda=expected.get("skip_bda", False),
                 ),
             ),
@@ -56,10 +60,39 @@ def load_test_cases() -> list[Any]:
     ]
 
 
+@contextmanager
+def _extraction_rule_for(tenant_id: str, expected: ExpectedResult) -> Iterator[None]:
+    """Seed the per-case extraction rule (if any) for the duration of an upload.
+
+    Fixtures that need a specific document type/field combination to trip
+    MISSING_FIELDS (101) declare a "requiredFieldsForExtraction" list in
+    expected.json. Because extraction rules are keyed by (tenant, document_type),
+    seeding one rule per case immediately around the upload - rather than once
+    per unique document class up front - lets multiple fixtures share a document
+    class while each asserts against its own required-field set. The rule is torn
+    down afterward even if the upload fails.
+    """
+    from documentai_api.utils.extraction_rules import delete_rule, upsert_rule
+
+    required_fields = expected.required_fields_for_extraction
+    document_type = expected.bda_matched_document_class
+
+    if required_fields and document_type:
+        upsert_rule(tenant_id, document_type, required_fields, optional_fields=[])
+        try:
+            yield
+        finally:
+            delete_rule(tenant_id, document_type)
+    else:
+        yield
+
+
 @pytest.mark.parametrize("test_case", load_test_cases())
-def test_post_document(test_case, client):
-    body = client.upload_and_wait(test_case.file_path)
+def test_post_document(test_case, client, e2e_tenant_id):
     expected_result = test_case.expected_result
+
+    with _extraction_rule_for(e2e_tenant_id, expected_result):
+        body = client.upload_and_wait(test_case.file_path)
 
     from documentai_api.config.env import get_env_config
     from documentai_api.services import ddb as ddb_service

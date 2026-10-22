@@ -856,5 +856,112 @@
     "preclassificationCategory": "present",
     "reruns_override": 2,
     "responseCode": "002"
+  },
+  "unhappy-path/synthetic-unclear-handwriting.png": {
+    "//": [
+      "Verified live. Handwriting-heavy document that gets categorized by",
+      "preclassification but no BDA blueprint matches, tripping NO_BLUEPRINT_MATCHED",
+      "(002) - the intended failure mode for this fixture. Currently failing",
+      "test_post_document: the pipeline reaches responseCode 002 without ever",
+      "invoking BDA (no default BDA project configured for the matched",
+      "preclassification category), so bdaOutputS3Uri/processedDate are null -",
+      "the same no-BDA-run shape the 'skip_bda' flag (added after this fixture",
+      "was written) exists to cover. Marking e2e_enabled: false until this entry",
+      "is updated with 'skip_bda: true' (see",
+      "happy-path/synthetic-wic-adjunctive-eligibility-snap-benefits-letter.jpg",
+      "for a precedent) and re-verified live."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/png",
+    "e2e_enabled": false,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "002"
+  },
+  "unhappy-path/synthetic-multiple-documents.pdf": {
+    "//": [
+      "Multipage PDF combining a state photo ID and a pay stub - two distinct document types.",
+      "Preclassification consistently returns has_multipage_inconsistency: true.",
+      "Requires FLAG_MULTIPLE_DOCUMENTS_IN_MULTIPAGE, which defaults to true.",
+      "Verified live (2x, consistent) - trips MULTIPLE_DOCUMENTS_IN_MULTIPAGE (401), the",
+      "intended failure mode for this fixture. reruns=2 gives 3 attempts to absorb the",
+      "best-effort same-type/different-individual detection variance at temp=0."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "application/pdf",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "reruns_override": 2,
+    "responseCode": "401"
+  },
+  "unhappy-path/synthetic-bad-scan.png": {
+    "//": [
+      "Verified live. Scan quality is degraded enough that blur detection rejects it",
+      "before preclassification, tripping BLURRY_DOCUMENT_DETECTED (104) - the intended",
+      "failure mode for this fixture."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/png",
+    "e2e_enabled": true,
+    "isDocumentBlurry": true,
+    "isPasswordProtected": false,
+    "preclassificationCategory": null,
+    "responseCode": "104"
+  },
+  "unhappy-path/synthetic-missing-data-fields.pdf": {
+    "//": [
+      "Verified live (2x, consistent). Matches the 'Electricity-Bill' blueprint but",
+      "average extraction confidence falls below the tenant's default threshold (0.65),",
+      "tripping LOW_EXTRACTION_CONFIDENCE (105) - the intended failure mode for this",
+      "fixture."
+    ],
+    "bdaMatchedDocumentClass": "Electricity-Bill",
+    "content_type": "application/pdf",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "105"
+  },
+  "unhappy-path/synthetic-crumpled.png": {
+    "//": [
+      "Verified live (2x, consistent). Real physically crumpled/photographed utility",
+      "bill (heavy creasing, uneven lighting, cluttered background). Preclassification",
+      "loosely detects the 'invoices' category but the crumpling degrades legibility",
+      "enough that no blueprint matches at all - the intended failure mode for this",
+      "fixture."
+    ],
+    "bdaMatchedDocumentClass": null,
+    "content_type": "image/png",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "present",
+    "responseCode": "002"
+  },
+  "unhappy-path/synthetic-cut-off.jpg": {
+    "//": [
+      "Cut off: right side of the ID card is cropped off, truncating ID_NUMBER",
+      "and DATE_OF_BIRTH before any values are legible. A US-drivers-licenses",
+      "extraction rule requiring those two fields is seeded for the e2e tenant",
+      "around this document's upload by the _extraction_rule_for context manager",
+      "in tests/e2e/test_app_documents.py (driven by requiredFieldsForExtraction",
+      "below), so BDA still matches the document class but flags the fields as",
+      "missing."
+    ],
+    "bdaMatchedDocumentClass": "US-drivers-licenses",
+    "content_type": "image/jpeg",
+    "e2e_enabled": true,
+    "isDocumentBlurry": false,
+    "isPasswordProtected": false,
+    "preclassificationCategory": "id",
+    "requiredFieldsForExtraction": [
+      "ID_NUMBER",
+      "DATE_OF_BIRTH"
+    ],
+    "responseCode": "101"
   }
 }
