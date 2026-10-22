@@ -47,12 +47,10 @@ Deploy from the repo root: `make deploy-admin-ui`
 Requires `ffmpeg` (`brew install ffmpeg`) and Chromium (`make playwright-install`).
 
 ```bash
-make record-admin-ui       # admin console walkthrough -> admin-walkthrough.gif
-make record-rules-ui       # extraction rules walkthrough -> admin-extraction-rules-walkthrough.gif
-make record-ui             # all videos (admin + rules + demo)
+make record-ui   # records every e2e-video/*.spec.js in both UIs
 ```
 
-Specs live in `e2e-video/`. See [e2e-video/README.md](e2e-video/README.md) for what to edit.
+The spec filename stem becomes the GIF name (e.g. `admin-walkthrough.spec.js` → `admin-walkthrough.gif`). To add a new recording, drop a `*.spec.js` in `e2e-video/` — no Makefile changes needed. Specs live in `e2e-video/`. See [e2e-video/README.md](e2e-video/README.md) for what to edit.
 
 ## Auth model
 

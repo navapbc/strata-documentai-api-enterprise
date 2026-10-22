@@ -95,7 +95,7 @@ For a quick picture of what happens after a document is submitted, see the repos
 
 For manual testing, use the repository's [Postman collection](postman/DocumentAI.postman_collection.json).
 
-For testing a document against a blueprint, use the **Extraction Test Runner** view in the admin console (admin-only). Select a tenant, upload a document, and run. The runner submits the document through full preclassification - you cannot force a category, so a misclassified document will follow the same path it would in production. Once complete, the result shows the extracted fields and per-field confidence, and a status label (e.g. "No blueprint") when nothing matched. Past runs appear under **Recent Test Runs** in the left panel of the page and expire after 7 days.
+For testing a document against a blueprint, use the **Extraction Test Runner** view in the admin console (admin-only). See [extraction-test-runner.md](extraction-test-runner.md) for a full description and walkthrough.
 
 ## Diagnosing unexpected results
 

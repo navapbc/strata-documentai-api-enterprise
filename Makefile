@@ -5,10 +5,6 @@
 	deploy-admin-ui \
 	deploy-demo-ui \
 	deploy-ui \
-	record-admin-ui \
-	record-rules-ui \
-	record-viewer-ui \
-	record-demo-ui \
 	record-ui \
 	record-api-setup \
 	playwright-install \
@@ -89,36 +85,24 @@ deploy-demo-ui: ## Build demo UI and sync to S3 + invalidate CloudFront
 		--no-cli-pager && \
 	echo "Demo UI deployed."
 
-record-ui: ## Regenerate demo videos for both UIs (webm + gif)
-record-ui: record-admin-ui record-rules-ui record-viewer-ui record-demo-ui
+record-ui: ## Regenerate all UI walkthrough videos (webm + gif) - auto-discovers e2e-video/*.spec.js
+record-ui: playwright-install
+	@which ffmpeg > /dev/null 2>&1 || (echo "Error: ffmpeg not found. Install with: brew install ffmpeg" && exit 1)
+	@for spec in ui/admin/e2e-video/*.spec.js ui/demo/e2e-video/*.spec.js; do \
+		[ -f "$$spec" ] || continue; \
+		stem=$$(basename "$$spec" .spec.js); \
+		echo "--- Recording $$stem ---"; \
+		rm -rf ui/admin/video-output ui/demo/video-output; \
+		dir=$$(dirname "$$spec"); \
+		root=$$(echo "$$dir" | sed 's|/e2e-video||'); \
+		( cd $$root && npm run record -- --grep "$$stem" ) || exit 1; \
+		webm=$$(ls $$root/video-output/*/video.webm 2>/dev/null | head -1); \
+		[ -n "$$webm" ] && ui/shared/scripts/webm-to-gif.sh "$$webm" "$(MEDIA_DIR)/$$stem.gif" || echo "Warning: no webm found for $$stem"; \
+	done
 
 playwright-install: ## Install Playwright Chromium browser for both UIs
 	cd ui/admin && npx playwright install chromium
 	cd ui/demo && npx playwright install chromium
-
-record-admin-ui: ## Record admin console walkthrough video -> $(MEDIA_DIR)/admin-walkthrough.gif
-record-admin-ui: playwright-install
-	@which ffmpeg > /dev/null 2>&1 || (echo "Error: ffmpeg not found. Install with: brew install ffmpeg" && exit 1)
-	cd ui/admin && npm run record -- --grep "admin console"
-	ui/shared/scripts/webm-to-gif.sh ui/admin/video-output/*/video.webm $(MEDIA_DIR)/admin-walkthrough.gif
-
-record-rules-ui: ## Record extraction rules walkthrough video -> $(MEDIA_DIR)/admin-extraction-rules-walkthrough.gif
-record-rules-ui: playwright-install
-	@which ffmpeg > /dev/null 2>&1 || (echo "Error: ffmpeg not found. Install with: brew install ffmpeg" && exit 1)
-	cd ui/admin && npm run record -- --grep "extraction rules"
-	ui/shared/scripts/webm-to-gif.sh ui/admin/video-output/*/video.webm $(MEDIA_DIR)/admin-extraction-rules-walkthrough.gif
-
-record-viewer-ui: ## Record document viewer walkthrough video -> $(MEDIA_DIR)/document-viewer-walkthrough.gif
-record-viewer-ui: playwright-install
-	@which ffmpeg > /dev/null 2>&1 || (echo "Error: ffmpeg not found. Install with: brew install ffmpeg" && exit 1)
-	cd ui/admin && npm run record -- --grep "document viewer"
-	ui/shared/scripts/webm-to-gif.sh ui/admin/video-output/*/video.webm $(MEDIA_DIR)/document-viewer-walkthrough.gif
-
-record-demo-ui: ## Record demo UI walkthrough video -> $(MEDIA_DIR)/demo-walkthrough.gif
-record-demo-ui: playwright-install
-	@which ffmpeg > /dev/null 2>&1 || (echo "Error: ffmpeg not found. Install with: brew install ffmpeg" && exit 1)
-	cd ui/demo && npx playwright test --config=playwright.video.config.js
-	ui/shared/scripts/webm-to-gif.sh ui/demo/video-output/*/video.webm $(MEDIA_DIR)/demo-walkthrough.gif
 
 record-api-setup: ## Record local API setup demo -> $(MEDIA_DIR)/api-setup-demo.mp4
 	@which vhs > /dev/null 2>&1 || (echo "Error: vhs not found. Install with: brew install vhs" && exit 1)
