@@ -51,15 +51,12 @@ output "bda_project_arns" {
 }
 
 output "bda_profile_arn" {
-  value = module.bedrock_data_automation_all.profile_arn
+  value = values(module.bedrock_data_automation)[0].profile_arn
 }
 
 output "blueprint_arns" {
   description = "ARNs for all custom blueprints created by this project"
-  value = distinct(flatten(concat(
-    [for k, v in module.bedrock_data_automation : v.blueprint_arns],
-    [module.bedrock_data_automation_all.blueprint_arns],
-  )))
+  value       = distinct(flatten([for k, v in module.bedrock_data_automation : v.blueprint_arns]))
 }
 
 output "cognito_user_pool_id" {

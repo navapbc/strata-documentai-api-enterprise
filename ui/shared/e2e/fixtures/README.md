@@ -7,6 +7,7 @@ Synthetic document data used by the demo video specs (`e2e-video/`) in both
 exist solely to provide deterministic, realistic-looking data for recorded
 walkthroughs.
 
-| File             | Used by                                                                                      |
-| ---------------- | -------------------------------------------------------------------------------------------- |
-| `w2-document.js` | `ui/admin/e2e-video/admin-walkthrough.spec.js`, `ui/demo/e2e-video/demo-walkthrough.spec.js` |
+| File                   | Used by                                                                                      |
+| ---------------------- | -------------------------------------------------------------------------------------------- |
+| `w2-document.js`       | `ui/admin/e2e-video/admin-walkthrough.spec.js`, `ui/demo/e2e-video/demo-walkthrough.spec.js` |
+| `passport-document.js` | `ui/admin/e2e-video/extraction-test-runner-walkthrough.spec.js`                              |

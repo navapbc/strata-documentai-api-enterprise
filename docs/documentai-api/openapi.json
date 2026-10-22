@@ -2615,6 +2615,23 @@
             }
           },
           {
+            "name": "is_test_run",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": false,
+              "title": "Is Test Run"
+            }
+          },
+          {
             "name": "limit",
             "in": "query",
             "required": false,
@@ -3186,19 +3203,19 @@
         }
       }
     },
-    "/v1/admin/blueprints/test": {
+    "/v1/admin/extraction-test": {
       "post": {
         "tags": [
-          "Admin:Blueprints"
+          "Admin:Documents"
         ],
-        "summary": "Start Blueprint Test",
-        "description": "Upload a document and start BDA extraction.\n\nReturns a test_id to poll for results via GET /test/{test_id}.",
-        "operationId": "start_blueprint_test_v1_admin_blueprints_test_post",
+        "summary": "Start Extraction Test",
+        "description": "Upload a document through the full extraction pipeline.\n\nReturns a job_id to poll for results via GET /{job_id}.",
+        "operationId": "start_extraction_test_v1_admin_extraction_test_post",
         "requestBody": {
           "content": {
             "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/Body_start_blueprint_test_v1_admin_blueprints_test_post"
+                "$ref": "#/components/schemas/Body_start_extraction_test_v1_admin_extraction_test_post"
               }
             }
           },
@@ -3210,7 +3227,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BlueprintTestStartResponse"
+                  "$ref": "#/components/schemas/ExtractionTestStartResponse"
                 }
               }
             }
@@ -3233,14 +3250,14 @@
         ]
       }
     },
-    "/v1/admin/blueprints/test/{test_id}": {
+    "/v1/admin/extraction-test/{job_id}": {
       "get": {
         "tags": [
-          "Admin:Blueprints"
+          "Admin:Documents"
         ],
-        "summary": "Get Blueprint Test Result",
-        "description": "Poll for blueprint test results.",
-        "operationId": "get_blueprint_test_result_v1_admin_blueprints_test__test_id__get",
+        "summary": "Get Extraction Test Result",
+        "description": "Poll for extraction test results.",
+        "operationId": "get_extraction_test_result_v1_admin_extraction_test__job_id__get",
         "security": [
           {
             "HTTPBearer": []
@@ -3248,12 +3265,22 @@
         ],
         "parameters": [
           {
-            "name": "test_id",
+            "name": "job_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "title": "Test Id"
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "include_extracted_data",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include Extracted Data"
             }
           }
         ],
@@ -3263,7 +3290,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BlueprintTestResult"
+                  "$ref": "#/components/schemas/JobStatusResponse"
                 }
               }
             }
@@ -4414,115 +4441,6 @@
         ],
         "title": "BatchUploadResponse"
       },
-      "BlueprintTestResult": {
-        "properties": {
-          "testId": {
-            "type": "string",
-            "title": "Testid"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "documentType": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documenttype"
-          },
-          "matchedBlueprint": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Matchedblueprint"
-          },
-          "matchedConfidence": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Matchedconfidence"
-          },
-          "extractedFields": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Extractedfields"
-          },
-          "fieldConfidences": {
-            "additionalProperties": {
-              "type": "number"
-            },
-            "type": "object",
-            "title": "Fieldconfidences"
-          },
-          "filteredFields": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Filteredfields"
-          },
-          "missingRequiredFields": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Missingrequiredfields"
-          },
-          "hasRules": {
-            "type": "boolean",
-            "title": "Hasrules",
-            "default": false
-          },
-          "error": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Error"
-          }
-        },
-        "type": "object",
-        "required": [
-          "testId",
-          "status"
-        ],
-        "title": "BlueprintTestResult"
-      },
-      "BlueprintTestStartResponse": {
-        "properties": {
-          "testId": {
-            "type": "string",
-            "title": "Testid"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status",
-            "default": "PROCESSING"
-          }
-        },
-        "type": "object",
-        "required": [
-          "testId"
-        ],
-        "title": "BlueprintTestStartResponse"
-      },
       "Body_create_build_v1_builds_post": {
         "properties": {
           "category": {
@@ -4834,46 +4752,25 @@
         ],
         "title": "Body_create_presigned_upload_url_v1_documents_presigned_url_post"
       },
-      "Body_start_blueprint_test_v1_admin_blueprints_test_post": {
+      "Body_start_extraction_test_v1_admin_extraction_test_post": {
         "properties": {
           "file": {
             "type": "string",
             "contentMediaType": "application/octet-stream",
             "title": "File"
           },
-          "document_category": {
-            "type": "string",
-            "title": "Document Category"
-          },
           "tenant_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Tenant Id"
-          },
-          "document_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Type"
+            "type": "string",
+            "title": "Tenant Id",
+            "description": "Tenant identifier"
           }
         },
         "type": "object",
         "required": [
           "file",
-          "document_category"
+          "tenant_id"
         ],
-        "title": "Body_start_blueprint_test_v1_admin_blueprints_test_post"
+        "title": "Body_start_extraction_test_v1_admin_extraction_test_post"
       },
       "Body_upload_document_batch_v1_documents_batch_post": {
         "properties": {
@@ -6391,6 +6288,24 @@
         ],
         "title": "ExtractionRulesListResponse"
       },
+      "ExtractionTestStartResponse": {
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "title": "Jobid"
+          },
+          "jobStatus": {
+            "type": "string",
+            "title": "Jobstatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "jobId",
+          "jobStatus"
+        ],
+        "title": "ExtractionTestStartResponse"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -6568,6 +6483,16 @@
               }
             ],
             "title": "Userprovideddocumentcategory"
+          },
+          "isCompleted": {
+            "type": "boolean",
+            "title": "Iscompleted",
+            "default": false
+          },
+          "isFailed": {
+            "type": "boolean",
+            "title": "Isfailed",
+            "default": false
           },
           "inferredDocumentType": {
             "anyOf": [

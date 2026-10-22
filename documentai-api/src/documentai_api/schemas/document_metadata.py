@@ -27,6 +27,7 @@ class DocumentMetadata:
     TENANT_ID = "tenantId"
     API_KEY_NAME = "apiKeyName"
     IS_DEMO = "isDemo"
+    IS_TEST_RUN = "isTestRun"
     V1_API_RESPONSE_JSON = "v1ApiResponseJson"
     CREATED_AT = "createdAt"
     UPDATED_AT = "updatedAt"

@@ -1,12 +1,11 @@
 import { test, expect } from "@playwright/test";
 import { JOB_ID, COMPLETED_DOC, FIELDS, previewDataUrl } from "../../shared/e2e/fixtures/recording/w2-document.js";
-import { loginWithMfa } from "../../shared/e2e/helpers/login.js";
 import { hoverFields, expectBboxOverlay, SELECTORS } from "../../shared/e2e/helpers/document-viewer.js";
 
 // ---------------------------------------------------------------------------
 // Scripted demo video: Document viewer with bounding box overlay.
 //
-// Flow: login -> MFA -> Documents -> open W-2 -> bbox overlay -> field hover
+// Flow: start logged in -> Documents -> open W-2 -> bbox overlay -> field hover
 //
 // All network dependencies are mocked - runs offline, no credentials needed.
 // ---------------------------------------------------------------------------
@@ -54,11 +53,18 @@ test("document viewer walkthrough: bbox overlay and field highlighting", async (
   await page.route("**/v1/audit/**", (route) => route.fulfill(json({})));
   await page.route("**/v1/dictionary/**", (route) => route.fulfill(json({ fields: [] })));
 
-  // === 1. Login + MFA =======================================================
-  await test.step("Login + MFA", async () => {
-    await page.addInitScript(() => sessionStorage.clear());
+  // === 1. Start logged in ==================================================
+  await test.step("Start logged in", async () => {
+    const payload = btoa(JSON.stringify({ "cognito:groups": ["super-admin"], email: "admin@example.com" }));
     await page.goto("/");
-    await loginWithMfa(page, { expect });
+    await page.evaluate((p) => {
+      sessionStorage.setItem("docai_console_session", JSON.stringify({
+        accessToken: "fake-at", idToken: `h.${p}.s`, refreshToken: "fake-rt",
+        email: "admin@example.com", expiresAt: Date.now() + 3600000,
+      }));
+    }, payload);
+    await page.goto("/");
+    await expect(page.locator("#view-title")).toHaveText("Home");
   });
 
   // === 2. Navigate to Documents ============================================

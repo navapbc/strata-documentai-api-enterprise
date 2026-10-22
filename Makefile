@@ -5,12 +5,9 @@
 	deploy-admin-ui \
 	deploy-demo-ui \
 	deploy-ui \
-	record-admin-ui \
-	record-rules-ui \
-	record-viewer-ui \
-	record-demo-ui \
 	record-ui \
 	record-api-setup \
+	gifs-to-mp4 \
 	playwright-install \
 	postman \
 	format \
@@ -89,36 +86,33 @@ deploy-demo-ui: ## Build demo UI and sync to S3 + invalidate CloudFront
 		--no-cli-pager && \
 	echo "Demo UI deployed."
 
-record-ui: ## Regenerate demo videos for both UIs (webm + gif)
-record-ui: record-admin-ui record-rules-ui record-viewer-ui record-demo-ui
+record-ui: ## Regenerate all UI walkthrough videos (webm + gif) - auto-discovers e2e-video/*.spec.js
+record-ui: playwright-install
+	@which ffmpeg > /dev/null 2>&1 || (echo "Error: ffmpeg not found. Install with: brew install ffmpeg" && exit 1)
+	@for spec in ui/admin/e2e-video/*.spec.js ui/demo/e2e-video/*.spec.js; do \
+		[ -f "$$spec" ] || continue; \
+		stem=$$(basename "$$spec" .spec.js); \
+		echo "--- Recording $$stem ---"; \
+		rm -rf ui/admin/video-output ui/demo/video-output; \
+		dir=$$(dirname "$$spec"); \
+		root=$$(echo "$$dir" | sed 's|/e2e-video||'); \
+		( cd $$root && npm run record -- --grep "$$stem" ) || exit 1; \
+		webm=$$(ls $$root/video-output/*/video.webm 2>/dev/null | head -1); \
+		[ -n "$$webm" ] && ui/shared/scripts/webm-to-gif.sh "$$webm" "$(MEDIA_DIR)/$$stem.gif" || echo "Warning: no webm found for $$stem"; \
+	done
 
 playwright-install: ## Install Playwright Chromium browser for both UIs
 	cd ui/admin && npx playwright install chromium
 	cd ui/demo && npx playwright install chromium
 
-record-admin-ui: ## Record admin console walkthrough video -> $(MEDIA_DIR)/admin-walkthrough.gif
-record-admin-ui: playwright-install
+gifs-to-mp4: ## Convert all GIFs in $(MEDIA_DIR) to MP4 using ffmpeg
 	@which ffmpeg > /dev/null 2>&1 || (echo "Error: ffmpeg not found. Install with: brew install ffmpeg" && exit 1)
-	cd ui/admin && npm run record -- --grep "admin console"
-	ui/shared/scripts/webm-to-gif.sh ui/admin/video-output/*/video.webm $(MEDIA_DIR)/admin-walkthrough.gif
-
-record-rules-ui: ## Record extraction rules walkthrough video -> $(MEDIA_DIR)/admin-extraction-rules-walkthrough.gif
-record-rules-ui: playwright-install
-	@which ffmpeg > /dev/null 2>&1 || (echo "Error: ffmpeg not found. Install with: brew install ffmpeg" && exit 1)
-	cd ui/admin && npm run record -- --grep "extraction rules"
-	ui/shared/scripts/webm-to-gif.sh ui/admin/video-output/*/video.webm $(MEDIA_DIR)/admin-extraction-rules-walkthrough.gif
-
-record-viewer-ui: ## Record document viewer walkthrough video -> $(MEDIA_DIR)/document-viewer-walkthrough.gif
-record-viewer-ui: playwright-install
-	@which ffmpeg > /dev/null 2>&1 || (echo "Error: ffmpeg not found. Install with: brew install ffmpeg" && exit 1)
-	cd ui/admin && npm run record -- --grep "document viewer"
-	ui/shared/scripts/webm-to-gif.sh ui/admin/video-output/*/video.webm $(MEDIA_DIR)/document-viewer-walkthrough.gif
-
-record-demo-ui: ## Record demo UI walkthrough video -> $(MEDIA_DIR)/demo-walkthrough.gif
-record-demo-ui: playwright-install
-	@which ffmpeg > /dev/null 2>&1 || (echo "Error: ffmpeg not found. Install with: brew install ffmpeg" && exit 1)
-	cd ui/demo && npx playwright test --config=playwright.video.config.js
-	ui/shared/scripts/webm-to-gif.sh ui/demo/video-output/*/video.webm $(MEDIA_DIR)/demo-walkthrough.gif
+	@for gif in $(MEDIA_DIR)/*.gif; do \
+		[ -f "$$gif" ] || continue; \
+		mp4="$${gif%.gif}.mp4"; \
+		echo "Converting $$gif -> $$mp4"; \
+		ffmpeg -y -loglevel error -i "$$gif" -movflags faststart -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" "$$mp4"; \
+	done
 
 record-api-setup: ## Record local API setup demo -> $(MEDIA_DIR)/api-setup-demo.mp4
 	@which vhs > /dev/null 2>&1 || (echo "Error: vhs not found. Install with: brew install vhs" && exit 1)
@@ -133,7 +127,7 @@ adr-log: ## Regenerate the ADR index (docs/decisions/index.md)
 	cd docs/decisions && adr-log -i -e template.md
 
 help: ## Show help
-	@grep -Eh '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@grep -Eh '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 	@echo ""
 	@echo "ENVIRONMENT=$(ENVIRONMENT)  AWS_PROFILE=$(AWS_PROFILE)"
 

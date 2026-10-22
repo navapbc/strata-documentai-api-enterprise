@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { JOB_ID, COMPLETED_DOC, previewDataUrl } from "../../shared/e2e/fixtures/recording/w2-document.js";
-import { loginWithMfa } from "../../shared/e2e/helpers/login.js";
+import { JOB_ID as PASSPORT_JOB_ID, COMPLETED_DOC as PASSPORT_DOC, previewDataUrl as passportPreviewDataUrl } from "../../shared/e2e/fixtures/recording/passport-document.js";
 import { hoverFields, expectBboxOverlay, SELECTORS } from "../../shared/e2e/helpers/document-viewer.js";
 
 // ---------------------------------------------------------------------------
@@ -10,11 +10,10 @@ import { hoverFields, expectBboxOverlay, SELECTORS } from "../../shared/e2e/help
 //   login -> MFA -> Console Access (Users, Audit Log)
 //         -> API Management (Tenants, API Keys, Manage Blueprints, Doc Categories, Extraction Rules)
 //         -> Documents (Recently Processed, Search)
+//         -> QA Tools (Extraction Test Runner)
 //         -> Reporting (Metrics, Usage)
 //
-// Every network dependency (config.json, Cognito, all API calls) is mocked so
-// this runs offline, deterministically, with no credentials or deployed infra.
-// Playwright records a .webm per run (see playwright.video.config.js).
+// All network dependencies are mocked - runs offline, no credentials needed.
 // ---------------------------------------------------------------------------
 
 // --- Synthetic data --------------------------------------------------------
@@ -134,6 +133,16 @@ test("admin console walkthrough", async ({
     ),
   );
 
+  await page.route("**/v1/admin/extraction-test", (route) => {
+    if (route.request().method() === "POST") {
+      return route.fulfill(json({ jobId: PASSPORT_JOB_ID }));
+    }
+    route.continue();
+  });
+  await page.route(`**/v1/admin/extraction-test/${PASSPORT_JOB_ID}**`, (route) =>
+    route.fulfill(json({ jobId: PASSPORT_JOB_ID, isCompleted: true, isFailed: false })),
+  );
+
   // --- API: all admin endpoints --------------------------------------------
   await page.route("**/v1/admin/api-keys**", (route) =>
     route.fulfill(json({ keys: KEYS })),
@@ -154,6 +163,12 @@ test("admin console walkthrough", async ({
     }
     if (url.includes(`/documents/${JOB_ID}`)) {
       return route.fulfill(json(COMPLETED_DOC));
+    }
+    if (url.includes(`/documents/${PASSPORT_JOB_ID}/preview`)) {
+      return route.fulfill(json({ url: passportPreviewDataUrl() }));
+    }
+    if (url.includes(`/documents/${PASSPORT_JOB_ID}`)) {
+      return route.fulfill(json(PASSPORT_DOC));
     }
     const status = new URL(url).searchParams.get("status_filter");
     const docs = status ? DOCUMENTS.filter((d) => d.processStatus === status) : DOCUMENTS;
@@ -176,11 +191,18 @@ test("admin console walkthrough", async ({
   });
   await page.route("**/v1/config/extraction-rules**", (route) => route.fulfill(json({ rules: [{ requiredFields: ["wages", "federalIncomeTaxWithheld"], optionalFields: ["employerName", "employeeName", "taxYear"] }] })));
 
-  // === 1. Login + MFA ======================================================
-  await test.step("Login + MFA", async () => {
-    await page.addInitScript(() => sessionStorage.clear());
+  // === 1. Start logged in ==================================================
+  await test.step("Start logged in", async () => {
+    const payload = btoa(JSON.stringify({ "cognito:groups": ["super-admin"], email: "admin@example.com" }));
     await page.goto("/");
-    await loginWithMfa(page, { expect });
+    await page.evaluate((p) => {
+      sessionStorage.setItem("docai_console_session", JSON.stringify({
+        accessToken: "fake-at", idToken: `h.${p}.s`, refreshToken: "fake-rt",
+        email: "admin@example.com", expiresAt: Date.now() + 3600000,
+      }));
+    }, payload);
+    await page.goto("/");
+    await expect(page.locator("#view-title")).toHaveText("Home");
   });
 
   // === 2. Console Access: Users ==========================================
@@ -280,7 +302,35 @@ test("admin console walkthrough", async ({
     await page.waitForTimeout(600);
   });
 
-  // === 10. Reporting: Metrics ==============================================
+  // === 10. QA Tools: Extraction Test Runner =================================
+  await test.step("QA Tools: Extraction Test Runner", async () => {
+    await page.locator('[data-section="qa-tools"]').click();
+    await expect(page.locator("#section-qa-tools")).not.toHaveClass(/hidden/);
+    await page.locator('a.nav-item[data-view="extraction-test-runner"]').click();
+    await expect(page.locator("#view-title")).toHaveText("Extraction Test Runner");
+    await expect(page.locator("#extraction-test-empty")).toBeVisible();
+    await page.waitForTimeout(600);
+
+    await page.locator("#tenant-select").selectOption("acme-corp");
+    await page.waitForTimeout(600);
+
+    await page.locator("#extraction-test-file").setInputFiles({
+      name: "us-passport.jpg",
+      mimeType: "image/jpeg",
+      buffer: Buffer.from("x"),
+    });
+    await expect(page.locator("#extraction-test-run-btn")).toBeEnabled();
+    await page.waitForTimeout(600);
+
+    await page.locator("#extraction-test-run-btn").click();
+    await expect(page.locator("#extraction-test-results")).not.toHaveClass(/hidden/, {
+      timeout: 15000,
+    });
+    await expect(page.locator(".extraction-result-filename")).toHaveText("us-passport.jpg");
+    await page.waitForTimeout(1500);
+  });
+
+  // === 12. Reporting: Metrics ==============================================
   await test.step("Reporting: Metrics Dashboard", async () => {
     await page.locator('[data-section="reporting"]').click();
     await expect(page.locator("#section-reporting")).not.toHaveClass(/hidden/);
@@ -294,7 +344,7 @@ test("admin console walkthrough", async ({
     await page.waitForTimeout(1000);
   });
 
-  // === 11. Reporting: Usage ================================================
+  // === 13. Reporting: Usage ================================================
   await test.step("Reporting: Usage Tracking", async () => {
     await page.locator('a.nav-item[data-view="usage"]').click();
     await expect(page.locator("#view-title")).toHaveText(/^Usage Tracking/);

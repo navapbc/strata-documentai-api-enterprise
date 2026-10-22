@@ -58,8 +58,6 @@ METRICS_AGG_DDB_MONTHLY_S3_PREFIX = "aggregated/utc/month"
 METRICS_USAGE_REPORT_S3_PREFIX = "usage-report/month"
 METRICS_USAGE_REPORT_DAILY_S3_PREFIX = "usage-report/utc/date"
 
-BDA_PROJECT_KEY_ALL = "all"
-
 
 UUID_PATTERN = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 
@@ -114,6 +112,7 @@ class ConfigDefaults:
     DOCUMENT_BUILDS_TTL_DAYS = 30
     DOCUMENT_METADATA_TTL_DAYS = 180
     DEMO_DOCUMENT_TTL_DAYS = 7
+    TEST_RUN_DOCUMENT_TTL_DAYS = 7
     PROCESSING_REAPER_STALE_THRESHOLD_HOURS = 1
     TENANT_REQUEST_COUNTS_TTL_DAYS = 365 * 5
     BDA_DOCUMENT_DETECTION_MIN_CHAR_LENGTH = 50
@@ -412,6 +411,21 @@ class ProcessStatus(StrEnum):
         return condition, values
 
 
+class V1JobStatus:
+    """jobStatus values used in v1 API responses.
+
+    These are the external-facing status strings written into v1ApiResponseJson
+    and returned by the v1 API. Distinct from the internal ProcessStatus enum.
+    """
+
+    AI_CONSENT_DECLINED = "ai_consent_declined"
+    COMPLETED = "completed"
+    CONVERSION_FAILED = "conversion_failed"
+    DELETED = "deleted"
+    FAILED = "failed"
+    PROCESSING = "processing"
+
+
 class S3MetadataKeys:
     # S3 metadata keys (for reading from S3 objects)
     USER_PROVIDED_DOCUMENT_CATEGORY = "user-provided-document-category"
@@ -612,7 +626,6 @@ class FeatureFlags:
     ENFORCE_BLUR_REJECTION = "enforce-blur-rejection"
     TEXTRACT_IDENTITY_ENABLED = "textract-identity-enabled"
     INCLUDE_MISSING_GEO_WITH_MISSING_FIELDS = "include-missing-geo-with-missing-fields"
-    PRECLASSIFICATION_BASED_ROUTING = "preclassification-based-routing"
     SKIP_BDA_IF_UNCLASSIFIED = "skip-bda-if-unclassified"
     ENABLE_PRECLASSIFICATION_BLUEPRINT_MATCHING = "enable-preclassification-blueprint-matching"
     FLAG_MULTIPLE_DOCUMENTS_IN_MULTIPAGE = "flag-multiple-documents-in-multipage"

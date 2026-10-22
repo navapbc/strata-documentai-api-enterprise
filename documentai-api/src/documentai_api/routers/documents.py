@@ -91,6 +91,7 @@ async def upload_document(
     external_system_id: ExternalSystemId = None,
     ai_consent_flag: AiConsentFlag = True,
     is_demo: bool = False,
+    is_test_run: bool = False,
     upload_source: UploadSourceField = None,
 ) -> _UploadResult:
     """Shared upload logic. Returns an _UploadResult with job_id, status, and message."""
@@ -102,7 +103,8 @@ async def upload_document(
     actual_content_type = await validate_upload(file)
     filename: str = file.filename  # type: ignore[assignment]
 
-    await asyncio.to_thread(increment_and_check, auth.tenant_id)
+    if not is_demo and not is_test_run:
+        await asyncio.to_thread(increment_and_check, auth.tenant_id)
 
     logger.info(
         "Processing document",
@@ -142,7 +144,12 @@ async def upload_document(
             tenant_id=auth.tenant_id,
             api_key_name=auth.api_key_name,
             is_demo=is_demo,
-            ttl_days=ConfigDefaults.DEMO_DOCUMENT_TTL_DAYS if is_demo else None,
+            is_test_run=is_test_run,
+            ttl_days=ConfigDefaults.DEMO_DOCUMENT_TTL_DAYS
+            if is_demo
+            else ConfigDefaults.TEST_RUN_DOCUMENT_TTL_DAYS
+            if is_test_run
+            else None,
         )
         await asyncio.to_thread(insert_minimal_ddb_record, record)
     except Exception:

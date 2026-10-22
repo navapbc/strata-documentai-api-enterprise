@@ -32,9 +32,9 @@ Use this section whenever you:
 
 Follow ["Before you test"](#before-you-test) below: create a synthetic document (see [test-documents/README.md](../../documentai-api/tests/helpers/fixtures/test-documents/README.md) for naming/watermarking conventions - no real data, ever), and decide the expected blueprint, key fields/values, and any intentional condition under test *before* you run anything. This applies just as much to a brand-new blueprint as to troubleshooting an existing one.
 
-### Step 3: Iterate with the blueprint test endpoint
+### Step 3: Iterate with the Extraction Test Runner
 
-Follow ["Executing a test"](#executing-a-test) below and use the blueprint test endpoint (`POST /v1/admin/blueprints/test` + `GET /v1/admin/blueprints/test/{test_id}`) to compare the actual matched blueprint, confidence, and extracted fields against what you decided in Step 2. Repeat until they match - only then move to Step 4. This keeps churn out of the reusable reference library described below.
+Follow ["Executing a test"](#executing-a-test) below and use the Extraction Test Runner view in the admin console to compare the actual extracted fields and per-field confidence against what you decided in Step 2. Repeat until they match - only then move to Step 4. This keeps churn out of the reusable reference library described below.
 
 ### Step 4: Promote the case to automated coverage
 
@@ -72,7 +72,7 @@ Follow ["Executing a test"](#executing-a-test) below and use the blueprint test 
 
 1. Configure the blueprint under `infra/document-types/`, apply Terraform, `make -C documentai-api pull-blueprint-schemas` / `pull-blueprint-fields`, `make -C documentai-api check-blueprint-schemas`.
 2. Create a synthetic document; decide the expected blueprint, fields, and any intentional condition.
-3. Iterate with `POST`/`GET /v1/admin/blueprints/test` until actual matches expected.
+3. Iterate with the Extraction Test Runner until actual matches expected.
 4. Add the document + an `expected.json` entry (and a `ROUTING_CASES` entry if routing-relevant); run `make -C documentai-api test-e2e` / `make -C documentai-api test-e2e-routing`.
 5. Leave the reference library (below) better than you found it.
 
@@ -95,16 +95,7 @@ For a quick picture of what happens after a document is submitted, see the repos
 
 For manual testing, use the repository's [Postman collection](postman/DocumentAI.postman_collection.json).
 
-For testing a document against a blueprint, use the blueprint test endpoint (`POST /v1/admin/blueprints/test`, admin-only; implemented in `documentai-api/src/documentai_api/app_blueprint_test.py`).
-
-The blueprint test response can help you compare the expected and actual:
-
-- Matched blueprint
-- Blueprint confidence
-- Extracted fields
-- Field confidence
-- Filtered fields
-- Missing required fields
+For testing a document against a blueprint, use the **Extraction Test Runner** view in the admin console (admin-only). See [extraction-test-runner.md](extraction-test-runner.md) for a full description and walkthrough.
 
 ## Diagnosing unexpected results
 
@@ -166,6 +157,24 @@ When QA or troubleshooting uncovers a meaningful new case:
 4. If the expected behavior changes intentionally, update the reference expectation
 
 When an unfamiliar case teaches something reusable, add that learning back to the reference library or this guide
+
+## Regression testing across document types
+
+`make test-regression` (see `documentai-api/Makefile`) re-runs the pipeline against a representative document for each category in `infra/document-types/`, without needing a deployed AWS environment or a live BDA job. It works by seeding mocked S3/DynamoDB (via `moto`) with canned BDA output at the same S3 JSON boundary the real pipeline reads from, then asserting on the same DynamoDB record the API itself relies on - including the final response code, matched document class, and missing-required-field list.
+
+The suite lives in `documentai-api/tests/regression/`:
+
+- `document_type_manifest.json` - one blueprint/document type per category, with expected fields, required/optional fields, and expected outcome
+- `conftest.py` - seeds mocked S3/DynamoDB per case and writes a triage report on session finish
+- `test_document_type_regression.py` - the parametrized test cases plus an edge case for an unmatched blueprint
+
+After a run, check `documentai-api/tests/regression/.regression_report.json` for a structured summary of every case's pass/fail status and observed values - useful for triaging unexpected results without re-running the suite.
+
+**Workflow for re-testing after a change:**
+
+- After a blueprint or extraction-rule configuration change, re-run `make test-regression` and review any failures against the manifest's expected values.
+- After a real BDA blueprint schema change, also re-run `make pull-blueprint-schemas` per [ADR-2026-08-25](../decisions/2026-08-25-blueprint-schema-preload.md) before re-testing.
+- If a failure reflects an intentional behavior change, update the manifest's expected values; if it's unexpected, treat it the same as any other diagnosed regression using the guidance above.
 
 ## When to stop troubleshooting
 

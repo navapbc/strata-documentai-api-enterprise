@@ -3,25 +3,16 @@ import { adminClient } from "./http.js";
 const POLL_INTERVAL_MS = 3000;
 const POLL_TIMEOUT_MS = 120000; // 2 minutes max
 
-export async function run(file, tenantId, category, documentType, signal) {
-  // Start the test
+export async function run(file, tenantId, signal) {
   const formData = new FormData();
   formData.append("file", file);
-  if (tenantId) {
-    formData.append("tenant_id", tenantId);
-  }
-  if (category) {
-    formData.append("document_category", category);
-  }
-  if (documentType) {
-    formData.append("document_type", documentType);
-  }
+  formData.append("tenant_id", tenantId);
 
   const baseUrl = adminClient.getBaseUrl();
   const session = JSON.parse(sessionStorage.getItem("docai_console_session") || "{}");
   const token = session.idToken || "";
 
-  const startRes = await fetch(`${baseUrl}/v1/admin/blueprints/test`, {
+  const startRes = await fetch(`${baseUrl}/v1/admin/extraction-test`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
     body: formData,
@@ -33,7 +24,7 @@ export async function run(file, tenantId, category, documentType, signal) {
     throw new Error(body.detail || "Failed to start test");
   }
 
-  const { testId } = await startRes.json();
+  const { jobId } = await startRes.json();
 
   // Poll for results with timeout
   const deadline = Date.now() + POLL_TIMEOUT_MS;
@@ -48,10 +39,13 @@ export async function run(file, tenantId, category, documentType, signal) {
       throw new DOMException("Aborted", "AbortError");
     }
 
-    const pollRes = await fetch(`${baseUrl}/v1/admin/blueprints/test/${testId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-      signal,
-    });
+    const pollRes = await fetch(
+      `${baseUrl}/v1/admin/extraction-test/${jobId}?include_extracted_data=true`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        signal,
+      },
+    );
 
     if (!pollRes.ok) {
       throw new Error("Failed to check test status");
@@ -59,14 +53,14 @@ export async function run(file, tenantId, category, documentType, signal) {
 
     const result = await pollRes.json();
 
-    if (result.status === "COMPLETED") {
+    if (result.isCompleted) {
+      if (result.isFailed) {
+        throw new Error(result.message || "Extraction failed");
+      }
       return result;
     }
-    if (result.status === "FAILED") {
-      throw new Error(result.error || "Extraction failed");
-    }
-    // Otherwise keep polling (PROCESSING)
+    // Otherwise keep polling
   }
 
-  throw new Error("Test timed out - BDA processing took too long");
+  throw new Error("Still processing — check Recent Test Runs for the result");
 }

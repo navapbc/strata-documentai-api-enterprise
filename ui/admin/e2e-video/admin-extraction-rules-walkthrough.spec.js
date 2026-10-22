@@ -1,11 +1,9 @@
 import { test, expect } from "@playwright/test";
-import { loginWithMfa } from "../../shared/e2e/helpers/login.js";
 
 // ---------------------------------------------------------------------------
 // Scripted demo video: Extraction Rules management view.
 //
-// Flow: login -> MFA -> Documents -> Extraction Rules
-//       -> select tenant -> browse blueprints -> toggle fields -> save
+// Flow: start logged in -> Extraction Rules -> select tenant -> browse blueprints -> toggle fields -> save
 // ---------------------------------------------------------------------------
 
 const TENANT_ID = "acme-corp";
@@ -83,11 +81,18 @@ test("extraction rules walkthrough", async ({ page }) => {
   });
   await page.route("**/v1/audit/**", (route) => route.fulfill(json({})));
 
-  // === 1. Login + MFA =======================================================
-  await test.step("Login + MFA", async () => {
-    await page.addInitScript(() => sessionStorage.clear());
+  // === 1. Start logged in ==================================================
+  await test.step("Start logged in", async () => {
+    const payload = btoa(JSON.stringify({ "cognito:groups": ["super-admin"], email: "admin@example.com" }));
     await page.goto("/");
-    await loginWithMfa(page, { expect });
+    await page.evaluate((p) => {
+      sessionStorage.setItem("docai_console_session", JSON.stringify({
+        accessToken: "fake-at", idToken: `h.${p}.s`, refreshToken: "fake-rt",
+        email: "admin@example.com", expiresAt: Date.now() + 3600000,
+      }));
+    }, payload);
+    await page.goto("/");
+    await expect(page.locator("#view-title")).toHaveText("Home");
   });
 
   // === 2. Navigate to Extraction Rules =====================================
