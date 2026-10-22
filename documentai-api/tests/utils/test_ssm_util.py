@@ -6,7 +6,6 @@ from documentai_api.utils.ssm import (
     is_document_crop_enabled,
     is_multipage_document_flagging_enabled,
     is_preclassification_blueprint_matching_enabled,
-    is_preclassification_routing_enabled,
     is_skip_bda_if_unclassified,
     is_textract_identity_enabled,
 )
@@ -63,32 +62,6 @@ def test_is_textract_identity_enabled_reads_false(mocker):
     )
     mocker.patch("documentai_api.utils.ssm.get_parameter_value", return_value="false")
     assert is_textract_identity_enabled() is False
-
-
-def test_is_preclassification_routing_enabled_defaults_off_when_unconfigured(mocker):
-    mocker.patch(
-        "documentai_api.config.env.get_env_config",
-        return_value=SimpleNamespace(ssm_prefix=None),
-    )
-    assert is_preclassification_routing_enabled() is False
-
-
-def test_is_preclassification_routing_enabled_reads_true(mocker):
-    mocker.patch(
-        "documentai_api.config.env.get_env_config",
-        return_value=SimpleNamespace(ssm_prefix="/docai/dev"),
-    )
-    mocker.patch("documentai_api.utils.ssm.get_parameter_value", return_value="true")
-    assert is_preclassification_routing_enabled() is True
-
-
-def test_is_preclassification_routing_enabled_reads_false(mocker):
-    mocker.patch(
-        "documentai_api.config.env.get_env_config",
-        return_value=SimpleNamespace(ssm_prefix="/docai/dev"),
-    )
-    mocker.patch("documentai_api.utils.ssm.get_parameter_value", return_value="false")
-    assert is_preclassification_routing_enabled() is False
 
 
 def test_is_skip_bda_if_unclassified_defaults_off_when_unconfigured(mocker):

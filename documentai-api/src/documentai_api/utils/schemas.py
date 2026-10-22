@@ -7,7 +7,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from documentai_api.config.constants import BDA_PROJECT_KEY_ALL, DictionaryBlueprintField
+from documentai_api.config.constants import DictionaryBlueprintField
 from documentai_api.config.env import get_env_config
 from documentai_api.logging import get_logger
 from documentai_api.services.bda import get_blueprint, get_data_automation_project
@@ -48,13 +48,8 @@ def fetch_schemas_from_bda(
 
     project_arns = get_env_config().get_bda_project_arns()
 
-    # "all" is a superset of every category project's blueprints, so it's
-    # skipped here - the union of the category projects covers all blueprints
-    # without creating duplicate entries
-    categories = {c: arn for c, arn in project_arns.items() if c != BDA_PROJECT_KEY_ALL}
-
     schemas: dict[str, DocumentSchema] = {}
-    for category, project_arn in categories.items():
+    for category, project_arn in project_arns.items():
         category_schemas = _fetch_project_schemas(category, project_arn)
         schemas.update(category_schemas)
         if on_category:

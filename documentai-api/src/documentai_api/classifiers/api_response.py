@@ -24,6 +24,7 @@ _TERMINAL_STATUS_RESPONSES: dict[str, dict[str, Any]] = {
     },
     ProcessStatus.FAILED.value: {
         "jobStatus": V1JobStatus.FAILED,
+        "message": "Processing failed",
         "error": "Processing failed",
         "responseCode": ResponseCodes.INTERNAL_PROCESSING_ERROR,
         "responseMessage": ResponseCodes.get_message(ResponseCodes.INTERNAL_PROCESSING_ERROR),

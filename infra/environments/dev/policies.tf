@@ -265,10 +265,7 @@ resource "aws_iam_policy" "s3_metrics_read_write" {
 # --- Bedrock and Textract ---
 
 locals {
-  bda_project_arns = concat(
-    [for k, v in module.bedrock_data_automation : v.project_arn],
-    [module.bedrock_data_automation_all.project_arn],
-  )
+  bda_project_arns = [for k, v in module.bedrock_data_automation : v.project_arn]
 }
 
 # API Lambda: extraction_test_runner router calls InvokeDataAutomationAsync and
