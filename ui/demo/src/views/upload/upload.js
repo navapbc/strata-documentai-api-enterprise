@@ -338,7 +338,6 @@ async function loadDocument(jobId) {
   }
 }
 
-
 let _resizeObserver = null;
 
 function renderResults(doc) {

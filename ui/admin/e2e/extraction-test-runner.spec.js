@@ -204,9 +204,11 @@ test.describe("Extraction Test Runner", () => {
       }),
     );
     await selectTenant(page);
-    await page
-      .locator("#extraction-test-file")
-      .setInputFiles({ name: "bad.xyz", mimeType: "application/octet-stream", buffer: Buffer.from("x") });
+    await page.locator("#extraction-test-file").setInputFiles({
+      name: "bad.xyz",
+      mimeType: "application/octet-stream",
+      buffer: Buffer.from("x"),
+    });
 
     await page.locator("#extraction-test-run-btn").click();
 

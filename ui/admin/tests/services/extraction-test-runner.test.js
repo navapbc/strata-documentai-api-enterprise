@@ -106,7 +106,9 @@ describe("extraction-test service", () => {
     });
 
     const file = new File(["pdf"], "test.pdf");
-    await expect(ExtractionTestRunnerService.run(file, "acme", null)).rejects.toThrow("Invalid file");
+    await expect(ExtractionTestRunnerService.run(file, "acme", null)).rejects.toThrow(
+      "Invalid file",
+    );
   });
 
   it("includes auth header from session", async () => {

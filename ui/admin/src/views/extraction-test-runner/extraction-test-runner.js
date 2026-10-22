@@ -152,11 +152,7 @@ async function _runTest() {
   try {
     const file = _selectedFile;
     _clearFile();
-    const result = await ExtractionTestRunnerService.run(
-      file,
-      tenantId,
-      _abortController.signal,
-    );
+    const result = await ExtractionTestRunnerService.run(file, tenantId, _abortController.signal);
     const doc = await DocumentsService.get(result.jobId, { includeExtractedData: true });
     _setStatus(null);
     _renderResults(doc);
@@ -265,8 +261,12 @@ function _renderResults(result) {
     h(
       "div",
       { className: "extraction-result-meta" },
-      ...(timeStr ? [h("span", { className: "extraction-result-time" }, `Elapsed: ${timeStr}`)] : []),
-      ...(dateStr ? [h("span", { className: "extraction-result-date" }, `Extracted: ${dateStr}`)] : []),
+      ...(timeStr
+        ? [h("span", { className: "extraction-result-time" }, `Elapsed: ${timeStr}`)]
+        : []),
+      ...(dateStr
+        ? [h("span", { className: "extraction-result-date" }, `Extracted: ${dateStr}`)]
+        : []),
     ),
   );
 

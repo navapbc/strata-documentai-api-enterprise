@@ -2627,6 +2627,7 @@
                   "type": "null"
                 }
               ],
+              "default": false,
               "title": "Is Test Run"
             }
           },
@@ -4760,7 +4761,8 @@
           },
           "tenant_id": {
             "type": "string",
-            "title": "Tenant Id"
+            "title": "Tenant Id",
+            "description": "Tenant identifier"
           }
         },
         "type": "object",
