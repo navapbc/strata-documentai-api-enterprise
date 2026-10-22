@@ -24,3 +24,7 @@ crash.*.log
 
 # VHS tape recording artifact - cloned by api-setup-demo.tape, cleaned up in teardown
 strata-documentai-api-enterprise/
+
+# Generated MP4s from gifs-to-mp4 target (keep api-setup-demo.mp4 which is VHS-recorded and referenced in docs)
+docs/documentai-api/media/*.mp4
+!docs/documentai-api/media/api-setup-demo.mp4

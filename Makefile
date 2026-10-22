@@ -7,6 +7,7 @@
 	deploy-ui \
 	record-ui \
 	record-api-setup \
+	gifs-to-mp4 \
 	playwright-install \
 	postman \
 	format \
@@ -104,6 +105,15 @@ playwright-install: ## Install Playwright Chromium browser for both UIs
 	cd ui/admin && npx playwright install chromium
 	cd ui/demo && npx playwright install chromium
 
+gifs-to-mp4: ## Convert all GIFs in $(MEDIA_DIR) to MP4 using ffmpeg
+	@which ffmpeg > /dev/null 2>&1 || (echo "Error: ffmpeg not found. Install with: brew install ffmpeg" && exit 1)
+	@for gif in $(MEDIA_DIR)/*.gif; do \
+		[ -f "$$gif" ] || continue; \
+		mp4="$${gif%.gif}.mp4"; \
+		echo "Converting $$gif -> $$mp4"; \
+		ffmpeg -y -loglevel error -i "$$gif" -movflags faststart -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" "$$mp4"; \
+	done
+
 record-api-setup: ## Record local API setup demo -> $(MEDIA_DIR)/api-setup-demo.mp4
 	@which vhs > /dev/null 2>&1 || (echo "Error: vhs not found. Install with: brew install vhs" && exit 1)
 	vhs docs/documentai-api/api-setup-demo.tape
@@ -117,7 +127,7 @@ adr-log: ## Regenerate the ADR index (docs/decisions/index.md)
 	cd docs/decisions && adr-log -i -e template.md
 
 help: ## Show help
-	@grep -Eh '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@grep -Eh '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 	@echo ""
 	@echo "ENVIRONMENT=$(ENVIRONMENT)  AWS_PROFILE=$(AWS_PROFILE)"
 
