@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { STORAGE_KEY, PRIVACY_MODE_KEY } from "../../../shared/utils/session.js";
 
 function flush() {
   return new Promise((r) => setTimeout(r, 0));
@@ -30,7 +31,7 @@ describe("main.js router", () => {
       }),
     );
 
-    vi.doMock("../../src/utils/session.js", () => ({
+    vi.doMock("../../../shared/utils/session.js", () => ({
       get: vi.fn(() => null),
       save: vi.fn(),
       clear: vi.fn(),
@@ -38,6 +39,8 @@ describe("main.js router", () => {
       isApproved: vi.fn(() => true),
       isSuperAdmin: vi.fn(() => false),
       onExpire: vi.fn(),
+      STORAGE_KEY,
+      PRIVACY_MODE_KEY,
     }));
     vi.doMock("../../src/utils/toast.js", () => ({ show: vi.fn() }));
     vi.doMock("../../src/utils/tenant-context.js", () => ({
@@ -79,7 +82,7 @@ describe("main.js router", () => {
 
     document.body.innerHTML = '<div id="app"></div>';
 
-    Session = await import("../../src/utils/session.js");
+    Session = await import("../../../shared/utils/session.js");
     LoginView = await import("../../src/views/login/login.js");
     KeysView = await import("../../src/views/keys/keys.js");
     TenantContext = await import("../../src/utils/tenant-context.js");

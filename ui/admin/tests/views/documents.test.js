@@ -66,8 +66,9 @@ describe("documents view", () => {
       setViewActions: vi.fn(),
       clearViewActions: vi.fn(),
     }));
-    vi.doMock("../../src/utils/session.js", () => ({
+    vi.doMock("../../../shared/utils/session.js", () => ({
       getEmail: () => "admin@test.com",
+      PRIVACY_MODE_KEY: "privacy_mode",
     }));
 
     DocumentsView = await import("../../src/views/documents/documents.js");

@@ -15,7 +15,7 @@ async function loginAsAdmin(page) {
       email: "admin@test.com",
       expiresAt: Date.now() + 3600000,
     };
-    sessionStorage.setItem("docai_console_session", JSON.stringify(session));
+    sessionStorage.setItem("documentai_console_session", JSON.stringify(session));
   });
   await page.goto("/");
 }

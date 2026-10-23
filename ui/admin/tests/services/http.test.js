@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import { STORAGE_KEY } from "../../../shared/utils/session.js";
 
 let adminClient, dataClient;
 
@@ -7,7 +8,7 @@ describe("http client", () => {
     vi.resetModules();
     sessionStorage.clear();
     sessionStorage.setItem(
-      "docai_console_session",
+      STORAGE_KEY,
       JSON.stringify({
         accessToken: "old",
         refreshToken: "refresh-tok",
@@ -65,7 +66,7 @@ describe("http client", () => {
       await expect(adminClient.request("GET", "/v1/admin/api-keys")).rejects.toThrow(
         "Session expired",
       );
-      expect(sessionStorage.getItem("docai_console_session")).toBeNull();
+      expect(sessionStorage.getItem(STORAGE_KEY)).toBeNull();
       expect(window.location.reload).toHaveBeenCalled();
     });
 
@@ -110,7 +111,7 @@ describe("http client", () => {
       await expect(adminClient.request("GET", "/v1/admin/tenants")).rejects.toThrow(
         "Access denied",
       );
-      expect(sessionStorage.getItem("docai_console_session")).not.toBeNull();
+      expect(sessionStorage.getItem(STORAGE_KEY)).not.toBeNull();
     });
   });
 

@@ -1,4 +1,5 @@
 import { adminClient } from "../../../shared/services/http.js";
+import { STORAGE_KEY } from "../../../shared/utils/session.js";
 
 export async function list({ limit, cursor } = {}) {
   const params = new URLSearchParams();
@@ -33,7 +34,7 @@ export async function getPreviewUrl(jobId) {
 
 export async function upload(file) {
   const baseUrl = adminClient.getBaseUrl();
-  const session = JSON.parse(sessionStorage.getItem("docai_console_session") || "{}");
+  const session = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || "{}");
   const token = session.idToken || "";
 
   const formData = new FormData();

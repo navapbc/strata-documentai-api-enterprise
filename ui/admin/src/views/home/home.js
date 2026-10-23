@@ -1,4 +1,4 @@
-import * as Session from "../../utils/session.js";
+import * as Session from "../../../../shared/utils/session.js";
 import * as Icons from "../../utils/icons.js";
 import { tpl } from "../../utils/tpl.js";
 import NAV_SECTIONS from "../../config/nav.js";

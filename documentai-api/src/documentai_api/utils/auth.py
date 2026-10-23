@@ -10,7 +10,7 @@ from datetime import UTC, datetime
 from functools import lru_cache
 from typing import Annotated, Any
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
@@ -26,6 +26,8 @@ from documentai_api.utils.jwt_auth import (
     get_tenant_id,
     is_super_admin,
     require_role,
+    require_super_admin,
+    verify_jwt,
 )
 
 logger = get_logger(__name__)
@@ -651,3 +653,28 @@ def resolve_tenant_from_context(
             detail="Access denied.",
         )
     return auth.tenant_id
+
+
+def is_privacy_mode(request: Request) -> bool:
+    """FastAPI dependency that returns True when the request carries X-Privacy-Mode: true."""
+    return request.headers.get("X-Privacy-Mode") == "true"
+
+
+async def verify_jwt_with_role(
+    claims: Annotated[dict[str, Any], Depends(verify_jwt)],
+) -> dict[str, Any]:
+    """Verify the JWT and require that the user has been assigned a role.
+
+    Pending users (authenticated but no Cognito group) get a 403 here so admin
+    handlers never see them.
+    """
+    require_role(claims)
+    return claims
+
+
+async def verify_jwt_with_super_admin(
+    claims: Annotated[dict[str, Any], Depends(verify_jwt)],
+) -> dict[str, Any]:
+    """Verify the JWT and require that the user is in the super-admin group."""
+    require_super_admin(claims)
+    return claims

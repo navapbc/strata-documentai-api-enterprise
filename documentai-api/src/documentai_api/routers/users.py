@@ -13,7 +13,7 @@ from typing import Any, Literal
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
-from documentai_api.annotations import SuperAdminClaims, verify_jwt_with_super_admin
+from documentai_api.annotations import IsPrivacyMode, SuperAdminClaims
 from documentai_api.config.constants import ApiVisualizationTag
 from documentai_api.logging import get_logger
 from documentai_api.models.user import ListUsersResponse
@@ -21,7 +21,9 @@ from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
 from documentai_api.services import cognito as cognito_service
 from documentai_api.utils import tenants as tenants_util
 from documentai_api.utils.audit_log import log_event
+from documentai_api.utils.auth import verify_jwt_with_super_admin
 from documentai_api.utils.jwt_auth import SUPER_ADMIN, TENANT_ADMIN
+from documentai_api.utils.privacy_masking import mask_tenant, mask_user
 
 logger = get_logger(__name__)
 
@@ -62,7 +64,7 @@ class ChangeTenantRequest(BaseModel):
 
 
 @router.get("")
-async def list_users(claims: SuperAdminClaims) -> ListUsersResponse:
+async def list_users(claims: SuperAdminClaims, is_privacy_mode: IsPrivacyMode) -> ListUsersResponse:
     """List every user in the pool with their group + tenant assignment."""
     try:
         users = cognito_service.list_users()
@@ -72,6 +74,16 @@ async def list_users(claims: SuperAdminClaims) -> ListUsersResponse:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to list users",
         ) from e
+
+    if is_privacy_mode:
+        for u in users:
+            masked = mask_user(u.username)
+            u.username = masked.email
+            u.email = masked.email if u.email else None
+
+            if u.tenant_id:
+                u.masked_tenant_id = mask_tenant(u.tenant_id).id
+
     return ListUsersResponse(users=users, count=len(users))
 
 
@@ -91,11 +103,13 @@ async def approve_user(
 ) -> dict[str, Any]:
     """Approve a pending user by assigning a role and (for tenant-admin) a tenant."""
     _validate_tenant_for_role(body.role, body.tenant_id)
+
     if body.tenant_id and not tenants_util.get_tenant(body.tenant_id):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Tenant '{body.tenant_id}' does not exist.",
         )
+
     try:
         cognito_service.replace_role(username, body.role)
         # Super-admin is cross-tenant by definition - clear any prior tenant
@@ -111,6 +125,7 @@ async def approve_user(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to approve user",
         ) from e
+
     log_event(
         claims,
         action=AuditAction.USER_APPROVE,
@@ -119,6 +134,7 @@ async def approve_user(
         tenant_id=body.tenant_id,
         metadata={"role": body.role, "tenant_id": body.tenant_id},
     )
+
     return {"username": username, "role": body.role, "tenant_id": body.tenant_id}
 
 
@@ -142,7 +158,9 @@ async def change_role(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Tenant '{body.tenant_id}' does not exist.",
         )
+
     tenant_id = body.tenant_id if body.role == TENANT_ADMIN else None
+
     try:
         cognito_service.replace_role(username, body.role)
         cognito_service.set_tenant(username, tenant_id)
@@ -152,6 +170,7 @@ async def change_role(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to change role",
         ) from e
+
     log_event(
         claims,
         action=AuditAction.USER_ROLE_CHANGE,
@@ -160,6 +179,7 @@ async def change_role(
         tenant_id=tenant_id,
         metadata={"new_role": body.role, "tenant_id": tenant_id},
     )
+
     return {"username": username, "role": body.role, "tenant_id": tenant_id}
 
 
@@ -175,6 +195,7 @@ async def change_tenant(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Tenant '{body.tenant_id}' does not exist.",
         )
+
     try:
         cognito_service.set_tenant(username, body.tenant_id)
     except Exception as e:
@@ -183,6 +204,7 @@ async def change_tenant(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to change tenant",
         ) from e
+
     log_event(
         claims,
         action=AuditAction.USER_TENANT_CHANGE,
@@ -191,6 +213,7 @@ async def change_tenant(
         tenant_id=body.tenant_id,
         metadata={"new_tenant": body.tenant_id},
     )
+
     return {"username": username, "tenant_id": body.tenant_id}
 
 
@@ -203,6 +226,7 @@ async def delete_user(username: str, claims: SuperAdminClaims) -> dict[str, Any]
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="You cannot delete your own account.",
         )
+
     try:
         cognito_service.delete_user(username)
     except Exception as e:
@@ -211,12 +235,14 @@ async def delete_user(username: str, claims: SuperAdminClaims) -> dict[str, Any]
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete user",
         ) from e
+
     log_event(
         claims,
         action=AuditAction.USER_DELETE,
         target_type=AuditTargetType.USER,
         target_id=username,
     )
+
     return {"username": username, "deleted": True}
 
 

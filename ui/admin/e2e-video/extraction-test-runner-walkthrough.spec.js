@@ -5,6 +5,7 @@ import {
   COMPLETED_DOC,
   previewDataUrl,
 } from "../../shared/e2e/fixtures/recording/passport-document.js";
+import { registerConfig, registerTenants, loginAs } from "../../shared/e2e/helpers/routes.js";
 // ---------------------------------------------------------------------------
 // Scripted demo video: Extraction Test Runner walkthrough.
 //
@@ -34,22 +35,10 @@ test("extraction test runner walkthrough", async ({ page }) => {
   });
 
   // --- config.json ----------------------------------------------------------
-  await page.route("**/config.json", (route) =>
-    route.fulfill(
-      json({
-        api_endpoint: { value: "https://api.admin.local" },
-        cognito_user_pool_id: { value: "us-east-1_ADMIN0000" },
-        cognito_client_id: { value: "adminclientid000000000000" },
-        cognito_domain: { value: null },
-        cognito_google_enabled: { value: false },
-      }),
-    ),
-  );
+  registerConfig(page);
 
   // --- tenants --------------------------------------------------------------
-  await page.route("**/v1/admin/tenants**", (route) =>
-    route.fulfill(json({ tenants: TENANTS })),
-  );
+  registerTenants(page, TENANTS);
 
   // --- extraction test: POST -> jobId, GET poll -> completed ----------------
   await page.route("**/v1/admin/extraction-test", (route) => {
@@ -85,15 +74,7 @@ test("extraction test runner walkthrough", async ({ page }) => {
 
   // === 1. Start logged in ==================================================
   await test.step("Start logged in", async () => {
-    const payload = btoa(JSON.stringify({ "cognito:groups": ["super-admin"], email: "admin@example.com" }));
-    await page.goto("/");
-    await page.evaluate((p) => {
-      sessionStorage.setItem("docai_console_session", JSON.stringify({
-        accessToken: "fake-at", idToken: `h.${p}.s`, refreshToken: "fake-rt",
-        email: "admin@example.com", expiresAt: Date.now() + 3600000,
-      }));
-    }, payload);
-    await page.goto("/");
+    await loginAs(page);
     await expect(page.locator("#view-title")).toHaveText("Home");
   });
 

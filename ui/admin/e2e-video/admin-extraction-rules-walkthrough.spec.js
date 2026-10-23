@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { registerConfig, registerTenants, loginAs } from "../../shared/e2e/helpers/routes.js";
 
 // ---------------------------------------------------------------------------
 // Scripted demo video: Extraction Rules management view.
@@ -49,23 +50,11 @@ test("extraction rules walkthrough", async ({ page }) => {
   });
 
   // --- config.json ----------------------------------------------------------
-  await page.route("**/config.json", (route) =>
-    route.fulfill(json({
-      api_endpoint: { value: "https://api.admin.local" },
-      cognito_user_pool_id: { value: "us-east-1_ADMIN0000" },
-      cognito_client_id: { value: "adminclientid000000000000" },
-      cognito_domain: { value: null },
-      cognito_google_enabled: { value: false },
-    })),
-  );
+  registerConfig(page);
 
   // --- API ------------------------------------------------------------------
-  await page.route("**/v1/admin/tenants**", (route) => {
-    const url = route.request().url();
-    if (url.includes(`/tenants/${TENANT_ID}`)) {
-      return route.fulfill(json({ tenantId: TENANT_ID, displayName: "Acme Corporation", isActive: true, disabled_blueprint_list: [] }));
-    }
-    return route.fulfill(json({ tenants: [{ tenantId: TENANT_ID, displayName: "Acme Corporation", isActive: true }] }));
+  registerTenants(page, [{ tenantId: TENANT_ID, displayName: "Acme Corporation", isActive: true }], {
+    [TENANT_ID]: { tenantId: TENANT_ID, displayName: "Acme Corporation", isActive: true, disabled_blueprint_list: [] },
   });
   await page.route("**/v1/dictionary/**", (route) => route.fulfill(json({ fields: [] })));
   await page.route("**/v1/dictionary/fields*", (route) =>
@@ -83,15 +72,7 @@ test("extraction rules walkthrough", async ({ page }) => {
 
   // === 1. Start logged in ==================================================
   await test.step("Start logged in", async () => {
-    const payload = btoa(JSON.stringify({ "cognito:groups": ["super-admin"], email: "admin@example.com" }));
-    await page.goto("/");
-    await page.evaluate((p) => {
-      sessionStorage.setItem("docai_console_session", JSON.stringify({
-        accessToken: "fake-at", idToken: `h.${p}.s`, refreshToken: "fake-rt",
-        email: "admin@example.com", expiresAt: Date.now() + 3600000,
-      }));
-    }, payload);
-    await page.goto("/");
+    await loginAs(page);
     await expect(page.locator("#view-title")).toHaveText("Home");
   });
 

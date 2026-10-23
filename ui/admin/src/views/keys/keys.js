@@ -1,6 +1,7 @@
 import * as Helpers from "../../utils/helpers.js";
 import * as KeysService from "../../services/keys.js";
 import * as TenantContext from "../../utils/tenant-context.js";
+import { isPrivacyMode } from "../../../../shared/utils/privacy.js";
 import { openModal, closeModal } from "../../utils/modal.js";
 import { h, iconBtn } from "../../utils/dom.js";
 import { tpl } from "../../utils/tpl.js";
@@ -33,7 +34,7 @@ export function mount(root) {
     _showInactiveToggle,
     document.createTextNode(" Show revoked"),
   );
-  Helpers.setViewActions(label, _createKeyBtn);
+  Helpers.setViewActions(label, ...(isPrivacyMode() ? [] : [_createKeyBtn]));
 
   _tableView = new TableView(
     root.querySelector("#keys-table"),
@@ -95,7 +96,7 @@ function openRevokeModal(key) {
     nameEl.textContent = key.apiKeyName || "-";
   }
   if (tenantEl) {
-    tenantEl.textContent = key.tenantId || "-";
+    tenantEl.textContent = key.maskedTenantId ?? key.tenantId ?? "-";
   }
   if (envEl) {
     envEl.textContent = key.environment || "-";
@@ -170,15 +171,20 @@ function copyKey() {
 
 function renderRow(key) {
   const isActive = key.isActive !== false;
-  const actionEl = isActive ? iconBtn("discard", "Revoke", "btn-icon-danger") : null;
+  const privacy = isPrivacyMode();
+  const actionEl = isActive && !privacy ? iconBtn("discard", "Revoke", "btn-icon-danger") : null;
   const tr = h(
     "tr",
     isActive ? null : { className: "row-inactive" },
-    h("td", null, key.tenantId || "-"),
-    h("td", null, key.apiKeyName || "-"),
-    h("td", null, key.emailAddress || "-"),
+    h("td", null, key.maskedTenantId ?? key.tenantId ?? "-"),
+    h("td", null, privacy ? "••••••••" : (key.apiKeyName ?? "-")),
+    h("td", null, key.emailAddress ?? "-"),
     h("td", null, key.environment || "-"),
-    h("td", null, h("span", null, key.keyPrefix ? key.keyPrefix + "…" : "-")),
+    h(
+      "td",
+      null,
+      h("span", null, privacy ? "••••••••" : key.keyPrefix ? key.keyPrefix + "…" : "-"),
+    ),
     h(
       "td",
       { title: key.lastUsed ? Helpers.formatDateTime(key.lastUsed) : "" },
@@ -195,7 +201,7 @@ function renderRow(key) {
     ),
     h("td", null, actionEl),
   );
-  if (isActive) {
+  if (isActive && !privacy) {
     actionEl.addEventListener("click", () => openRevokeModal(key));
   }
   return tr;

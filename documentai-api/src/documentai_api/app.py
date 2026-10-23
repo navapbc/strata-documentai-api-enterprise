@@ -75,7 +75,14 @@ app.add_middleware(
     allow_origins=get_app_config().get_cors_origins(),
     allow_credentials=False,
     allow_methods=["GET", "PUT", "POST", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "x-api-key", "API-Key", "Authorization", "X-Trace-ID"],
+    allow_headers=[
+        "Content-Type",
+        "x-api-key",
+        "API-Key",
+        "Authorization",
+        "X-Trace-ID",
+        "X-Privacy-Mode",
+    ],
     expose_headers=["X-Trace-ID"],
 )
 

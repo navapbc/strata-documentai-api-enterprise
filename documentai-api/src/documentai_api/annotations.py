@@ -17,34 +17,17 @@ from documentai_api.utils.auth import (
     UserContext,
     get_user_context_from_api_key,
     get_user_context_with_fallback,
+    is_privacy_mode,
+    verify_jwt_with_role,
+    verify_jwt_with_super_admin,
 )
-from documentai_api.utils.jwt_auth import require_role, require_super_admin, verify_jwt
 
 AuthMethod = Literal["api_key", "jwt"]
 
 
-async def verify_jwt_with_role(
-    claims: Annotated[dict[str, Any], Depends(verify_jwt)],
-) -> dict[str, Any]:
-    """Verify the JWT and require that the user has been assigned a role.
-
-    Pending users (authenticated but no Cognito group) get a 403 here so admin
-    handlers never see them.
-    """
-    require_role(claims)
-    return claims
-
-
-async def verify_jwt_with_super_admin(
-    claims: Annotated[dict[str, Any], Depends(verify_jwt)],
-) -> dict[str, Any]:
-    """Verify the JWT and require that the user is in the super-admin group."""
-    require_super_admin(claims)
-    return claims
-
-
 AdminClaims = Annotated[dict[str, Any], Depends(verify_jwt_with_role)]
 SuperAdminClaims = Annotated[dict[str, Any], Depends(verify_jwt_with_super_admin)]
+IsPrivacyMode = Annotated[bool, Depends(is_privacy_mode)]
 
 # Auth
 # Router-level `dependencies=[Depends(get_user_context_from_api_key)]` enforces auth even if a handler

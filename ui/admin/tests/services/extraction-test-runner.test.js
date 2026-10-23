@@ -17,7 +17,7 @@ describe("extraction-test service", () => {
       dataClient: { request: vi.fn(), configure: vi.fn(), getBaseUrl: () => "" },
     }));
 
-    const store = { docai_console_session: JSON.stringify({ idToken: "tok-123" }) };
+    const store = { documentai_console_session: JSON.stringify({ idToken: "tok-123" }) };
     vi.stubGlobal("sessionStorage", {
       getItem: (k) => store[k] || null,
       setItem: (k, v) => {

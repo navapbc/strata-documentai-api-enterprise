@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 import { _fillDailyGaps } from "../../src/views/usage/usage.js";
 
 describe("_fillDailyGaps", () => {
@@ -49,5 +49,55 @@ describe("_fillDailyGaps", () => {
     const result = _fillDailyGaps("2026-04", []);
     expect(result.length).toBe(30);
     expect(result[29].date).toBe("2026-04-30");
+  });
+});
+
+const USAGE_DATA = {
+  tenants: [{ tenantId: "test-tenant-id", maskedTenantId: "m-1", totalRecords: 5 }],
+};
+
+async function mountUsageView({ privacyMode }) {
+  vi.resetModules();
+  if (privacyMode) {
+    sessionStorage.setItem("privacy_mode", "true");
+  } else {
+    sessionStorage.removeItem("privacy_mode");
+  }
+  vi.doMock("../../src/services/usage.js", () => ({
+    get: vi.fn().mockResolvedValue(USAGE_DATA),
+  }));
+  vi.doMock("../../src/utils/tenant-context.js", () => ({
+    getTenantId: vi.fn(() => null),
+    onChange: vi.fn(() => () => {}),
+    mountSelect: vi.fn(),
+    unmountSelect: vi.fn(),
+  }));
+  vi.doMock("../../src/utils/toast.js", () => ({ show: vi.fn() }));
+  const UsageView = await import("../../src/views/usage/usage.js");
+  const root = document.createElement("div");
+  document.body.appendChild(root);
+  UsageView.mount(root);
+  await new Promise((r) => setTimeout(r, 0));
+  return root;
+}
+
+describe("usage view - download button visibility", () => {
+  afterEach(() => {
+    document.body.innerHTML = "";
+    sessionStorage.clear();
+  });
+
+  it("is visible and enabled without privacy mode", async () => {
+    const root = await mountUsageView({ privacyMode: false });
+    const btn = root.querySelector("#usage-download-btn");
+    expect(btn.classList.contains("hidden")).toBe(false);
+    expect(btn.disabled).toBe(false);
+  });
+
+  it("is hidden and disabled with privacy mode", async () => {
+    const root = await mountUsageView({ privacyMode: true });
+    const btn = root.querySelector("#usage-download-btn");
+    expect(btn.classList.contains("hidden")).toBe(true);
+    expect(btn.disabled).toBe(true);
   });
 });

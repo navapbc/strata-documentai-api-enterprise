@@ -9,7 +9,7 @@ import json
 
 from fastapi import APIRouter, Depends, HTTPException, Response, UploadFile
 
-from documentai_api.annotations import AdminClaims, TenantIdField, verify_jwt_with_role
+from documentai_api.annotations import AdminClaims, TenantIdField
 from documentai_api.classifiers.api_response import build_v1_api_response
 from documentai_api.config.constants import ApiVisualizationTag, ProcessStatus
 from documentai_api.logging import get_logger
@@ -17,7 +17,7 @@ from documentai_api.models.base import BaseApiResponse
 from documentai_api.models.job_status import JobStatusResponse
 from documentai_api.routers.documents import upload_document
 from documentai_api.schemas.document_metadata import DocumentMetadata
-from documentai_api.utils.auth import UserContext, resolve_tenant_from_context
+from documentai_api.utils.auth import UserContext, resolve_tenant_from_context, verify_jwt_with_role
 from documentai_api.utils.jobs import get_job_status
 from documentai_api.utils.jwt_auth import (
     SUPER_ADMIN,

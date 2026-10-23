@@ -10,7 +10,8 @@
  */
 import * as DocumentsService from "../services/documents.js";
 import * as Helpers from "../utils/helpers.js";
-import * as Session from "../utils/session.js";
+import * as Session from "../../../shared/utils/session.js";
+import { isPrivacyMode } from "../../../shared/utils/privacy.js";
 import { h } from "../utils/dom.js";
 import { tpl } from "../utils/tpl.js";
 import {
@@ -229,7 +230,7 @@ export function mount(root) {
       renderPreview(previewPanel, {
         url: resp.url,
         contentType,
-        watermarkEmail: Session.getEmail() || "",
+        watermarkEmail: isPrivacyMode() ? "user@example.com" : Session.getEmail() || "",
         onRotate: () => previewPanel._bboxRerender?.(),
       });
     } catch {

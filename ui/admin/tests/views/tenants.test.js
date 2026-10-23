@@ -260,3 +260,64 @@ describe("tenants view", () => {
     expect(root.children.length).toBe(0);
   });
 });
+
+describe("tenants view - privacy mode", () => {
+  let root, TenantsView;
+
+  function flush() {
+    return new Promise((r) => setTimeout(r, 0));
+  }
+
+  beforeEach(async () => {
+    vi.resetModules();
+    sessionStorage.setItem("privacy_mode", "true");
+
+    vi.doMock("../../src/services/tenants.js", () => ({
+      list: vi.fn().mockResolvedValue({ tenants: [buildTenant()] }),
+      create: vi.fn(),
+      update: vi.fn(),
+      remove: vi.fn(),
+    }));
+
+    vi.doMock("../../src/utils/tenant-context.js", () => ({
+      getTenantId: vi.fn(() => null),
+      onChange: vi.fn(() => () => {}),
+      load: vi.fn(),
+      mountSelect: vi.fn(),
+      unmountSelect: vi.fn(),
+    }));
+
+    vi.doMock("../../src/utils/helpers.js", () => ({
+      esc: (s) => s,
+      formatDate: (d) => d || "-",
+      showLoading: vi.fn(),
+      setViewActions: vi.fn(),
+      clearViewActions: vi.fn(),
+      bindSortHeaders: vi.fn(() => () => {}),
+      sortRows: (rows) => rows,
+    }));
+
+    vi.doMock("../../src/utils/toast.js", () => ({ show: vi.fn() }));
+
+    TenantsView = await import("../../src/views/tenants/tenants.js");
+    root = document.createElement("div");
+    document.body.appendChild(root);
+  });
+
+  afterEach(() => {
+    document.body.innerHTML = "";
+    sessionStorage.clear();
+  });
+
+  it("hides edit button in tenant rows when privacy mode is active", async () => {
+    TenantsView.mount(root);
+    await flush();
+    expect(root.querySelector(".btn-icon")).toBeNull();
+  });
+
+  it("hides deactivate button in tenant rows when privacy mode is active", async () => {
+    TenantsView.mount(root);
+    await flush();
+    expect(root.querySelector(".btn-icon-danger")).toBeNull();
+  });
+});

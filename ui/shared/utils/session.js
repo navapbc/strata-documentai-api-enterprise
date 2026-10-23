@@ -1,4 +1,5 @@
-const STORAGE_KEY = "docai_console_session";
+export const STORAGE_KEY = "documentai_console_session";
+export const PRIVACY_MODE_KEY = "privacy_mode";
 const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
 
 let _inactivityTimer = null;

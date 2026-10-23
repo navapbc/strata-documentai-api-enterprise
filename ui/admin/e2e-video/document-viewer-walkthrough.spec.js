@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { JOB_ID, COMPLETED_DOC, FIELDS, previewDataUrl } from "../../shared/e2e/fixtures/recording/w2-document.js";
 import { hoverFields, expectBboxOverlay, SELECTORS } from "../../shared/e2e/helpers/document-viewer.js";
+import { registerConfig, registerTenants, loginAs } from "../../shared/e2e/helpers/routes.js";
 
 // ---------------------------------------------------------------------------
 // Scripted demo video: Document viewer with bounding box overlay.
@@ -26,20 +27,10 @@ test("document viewer walkthrough: bbox overlay and field highlighting", async (
   });
 
   // --- config.json ----------------------------------------------------------
-  await page.route("**/config.json", (route) =>
-    route.fulfill(json({
-      api_endpoint: { value: "https://api.admin.local" },
-      cognito_user_pool_id: { value: "us-east-1_ADMIN0000" },
-      cognito_client_id: { value: "adminclientid000000000000" },
-      cognito_domain: { value: null },
-      cognito_google_enabled: { value: false },
-    })),
-  );
+  registerConfig(page);
 
   // --- API ------------------------------------------------------------------
-  await page.route("**/v1/admin/tenants**", (route) =>
-    route.fulfill(json({ tenants: [{ tenantId: TENANT_ID, displayName: "Acme Corporation", isActive: true }] })),
-  );
+  registerTenants(page, [{ tenantId: TENANT_ID, displayName: "Acme Corporation", isActive: true }]);
   await page.route("**/v1/admin/documents**", (route) => {
     const url = route.request().url();
     if (url.includes(`/documents/${JOB_ID}/preview`)) {
@@ -55,15 +46,7 @@ test("document viewer walkthrough: bbox overlay and field highlighting", async (
 
   // === 1. Start logged in ==================================================
   await test.step("Start logged in", async () => {
-    const payload = btoa(JSON.stringify({ "cognito:groups": ["super-admin"], email: "admin@example.com" }));
-    await page.goto("/");
-    await page.evaluate((p) => {
-      sessionStorage.setItem("docai_console_session", JSON.stringify({
-        accessToken: "fake-at", idToken: `h.${p}.s`, refreshToken: "fake-rt",
-        email: "admin@example.com", expiresAt: Date.now() + 3600000,
-      }));
-    }, payload);
-    await page.goto("/");
+    await loginAs(page);
     await expect(page.locator("#view-title")).toHaveText("Home");
   });
 

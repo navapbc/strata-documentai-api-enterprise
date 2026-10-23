@@ -71,7 +71,7 @@ async function setup(page) {
     );
     const fakeToken = `h.${payload}.s`;
     sessionStorage.setItem(
-      "docai_console_session",
+      "documentai_console_session",
       JSON.stringify({
         accessToken: "fake-at",
         idToken: fakeToken,
@@ -184,7 +184,7 @@ test.describe("Extraction Test Runner", () => {
       );
       const fakeToken = `h.${payload}.s`;
       sessionStorage.setItem(
-        "docai_console_session",
+        "documentai_console_session",
         JSON.stringify({
           accessToken: "fake-at",
           idToken: fakeToken,

@@ -21,7 +21,9 @@ export async function load() {
   _loading = true;
   try {
     const resp = await TenantsService.list();
-    _options = (resp.tenants || []).map((t) => ({ value: t.tenantId, label: t.tenantId }));
+    _options = (resp.tenants || [])
+      .map((t) => ({ value: t.tenantId, label: t.maskedTenantId ?? t.tenantId }))
+      .sort((a, b) => a.label.localeCompare(b.label));
   } catch {
     // Tenant list unavailable (tenant-admin)
   }

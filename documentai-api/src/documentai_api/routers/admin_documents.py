@@ -6,7 +6,7 @@ from typing import Any
 from boto3.dynamodb.conditions import Attr, ConditionBase
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from documentai_api.annotations import AdminClaims, PageLimit, verify_jwt_with_role
+from documentai_api.annotations import AdminClaims, PageLimit
 from documentai_api.classifiers.api_response import extract_field_values
 from documentai_api.config.constants import ApiVisualizationTag, ConfigDefaults, FileValidation
 from documentai_api.config.env import get_env_config
@@ -21,6 +21,7 @@ from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils.audit_log import log_event
+from documentai_api.utils.auth import verify_jwt_with_role
 from documentai_api.utils.document_metadata_table import DocumentMetadataTable
 from documentai_api.utils.jwt_auth import assert_tenant_scope, tenant_scope
 from documentai_api.utils.pagination import decode_cursor, encode_cursor
