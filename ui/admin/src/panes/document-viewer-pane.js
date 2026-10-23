@@ -11,7 +11,7 @@
 import * as DocumentsService from "../services/documents.js";
 import * as Helpers from "../utils/helpers.js";
 import * as Session from "../../../shared/utils/session.js";
-import { isPrivacyMode } from "../../../shared/utils/privacy.js";
+import { isPresentationMode, MASKED_VALUE } from "../../../shared/utils/presentation-mode.js";
 import { h } from "../utils/dom.js";
 import { tpl } from "../utils/tpl.js";
 import {
@@ -230,7 +230,7 @@ export function mount(root) {
       renderPreview(previewPanel, {
         url: resp.url,
         contentType,
-        watermarkEmail: isPrivacyMode() ? "user@example.com" : Session.getEmail() || "",
+        watermarkEmail: isPresentationMode() ? "user@example.com" : Session.getEmail() || "",
         onRotate: () => previewPanel._bboxRerender?.(),
       });
     } catch {
@@ -240,19 +240,20 @@ export function mount(root) {
   }
 
   function renderDetail(doc) {
+    const presented = isPresentationMode();
     const sections = [
       renderSection("Overview", [
         ["Job ID", doc.jobId],
         ["File Name", doc.fileName],
         ["Status", doc.processStatus],
         ["Category", doc.documentCategory],
-        ["Tenant", doc.tenantId],
-        ["API Key", doc.apiKeyName],
+        ["Tenant", presented ? (doc.maskedTenantId ?? doc.tenantId) : doc.tenantId],
+        ["API Key", presented ? MASKED_VALUE : doc.apiKeyName],
         ["External ID", doc.externalDocumentId],
         ["Batch ID", doc.batchId],
       ]),
       renderSection("Classification", [
-        ["Matched Blueprint", doc.matchedBlueprint],
+        ["Matched Blueprint", presented ? MASKED_VALUE : doc.matchedBlueprint],
         [
           "Blueprint Confidence",
           doc.matchedBlueprintConfidence != null

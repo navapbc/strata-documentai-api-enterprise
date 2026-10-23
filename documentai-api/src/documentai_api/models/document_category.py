@@ -28,7 +28,7 @@ class UpdateDocumentCategoryRequest(BaseApiResponse):
 class DocumentCategoryItem(BaseApiResponse):
     """Document category response item.
 
-    When privacy mode is active, `masked_tenant_id` is populated. The real
+    When presentation mode is active, `masked_tenant_id` is populated. The real
     `tenant_id` is always returned so that frontend filter calls continue to work -
     `masked_tenant_id` is for display only.
     """

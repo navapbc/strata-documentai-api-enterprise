@@ -4,7 +4,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from documentai_api.annotations import AdminClaims, IsPrivacyMode
+from documentai_api.annotations import AdminClaims, IsPresentationMode
 from documentai_api.config.constants import ApiVisualizationTag
 from documentai_api.logging import get_logger
 from documentai_api.models.document_category import (
@@ -19,7 +19,7 @@ from documentai_api.utils import document_categories as categories_util
 from documentai_api.utils.audit_log import log_event
 from documentai_api.utils.auth import verify_jwt_with_role
 from documentai_api.utils.jwt_auth import resolve_tenant, tenant_scope
-from documentai_api.utils.privacy_masking import mask_tenant
+from documentai_api.utils.presentation_mask import mask_tenant
 
 logger = get_logger(__name__)
 
@@ -49,11 +49,11 @@ def _get_effective_tenant(claims: dict[str, Any], tenant_id: str | None = None) 
     return effective
 
 
-def _to_item(record: dict[str, Any], is_privacy_mode: bool = False) -> DocumentCategoryItem:
+def _to_item(record: dict[str, Any], is_presentation_mode: bool = False) -> DocumentCategoryItem:
     tenant_id = record.get(DocumentCategoryRecord.TENANT_ID, "")
     return DocumentCategoryItem(
         tenant_id=tenant_id,
-        masked_tenant_id=mask_tenant(tenant_id).id if is_privacy_mode and tenant_id else None,
+        masked_tenant_id=mask_tenant(tenant_id).id if is_presentation_mode and tenant_id else None,
         category_name=record.get(DocumentCategoryRecord.CATEGORY_NAME, ""),
         display_name=record.get(DocumentCategoryRecord.DISPLAY_NAME, ""),
         description=record.get(DocumentCategoryRecord.DESCRIPTION, ""),
@@ -68,7 +68,7 @@ def _to_item(record: dict[str, Any], is_privacy_mode: bool = False) -> DocumentC
 @router.get("")
 async def list_document_categories(
     claims: AdminClaims,
-    is_privacy_mode: IsPrivacyMode,
+    is_presentation_mode: IsPresentationMode,
     tenant_id: str | None = None,
     active_only: bool = True,
 ) -> ListDocumentCategoriesResponse:
@@ -92,7 +92,7 @@ async def list_document_categories(
         # Super-admin with no tenant filter - list all
         records = categories_util.list_all_categories(active_only=active_only)
 
-    items = [_to_item(r, is_privacy_mode) for r in records]
+    items = [_to_item(r, is_presentation_mode) for r in records]
     return ListDocumentCategoriesResponse(categories=items, count=len(items))
 
 

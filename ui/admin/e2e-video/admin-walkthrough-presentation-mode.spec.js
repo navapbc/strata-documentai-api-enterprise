@@ -3,14 +3,14 @@ import { TENANTS, USAGE_RESP } from "../../shared/e2e/fixtures/recording/admin-d
 import { registerConfig, registerTenants, loginAs } from "../../shared/e2e/helpers/routes.js";
 
 // ---------------------------------------------------------------------------
-// Scripted demo video: Privacy Mode toggle.
+// Scripted demo video: Presentation Mode toggle.
 //
-// Flow: login page -> tick privacy mode checkbox -> login -> Usage (masked)
+// Flow: login page -> tick presentation mode checkbox -> login -> Usage (masked)
 //
 // All network dependencies are mocked - runs offline, no credentials needed.
 // ---------------------------------------------------------------------------
 
-test("privacy mode walkthrough", async ({ page }) => {
+test("presentation mode walkthrough", async ({ page }) => {
   const json = (body) => ({
     status: 200,
     contentType: "application/json",
@@ -31,16 +31,16 @@ test("privacy mode walkthrough", async ({ page }) => {
     await expect(page.locator(".usage-table")).toBeVisible({ timeout: 10000 });
   };
 
-  // === 1. Tick privacy mode on login page, then log in ====================
-  await test.step("Enable privacy mode and log in", async () => {
-    await loginAs(page, { privacyMode: true });
+  // === 1. Tick presentation mode on login page, then log in ====================
+  await test.step("Enable presentation mode and log in", async () => {
+    await loginAs(page, { presentationMode: true });
     await expect(page.locator("#view-title")).toHaveText("Home");
   });
 
   // === 2. Navigate to Usage — masked data + banner visible ================
   await test.step("Usage - masked data", async () => {
     await goToUsage();
-    await expect(page.locator("#privacy-banner")).toBeVisible();
+    await expect(page.locator(".info-banner")).toBeVisible();
     await page.waitForTimeout(2000);
   });
 });

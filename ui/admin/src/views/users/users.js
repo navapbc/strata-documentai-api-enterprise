@@ -7,7 +7,7 @@ import * as Toast from "../../utils/toast.js";
 import { h, iconBtn } from "../../utils/dom.js";
 import { tpl } from "../../utils/tpl.js";
 import { TableView } from "../../utils/table-view.js";
-import { isPrivacyMode } from "../../../../shared/utils/privacy.js";
+import { isPresentationMode } from "../../../../shared/utils/presentation-mode.js";
 import html from "./users.html";
 
 const tmpl = tpl(html);
@@ -126,9 +126,9 @@ function renderRow(user) {
     groups.length > 0
       ? h("span", { className: "badge badge-success" }, "Active")
       : h("span", { className: "badge badge-neutral" }, "Pending");
-  const privacy = isPrivacyMode();
-  const roleBtn = !privacy ? iconBtn("edit", "Assign Role") : null;
-  const deleteBtn = !privacy ? iconBtn("discard", "Delete", "btn-icon-danger") : null;
+  const presented = isPresentationMode();
+  const roleBtn = !presented ? iconBtn("edit", "Assign Role") : null;
+  const deleteBtn = !presented ? iconBtn("discard", "Delete", "btn-icon-danger") : null;
   const tr = h(
     "tr",
     null,

@@ -542,6 +542,50 @@ def test_get_document_not_found_logs_search_only(api_client, ddb_doc_metadata_ta
     )
 
 
+##############################################################################
+# Presentation mode
+##############################################################################
+
+
+def test_list_presentation_mode_masks_tenant_id(api_client, seeded_docs):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(
+        DOCUMENTS_URL,
+        params={"tenant_id": TENANT_ADMIN_ID},
+        headers={"X-Presentation-Mode": "true"},
+    )
+    assert response.status_code == 200
+    docs = response.json()["documents"]
+    assert all(d["maskedTenantId"] is not None for d in docs)
+    assert all(d["maskedTenantId"] != TENANT_ADMIN_ID for d in docs)
+
+
+def test_list_no_presentation_mode_omits_masked_tenant_id(api_client, seeded_docs):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(DOCUMENTS_URL, params={"tenant_id": TENANT_ADMIN_ID})
+    assert response.status_code == 200
+    assert all(d["maskedTenantId"] is None for d in response.json()["documents"])
+
+
+def test_detail_presentation_mode_masks_tenant_id(api_client, seeded_docs):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(
+        f"{DOCUMENTS_URL}/test-job-id-1",
+        headers={"X-Presentation-Mode": "true"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["maskedTenantId"] is not None
+    assert data["maskedTenantId"] != TENANT_ADMIN_ID
+
+
+def test_detail_no_presentation_mode_omits_masked_tenant_id(api_client, seeded_docs):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(f"{DOCUMENTS_URL}/test-job-id-1")
+    assert response.status_code == 200
+    assert response.json()["maskedTenantId"] is None
+
+
 def test_get_document_bounding_box_implies_extracted_data(
     api_client, ddb_doc_metadata_table, mocker
 ):

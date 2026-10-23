@@ -130,7 +130,7 @@ def test_usage_stats_fields_match_response_models():
     dto_fields = {f.name for f in dc_fields(UsageStats)}
 
     # TenantUsage has tenant_id as extra; DailyUsage has date + partial as extra.
-    # masked_tenant_id is a display-only field added for privacy mode — not stored
+    # masked_tenant_id is a display-only field added for presentation mode — not stored
     # data, so it is intentionally absent from the DTO.
     tenant_usage_fields = set(TenantUsage.model_fields.keys()) - {"tenant_id", "masked_tenant_id"}
     daily_usage_fields = set(DailyUsage.model_fields.keys()) - {"date", "partial"}

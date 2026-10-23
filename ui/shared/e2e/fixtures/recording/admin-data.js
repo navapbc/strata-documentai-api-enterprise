@@ -1,5 +1,5 @@
 // Shared synthetic data for admin console video recording specs.
-// Used by admin-walkthrough.spec.js and admin-walkthrough-privacy-mode.spec.js.
+// Used by admin-walkthrough.spec.js and admin-walkthrough-presentation-mode.spec.js.
 
 export const JOB_ID = "demo-w2-0001";
 

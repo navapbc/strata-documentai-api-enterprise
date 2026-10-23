@@ -1,9 +1,9 @@
-"""Utilities for masking PII fields in privacy mode responses."""
+"""Utilities for masking PII fields in presentation mode responses."""
 
 import hashlib
 from dataclasses import dataclass
 
-from documentai_api.config.privacy_masks import (
+from documentai_api.config.presentation_mask import (
     DEMO_EMAIL_DOMAINS,
     DEMO_FIRST_NAMES,
     DEMO_LAST_NAMES,

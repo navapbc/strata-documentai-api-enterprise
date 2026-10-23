@@ -65,7 +65,7 @@ class UpdateTenantRequest(BaseApiResponse):
 class TenantItem(BaseApiResponse):
     """Tenant response item.
 
-    When privacy mode is active, `display_name` and `primary_contact` are masked and
+    When presentation mode is active, `display_name` and `primary_contact` are masked and
     `masked_tenant_id` is populated. The real `tenant_id` is always returned so that
     frontend filter calls continue to work - `masked_tenant_id` is for display only.
     """

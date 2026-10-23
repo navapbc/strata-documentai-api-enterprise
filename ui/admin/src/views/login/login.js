@@ -1,7 +1,7 @@
 import * as Auth from "../../services/auth.js";
 import { COGNITO_REGION } from "../../services/auth.js";
 import * as Session from "../../../../shared/utils/session.js";
-import { PRIVACY_MODE_KEY } from "../../../../shared/utils/session.js";
+import { PRESENTATION_MODE_KEY } from "../../../../shared/utils/session.js";
 import QRCode from "qrcode";
 import { tpl } from "../../utils/tpl.js";
 import html from "./login.html";
@@ -21,7 +21,7 @@ export function onLoginSuccess(callback) {
 export function mount(root, ssoConfig = {}) {
   _root = root;
   _ssoConfig = ssoConfig;
-  sessionStorage.removeItem(PRIVACY_MODE_KEY);
+  sessionStorage.removeItem(PRESENTATION_MODE_KEY);
   root.replaceChildren(tmpl());
 
   // Show Google SSO button if configured
@@ -107,8 +107,8 @@ async function handleGoogleSignIn() {
   // Persist for callback validation
   sessionStorage.setItem("oauth_code_verifier", verifier);
   sessionStorage.setItem("oauth_state", state);
-  if (_root?.querySelector("#privacy-mode-checkbox")?.checked) {
-    sessionStorage.setItem(PRIVACY_MODE_KEY, "true");
+  if (_root?.querySelector("#presentation-mode-checkbox")?.checked) {
+    sessionStorage.setItem(PRESENTATION_MODE_KEY, "true");
   }
 
   const url =
@@ -212,8 +212,8 @@ async function handleSignIn(e) {
       return;
     }
 
-    if (_root?.querySelector("#privacy-mode-checkbox")?.checked) {
-      sessionStorage.setItem(PRIVACY_MODE_KEY, "true");
+    if (_root?.querySelector("#presentation-mode-checkbox")?.checked) {
+      sessionStorage.setItem(PRESENTATION_MODE_KEY, "true");
     }
     Session.save({
       accessToken: result.accessToken,
@@ -299,8 +299,8 @@ async function handleConfirm(e) {
       return;
     }
 
-    if (_root?.querySelector("#privacy-mode-checkbox")?.checked) {
-      sessionStorage.setItem(PRIVACY_MODE_KEY, "true");
+    if (_root?.querySelector("#presentation-mode-checkbox")?.checked) {
+      sessionStorage.setItem(PRESENTATION_MODE_KEY, "true");
     }
     Session.save({
       accessToken: result.accessToken,
@@ -357,8 +357,8 @@ async function handleMfaVerify(e) {
 
   try {
     const tokens = await Auth.respondToMfaChallenge(_mfaSession, code, _pendingEmail);
-    if (_root?.querySelector("#privacy-mode-checkbox")?.checked) {
-      sessionStorage.setItem(PRIVACY_MODE_KEY, "true");
+    if (_root?.querySelector("#presentation-mode-checkbox")?.checked) {
+      sessionStorage.setItem(PRESENTATION_MODE_KEY, "true");
     }
     Session.save({ ...tokens, email: _pendingEmail });
     if (_onLogin) {
@@ -388,8 +388,8 @@ async function handleMfaSetupVerify(e) {
 
   try {
     const tokens = await Auth.verifySoftwareToken(_mfaSession, code, _pendingEmail);
-    if (_root?.querySelector("#privacy-mode-checkbox")?.checked) {
-      sessionStorage.setItem(PRIVACY_MODE_KEY, "true");
+    if (_root?.querySelector("#presentation-mode-checkbox")?.checked) {
+      sessionStorage.setItem(PRESENTATION_MODE_KEY, "true");
     }
     Session.save({ ...tokens, email: _pendingEmail });
     if (_onLogin) {

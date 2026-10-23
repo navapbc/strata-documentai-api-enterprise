@@ -1,4 +1,4 @@
-import { PRIVACY_MODE_KEY, STORAGE_KEY } from "../utils/session.js";
+import { PRESENTATION_MODE_KEY, STORAGE_KEY } from "../utils/session.js";
 
 let _refreshing = null;
 
@@ -90,8 +90,8 @@ export function setApiKey(key) {
 
 export const adminClient = createClient(() => {
   const headers = { Authorization: `Bearer ${_jwt}` };
-  if (sessionStorage.getItem(PRIVACY_MODE_KEY) === "true")
-    headers["X-Privacy-Mode"] = "true";
+  if (sessionStorage.getItem(PRESENTATION_MODE_KEY) === "true")
+    headers["X-Presentation-Mode"] = "true";
   return headers;
 });
 export const dataClient = createClient(() => ({ "API-Key": _apiKey }));

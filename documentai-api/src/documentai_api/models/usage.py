@@ -14,7 +14,7 @@ from documentai_api.models.base import BaseApiResponse
 class TenantUsage(BaseApiResponse):
     """Tenant usage row.
 
-    When privacy mode is active, `masked_tenant_id` is populated. The real
+    When presentation mode is active, `masked_tenant_id` is populated. The real
     `tenant_id` is always returned so that frontend filter calls continue to
     work - `masked_tenant_id` is for display only.
     """

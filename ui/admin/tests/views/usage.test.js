@@ -56,12 +56,12 @@ const USAGE_DATA = {
   tenants: [{ tenantId: "test-tenant-id", maskedTenantId: "m-1", totalRecords: 5 }],
 };
 
-async function mountUsageView({ privacyMode }) {
+async function mountUsageView({ presentationMode }) {
   vi.resetModules();
-  if (privacyMode) {
-    sessionStorage.setItem("privacy_mode", "true");
+  if (presentationMode) {
+    sessionStorage.setItem("presentation_mode", "true");
   } else {
-    sessionStorage.removeItem("privacy_mode");
+    sessionStorage.removeItem("presentation_mode");
   }
   vi.doMock("../../src/services/usage.js", () => ({
     get: vi.fn().mockResolvedValue(USAGE_DATA),
@@ -87,15 +87,15 @@ describe("usage view - download button visibility", () => {
     sessionStorage.clear();
   });
 
-  it("is visible and enabled without privacy mode", async () => {
-    const root = await mountUsageView({ privacyMode: false });
+  it("is visible and enabled without presentation mode", async () => {
+    const root = await mountUsageView({ presentationMode: false });
     const btn = root.querySelector("#usage-download-btn");
     expect(btn.classList.contains("hidden")).toBe(false);
     expect(btn.disabled).toBe(false);
   });
 
-  it("is hidden and disabled with privacy mode", async () => {
-    const root = await mountUsageView({ privacyMode: true });
+  it("is hidden and disabled with presentation mode", async () => {
+    const root = await mountUsageView({ presentationMode: true });
     const btn = root.querySelector("#usage-download-btn");
     expect(btn.classList.contains("hidden")).toBe(true);
     expect(btn.disabled).toBe(true);

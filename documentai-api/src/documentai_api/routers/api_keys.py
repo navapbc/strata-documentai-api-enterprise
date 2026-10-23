@@ -4,7 +4,7 @@ import hashlib
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from documentai_api.annotations import AdminClaims, IsPrivacyMode
+from documentai_api.annotations import AdminClaims, IsPresentationMode
 from documentai_api.config.constants import ApiVisualizationTag
 from documentai_api.config.env import get_env_config
 from documentai_api.logging import get_logger
@@ -27,7 +27,7 @@ from documentai_api.utils.auth import (
     is_duplicate_key_name,
 )
 from documentai_api.utils.jwt_auth import resolve_tenant, tenant_scope, verify_jwt
-from documentai_api.utils.privacy_masking import mask_email, mask_tenant
+from documentai_api.utils.presentation_mask import mask_email, mask_tenant
 from documentai_api.utils.tenants import get_tenant
 
 logger = get_logger(__name__)
@@ -129,7 +129,7 @@ async def create_api_key(
 @router.get("/api-keys")
 async def list_api_keys(
     claims: AdminClaims,
-    is_privacy_mode: IsPrivacyMode,
+    is_presentation_mode: IsPresentationMode,
     api_key_name: str | None = None,
     include_inactive: bool = False,
     tenant_id: str | None = None,
@@ -176,7 +176,7 @@ async def list_api_keys(
             api_key_name=record.get(ApiKeyRecord.API_KEY_NAME),
             tenant_id=record.get(ApiKeyRecord.TENANT_ID),
             masked_tenant_id=mask_tenant(record.get(ApiKeyRecord.TENANT_ID) or "").id
-            if is_privacy_mode and record.get(ApiKeyRecord.TENANT_ID)
+            if is_presentation_mode and record.get(ApiKeyRecord.TENANT_ID)
             else None,
             environment=record.get(ApiKeyRecord.ENVIRONMENT),
             is_active=record.get(ApiKeyRecord.IS_ACTIVE),
@@ -184,10 +184,10 @@ async def list_api_keys(
             expires_at=record.get(ApiKeyRecord.EXPIRES_AT),
             last_used=record.get(ApiKeyRecord.LAST_USED),
             created_by=mask_email(record.get(ApiKeyRecord.CREATED_BY) or "")
-            if is_privacy_mode and record.get(ApiKeyRecord.CREATED_BY)
+            if is_presentation_mode and record.get(ApiKeyRecord.CREATED_BY)
             else record.get(ApiKeyRecord.CREATED_BY),
             email_address=mask_email(record.get(ApiKeyRecord.EMAIL_ADDRESS) or "")
-            if is_privacy_mode and record.get(ApiKeyRecord.EMAIL_ADDRESS)
+            if is_presentation_mode and record.get(ApiKeyRecord.EMAIL_ADDRESS)
             else record.get(ApiKeyRecord.EMAIL_ADDRESS),
             key_prefix=record.get(ApiKeyRecord.KEY_HASH, "")[:8],
         )

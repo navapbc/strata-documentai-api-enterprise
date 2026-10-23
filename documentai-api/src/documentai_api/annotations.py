@@ -17,7 +17,7 @@ from documentai_api.utils.auth import (
     UserContext,
     get_user_context_from_api_key,
     get_user_context_with_fallback,
-    is_privacy_mode,
+    is_presentation_mode,
     verify_jwt_with_role,
     verify_jwt_with_super_admin,
 )
@@ -27,7 +27,7 @@ AuthMethod = Literal["api_key", "jwt"]
 
 AdminClaims = Annotated[dict[str, Any], Depends(verify_jwt_with_role)]
 SuperAdminClaims = Annotated[dict[str, Any], Depends(verify_jwt_with_super_admin)]
-IsPrivacyMode = Annotated[bool, Depends(is_privacy_mode)]
+IsPresentationMode = Annotated[bool, Depends(is_presentation_mode)]
 
 # Auth
 # Router-level `dependencies=[Depends(get_user_context_from_api_key)]` enforces auth even if a handler

@@ -492,38 +492,38 @@ def test_bucket_not_configured(api_client, monkeypatch):
 
 
 ##############################################################################
-# Privacy mode masking
+# Presentation mode masking
 ##############################################################################
 
 
-def test_monthly_privacy_mode_masks_tenant_id(api_client, seeded_monthly):
+def test_monthly_presentation_mode_masks_tenant_id(api_client, seeded_monthly):
     override_jwt(SUPER_ADMIN_CLAIMS)
     response = api_client.get(
-        USAGE_URL, params={"month": "2026-06"}, headers={"X-Privacy-Mode": "true"}
+        USAGE_URL, params={"month": "2026-06"}, headers={"X-Presentation-Mode": "true"}
     )
     assert response.status_code == 200
     tenants = response.json()["tenants"]
     assert all(t["maskedTenantId"] != t["tenantId"] for t in tenants)
 
 
-def test_monthly_privacy_mode_masked_tenant_id_is_deterministic(api_client, seeded_monthly):
+def test_monthly_presentation_mode_masked_tenant_id_is_deterministic(api_client, seeded_monthly):
     override_jwt(SUPER_ADMIN_CLAIMS)
     r1 = {
         t["maskedTenantId"]
         for t in api_client.get(
-            USAGE_URL, params={"month": "2026-06"}, headers={"X-Privacy-Mode": "true"}
+            USAGE_URL, params={"month": "2026-06"}, headers={"X-Presentation-Mode": "true"}
         ).json()["tenants"]
     }
     r2 = {
         t["maskedTenantId"]
         for t in api_client.get(
-            USAGE_URL, params={"month": "2026-06"}, headers={"X-Privacy-Mode": "true"}
+            USAGE_URL, params={"month": "2026-06"}, headers={"X-Presentation-Mode": "true"}
         ).json()["tenants"]
     }
     assert r1 == r2
 
 
-def test_monthly_no_privacy_mode_preserves_tenant_id(api_client, seeded_monthly):
+def test_monthly_no_presentation_mode_preserves_tenant_id(api_client, seeded_monthly):
     override_jwt(SUPER_ADMIN_CLAIMS)
     response = api_client.get(USAGE_URL, params={"month": "2026-06"})
     assert response.status_code == 200

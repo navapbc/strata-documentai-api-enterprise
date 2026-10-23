@@ -235,7 +235,7 @@ export function clearBboxOverlay(container) {
  * @param {Object} data - API response fields object
  * @param {object} [opts]
  * @param {boolean} [opts.revealed=false] - show values (vs masked dots)
- * @param {boolean} [opts.maskable=true] - render the "Show values" privacy toggle.
+ * @param {boolean} [opts.maskable=true] - render the "Show values" presentation mode toggle.
  *   When false, values are always shown and no toggle is rendered (demo mode).
  * @returns {string} - table HTML, or "" when there are no fields
  */

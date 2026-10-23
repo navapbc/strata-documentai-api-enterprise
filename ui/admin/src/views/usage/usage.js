@@ -3,7 +3,7 @@ import * as TenantContext from "../../utils/tenant-context.js";
 import * as Toast from "../../utils/toast.js";
 import { tpl } from "../../utils/tpl.js";
 import { h } from "../../utils/dom.js";
-import { isPrivacyMode } from "../../../../shared/utils/privacy.js";
+import { isPresentationMode } from "../../../../shared/utils/presentation-mode.js";
 import html from "./usage.html";
 
 const tmpl = tpl(html);
@@ -105,7 +105,7 @@ function renderTable() {
   }
 
   _empty.classList.add("hidden");
-  if (!isPrivacyMode()) {
+  if (!isPresentationMode()) {
     _downloadBtn.disabled = false;
     _downloadBtn.classList.remove("hidden");
   }
@@ -136,7 +136,7 @@ function renderTable() {
     {},
     ..._currentData.map((row) => {
       const displayRow =
-        isPrivacyMode() && row.maskedTenantId ? { ...row, tenantId: row.maskedTenantId } : row;
+        isPresentationMode() && row.maskedTenantId ? { ...row, tenantId: row.maskedTenantId } : row;
       return h(
         "tr",
         { className: row.partial ? "partial-row" : "" },

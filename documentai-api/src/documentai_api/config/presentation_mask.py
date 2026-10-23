@@ -1,4 +1,4 @@
-"""Static data for privacy mode masking."""
+"""Static data for presentation mode masking."""
 
 DEMO_TENANTS = [
     # Federal Government Departments

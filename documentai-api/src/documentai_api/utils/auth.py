@@ -655,9 +655,9 @@ def resolve_tenant_from_context(
     return auth.tenant_id
 
 
-def is_privacy_mode(request: Request) -> bool:
-    """FastAPI dependency that returns True when the request carries X-Privacy-Mode: true."""
-    return request.headers.get("X-Privacy-Mode") == "true"
+def is_presentation_mode(request: Request) -> bool:
+    """FastAPI dependency that returns True when the request carries X-Presentation-Mode: true."""
+    return request.headers.get("X-Presentation-Mode") == "true"
 
 
 async def verify_jwt_with_role(

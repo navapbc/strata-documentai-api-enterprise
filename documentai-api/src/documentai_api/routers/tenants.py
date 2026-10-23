@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from documentai_api.annotations import (
     AdminClaims,
-    IsPrivacyMode,
+    IsPresentationMode,
     MonthParam,
     SuperAdminClaims,
 )
@@ -29,7 +29,7 @@ from documentai_api.utils.audit_log import log_event
 from documentai_api.utils.auth import deactivate_keys_for_tenant, verify_jwt_with_role
 from documentai_api.utils.dates import get_month_prefix, get_today_iso
 from documentai_api.utils.jwt_auth import is_super_admin, tenant_scope
-from documentai_api.utils.privacy_masking import mask_email, mask_tenant
+from documentai_api.utils.presentation_mask import mask_email, mask_tenant
 from documentai_api.utils.strings import camel_to_snake
 from documentai_api.utils.tenants import SUPER_ADMIN_PROTECTED_FIELDS
 from documentai_api.utils.write_limit import get_write_counts
@@ -43,18 +43,18 @@ router = APIRouter(
 )
 
 
-def _to_item(record: dict[str, Any], is_privacy_mode: bool = False) -> TenantItem:
+def _to_item(record: dict[str, Any], is_presentation_mode: bool = False) -> TenantItem:
     display_name = record.get(TenantRecord.DISPLAY_NAME, "")
     primary_contact = record.get(TenantRecord.PRIMARY_CONTACT)
 
-    if is_privacy_mode:
+    if is_presentation_mode:
         masked = mask_tenant(record.get(TenantRecord.TENANT_ID, ""))
         display_name = masked.name if display_name else display_name
         primary_contact = mask_email(primary_contact) if primary_contact else primary_contact
 
     return TenantItem(
         tenant_id=record.get(TenantRecord.TENANT_ID, ""),
-        masked_tenant_id=masked.id if is_privacy_mode else None,
+        masked_tenant_id=masked.id if is_presentation_mode else None,
         display_name=display_name,
         primary_contact=primary_contact,
         is_active=record.get(TenantRecord.IS_ACTIVE, True),
@@ -81,7 +81,7 @@ def _enforce_scope(claims: dict[str, Any], tenant_id: str) -> None:
 async def create_tenant(
     body: CreateTenantRequest,
     claims: SuperAdminClaims,
-    is_privacy_mode: IsPrivacyMode,
+    is_presentation_mode: IsPresentationMode,
 ) -> TenantItem:
     """Create a new tenant."""
     try:
@@ -103,13 +103,13 @@ async def create_tenant(
         target_id=body.tenant_id,
         metadata={"display_name": body.display_name, "primary_contact": body.primary_contact},
     )
-    return _to_item(record, is_privacy_mode)
+    return _to_item(record, is_presentation_mode)
 
 
 @router.get("")
 async def list_tenants(
     claims: AdminClaims,
-    is_privacy_mode: IsPrivacyMode,
+    is_presentation_mode: IsPresentationMode,
     active_only: bool = True,
 ) -> ListTenantsResponse:
     """List tenants. Super-admins see all; tenant-admins see only their own."""
@@ -117,11 +117,11 @@ async def list_tenants(
 
     if scope:
         record = tenants_util.get_tenant(scope)
-        items = [_to_item(record, is_privacy_mode)] if record else []
+        items = [_to_item(record, is_presentation_mode)] if record else []
     else:
         records = tenants_util.list_tenants(active_only=active_only)
         items = sorted(
-            [_to_item(r, is_privacy_mode) for r in records], key=lambda x: x.tenant_id.lower()
+            [_to_item(r, is_presentation_mode) for r in records], key=lambda x: x.tenant_id.lower()
         )
 
     return ListTenantsResponse(tenants=items, count=len(items))
@@ -131,7 +131,7 @@ async def list_tenants(
 async def get_tenant(
     tenant_id: str,
     claims: AdminClaims,
-    is_privacy_mode: IsPrivacyMode,
+    is_presentation_mode: IsPresentationMode,
 ) -> TenantItem:
     """Get a single tenant by ID."""
     _enforce_scope(claims, tenant_id)
@@ -140,7 +140,7 @@ async def get_tenant(
     if not record:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant not found")
 
-    return _to_item(record, is_privacy_mode)
+    return _to_item(record, is_presentation_mode)
 
 
 @router.patch(
@@ -151,7 +151,7 @@ async def update_tenant(
     tenant_id: str,
     body: UpdateTenantRequest,
     claims: AdminClaims,
-    is_privacy_mode: IsPrivacyMode,
+    is_presentation_mode: IsPresentationMode,
 ) -> TenantItem:
     """Update a tenant's metadata."""
     _enforce_scope(claims, tenant_id)
@@ -232,7 +232,7 @@ async def update_tenant(
         tenant_id=tenant_id,
         metadata=metadata,
     )
-    return _to_item(updated, is_privacy_mode)
+    return _to_item(updated, is_presentation_mode)
 
 
 @router.get("/{tenant_id}/request-counts")

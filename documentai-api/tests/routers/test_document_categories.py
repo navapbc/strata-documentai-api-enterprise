@@ -450,3 +450,28 @@ def test_categories_super_admin_requires_tenant_id_all_methods(
         method, path, json=NEW_CATEGORY if method in ("POST", "PATCH") else None
     )
     assert response.status_code == 400
+
+
+##############################################################################
+# Presentation mode
+##############################################################################
+
+
+def test_categories_presentation_mode_masks_tenant_id(api_client, seed_category):
+    override_jwt(make_claims(groups=[SUPER_ADMIN]))
+    response = api_client.get(
+        CATEGORIES_URL,
+        params={"tenant_id": TENANT_ID},
+        headers={"X-Presentation-Mode": "true"},
+    )
+    assert response.status_code == 200
+    categories = response.json()["categories"]
+    assert all(c["maskedTenantId"] is not None for c in categories)
+    assert all(c["maskedTenantId"] != TENANT_ID for c in categories)
+
+
+def test_categories_no_presentation_mode_omits_masked_tenant_id(api_client, seed_category):
+    override_jwt(make_claims(groups=[SUPER_ADMIN]))
+    response = api_client.get(CATEGORIES_URL, params={"tenant_id": TENANT_ID})
+    assert response.status_code == 200
+    assert all(c["maskedTenantId"] is None for c in response.json()["categories"])

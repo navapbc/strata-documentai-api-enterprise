@@ -2,7 +2,7 @@ import * as AuditLogService from "../../services/audit-log.js";
 import * as TenantContext from "../../utils/tenant-context.js";
 import * as Helpers from "../../utils/helpers.js";
 import { localDateToUtcStart, localDateToUtcEnd } from "../../utils/helpers.js";
-import { isPrivacyMode } from "../../../../shared/utils/privacy.js";
+import { isPresentationMode } from "../../../../shared/utils/presentation-mode.js";
 import * as Session from "../../../../shared/utils/session.js";
 const PAGE_SIZE = 50;
 import { h } from "../../utils/dom.js";
@@ -123,12 +123,13 @@ async function loadActions() {
 }
 
 async function loadActors() {
-  // TODO: In privacy mode, actor_email is masked so filtering by it returns no results.
+  // TODO: In presentation mode, actor_email is masked so filtering by it returns no results.
   // A future fix should add a DynamoDB GSI on actor_sub and filter by that instead.
-  // For now, disable the actor filter entirely in privacy mode.
-  if (isPrivacyMode()) {
+  // For now, disable the actor filter entirely in presentation mode.
+  if (isPresentationMode()) {
     _actorFilter.disabled = true;
-    _actorFilter.innerHTML = '<option value="">Actor filter unavailable in privacy mode</option>';
+    _actorFilter.innerHTML =
+      '<option value="">Actor filter unavailable in presentation mode</option>';
     return;
   }
   try {
@@ -236,7 +237,7 @@ function render(events) {
   }
   _table.classList.remove("hidden");
   _noEvents.classList.add("hidden");
-  const privacy = isPrivacyMode();
+  const presented = isPresentationMode();
   const rowOffset = (_pageNum - 1) * PAGE_SIZE;
   for (const [i, ev] of events.entries()) {
     const hasDetail =
@@ -270,7 +271,7 @@ function render(events) {
                   "span",
                   { className: "audit-detail-item" },
                   h("span", { className: "audit-detail-key" }, "Target ID"),
-                  privacy ? "[masked]" : ev.targetId,
+                  presented ? "[masked]" : ev.targetId,
                 ),
               ]
             : []),
@@ -280,7 +281,7 @@ function render(events) {
                   "span",
                   { className: "audit-detail-item" },
                   h("span", { className: "audit-detail-key" }, "Tenant"),
-                  privacy ? (ev.maskedTenantId ?? ev.tenantId) : ev.tenantId,
+                  presented ? (ev.maskedTenantId ?? ev.tenantId) : ev.tenantId,
                 ),
               ]
             : []),
@@ -290,7 +291,7 @@ function render(events) {
                   "span",
                   { className: "audit-detail-item" },
                   h("span", { className: "audit-detail-key" }, "Metadata"),
-                  privacy ? "[masked]" : JSON.stringify(ev.metadata),
+                  presented ? "[masked]" : JSON.stringify(ev.metadata),
                 ),
               ]
             : []),
@@ -310,7 +311,7 @@ function render(events) {
       h(
         "td",
         { className: "audit-col-tenant" + (Session.isSuperAdmin() ? "" : " hidden") },
-        privacy
+        presented
           ? (ev.maskedTenantId ?? "-")
           : ev.tenantId === "__global__"
             ? "-"

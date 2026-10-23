@@ -6,7 +6,7 @@ import * as Toast from "../../utils/toast.js";
 import { h, iconBtn } from "../../utils/dom.js";
 import { tpl } from "../../utils/tpl.js";
 import { TableView } from "../../utils/table-view.js";
-import { isPrivacyMode } from "../../../../shared/utils/privacy.js";
+import { isPresentationMode } from "../../../../shared/utils/presentation-mode.js";
 import html from "./tenants.html";
 
 const tmpl = tpl(html);
@@ -41,7 +41,7 @@ export function mount(root) {
     _showInactive,
     document.createTextNode(" Show inactive"),
   );
-  Helpers.setViewActions(label, ...(isPrivacyMode() ? [] : [_createBtn]));
+  Helpers.setViewActions(label, ...(isPresentationMode() ? [] : [_createBtn]));
 
   _tableView = new TableView(
     root.querySelector("#tenants-table"),
@@ -101,10 +101,10 @@ function renderRow(t) {
   const statusEl = t.isActive
     ? h("span", { className: "badge badge-success" }, "Active")
     : h("span", { className: "badge badge-neutral" }, "Inactive");
-  const privacy = isPrivacyMode();
-  const editBtn = !privacy ? iconBtn("edit", "Edit") : null;
+  const presented = isPresentationMode();
+  const editBtn = !presented ? iconBtn("edit", "Edit") : null;
   const actionsWrapper = h("div", { className: "row-actions" }, ...(editBtn ? [editBtn] : []));
-  if (t.isActive && !privacy) {
+  if (t.isActive && !presented) {
     const delBtn = iconBtn("discard", "Deactivate", "btn-icon-danger");
     delBtn.addEventListener("click", () => openDeleteModal(t));
     actionsWrapper.appendChild(delBtn);
@@ -213,7 +213,7 @@ async function handleSubmit(e) {
 
 function openDeleteModal(tenant) {
   _pendingDeleteId = tenant.tenantId;
-  const displayId = isPrivacyMode() ? (tenant.maskedTenantId ?? "[masked]") : tenant.tenantId;
+  const displayId = isPresentationMode() ? (tenant.maskedTenantId ?? "[masked]") : tenant.tenantId;
   _deleteName.textContent = tenant.displayName || displayId;
   _deleteError.classList.add("hidden");
   openModal(_deleteModal);

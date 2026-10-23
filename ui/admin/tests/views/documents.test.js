@@ -68,7 +68,7 @@ describe("documents view", () => {
     }));
     vi.doMock("../../../shared/utils/session.js", () => ({
       getEmail: () => "admin@test.com",
-      PRIVACY_MODE_KEY: "privacy_mode",
+      PRESENTATION_MODE_KEY: "presentation_mode",
     }));
 
     DocumentsView = await import("../../src/views/documents/documents.js");
@@ -279,5 +279,54 @@ describe("documents view", () => {
       includeExtractedData: true,
       includeBoundingBox: true,
     });
+  });
+});
+
+describe("documents view - presentation mode", () => {
+  let root;
+
+  beforeEach(async () => {
+    sessionStorage.setItem("presentation_mode", "true");
+    mockGetTenantId.mockReturnValue("tenant-a");
+    mockList.mockResolvedValue({ documents: [doc({ jobId: "j-1" })] });
+    mockGet.mockResolvedValue({
+      jobId: "j-1",
+      fileName: "invoice.pdf",
+      processStatus: "completed",
+      contentType: "application/pdf",
+      tenantId: "real-tenant-id",
+      maskedTenantId: "Acme Corp",
+      apiKeyName: "real-key-name",
+      matchedBlueprint: "real-blueprint",
+    });
+
+    root = document.createElement("div");
+    document.body.appendChild(root);
+    DocumentsView.mount(root);
+    await flush();
+    root.querySelector(".doc-list-item").click();
+    await flush();
+  });
+
+  afterEach(() => {
+    document.body.removeChild(root);
+  });
+
+  it("shows masked tenant id in detail", () => {
+    const html = root.querySelector("#doc-pane-detail-content").innerHTML;
+    expect(html).toContain("Acme Corp");
+    expect(html).not.toContain("real-tenant-id");
+  });
+
+  it("masks api key name in detail", () => {
+    const html = root.querySelector("#doc-pane-detail-content").innerHTML;
+    expect(html).toContain("••••••••");
+    expect(html).not.toContain("real-key-name");
+  });
+
+  it("masks matched blueprint in detail", () => {
+    const html = root.querySelector("#doc-pane-detail-content").innerHTML;
+    expect(html).toContain("••••••••");
+    expect(html).not.toContain("real-blueprint");
   });
 });

@@ -199,7 +199,7 @@ describe("keys view", () => {
   });
 });
 
-describe("keys view - privacy mode", () => {
+describe("keys view - presentation mode", () => {
   let root, KeysView;
 
   function flush() {
@@ -208,7 +208,7 @@ describe("keys view - privacy mode", () => {
 
   beforeEach(async () => {
     vi.resetModules();
-    sessionStorage.setItem("privacy_mode", "true");
+    sessionStorage.setItem("presentation_mode", "true");
 
     vi.doMock("../../src/services/keys.js", () => ({
       list: vi.fn().mockResolvedValue({ keys: [buildApiKey({ isActive: true })] }),
@@ -247,7 +247,7 @@ describe("keys view - privacy mode", () => {
     sessionStorage.clear();
   });
 
-  it("hides revoke button in key rows when privacy mode is active", async () => {
+  it("hides revoke button in key rows when presentation mode is active", async () => {
     KeysView.mount(root);
     await flush();
     expect(root.querySelector(".btn-icon-danger")).toBeNull();

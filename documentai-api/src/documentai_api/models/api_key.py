@@ -26,7 +26,7 @@ class CreateApiKeyResponse(BaseApiResponse):
 class ApiKeyItem(BaseApiResponse):
     """API key response item.
 
-    When privacy mode is active, `created_by` and `email_address` are masked and
+    When presentation mode is active, `created_by` and `email_address` are masked and
     `masked_tenant_id` is populated. The real `tenant_id` is always returned so that
     frontend filter calls continue to work - `masked_tenant_id` is for display only.
     """

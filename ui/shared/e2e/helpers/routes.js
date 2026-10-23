@@ -52,13 +52,13 @@ export function registerTenants(page, tenants, byId = {}) {
 /**
  * Sets a super-admin session in sessionStorage and navigates to "/".
  *
- * When privacyMode is true, the login page is shown first so the checkbox
+ * When presentationMode is true, the login page is shown first so the checkbox
  * tick is visible in the recording before the session is injected.
  *
  * @param {import('@playwright/test').Page} page
- * @param {{ privacyMode?: boolean }} [opts]
+ * @param {{ presentationMode?: boolean }} [opts]
  */
-export async function loginAs(page, { privacyMode = false } = {}) {
+export async function loginAs(page, { presentationMode = false } = {}) {
   const payload = btoa(
     JSON.stringify({
       "cognito:groups": ["super-admin"],
@@ -70,8 +70,8 @@ export async function loginAs(page, { privacyMode = false } = {}) {
   await page.goto("/");
   await page.locator("#sign-in-email").fill("admin@example.com");
   await page.locator("#sign-in-password").fill("••••••••••••");
-  if (privacyMode) {
-    await page.locator("#privacy-mode-checkbox + .toggle-track").click();
+  if (presentationMode) {
+    await page.locator("#presentation-mode-checkbox + .toggle-track").click();
   }
   await page.evaluate(
     ([p, pm]) => {
@@ -86,12 +86,12 @@ export async function loginAs(page, { privacyMode = false } = {}) {
         }),
       );
       if (pm) {
-        sessionStorage.setItem("privacy_mode", "true");
+        sessionStorage.setItem("presentation_mode", "true");
       } else {
-        sessionStorage.removeItem("privacy_mode");
+        sessionStorage.removeItem("presentation_mode");
       }
     },
-    [payload, privacyMode],
+    [payload, presentationMode],
   );
   await page.goto("/");
 }

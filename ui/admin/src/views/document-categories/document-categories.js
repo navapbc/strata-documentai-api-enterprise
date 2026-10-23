@@ -6,7 +6,7 @@ import { openModal, closeModal } from "../../utils/modal.js";
 import { h, iconBtn } from "../../utils/dom.js";
 import { tpl } from "../../utils/tpl.js";
 import { TableView } from "../../utils/table-view.js";
-import { isPrivacyMode } from "../../../../shared/utils/privacy.js";
+import { isPresentationMode } from "../../../../shared/utils/presentation-mode.js";
 import html from "./document-categories.html";
 
 const tmpl = tpl(html);
@@ -37,7 +37,7 @@ export function mount(root) {
 
   _createBtn = h("button", { className: "btn-primary" }, "Create Category");
   _refreshBtn = h("button", { className: "btn-secondary" }, "Refresh");
-  Helpers.setViewActions(...(isPrivacyMode() ? [] : [_createBtn]), _refreshBtn);
+  Helpers.setViewActions(...(isPresentationMode() ? [] : [_createBtn]), _refreshBtn);
 
   _tableView = new TableView(
     root.querySelector("#categories-table"),
@@ -161,10 +161,10 @@ function renderRow(cat) {
   const statusEl = cat.isActive
     ? h("span", { className: "badge badge-success" }, "Active")
     : h("span", { className: "badge badge-neutral" }, "Inactive");
-  const privacy = isPrivacyMode();
-  const editBtn = !privacy ? iconBtn("edit", "Edit") : null;
+  const presented = isPresentationMode();
+  const editBtn = !presented ? iconBtn("edit", "Edit") : null;
   const actionsWrapper = h("div", { className: "row-actions" }, ...(editBtn ? [editBtn] : []));
-  if (cat.isActive && !privacy) {
+  if (cat.isActive && !presented) {
     const delBtn = iconBtn("discard", "Deactivate", "btn-icon-danger");
     delBtn.addEventListener("click", () => deactivate(cat));
     actionsWrapper.appendChild(delBtn);

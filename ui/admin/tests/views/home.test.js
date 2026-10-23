@@ -12,7 +12,7 @@ describe("home view", () => {
     vi.doMock("../../../shared/utils/session.js", () => ({
       get: vi.fn(() => ({ email: "admin@test.com" })),
       isSuperAdmin: vi.fn(() => false),
-      PRIVACY_MODE_KEY: "privacy_mode",
+      PRESENTATION_MODE_KEY: "presentation_mode",
     }));
 
     HomeView = await import("../../src/views/home/home.js");

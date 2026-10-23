@@ -6,7 +6,7 @@ from typing import Any
 from boto3.dynamodb.conditions import Attr, ConditionBase
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from documentai_api.annotations import AdminClaims, PageLimit
+from documentai_api.annotations import AdminClaims, IsPresentationMode, PageLimit
 from documentai_api.classifiers.api_response import extract_field_values
 from documentai_api.config.constants import ApiVisualizationTag, ConfigDefaults, FileValidation
 from documentai_api.config.env import get_env_config
@@ -25,6 +25,7 @@ from documentai_api.utils.auth import verify_jwt_with_role
 from documentai_api.utils.document_metadata_table import DocumentMetadataTable
 from documentai_api.utils.jwt_auth import assert_tenant_scope, tenant_scope
 from documentai_api.utils.pagination import decode_cursor, encode_cursor
+from documentai_api.utils.presentation_mask import mask_tenant
 from documentai_api.utils.response_builder import nest_fields
 from documentai_api.utils.s3 import get_bucket_and_key
 
@@ -39,18 +40,20 @@ router = APIRouter(
 _table = DocumentMetadataTable()
 
 
-def _record_to_item(record: dict[str, Any]) -> DocumentListItem:
+def _record_to_item(record: dict[str, Any], is_presentation_mode: bool = False) -> DocumentListItem:
     """Convert a DDB record to a list item."""
+    tenant_id = record.get(DocumentMetadata.TENANT_ID, "")
     return DocumentListItem(
         job_id=record.get(DocumentMetadata.JOB_ID, ""),
         file_name=record.get(DocumentMetadata.ORIGINAL_FILE_NAME, ""),
-        tenant_id=record.get(DocumentMetadata.TENANT_ID, ""),
+        tenant_id=tenant_id,
         api_key_name=record.get(DocumentMetadata.API_KEY_NAME, ""),
         process_status=record.get(DocumentMetadata.PROCESS_STATUS, ""),
         document_category=record.get(DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY, ""),
         matched_blueprint=record.get(DocumentMetadata.BDA_MATCHED_BLUEPRINT_NAME, ""),
         created_at=record.get(DocumentMetadata.CREATED_AT, ""),
         processed_date=record.get(DocumentMetadata.PROCESSED_DATE, ""),
+        masked_tenant_id=mask_tenant(tenant_id).id if is_presentation_mode and tenant_id else None,
     )
 
 
@@ -58,6 +61,7 @@ def _record_to_detail(
     record: dict[str, Any],
     include_extracted_data: bool = False,
     include_bounding_box: bool = False,
+    is_presentation_mode: bool = False,
 ) -> DocumentDetail:
     """Convert a DDB record to a full detail response."""
     fields = (
@@ -72,11 +76,13 @@ def _record_to_detail(
         if include_extracted_data
         else _parse_extracted_data(record)
     )
+    tenant_id = record.get(DocumentMetadata.TENANT_ID, "")
     return DocumentDetail(
         job_id=record.get(DocumentMetadata.JOB_ID, ""),
         file_name=record.get(DocumentMetadata.ORIGINAL_FILE_NAME, ""),
-        tenant_id=record.get(DocumentMetadata.TENANT_ID, ""),
+        tenant_id=tenant_id,
         api_key_name=record.get(DocumentMetadata.API_KEY_NAME, ""),
+        masked_tenant_id=mask_tenant(tenant_id).id if is_presentation_mode and tenant_id else None,
         process_status=record.get(DocumentMetadata.PROCESS_STATUS, ""),
         document_category=record.get(DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY, ""),
         matched_blueprint=record.get(DocumentMetadata.BDA_MATCHED_BLUEPRINT_NAME, ""),
@@ -145,6 +151,7 @@ def _parse_extracted_data(record: dict[str, Any]) -> dict[str, Any] | None:
 @router.get("")
 async def list_documents(
     claims: AdminClaims,
+    is_presentation_mode: IsPresentationMode = False,
     tenant_id: str | None = None,
     status_filter: str | None = None,
     is_demo: bool | None = None,
@@ -201,7 +208,7 @@ async def list_documents(
             start_key=exclusive_start_key,
         )
 
-        documents = [_record_to_item(item) for item in documents_raw]
+        documents = [_record_to_item(item, is_presentation_mode) for item in documents_raw]
         next_cursor = encode_cursor(last_key) if last_key else None
 
         log_event(
@@ -231,6 +238,7 @@ async def list_documents(
 async def get_document(
     job_id: str,
     claims: AdminClaims,
+    is_presentation_mode: IsPresentationMode = False,
     include_extracted_data: bool = False,
     include_bounding_box: bool = False,
 ) -> DocumentDetail:
@@ -252,7 +260,9 @@ async def get_document(
 
     try:
         record = _fetch_scoped_record(job_id, scope)
-        detail = _record_to_detail(record, include_extracted_data, include_bounding_box)
+        detail = _record_to_detail(
+            record, include_extracted_data, include_bounding_box, is_presentation_mode
+        )
 
         action = (
             AuditAction.DOCUMENT_VIEW_EXTRACTED_DATA

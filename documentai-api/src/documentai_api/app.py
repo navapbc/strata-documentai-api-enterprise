@@ -81,7 +81,7 @@ app.add_middleware(
         "API-Key",
         "Authorization",
         "X-Trace-ID",
-        "X-Privacy-Mode",
+        "X-Presentation-Mode",
     ],
     expose_headers=["X-Trace-ID"],
 )

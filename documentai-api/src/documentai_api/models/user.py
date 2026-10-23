@@ -8,7 +8,7 @@ from documentai_api.models.base import BaseApiResponse
 class CognitoUserItem(BaseApiResponse):
     """User response item.
 
-    When privacy mode is active, `email` and `username` are masked and
+    When presentation mode is active, `email` and `username` are masked and
     `masked_tenant_id` is populated. The real `tenant_id` is always returned so that
     frontend filter calls continue to work - `masked_tenant_id` is for display only.
     """

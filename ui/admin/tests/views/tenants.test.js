@@ -261,7 +261,7 @@ describe("tenants view", () => {
   });
 });
 
-describe("tenants view - privacy mode", () => {
+describe("tenants view - presentation mode", () => {
   let root, TenantsView;
 
   function flush() {
@@ -270,7 +270,7 @@ describe("tenants view - privacy mode", () => {
 
   beforeEach(async () => {
     vi.resetModules();
-    sessionStorage.setItem("privacy_mode", "true");
+    sessionStorage.setItem("presentation_mode", "true");
 
     vi.doMock("../../src/services/tenants.js", () => ({
       list: vi.fn().mockResolvedValue({ tenants: [buildTenant()] }),
@@ -309,13 +309,13 @@ describe("tenants view - privacy mode", () => {
     sessionStorage.clear();
   });
 
-  it("hides edit button in tenant rows when privacy mode is active", async () => {
+  it("hides edit button in tenant rows when presentation mode is active", async () => {
     TenantsView.mount(root);
     await flush();
     expect(root.querySelector(".btn-icon")).toBeNull();
   });
 
-  it("hides deactivate button in tenant rows when privacy mode is active", async () => {
+  it("hides deactivate button in tenant rows when presentation mode is active", async () => {
     TenantsView.mount(root);
     await flush();
     expect(root.querySelector(".btn-icon-danger")).toBeNull();

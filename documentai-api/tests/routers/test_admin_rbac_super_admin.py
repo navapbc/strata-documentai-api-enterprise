@@ -560,11 +560,11 @@ def test_users_delete_self_returns_400(api_client):
 
 
 ##############################################################################
-# Privacy mode masking
+# Presentation mode masking
 ##############################################################################
 
 
-def test_keys_privacy_mode_masks_tenant_id(
+def test_keys_presentation_mode_masks_tenant_id(
     api_client, api_keys_table, tenants_table, audit_events_table
 ):
     override_jwt(make_claims(groups=[SUPER_ADMIN]))
@@ -573,7 +573,7 @@ def test_keys_privacy_mode_masks_tenant_id(
         KEYS_URL, json={"api_key_name": "demo", "environment": "dev", "tenant_id": TENANT_ID}
     )
     response = api_client.get(
-        KEYS_URL, params={"tenant_id": TENANT_ID}, headers={"X-Privacy-Mode": "true"}
+        KEYS_URL, params={"tenant_id": TENANT_ID}, headers={"X-Presentation-Mode": "true"}
     )
     assert response.status_code == 200
     keys = response.json()["keys"]
@@ -581,7 +581,7 @@ def test_keys_privacy_mode_masks_tenant_id(
     assert keys[0]["maskedTenantId"] != TENANT_ID
 
 
-def test_keys_privacy_mode_masks_email(
+def test_keys_presentation_mode_masks_email(
     api_client, api_keys_table, tenants_table, audit_events_table
 ):
     override_jwt(make_claims(groups=[SUPER_ADMIN]))
@@ -590,14 +590,14 @@ def test_keys_privacy_mode_masks_email(
         KEYS_URL, json={"api_key_name": "demo", "environment": "dev", "tenant_id": TENANT_ID}
     )
     response = api_client.get(
-        KEYS_URL, params={"tenant_id": TENANT_ID}, headers={"X-Privacy-Mode": "true"}
+        KEYS_URL, params={"tenant_id": TENANT_ID}, headers={"X-Presentation-Mode": "true"}
     )
     assert response.status_code == 200
     keys = response.json()["keys"]
     assert keys[0]["createdBy"] != "admin@example.com"
 
 
-def test_keys_no_privacy_mode_preserves_tenant_id(
+def test_keys_no_presentation_mode_preserves_tenant_id(
     api_client, api_keys_table, tenants_table, audit_events_table
 ):
     override_jwt(make_claims(groups=[SUPER_ADMIN]))

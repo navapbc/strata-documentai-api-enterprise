@@ -9,7 +9,7 @@ from typing import Any
 from botocore.exceptions import ClientError
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
-from documentai_api.annotations import AdminClaims, IsPrivacyMode, OutputFormat
+from documentai_api.annotations import AdminClaims, IsPresentationMode, OutputFormat
 from documentai_api.config.constants import (
     METRICS_USAGE_REPORT_DAILY_S3_PREFIX,
     METRICS_USAGE_REPORT_S3_PREFIX,
@@ -28,7 +28,7 @@ from documentai_api.models.usage import (
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils.auth import verify_jwt_with_role
 from documentai_api.utils.jwt_auth import tenant_scope
-from documentai_api.utils.privacy_masking import mask_tenant
+from documentai_api.utils.presentation_mask import mask_tenant
 from documentai_api.utils.response_builder import build_csv_response
 
 logger = get_logger(__name__)
@@ -111,7 +111,7 @@ async def _read_daily_usage(bucket: str, month: str, tenant_id: str | None) -> l
 @router.get("", response_model=None)
 async def get_usage(
     claims: AdminClaims,
-    is_privacy_mode: IsPrivacyMode,
+    is_presentation_mode: IsPresentationMode,
     month: str | None = None,
     tenant_id: str | None = None,
     granularity: MetricsGranularity = MetricsGranularity.MONTHLY,
@@ -207,7 +207,7 @@ async def get_usage(
         TenantUsage(
             **t,
             masked_tenant_id=mask_tenant(t["tenant_id"]).id
-            if is_privacy_mode and t.get("tenant_id")
+            if is_presentation_mode and t.get("tenant_id")
             else None,
         )
         for t in tenants_raw

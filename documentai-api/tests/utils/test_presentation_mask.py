@@ -1,12 +1,12 @@
-"""Tests for utils/privacy_masking.py."""
+"""Tests for utils/presentation_mask.py."""
 
-from documentai_api.config.privacy_masks import (
+from documentai_api.config.presentation_mask import (
     DEMO_EMAIL_DOMAINS,
     DEMO_FIRST_NAMES,
     DEMO_LAST_NAMES,
     DEMO_TENANTS,
 )
-from documentai_api.utils.privacy_masking import (
+from documentai_api.utils.presentation_mask import (
     MaskedTenant,
     MaskedUser,
     _hash,

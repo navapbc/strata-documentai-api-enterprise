@@ -44,7 +44,7 @@ describe("document-search view", () => {
     }));
     vi.doMock("../../../shared/utils/session.js", () => ({
       getEmail: () => "admin@test.com",
-      PRIVACY_MODE_KEY: "privacy_mode",
+      PRESENTATION_MODE_KEY: "presentation_mode",
     }));
     vi.doMock("../../src/utils/toast.js", () => ({ show: vi.fn() }));
 

@@ -86,7 +86,7 @@ deploy-demo-ui: ## Build demo UI and sync to S3 + invalidate CloudFront
 		--no-cli-pager && \
 	echo "Demo UI deployed."
 
-record-ui: ## Regenerate UI walkthrough videos. Optional: args=admin-walkthrough-privacy-mode
+record-ui: ## Regenerate UI walkthrough videos. Optional: args=admin-walkthrough-presentation-mode
 record-ui: playwright-install
 	@which ffmpeg > /dev/null 2>&1 || (echo "Error: ffmpeg not found. Install with: brew install ffmpeg" && exit 1)
 	@for spec in ui/admin/e2e-video/*.spec.js ui/demo/e2e-video/*.spec.js; do \

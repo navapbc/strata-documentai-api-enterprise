@@ -13,7 +13,7 @@ from typing import Any, Literal
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
-from documentai_api.annotations import IsPrivacyMode, SuperAdminClaims
+from documentai_api.annotations import IsPresentationMode, SuperAdminClaims
 from documentai_api.config.constants import ApiVisualizationTag
 from documentai_api.logging import get_logger
 from documentai_api.models.user import ListUsersResponse
@@ -23,7 +23,7 @@ from documentai_api.utils import tenants as tenants_util
 from documentai_api.utils.audit_log import log_event
 from documentai_api.utils.auth import verify_jwt_with_super_admin
 from documentai_api.utils.jwt_auth import SUPER_ADMIN, TENANT_ADMIN
-from documentai_api.utils.privacy_masking import mask_tenant, mask_user
+from documentai_api.utils.presentation_mask import mask_tenant, mask_user
 
 logger = get_logger(__name__)
 
@@ -64,7 +64,9 @@ class ChangeTenantRequest(BaseModel):
 
 
 @router.get("")
-async def list_users(claims: SuperAdminClaims, is_privacy_mode: IsPrivacyMode) -> ListUsersResponse:
+async def list_users(
+    claims: SuperAdminClaims, is_presentation_mode: IsPresentationMode
+) -> ListUsersResponse:
     """List every user in the pool with their group + tenant assignment."""
     try:
         users = cognito_service.list_users()
@@ -75,7 +77,7 @@ async def list_users(claims: SuperAdminClaims, is_privacy_mode: IsPrivacyMode) -
             detail="Failed to list users",
         ) from e
 
-    if is_privacy_mode:
+    if is_presentation_mode:
         for u in users:
             masked = mask_user(u.username)
             u.username = masked.email

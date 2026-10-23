@@ -213,8 +213,8 @@ form button[type="submit"]:not(.btn-primary):not(.btn-secondary):not(.btn-outlin
   min-height: 100vh;
 }
 
-.privacy-banner-offset {
-  --banner-height: 2.25rem; /* must match .privacy-banner height exactly */
+.info-banner-offset {
+  --banner-height: 2.25rem; /* must match .info-banner height exactly */
 }
 
 /* Sidebar */
@@ -1234,7 +1234,7 @@ td {
   background: var(--color-border);
 }
 
-.privacy-banner {
+.info-banner {
   position: fixed;
   top: 0;
   left: 0;
@@ -1252,7 +1252,7 @@ td {
   color: #3d2e00;
 }
 
-.privacy-banner-badge {
+.info-banner-badge {
   flex-shrink: 0;
   font-weight: 700;
   background: #e6c84a;
@@ -1264,12 +1264,12 @@ td {
   letter-spacing: 0.04em;
 }
 
-.privacy-banner-text {
+.info-banner-text {
   line-height: 1.4;
 }
 
 @media (max-width: 768px) {
-  .privacy-banner-text {
+  .info-banner-text {
     display: none;
   }
 }
@@ -1502,7 +1502,7 @@ td {
 }
 
 /* Login-form buttons (scoped so dashboard buttons keep their base size) */
-.privacy-mode-row {
+.presentation-mode-row {
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -1513,7 +1513,7 @@ td {
   color: #3d4551;
 }
 
-.privacy-mode-label {
+.presentation-mode-label {
   margin-top: 0.5rem;
 }
 

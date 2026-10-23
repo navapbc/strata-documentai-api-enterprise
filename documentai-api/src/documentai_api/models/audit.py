@@ -10,7 +10,7 @@ from documentai_api.models.base import BaseApiResponse
 class AuditEventItem(BaseApiResponse):
     """Audit event item.
 
-    When privacy mode is active, `actor_email` is masked and `masked_tenant_id`
+    When presentation mode is active, `actor_email` is masked and `masked_tenant_id`
     is populated. The real `tenant_id` is always returned so that frontend filter
     calls continue to work - `masked_tenant_id` is for display only.
     """
