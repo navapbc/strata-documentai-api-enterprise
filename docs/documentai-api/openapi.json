@@ -5819,6 +5819,17 @@
             "type": "string",
             "title": "Apikeyname"
           },
+          "maskedTenantId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maskedtenantid"
+          },
           "processStatus": {
             "type": "string",
             "title": "Processstatus"
@@ -6018,6 +6029,17 @@
           "processedDate": {
             "type": "string",
             "title": "Processeddate"
+          },
+          "maskedTenantId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maskedtenantid"
           }
         },
         "type": "object",
