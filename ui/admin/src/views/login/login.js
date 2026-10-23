@@ -1,6 +1,7 @@
 import * as Auth from "../../services/auth.js";
 import { COGNITO_REGION } from "../../services/auth.js";
-import * as Session from "../../utils/session.js";
+import * as Session from "../../../../shared/utils/session.js";
+import { PRESENTATION_MODE_KEY } from "../../../../shared/utils/session.js";
 import QRCode from "qrcode";
 import { tpl } from "../../utils/tpl.js";
 import html from "./login.html";
@@ -20,6 +21,7 @@ export function onLoginSuccess(callback) {
 export function mount(root, ssoConfig = {}) {
   _root = root;
   _ssoConfig = ssoConfig;
+  sessionStorage.removeItem(PRESENTATION_MODE_KEY);
   root.replaceChildren(tmpl());
 
   // Show Google SSO button if configured
@@ -105,6 +107,9 @@ async function handleGoogleSignIn() {
   // Persist for callback validation
   sessionStorage.setItem("oauth_code_verifier", verifier);
   sessionStorage.setItem("oauth_state", state);
+  if (_root?.querySelector("#presentation-mode-checkbox")?.checked) {
+    sessionStorage.setItem(PRESENTATION_MODE_KEY, "true");
+  }
 
   const url =
     `https://${cognitoDomain}.auth.${COGNITO_REGION}.amazoncognito.com/oauth2/authorize?` +
@@ -207,6 +212,9 @@ async function handleSignIn(e) {
       return;
     }
 
+    if (_root?.querySelector("#presentation-mode-checkbox")?.checked) {
+      sessionStorage.setItem(PRESENTATION_MODE_KEY, "true");
+    }
     Session.save({
       accessToken: result.accessToken,
       idToken: result.idToken,
@@ -291,6 +299,9 @@ async function handleConfirm(e) {
       return;
     }
 
+    if (_root?.querySelector("#presentation-mode-checkbox")?.checked) {
+      sessionStorage.setItem(PRESENTATION_MODE_KEY, "true");
+    }
     Session.save({
       accessToken: result.accessToken,
       idToken: result.idToken,
@@ -346,6 +357,9 @@ async function handleMfaVerify(e) {
 
   try {
     const tokens = await Auth.respondToMfaChallenge(_mfaSession, code, _pendingEmail);
+    if (_root?.querySelector("#presentation-mode-checkbox")?.checked) {
+      sessionStorage.setItem(PRESENTATION_MODE_KEY, "true");
+    }
     Session.save({ ...tokens, email: _pendingEmail });
     if (_onLogin) {
       _onLogin();
@@ -374,6 +388,9 @@ async function handleMfaSetupVerify(e) {
 
   try {
     const tokens = await Auth.verifySoftwareToken(_mfaSession, code, _pendingEmail);
+    if (_root?.querySelector("#presentation-mode-checkbox")?.checked) {
+      sessionStorage.setItem(PRESENTATION_MODE_KEY, "true");
+    }
     Session.save({ ...tokens, email: _pendingEmail });
     if (_onLogin) {
       _onLogin();

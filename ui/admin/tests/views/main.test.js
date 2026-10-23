@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { STORAGE_KEY, PRESENTATION_MODE_KEY } from "../../../shared/utils/session.js";
 
 function flush() {
   return new Promise((r) => setTimeout(r, 0));
@@ -10,6 +11,7 @@ const SIDEBAR_MOCK = `<div id="user-email"></div><p id="build-date"></p><select 
   <div class="nav-section" id="nav-section-console-access"><button class="nav-section-header" data-section="console-access"><span class="nav-arrow">▸</span></button><div class="nav-section-body hidden" id="section-console-access"></div></div>
   <div class="nav-section" id="nav-section-management"><button class="nav-section-header" data-section="management"><span class="nav-arrow">▸</span></button><div class="nav-section-body hidden" id="section-management"></div></div>
   <div class="nav-section" id="nav-section-docs"><button class="nav-section-header" data-section="docs"><span class="nav-arrow">▸</span></button><div class="nav-section-body hidden" id="section-docs"></div></div>
+  <div class="nav-section" id="nav-section-qa-tools"><button class="nav-section-header" data-section="qa-tools"><span class="nav-arrow">▸</span></button><div class="nav-section-body hidden" id="section-qa-tools"></div></div>
   <div class="nav-section" id="nav-section-reporting"><button class="nav-section-header" data-section="reporting"><span class="nav-arrow">▸</span></button><div class="nav-section-body hidden" id="section-reporting"></div></div>`;
 
 describe("main.js router", () => {
@@ -30,7 +32,7 @@ describe("main.js router", () => {
       }),
     );
 
-    vi.doMock("../../src/utils/session.js", () => ({
+    vi.doMock("../../../shared/utils/session.js", () => ({
       get: vi.fn(() => null),
       save: vi.fn(),
       clear: vi.fn(),
@@ -38,6 +40,8 @@ describe("main.js router", () => {
       isApproved: vi.fn(() => true),
       isSuperAdmin: vi.fn(() => false),
       onExpire: vi.fn(),
+      STORAGE_KEY,
+      PRESENTATION_MODE_KEY,
     }));
     vi.doMock("../../src/utils/toast.js", () => ({ show: vi.fn() }));
     vi.doMock("../../src/utils/tenant-context.js", () => ({
@@ -79,7 +83,7 @@ describe("main.js router", () => {
 
     document.body.innerHTML = '<div id="app"></div>';
 
-    Session = await import("../../src/utils/session.js");
+    Session = await import("../../../shared/utils/session.js");
     LoginView = await import("../../src/views/login/login.js");
     KeysView = await import("../../src/views/keys/keys.js");
     TenantContext = await import("../../src/utils/tenant-context.js");
@@ -209,5 +213,87 @@ describe("main.js router", () => {
   it("registers session expiry handler", async () => {
     await import("../../src/main.js");
     expect(Session.onExpire).toHaveBeenCalledWith(expect.any(Function));
+  });
+});
+
+describe("main.js - presentation mode nav", () => {
+  beforeEach(async () => {
+    vi.resetModules();
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        json: () =>
+          Promise.resolve({
+            api_endpoint: { value: "http://localhost:8000" },
+            cognito_user_pool_id: { value: "us-east-1_abc" },
+            cognito_client_id: { value: "client123" },
+          }),
+      }),
+    );
+
+    vi.doMock("../../../shared/utils/session.js", () => ({
+      get: vi.fn(() => ({ accessToken: "tok", idToken: "id", email: "a@b.com" })),
+      save: vi.fn(),
+      clear: vi.fn(),
+      isExpired: vi.fn(() => false),
+      isApproved: vi.fn(() => true),
+      isSuperAdmin: vi.fn(() => false),
+      onExpire: vi.fn(),
+      STORAGE_KEY,
+      PRESENTATION_MODE_KEY,
+    }));
+    vi.doMock("../../src/utils/toast.js", () => ({ show: vi.fn() }));
+    vi.doMock("../../src/utils/tenant-context.js", () => ({
+      load: vi.fn(),
+      getTenantId: vi.fn(() => null),
+      onChange: vi.fn(() => () => {}),
+      mountSelect: vi.fn(),
+      unmountSelect: vi.fn(),
+    }));
+    vi.doMock("../../src/services/http.js", () => ({ configure: vi.fn() }));
+    vi.doMock("../../src/services/auth.js", () => ({ configure: vi.fn(), signOut: vi.fn() }));
+
+    const mockView = () => ({ mount: vi.fn(), unmount: vi.fn() });
+    vi.doMock("../../src/views/keys/keys.js", mockView);
+    vi.doMock("../../src/views/extraction-rules/extraction-rules.js", mockView);
+    vi.doMock("../../src/views/users/users.js", mockView);
+    vi.doMock("../../src/views/tenants/tenants.js", mockView);
+    vi.doMock("../../src/views/document-categories/document-categories.js", mockView);
+    vi.doMock("../../src/views/audit-log/audit-log.js", mockView);
+    vi.doMock("../../src/views/documents/documents.js", mockView);
+    vi.doMock("../../src/views/login/login.js", () => ({
+      mount: vi.fn(),
+      unmount: vi.fn(),
+      onLoginSuccess: vi.fn(),
+    }));
+    vi.doMock("../../src/views/pending/pending.html", () => ({
+      default: '<div id="pending-email"></div><button id="pending-logout-btn"></button>',
+    }));
+    vi.doMock("../../src/views/sidebar/sidebar.html", () => ({ default: SIDEBAR_MOCK }));
+
+    document.body.innerHTML = '<div id="app"></div>';
+  });
+
+  afterEach(() => {
+    document.body.innerHTML = "";
+    location.hash = "";
+    sessionStorage.clear();
+    vi.unstubAllGlobals();
+  });
+
+  it("shows QA Tools nav section without presentation mode", async () => {
+    await import("../../src/main.js");
+    await flush();
+    expect(document.querySelector("#nav-section-qa-tools").classList.contains("hidden")).toBe(
+      false,
+    );
+  });
+
+  it("hides QA Tools nav section in presentation mode", async () => {
+    sessionStorage.setItem(PRESENTATION_MODE_KEY, "true");
+    await import("../../src/main.js");
+    await flush();
+    expect(document.querySelector("#nav-section-qa-tools").classList.contains("hidden")).toBe(true);
   });
 });

@@ -1,4 +1,5 @@
 import { adminClient } from "./http.js";
+import { STORAGE_KEY } from "../../../shared/utils/session.js";
 
 const POLL_INTERVAL_MS = 3000;
 const POLL_TIMEOUT_MS = 120000; // 2 minutes max
@@ -9,7 +10,7 @@ export async function run(file, tenantId, signal) {
   formData.append("tenant_id", tenantId);
 
   const baseUrl = adminClient.getBaseUrl();
-  const session = JSON.parse(sessionStorage.getItem("docai_console_session") || "{}");
+  const session = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || "{}");
   const token = session.idToken || "";
 
   const startRes = await fetch(`${baseUrl}/v1/admin/extraction-test`, {

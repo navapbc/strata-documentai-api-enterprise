@@ -1,3 +1,5 @@
+import { PRESENTATION_MODE_KEY, STORAGE_KEY } from "../utils/session.js";
+
 let _refreshing = null;
 
 async function _tryRefresh() {
@@ -5,9 +7,7 @@ async function _tryRefresh() {
   _refreshing = (async () => {
     try {
       const { refreshSession } = await import("./auth.js");
-      const session = JSON.parse(
-        sessionStorage.getItem("docai_console_session"),
-      );
+      const session = JSON.parse(sessionStorage.getItem(STORAGE_KEY));
       if (!session?.refreshToken) throw new Error("No refresh token");
       const tokens = await refreshSession(session.refreshToken);
       const { update } = await import("../utils/session.js");
@@ -15,7 +15,7 @@ async function _tryRefresh() {
       _jwt = tokens.idToken;
       return true;
     } catch {
-      sessionStorage.removeItem("docai_console_session");
+      sessionStorage.removeItem(STORAGE_KEY);
       window.location.reload();
       return false;
     } finally {
@@ -88,9 +88,12 @@ export function setApiKey(key) {
   _apiKey = key;
 }
 
-export const adminClient = createClient(() => ({
-  Authorization: `Bearer ${_jwt}`,
-}));
+export const adminClient = createClient(() => {
+  const headers = { Authorization: `Bearer ${_jwt}` };
+  if (sessionStorage.getItem(PRESENTATION_MODE_KEY) === "true")
+    headers["X-Presentation-Mode"] = "true";
+  return headers;
+});
 export const dataClient = createClient(() => ({ "API-Key": _apiKey }));
 
 export function configure({ baseUrl, jwt, apiKey }) {

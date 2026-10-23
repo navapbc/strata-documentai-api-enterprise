@@ -77,11 +77,15 @@ test("demo walkthrough: login -> upload -> extraction with bounding boxes", asyn
     return route.fulfill(json({ ...HISTORY, documents: docs }));
   });
 
-  // === 1. Start logged in ==================================================
-  await page.goto("/");
+  // === 1. Login ===========================================================
   const payload = btoa(JSON.stringify({ "cognito:groups": [], email: "demo@example.com" }));
+  await page.goto("/");
+  await page.evaluate(() => sessionStorage.clear());
+  await page.goto("/");
+  await page.locator("#sign-in-email").fill("demo@example.com");
+  await page.locator("#sign-in-password").fill("••••••••••••");
   await page.evaluate((p) => {
-    sessionStorage.setItem("docai_console_session", JSON.stringify({
+    sessionStorage.setItem("documentai_console_session", JSON.stringify({
       accessToken: "fake-at", idToken: `h.${p}.s`, refreshToken: "fake-rt",
       email: "demo@example.com", expiresAt: Date.now() + 3600000,
     }));

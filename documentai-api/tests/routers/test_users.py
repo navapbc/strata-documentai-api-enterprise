@@ -189,6 +189,39 @@ def test_delete_user(api_client, seeded_cognito_users):
     assert all(u["username"] != "tenant-admin-2" for u in users)
 
 
+##############################################################################
+# Presentation mode masking
+##############################################################################
+
+
+def test_list_users_presentation_mode_masks_email(api_client, seeded_cognito_users):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(USERS_URL, headers={"X-Presentation-Mode": "true"})
+    assert response.status_code == 200
+    emails = {u["email"] for u in response.json()["users"]}
+    assert "super@example.com" not in emails
+    assert "acme-admin@example.com" not in emails
+
+
+def test_list_users_presentation_mode_masking_is_deterministic(api_client, seeded_cognito_users):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    r1 = {
+        u["email"]
+        for u in api_client.get(USERS_URL, headers={"X-Presentation-Mode": "true"}).json()["users"]
+    }
+    r2 = {
+        u["email"]
+        for u in api_client.get(USERS_URL, headers={"X-Presentation-Mode": "true"}).json()["users"]
+    }
+    assert r1 == r2
+
+
+def test_list_users_no_presentation_mode_preserves_email(api_client, seeded_cognito_users):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    emails = {u["email"] for u in api_client.get(USERS_URL).json()["users"]}
+    assert "super@example.com" in emails
+
+
 def test_delete_self_is_rejected(api_client, seeded_cognito_users):
     override_jwt({**SUPER_ADMIN_CLAIMS, "sub": "super-admin-1"})
     response = api_client.delete(f"{USERS_URL}/super-admin-1")

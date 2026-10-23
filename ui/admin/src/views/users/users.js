@@ -7,6 +7,7 @@ import * as Toast from "../../utils/toast.js";
 import { h, iconBtn } from "../../utils/dom.js";
 import { tpl } from "../../utils/tpl.js";
 import { TableView } from "../../utils/table-view.js";
+import { isPresentationMode } from "../../../../shared/utils/presentation-mode.js";
 import html from "./users.html";
 
 const tmpl = tpl(html);
@@ -125,20 +126,25 @@ function renderRow(user) {
     groups.length > 0
       ? h("span", { className: "badge badge-success" }, "Active")
       : h("span", { className: "badge badge-neutral" }, "Pending");
-  const roleBtn = iconBtn("edit", "Assign Role");
-  const deleteBtn = iconBtn("discard", "Delete", "btn-icon-danger");
+  const presented = isPresentationMode();
+  const roleBtn = !presented ? iconBtn("edit", "Assign Role") : null;
+  const deleteBtn = !presented ? iconBtn("discard", "Delete", "btn-icon-danger") : null;
   const tr = h(
     "tr",
     null,
     h("td", null, user.email || "-"),
     h("td", null, statusEl),
     h("td", null, role),
-    h("td", null, user.tenantId || "-"),
+    h("td", null, user.maskedTenantId ?? user.tenantId ?? "-"),
     h("td", null, Helpers.formatDate(user.createdAt)),
-    h("td", null, h("div", { className: "row-actions" }, roleBtn, deleteBtn)),
+    h("td", null, h("div", { className: "row-actions" }, ...[roleBtn, deleteBtn].filter(Boolean))),
   );
-  roleBtn.addEventListener("click", () => openAssignModal(user));
-  deleteBtn.addEventListener("click", () => openDeleteModal(user));
+  if (roleBtn) {
+    roleBtn.addEventListener("click", () => openAssignModal(user));
+  }
+  if (deleteBtn) {
+    deleteBtn.addEventListener("click", () => openDeleteModal(user));
+  }
   return tr;
 }
 
@@ -154,7 +160,7 @@ async function openAssignModal(user) {
     for (const t of data.tenants || []) {
       const opt = document.createElement("option");
       opt.value = t.tenantId;
-      opt.textContent = t.displayName || t.tenantId;
+      opt.textContent = t.maskedTenantId ?? t.displayName ?? t.tenantId;
       if (t.tenantId === user.tenantId) {
         opt.selected = true;
       }

@@ -3999,6 +3999,17 @@
             ],
             "title": "Tenantid"
           },
+          "maskedTenantId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maskedtenantid"
+          },
           "environment": {
             "anyOf": [
               {
@@ -4089,7 +4100,8 @@
           }
         },
         "type": "object",
-        "title": "ApiKeyItem"
+        "title": "ApiKeyItem",
+        "description": "API key response item.\n\nWhen presentation mode is active, `created_by` and `email_address` are masked and\n`masked_tenant_id` is populated. The real `tenant_id` is always returned so that\nfrontend filter calls continue to work - `masked_tenant_id` is for display only."
       },
       "ApproveRequest": {
         "properties": {
@@ -4162,6 +4174,17 @@
             "type": "string",
             "title": "Tenantid"
           },
+          "maskedTenantId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maskedtenantid"
+          },
           "actorSub": {
             "type": "string",
             "title": "Actorsub"
@@ -4203,7 +4226,8 @@
           "targetId",
           "timestamp"
         ],
-        "title": "AuditEventItem"
+        "title": "AuditEventItem",
+        "description": "Audit event item.\n\nWhen presentation mode is active, `actor_email` is masked and `masked_tenant_id`\nis populated. The real `tenant_id` is always returned so that frontend filter\ncalls continue to work - `masked_tenant_id` is for display only."
       },
       "AuditLogResponse": {
         "properties": {
@@ -5304,6 +5328,17 @@
             ],
             "title": "Tenantid"
           },
+          "maskedTenantId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maskedtenantid"
+          },
           "groups": {
             "anyOf": [
               {
@@ -5324,7 +5359,8 @@
         "required": [
           "username"
         ],
-        "title": "CognitoUserItem"
+        "title": "CognitoUserItem",
+        "description": "User response item.\n\nWhen presentation mode is active, `email` and `username` are masked and\n`masked_tenant_id` is populated. The real `tenant_id` is always returned so that\nfrontend filter calls continue to work - `masked_tenant_id` is for display only."
       },
       "ConfigResponse": {
         "properties": {
@@ -5694,6 +5730,17 @@
             "type": "string",
             "title": "Tenantid"
           },
+          "maskedTenantId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maskedtenantid"
+          },
           "categoryName": {
             "type": "string",
             "title": "Categoryname"
@@ -5751,7 +5798,8 @@
           "categoryName",
           "displayName"
         ],
-        "title": "DocumentCategoryItem"
+        "title": "DocumentCategoryItem",
+        "description": "Document category response item.\n\nWhen presentation mode is active, `masked_tenant_id` is populated. The real\n`tenant_id` is always returned so that frontend filter calls continue to work -\n`masked_tenant_id` is for display only."
       },
       "DocumentDetail": {
         "properties": {
@@ -5770,6 +5818,17 @@
           "apiKeyName": {
             "type": "string",
             "title": "Apikeyname"
+          },
+          "maskedTenantId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maskedtenantid"
           },
           "processStatus": {
             "type": "string",
@@ -5970,6 +6029,17 @@
           "processedDate": {
             "type": "string",
             "title": "Processeddate"
+          },
+          "maskedTenantId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maskedtenantid"
           }
         },
         "type": "object",
@@ -6977,6 +7047,17 @@
             "type": "string",
             "title": "Displayname"
           },
+          "maskedTenantId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maskedtenantid"
+          },
           "primaryContact": {
             "anyOf": [
               {
@@ -7069,7 +7150,8 @@
           "tenantId",
           "displayName"
         ],
-        "title": "TenantItem"
+        "title": "TenantItem",
+        "description": "Tenant response item.\n\nWhen presentation mode is active, `display_name` and `primary_contact` are masked and\n`masked_tenant_id` is populated. The real `tenant_id` is always returned so that\nfrontend filter calls continue to work - `masked_tenant_id` is for display only."
       },
       "TenantRequestCountItem": {
         "properties": {

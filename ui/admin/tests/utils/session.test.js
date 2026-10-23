@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import * as Session from "../../src/utils/session.js";
+import * as Session from "../../../shared/utils/session.js";
 
 describe("session", () => {
   beforeEach(() => {

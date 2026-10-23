@@ -8,10 +8,10 @@ describe("session inactivity timer", () => {
     vi.useFakeTimers();
     sessionStorage.clear();
     // Mock the dynamic auth import to prevent hanging
-    vi.doMock("../../src/services/auth.js", () => ({
+    vi.doMock("../../../shared/services/auth.js", () => ({
       signOut: vi.fn().mockResolvedValue(undefined),
     }));
-    Session = await import("../../src/utils/session.js");
+    Session = await import("../../../shared/utils/session.js");
   });
 
   afterEach(() => {

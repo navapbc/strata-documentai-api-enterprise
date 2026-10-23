@@ -354,3 +354,46 @@ def test_request_counts_daily_sorted_by_date(
     assert response.status_code == 200
     dates = [d["date"] for d in response.json()["daily"]]
     assert dates == sorted(dates)
+
+
+# =============================================================================
+# Presentation mode masking
+# =============================================================================
+
+
+def test_list_tenants_presentation_mode_masks_display_name(api_client, tenants_table):
+    api_client.post(URL, json={"tenant_id": "t1", "display_name": "Acme Corp"})
+    response = api_client.get(URL, headers={"X-Presentation-Mode": "true"})
+    assert response.status_code == 200
+    assert response.json()["tenants"][0]["displayName"] != "Acme Corp"
+
+
+def test_list_tenants_no_presentation_mode_preserves_display_name(api_client, tenants_table):
+    api_client.post(URL, json={"tenant_id": "t1", "display_name": "Acme Corp"})
+    response = api_client.get(URL)
+    assert response.status_code == 200
+    assert response.json()["tenants"][0]["displayName"] == "Acme Corp"
+
+
+def test_get_tenant_presentation_mode_masks_display_name(api_client, tenants_table):
+    api_client.post(URL, json={"tenant_id": "t1", "display_name": "Acme Corp"})
+    response = api_client.get(f"{URL}/t1", headers={"X-Presentation-Mode": "true"})
+    assert response.status_code == 200
+    assert response.json()["displayName"] != "Acme Corp"
+
+
+def test_get_tenant_presentation_mode_masks_primary_contact(api_client, tenants_table):
+    api_client.post(
+        URL,
+        json={"tenant_id": "t1", "display_name": "Acme Corp", "primary_contact": "real@acme.com"},
+    )
+    response = api_client.get(f"{URL}/t1", headers={"X-Presentation-Mode": "true"})
+    assert response.status_code == 200
+    assert response.json()["primaryContact"] != "real@acme.com"
+
+
+def test_demo_masking_is_deterministic(api_client, tenants_table):
+    api_client.post(URL, json={"tenant_id": "t1", "display_name": "Acme Corp"})
+    r1 = api_client.get(f"{URL}/t1", headers={"X-Presentation-Mode": "true"}).json()["displayName"]
+    r2 = api_client.get(f"{URL}/t1", headers={"X-Presentation-Mode": "true"}).json()["displayName"]
+    assert r1 == r2

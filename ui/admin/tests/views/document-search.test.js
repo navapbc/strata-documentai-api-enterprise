@@ -42,7 +42,10 @@ describe("document-search view", () => {
       formatDate: (d) => d || "-",
       setViewActions: vi.fn(),
     }));
-    vi.doMock("../../src/utils/session.js", () => ({ getEmail: () => "admin@test.com" }));
+    vi.doMock("../../../shared/utils/session.js", () => ({
+      getEmail: () => "admin@test.com",
+      PRESENTATION_MODE_KEY: "presentation_mode",
+    }));
     vi.doMock("../../src/utils/toast.js", () => ({ show: vi.fn() }));
 
     DocumentSearchView = await import("../../src/views/document-search/document-search.js");

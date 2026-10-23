@@ -9,13 +9,14 @@ describe("home view", () => {
   beforeEach(async () => {
     vi.resetModules();
 
-    vi.doMock("../../src/utils/session.js", () => ({
+    vi.doMock("../../../shared/utils/session.js", () => ({
       get: vi.fn(() => ({ email: "admin@test.com" })),
       isSuperAdmin: vi.fn(() => false),
+      PRESENTATION_MODE_KEY: "presentation_mode",
     }));
 
     HomeView = await import("../../src/views/home/home.js");
-    Session = await import("../../src/utils/session.js");
+    Session = await import("../../../shared/utils/session.js");
     root = document.createElement("div");
     document.body.appendChild(root);
   });

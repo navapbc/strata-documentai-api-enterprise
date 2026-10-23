@@ -3,10 +3,13 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from documentai_api.annotations import verify_jwt_with_role
 from documentai_api.app import app
 from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
-from documentai_api.utils.auth import UserContext, get_user_context_with_fallback
+from documentai_api.utils.auth import (
+    UserContext,
+    get_user_context_with_fallback,
+    verify_jwt_with_role,
+)
 
 client = TestClient(app)
 

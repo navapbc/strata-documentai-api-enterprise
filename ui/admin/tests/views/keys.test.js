@@ -198,3 +198,58 @@ describe("keys view", () => {
     expect(root.children.length).toBe(0);
   });
 });
+
+describe("keys view - presentation mode", () => {
+  let root, KeysView;
+
+  function flush() {
+    return new Promise((r) => setTimeout(r, 0));
+  }
+
+  beforeEach(async () => {
+    vi.resetModules();
+    sessionStorage.setItem("presentation_mode", "true");
+
+    vi.doMock("../../src/services/keys.js", () => ({
+      list: vi.fn().mockResolvedValue({ keys: [buildApiKey({ isActive: true })] }),
+      create: vi.fn(),
+      revoke: vi.fn(),
+    }));
+    vi.doMock("../../src/utils/tenant-context.js", () => ({
+      getTenantId: vi.fn(() => null),
+      onChange: vi.fn(() => () => {}),
+      mountSelect: vi.fn(),
+      unmountSelect: vi.fn(),
+    }));
+    vi.doMock("../../src/utils/helpers.js", () => ({
+      esc: (s) => s,
+      formatDate: (d) => d || "-",
+      formatDateTime: (d) => d || "-",
+      relativeTime: (d) => d || "-",
+      showLoading: vi.fn(),
+      setViewActions: vi.fn(),
+      clearViewActions: vi.fn(),
+      bindSortHeaders: vi.fn(() => () => {}),
+      sortRows: (rows) => rows,
+    }));
+
+    const globalSelect = document.createElement("select");
+    globalSelect.id = "global-tenant-select";
+    document.body.appendChild(globalSelect);
+
+    KeysView = await import("../../src/views/keys/keys.js");
+    root = document.createElement("div");
+    document.body.appendChild(root);
+  });
+
+  afterEach(() => {
+    document.body.innerHTML = "";
+    sessionStorage.clear();
+  });
+
+  it("hides revoke button in key rows when presentation mode is active", async () => {
+    KeysView.mount(root);
+    await flush();
+    expect(root.querySelector(".btn-icon-danger")).toBeNull();
+  });
+});

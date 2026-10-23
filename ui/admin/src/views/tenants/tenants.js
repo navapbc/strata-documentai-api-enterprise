@@ -6,6 +6,7 @@ import * as Toast from "../../utils/toast.js";
 import { h, iconBtn } from "../../utils/dom.js";
 import { tpl } from "../../utils/tpl.js";
 import { TableView } from "../../utils/table-view.js";
+import { isPresentationMode } from "../../../../shared/utils/presentation-mode.js";
 import html from "./tenants.html";
 
 const tmpl = tpl(html);
@@ -40,7 +41,7 @@ export function mount(root) {
     _showInactive,
     document.createTextNode(" Show inactive"),
   );
-  Helpers.setViewActions(label, _createBtn);
+  Helpers.setViewActions(label, ...(isPresentationMode() ? [] : [_createBtn]));
 
   _tableView = new TableView(
     root.querySelector("#tenants-table"),
@@ -100,9 +101,10 @@ function renderRow(t) {
   const statusEl = t.isActive
     ? h("span", { className: "badge badge-success" }, "Active")
     : h("span", { className: "badge badge-neutral" }, "Inactive");
-  const editBtn = iconBtn("edit", "Edit");
-  const actionsWrapper = h("div", { className: "row-actions" }, editBtn);
-  if (t.isActive) {
+  const presented = isPresentationMode();
+  const editBtn = !presented ? iconBtn("edit", "Edit") : null;
+  const actionsWrapper = h("div", { className: "row-actions" }, ...(editBtn ? [editBtn] : []));
+  if (t.isActive && !presented) {
     const delBtn = iconBtn("discard", "Deactivate", "btn-icon-danger");
     delBtn.addEventListener("click", () => openDeleteModal(t));
     actionsWrapper.appendChild(delBtn);
@@ -110,7 +112,7 @@ function renderRow(t) {
   const tr = h(
     "tr",
     t.isActive ? null : { className: "row-inactive" },
-    h("td", null, t.tenantId),
+    h("td", null, t.maskedTenantId ?? t.tenantId),
     h("td", null, t.displayName || "-"),
     h(
       "td",
@@ -124,7 +126,9 @@ function renderRow(t) {
     h("td", null, statusEl),
     h("td", null, actionsWrapper),
   );
-  editBtn.addEventListener("click", () => openEditModal(t));
+  if (editBtn) {
+    editBtn.addEventListener("click", () => openEditModal(t));
+  }
   return tr;
 }
 
@@ -209,7 +213,8 @@ async function handleSubmit(e) {
 
 function openDeleteModal(tenant) {
   _pendingDeleteId = tenant.tenantId;
-  _deleteName.textContent = tenant.displayName || tenant.tenantId;
+  const displayId = isPresentationMode() ? (tenant.maskedTenantId ?? "[masked]") : tenant.tenantId;
+  _deleteName.textContent = tenant.displayName || displayId;
   _deleteError.classList.add("hidden");
   openModal(_deleteModal);
 }

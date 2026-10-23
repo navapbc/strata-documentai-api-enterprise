@@ -4,7 +4,9 @@
  * Each view exports mount(root) and unmount(root).
  * Only one content view is in the DOM at a time.
  */
-import * as Session from "./utils/session.js";
+import * as Session from "../../shared/utils/session.js";
+import { PRESENTATION_MODE_KEY } from "../../shared/utils/session.js";
+import { isPresentationMode } from "../../shared/utils/presentation-mode.js";
 import * as Toast from "./utils/toast.js";
 import * as TenantContext from "./utils/tenant-context.js";
 import * as CollapsibleFilterBar from "./utils/collapsible-filter-bar.js";
@@ -180,8 +182,17 @@ function showDashboard(session) {
     }
   });
 
+  // Presentation mode banner + restrictions
+  if (sessionStorage.getItem(PRESENTATION_MODE_KEY) === "true") {
+    app.querySelector(".info-banner")?.classList.remove("hidden");
+    app.querySelector(".layout")?.classList.add("info-banner-offset");
+    app.querySelector("#nav-section-qa-tools")?.classList.add("hidden");
+  }
+
   // Connected info
-  app.querySelector("#user-email").textContent = session.email;
+  app.querySelector("#user-email").textContent = isPresentationMode()
+    ? "Presentation Mode"
+    : session.email;
 
   // Build date (injected at build time)
   const buildDateEl = app.querySelector("#build-date");

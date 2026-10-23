@@ -6,7 +6,8 @@ import { defineConfig } from "@playwright/test";
 // and produces a deterministic .webm per run.
 //
 //   npm run dev  (or let webServer start it) then:
-//   npx playwright test --config=playwright.video.config.js
+//   npm run record                                        # all specs
+//   npm run record -- e2e-video/admin-walkthrough.spec.js # one spec
 //
 // Output: video-output/<test>/*.webm  ->  convert to GIF with ../shared/scripts/webm-to-gif.sh
 export default defineConfig({

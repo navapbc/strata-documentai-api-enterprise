@@ -344,6 +344,57 @@ def test_audit_log_tenant_admin_filter_by_actor(api_client, seeded_events):
 
 
 ##############################################################################
+# Presentation mode masking
+##############################################################################
+
+
+def test_audit_log_presentation_mode_masks_actor_email(api_client, seeded_events):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(AUDIT_LOG_URL, headers={"X-Presentation-Mode": "true"})
+    assert response.status_code == 200
+    emails = {e["actorEmail"] for e in response.json()["events"]}
+    assert "admin@example.com" not in emails
+    assert "user@example.com" not in emails
+
+
+def test_audit_log_presentation_mode_masking_is_deterministic(api_client, seeded_events):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    r1 = {
+        e["actorEmail"]
+        for e in api_client.get(AUDIT_LOG_URL, headers={"X-Presentation-Mode": "true"}).json()[
+            "events"
+        ]
+    }
+    r2 = {
+        e["actorEmail"]
+        for e in api_client.get(AUDIT_LOG_URL, headers={"X-Presentation-Mode": "true"}).json()[
+            "events"
+        ]
+    }
+    assert r1 == r2
+
+
+def test_audit_log_no_presentation_mode_preserves_actor_email(api_client, seeded_events):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    emails = {e["actorEmail"] for e in api_client.get(AUDIT_LOG_URL).json()["events"]}
+    assert "admin@example.com" in emails
+
+
+def test_actors_presentation_mode_masks_emails(api_client, cognito_client):
+    create_cognito_user(cognito_client, "admin-1", "admin@example.com")
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    actors = api_client.get(ACTORS_URL, headers={"X-Presentation-Mode": "true"}).json()["actors"]
+    assert "admin@example.com" not in actors
+
+
+def test_actors_no_presentation_mode_preserves_emails(api_client, cognito_client):
+    create_cognito_user(cognito_client, "admin-1", "admin@example.com")
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    actors = api_client.get(ACTORS_URL).json()["actors"]
+    assert "admin@example.com" in actors
+
+
+##############################################################################
 # Filter + limit interaction (regression: DynamoDB Limit applied pre-filter)
 ##############################################################################
 

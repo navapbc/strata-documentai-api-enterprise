@@ -3,6 +3,7 @@ import * as TenantContext from "../../utils/tenant-context.js";
 import * as Toast from "../../utils/toast.js";
 import { tpl } from "../../utils/tpl.js";
 import { h } from "../../utils/dom.js";
+import { isPresentationMode } from "../../../../shared/utils/presentation-mode.js";
 import html from "./usage.html";
 
 const tmpl = tpl(html);
@@ -104,8 +105,10 @@ function renderTable() {
   }
 
   _empty.classList.add("hidden");
-  _downloadBtn.disabled = false;
-  _downloadBtn.classList.remove("hidden");
+  if (!isPresentationMode()) {
+    _downloadBtn.disabled = false;
+    _downloadBtn.classList.remove("hidden");
+  }
 
   const columns =
     _currentGranularity === "daily"
@@ -131,13 +134,15 @@ function renderTable() {
   const tbody = h(
     "tbody",
     {},
-    ..._currentData.map((row) =>
-      h(
+    ..._currentData.map((row) => {
+      const displayRow =
+        isPresentationMode() && row.maskedTenantId ? { ...row, tenantId: row.maskedTenantId } : row;
+      return h(
         "tr",
         { className: row.partial ? "partial-row" : "" },
-        ...columns.map((col) => h("td", {}, formatCell(col.key, row[col.key]))),
-      ),
-    ),
+        ...columns.map((col) => h("td", {}, formatCell(col.key, displayRow[col.key]))),
+      );
+    }),
   );
 
   let tfoot = null;

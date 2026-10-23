@@ -15,6 +15,7 @@ class DocumentListItem(BaseApiResponse):
     matched_blueprint: str
     created_at: str
     processed_date: str
+    masked_tenant_id: str | None = None
 
 
 class DocumentListResponse(BaseApiResponse):
@@ -28,6 +29,7 @@ class DocumentDetail(BaseApiResponse):
     file_name: str
     tenant_id: str
     api_key_name: str
+    masked_tenant_id: str | None = None
     process_status: str
     document_category: str
     matched_blueprint: str

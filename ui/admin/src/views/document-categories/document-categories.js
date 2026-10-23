@@ -6,6 +6,7 @@ import { openModal, closeModal } from "../../utils/modal.js";
 import { h, iconBtn } from "../../utils/dom.js";
 import { tpl } from "../../utils/tpl.js";
 import { TableView } from "../../utils/table-view.js";
+import { isPresentationMode } from "../../../../shared/utils/presentation-mode.js";
 import html from "./document-categories.html";
 
 const tmpl = tpl(html);
@@ -36,7 +37,7 @@ export function mount(root) {
 
   _createBtn = h("button", { className: "btn-primary" }, "Create Category");
   _refreshBtn = h("button", { className: "btn-secondary" }, "Refresh");
-  Helpers.setViewActions(_createBtn, _refreshBtn);
+  Helpers.setViewActions(...(isPresentationMode() ? [] : [_createBtn]), _refreshBtn);
 
   _tableView = new TableView(
     root.querySelector("#categories-table"),
@@ -160,9 +161,10 @@ function renderRow(cat) {
   const statusEl = cat.isActive
     ? h("span", { className: "badge badge-success" }, "Active")
     : h("span", { className: "badge badge-neutral" }, "Inactive");
-  const editBtn = iconBtn("edit", "Edit");
-  const actionsWrapper = h("div", { className: "row-actions" }, editBtn);
-  if (cat.isActive) {
+  const presented = isPresentationMode();
+  const editBtn = !presented ? iconBtn("edit", "Edit") : null;
+  const actionsWrapper = h("div", { className: "row-actions" }, ...(editBtn ? [editBtn] : []));
+  if (cat.isActive && !presented) {
     const delBtn = iconBtn("discard", "Deactivate", "btn-icon-danger");
     delBtn.addEventListener("click", () => deactivate(cat));
     actionsWrapper.appendChild(delBtn);
@@ -170,7 +172,7 @@ function renderRow(cat) {
   const tr = h(
     "tr",
     null,
-    h("td", null, cat.tenantId || "-"),
+    h("td", null, cat.maskedTenantId ?? cat.tenantId ?? "-"),
     h("td", null, cat.categoryName),
     h("td", null, cat.displayName),
     h("td", null, cat.description || "-"),
@@ -185,7 +187,9 @@ function renderRow(cat) {
     h("td", null, statusEl),
     h("td", null, actionsWrapper),
   );
-  editBtn.addEventListener("click", () => openEditModal(cat));
+  if (editBtn) {
+    editBtn.addEventListener("click", () => openEditModal(cat));
+  }
   return tr;
 }
 

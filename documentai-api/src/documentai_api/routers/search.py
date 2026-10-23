@@ -5,11 +5,12 @@ from typing import Any
 from boto3.dynamodb.conditions import Attr
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from documentai_api.annotations import AdminClaims, PageLimit, verify_jwt_with_role
+from documentai_api.annotations import AdminClaims, PageLimit
 from documentai_api.config.constants import ApiVisualizationTag
 from documentai_api.logging import get_logger
 from documentai_api.models.admin_document import DocumentListItem, DocumentListResponse
 from documentai_api.schemas.document_metadata import DocumentMetadata
+from documentai_api.utils.auth import verify_jwt_with_role
 from documentai_api.utils.document_metadata_table import DocumentMetadataTable
 from documentai_api.utils.jwt_auth import tenant_scope
 from documentai_api.utils.pagination import decode_cursor, encode_cursor

@@ -86,17 +86,18 @@ deploy-demo-ui: ## Build demo UI and sync to S3 + invalidate CloudFront
 		--no-cli-pager && \
 	echo "Demo UI deployed."
 
-record-ui: ## Regenerate all UI walkthrough videos (webm + gif) - auto-discovers e2e-video/*.spec.js
+record-ui: ## Regenerate UI walkthrough videos. Optional: args=admin-walkthrough-presentation-mode
 record-ui: playwright-install
 	@which ffmpeg > /dev/null 2>&1 || (echo "Error: ffmpeg not found. Install with: brew install ffmpeg" && exit 1)
 	@for spec in ui/admin/e2e-video/*.spec.js ui/demo/e2e-video/*.spec.js; do \
 		[ -f "$$spec" ] || continue; \
 		stem=$$(basename "$$spec" .spec.js); \
+		[ -n "$(args)" ] && [ "$$stem" != "$(args)" ] && continue; \
 		echo "--- Recording $$stem ---"; \
 		rm -rf ui/admin/video-output ui/demo/video-output; \
 		dir=$$(dirname "$$spec"); \
 		root=$$(echo "$$dir" | sed 's|/e2e-video||'); \
-		( cd $$root && npm run record -- --grep "$$stem" ) || exit 1; \
+		( cd $$root && npm run record -- "e2e-video/$$stem.spec.js" ) || exit 1; \
 		webm=$$(ls $$root/video-output/*/video.webm 2>/dev/null | head -1); \
 		[ -n "$$webm" ] && ui/shared/scripts/webm-to-gif.sh "$$webm" "$(MEDIA_DIR)/$$stem.gif" || echo "Warning: no webm found for $$stem"; \
 	done

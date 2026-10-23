@@ -4,6 +4,9 @@
 // image AND the normalised bounding boxes, so overlay rects always land exactly
 // on the printed values.
 
+import { JOB_ID } from "./admin-data.js";
+export { JOB_ID };
+
 export const W = 850;
 export const H = 1100;
 
@@ -105,8 +108,6 @@ export const FIELDS = [
     vh: 30,
   },
 ];
-
-export const JOB_ID = "demo-w2-0001";
 
 function documentSvg() {
   const cells = FIELDS.map(

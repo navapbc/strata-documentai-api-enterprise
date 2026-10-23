@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { STORAGE_KEY, PRESENTATION_MODE_KEY } from "../../../shared/utils/session.js";
 import { buildToken } from "../factories.js";
 
 let LoginView, Auth, mockSession, token;
@@ -96,8 +97,14 @@ describe("login view", () => {
     };
     vi.doMock("../../src/services/auth.js", () => Auth);
 
-    mockSession = { save: vi.fn(), clear: vi.fn(), get: vi.fn() };
-    vi.doMock("../../src/utils/session.js", () => mockSession);
+    mockSession = {
+      save: vi.fn(),
+      clear: vi.fn(),
+      get: vi.fn(),
+      STORAGE_KEY,
+      PRESENTATION_MODE_KEY,
+    };
+    vi.doMock("../../../shared/utils/session.js", () => mockSession);
     vi.doMock("qrcode", () => ({ default: { toCanvas: vi.fn().mockResolvedValue(undefined) } }));
 
     LoginView = await import("../../src/views/login/login.js");

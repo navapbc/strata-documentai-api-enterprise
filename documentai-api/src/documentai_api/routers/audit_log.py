@@ -2,7 +2,12 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from documentai_api.annotations import AdminClaims, IsoDateParam, PageLimit, verify_jwt_with_role
+from documentai_api.annotations import (
+    AdminClaims,
+    IsoDateParam,
+    IsPresentationMode,
+    PageLimit,
+)
 from documentai_api.config.constants import ApiVisualizationTag
 from documentai_api.logging import get_logger
 from documentai_api.models.audit import (
@@ -18,8 +23,10 @@ from documentai_api.utils.audit_log import (
     query_by_tenant,
     record_to_item,
 )
+from documentai_api.utils.auth import verify_jwt_with_role
 from documentai_api.utils.jwt_auth import tenant_scope
 from documentai_api.utils.pagination import decode_cursor, encode_cursor
+from documentai_api.utils.presentation_mask import mask_email, mask_tenant
 
 logger = get_logger(__name__)
 
@@ -33,6 +40,7 @@ router = APIRouter(
 @router.get("/actors")
 async def get_audit_actors(
     claims: AdminClaims,
+    is_presentation_mode: IsPresentationMode,
     tenant_id: str | None = None,
 ) -> AuditActorsResponse:
     """Return distinct actor emails visible to the caller.
@@ -51,6 +59,9 @@ async def get_audit_actors(
     try:
         users = cognito_service.list_users(include_groups=False)
         actors = {u.email for u in users if u.email and (not tenant_id or u.tenant_id == tenant_id)}
+
+        if is_presentation_mode:
+            actors = {mask_email(a) for a in actors}
     except Exception as e:
         logger.error(f"Failed to list audit actors: {e}")
         raise HTTPException(
@@ -73,6 +84,7 @@ async def get_audit_actions() -> AuditActionsResponse:
 @router.get("")
 async def get_audit_log(
     claims: AdminClaims,
+    is_presentation_mode: IsPresentationMode,
     tenant_id: str | None = None,
     action: str | None = None,
     actor_email: str | None = None,
@@ -128,5 +140,12 @@ async def get_audit_log(
         ) from e
 
     items = [record_to_item(r) for r in records]
+
+    if is_presentation_mode:
+        for item in items:
+            item.actor_email = mask_email(item.actor_email)
+            if item.tenant_id and item.tenant_id != GLOBAL_TENANT:
+                item.masked_tenant_id = mask_tenant(item.tenant_id).id
     next_cursor = encode_cursor(last_key) if last_key else None
+
     return AuditLogResponse(events=items, count=len(items), next_cursor=next_cursor)
