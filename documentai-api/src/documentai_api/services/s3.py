@@ -7,10 +7,10 @@ from typing import IO, TYPE_CHECKING, Any
 
 from botocore.config import Config
 
-from documentai_api.config.constants import ConfigDefaults
+from documentai_api.constants.defaults import SystemDefaults
 from documentai_api.services.aws_client_factory import AWSClientFactory
 
-_PRESIGN_CONFIG = Config(signature_version=ConfigDefaults.PRESIGNED_URL_SIGNATURE_VERSION)
+_PRESIGN_CONFIG = Config(signature_version=SystemDefaults.PRESIGNED_URL_SIGNATURE_VERSION)
 
 if TYPE_CHECKING:
     from mypy_boto3_s3.type_defs import (

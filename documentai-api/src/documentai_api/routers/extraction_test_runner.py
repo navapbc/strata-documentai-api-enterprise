@@ -11,7 +11,8 @@ from fastapi import APIRouter, Depends, HTTPException, Response, UploadFile
 
 from documentai_api.annotations import AdminClaims, TenantIdField
 from documentai_api.classifiers.api_response import build_v1_api_response
-from documentai_api.config.constants import ApiVisualizationTag, ProcessStatus
+from documentai_api.constants.api import ApiVisualizationTag
+from documentai_api.constants.processing import ProcessStatus
 from documentai_api.logging import get_logger
 from documentai_api.models.base import BaseApiResponse
 from documentai_api.models.job_status import JobStatusResponse

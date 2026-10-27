@@ -7,11 +7,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 
 from documentai_api.annotations import AuthUserWithFallback, OutputFormat
-from documentai_api.config.constants import (
-    ApiVisualizationTag,
-    DictionaryBlueprintField,
-    OutputFormatType,
-)
+from documentai_api.constants.api import ApiVisualizationTag
+from documentai_api.constants.dictionary import DictionaryBlueprintField
+from documentai_api.constants.processing import OutputFormatType
 from documentai_api.logging import get_logger
 from documentai_api.models.dictionary import (
     DictionaryFieldsResponse,

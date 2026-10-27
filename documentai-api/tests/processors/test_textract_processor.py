@@ -1,6 +1,6 @@
 import pytest
 
-from documentai_api.config.constants import ExtractMethod
+from documentai_api.constants.processing import ExtractMethod
 from documentai_api.dtos.extraction import ExtractionResult
 from documentai_api.dtos.processing import ProcessorResult
 from documentai_api.processors.textract import process_textract_result

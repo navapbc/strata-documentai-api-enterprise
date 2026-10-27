@@ -1,8 +1,8 @@
 from datetime import UTC, datetime
 from typing import Any
 
-from documentai_api.config.constants import ConfigDefaults
 from documentai_api.config.env import get_env_config
+from documentai_api.constants.defaults import SystemDefaults
 from documentai_api.dtos.processing import PageMetadata
 from documentai_api.schemas.document_builds import DocumentBuilds
 from documentai_api.services import ddb as ddb_service
@@ -72,7 +72,7 @@ async def upsert_document_build_page(
         DocumentBuilds.PAGE_NUMBER: page_number,
         DocumentBuilds.S3_PATH: s3_path,
         DocumentBuilds.CREATED_AT: datetime.now(UTC).isoformat(),
-        DocumentBuilds.TIME_TO_LIVE: get_ttl_epoch_in_days(ConfigDefaults.DOCUMENT_BUILDS_TTL_DAYS),
+        DocumentBuilds.TIME_TO_LIVE: get_ttl_epoch_in_days(SystemDefaults.DOCUMENT_BUILDS_TTL_DAYS),
     }
 
     if original_file_name:
@@ -232,7 +232,7 @@ def create_document_build(
         DocumentBuilds.PAGE_NUMBER: _METADATA_PAGE_NUMBER,
         DocumentBuilds.CREATED_AT: datetime.now(UTC).isoformat(),
         DocumentBuilds.IS_BUILD_METADATA: True,
-        DocumentBuilds.TIME_TO_LIVE: get_ttl_epoch_in_days(ConfigDefaults.DOCUMENT_BUILDS_TTL_DAYS),
+        DocumentBuilds.TIME_TO_LIVE: get_ttl_epoch_in_days(SystemDefaults.DOCUMENT_BUILDS_TTL_DAYS),
     }
 
     if category:

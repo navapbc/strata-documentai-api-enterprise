@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 
-from documentai_api.config.constants import ConfigDefaults
+from documentai_api.constants.defaults import SystemDefaults
 from documentai_api.utils.bbox_detection import detect_document_bbox
 from tests.helpers.fixtures.paths import TEST_DOCS_DIR, TEST_DOCS_DIR_HAPPY_PATH
 
@@ -82,7 +82,7 @@ def test_detect_bbox_non_image_returns_none():
 def test_detect_bbox_downscales_oversized_image(monkeypatch):
     """Downscale, don't skip, an image over the Converse byte limit."""
     big = _make_image_bytes(2500, 2500, noise=True)
-    assert len(big) > int(ConfigDefaults.BEDROCK_CONVERSE_MAX_IMAGE_BYTES)
+    assert len(big) > int(SystemDefaults.BEDROCK_CONVERSE_MAX_IMAGE_BYTES)
 
     sent = {}
 
@@ -95,7 +95,7 @@ def test_detect_bbox_downscales_oversized_image(monkeypatch):
     result = detect_document_bbox(big, "image/png")
     assert result.bbox == (100.0, 200.0, 800.0, 900.0)
     sent_bytes = sent["image"]["source"]["bytes"]
-    assert len(sent_bytes) <= int(ConfigDefaults.BEDROCK_CONVERSE_MAX_IMAGE_BYTES)
+    assert len(sent_bytes) <= int(SystemDefaults.BEDROCK_CONVERSE_MAX_IMAGE_BYTES)
     assert sent["image"]["format"] == "jpeg"
 
 
@@ -107,7 +107,7 @@ def test_downscale_for_detection_caps_dimension():
 
     from documentai_api.utils.bbox_detection import _downscale_for_detection
 
-    max_dim = int(ConfigDefaults.BEDROCK_CONVERSE_MAX_IMAGE_DIMENSION_PX)
+    max_dim = int(SystemDefaults.BEDROCK_CONVERSE_MAX_IMAGE_DIMENSION_PX)
     wide = _make_image_bytes(max_dim + 500, 200)
 
     out_bytes, out_fmt = _downscale_for_detection(wide, "image/png")
@@ -129,7 +129,7 @@ def test_downscale_for_detection_returns_original_on_unreadable_bytes():
     """Best-effort: undecodable bytes fall back to the original."""
     from documentai_api.utils.bbox_detection import _downscale_for_detection
 
-    junk = b"\x89PNG" + b"\x00" * (int(ConfigDefaults.BEDROCK_CONVERSE_MAX_IMAGE_BYTES) + 1)
+    junk = b"\x89PNG" + b"\x00" * (int(SystemDefaults.BEDROCK_CONVERSE_MAX_IMAGE_BYTES) + 1)
     out_bytes, out_fmt = _downscale_for_detection(junk, "image/png")
     assert out_bytes is junk
     assert out_fmt == "png"
@@ -146,7 +146,7 @@ def test_detect_bbox_swallows_errors(monkeypatch):
 
 def test_get_bbox_model_id_uses_default(monkeypatch):
     """When no SSM param configured, returns the default bbox model ID."""
-    from documentai_api.config.constants import PreprocessingBoundingBoxDefault
+    from documentai_api.constants.defaults import PreprocessingBoundingBoxDefaults
     from documentai_api.utils.bbox_detection import _get_bbox_model_id
 
     monkeypatch.setattr(
@@ -154,7 +154,7 @@ def test_get_bbox_model_id_uses_default(monkeypatch):
         lambda: type("C", (), {"bedrock_bounding_box_model_id_param": None})(),
     )
 
-    assert _get_bbox_model_id() == PreprocessingBoundingBoxDefault.MODEL_ID
+    assert _get_bbox_model_id() == PreprocessingBoundingBoxDefaults.MODEL_ID
 
 
 def test_get_bbox_model_id_reads_ssm(monkeypatch):
@@ -291,7 +291,7 @@ def test_detect_document_bbox_oversized_real(monkeypatch, real_aws_credentials):
     buf = io.BytesIO()
     big.save(buf, format="PNG")
     image_bytes = buf.getvalue()
-    assert len(image_bytes) > int(ConfigDefaults.BEDROCK_CONVERSE_MAX_IMAGE_BYTES)
+    assert len(image_bytes) > int(SystemDefaults.BEDROCK_CONVERSE_MAX_IMAGE_BYTES)
 
     result = detect_document_bbox(image_bytes, "image/png")
     assert result.bbox is not None, f"{filename}: no bbox detected on oversized image"

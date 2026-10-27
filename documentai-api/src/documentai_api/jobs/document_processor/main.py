@@ -25,11 +25,11 @@ from documentai_api.classifiers.document_classification import (
     classify_as_no_custom_blueprint_matched,
     classify_as_not_implemented,
 )
-from documentai_api.config.constants import (
+from documentai_api.config.env import get_env_config
+from documentai_api.constants.processing import (
     ProcessStatus,
     S3MetadataKeys,
 )
-from documentai_api.config.env import get_env_config
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.dtos.processing import CropResult, OptimizationResult, PreExtractionResult
 from documentai_api.pipeline.document_lifecycle import (

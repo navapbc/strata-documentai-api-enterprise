@@ -10,13 +10,13 @@ from botocore.exceptions import ClientError
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from documentai_api.annotations import AdminClaims, IsPresentationMode, OutputFormat
-from documentai_api.config.constants import (
+from documentai_api.config.env import get_env_config
+from documentai_api.constants.metrics import (
     METRICS_USAGE_REPORT_DAILY_S3_PREFIX,
     METRICS_USAGE_REPORT_S3_PREFIX,
     MetricsGranularity,
-    OutputFormatType,
 )
-from documentai_api.config.env import get_env_config
+from documentai_api.constants.processing import OutputFormatType
 from documentai_api.dtos.usage_stats import UsageStats
 from documentai_api.logging import get_logger
 from documentai_api.models.usage import (

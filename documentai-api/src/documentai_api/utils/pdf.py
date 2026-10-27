@@ -5,13 +5,14 @@ import io
 from PIL import Image
 from pypdf import PdfReader, PdfWriter
 
-from documentai_api.config.constants import ConfigDefaults, FileValidation
+from documentai_api.constants.defaults import SystemDefaults
+from documentai_api.constants.file_validation import FileValidation
 from documentai_api.dtos.processing import PageMetadata
 from documentai_api.logging import get_logger
 from documentai_api.services import s3 as s3_service
 
 # Limit maximum image pixels to prevent pixel-flood DoS.
-Image.MAX_IMAGE_PIXELS = ConfigDefaults.MAX_IMAGE_PIXELS
+Image.MAX_IMAGE_PIXELS = SystemDefaults.MAX_IMAGE_PIXELS
 
 logger = get_logger(__name__)
 

@@ -5,7 +5,8 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from documentai_api.config.constants import ConfigDefaults, ProcessStatus
+from documentai_api.constants.defaults import SystemDefaults
+from documentai_api.constants.processing import ProcessStatus
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.jobs import JobStatus
 from tests.helpers.fixtures.claims import (
@@ -195,4 +196,4 @@ def test_post_sets_test_run_ttl(api_client, blank_pdf_bytes, mocker):
 
     record = mock_insert.call_args[0][0]
     assert record.is_test_run is True
-    assert record.ttl_days == ConfigDefaults.TEST_RUN_DOCUMENT_TTL_DAYS
+    assert record.ttl_days == SystemDefaults.TEST_RUN_DOCUMENT_TTL_DAYS

@@ -12,7 +12,7 @@ from typing import Any
 
 import pytest
 
-from documentai_api.config.constants import ConfigDefaults
+from documentai_api.constants.defaults import SystemDefaults
 from documentai_api.utils.preclassification import (
     _build_blueprint_prompt,
     find_matching_blueprint,
@@ -68,7 +68,7 @@ def test_skips_unsupported_content_type():
 
 
 def test_skips_oversized_image():
-    large_image = b"\x00" * (int(ConfigDefaults.BDA_MAX_IMAGE_SIZE_BYTES) + 1)
+    large_image = b"\x00" * (int(SystemDefaults.BDA_MAX_IMAGE_SIZE_BYTES) + 1)
 
     result = preclassify_document(large_image, "image/jpeg")
 
@@ -78,7 +78,7 @@ def test_skips_oversized_image():
 
 def test_pdf_not_subject_to_image_size_limit(monkeypatch):
     """PDFs bypass the image size check - BDA handles large PDFs natively."""
-    large_pdf = b"%PDF-1.4" + b"\x00" * (int(ConfigDefaults.BDA_MAX_IMAGE_SIZE_BYTES) + 1)
+    large_pdf = b"%PDF-1.4" + b"\x00" * (int(SystemDefaults.BDA_MAX_IMAGE_SIZE_BYTES) + 1)
     response = _mock_invoke_response(
         {
             "document_type": "tax_documents",
@@ -214,7 +214,7 @@ def test_empty_document_bytes(monkeypatch):
 
 
 def test_prompt_includes_category_match_placeholder():
-    from documentai_api.config.constants import PreClassificationDefaults
+    from documentai_api.constants.defaults import PreClassificationDefaults
 
     prompt = PreClassificationDefaults.PROMPT
     assert "category_match" in prompt
@@ -366,7 +366,7 @@ def test_has_multipage_inconsistency_defaults_to_false(monkeypatch):
 
 def test_get_model_id_uses_default(monkeypatch):
     """When no SSM param configured, returns the default model ID."""
-    from documentai_api.config.constants import PreClassificationDefaults
+    from documentai_api.constants.defaults import PreClassificationDefaults
     from documentai_api.utils.preclassification import _get_model_id
 
     monkeypatch.setattr(

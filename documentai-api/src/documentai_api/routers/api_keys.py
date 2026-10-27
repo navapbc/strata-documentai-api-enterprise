@@ -5,8 +5,8 @@ import hashlib
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from documentai_api.annotations import AdminClaims, IsPresentationMode
-from documentai_api.config.constants import ApiVisualizationTag
 from documentai_api.config.env import get_env_config
+from documentai_api.constants.api import ApiVisualizationTag
 from documentai_api.logging import get_logger
 from documentai_api.models.api_key import (
     ApiKeyItem,

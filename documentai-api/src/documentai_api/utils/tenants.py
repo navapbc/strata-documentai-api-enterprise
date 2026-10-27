@@ -17,13 +17,13 @@ def get_tenant(tenant_id: str) -> dict[str, Any] | None:
 
 def get_extraction_confidence_floor(tenant_id: str | None) -> float:
     """Get the extraction confidence floor for a tenant, falling back to global default."""
-    from documentai_api.config.constants import ConfigDefaults
+    from documentai_api.constants.defaults import SystemDefaults
 
     if tenant_id:
         record = _table.get(tenant_id)
         if record and TenantRecord.EXTRACTION_CONFIDENCE_FLOOR in record:
             return float(record[TenantRecord.EXTRACTION_CONFIDENCE_FLOOR])
-    return ConfigDefaults.FIELD_CONFIDENCE_THRESHOLD
+    return SystemDefaults.FIELD_CONFIDENCE_THRESHOLD
 
 
 def tenant_has_confidence_floor(tenant_id: str | None) -> bool:

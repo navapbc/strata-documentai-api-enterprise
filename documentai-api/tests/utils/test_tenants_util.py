@@ -6,7 +6,7 @@ from unittest.mock import patch
 import pytest
 from fastapi import HTTPException
 
-from documentai_api.config.constants import ConfigDefaults
+from documentai_api.constants.defaults import SystemDefaults
 from documentai_api.schemas.tenants import TenantRecord
 from documentai_api.utils import tenants as tenants_util
 from documentai_api.utils.auth import UserContext
@@ -153,21 +153,21 @@ def test_confidence_floor_falls_back_to_default_when_unset(tenants_table):
 
     assert (
         tenants_util.get_extraction_confidence_floor("test-tenant-id")
-        == ConfigDefaults.FIELD_CONFIDENCE_THRESHOLD
+        == SystemDefaults.FIELD_CONFIDENCE_THRESHOLD
     )
 
 
 def test_confidence_floor_falls_back_to_default_for_missing_tenant(tenants_table):
     assert (
         tenants_util.get_extraction_confidence_floor("missing")
-        == ConfigDefaults.FIELD_CONFIDENCE_THRESHOLD
+        == SystemDefaults.FIELD_CONFIDENCE_THRESHOLD
     )
 
 
 def test_confidence_floor_falls_back_to_default_for_none_tenant(tenants_table):
     assert (
         tenants_util.get_extraction_confidence_floor(None)
-        == ConfigDefaults.FIELD_CONFIDENCE_THRESHOLD
+        == SystemDefaults.FIELD_CONFIDENCE_THRESHOLD
     )
 
 

@@ -5,7 +5,10 @@ from typing import Any
 from botocore.exceptions import ClientError
 
 from documentai_api.classifiers.api_response import finalize_v1_response
-from documentai_api.config.constants import ExtractMethod, ProcessStatus
+from documentai_api.constants.processing import (
+    ExtractMethod,
+    ProcessStatus,
+)
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.dtos.ddb import UpdateDdbRecord
 from documentai_api.dtos.extraction import ExtractionResult

@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
-from documentai_api.config.constants import ConfigDefaults
+from documentai_api.constants.defaults import SystemDefaults
 from documentai_api.logging import get_logger
 from documentai_api.schemas.document_category import DocumentCategoriesTable, DocumentCategoryRecord
 from documentai_api.services.aws_client_factory import AWSClientFactory
@@ -29,7 +29,7 @@ def get_processing_percentage(tenant_id: str, category_name: str) -> float:
     record = get_category(tenant_id, category_name)
     value = float(record.get(DocumentCategoryRecord.PROCESSING_PERCENTAGE, 1.0)) if record else 1.0
     get_cache().add(
-        cache_key, value, ttl_minutes=ConfigDefaults.PROCESSING_PERCENTAGE_CACHE_TTL_MINUTES
+        cache_key, value, ttl_minutes=SystemDefaults.PROCESSING_PERCENTAGE_CACHE_TTL_MINUTES
     )
 
     return value

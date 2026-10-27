@@ -5,7 +5,10 @@ from typing import Any
 import pytest
 from freezegun import freeze_time
 
-from documentai_api.config.constants import ExtractMethod, ProcessStatus
+from documentai_api.constants.processing import (
+    ExtractMethod,
+    ProcessStatus,
+)
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.dtos.ddb import InitialDdbRecord, PreClassificationDdbFields, UpdateDdbRecord
 from documentai_api.dtos.processing import InternalApiResponse
@@ -538,7 +541,7 @@ def test_upsert_ddb_cold_start_true_persists(ddb_doc_metadata_table):
 @pytest.mark.parametrize("deletion_type", ["soft", "hard"])
 def test_mark_document_deleted(deletion_type, ddb_doc_metadata_table):
     """mark_document_deleted sets status=DELETED, deletionType, and updatedAt."""
-    from documentai_api.config.constants import DeletionType
+    from documentai_api.constants.processing import DeletionType
 
     ddb_doc_metadata_table.put_item(
         Item={

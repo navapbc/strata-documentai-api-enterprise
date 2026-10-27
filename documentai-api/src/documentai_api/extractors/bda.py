@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from documentai_api.config.constants import BdaResponseFields
+from documentai_api.constants.processing import BdaResponseFields
 from documentai_api.dtos.extraction import ExtractionResult
 from documentai_api.readers.bda import read_bda_output
 from documentai_api.utils.bda import MatchedBlueprintInfo

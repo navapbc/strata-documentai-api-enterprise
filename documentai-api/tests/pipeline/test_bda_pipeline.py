@@ -2,7 +2,7 @@
 
 import pytest
 
-from documentai_api.config.constants import ProcessStatus
+from documentai_api.constants.processing import ProcessStatus
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.dtos.extraction import ExtractionResult
 from documentai_api.dtos.processing import ProcessorResult

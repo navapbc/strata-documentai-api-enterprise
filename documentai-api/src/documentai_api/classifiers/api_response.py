@@ -3,7 +3,8 @@
 import json
 from typing import Any
 
-from documentai_api.config.constants import ProcessStatus, V1JobStatus
+from documentai_api.constants.api import V1JobStatus
+from documentai_api.constants.processing import ProcessStatus
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.logging import get_logger
 from documentai_api.readers.extraction import read_output

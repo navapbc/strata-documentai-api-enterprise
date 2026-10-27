@@ -3,7 +3,7 @@ from unittest.mock import patch
 import pytest
 
 from documentai_api.classifiers.document_classification import classify_extraction_result
-from documentai_api.config.constants import ProcessStatus
+from documentai_api.constants.processing import ProcessStatus
 from documentai_api.dtos.extraction import ExtractionResult
 from documentai_api.dtos.processing import ProcessorResult
 from documentai_api.processors import bda as bda_processor

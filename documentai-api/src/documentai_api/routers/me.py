@@ -3,7 +3,7 @@
 from fastapi import APIRouter
 
 from documentai_api.annotations import AuthMethod, AuthUserWithFallback
-from documentai_api.config.constants import ApiVisualizationTag
+from documentai_api.constants.api import ApiVisualizationTag
 from documentai_api.models.base import BaseApiResponse
 
 router = APIRouter(tags=[ApiVisualizationTag.IDENTITY])

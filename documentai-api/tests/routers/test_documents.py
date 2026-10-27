@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from documentai_api.config.constants import DeletionType
 from documentai_api.config.env_var_names_generated import EnvVarNames
+from documentai_api.constants.processing import DeletionType
 from documentai_api.models.job_status import JobStatusResponse
 from documentai_api.routers.documents import _APIGW_MAX_TIMEOUT_SECONDS
 from documentai_api.schemas.document_metadata import DocumentMetadata

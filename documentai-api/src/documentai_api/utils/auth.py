@@ -14,8 +14,8 @@ from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
-from documentai_api.config.constants import API_AUTH_KEY_HEADER_NAME
 from documentai_api.config.env import get_app_config, get_env_config
+from documentai_api.constants.api import ApiMetadata
 from documentai_api.logging import get_logger
 from documentai_api.schemas.api_key import ApiKeyRecord
 from documentai_api.services import ddb as ddb_service
@@ -32,7 +32,7 @@ from documentai_api.utils.jwt_auth import (
 
 logger = get_logger(__name__)
 
-api_key_header = APIKeyHeader(name=API_AUTH_KEY_HEADER_NAME, auto_error=False)
+api_key_header = APIKeyHeader(name=ApiMetadata.AUTH_KEY_HEADER_NAME, auto_error=False)
 _bearer_scheme = HTTPBearer(auto_error=False)
 
 

@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from documentai_api.config.constants import BdaResponseFields
+from documentai_api.constants.processing import BdaResponseFields
 from documentai_api.dtos.processing import ReaderResult
 from documentai_api.logging import get_logger
 from documentai_api.utils.bda import BdaFieldProcessingResult
@@ -11,13 +11,13 @@ logger = get_logger(__name__)
 
 
 def _get_missing_geometry_threshold() -> float:
-    from documentai_api.config.constants import ConfigDefaults
+    from documentai_api.constants.defaults import SystemDefaults
     from documentai_api.utils.ssm import is_missing_geo_included_with_missing_fields
 
     if not is_missing_geo_included_with_missing_fields():
         return 0.0
 
-    return ConfigDefaults.MISSING_GEOMETRY_CONFIDENCE_THRESHOLD
+    return SystemDefaults.MISSING_GEOMETRY_CONFIDENCE_THRESHOLD
 
 
 def _process_single_field(field_name: str, field_data: dict[str, Any]) -> BdaFieldProcessingResult:

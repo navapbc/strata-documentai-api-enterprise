@@ -30,15 +30,14 @@ from documentai_api.classifiers.document_classification import (
     classify_as_conversion_failed,
     classify_as_failed,
 )
-from documentai_api.config.constants import (
-    DEFAULT_DDB_ERROR_MESSAGE,
-    MAX_BATCH_SIZE,
-    ApiVisualizationTag,
+from documentai_api.config.env import get_env_config
+from documentai_api.constants.api import ApiVisualizationTag
+from documentai_api.constants.defaults import SystemDefaults
+from documentai_api.constants.processing import (
     BatchStatus,
     ProcessStatus,
     UploadMethod,
 )
-from documentai_api.config.env import get_env_config
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.logging import get_logger
 from documentai_api.models.batch import (
@@ -244,7 +243,9 @@ async def _execute_batch(
         )
         if get_batch(batch_id):
             update_batch_status(
-                batch_id, status=BatchStatus.FAILED, error_message=DEFAULT_DDB_ERROR_MESSAGE
+                batch_id,
+                status=BatchStatus.FAILED,
+                error_message=SystemDefaults.DEFAULT_DDB_ERROR_MESSAGE,
             )
         raise HTTPException(status_code=500, detail="Failed to upload batch") from e
 
@@ -274,10 +275,10 @@ async def upload_document_batch(
 
     if not files:
         raise HTTPException(status_code=400, detail="No files provided")
-    if len(files) > MAX_BATCH_SIZE:
+    if len(files) > SystemDefaults.MAX_BATCH_SIZE:
         raise HTTPException(
             status_code=400,
-            detail=f"Batch size exceeds maximum of {MAX_BATCH_SIZE} files",
+            detail=f"Batch size exceeds maximum of {SystemDefaults.MAX_BATCH_SIZE} files",
         )
 
     return await _execute_batch(

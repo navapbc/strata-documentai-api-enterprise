@@ -5,7 +5,10 @@ from typing import Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from documentai_api.config.constants import ExtractMethod, ProcessStatus
+from documentai_api.constants.processing import (
+    ExtractMethod,
+    ProcessStatus,
+)
 from documentai_api.dtos.classification import (
     BedrockClassificationResult,
     ClassificationData,

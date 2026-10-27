@@ -8,8 +8,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from documentai_api.annotations import AdminClaims, IsPresentationMode, PageLimit
 from documentai_api.classifiers.api_response import extract_field_values
-from documentai_api.config.constants import ApiVisualizationTag, ConfigDefaults, FileValidation
 from documentai_api.config.env import get_env_config
+from documentai_api.constants.api import ApiVisualizationTag
+from documentai_api.constants.defaults import SystemDefaults
+from documentai_api.constants.file_validation import FileValidation
 from documentai_api.logging import get_logger
 from documentai_api.models.admin_document import (
     DocumentDetail,
@@ -330,7 +332,7 @@ async def get_document_preview(
             bucket=bucket,
             key=object_key,
             content_type=content_type,
-            expiration=ConfigDefaults.PRESIGNED_PREVIEW_EXPIRY_SECONDS,
+            expiration=SystemDefaults.PRESIGNED_PREVIEW_EXPIRY_SECONDS,
         )
 
         log_event(
@@ -344,7 +346,7 @@ async def get_document_preview(
         return DocumentPreviewResponse(
             url=url,
             content_type=content_type,
-            expires_in=ConfigDefaults.PRESIGNED_PREVIEW_EXPIRY_SECONDS,
+            expires_in=SystemDefaults.PRESIGNED_PREVIEW_EXPIRY_SECONDS,
         )
 
     except HTTPException:

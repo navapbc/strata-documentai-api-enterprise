@@ -1,6 +1,6 @@
 """SSM Parameter Store helpers with caching."""
 
-from documentai_api.config.constants import FeatureFlags
+from documentai_api.constants.features import FeatureFlags
 from documentai_api.logging import get_logger
 from documentai_api.services import ssm as ssm_service
 from documentai_api.utils.cache import get_cache

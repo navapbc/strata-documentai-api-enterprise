@@ -8,11 +8,8 @@ from decimal import Decimal
 
 from PIL import Image
 
-from documentai_api.config.constants import (
-    ConfigDefaults,
-    PreprocessingBoundingBoxDefault,
-)
 from documentai_api.config.env import get_env_config
+from documentai_api.constants.defaults import PreprocessingBoundingBoxDefaults, SystemDefaults
 from documentai_api.dtos.processing import CropResult
 from documentai_api.logging import get_logger
 from documentai_api.services.bedrock import invoke_model
@@ -30,15 +27,15 @@ class BboxResult:
 def _get_bbox_model_id() -> str:
     param_name = get_env_config().bedrock_bounding_box_model_id_param
     if not param_name:
-        return PreprocessingBoundingBoxDefault.MODEL_ID
-    return get_parameter_value(param_name, default=PreprocessingBoundingBoxDefault.MODEL_ID)
+        return PreprocessingBoundingBoxDefaults.MODEL_ID
+    return get_parameter_value(param_name, default=PreprocessingBoundingBoxDefaults.MODEL_ID)
 
 
 def _parse_bbox(text: str) -> tuple[float, float, float, float] | None:
     """Extract a 4-number bounding box from the model's text response."""
     if re.search(r"bounding_box\"?\s*:\s*null", text):
         return None
-    match = PreprocessingBoundingBoxDefault.ARRAY_RE.search(text)
+    match = PreprocessingBoundingBoxDefaults.ARRAY_RE.search(text)
     if not match:
         return None
     return tuple(float(v) for v in match.groups())  # type: ignore[return-value]
@@ -51,8 +48,8 @@ def _downscale_for_detection(image_bytes: bytes, content_type: str) -> tuple[byt
     is on a normalized 0-1000 scale so it applies to the full-resolution original.
     """
     fmt = content_type.split("/")[1]
-    max_bytes = int(ConfigDefaults.BEDROCK_CONVERSE_MAX_IMAGE_BYTES)
-    max_dim = int(ConfigDefaults.BEDROCK_CONVERSE_MAX_IMAGE_DIMENSION_PX)
+    max_bytes = int(SystemDefaults.BEDROCK_CONVERSE_MAX_IMAGE_BYTES)
+    max_dim = int(SystemDefaults.BEDROCK_CONVERSE_MAX_IMAGE_DIMENSION_PX)
 
     try:
         img = Image.open(io.BytesIO(image_bytes))
@@ -103,7 +100,7 @@ def detect_document_bbox(image_bytes: bytes, content_type: str) -> BboxResult:
             "role": "user",
             "content": [
                 {"image": {"format": detection_format, "source": {"bytes": detection_bytes}}},
-                {"text": PreprocessingBoundingBoxDefault.PROMPT},
+                {"text": PreprocessingBoundingBoxDefaults.PROMPT},
             ],
         }
     ]

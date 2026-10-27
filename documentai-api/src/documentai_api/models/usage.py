@@ -2,7 +2,7 @@
 
 from pydantic import Field
 
-from documentai_api.config.constants import MetricsGranularity
+from documentai_api.constants.metrics import MetricsGranularity
 from documentai_api.models.base import BaseApiResponse
 
 # These fields mirror UsageStats (dtos/usage_stats.py) intentionally.

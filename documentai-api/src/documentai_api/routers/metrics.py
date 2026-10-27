@@ -6,8 +6,9 @@ from fastapi import APIRouter, HTTPException
 from fastapi.concurrency import run_in_threadpool
 
 from documentai_api.annotations import AuthUserWithFallback
-from documentai_api.config.constants import ApiVisualizationTag, MetricsGranularity
 from documentai_api.config.env import get_env_config
+from documentai_api.constants.api import ApiVisualizationTag
+from documentai_api.constants.metrics import MetricsGranularity
 from documentai_api.logging import get_logger
 from documentai_api.models.metrics import MetricsResponse
 from documentai_api.utils.auth import resolve_tenant_from_context

@@ -17,8 +17,8 @@ from typing import Any
 
 from opentelemetry import trace
 
-from documentai_api.config.constants import ConfigDefaults
 from documentai_api.config.env import get_env_config
+from documentai_api.constants.defaults import SystemDefaults
 from documentai_api.logging import get_logger
 from documentai_api.services.textract import get_words
 from documentai_api.utils.ssm import get_parameter_value
@@ -110,8 +110,8 @@ def _crop_quadrant(image_bytes: bytes, quadrant_name: str) -> tuple[bytes, str]:
 def _get_blur_quadrant_model_id() -> str:
     param_name = get_env_config().bedrock_blur_quadrant_model_id_param
     if not param_name:
-        return ConfigDefaults.BLUR_QUADRANT_MODEL_ID
-    return get_parameter_value(param_name, default=ConfigDefaults.BLUR_QUADRANT_MODEL_ID)
+        return SystemDefaults.BLUR_QUADRANT_MODEL_ID
+    return get_parameter_value(param_name, default=SystemDefaults.BLUR_QUADRANT_MODEL_ID)
 
 
 def _check_empty_quadrants_for_text(
@@ -269,10 +269,10 @@ def detect_blur(image_bytes: bytes, content_type: str | None = None) -> BlurResu
             is_blurry=False, blur_reason_text="Blur check not performed - document is not an image."
         )
 
-    confidence_floor = ConfigDefaults.BLUR_CONFIDENCE_FLOOR
-    min_word_count = ConfigDefaults.BLUR_MIN_WORD_COUNT
-    max_low_confidence_percent = ConfigDefaults.BLUR_LOW_CONFIDENCE_MAX_PERCENT
-    min_avg_confidence = ConfigDefaults.BLUR_QUADRANT_MIN_AVG_CONFIDENCE
+    confidence_floor = SystemDefaults.BLUR_CONFIDENCE_FLOOR
+    min_word_count = SystemDefaults.BLUR_MIN_WORD_COUNT
+    max_low_confidence_percent = SystemDefaults.BLUR_LOW_CONFIDENCE_MAX_PERCENT
+    min_avg_confidence = SystemDefaults.BLUR_QUADRANT_MIN_AVG_CONFIDENCE
 
     try:
         start = time.time()
@@ -310,7 +310,7 @@ def detect_blur(image_bytes: bytes, content_type: str | None = None) -> BlurResu
             empty_quadrant_names = [
                 name
                 for name, qwords in quadrants.items()
-                if len(qwords) == 0 and word_count >= ConfigDefaults.BLUR_TEXT_DENSE_MIN_WORDS
+                if len(qwords) == 0 and word_count >= SystemDefaults.BLUR_TEXT_DENSE_MIN_WORDS
             ]
             if empty_quadrant_names:
                 llm_results = _check_empty_quadrants_for_text(image_bytes, empty_quadrant_names)

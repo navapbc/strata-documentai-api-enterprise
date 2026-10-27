@@ -8,8 +8,8 @@ from zipfile import ZipFile
 import pytest
 from fastapi import HTTPException
 
-from documentai_api.config.constants import BatchStatus
 from documentai_api.config.env_var_names_generated import EnvVarNames
+from documentai_api.constants.processing import BatchStatus
 from documentai_api.schemas.document_batches import DocumentBatches
 from documentai_api.utils.batch_operations import get_batch, query_jobs_by_batch_id
 from documentai_api.utils.uploads import ImageConversionError
@@ -306,7 +306,7 @@ def test_batch_upload_returns_uuid_batch_id(api_client, pdf_file):
 
 def test_upload_document_batch_exceeds_max_size(api_client, monkeypatch):
     """Batch upload rejects > MAX_BATCH_SIZE files with 400."""
-    monkeypatch.setattr("documentai_api.routers.batch.MAX_BATCH_SIZE", 2)
+    monkeypatch.setattr("documentai_api.constants.defaults.SystemDefaults.MAX_BATCH_SIZE", 2)
 
     files = [
         ("files", ("file1.pdf", b"content1", "application/pdf")),

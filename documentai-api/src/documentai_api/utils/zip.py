@@ -4,18 +4,14 @@ import zipfile
 
 from fastapi import HTTPException, UploadFile
 
-from documentai_api.config.constants import (
-    MAX_BATCH_SIZE,
-    MAX_ZIP_DECOMPRESSION_RATIO,
-    MAX_ZIP_EXTRACTED_BYTES,
-)
+from documentai_api.constants.defaults import SystemDefaults
 from documentai_api.logging import get_logger
 
 logger = get_logger(__name__)
 
 
 async def extract_files_from_zip(
-    zip_file: UploadFile, max_files: int = MAX_BATCH_SIZE
+    zip_file: UploadFile, max_files: int = SystemDefaults.MAX_BATCH_SIZE
 ) -> list[UploadFile]:
     """Extract files from zip archive and return as UploadFile list.
 
@@ -46,12 +42,15 @@ async def extract_files_from_zip(
                 # entries and provides a fast pre-check before any decompression.
                 projected_total = total_extracted + file_info.file_size
 
-                if projected_total > MAX_ZIP_EXTRACTED_BYTES:
+                if projected_total > SystemDefaults.MAX_ZIP_EXTRACTED_BYTES:
                     raise HTTPException(
                         status_code=400,
                         detail="ZIP extracted size exceeds limit",
                     )
-                if zip_size > 0 and projected_total / zip_size > MAX_ZIP_DECOMPRESSION_RATIO:
+                if (
+                    zip_size > 0
+                    and projected_total / zip_size > SystemDefaults.MAX_ZIP_DECOMPRESSION_RATIO
+                ):
                     raise HTTPException(
                         status_code=400,
                         detail="ZIP decompression ratio exceeds limit",
@@ -61,13 +60,16 @@ async def extract_files_from_zip(
                 total_extracted += len(file_content)
 
                 # Re-check with actual decompressed size (guards against spoofed headers).
-                if total_extracted > MAX_ZIP_EXTRACTED_BYTES:
+                if total_extracted > SystemDefaults.MAX_ZIP_EXTRACTED_BYTES:
                     raise HTTPException(
                         status_code=400,
                         detail="ZIP extracted size exceeds limit",
                     )
 
-                if zip_size > 0 and total_extracted / zip_size > MAX_ZIP_DECOMPRESSION_RATIO:
+                if (
+                    zip_size > 0
+                    and total_extracted / zip_size > SystemDefaults.MAX_ZIP_DECOMPRESSION_RATIO
+                ):
                     raise HTTPException(
                         status_code=400,
                         detail="ZIP decompression ratio exceeds limit",

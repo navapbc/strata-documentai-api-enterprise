@@ -1,8 +1,9 @@
 from opentelemetry import trace
 
 import documentai_api.utils.documents as document_utils
-from documentai_api.config.constants import ConfigDefaults, ExtractMethod
 from documentai_api.config.env import get_env_config
+from documentai_api.constants.defaults import SystemDefaults
+from documentai_api.constants.processing import ExtractMethod
 from documentai_api.logging import get_logger
 from documentai_api.services import s3 as s3_service
 from documentai_api.services.aws_client_factory import AWSClientFactory
@@ -93,16 +94,16 @@ def invoke_bedrock_data_automation(
         file_bytes = s3_service.get_file_bytes(source_bucket_name, source_object_name)
         page_count = document_utils.get_page_count(file_bytes)
         pages_sent = (
-            min(page_count, int(ConfigDefaults.MAX_PAGES_PER_DOCUMENT)) if page_count else 1
+            min(page_count, int(SystemDefaults.MAX_PAGES_PER_DOCUMENT)) if page_count else 1
         )
 
-        if page_count and page_count > int(ConfigDefaults.MAX_PAGES_PER_DOCUMENT):
+        if page_count and page_count > int(SystemDefaults.MAX_PAGES_PER_DOCUMENT):
             logger.info(
-                f"{source_object_name} has {page_count} pages, truncating to {int(ConfigDefaults.MAX_PAGES_PER_DOCUMENT)}"
+                f"{source_object_name} has {page_count} pages, truncating to {int(SystemDefaults.MAX_PAGES_PER_DOCUMENT)}"
             )
 
             truncated_bytes = document_utils.truncate_to_pages(
-                file_bytes, max_pages=int(ConfigDefaults.MAX_PAGES_PER_DOCUMENT)
+                file_bytes, max_pages=int(SystemDefaults.MAX_PAGES_PER_DOCUMENT)
             )
 
             source_object_name = get_truncated_object_key(source_object_name)

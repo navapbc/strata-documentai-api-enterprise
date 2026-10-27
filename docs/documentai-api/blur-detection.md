@@ -30,7 +30,7 @@ Blur detection never blocks the pipeline on its own failure. If Textract or the 
 
 ## Thresholds
 
-All thresholds live in `ConfigDefaults` in `documentai_api/config/constants.py`. See that file for current values. The constants are:
+All thresholds live in `SystemDefaults` in `documentai_api/constants/defaults.py`. See that file for current values. The constants are:
 
 | Constant | Purpose |
 |----------|---------|

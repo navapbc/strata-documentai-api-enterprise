@@ -1,7 +1,7 @@
 """Tenant write quota enforcement via DDB atomic counters.
 
 Each item tracks the write count for a tenant on a given calendar day.
-Items are retained for 5 years (see ConfigDefaults.TENANT_REQUEST_COUNTS_TTL_DAYS)
+Items are retained for 5 years (see SystemDefaults.TENANT_REQUEST_COUNTS_TTL_DAYS)
 for historical trend analysis and capacity planning.
 Monthly totals are derived by summing daily items - no separate monthly counter needed.
 """
@@ -13,7 +13,7 @@ from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 from fastapi import HTTPException, status
 
-from documentai_api.config.constants import ConfigDefaults
+from documentai_api.constants.defaults import SystemDefaults
 from documentai_api.logging import get_logger
 from documentai_api.schemas.tenant_request_counts import (
     TenantRequestCountRecord,
@@ -65,7 +65,7 @@ def increment_and_check(tenant_id: str) -> None:
         },
         expression_values={
             ":one": Decimal(1),
-            ":ttl": get_ttl_epoch_in_days(ConfigDefaults.TENANT_REQUEST_COUNTS_TTL_DAYS),
+            ":ttl": get_ttl_epoch_in_days(SystemDefaults.TENANT_REQUEST_COUNTS_TTL_DAYS),
         },
         return_values="ALL_NEW",
     )

@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends
 
 from documentai_api.annotations import AuthUserWithFallback
-from documentai_api.config.constants import ApiVisualizationTag
+from documentai_api.constants.api import ApiVisualizationTag
 from documentai_api.logging import get_logger
 from documentai_api.models.auth_event import AuthEventRequest
 from documentai_api.schemas.audit_event import AuditAction, AuditTargetType

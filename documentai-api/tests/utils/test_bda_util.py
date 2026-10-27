@@ -1,6 +1,6 @@
 import pytest
 
-from documentai_api.config.constants import ProcessStatus
+from documentai_api.constants.processing import ProcessStatus
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils import bda as bda_util
 

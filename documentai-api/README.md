@@ -49,7 +49,7 @@ For the DynamoDB table structure behind the pipeline, see [data-model.md](../doc
 | PDF | 500 MB |
 | JPEG, PNG, TIFF | 5 MB |
 
-- PDFs > 5 pages are trimmed to first 5 (set by `MAX_PAGES_PER_DOCUMENT` in `config/constants.py`)
+- PDFs > 5 pages are trimmed to first 5 (set by `SystemDefaults.MAX_PAGES_PER_DOCUMENT` in `documentai_api/constants/defaults.py`)
 - Documents must not be password-protected
 - Minimum 50 characters of text content
 

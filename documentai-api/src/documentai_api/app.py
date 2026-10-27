@@ -9,12 +9,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from mangum import Mangum
 
-from documentai_api.config.constants import (
-    API_VERSION,
-    APIConfig,
-    FileValidation,
-)
 from documentai_api.config.env import get_app_config
+from documentai_api.constants.api import ApiMetadata
+from documentai_api.constants.file_validation import FileValidation
 from documentai_api.logging import get_logger
 from documentai_api.models.config import ConfigResponse, HealthResponse
 from documentai_api.routers.admin_documents import router as admin_documents_router
@@ -45,9 +42,9 @@ setup_otel()  # no-op unless OTEL_SDK_DISABLED=false; must run before app is cre
 logger = get_logger(__name__)
 
 app = FastAPI(
-    title=APIConfig.TITLE,
-    description=APIConfig.DESCRIPTION,
-    version=APIConfig.VERSION,
+    title=ApiMetadata.TITLE,
+    description=ApiMetadata.DESCRIPTION,
+    version=ApiMetadata.VERSION,
 )
 app.include_router(documents_router)
 app.include_router(batch_router)
@@ -160,7 +157,7 @@ def discover_endpoints(app: FastAPI) -> dict[str, str]:
 
 @app.get("/")
 def root() -> dict[str, Any]:
-    return {"message": APIConfig.TITLE, "status": "healthy"}
+    return {"message": ApiMetadata.TITLE, "status": "healthy"}
 
 
 @app.get("/health")
@@ -175,7 +172,7 @@ def get_config() -> ConfigResponse:
 
     return ConfigResponse(
         api_url=app_config.api_base_url,
-        version=API_VERSION,
+        version=ApiMetadata.VERSION,
         image_tag=app_config.image_tag,
         environment=app_config.environment,
         endpoints=endpoints,

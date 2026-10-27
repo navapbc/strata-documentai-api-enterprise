@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Any, Self
 
-from documentai_api.config.constants import ProcessStatus
+from documentai_api.constants.processing import ProcessStatus
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.dtos.extraction import ExtractionResult
 

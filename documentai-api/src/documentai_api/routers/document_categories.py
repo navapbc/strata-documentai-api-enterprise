@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from documentai_api.annotations import AdminClaims, IsPresentationMode
-from documentai_api.config.constants import ApiVisualizationTag
+from documentai_api.constants.api import ApiVisualizationTag
 from documentai_api.logging import get_logger
 from documentai_api.models.document_category import (
     CreateDocumentCategoryRequest,

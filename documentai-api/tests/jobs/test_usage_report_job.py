@@ -7,7 +7,7 @@ from unittest.mock import patch
 import pytest
 from moto import mock_aws
 
-from documentai_api.config.constants import METRICS_USAGE_REPORT_S3_PREFIX
+from documentai_api.constants.metrics import METRICS_USAGE_REPORT_S3_PREFIX
 from documentai_api.jobs.usage_report.handler import handler
 from documentai_api.jobs.usage_report.main import (
     _build_daily_usage_query,
@@ -216,7 +216,7 @@ def test_main_writes_to_s3(s3_client, s3_bucket, monkeypatch):
     assert report["tenants"][0]["total_records"] == 5  # 3 + 2
 
     # Verify daily S3 content
-    from documentai_api.config.constants import METRICS_USAGE_REPORT_DAILY_S3_PREFIX
+    from documentai_api.constants.metrics import METRICS_USAGE_REPORT_DAILY_S3_PREFIX
 
     obj = s3_client.get_object(
         Bucket="test-bucket",

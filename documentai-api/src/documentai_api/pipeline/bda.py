@@ -45,7 +45,7 @@ def _classify(result: ProcessorResult) -> dict[str, Any]:
             ) from e
 
     if result.status is not None and result.classification_data is not None:
-        from documentai_api.config.constants import ProcessStatus
+        from documentai_api.constants.processing import ProcessStatus
 
         if result.status == ProcessStatus.NO_CUSTOM_BLUEPRINT_MATCHED:
             return classify_as_no_custom_blueprint_matched(

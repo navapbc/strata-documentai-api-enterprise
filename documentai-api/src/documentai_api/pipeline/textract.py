@@ -1,7 +1,7 @@
 """Textract pipeline: calls extractor, processor, and classifier. Returns bool (handled)."""
 
 from documentai_api.classifiers.document_classification import classify_extraction_result
-from documentai_api.config.constants import ExtractMethod
+from documentai_api.constants.processing import ExtractMethod
 from documentai_api.extractors.textract import extract_textract_identity
 from documentai_api.logging import get_logger
 from documentai_api.processors.textract import process_textract_result

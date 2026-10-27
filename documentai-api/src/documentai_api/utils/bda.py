@@ -3,10 +3,8 @@ import uuid as uuid_mod
 from dataclasses import dataclass
 from typing import Any
 
-from documentai_api.config.constants import (
-    UUID_PATTERN,
-)
 from documentai_api.config.env import get_env_config
+from documentai_api.constants.defaults import SystemDefaults
 from documentai_api.logging import get_logger
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import ddb as ddb_service
@@ -93,7 +91,7 @@ def get_ddb_record_from_bda_output(
     Returns None if the invocation ID cannot be extracted or no record is found.
     """
     bda_output_s3_uri = f"s3://{output_bucket_name}/{output_object_key}"
-    uuid_matches = re.findall(UUID_PATTERN, bda_output_s3_uri)
+    uuid_matches = re.findall(SystemDefaults.UUID_PATTERN, bda_output_s3_uri)
     if not uuid_matches:
         return None
 

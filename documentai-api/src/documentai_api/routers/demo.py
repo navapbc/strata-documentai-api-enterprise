@@ -6,8 +6,9 @@ from boto3.dynamodb.conditions import Attr
 from fastapi import APIRouter, Depends, HTTPException, Response, UploadFile, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from documentai_api.config.constants import ConfigDefaults, FileValidation
 from documentai_api.config.env import get_env_config
+from documentai_api.constants.defaults import SystemDefaults
+from documentai_api.constants.file_validation import FileValidation
 from documentai_api.logging import get_logger
 from documentai_api.models.admin_document import (
     DocumentDetail,
@@ -183,12 +184,12 @@ async def get_demo_document_preview(
         bucket=bucket,
         key=object_key,
         content_type=content_type,
-        expiration=ConfigDefaults.PRESIGNED_PREVIEW_EXPIRY_SECONDS,
+        expiration=SystemDefaults.PRESIGNED_PREVIEW_EXPIRY_SECONDS,
     )
 
     logger.info("Demo preview generated", extra={"tenant_id": auth.tenant_id, "job_id": job_id})
     return DocumentPreviewResponse(
         url=url,
         content_type=content_type,
-        expires_in=ConfigDefaults.PRESIGNED_PREVIEW_EXPIRY_SECONDS,
+        expires_in=SystemDefaults.PRESIGNED_PREVIEW_EXPIRY_SECONDS,
     )
