@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from documentai_api.config.env_var_names_generated import EnvVarNames
+from documentai_api.generated.env_var_names_generated import EnvVarNames
 from documentai_api.schemas.audit_event import AuditAction, AuditTargetType
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from tests.helpers.fixtures.claims import (

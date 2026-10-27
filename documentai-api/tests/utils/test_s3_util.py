@@ -3,7 +3,7 @@
 import pytest
 
 from documentai_api.config.env import get_env_config
-from documentai_api.config.env_var_names_generated import EnvVarNames
+from documentai_api.generated.env_var_names_generated import EnvVarNames
 from documentai_api.utils import s3 as s3_util
 
 

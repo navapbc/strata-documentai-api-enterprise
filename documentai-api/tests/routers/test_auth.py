@@ -7,7 +7,7 @@ import pytest
 
 from documentai_api.app import app, iter_api_routes
 from documentai_api.config.env import get_app_config
-from documentai_api.config.env_var_names_generated import EnvVarNames
+from documentai_api.generated.env_var_names_generated import EnvVarNames
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils import auth as auth_util
 from documentai_api.utils.auth import (

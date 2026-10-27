@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from documentai_api.config.env_var_names_generated import EnvVarNames
+from documentai_api.generated.env_var_names_generated import EnvVarNames
 from tests.helpers.fixtures.claims import (
     SUPER_ADMIN_CLAIMS,
     TENANT_ADMIN_CLAIMS,

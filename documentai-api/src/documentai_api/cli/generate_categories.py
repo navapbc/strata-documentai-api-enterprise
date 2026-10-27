@@ -16,7 +16,7 @@ app = typer.Typer()
 _INFRA_DOCUMENT_TYPES = Path(__file__).resolve().parents[4] / "infra" / "document-types"
 _OUTPUT = (
     Path(__file__).resolve().parents[1]
-    / "config"
+    / "generated"
     / "constants_preclassification_category_generated.py"
 )
 

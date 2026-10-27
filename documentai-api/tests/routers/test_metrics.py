@@ -7,7 +7,7 @@ import pytest
 from botocore.exceptions import ClientError
 
 from documentai_api.app import app
-from documentai_api.config.env_var_names_generated import EnvVarNames
+from documentai_api.generated.env_var_names_generated import EnvVarNames
 from documentai_api.utils.auth import UserContext, get_user_context_with_fallback
 
 METRICS_URL = "/v1/metrics"

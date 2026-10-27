@@ -15,10 +15,10 @@ from pathlib import Path
 
 import pytest
 
-from documentai_api.config.constants_preclassification_category_generated import (
+from documentai_api.constants.features import FeatureFlags
+from documentai_api.generated.constants_preclassification_category_generated import (
     PreclassificationCategory,
 )
-from documentai_api.constants.features import FeatureFlags
 from documentai_api.schemas.document_metadata import DocumentMetadata
 
 TEST_DOCS_DIR = Path(__file__).parent.parent / "helpers" / "fixtures" / "test-documents"

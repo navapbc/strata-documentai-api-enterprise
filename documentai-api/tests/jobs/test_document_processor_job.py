@@ -8,17 +8,17 @@ import pytest
 from botocore.exceptions import ClientError
 from tenacity import RetryError
 
-from documentai_api.config.constants_preclassification_category_generated import (
-    PreclassificationCategory,
-)
 from documentai_api.config.env import get_env_config
-from documentai_api.config.env_var_names_generated import EnvVarNames
 from documentai_api.constants.processing import ProcessStatus
 from documentai_api.dtos.classification import (
     BedrockClassificationResult,
     PreclassificationMatchResult,
 )
 from documentai_api.dtos.processing import CropResult, OptimizationResult
+from documentai_api.generated.constants_preclassification_category_generated import (
+    PreclassificationCategory,
+)
+from documentai_api.generated.env_var_names_generated import EnvVarNames
 from documentai_api.jobs.document_processor.main import (
     _invoke_bda,
     _persist_optimization_metrics,

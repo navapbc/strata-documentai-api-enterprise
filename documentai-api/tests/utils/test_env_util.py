@@ -70,7 +70,7 @@ def test_is_hosted_env_true_in_lambda(monkeypatch):
 
 def test_get_bda_project_arns_builds_from_prefix_and_ids(monkeypatch):
     """Reconstructs full ARNs from BDA_PROJECT_ARN_PREFIX + BDA_PROJECT_ID_{CATEGORY}."""
-    from documentai_api.config.constants_preclassification_category_generated import (
+    from documentai_api.generated.constants_preclassification_category_generated import (
         PreclassificationCategory,
     )
 

@@ -172,7 +172,7 @@ def dev() -> int:
 
 
 def generate_categories() -> int:
-    """Regenerate constants_generated.py from infra/document-types folders."""
+    """Regenerate constants_preclassification_category_generated.py from infra/document-types folders."""
     return _uv("generate-categories")
 
 

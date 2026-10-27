@@ -8,8 +8,8 @@ import pytest
 from fastapi import HTTPException
 
 from documentai_api import app as app_module
-from documentai_api.config.env_var_names_generated import EnvVarNames
 from documentai_api.constants.processing import ProcessStatus
+from documentai_api.generated.env_var_names_generated import EnvVarNames
 from documentai_api.pipeline.jobs import poll_for_completion
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.jobs import JobStatus, get_job_status

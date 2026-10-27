@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from documentai_api.config.env_var_names_generated import EnvVarNames
+from documentai_api.generated.env_var_names_generated import EnvVarNames
 from documentai_api.utils import schemas
 from documentai_api.utils.schemas import DocumentSchema, SchemaField
 

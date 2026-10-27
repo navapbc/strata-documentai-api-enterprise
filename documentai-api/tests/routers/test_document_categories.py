@@ -4,7 +4,7 @@ import boto3
 import pytest
 from moto import mock_aws
 
-from documentai_api.config.env_var_names_generated import EnvVarNames
+from documentai_api.generated.env_var_names_generated import EnvVarNames
 from documentai_api.utils.document_categories import auto_register_category
 from tests.helpers.fixtures.claims import SUPER_ADMIN, TENANT_ADMIN, make_claims, override_jwt
 

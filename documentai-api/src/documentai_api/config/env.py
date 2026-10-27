@@ -6,7 +6,7 @@ from functools import lru_cache
 import boto3
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from documentai_api.config.env_var_names_generated import EnvVarNames
+from documentai_api.generated.env_var_names_generated import EnvVarNames
 
 
 class PydanticBaseEnvConfig(BaseSettings):
@@ -109,7 +109,7 @@ class EnvConfig(PydanticBaseEnvConfig):
         BDA_PROJECT_ID_{CATEGORY} - a local-dev convenience for testing against
         a single BDA project instead of standing up all per-category projects.
         """
-        from documentai_api.config.constants_preclassification_category_generated import (
+        from documentai_api.generated.constants_preclassification_category_generated import (
             PreclassificationCategory,
         )
 
