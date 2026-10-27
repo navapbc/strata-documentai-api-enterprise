@@ -11,7 +11,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from documentai_api.config.env import AppConfig, EnvConfig, get_app_config, get_env_config
-from documentai_api.config.env_var_names_generated import EnvVarNames
+from documentai_api.generated.env_var_names_generated import EnvVarNames
 from documentai_api.routers.demo import _resolve_demo_context
 from documentai_api.utils import auth as auth_util
 from documentai_api.utils.auth import (

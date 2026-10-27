@@ -15,7 +15,7 @@ from typing import Any
 
 import pytest
 
-from documentai_api.config.env_var_names_generated import EnvVarNames
+from documentai_api.generated.env_var_names_generated import EnvVarNames
 
 MANIFEST_PATH = Path(__file__).parent / "document_type_manifest.json"
 # tests/regression/conftest.py -> tests -> documentai-api -> repo root

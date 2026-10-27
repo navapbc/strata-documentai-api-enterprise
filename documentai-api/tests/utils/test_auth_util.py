@@ -9,7 +9,7 @@ from unittest.mock import call, patch
 import pytest
 from fastapi import HTTPException
 
-from documentai_api.config.env_var_names_generated import EnvVarNames
+from documentai_api.generated.env_var_names_generated import EnvVarNames
 from documentai_api.schemas.api_key import ApiKeyRecord
 from documentai_api.services import ddb as ddb_service
 from documentai_api.utils import auth as auth_util

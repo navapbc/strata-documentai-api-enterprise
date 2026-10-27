@@ -10,8 +10,8 @@ import pytest
 from fastapi import HTTPException, UploadFile
 from starlette.datastructures import Headers
 
-from documentai_api.config.env_var_names_generated import EnvVarNames
 from documentai_api.constants.processing import ExtractMethod
+from documentai_api.generated.env_var_names_generated import EnvVarNames
 from documentai_api.utils.s3 import (
     extract_s3_info_from_event,
     get_bucket_and_key,

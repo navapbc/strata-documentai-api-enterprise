@@ -3,8 +3,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from documentai_api.config.env import get_env_config
-from documentai_api.config.env_var_names_generated import EnvVarNames
 from documentai_api.constants.defaults import SystemDefaults
+from documentai_api.generated.env_var_names_generated import EnvVarNames
 from documentai_api.utils import bda_invoker as bda_invoker_util
 
 

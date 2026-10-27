@@ -146,7 +146,7 @@ jobs:
       - name: Fail if categories drifted from infra/document-types/
         if: needs.changes.outputs.relevant == 'true'
         run: |
-          git diff --exit-code src/documentai_api/config/constants_preclassification_category_generated.py \
+          git diff --exit-code src/documentai_api/generated/constants_preclassification_category_generated.py \
             || { echo "::error::constants_preclassification_category_generated.py is out of sync with infra/document-types/ - run 'make generate-categories' and commit."; exit 1; }
 
   env-names:
@@ -170,7 +170,7 @@ jobs:
       - name: Fail if env var names drifted from config
         if: needs.changes.outputs.relevant == 'true'
         run: |
-          git diff --exit-code src/documentai_api/config/env_var_names_generated.py \
+          git diff --exit-code src/documentai_api/generated/env_var_names_generated.py \
             || { echo "::error::env_var_names_generated.py is out of sync - run 'make generate-env-names' and commit."; exit 1; }
 
   blueprint-schemas:
