@@ -5,7 +5,8 @@ from datetime import UTC, datetime
 
 from opentelemetry import trace
 
-from documentai_api.config.constants import ExtractMethod, TextractConfig
+from documentai_api.constants.file_validation import TextractConfig
+from documentai_api.constants.processing import ExtractMethod
 from documentai_api.dtos.extraction import ExtractionResult
 from documentai_api.logging import get_logger
 from documentai_api.mappings import get_bda_field_map, get_document_class

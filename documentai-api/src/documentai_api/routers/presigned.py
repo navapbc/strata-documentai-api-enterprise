@@ -15,14 +15,14 @@ from documentai_api.annotations import (
     TraceId,
     UploadSourceField,
 )
-from documentai_api.config.constants import (
-    ApiVisualizationTag,
-    ConfigDefaults,
-    FileValidation,
+from documentai_api.config.env import get_app_config, get_env_config
+from documentai_api.constants.api import ApiVisualizationTag
+from documentai_api.constants.defaults import SystemDefaults
+from documentai_api.constants.file_validation import FileValidation
+from documentai_api.constants.processing import (
     ProcessStatus,
     UploadMethod,
 )
-from documentai_api.config.env import get_app_config, get_env_config
 from documentai_api.logging import get_logger
 from documentai_api.models.document_record import DocumentRecord
 from documentai_api.models.presigned import PresignedUploadResponse
@@ -37,7 +37,7 @@ logger = get_logger(__name__)
 
 router = APIRouter(dependencies=[Depends(get_user_context_from_api_key)])
 
-MAX_UPLOAD_SIZE_BYTES = ConfigDefaults.BDA_MAX_DOCUMENT_FILE_SIZE_BYTES
+MAX_UPLOAD_SIZE_BYTES = SystemDefaults.BDA_MAX_DOCUMENT_FILE_SIZE_BYTES
 MAX_FILENAME_LENGTH = 255
 
 

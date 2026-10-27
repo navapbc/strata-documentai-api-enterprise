@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from documentai_api.annotations import AuthUserWithFallback
-from documentai_api.config.constants import ApiVisualizationTag
+from documentai_api.constants.api import ApiVisualizationTag
 from documentai_api.logging import get_logger
 from documentai_api.models.extraction_rule import (
     ExtractionRuleDeleteResponse,

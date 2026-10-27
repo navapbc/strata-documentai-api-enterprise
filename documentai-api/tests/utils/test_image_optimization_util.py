@@ -6,7 +6,7 @@ from decimal import Decimal
 import pytest
 from PIL import Image
 
-from documentai_api.config.constants import ConfigDefaults
+from documentai_api.constants.defaults import SystemDefaults
 from documentai_api.dtos.processing import CropResult
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils.bbox_detection import BboxResult
@@ -98,15 +98,15 @@ def test_crop_to_bbox_invalid_bytes_raises():
 @pytest.mark.parametrize(
     ("content_type", "file_size", "expected"),
     [
-        ("image/jpeg", ConfigDefaults.BDA_MAX_IMAGE_SIZE_BYTES, False),
-        ("image/jpeg", int(ConfigDefaults.BDA_MAX_IMAGE_SIZE_BYTES) + 1, True),
-        ("image/png", ConfigDefaults.BDA_MAX_IMAGE_SIZE_BYTES, False),
-        ("image/png", int(ConfigDefaults.BDA_MAX_IMAGE_SIZE_BYTES) + 1, True),
-        ("application/pdf", ConfigDefaults.BDA_MAX_DOCUMENT_FILE_SIZE_BYTES, False),
-        ("application/pdf", int(ConfigDefaults.BDA_MAX_DOCUMENT_FILE_SIZE_BYTES) + 1, True),
-        ("image/tiff", ConfigDefaults.BDA_MAX_DOCUMENT_FILE_SIZE_BYTES, False),
-        ("image/tiff", int(ConfigDefaults.BDA_MAX_DOCUMENT_FILE_SIZE_BYTES) + 1, True),
-        ("unknown/type", int(ConfigDefaults.BDA_MAX_IMAGE_SIZE_BYTES) + 1, True),
+        ("image/jpeg", SystemDefaults.BDA_MAX_IMAGE_SIZE_BYTES, False),
+        ("image/jpeg", int(SystemDefaults.BDA_MAX_IMAGE_SIZE_BYTES) + 1, True),
+        ("image/png", SystemDefaults.BDA_MAX_IMAGE_SIZE_BYTES, False),
+        ("image/png", int(SystemDefaults.BDA_MAX_IMAGE_SIZE_BYTES) + 1, True),
+        ("application/pdf", SystemDefaults.BDA_MAX_DOCUMENT_FILE_SIZE_BYTES, False),
+        ("application/pdf", int(SystemDefaults.BDA_MAX_DOCUMENT_FILE_SIZE_BYTES) + 1, True),
+        ("image/tiff", SystemDefaults.BDA_MAX_DOCUMENT_FILE_SIZE_BYTES, False),
+        ("image/tiff", int(SystemDefaults.BDA_MAX_DOCUMENT_FILE_SIZE_BYTES) + 1, True),
+        ("unknown/type", int(SystemDefaults.BDA_MAX_IMAGE_SIZE_BYTES) + 1, True),
     ],
 )
 def test_is_file_too_large_for_bda(content_type, file_size, expected):
@@ -378,7 +378,7 @@ def test_optimize_too_large_after_conversion(s3_bucket, mocker):
     mocker.patch(f"{MODULE}.is_document_crop_enabled", return_value=False)
     mocker.patch(
         f"{MODULE}.convert_to_grayscale",
-        return_value=(b"x" * (ConfigDefaults.BDA_MAX_IMAGE_SIZE_BYTES + 1), "image/jpeg"),
+        return_value=(b"x" * (SystemDefaults.BDA_MAX_IMAGE_SIZE_BYTES + 1), "image/jpeg"),
     )
     s3_bucket.put_object(Key="a.jpg", Body=b"small", ContentType="image/jpeg")
 
@@ -389,13 +389,13 @@ def test_optimize_too_large_after_conversion(s3_bucket, mocker):
 
 
 def test_max_image_pixels_constant_is_sufficient_for_id_documents():
-    assert ConfigDefaults.MAX_IMAGE_PIXELS >= 48_000_000
+    assert SystemDefaults.MAX_IMAGE_PIXELS >= 48_000_000
 
 
 def test_max_image_pixels_set_on_pil():
     from PIL import Image
 
-    assert Image.MAX_IMAGE_PIXELS == ConfigDefaults.MAX_IMAGE_PIXELS
+    assert Image.MAX_IMAGE_PIXELS == SystemDefaults.MAX_IMAGE_PIXELS
 
 
 def test_oversized_image_raises_decompression_bomb():

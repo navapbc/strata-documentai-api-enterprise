@@ -5,7 +5,11 @@ from typing import Any
 from opentelemetry import trace
 from opentelemetry.propagate import extract as otel_extract
 
-from documentai_api.config.constants import BdaResponseFields, ConfigDefaults, ProcessStatus
+from documentai_api.constants.defaults import SystemDefaults
+from documentai_api.constants.processing import (
+    BdaResponseFields,
+    ProcessStatus,
+)
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.dtos.processing import ProcessorResult
 from documentai_api.extractors.bda import extract_bda_result
@@ -82,7 +86,7 @@ def _process_bda_result(
 
     text = get_text_from_standard_blueprint(bda_result_json)
     if text and len([c for c in text if c.isalnum()]) > int(
-        ConfigDefaults.BDA_DOCUMENT_DETECTION_MIN_CHAR_LENGTH
+        SystemDefaults.BDA_DOCUMENT_DETECTION_MIN_CHAR_LENGTH
     ):
         msg = "No matching custom blueprint found. Document detected, but not implemented."
         logger.info(msg)

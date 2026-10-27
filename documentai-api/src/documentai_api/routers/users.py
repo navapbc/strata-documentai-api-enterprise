@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from documentai_api.annotations import IsPresentationMode, SuperAdminClaims
-from documentai_api.config.constants import ApiVisualizationTag
+from documentai_api.constants.api import ApiVisualizationTag
 from documentai_api.logging import get_logger
 from documentai_api.models.user import ListUsersResponse
 from documentai_api.schemas.audit_event import AuditAction, AuditTargetType

@@ -9,7 +9,7 @@ from typing import Annotated, Any, Literal
 from fastapi import Depends, Form, Header, Query
 from pydantic import Field, StringConstraints
 
-from documentai_api.config.constants import (
+from documentai_api.constants.processing import (
     OutputFormatType,
     UploadSource,
 )

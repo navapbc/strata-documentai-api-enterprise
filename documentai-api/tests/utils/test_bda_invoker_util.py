@@ -2,9 +2,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from documentai_api.config.constants import ConfigDefaults
 from documentai_api.config.env import get_env_config
 from documentai_api.config.env_var_names_generated import EnvVarNames
+from documentai_api.constants.defaults import SystemDefaults
 from documentai_api.utils import bda_invoker as bda_invoker_util
 
 
@@ -80,9 +80,9 @@ def test_invoke_bedrock_data_automation_document_truncation():
         invocation_arn, project_arn, pages_sent, _ = result
         assert invocation_arn == bda_invocation_arn
         assert project_arn == "arn:aws:project"
-        assert pages_sent == int(ConfigDefaults.MAX_PAGES_PER_DOCUMENT)
+        assert pages_sent == int(SystemDefaults.MAX_PAGES_PER_DOCUMENT)
         mock_truncate.assert_called_once_with(
-            b"file_content", max_pages=int(ConfigDefaults.MAX_PAGES_PER_DOCUMENT)
+            b"file_content", max_pages=int(SystemDefaults.MAX_PAGES_PER_DOCUMENT)
         )
         mock_put_object.assert_called_once_with(
             bucket="test-bucket", key="test_truncated.pdf", body=b"truncated_content"

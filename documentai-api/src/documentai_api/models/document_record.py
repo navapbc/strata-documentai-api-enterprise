@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel
 
-from documentai_api.config.constants import ProcessStatus
+from documentai_api.constants.processing import ProcessStatus
 
 
 class DocumentRecord(BaseModel):

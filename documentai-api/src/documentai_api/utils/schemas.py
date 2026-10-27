@@ -7,8 +7,8 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from documentai_api.config.constants import DictionaryBlueprintField
 from documentai_api.config.env import get_env_config
+from documentai_api.constants.dictionary import DictionaryBlueprintField
 from documentai_api.logging import get_logger
 from documentai_api.services.bda import get_blueprint, get_data_automation_project
 

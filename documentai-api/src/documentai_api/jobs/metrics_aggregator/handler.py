@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta
 from typing import Any
 
-from documentai_api.config.constants import MetricsAggregatorTargetDate
+from documentai_api.constants.metrics import MetricsAggregatorTargetDate
 from documentai_api.jobs.metrics_aggregator.main import main
 from documentai_api.logging import get_logger, init
 from documentai_api.utils.lambda_error_handler import handle_lambda_errors

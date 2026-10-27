@@ -30,7 +30,7 @@ def test_extract_textract_identity_returns_none_early(mocker, content_type, flag
 
 
 def test_extract_textract_identity_returns_result_on_success(mocker):
-    from documentai_api.config.constants import ExtractMethod
+    from documentai_api.constants.processing import ExtractMethod
 
     mocker.patch(
         "documentai_api.extractors.textract.is_textract_identity_enabled",

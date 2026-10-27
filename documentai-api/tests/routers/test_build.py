@@ -9,7 +9,8 @@ from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from documentai_api.app import app
-from documentai_api.config.constants import MAX_PAGES_PER_BUILD, UploadMethod
+from documentai_api.constants.defaults import SystemDefaults
+from documentai_api.constants.processing import UploadMethod
 from documentai_api.dtos.processing import PageMetadata
 from documentai_api.models.job_status import JobStatusResponse
 from documentai_api.schemas.document_builds import DocumentBuilds
@@ -623,14 +624,14 @@ def test_upload_document_build_page_max_pages_cap(
             s3_key=f"builds/test-build-id/page-{i}.pdf",
             s3_bucket_name="test-bucket",
         )
-        for i in range(1, MAX_PAGES_PER_BUILD + 1)
+        for i in range(1, SystemDefaults.MAX_PAGES_PER_BUILD + 1)
     ]
 
     with patch(
         "documentai_api.routers.build.get_document_build_pages", return_value=existing_pages
     ):
         files = {"file": ("page.pdf", b"fake pdf", "application/pdf")}
-        data = _form(page_number=MAX_PAGES_PER_BUILD + 1)
+        data = _form(page_number=SystemDefaults.MAX_PAGES_PER_BUILD + 1)
         response = client.post("/v1/builds/test-build-id/pages", files=files, data=data)
 
     assert response.status_code == 400
@@ -644,7 +645,7 @@ def test_upload_document_build_pages_batch_max_pages_cap(
     # Cheap pre-check: more files than the cap
     files = [
         ("files", (f"page{i}.pdf", b"fake pdf", "application/pdf"))
-        for i in range(MAX_PAGES_PER_BUILD + 1)
+        for i in range(SystemDefaults.MAX_PAGES_PER_BUILD + 1)
     ]
     response = client.post("/v1/builds/test-build-id/pages/batch", files=files)
 

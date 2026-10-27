@@ -11,13 +11,13 @@ import time
 from collections import defaultdict
 from typing import Any
 
-from documentai_api.config.constants import (
+from documentai_api.config.env import get_env_config
+from documentai_api.constants.metrics import (
     ATHENA_QUERY_TIMEOUT_SECONDS,
     METRICS_USAGE_REPORT_DAILY_S3_PREFIX,
     METRICS_USAGE_REPORT_S3_PREFIX,
     AthenaQueryStatus,
 )
-from documentai_api.config.env import get_env_config
 from documentai_api.dtos.usage_stats import UsageStats
 from documentai_api.logging import get_logger
 from documentai_api.services.aws_client_factory import AWSClientFactory

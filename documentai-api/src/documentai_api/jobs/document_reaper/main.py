@@ -11,12 +11,12 @@ from typing import Any
 import boto3
 from botocore.exceptions import ClientError
 
-from documentai_api.config.constants import (
+from documentai_api.config.env import get_env_config
+from documentai_api.constants.defaults import SystemDefaults
+from documentai_api.constants.processing import (
     BdaJobStatus,
-    ConfigDefaults,
     ProcessStatus,
 )
-from documentai_api.config.env import get_env_config
 from documentai_api.logging import get_logger
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import cloudwatch as cloudwatch_service
@@ -60,7 +60,7 @@ def _query_stale_by_status(
 def _find_stale_records(table_name: str, index_name: str) -> list[dict[str, Any]]:
     """Query all non-terminal statuses in parallel for records older than the threshold."""
     cutoff = (
-        datetime.now(UTC) - timedelta(hours=ConfigDefaults.PROCESSING_REAPER_STALE_THRESHOLD_HOURS)
+        datetime.now(UTC) - timedelta(hours=SystemDefaults.PROCESSING_REAPER_STALE_THRESHOLD_HOURS)
     ).isoformat()
     table = AWSClientFactory.get_ddb_table(table_name)
 

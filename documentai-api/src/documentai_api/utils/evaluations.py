@@ -1,6 +1,6 @@
 """Evaluation statuses, keys, pipeline order, and skip reasons for the /evaluation endpoint."""
 
-from documentai_api.config.constants import ProcessStatus
+from documentai_api.constants.processing import ProcessStatus
 
 
 class EvaluationStatus:

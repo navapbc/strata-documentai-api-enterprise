@@ -3,7 +3,7 @@
 import json
 from unittest.mock import patch
 
-from documentai_api.config.constants import METRICS_RAW_DDB_DATA_S3_PREFIX
+from documentai_api.constants.metrics import METRICS_RAW_DDB_DATA_S3_PREFIX
 from documentai_api.jobs.metrics_processor.main import (
     convert_keys_to_snake_case,
     main,

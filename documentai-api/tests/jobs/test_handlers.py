@@ -4,8 +4,8 @@ from unittest.mock import patch
 
 import pytest
 
-from documentai_api.config.constants import ProcessStatus
 from documentai_api.config.env_var_names_generated import EnvVarNames
+from documentai_api.constants.processing import ProcessStatus
 from documentai_api.jobs.bda_result_processor.handler import handler as bda_result_handler
 from documentai_api.jobs.document_processor import handler as handler_mod
 from documentai_api.jobs.document_processor.handler import handler as document_processor_handler

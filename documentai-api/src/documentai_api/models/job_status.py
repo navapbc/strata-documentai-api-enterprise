@@ -2,7 +2,8 @@ from typing import Any, Self
 
 from pydantic import AwareDatetime, model_validator
 
-from documentai_api.config.constants import ProcessStatus, V1JobStatus
+from documentai_api.constants.api import V1JobStatus
+from documentai_api.constants.processing import ProcessStatus
 from documentai_api.models.base import BaseApiResponse
 from documentai_api.utils.response_builder import present_v1_response
 

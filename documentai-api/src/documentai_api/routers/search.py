@@ -6,7 +6,7 @@ from boto3.dynamodb.conditions import Attr
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from documentai_api.annotations import AdminClaims, PageLimit
-from documentai_api.config.constants import ApiVisualizationTag
+from documentai_api.constants.api import ApiVisualizationTag
 from documentai_api.logging import get_logger
 from documentai_api.models.admin_document import DocumentListItem, DocumentListResponse
 from documentai_api.schemas.document_metadata import DocumentMetadata

@@ -11,7 +11,7 @@ from documentai_api.annotations import (
     MonthParam,
     SuperAdminClaims,
 )
-from documentai_api.config.constants import ApiVisualizationTag
+from documentai_api.constants.api import ApiVisualizationTag
 from documentai_api.logging import get_logger
 from documentai_api.models.tenant import (
     CreateTenantRequest,

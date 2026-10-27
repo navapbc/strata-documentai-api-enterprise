@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from documentai_api.app import app
-from documentai_api.config.constants import ConfigDefaults
+from documentai_api.constants.defaults import SystemDefaults
 from documentai_api.routers.demo import _resolve_demo_context
 from documentai_api.schemas.document_metadata import DocumentMetadata
 
@@ -55,7 +55,7 @@ def test_demo_upload_sets_ttl(api_client, blank_pdf_bytes, mocker):
     api_client.post("/v1/demo/documents", files=files)
 
     record = mock_insert.call_args[0][0]
-    assert record.ttl_days == ConfigDefaults.DEMO_DOCUMENT_TTL_DAYS
+    assert record.ttl_days == SystemDefaults.DEMO_DOCUMENT_TTL_DAYS
 
 
 def test_demo_upload_does_not_increment_quota(api_client, blank_pdf_bytes, mocker):

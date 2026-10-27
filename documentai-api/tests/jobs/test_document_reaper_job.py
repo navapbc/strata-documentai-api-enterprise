@@ -5,7 +5,11 @@ from typing import Any, cast
 
 import pytest
 
-from documentai_api.config.constants import BatchStatus, BdaJobStatus, ProcessStatus
+from documentai_api.constants.processing import (
+    BatchStatus,
+    BdaJobStatus,
+    ProcessStatus,
+)
 from documentai_api.jobs.document_reaper.main import main
 from documentai_api.schemas.document_batches import DocumentBatches
 from documentai_api.schemas.document_metadata import DocumentMetadata

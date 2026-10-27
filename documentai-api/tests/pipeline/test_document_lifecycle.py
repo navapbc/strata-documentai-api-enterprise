@@ -4,7 +4,7 @@ from typing import Any
 import pytest
 from botocore.exceptions import ClientError
 
-from documentai_api.config.constants import ProcessStatus
+from documentai_api.constants.processing import ProcessStatus
 from documentai_api.dtos.classification import (
     BedrockClassificationResult,
     PreclassificationMatchResult,

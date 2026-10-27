@@ -6,7 +6,7 @@ from typing import Any
 
 from botocore.exceptions import ClientError
 
-from documentai_api.config.constants import (
+from documentai_api.constants.metrics import (
     METRICS_AGG_DDB_DAILY_S3_PREFIX,
     METRICS_AGG_DDB_MONTHLY_S3_PREFIX,
     MetricsGranularity,

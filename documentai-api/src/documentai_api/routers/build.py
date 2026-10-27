@@ -19,16 +19,15 @@ from fastapi import (
 
 from documentai_api.annotations import AuthUser, DocumentCategoryField, UploadSourceField
 from documentai_api.classifiers.document_classification import classify_as_ai_consent_declined
-from documentai_api.config.constants import (
-    MAX_PAGES_PER_BUILD,
-    ApiVisualizationTag,
-    ConfigDefaults,
+from documentai_api.config.env import get_env_config
+from documentai_api.constants.api import ApiVisualizationTag
+from documentai_api.constants.defaults import SystemDefaults
+from documentai_api.constants.file_validation import FileValidation
+from documentai_api.constants.processing import (
     DocumentBuildStatus,
-    FileValidation,
     ProcessStatus,
     UploadMethod,
 )
-from documentai_api.config.env import get_env_config
 from documentai_api.logging import get_logger
 from documentai_api.models.build import (
     BuildCreatedResponse,
@@ -68,7 +67,7 @@ logger = get_logger(__name__)
 
 router = APIRouter(dependencies=[Depends(get_user_context_from_api_key)])
 
-MAX_FILE_SIZE_BYTES = ConfigDefaults.BDA_MAX_DOCUMENT_FILE_SIZE_BYTES
+MAX_FILE_SIZE_BYTES = SystemDefaults.BDA_MAX_DOCUMENT_FILE_SIZE_BYTES
 
 
 async def add_page_to_build(
@@ -197,10 +196,10 @@ async def upload_document_build_page(
 
         pages = await asyncio.to_thread(get_document_build_pages, build_id)
 
-        if len(pages) >= MAX_PAGES_PER_BUILD:
+        if len(pages) >= SystemDefaults.MAX_PAGES_PER_BUILD:
             raise HTTPException(
                 status_code=400,
-                detail=f"Build exceeds maximum of {MAX_PAGES_PER_BUILD} pages",
+                detail=f"Build exceeds maximum of {SystemDefaults.MAX_PAGES_PER_BUILD} pages",
             )
 
         if page_number is None:
@@ -254,10 +253,10 @@ async def upload_document_build_pages_batch(
             trace_id = str(uuid.uuid4())
 
         # Cheap pre-check before reading/validating all files
-        if len(files) > MAX_PAGES_PER_BUILD:
+        if len(files) > SystemDefaults.MAX_PAGES_PER_BUILD:
             raise HTTPException(
                 status_code=400,
-                detail=f"Batch exceeds maximum of {MAX_PAGES_PER_BUILD} pages",
+                detail=f"Batch exceeds maximum of {SystemDefaults.MAX_PAGES_PER_BUILD} pages",
             )
 
         # Validate all files up front - cache content types to avoid double I/O
@@ -274,10 +273,10 @@ async def upload_document_build_pages_batch(
         existing_pages = await asyncio.to_thread(get_document_build_pages, build_id)
         next_page_number = max((p.page_number for p in existing_pages), default=0) + 1
 
-        if len(existing_pages) + len(files) > MAX_PAGES_PER_BUILD:
+        if len(existing_pages) + len(files) > SystemDefaults.MAX_PAGES_PER_BUILD:
             raise HTTPException(
                 status_code=400,
-                detail=f"Build would exceed maximum of {MAX_PAGES_PER_BUILD} pages",
+                detail=f"Build would exceed maximum of {SystemDefaults.MAX_PAGES_PER_BUILD} pages",
             )
 
         # Upload pages concurrently with bounded concurrency.

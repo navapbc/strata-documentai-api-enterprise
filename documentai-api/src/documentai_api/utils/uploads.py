@@ -11,12 +11,10 @@ from typing import Any, BinaryIO
 import filetype  # type: ignore[import-untyped]
 from fastapi import HTTPException, UploadFile
 
-from documentai_api.config.constants import (
-    MAX_UPLOAD_SIZE_BYTES,
-    FileValidation,
-    S3MetadataKeys,
-)
 from documentai_api.config.env import get_env_config
+from documentai_api.constants.defaults import SystemDefaults
+from documentai_api.constants.file_validation import FileValidation
+from documentai_api.constants.processing import S3MetadataKeys
 from documentai_api.logging import get_logger
 from documentai_api.services import s3 as s3_service
 from documentai_api.utils.document_categories import auto_register_category
@@ -38,7 +36,7 @@ HEADER_PROBE_BYTES = 4096
 # (see FileValidation.is_office_container_magic), so they need the full file. Cap
 # the read at one byte past the upload limit: enough to inspect any acceptable
 # file, while an oversized file is truncated here and rejected by the size gate.
-MAX_DETECT_BYTES = MAX_UPLOAD_SIZE_BYTES + 1
+MAX_DETECT_BYTES = SystemDefaults.MAX_UPLOAD_SIZE_BYTES + 1
 
 
 def _detect_ooxml_from_zip(data: bytes) -> str | None:
@@ -234,18 +232,18 @@ async def validate_upload(file: UploadFile) -> str:
 
     # Size check: use Content-Length if available, otherwise probe the stream
     if file.size is not None:
-        if file.size > MAX_UPLOAD_SIZE_BYTES:
+        if file.size > SystemDefaults.MAX_UPLOAD_SIZE_BYTES:
             raise HTTPException(
                 status_code=400,
-                detail=f"File too large ({file.size} bytes). Maximum is {MAX_UPLOAD_SIZE_BYTES} bytes.",
+                detail=f"File too large ({file.size} bytes). Maximum is {SystemDefaults.MAX_UPLOAD_SIZE_BYTES} bytes.",
             )
     else:
         # No Content-Length header - read one byte past the limit to detect oversized files
-        probe = await file.read(MAX_UPLOAD_SIZE_BYTES + 1)
-        if len(probe) > MAX_UPLOAD_SIZE_BYTES:
+        probe = await file.read(SystemDefaults.MAX_UPLOAD_SIZE_BYTES + 1)
+        if len(probe) > SystemDefaults.MAX_UPLOAD_SIZE_BYTES:
             raise HTTPException(
                 status_code=400,
-                detail=f"File too large. Maximum is {MAX_UPLOAD_SIZE_BYTES} bytes.",
+                detail=f"File too large. Maximum is {SystemDefaults.MAX_UPLOAD_SIZE_BYTES} bytes.",
             )
         await file.seek(0)
 

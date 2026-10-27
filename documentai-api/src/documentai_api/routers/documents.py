@@ -27,15 +27,14 @@ from documentai_api.annotations import (
 )
 from documentai_api.classifiers.api_response import build_v1_api_response
 from documentai_api.classifiers.document_classification import classify_as_ai_consent_declined
-from documentai_api.config.constants import (
-    MAX_SEARCH_JOB_IDS,
-    ApiVisualizationTag,
-    ConfigDefaults,
+from documentai_api.config.env import get_env_config
+from documentai_api.constants.api import ApiVisualizationTag
+from documentai_api.constants.defaults import SystemDefaults
+from documentai_api.constants.processing import (
     DeletionType,
     ProcessStatus,
     UploadMethod,
 )
-from documentai_api.config.env import get_env_config
 from documentai_api.logging import get_logger
 from documentai_api.models.document_record import DocumentRecord
 from documentai_api.models.job_status import (
@@ -145,9 +144,9 @@ async def upload_document(
             api_key_name=auth.api_key_name,
             is_demo=is_demo,
             is_test_run=is_test_run,
-            ttl_days=ConfigDefaults.DEMO_DOCUMENT_TTL_DAYS
+            ttl_days=SystemDefaults.DEMO_DOCUMENT_TTL_DAYS
             if is_demo
-            else ConfigDefaults.TEST_RUN_DOCUMENT_TTL_DAYS
+            else SystemDefaults.TEST_RUN_DOCUMENT_TTL_DAYS
             if is_test_run
             else None,
         )
@@ -429,10 +428,10 @@ async def search_documents(body: DocumentSearchRequest, auth: AuthUser) -> Docum
     """Search for multiple documents by job IDs."""
     if not body.job_ids:
         raise HTTPException(status_code=400, detail="job_ids must not be empty")
-    if len(body.job_ids) > MAX_SEARCH_JOB_IDS:
+    if len(body.job_ids) > SystemDefaults.MAX_SEARCH_JOB_IDS:
         raise HTTPException(
             status_code=400,
-            detail=f"Maximum of {MAX_SEARCH_JOB_IDS} job_ids per request",
+            detail=f"Maximum of {SystemDefaults.MAX_SEARCH_JOB_IDS} job_ids per request",
         )
 
     results: list[JobStatusResponse] = []

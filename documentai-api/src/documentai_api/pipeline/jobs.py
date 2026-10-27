@@ -6,7 +6,7 @@ from typing import Any
 
 from documentai_api.classifiers.api_response import build_v1_api_response
 from documentai_api.classifiers.document_classification import classify_as_failed
-from documentai_api.config.constants import ProcessStatus
+from documentai_api.constants.processing import ProcessStatus
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.logging import get_logger
 from documentai_api.models.job_status import JobStatusResponse

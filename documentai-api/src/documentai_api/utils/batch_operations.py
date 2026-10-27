@@ -3,11 +3,9 @@
 from datetime import UTC, datetime
 from typing import Any
 
-from documentai_api.config.constants import (
-    BatchStatus,
-    ConfigDefaults,
-)
 from documentai_api.config.env import get_env_config
+from documentai_api.constants.defaults import SystemDefaults
+from documentai_api.constants.processing import BatchStatus
 from documentai_api.logging import get_logger
 from documentai_api.schemas.document_batches import DocumentBatches
 from documentai_api.schemas.document_metadata import DocumentMetadata
@@ -36,7 +34,7 @@ def create_batch(
         DocumentBatches.CREATED_AT: created_at,
         # TTL from creation - batch records are short-lived tracking artifacts.
         DocumentBatches.TIME_TO_LIVE: get_ttl_epoch_in_days(
-            ConfigDefaults.DOCUMENT_BATCHES_TTL_DAYS
+            SystemDefaults.DOCUMENT_BATCHES_TTL_DAYS
         ),
     }
 
@@ -157,7 +155,7 @@ def increment_resolved_count(batch_id: str) -> None:
         # Re-query jobs to get accurate failed count rather than tracking it
         # incrementally (avoids counter drift from retries or reaper overlap).
         jobs = query_jobs_by_batch_id(batch_id)
-        from documentai_api.config.constants import ProcessStatus
+        from documentai_api.constants.processing import ProcessStatus
 
         failed_count = sum(
             1

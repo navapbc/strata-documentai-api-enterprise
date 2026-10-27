@@ -11,7 +11,8 @@ from decimal import Decimal
 
 from PIL import Image
 
-from documentai_api.config.constants import ConfigDefaults, FileValidation
+from documentai_api.constants.defaults import SystemDefaults
+from documentai_api.constants.file_validation import FileValidation
 from documentai_api.dtos.processing import CropResult, OptimizationResult
 from documentai_api.logging import get_logger
 from documentai_api.services import s3 as s3_service
@@ -19,7 +20,7 @@ from documentai_api.utils.bbox_detection import BboxResult, detect_document_bbox
 from documentai_api.utils.ssm import is_document_crop_enabled
 
 # Limit maximum image pixels to prevent pixel-flood DoS.
-Image.MAX_IMAGE_PIXELS = ConfigDefaults.MAX_IMAGE_PIXELS
+Image.MAX_IMAGE_PIXELS = SystemDefaults.MAX_IMAGE_PIXELS
 
 logger = get_logger(__name__)
 
@@ -103,12 +104,12 @@ def crop_image_to_bbox(
 def is_file_too_large_for_bda(content_type: str, file_size_bytes: int) -> bool:
     """Check if file exceeds BDA size limits based on content type."""
     if content_type in ["image/jpeg", "image/png"]:
-        return int(file_size_bytes) > int(ConfigDefaults.BDA_MAX_IMAGE_SIZE_BYTES)
+        return int(file_size_bytes) > int(SystemDefaults.BDA_MAX_IMAGE_SIZE_BYTES)
     elif content_type in ["application/pdf", "image/tiff"]:
-        return int(file_size_bytes) > int(ConfigDefaults.BDA_MAX_DOCUMENT_FILE_SIZE_BYTES)
+        return int(file_size_bytes) > int(SystemDefaults.BDA_MAX_DOCUMENT_FILE_SIZE_BYTES)
     else:
         # unknown file type, assume document limit
-        return int(file_size_bytes) > int(ConfigDefaults.BDA_MAX_IMAGE_SIZE_BYTES)
+        return int(file_size_bytes) > int(SystemDefaults.BDA_MAX_IMAGE_SIZE_BYTES)
 
 
 def convert_to_grayscale(
@@ -127,7 +128,7 @@ def convert_to_grayscale(
         gray.save(jpeg_output, format="JPEG", quality=100)
         jpeg_bytes = jpeg_output.getvalue()
 
-        if len(jpeg_bytes) > int(ConfigDefaults.BDA_MAX_IMAGE_SIZE_BYTES):
+        if len(jpeg_bytes) > int(SystemDefaults.BDA_MAX_IMAGE_SIZE_BYTES):
             logger.info(f"{object_key} too large for BDA, converting to PDF")
             pdf_output = io.BytesIO()
             gray.save(pdf_output, format="PDF")

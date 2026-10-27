@@ -7,7 +7,10 @@ from unittest.mock import MagicMock, patch
 import pytest
 from botocore.exceptions import ClientError
 
-from documentai_api.config.constants import MetricsGranularity, TimingMetrics
+from documentai_api.constants.metrics import (
+    MetricsGranularity,
+    TimingMetrics,
+)
 from documentai_api.utils.metrics import _map_response_codes, build_summary, get_aggregated_metrics
 
 

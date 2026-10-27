@@ -97,9 +97,10 @@ async def test_extract_files_from_zip_empty():
 
 @pytest.mark.asyncio
 async def test_zip_bomb_rejected_by_pre_check(monkeypatch):
-    from documentai_api.utils import zip as zip_util
 
-    monkeypatch.setattr(zip_util, "MAX_ZIP_EXTRACTED_BYTES", 100)
+    monkeypatch.setattr(
+        "documentai_api.constants.defaults.SystemDefaults.MAX_ZIP_EXTRACTED_BYTES", 100
+    )
 
     zip_buffer = BytesIO()
     with ZipFile(zip_buffer, "w", compression=ZIP_DEFLATED) as zf:
@@ -112,9 +113,10 @@ async def test_zip_bomb_rejected_by_pre_check(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_zip_high_ratio_rejected(monkeypatch):
-    from documentai_api.utils import zip as zip_util
 
-    monkeypatch.setattr(zip_util, "MAX_ZIP_DECOMPRESSION_RATIO", 2)
+    monkeypatch.setattr(
+        "documentai_api.constants.defaults.SystemDefaults.MAX_ZIP_DECOMPRESSION_RATIO", 2
+    )
 
     zip_buffer = BytesIO()
     with ZipFile(zip_buffer, "w", compression=ZIP_DEFLATED) as zf:

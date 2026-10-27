@@ -3,7 +3,7 @@
 import json
 from typing import Any
 
-from documentai_api.config.constants import ExtractMethod
+from documentai_api.constants.processing import ExtractMethod
 from documentai_api.dtos.processing import ReaderResult
 from documentai_api.readers.bda import read_bda_output
 from documentai_api.readers.textract import read_textract_output

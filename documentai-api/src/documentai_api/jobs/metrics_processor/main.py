@@ -10,7 +10,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from documentai_api.config.constants import METRICS_RAW_DDB_DATA_S3_PREFIX
+from documentai_api.constants.metrics import METRICS_RAW_DDB_DATA_S3_PREFIX
 from documentai_api.logging import get_logger
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import s3 as s3_service

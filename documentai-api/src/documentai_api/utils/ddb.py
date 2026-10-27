@@ -5,13 +5,13 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from documentai_api.config.constants import (
-    ConfigDefaults,
+from documentai_api.config.env import get_env_config
+from documentai_api.constants.defaults import SystemDefaults
+from documentai_api.constants.processing import (
     DeletionType,
     ExtractMethod,
     ProcessStatus,
 )
-from documentai_api.config.env import get_env_config
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.dtos.ddb import InitialDdbRecord, UpdateDdbRecord
 from documentai_api.dtos.processing import InternalApiResponse, ProcessingTimes
@@ -209,7 +209,7 @@ def _build_update_expression(
 
         bda_region = (
             extract_region_from_bda_arn(bda_invocation_arn)
-            or ConfigDefaults.BDA_REGION_NOT_AVAILABLE
+            or SystemDefaults.BDA_REGION_NOT_AVAILABLE
         )
 
         bda_invocation_id = bda_invocation_arn.split("/")[
@@ -536,7 +536,7 @@ def upsert_ddb(data: InitialDdbRecord) -> None:
             ":blurLlm": bool(data.blur_llm_checked),
             ":aiConsent": bool(data.ai_consent_flag),
             ":ttl": get_ttl_epoch_in_days(
-                data.ttl_days or ConfigDefaults.DOCUMENT_METADATA_TTL_DAYS
+                data.ttl_days or SystemDefaults.DOCUMENT_METADATA_TTL_DAYS
             ),
         }
 

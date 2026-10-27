@@ -8,11 +8,11 @@ from typing import Any
 from opentelemetry import trace
 from pydantic import BaseModel, ConfigDict, ValidationError
 
-from documentai_api.config.constants import (
-    ConfigDefaults,
-    PreClassificationDefaults,
-)
 from documentai_api.config.env import get_env_config
+from documentai_api.constants.defaults import (
+    PreClassificationDefaults,
+    SystemDefaults,
+)
 from documentai_api.dtos.classification import (
     BedrockClassificationResult,
     PreclassificationMatchResult,
@@ -89,7 +89,7 @@ def preclassify_document(
         )
 
     if content_type.startswith("image/") and len(document_bytes) > int(
-        ConfigDefaults.BDA_MAX_IMAGE_SIZE_BYTES
+        SystemDefaults.BDA_MAX_IMAGE_SIZE_BYTES
     ):
         logger.info("Image exceeds 5MB, skipping classification")
         return BedrockClassificationResult(

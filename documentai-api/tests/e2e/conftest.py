@@ -378,8 +378,8 @@ def _ensure_multipage_flagging_enabled(monkeypatch_session):
     after the session. Ensures the 401 multipage test is not sensitive to
     whatever the flag is set to in the target environment.
     """
-    from documentai_api.config.constants import FeatureFlags
     from documentai_api.config.env import get_env_config
+    from documentai_api.constants.features import FeatureFlags
     from documentai_api.services import ssm as ssm_service
     from documentai_api.utils.cache import get_cache
 

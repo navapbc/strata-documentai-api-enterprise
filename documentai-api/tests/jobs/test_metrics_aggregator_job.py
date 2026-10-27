@@ -9,7 +9,7 @@ import pytest
 from botocore.exceptions import ClientError
 from moto import mock_aws
 
-from documentai_api.config.constants import (
+from documentai_api.constants.metrics import (
     METRICS_AGG_DDB_DAILY_S3_PREFIX,
     METRICS_AGG_DDB_MONTHLY_S3_PREFIX,
 )

@@ -2,7 +2,8 @@
 
 import io
 
-from documentai_api.config.constants import ConfigDefaults, FileValidation
+from documentai_api.constants.defaults import SystemDefaults
+from documentai_api.constants.file_validation import FileValidation
 from documentai_api.logging import get_logger
 
 logger = get_logger(__name__)
@@ -132,7 +133,7 @@ def _truncate_tiff(file_bytes: bytes, max_pages: int) -> bytes:
 
 
 def truncate_to_pages(
-    file_bytes: bytes, max_pages: int = int(ConfigDefaults.MAX_PAGES_PER_DOCUMENT)
+    file_bytes: bytes, max_pages: int = int(SystemDefaults.MAX_PAGES_PER_DOCUMENT)
 ) -> bytes:
     file_type = detect_file_type(file_bytes)
 

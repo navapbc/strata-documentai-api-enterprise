@@ -4,7 +4,10 @@ from typing import Any
 import pytest
 
 from documentai_api.classifiers import api_response as api_response_util
-from documentai_api.config.constants import BdaResponseFields, ProcessStatus
+from documentai_api.constants.processing import (
+    BdaResponseFields,
+    ProcessStatus,
+)
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.response_codes import ResponseCodes
@@ -694,7 +697,10 @@ def test_build_v1_api_response_extraction_rules_match_nested_fields(
     import json
     from datetime import UTC, datetime
 
-    from documentai_api.config.constants import BdaResponseFields, ProcessStatus
+    from documentai_api.constants.processing import (
+        BdaResponseFields,
+        ProcessStatus,
+    )
     from documentai_api.utils.response_builder import present_v1_response
 
     year = datetime.now().year

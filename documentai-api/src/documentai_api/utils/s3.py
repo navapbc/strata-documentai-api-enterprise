@@ -2,8 +2,8 @@ import os
 from typing import Any
 from urllib.parse import quote, unquote_plus
 
-from documentai_api.config.constants import ExtractMethod
 from documentai_api.config.env import get_env_config
+from documentai_api.constants.processing import ExtractMethod
 from documentai_api.services import s3 as s3_service
 
 

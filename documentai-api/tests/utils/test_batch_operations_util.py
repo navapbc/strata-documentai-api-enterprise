@@ -2,7 +2,10 @@ from datetime import UTC, datetime
 
 import pytest
 
-from documentai_api.config.constants import BatchStatus, ProcessStatus
+from documentai_api.constants.processing import (
+    BatchStatus,
+    ProcessStatus,
+)
 from documentai_api.dtos.ddb import InitialDdbRecord
 from documentai_api.utils import batch_operations as batch_util
 from documentai_api.utils import ddb as ddb_util

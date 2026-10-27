@@ -12,17 +12,17 @@ from typing import Any
 
 from botocore.exceptions import ClientError
 
-from documentai_api.config.constants import (
+from documentai_api.config.env import get_env_config
+from documentai_api.constants.file_validation import FileValidation
+from documentai_api.constants.metrics import (
     ATHENA_QUERY_TIMEOUT_SECONDS,
     METRICS_AGG_DDB_DAILY_S3_PREFIX,
     METRICS_AGG_DDB_MONTHLY_S3_PREFIX,
     AthenaQueryStatus,
-    ExtractMethod,
-    FileValidation,
     MetricsDisplayValues,
     TimingMetrics,
 )
-from documentai_api.config.env import get_env_config
+from documentai_api.constants.processing import ExtractMethod
 from documentai_api.logging import get_logger
 from documentai_api.services.aws_client_factory import AWSClientFactory
 from documentai_api.utils.dates import validate_yyyymmdd_format

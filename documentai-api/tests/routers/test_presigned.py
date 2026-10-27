@@ -4,7 +4,10 @@ import uuid
 
 import pytest
 
-from documentai_api.config.constants import ProcessStatus, UploadMethod
+from documentai_api.constants.processing import (
+    ProcessStatus,
+    UploadMethod,
+)
 
 
 @pytest.fixture(autouse=True)

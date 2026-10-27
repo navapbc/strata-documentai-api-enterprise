@@ -1,0 +1,9 @@
+# Submodules:
+#   documentai_api.constants.api
+#   documentai_api.constants.defaults
+#   documentai_api.constants.dictionary
+#   documentai_api.constants.features
+#   documentai_api.constants.file_validation
+#   documentai_api.constants.limits
+#   documentai_api.constants.metrics
+#   documentai_api.constants.processing

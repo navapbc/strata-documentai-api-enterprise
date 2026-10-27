@@ -3,7 +3,10 @@
 import pytest
 
 from documentai_api.classifiers import document_classification as classification_util
-from documentai_api.config.constants import ExtractMethod, ProcessStatus
+from documentai_api.constants.processing import (
+    ExtractMethod,
+    ProcessStatus,
+)
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.dtos.ddb import UpdateDdbRecord
 from documentai_api.dtos.processing import InternalApiResponse

@@ -11,11 +11,9 @@ from opentelemetry.propagate import inject
 
 import documentai_api.utils.documents as document_utils
 from documentai_api.classifiers.api_response import finalize_v1_response
-from documentai_api.config.constants import (
-    FileValidation,
-    ProcessStatus,
-)
 from documentai_api.config.env import get_env_config
+from documentai_api.constants.file_validation import FileValidation
+from documentai_api.constants.processing import ProcessStatus
 from documentai_api.dtos.classification import PreclassificationMatchResult
 from documentai_api.dtos.ddb import InitialDdbRecord, PreClassificationDdbFields, UpdateDdbRecord
 from documentai_api.dtos.processing import InternalApiResponse, PreExtractionResult

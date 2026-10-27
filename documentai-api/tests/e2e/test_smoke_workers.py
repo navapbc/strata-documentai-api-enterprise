@@ -25,8 +25,11 @@ from datetime import UTC, datetime, timedelta
 
 import boto3
 
-from documentai_api.config.constants import BatchStatus, ProcessStatus
 from documentai_api.config.env_var_names_generated import EnvVarNames
+from documentai_api.constants.processing import (
+    BatchStatus,
+    ProcessStatus,
+)
 from documentai_api.schemas.document_batches import DocumentBatches
 from documentai_api.schemas.document_metadata import DocumentMetadata
 
