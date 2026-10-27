@@ -133,12 +133,16 @@ help: ## Show help
 	@echo "ENVIRONMENT=$(ENVIRONMENT)  AWS_PROFILE=$(AWS_PROFILE)"
 
 format: ## Format all code
+	@which terraform > /dev/null 2>&1 || (echo "Error: terraform not found. Install with: brew install terraform" && exit 1)
 	$(MAKE) -C documentai-api format
+	$(MAKE) -C infra infra-format
 	cd ui/admin && npm run format
 	cd ui/demo && npm run format
 
 lint: ## Run all linters
+	@which terraform > /dev/null 2>&1 || (echo "Error: terraform not found. Install with: brew install terraform" && exit 1)
 	$(MAKE) -C documentai-api lint
+	$(MAKE) -C infra infra-lint
 	cd ui/admin && npm run lint
 	cd ui/demo && npm run lint
 
