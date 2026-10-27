@@ -48,11 +48,11 @@ infra-init: ## Initialize Terraform for $ENVIRONMENT
 		-backend-config="use_lockfile=true"
 
 infra-plan: ## Plan infrastructure changes for $ENVIRONMENT
-	@IMAGE_TAG=$${IMAGE_TAG:-$$(git -C .. rev-parse --short HEAD)} && \
+	@IMAGE_TAG=$${IMAGE_TAG:-$$(git -C .. rev-parse HEAD)} && \
 	terraform -chdir="$(TF_DIR)" plan -var="image_tag=$$IMAGE_TAG"
 
 infra-apply: ## Apply infrastructure changes for $ENVIRONMENT
-	@IMAGE_TAG=$${IMAGE_TAG:-$$(git -C .. rev-parse --short HEAD)} && \
+	@IMAGE_TAG=$${IMAGE_TAG:-$$(git -C .. rev-parse HEAD)} && \
 	terraform -chdir="$(TF_DIR)" apply -var="image_tag=$$IMAGE_TAG"
 	$(WRITE_CONFIG)
 
@@ -61,13 +61,16 @@ infra-deploy: ## Build, push image, and deploy for $ENVIRONMENT
 	@echo "Ensuring ECR repository exists..."
 	terraform -chdir="$(TF_DIR)" apply -target=module.ecr -auto-approve
 	@ECR_URL=$$(terraform -chdir="$(TF_DIR)" output -raw ecr_repository_url) && \
-	IMAGE_TAG=$${IMAGE_TAG:-$$(git -C .. rev-parse --short HEAD)} && \
+	IMAGE_TAG=$${IMAGE_TAG:-$$(git -C .. rev-parse HEAD)} && \
 	REGION=$$(grep 'region' $(TF_DIR)/terraform.tfvars | head -1 | awk -F'"' '{print $$2}') && \
 	echo "ECR: $$ECR_URL" && \
 	echo "Tag: $$IMAGE_TAG" && \
 	echo "Region: $$REGION" && \
 	aws ecr get-login-password --region $$REGION $(AWS_ARGS) | docker login --username AWS --password-stdin $$ECR_URL && \
-	docker build --platform linux/amd64 -f ../documentai-api/Dockerfile.lambda -t $$ECR_URL:$$IMAGE_TAG ../documentai-api && \
+	docker build --platform linux/amd64 -f ../documentai-api/Dockerfile.lambda \
+		--build-arg IMAGE_TAG=$$IMAGE_TAG \
+		--build-arg BUILT_AT=$$(date -u +%Y-%m-%dT%H:%M:%SZ) \
+		-t $$ECR_URL:$$IMAGE_TAG ../documentai-api && \
 	docker push $$ECR_URL:$$IMAGE_TAG && \
 	terraform -chdir="$(TF_DIR)" apply -var="image_tag=$$IMAGE_TAG" -auto-approve && \
 	echo "Deploy complete: $$IMAGE_TAG → $(ENVIRONMENT)"

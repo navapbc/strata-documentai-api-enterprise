@@ -5383,6 +5383,17 @@
             ],
             "title": "Imagetag"
           },
+          "builtAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Builtat"
+          },
           "environment": {
             "type": "string",
             "title": "Environment"
@@ -5407,6 +5418,7 @@
           "apiUrl",
           "version",
           "imageTag",
+          "builtAt",
           "environment",
           "endpoints",
           "supportedFileTypes"

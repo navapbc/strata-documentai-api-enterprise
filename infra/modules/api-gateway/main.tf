@@ -57,7 +57,13 @@ resource "aws_lambda_function" "this" {
   }
 
   environment {
-    variables = var.environment_variables
+    # API_BASE_URL is always derived from this module's own API Gateway endpoint.
+    # The app surfaces it as apiUrl in GET /config - an incorrect value is immediately
+    # visible to API consumers. If a custom domain or CloudFront is added in front,
+    # override this value here rather than passing it through environment_variables.
+    variables = merge(var.environment_variables, {
+      API_BASE_URL = aws_apigatewayv2_api.this.api_endpoint
+    })
   }
 
   # Required for OTEL traces to reach X-Ray, not optional: the aws-otel-python-instrumentation

@@ -35,7 +35,10 @@ deploy-infra: ## Deploy infrastructure (Docker image + Terraform)
 	$(MAKE) -C infra infra-deploy ENVIRONMENT=$(ENVIRONMENT) AWS_PROFILE=$(AWS_PROFILE)
 
 deploy-api: ## Build and deploy API from current working directory
-	$(MAKE) -C infra infra-deploy ENVIRONMENT=$(ENVIRONMENT) AWS_PROFILE=$(AWS_PROFILE) IMAGE_TAG=$(ENVIRONMENT)-$$(date +%s)
+	$(MAKE) -C infra infra-deploy ENVIRONMENT=$(ENVIRONMENT) AWS_PROFILE=$(AWS_PROFILE) \
+		IMAGE_TAG=$$(git diff --quiet && git diff --cached --quiet \
+			&& git rev-parse HEAD \
+			|| echo "$$(git rev-parse HEAD)-dirty-$$(date +%s)")
 
 deploy-ui: ## Build and deploy both UIs
 deploy-ui: deploy-admin-ui deploy-demo-ui

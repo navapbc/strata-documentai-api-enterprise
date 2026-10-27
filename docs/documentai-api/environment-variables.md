@@ -66,8 +66,10 @@ Environment variables are set at deploy time via Terraform. Unlike [feature flag
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
+| `API_BASE_URL` | No | `http://localhost:8000` | Public base URL of this deployment, surfaced in `/config` responses as `apiUrl`. Must be set in any hosted environment; a warning is logged at startup if unset. |
 | `ENVIRONMENT` | No | `local` | Deployment environment name (e.g. `dev`, `prod`). |
-| `IMAGE_TAG` | No | - | Docker image tag, surfaced in health check responses. |
+| `IMAGE_TAG` | No | - | Docker image tag baked in at build time, surfaced in `/config` responses. |
+| `BUILT_AT` | No | - | UTC timestamp of when the image was built, surfaced in `/config` responses. |
 | `HOST` | No | `127.0.0.1` | Host the API server binds to. |
 | `PORT` | No | `8000` | Port the API server listens on. |
 | `AWS_LAMBDA_FUNCTION_NAME` | - | - | Set automatically by the Lambda runtime. Used internally to detect hosted vs. local execution; do not set manually. |

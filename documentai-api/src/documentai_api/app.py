@@ -96,6 +96,25 @@ if os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
     LoggingContext("documentai_api")
 
 
+_DEFAULT_API_BASE_URL = "http://localhost:8000"
+
+
+def _warn_if_api_base_url_unset() -> None:
+    """Warn when API_BASE_URL is not configured in a hosted environment.
+
+    The default is localhost:8000, which is correct for local dev but wrong in
+    any deployed environment. This produces a visible log warning at startup
+    rather than silently returning a useless value from GET /config.
+    """
+    config = get_app_config()
+    if config.is_hosted_env() and config.api_base_url == _DEFAULT_API_BASE_URL:
+        logger.warning(
+            "API_BASE_URL is not set; /config will return apiUrl=%r. "
+            "Set API_BASE_URL to the public URL of this deployment.",
+            _DEFAULT_API_BASE_URL,
+        )
+
+
 def _require_auth_in_hosted_envs() -> None:
     """Refuse to start with per-key auth disabled in a hosted environment.
 
@@ -113,6 +132,7 @@ def _require_auth_in_hosted_envs() -> None:
 
 
 _require_auth_in_hosted_envs()
+_warn_if_api_base_url_unset()
 
 CONFIG_EXCLUDED_ROUTES = {"/", "/health", "/config", "/openapi.json", "/docs", "/redoc"}
 
@@ -173,7 +193,8 @@ def get_config() -> ConfigResponse:
     return ConfigResponse(
         api_url=app_config.api_base_url,
         version=ApiMetadata.VERSION,
-        image_tag=app_config.image_tag,
+        image_tag=app_config.image_tag or None,
+        built_at=app_config.built_at or None,
         environment=app_config.environment,
         endpoints=endpoints,
         supported_file_types=list(FileValidation.SUPPORTED_CONTENT_TYPES),

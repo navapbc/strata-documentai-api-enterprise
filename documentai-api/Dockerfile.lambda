@@ -39,5 +39,10 @@ RUN dnf install -y curl-minimal unzip && \
 # export, making this a genuine kill switch at the wrapper layer.
 ENV AWS_LAMBDA_EXEC_WRAPPER=/opt/otel-instrument
 
+ARG IMAGE_TAG
+ARG BUILT_AT
+ENV IMAGE_TAG=${IMAGE_TAG} \
+    BUILT_AT=${BUILT_AT}
+
 COPY src/documentai_api/ ./src/documentai_api/
 ENV PYTHONPATH=${LAMBDA_TASK_ROOT}/src
