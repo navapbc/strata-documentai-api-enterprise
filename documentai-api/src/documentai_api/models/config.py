@@ -9,6 +9,7 @@ class ConfigResponse(BaseApiResponse):
     api_url: str
     version: str
     image_tag: str | None
+    built_at: str | None
     environment: str
     endpoints: dict[str, str]
     supported_file_types: list[str]

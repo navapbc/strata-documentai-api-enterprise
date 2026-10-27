@@ -8,6 +8,7 @@ import pytest
 from fastapi import HTTPException
 
 from documentai_api import app as app_module
+from documentai_api.config.env import get_app_config
 from documentai_api.constants.processing import ProcessStatus
 from documentai_api.generated.env_var_names_generated import EnvVarNames
 from documentai_api.pipeline.jobs import poll_for_completion
@@ -266,6 +267,38 @@ async def test_poll_for_completion_polling_error(mocker):
     result = await poll_for_completion("test-job-id", timeout=10)
 
     assert result.job_status == "success"
+
+
+@pytest.mark.parametrize(
+    ("image_tag_env", "built_at_env", "expected_image_tag", "expected_built_at"),
+    [
+        ("test-image-id", "2026-01-01T00:00:00Z", "test-image-id", "2026-01-01T00:00:00Z"),
+        ("", "", None, None),
+        (None, None, None, None),
+        ("test-image-id", "", "test-image-id", None),
+        ("", "2026-01-01T00:00:00Z", None, "2026-01-01T00:00:00Z"),
+    ],
+)
+def test_config_image_tag_and_built_at(
+    api_client, monkeypatch, image_tag_env, built_at_env, expected_image_tag, expected_built_at
+):
+    """image_tag and built_at are null when env var is absent or empty string."""
+    if image_tag_env is None:
+        monkeypatch.delenv(EnvVarNames.IMAGE_TAG, raising=False)
+    else:
+        monkeypatch.setenv(EnvVarNames.IMAGE_TAG, image_tag_env)
+
+    if built_at_env is None:
+        monkeypatch.delenv(EnvVarNames.BUILT_AT, raising=False)
+    else:
+        monkeypatch.setenv(EnvVarNames.BUILT_AT, built_at_env)
+
+    get_app_config.cache_clear()
+    response = api_client.get("/config")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["imageTag"] == expected_image_tag
+    assert data["builtAt"] == expected_built_at
 
 
 def test_config_api_url_from_env(api_client):

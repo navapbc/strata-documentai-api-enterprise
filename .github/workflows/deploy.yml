@@ -67,7 +67,10 @@ jobs:
           ECR_URL: ${{ steps.ecr_url.outputs.ECR_URL }}
           IMAGE_TAG: ${{ steps.tag.outputs.IMAGE_TAG }}
         run: |
-          docker build -f documentai-api/Dockerfile.lambda -t $ECR_URL:$IMAGE_TAG documentai-api/
+          docker build -f documentai-api/Dockerfile.lambda \
+            --build-arg IMAGE_TAG=$IMAGE_TAG \
+            --build-arg BUILT_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ) \
+            -t $ECR_URL:$IMAGE_TAG documentai-api/
           docker push $ECR_URL:$IMAGE_TAG
 
       - name: Terraform apply

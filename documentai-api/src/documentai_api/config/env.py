@@ -207,6 +207,7 @@ class AppConfig(PydanticBaseEnvConfig):
         return [] if self.is_hosted_env() else ["*"]
 
     image_tag: str | None = None
+    built_at: str | None = None
     environment: str = "local"
     host: str = "127.0.0.1"
     port: int = 8000
