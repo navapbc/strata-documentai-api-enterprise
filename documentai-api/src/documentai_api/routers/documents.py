@@ -149,6 +149,8 @@ async def upload_document(
             if is_demo
             else SystemDefaults.TEST_RUN_DOCUMENT_TTL_DAYS
             if is_test_run
+            else SystemDefaults.COMPARE_DOCUMENT_TTL_DAYS
+            if is_compare
             else None,
             is_compare=is_compare,
         )

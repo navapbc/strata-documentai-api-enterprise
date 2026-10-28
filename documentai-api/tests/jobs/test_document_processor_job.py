@@ -938,6 +938,8 @@ def ocr_mapping_ddb_record(mocker):
             crop_result=CropResult(), grayscale_applied=False, file_size_bytes=100, too_large=False
         ),
     )
+    # the fixture body is PDF_MAGIC only, which truncate_to_pages cannot parse
+    mocker.patch(f"{_MAIN_MODULE}.truncate_to_pages", side_effect=lambda b, max_pages: b)
     return mock_get
 
 

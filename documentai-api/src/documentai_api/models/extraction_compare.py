@@ -25,6 +25,7 @@ class CompareSubmitResponse(BaseApiResponse):
 class CompareResponse(BaseApiResponse):
     job_id: str
     primary_method: str
+    is_completed: bool = False
     primary: dict[str, CompareFieldResult] = Field(default_factory=dict)
     ocr_mapping: dict[str, CompareFieldResult] = Field(default_factory=dict)
     durations: dict[str, CompareDuration] = Field(default_factory=dict)

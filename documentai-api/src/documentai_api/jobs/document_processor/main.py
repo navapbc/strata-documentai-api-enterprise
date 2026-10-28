@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Process uploaded documents: insert to DDB, convert if needed, invoke BDA."""
 
+import json
 import os
 import time
 from dataclasses import dataclass
@@ -9,6 +10,7 @@ from decimal import Decimal
 from typing import Any
 
 import typer
+from opentelemetry.propagate import inject
 from tenacity import (
     RetryError,
     Retrying,
@@ -57,6 +59,7 @@ from documentai_api.utils.bda_invoker import (
 )
 from documentai_api.utils.dates import strip_time
 from documentai_api.utils.ddb import get_ddb_record, write_tokens_by_model
+from documentai_api.utils.documents import truncate_to_pages
 from documentai_api.utils.image_optimization import optimize_s3_image
 from documentai_api.utils.s3 import parse_s3_uri
 from documentai_api.utils.ssm import is_ocr_mapping_enabled
@@ -318,12 +321,11 @@ def _invoke_ocr_mapping_path(
     No-ops when the feature flag is off or no blueprint type was matched.
     Errors are logged and swallowed - BDA is the authoritative extraction path.
     """
-    import json
-
     document_type = existing_record.get(DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCHED_TYPE)
-    is_compare = existing_record.get(DocumentMetadata.IS_COMPARE, False)
 
-    if not document_type or (not is_ocr_mapping_enabled() and not is_compare):
+    if not document_type or (
+        not is_ocr_mapping_enabled() and not existing_record.get(DocumentMetadata.IS_COMPARE, False)
+    ):
         return
 
     try:
@@ -332,7 +334,10 @@ def _invoke_ocr_mapping_path(
             logger.warning("DOCUMENTAI_OUTPUT_LOCATION not set, skipping OCR mapping extraction")
             return
         output_bucket, output_prefix = parse_s3_uri(output_location)
-        ocr_blocks = get_layout_ocr_blocks(file_bytes)
+        # AnalyzeDocument is a sync single-page call; truncate multi-page PDFs/TIFFs
+        # to page 1 to avoid UnsupportedDocumentException.
+        ocr_bytes = truncate_to_pages(file_bytes, max_pages=1)
+        ocr_blocks = get_layout_ocr_blocks(ocr_bytes)
         ocr_key = f"{output_prefix}/ocr-mapping/ocr/{ddb_key}.json"
         s3_service.put_object(
             output_bucket,
@@ -346,8 +351,6 @@ def _invoke_ocr_mapping_path(
         if not queue_url:
             logger.warning("OCR_MAPPING_QUEUE_URL not set, skipping OCR mapping extraction")
             return
-
-        from opentelemetry.propagate import inject
 
         carrier: dict[str, str] = {}
         inject(carrier)

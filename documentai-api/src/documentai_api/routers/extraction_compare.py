@@ -7,7 +7,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
 from starlette.datastructures import Headers
 
-from documentai_api.annotations import AdminClaims
+from documentai_api.annotations import AdminClaims, SuperAdminClaims
 from documentai_api.constants.api import ApiVisualizationTag
 from documentai_api.constants.processing import ExtractMethod, LlmUsageReason, TextractOperation
 from documentai_api.logging import get_logger
@@ -24,6 +24,7 @@ from documentai_api.utils.ddb import (
     get_token_usage_by_reason,
     sum_token_usage_by_model,
 )
+from documentai_api.utils.jwt_auth import is_super_admin
 from documentai_api.utils.llm_cost import compute_bda_cost, compute_llm_cost, compute_textract_cost
 
 logger = get_logger(__name__)
@@ -58,12 +59,12 @@ def _extract_fields(v1_response_json: str | dict[str, Any]) -> dict[str, Compare
 
 @router.post("", status_code=202)
 async def run_compare(
-    claims: AdminClaims,
+    claims: SuperAdminClaims,
     file: Annotated[UploadFile, File(...)],
 ) -> CompareSubmitResponse:
     """Submit a document through the real pipeline with both BDA and OCR mapping extraction.
 
-    Returns immediately with a job_id. Poll GET /{job_id} until 200.
+    Returns immediately with a job_id. Poll GET /{job_id} until isCompleted is true.
 
     Uses is_compare=True which:
     - Forces OCR mapping extraction regardless of the feature flag
@@ -95,17 +96,32 @@ async def run_compare(
 
 
 @router.get("/{job_id}")
-def get_compare_result(job_id: str) -> CompareResponse:
-    """Poll for compare results. Returns 200 with results when both paths complete, 404 until then."""
+def get_compare_result(claims: AdminClaims, job_id: str) -> CompareResponse:
+    """Poll for compare results.
+
+    Returns 200 with isCompleted=false while either path is still running, and
+    isCompleted=true once both finish. 404 when the job is unknown or not visible to the caller.
+    """
     record = get_ddb_by_job_id(job_id)
+    _not_found = HTTPException(status_code=404, detail="Job not found")
     if not record:
-        raise HTTPException(status_code=404, detail="Job not found")
+        raise _not_found
+
+    if not record.get(DocumentMetadata.IS_COMPARE):
+        raise _not_found
+
+    sub = claims.get("sub", "")
+    owner = record.get(DocumentMetadata.TENANT_ID)
+    if not is_super_admin(claims) and owner != f"compare-{sub}":
+        raise _not_found
 
     primary_method = record.get(DocumentMetadata.EXTRACT_METHOD) or ExtractMethod.BDA.value
     responses = record.get(DocumentMetadata.API_RESPONSES_BY_METHOD) or {}
 
-    if not {primary_method, _OCR_MAPPING}.issubset(responses.keys()):
-        raise HTTPException(status_code=404, detail="Results not ready")
+    extract_methods = {primary_method, _OCR_MAPPING}
+
+    if not extract_methods.issubset(responses.keys()):
+        return CompareResponse(job_id=job_id, primary_method=primary_method)
 
     object_key = record.get(DocumentMetadata.FILE_NAME, "")
     pages = 1
@@ -154,6 +170,7 @@ def get_compare_result(job_id: str) -> CompareResponse:
     return CompareResponse(
         job_id=job_id,
         primary_method=primary_method,
+        is_completed=True,
         primary=_extract_fields(responses[primary_method]),
         ocr_mapping=_extract_fields(responses[_OCR_MAPPING]),
         durations=record.get(DocumentMetadata.DURATIONS_BY_METHOD) or {},

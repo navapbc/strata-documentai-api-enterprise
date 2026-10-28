@@ -3705,7 +3705,7 @@
           "Admin:Compare"
         ],
         "summary": "Run Compare",
-        "description": "Submit a document through the real pipeline with both BDA and OCR mapping extraction.\n\nReturns immediately with a job_id. Poll GET /{job_id} until 200.\n\nUses is_compare=True which:\n- Forces OCR mapping extraction regardless of the feature flag\n- Writes each path's output to apiResponsesByMethod map instead of terminal status\n- Suppresses metrics queue emission and batch counter increments",
+        "description": "Submit a document through the real pipeline with both BDA and OCR mapping extraction.\n\nReturns immediately with a job_id. Poll GET /{job_id} until isCompleted is true.\n\nUses is_compare=True which:\n- Forces OCR mapping extraction regardless of the feature flag\n- Writes each path's output to apiResponsesByMethod map instead of terminal status\n- Suppresses metrics queue emission and batch counter increments",
         "operationId": "run_compare_v1_admin_extraction_compare_post",
         "requestBody": {
           "content": {
@@ -3752,7 +3752,7 @@
           "Admin:Compare"
         ],
         "summary": "Get Compare Result",
-        "description": "Poll for compare results. Returns 200 with results when both paths complete, 404 until then.",
+        "description": "Poll for compare results.\n\nReturns 200 with isCompleted=false while either path is still running, and\nisCompleted=true once both finish. 404 when the job is unknown or not visible to the caller.",
         "operationId": "get_compare_result_v1_admin_extraction_compare__job_id__get",
         "security": [
           {
@@ -5565,6 +5565,11 @@
           "primaryMethod": {
             "type": "string",
             "title": "Primarymethod"
+          },
+          "isCompleted": {
+            "type": "boolean",
+            "title": "Iscompleted",
+            "default": false
           },
           "primary": {
             "additionalProperties": {

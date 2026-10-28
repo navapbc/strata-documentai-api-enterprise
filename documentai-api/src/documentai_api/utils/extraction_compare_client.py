@@ -56,7 +56,11 @@ def submit_and_poll(
             timeout=30,
         )
         if poll.status_code == 200:
-            return CompareResponse.model_validate(poll.json())
+            result = CompareResponse.model_validate(poll.json())
+            if not result.is_completed:
+                time.sleep(interval)
+                continue
+            return result
         if poll.status_code != 404:
             raise RuntimeError(f"unexpected status {poll.status_code}: {poll.text}")
         time.sleep(interval)
