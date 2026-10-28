@@ -21,7 +21,7 @@ import boto3
 import pytest
 
 from documentai_api.config.env import get_env_config
-from documentai_api.constants.processing import ExtractMethod, LlmUsageReason
+from documentai_api.constants.processing import ExtractMethod, LlmUsageReason, TextractOperation
 from documentai_api.models.extraction_compare import CompareFieldResult, CompareResponse
 from documentai_api.utils.extraction_compare_client import (
     EXPECTED_EMPTY,
@@ -48,6 +48,10 @@ _EXTRACT_COMPARE_ADMIN_EMAIL = "extract-compare-admin@internal.invalid"
 _EXPECTED_DIR = TEST_DOCS_DIR / "expected"
 _RESULTS_DIR = Path(__file__).parent / "results" / "extraction_compare"
 _GEO_TOLERANCE = 0.025
+# display labels for cost keys that are services rather than model IDs
+_COST_LABELS = {
+    TextractOperation.ANALYZE_DOCUMENT_LAYOUT.value: "textract - AnalyzeDocument (layout)",
+}
 
 
 class _AccuracyDisplay(TypedDict):
@@ -79,6 +83,7 @@ class _ResultData(StrEnum):
     """Result data JSON keys."""
 
     FILENAME = "filename"
+    COMPLETED_AT = "completedAt"
     PRIMARY_METHOD = "primary_method"
     DURATIONS = "durations"
     COST = "cost"
@@ -189,9 +194,18 @@ def compare_jwt(reset_env):
     return response["AuthenticationResult"]["AccessToken"]
 
 
+def _clear_results(filename: str, results_dir: Path = _RESULTS_DIR) -> None:
+    """Remove a document's results from earlier runs so a failed run cannot leave stale ones."""
+    results_dir.mkdir(parents=True, exist_ok=True)
+
+    for suffix in (".md", ".data.json"):
+        (results_dir / f"{Path(filename).stem}{suffix}").unlink(missing_ok=True)
+
+
 @pytest.mark.parametrize("filename", _COMPARE_FILES)
 def test_extraction_compare(filename, compare_jwt):
     """Run extraction compare for a single fixture file and write per-doc results."""
+    _clear_results(filename)
     result = submit_and_poll(BASE_URL, TEST_DOCS_DIR / filename, compare_jwt)
 
     assert result.job_id
@@ -371,12 +385,30 @@ def _md_table_header(cols: list[str]) -> tuple[str, str]:
     return "| " + " | ".join(cols) + " |", "|---" * len(cols) + "|"
 
 
+def _format_run_stamp(completed_at: datetime) -> str:
+    return completed_at.astimezone(UTC).strftime("%Y-%m-%d %H:%M UTC")
+
+
+def _sidecar_completed_at(sidecar: Path, data: dict[str, Any]) -> datetime:
+    """When a result was captured: its stored completedAt, else the sidecar's mtime (legacy)."""
+    stored = data.get(_ResultData.COMPLETED_AT)
+
+    if stored:
+        return datetime.fromisoformat(stored)
+
+    return datetime.fromtimestamp(sidecar.stat().st_mtime, UTC)
+
+
 def _write_result_data(
-    filename: str, result: CompareResponse, accuracy: dict[str, dict[str, int]]
+    filename: str,
+    result: CompareResponse,
+    accuracy: dict[str, dict[str, int]],
+    completed_at: datetime,
 ) -> None:
     """Write per-document result data to a .data.json sidecar file."""
     result_data = {
         _ResultData.FILENAME: filename,
+        _ResultData.COMPLETED_AT: completed_at.isoformat(),
         _ResultData.PRIMARY_METHOD: result.primary_method,
         _ResultData.DURATIONS: {
             method: d.extraction_duration_seconds for method, d in result.durations.items()
@@ -400,7 +432,8 @@ def _write_comparison_md(
 ) -> None:
     """Write per-document field comparison to a markdown file and persist result data."""
     accuracy = _compute_accuracy(result.primary, result.ocr_mapping, expected, expected_geo)
-    _write_result_data(filename, result, accuracy)
+    completed_at = datetime.now(UTC)
+    _write_result_data(filename, result, accuracy, completed_at)
 
     primary_method = result.primary_method
     all_fields = sorted(
@@ -409,7 +442,7 @@ def _write_comparison_md(
         | (set(expected) if expected is not None else set())
     )
     results_file = _RESULTS_DIR / f"{Path(filename).stem}.md"
-    lines = [f"# {filename}\n", f"\n_Run: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')}_\n"]
+    lines = [f"# {filename}\n", f"\n_Run: {_format_run_stamp(completed_at)}_\n"]
 
     if result.durations:
         lines.append("\n## Durations\n")
@@ -825,7 +858,7 @@ def regen_comparison_md(results_dir: Path) -> None:
             set(primary) | set(ocr_mapping) | (set(expected) if expected else set())
         )
         results_file = results_dir / f"{Path(filename).stem}.md"
-        run_ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
+        run_ts = _format_run_stamp(_sidecar_completed_at(sidecar, data))
         lines = [f"# {filename}\n", f"\n_Run: {run_ts}_\n"]
 
         durations = data.get(_ResultData.DURATIONS, {})
@@ -939,7 +972,11 @@ def write_extraction_compare_summary(results_dir: Path) -> None:
         return
 
     result = _aggregate_result_data(worker_files, results_dir)
-    run_ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
+    completed = [
+        _sidecar_completed_at(sidecar, json.loads(sidecar.read_text()))
+        for sidecar in results_dir.glob("*.data.json")
+    ]
+    run_ts = _format_run_stamp(max(completed, default=datetime.now(UTC)))
     lines = ["# Extraction Compare Results\n", f"\n_Run: {run_ts}_\n"]
 
     if result["avg_durations"]:
@@ -955,10 +992,13 @@ def write_extraction_compare_summary(results_dir: Path) -> None:
             if k not in (ExtractMethod.BDA, ExtractMethod.TEXTRACT)
         }
 
-        lines.append("\n## Total Cost by Model\n")
+        lines.append("\n## Cost by Model and Service\n")
+        lines.append(
+            "_Excludes the primary-path fee (BDA or Textract AnalyzeID); see the tables below._"
+        )
         for cost_key, amount in sorted(llm_costs.items()):
-            lines.append(f"- {cost_key}: ${amount:.6f}")
-        lines.append(f"- **total: ${sum(llm_costs.values()):.6f}**")
+            lines.append(f"- {_COST_LABELS.get(cost_key, cost_key)}: ${amount:.6f}")
+        lines.append(f"- **subtotal: ${sum(llm_costs.values()):.6f}**")
         lines.append("")
 
     cost_rows = _cost_compare_section(

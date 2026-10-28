@@ -1,28 +1,29 @@
 # synthetic-expense-child-support-scan.jpg
 
 
-_Run: 2026-10-01 02:38 UTC_
+_Run: 2026-10-28 18:34 UTC_
 
 
 ## Durations
 
-- bda: 27.03s extraction
-- ocr-mapping: 3.503s extraction
+- bda: 27.77s extraction
+- ocr-mapping: 3.333s extraction
 
 
 ## Cost
 
 _By Service_
-- us.amazon.nova-lite-v1:0: $0.00012360
-- us.amazon.nova-pro-v1:0: $0.01552800
-- bda: $0.04000000
-- **total: $0.05565160**
+- us.amazon.nova-lite-v1:0: $0.00012384 (1956 in / 27 out)
+- us.amazon.nova-pro-v1:0: $0.01548000 (16622 in / 682 out)
+- bda: $0.04000000 (1 page(s))
+- analyze_document_layout: $0.00400000 (1 page(s))
+- **total: $0.05960384**
 
 _By Extraction Method_
-- shared (preclassification): $0.00926600
-- ocr-mapping extraction: $0.00638560
+- shared (preclassification): $0.00931424
+- ocr-mapping extraction: $0.01028960
 - primary (bda): $0.04000000
-- **total: $0.05565160**
+- **total: $0.05960384**
 
 
 ## Accuracy
@@ -40,9 +41,9 @@ _By Bounding Box_
 | Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Bounding Box | BDA Bounding Box | LLM Bounding Box |
 |---|---|---|---|---|---|---|---|---|
 | case_number | D-2022-04567-FC | ✅ D-2022-04567-FC | ✅ D-2022-04567-FC | 0.89 | 1.0000 | 0.711,0.190,0.116,0.008 | ✅ 0.711,0.190,0.118,0.009 | ✅ 0.711,0.190,0.118,0.009 |
-| child_name | - | - | - | 0.91 | N/A | - | - | - |
+| child_name | - | - | - | 0.91 | - | - | - | - |
 | court_name | 2nd Judicial District Court | ✅ 2nd Judicial District Court | ✅ 2nd Judicial District Court | 0.67 | 1.0000 | 0.099,0.221,0.779,0.020 | ❌ 0.711,0.227,0.168,0.009 | ❌ 0.710,0.227,0.168,0.009 |
-| effective_end_date | - | - | - | 0.90 | N/A | - | - | - |
+| effective_end_date | - | - | - | 0.90 | - | - | - | - |
 | effective_start_date | 2022-03-22 | ✅ 2022-03-22 | ✅ 2022-03-22 | 0.77 | 1.0000 | 0.355,0.361,0.072,0.008 | ✅ 0.355,0.361,0.073,0.009 | ✅ 0.356,0.361,0.073,0.009 |
 | order_date | 2022-03-15 | ✅ 2022-03-15 | ✅ 2022-03-15 | 0.92 | 1.0000 | 0.711,0.208,0.072,0.008 | ✅ 0.711,0.208,0.074,0.009 | ✅ 0.711,0.208,0.074,0.009 |
 | payer_name | Daniel R. Montoya | ✅ Daniel R. Montoya | ✅ Daniel R. Montoya | 0.93 | 1.0000 | 0.097,0.279,0.736,0.013 | ❌ 0.712,0.282,0.123,0.011 | ❌ 0.711,0.282,0.123,0.011 |

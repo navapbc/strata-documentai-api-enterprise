@@ -1,27 +1,28 @@
 # synthetic-assets-life-insurance-policy-render.pdf
 
 
-_Run: 2026-10-01 02:38 UTC_
+_Run: 2026-10-28 18:33 UTC_
 
 
 ## Durations
 
-- bda: 23.08s extraction
-- ocr-mapping: 1.538s extraction
+- bda: 29.51s extraction
+- ocr-mapping: 2.066s extraction
 
 
 ## Cost
 
 _By Service_
-- us.amazon.nova-pro-v1:0: $0.01252880
-- bda: $0.04000000
-- **total: $0.05252880**
+- us.amazon.nova-pro-v1:0: $0.01251920 (13629 in / 505 out)
+- bda: $0.04000000 (1 page(s))
+- analyze_document_layout: $0.00400000 (1 page(s))
+- **total: $0.05651920**
 
 _By Extraction Method_
-- shared (preclassification): $0.00883040
-- ocr-mapping extraction: $0.00369840
+- shared (preclassification): $0.00882080
+- ocr-mapping extraction: $0.00769840
 - primary (bda): $0.04000000
-- **total: $0.05252880**
+- **total: $0.05651920**
 
 
 ## Accuracy
@@ -41,10 +42,10 @@ _By Bounding Box_
 | cash_surrender_value | 9500 | ✅ 9500 | ✅ 9500 | 0.71 | 1.0000 | 0.478,0.474,0.058,0.014 | ✅ 0.477,0.474,0.059,0.015 | ✅ 0.477,0.473,0.059,0.015 |
 | death_benefit | 100000 | ✅ 100000 | ✅ 100000 | 0.91 | 1.0000 | 0.478,0.438,0.078,0.015 | ✅ 0.477,0.438,0.080,0.015 | ✅ 0.477,0.438,0.080,0.015 |
 | insured_name | Jordan Rivera | ✅ Jordan Rivera | ✅ Jordan Rivera | 0.92 | 1.0000 | 0.476,0.368,0.125,0.015 | ✅ 0.476,0.368,0.125,0.015 | 🟡 0.476,0.333,0.125,0.015 |
-| insurer_name | Northstar Life Insurance Company | 🟡 Northstar Life Insurance | ✅ Northstar Life Insurance Company | 0.41 | 1.0000 | 0.150,0.774,0.307,0.016 | ❌ 0.274,0.034,0.224,0.030 | ✅ 0.148,0.774,0.309,0.016 |
+| insurer_name | Northstar Life Insurance Company | 🟡 Northstar Life Insurance | ✅ Northstar Life Insurance Company | 0.44 | 1.0000 | 0.150,0.774,0.307,0.016 | ❌ 0.274,0.034,0.224,0.052 | ✅ 0.148,0.774,0.309,0.016 |
 | policy_number | XX-1234567-MD | ✅ XX-1234567-MD | ✅ XX-1234567-MD | 0.93 | 1.0000 | 0.477,0.263,0.145,0.011 | ✅ 0.477,0.262,0.145,0.012 | ✅ 0.477,0.262,0.145,0.012 |
 | policy_type | Universal Life Insurance | ✅ Universal Life Insurance | ✅ Universal Life Insurance | 0.89 | 1.0000 | 0.477,0.403,0.225,0.013 | ✅ 0.477,0.403,0.225,0.013 | ✅ 0.477,0.403,0.225,0.013 |
-| policyholder_name | Jordan Rivera | ✅ Jordan Rivera | ✅ Jordan Rivera | 0.93 | 1.0000 | 0.476,0.333,0.125,0.015 | ✅ 0.476,0.333,0.125,0.015 | ✅ 0.476,0.333,0.125,0.015 |
+| policyholder_name | Jordan Rivera | ✅ Jordan Rivera | ✅ Jordan Rivera | 0.93 | 1.0000 | 0.476,0.333,0.125,0.015 | ✅ 0.476,0.332,0.125,0.015 | ✅ 0.476,0.333,0.125,0.015 |
 | premium_amount | 50.00 | ✅ 50 | ✅ 50.00 | 0.91 | 1.0000 | 0.478,0.509,0.057,0.013 | ✅ 0.477,0.508,0.059,0.014 | ✅ 0.477,0.508,0.059,0.014 |
 | premium_frequency | Monthly | ✅ Monthly | ✅ Monthly | 0.71 | N/A | 0.542,0.509,0.087,0.016 | ✅ 0.542,0.508,0.089,0.016 | ❌ - |
 | statement_date | 2026-08-31 | ✅ 2026-08-31 | ✅ 2026-08-31 | 0.82 | 1.0000 | 0.149,0.298,0.466,0.015 | ❌ 0.477,0.297,0.138,0.016 | ❌ 0.477,0.297,0.139,0.016 |

@@ -1,33 +1,35 @@
 # Extraction Compare Results
 
-_Run: 2026-10-28 00:55 UTC_
+_Run: 2026-10-28 18:38 UTC_
 
 ## Avg Durations
-- bda: 24.37s
-- ocr-mapping: 4.81s
-- textract: 2.34s
+- bda: 26.84s
+- ocr-mapping: 4.86s
+- textract: 1.38s
 
 
-## Total Cost by Model
-- us.amazon.nova-lite-v1:0: $0.003038
-- us.amazon.nova-pro-v1:0: $0.571101
-- **total: $0.574138**
+## Cost by Model and Service
+_Excludes the primary-path fee (BDA or Textract AnalyzeID); see the tables below._
+- textract - AnalyzeDocument (layout): $0.140000
+- us.amazon.nova-lite-v1:0: $0.002790
+- us.amazon.nova-pro-v1:0: $0.542829
+- **subtotal: $0.685618**
 
 
 ## Primary Extraction Method vs. LLM via Textract
 ### Cost & Duration 
 | Primary Method | Shared (preclass) | Primary Total | LLM Total | Cost Ratio | Median Primary Duration | Median LLM Duration | Speed Ratio |
 |---|---|---|---|---|---|---|---|
-| bda | $0.327286 | $1.440000 | $0.231382 | 6.2x cheaper | 23.75s | 2.49s | 9.5x faster |
-| textract | $0.008870 | $0.025000 | $0.006600 | 3.8x cheaper | 2.34s | 2.28s | 1.0x faster |
+| bda | $0.308852 | $1.360000 | $0.357309 | 3.8x cheaper | 25.07s | 3.09s | 8.1x faster |
+| textract | $0.008858 | $0.025000 | $0.010600 | 2.4x cheaper | 1.38s | 3.82s | 0.4x slower |
 
 
 ### Accuracy
 
-_Expected field values defined for 520 scored fields (507 bda, 13 textract); bounding-box ground truth resolved for 321 fields._
+_Expected field values defined for 498 scored fields (485 bda, 13 textract); bounding-box ground truth resolved for 312 fields._
 | Primary Method | Primary Match (Equiv.) | LLM Match (Equiv.) | Primary Match (Equiv+Approx.) | LLM Match (Equiv+Approx.) | Primary Bounding Box Match | LLM Bounding Box Match |
 |---|---|---|---|---|---|---|
-| bda | 377/507 (74%) | 435/507 (86%) | 389/507 (77%) | 457/507 (90%) | 173/311 (56%) | 173/311 (56%) |
+| bda | 363/485 (75%) | 412/485 (85%) | 370/485 (76%) | 433/485 (89%) | 169/302 (56%) | 172/302 (57%) |
 | textract | 12/13 (92%) | 13/13 (100%) | 13/13 (100%) | 13/13 (100%) | 7/10 (70%) | 7/10 (70%) |
 
 
@@ -35,41 +37,39 @@ _Expected field values defined for 520 scored fields (507 bda, 13 textract); bou
 
 | Document | Method | Total Cost | Primary Cost | LLM Cost | Cost Delta | Primary Duration | LLM Duration | Duration Delta | Primary Match Rate (Equiv+Approx.) | LLM Match Rate (Equiv+Approx.) | Match Rate Delta |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| [synthetic-assets-bank-statement-render-spanish.png](synthetic-assets-bank-statement-render-spanish.md) | bda | $0.057724 | $0.049337 | $0.017724 | -0.031613 | 35.58s | 16.74s | -18.84s | 7/15 (47%) | 14/15 (93%) | +46.7% |
-| [synthetic-assets-bank-statement-render.pdf](synthetic-assets-bank-statement-render.md) | bda | $0.054146 | $0.048757 | $0.014146 | -0.034611 | 21.62s | 2.47s | -19.15s | 6/8 (75%) | 8/8 (100%) | +25.0% |
-| [synthetic-assets-bank-statement-scan.jpg](synthetic-assets-bank-statement-scan.md) | bda | $0.056845 | $0.049282 | $0.016845 | -0.032438 | 25.22s | 11.49s | -13.73s | 8/15 (53%) | 13/15 (87%) | +33.3% |
-| [synthetic-assets-life-insurance-policy-render.pdf](synthetic-assets-life-insurance-policy-render.md) | bda | $0.052529 | $0.048830 | $0.012529 | -0.036302 | 23.08s | 1.54s | -21.54s | 10/10 (100%) | 10/10 (100%) | 0% |
-| [synthetic-assets-life-insurance-policy-scan.jpg](synthetic-assets-life-insurance-policy-scan.md) | bda | $0.053326 | $0.049279 | $0.013326 | -0.035953 | 22.88s | 7.81s | -15.07s | 10/10 (100%) | 10/10 (100%) | 0% |
-| [synthetic-assets-trust-funds-investment-accounts-render-spanish.png](synthetic-assets-trust-funds-investment-accounts-render-spanish.md) | bda | $0.054009 | $0.049276 | $0.014009 | -0.035267 | 22.23s | 1.93s | -20.30s | 9/10 (90%) | 9/10 (90%) | 0% |
-| [synthetic-assets-trust-funds-investment-accounts-render.pdf](synthetic-assets-trust-funds-investment-accounts-render.md) | bda | $0.052872 | $0.048789 | $0.012872 | -0.035917 | 23.04s | 11.21s | -11.83s | 7/10 (70%) | 9/10 (90%) | +20.0% |
-| [synthetic-assets-trust-funds-investment-accounts-scan.jpg](synthetic-assets-trust-funds-investment-accounts-scan.md) | bda | $0.053855 | $0.049279 | $0.013855 | -0.035424 | 20.94s | 1.98s | -18.96s | 9/10 (90%) | 10/10 (100%) | +10.0% |
-| [synthetic-expense-burial-scan-corner-torn.jpg](synthetic-expense-burial-scan-corner-torn.md) | bda | $0.053737 | $0.049311 | $0.013737 | -0.035574 | 26.36s | 1.96s | -24.40s | 7/9 (78%) | 7/9 (78%) | 0% |
-| [synthetic-expense-child-support-rendered.pdf](synthetic-expense-child-support-rendered.md) | bda | $0.054718 | $0.048834 | $0.014718 | -0.034116 | 28.58s | 2.26s | -26.32s | 6/6 (100%) | 6/6 (100%) | 0% |
-| [synthetic-expense-child-support-scan.jpg](synthetic-expense-child-support-scan.md) | bda | $0.055652 | $0.049266 | $0.015652 | -0.033614 | 27.03s | 3.50s | -23.53s | 14/14 (100%) | 14/14 (100%) | 0% |
-| [synthetic-expense-child-support-spanish-picture.png](synthetic-expense-child-support-spanish-picture.md) | bda | $0.055736 | $0.049298 | $0.015736 | -0.033562 | 29.37s | 2.51s | -26.86s | 12/13 (92%) | 11/13 (85%) | -7.7% |
-| [synthetic-expense-dependent-care-render.pdf](synthetic-expense-dependent-care-render.md) | bda | $0.052999 | $0.048834 | $0.012999 | -0.035834 | 25.53s | 1.76s | -23.77s | 10/11 (91%) | 11/11 (100%) | +9.1% |
-| [synthetic-expense-dependent-care-scan.png](synthetic-expense-dependent-care-scan.md) | bda | $0.054127 | $0.049269 | $0.014127 | -0.035142 | 25.71s | 2.13s | -23.58s | 9/11 (82%) | 11/11 (100%) | +18.2% |
-| [synthetic-expense-utility-cable-bill-render-spanish.png](synthetic-expense-utility-cable-bill-render-spanish.md) | bda | $0.056013 | $0.049289 | $0.016013 | -0.033276 | 23.76s | 4.05s | -19.71s | 7/10 (70%) | 10/10 (100%) | +30.0% |
-| [synthetic-expense-utility-cable-bill-render.pdf](synthetic-expense-utility-cable-bill-render.md) | bda | $0.054110 | $0.048802 | $0.014110 | -0.034692 | 25.91s | 3.43s | -22.48s | 7/10 (70%) | 10/10 (100%) | +30.0% |
-| [synthetic-expense-utility-electric-bill-render-spanish.png](synthetic-expense-utility-electric-bill-render-spanish.md) | bda | $0.059898 | $0.049260 | $0.019898 | -0.029362 | 23.73s | 9.47s | -14.26s | 11/25 (44%) | 17/25 (68%) | +24.0% |
-| [synthetic-expense-utility-electric-bill-render.pdf](synthetic-expense-utility-electric-bill-render.md) | bda | $0.058866 | $0.048798 | $0.018866 | -0.029933 | 27.24s | 9.22s | -18.02s | 12/24 (50%) | 20/24 (83%) | +33.3% |
-| [synthetic-expense-utility-electric-bill-scan.jpg](synthetic-expense-utility-electric-bill-scan.md) | bda | $0.059770 | $0.049263 | $0.019770 | -0.029493 | 25.10s | 9.46s | -15.64s | 12/25 (48%) | 24/25 (96%) | +48.0% |
-| [synthetic-expense-utility-water-sewer-bill-render-spanish.png](synthetic-expense-utility-water-sewer-bill-render-spanish.md) | bda | $0.058292 | $0.049301 | $0.018292 | -0.031010 | 28.97s | 5.06s | -23.91s | 18/21 (86%) | 20/21 (95%) | +9.5% |
-| [synthetic-expense-utility-water-sewer-bill-render.pdf](synthetic-expense-utility-water-sewer-bill-render.md) | bda | $0.056880 | $0.048840 | $0.016880 | -0.031960 | 22.24s | 3.14s | -19.10s | 16/19 (84%) | 18/19 (95%) | +10.5% |
-| [synthetic-expense-utility-water-sewer-bill-scan.jpg](synthetic-expense-utility-water-sewer-bill-scan.md) | bda | $0.057861 | $0.049340 | $0.017861 | -0.031479 | 23.53s | 3.77s | -19.76s | 19/21 (90%) | 20/21 (95%) | +4.8% |
-| [synthetic-insurance-health-insurance-premium-render-spanish.png](synthetic-insurance-health-insurance-premium-render-spanish.md) | bda | $0.054338 | $0.049298 | $0.014338 | -0.034960 | 24.43s | 2.72s | -21.71s | 11/11 (100%) | 9/11 (82%) | -18.2% |
-| [synthetic-insurance-health-insurance-premium-render.pdf](synthetic-insurance-health-insurance-premium-render.md) | bda | $0.053453 | $0.048795 | $0.013453 | -0.035342 | 31.87s | 1.77s | -30.10s | 11/11 (100%) | 11/11 (100%) | 0% |
-| [synthetic-insurance-health-insurance-premium-scan.jpg](synthetic-insurance-health-insurance-premium-scan.md) | bda | $0.054193 | $0.049276 | $0.014193 | -0.035082 | 20.50s | 2.37s | -18.13s | 11/11 (100%) | 11/11 (100%) | 0% |
-| [synthetic-investment-and-royalty-income-render-spanish.png](synthetic-investment-and-royalty-income-render-spanish.md) | bda | $0.053137 | $0.049263 | $0.013137 | -0.036126 | 22.07s | 1.74s | -20.33s | 6/12 (50%) | 7/12 (58%) | +8.3% |
-| [synthetic-investment-and-royalty-income-render.pdf](synthetic-investment-and-royalty-income-render.md) | bda | $0.052320 | $0.048789 | $0.012320 | -0.036469 | 21.36s | 2.44s | -18.93s | 2/6 (33%) | 6/6 (100%) | +66.7% |
-| [synthetic-investment-and-royalty-income-scan.jpg](synthetic-investment-and-royalty-income-scan.md) | bda | $0.053159 | $0.049282 | $0.013159 | -0.036123 | 22.27s | 1.40s | -20.87s | 5/12 (42%) | 8/12 (67%) | +25.0% |
-| [synthetic-public-benefits-identity-proof-state-photo-id.jpg](synthetic-public-benefits-identity-proof-state-photo-id.md) | textract | $0.040470 | $0.033870 | $0.015470 | -0.018400 | 2.34s | 2.28s | -0.06s | 13/13 (100%) | 13/13 (100%) | 0% |
-| [synthetic-public-benefits-income-proof-pay-statement-photo.png](synthetic-public-benefits-income-proof-pay-statement-photo.md) | bda | $0.063716 | $0.048980 | $0.023716 | -0.025263 | 23.60s | 12.30s | -11.30s | 29/35 (83%) | 32/35 (91%) | +8.6% |
-| [synthetic-public-benefits-income-proof-pay-statement-rendered.png](synthetic-public-benefits-income-proof-pay-statement-rendered.md) | bda | $0.063613 | $0.048864 | $0.023613 | -0.025251 | 24.08s | 12.74s | -11.34s | 29/35 (83%) | 32/35 (91%) | +8.6% |
-| [synthetic-public-benefits-income-proof-pay-stub.jpg](synthetic-public-benefits-income-proof-pay-stub.md) | bda | $0.063618 | $0.048977 | $0.023618 | -0.025359 | 23.17s | 11.77s | -11.40s | 23/29 (79%) | 26/29 (90%) | +10.3% |
-| [synthetic-shelter-shelter-verification-render-spanish.png](synthetic-shelter-shelter-verification-render-spanish.md) | bda | $0.052904 | $0.049266 | $0.012904 | -0.036362 | 27.21s | 2.25s | -24.96s | 7/7 (100%) | 6/7 (86%) | -14.3% |
-| [synthetic-shelter-shelter-verification-render.pdf](synthetic-shelter-shelter-verification-render.md) | bda | $0.052160 | $0.048805 | $0.012160 | -0.036645 | 27.58s | 1.97s | -25.61s | 7/7 (100%) | 6/7 (86%) | -14.3% |
-| [synthetic-shelter-shelter-verification-scan.jpg](synthetic-shelter-shelter-verification-scan.md) | bda | $0.054329 | $0.049263 | $0.014329 | -0.034934 | 16.59s | 2.31s | -14.28s | 8/10 (80%) | 9/10 (90%) | +10.0% |
-| [synthetic-snap-income-proof-employment-wage-verification-letter-photo.png](synthetic-snap-income-proof-employment-wage-verification-letter-photo.md) | bda | $0.051940 | $0.049012 | $0.011940 | -0.037071 | 17.09s | 1.75s | -15.34s | 7/7 (100%) | 6/7 (86%) | -14.3% |
-| [synthetic-snap-income-proof-employment-wage-verification-letter-rendered.png](synthetic-snap-income-proof-employment-wage-verification-letter-rendered.md) | bda | $0.051825 | $0.048883 | $0.011825 | -0.037058 | 17.98s | 1.12s | -16.86s | 7/7 (100%) | 6/7 (86%) | -14.3% |
+| [synthetic-assets-bank-statement-render-spanish.png](synthetic-assets-bank-statement-render-spanish.md) | bda | $0.061509 | $0.049340 | $0.021509 | -0.027830 | 25.03s | 9.36s | -15.67s | 7/15 (47%) | 14/15 (93%) | +46.7% |
+| [synthetic-assets-bank-statement-render.pdf](synthetic-assets-bank-statement-render.md) | bda | $0.057784 | $0.048770 | $0.017784 | -0.030986 | 23.10s | 2.68s | -20.42s | 6/8 (75%) | 8/8 (100%) | +25.0% |
+| [synthetic-assets-bank-statement-scan.jpg](synthetic-assets-bank-statement-scan.md) | bda | $0.060755 | $0.049253 | $0.020755 | -0.028498 | 22.48s | 6.86s | -15.62s | 8/15 (53%) | 12/15 (80%) | +26.7% |
+| [synthetic-assets-life-insurance-policy-render.pdf](synthetic-assets-life-insurance-policy-render.md) | bda | $0.056519 | $0.048821 | $0.016519 | -0.032302 | 29.51s | 2.07s | -27.44s | 10/10 (100%) | 10/10 (100%) | 0% |
+| [synthetic-assets-life-insurance-policy-scan.jpg](synthetic-assets-life-insurance-policy-scan.md) | bda | $0.057349 | $0.049301 | $0.017349 | -0.031953 | 25.00s | 2.48s | -22.52s | 10/10 (100%) | 10/10 (100%) | 0% |
+| [synthetic-assets-trust-funds-investment-accounts-render-spanish.png](synthetic-assets-trust-funds-investment-accounts-render-spanish.md) | bda | $0.058018 | $0.049285 | $0.018018 | -0.031267 | 22.41s | 2.69s | -19.72s | 9/10 (90%) | 9/10 (90%) | 0% |
+| [synthetic-assets-trust-funds-investment-accounts-render.pdf](synthetic-assets-trust-funds-investment-accounts-render.md) | bda | $0.056885 | $0.048802 | $0.016885 | -0.031917 | 27.78s | 2.80s | -24.98s | 7/10 (70%) | 9/10 (90%) | +20.0% |
+| [synthetic-assets-trust-funds-investment-accounts-scan.jpg](synthetic-assets-trust-funds-investment-accounts-scan.md) | bda | $0.057893 | $0.049311 | $0.017893 | -0.031418 | 36.05s | 2.17s | -33.88s | 9/10 (90%) | 10/10 (100%) | +10.0% |
+| [synthetic-expense-child-support-rendered.pdf](synthetic-expense-child-support-rendered.md) | bda | $0.057671 | $0.048779 | $0.017671 | -0.031108 | 26.96s | 2.63s | -24.33s | 6/6 (100%) | 5/6 (83%) | -16.7% |
+| [synthetic-expense-child-support-scan.jpg](synthetic-expense-child-support-scan.md) | bda | $0.059604 | $0.049314 | $0.019604 | -0.029710 | 27.77s | 3.33s | -24.44s | 14/14 (100%) | 14/14 (100%) | 0% |
+| [synthetic-expense-dependent-care-render.pdf](synthetic-expense-dependent-care-render.md) | bda | $0.056964 | $0.048776 | $0.016964 | -0.031812 | 22.99s | 1.99s | -21.00s | 10/11 (91%) | 11/11 (100%) | +9.1% |
+| [synthetic-expense-dependent-care-scan.png](synthetic-expense-dependent-care-scan.md) | bda | $0.058005 | $0.049301 | $0.018005 | -0.031296 | 25.02s | 2.56s | -22.45s | 9/11 (82%) | 10/11 (91%) | +9.1% |
+| [synthetic-expense-utility-cable-bill-render-spanish.png](synthetic-expense-utility-cable-bill-render-spanish.md) | bda | $0.060147 | $0.049285 | $0.020147 | -0.029138 | 25.50s | 4.79s | -20.71s | 7/10 (70%) | 10/10 (100%) | +30.0% |
+| [synthetic-expense-utility-cable-bill-render.pdf](synthetic-expense-utility-cable-bill-render.md) | bda | $0.058090 | $0.048782 | $0.018090 | -0.030692 | 28.14s | 4.01s | -24.13s | 7/10 (70%) | 10/10 (100%) | +30.0% |
+| [synthetic-expense-utility-electric-bill-render-spanish.png](synthetic-expense-utility-electric-bill-render-spanish.md) | bda | $0.064058 | $0.049276 | $0.024058 | -0.025218 | 24.35s | 9.65s | -14.70s | 11/25 (44%) | 22/25 (88%) | +44.0% |
+| [synthetic-expense-utility-electric-bill-render.pdf](synthetic-expense-utility-electric-bill-render.md) | bda | $0.062725 | $0.048786 | $0.022725 | -0.026061 | 38.61s | 9.04s | -29.57s | 12/24 (50%) | 21/24 (88%) | +37.5% |
+| [synthetic-expense-utility-electric-bill-scan.jpg](synthetic-expense-utility-electric-bill-scan.md) | bda | $0.063741 | $0.049260 | $0.023741 | -0.025518 | 24.42s | 9.79s | -14.63s | 12/25 (48%) | 23/25 (92%) | +44.0% |
+| [synthetic-expense-utility-water-sewer-bill-render-spanish.png](synthetic-expense-utility-water-sewer-bill-render-spanish.md) | bda | $0.062276 | $0.049285 | $0.022276 | -0.027010 | 29.22s | 7.70s | -21.52s | 17/21 (81%) | 20/21 (95%) | +14.3% |
+| [synthetic-expense-utility-water-sewer-bill-render.pdf](synthetic-expense-utility-water-sewer-bill-render.md) | bda | $0.060851 | $0.048808 | $0.020851 | -0.027957 | 23.27s | 6.29s | -16.98s | 16/19 (84%) | 18/19 (95%) | +10.5% |
+| [synthetic-expense-utility-water-sewer-bill-scan.jpg](synthetic-expense-utility-water-sewer-bill-scan.md) | bda | $0.061854 | $0.049346 | $0.021854 | -0.027492 | 23.69s | 5.42s | -18.27s | 19/21 (90%) | 20/21 (95%) | +4.8% |
+| [synthetic-insurance-health-insurance-premium-render-spanish.png](synthetic-insurance-health-insurance-premium-render-spanish.md) | bda | $0.058325 | $0.049285 | $0.018325 | -0.030960 | 29.32s | 2.43s | -26.89s | 11/11 (100%) | 9/11 (82%) | -18.2% |
+| [synthetic-insurance-health-insurance-premium-render.pdf](synthetic-insurance-health-insurance-premium-render.md) | bda | $0.057549 | $0.048818 | $0.017549 | -0.031269 | 26.83s | 3.81s | -23.02s | 11/11 (100%) | 11/11 (100%) | 0% |
+| [synthetic-insurance-health-insurance-premium-scan.jpg](synthetic-insurance-health-insurance-premium-scan.md) | bda | $0.058229 | $0.049311 | $0.018229 | -0.031082 | 21.79s | 1.97s | -19.82s | 11/11 (100%) | 11/11 (100%) | 0% |
+| [synthetic-investment-and-royalty-income-render-spanish.png](synthetic-investment-and-royalty-income-render-spanish.md) | bda | $0.057176 | $0.049301 | $0.017176 | -0.032126 | 28.59s | 2.47s | -26.12s | 8/12 (67%) | 7/12 (58%) | -8.3% |
+| [synthetic-investment-and-royalty-income-render.pdf](synthetic-investment-and-royalty-income-render.md) | bda | $0.056314 | $0.048827 | $0.016314 | -0.032514 | 30.57s | 3.09s | -27.48s | 6/6 (100%) | 6/6 (100%) | 0% |
+| [synthetic-investment-and-royalty-income-scan.jpg](synthetic-investment-and-royalty-income-scan.md) | bda | $0.057185 | $0.049308 | $0.017185 | -0.032123 | 25.93s | 3.09s | -22.84s | 8/12 (67%) | 8/12 (67%) | 0% |
+| [synthetic-public-benefits-identity-proof-state-photo-id.jpg](synthetic-public-benefits-identity-proof-state-photo-id.md) | textract | $0.044458 | $0.033858 | $0.019458 | -0.014400 | 1.38s | 3.82s | +2.44s | 13/13 (100%) | 13/13 (100%) | 0% |
+| [synthetic-public-benefits-income-proof-pay-statement-photo.png](synthetic-public-benefits-income-proof-pay-statement-photo.md) | bda | $0.067742 | $0.048992 | $0.027742 | -0.021250 | 25.11s | 15.41s | -9.70s | 29/35 (83%) | 32/35 (91%) | +8.6% |
+| [synthetic-public-benefits-income-proof-pay-statement-rendered.png](synthetic-public-benefits-income-proof-pay-statement-rendered.md) | bda | $0.067625 | $0.048880 | $0.027625 | -0.021254 | 43.65s | 11.86s | -31.79s | 29/35 (83%) | 31/35 (89%) | +5.7% |
+| [synthetic-public-benefits-income-proof-pay-stub.jpg](synthetic-public-benefits-income-proof-pay-stub.md) | bda | $0.067605 | $0.048968 | $0.027605 | -0.021362 | 24.34s | 11.84s | -12.50s | 23/29 (79%) | 25/29 (86%) | +6.9% |
+| [synthetic-shelter-shelter-verification-render-spanish.png](synthetic-shelter-shelter-verification-render-spanish.md) | bda | $0.059189 | $0.049308 | $0.019189 | -0.030119 | 24.14s | 2.88s | -21.27s | 7/7 (100%) | 0/7 (0%) | -100.0% |
+| [synthetic-shelter-shelter-verification-render.pdf](synthetic-shelter-shelter-verification-render.md) | bda | $0.056336 | $0.048776 | $0.016336 | -0.032440 | 32.34s | 2.71s | -29.63s | 7/7 (100%) | 7/7 (100%) | 0% |
+| [synthetic-shelter-shelter-verification-scan.jpg](synthetic-shelter-shelter-verification-scan.md) | bda | $0.058380 | $0.049272 | $0.018380 | -0.030892 | 23.36s | 3.60s | -19.76s | 0/10 (0%) | 8/10 (80%) | +80.0% |
+| [synthetic-snap-income-proof-employment-wage-verification-letter-photo.png](synthetic-snap-income-proof-employment-wage-verification-letter-photo.md) | bda | $0.055950 | $0.049008 | $0.015950 | -0.033058 | 21.40s | 1.28s | -20.12s | 7/7 (100%) | 6/7 (86%) | -14.3% |
+| [synthetic-snap-income-proof-employment-wage-verification-letter-rendered.png](synthetic-snap-income-proof-employment-wage-verification-letter-rendered.md) | bda | $0.055856 | $0.048915 | $0.015856 | -0.033058 | 23.95s | 1.47s | -22.48s | 7/7 (100%) | 6/7 (86%) | -14.3% |
 

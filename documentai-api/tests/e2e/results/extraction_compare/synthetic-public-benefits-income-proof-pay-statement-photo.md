@@ -1,28 +1,29 @@
 # synthetic-public-benefits-income-proof-pay-statement-photo.png
 
 
-_Run: 2026-10-01 02:38 UTC_
+_Run: 2026-10-28 18:36 UTC_
 
 
 ## Durations
 
-- bda: 23.6s extraction
-- ocr-mapping: 12.303s extraction
+- bda: 25.11s extraction
+- ocr-mapping: 15.412s extraction
 
 
 ## Cost
 
 _By Service_
-- us.amazon.nova-lite-v1:0: $0.00011394
-- us.amazon.nova-pro-v1:0: $0.02360240
-- bda: $0.04000000
-- **total: $0.06371634**
+- us.amazon.nova-lite-v1:0: $0.00011394 (1791 in / 27 out)
+- us.amazon.nova-pro-v1:0: $0.02362800 (23155 in / 1595 out)
+- bda: $0.04000000 (1 page(s))
+- analyze_document_layout: $0.00400000 (1 page(s))
+- **total: $0.06774194**
 
 _By Extraction Method_
-- shared (preclassification): $0.00897954
-- ocr-mapping extraction: $0.01473680
+- shared (preclassification): $0.00899234
+- ocr-mapping extraction: $0.01874960
 - primary (bda): $0.04000000
-- **total: $0.06371634**
+- **total: $0.06774194**
 
 
 ## Accuracy
@@ -55,12 +56,12 @@ _By Bounding Box_
 | EmployeeAddress.Line2 | - | - | - | 0.93 | N/A | - | - | - |
 | EmployeeAddress.State | MD | ✅ MD | ✅ MD | 0.94 | 1.0000 | 0.355,0.238,0.019,0.009 | ✅ 0.354,0.238,0.020,0.010 | ❌ 0.236,0.133,0.023,0.011 |
 | EmployeeAddress.ZipCode | 21213 | ✅ 21213 | ✅ 21213 | 0.94 | 1.0000 | 0.378,0.238,0.035,0.009 | ✅ 0.379,0.238,0.035,0.010 | ✅ 0.379,0.238,0.035,0.010 |
-| EmployeeName.FirstName | Jasmine | ✅ Jasmine | ✅ Jasmine | 0.92 | 1.0000 | 0.292,0.202,0.045,0.009 | ✅ 0.292,0.202,0.046,0.010 | ✅ 0.292,0.201,0.046,0.010 |
+| EmployeeName.FirstName | Jasmine | ✅ Jasmine | ✅ Jasmine | 0.93 | 1.0000 | 0.292,0.202,0.045,0.009 | ✅ 0.292,0.202,0.046,0.010 | ✅ 0.292,0.201,0.046,0.010 |
 | EmployeeName.LastName | Carter | ✅ Carter | ✅ Carter | 0.91 | 1.0000 | 0.342,0.202,0.034,0.009 | ✅ 0.341,0.202,0.035,0.010 | ✅ 0.341,0.202,0.035,0.010 |
 | EmployeeName.MiddleName | - | - | - | 0.93 | N/A | - | - | - |
 | EmployeeName.SuffixName | - | - | - | 0.93 | N/A | - | - | - |
 | EmployeeNumber | 10482 | ✅ 10482 | ✅ 10482 | 0.94 | 1.0000 | 0.293,0.261,0.032,0.009 | ✅ 0.292,0.261,0.035,0.010 | ✅ 0.292,0.261,0.035,0.010 |
-| FederalFilingStatus | Married | ✅ Married | ✅ Married | 0.71 | 1.0000 | 0.799,0.579,0.043,0.010 | ✅ 0.799,0.579,0.045,0.010 | ✅ 0.799,0.579,0.044,0.010 |
+| FederalFilingStatus | Married | ✅ Married | ✅ Married | 0.72 | 1.0000 | 0.799,0.579,0.043,0.010 | ✅ 0.799,0.579,0.045,0.010 | ✅ 0.799,0.579,0.044,0.010 |
 | FederalTaxes.ItemDescription | Federal Income Tax | ❌ - | ✅ Federal Income Tax | - | 1.0000 | 0.143,0.584,0.115,0.010 | ❌ - | ✅ 0.143,0.584,0.116,0.011 |
 | FederalTaxes.Period | 186.11 | ❌ - | ✅ 186.11 | - | 1.0000 | 0.495,0.581,0.044,0.011 | ❌ - | ✅ 0.495,0.581,0.046,0.012 |
 | FederalTaxes.YTD | 2287.59 | ❌ - | ✅ 2287.59 | - | 1.0000 | 0.636,0.580,0.060,0.011 | ❌ - | ✅ 0.637,0.580,0.060,0.012 |

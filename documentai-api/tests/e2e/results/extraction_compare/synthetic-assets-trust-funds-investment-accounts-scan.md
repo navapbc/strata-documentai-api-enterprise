@@ -1,28 +1,29 @@
 # synthetic-assets-trust-funds-investment-accounts-scan.jpg
 
 
-_Run: 2026-10-01 02:38 UTC_
+_Run: 2026-10-28 18:32 UTC_
 
 
 ## Durations
 
-- bda: 20.94s extraction
-- ocr-mapping: 1.98s extraction
+- bda: 36.05s extraction
+- ocr-mapping: 2.166s extraction
 
 
 ## Cost
 
 _By Service_
-- us.amazon.nova-lite-v1:0: $0.00012360
-- us.amazon.nova-pro-v1:0: $0.01373120
-- bda: $0.04000000
-- **total: $0.05385480**
+- us.amazon.nova-lite-v1:0: $0.00012360 (1956 in / 26 out)
+- us.amazon.nova-pro-v1:0: $0.01376960 (14904 in / 577 out)
+- bda: $0.04000000 (1 page(s))
+- analyze_document_layout: $0.00400000 (1 page(s))
+- **total: $0.05789320**
 
 _By Extraction Method_
-- shared (preclassification): $0.00927880
-- ocr-mapping extraction: $0.00457600
+- shared (preclassification): $0.00931080
+- ocr-mapping extraction: $0.00858240
 - primary (bda): $0.04000000
-- **total: $0.05385480**
+- **total: $0.05789320**
 
 
 ## Accuracy

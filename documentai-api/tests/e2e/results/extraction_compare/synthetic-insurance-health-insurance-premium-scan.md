@@ -1,35 +1,36 @@
 # synthetic-insurance-health-insurance-premium-scan.jpg
 
 
-_Run: 2026-10-01 02:38 UTC_
+_Run: 2026-10-28 18:35 UTC_
 
 
 ## Durations
 
-- bda: 20.5s extraction
-- ocr-mapping: 2.374s extraction
+- bda: 21.79s extraction
+- ocr-mapping: 1.967s extraction
 
 
 ## Cost
 
 _By Service_
-- us.amazon.nova-lite-v1:0: $0.00012360
-- us.amazon.nova-pro-v1:0: $0.01406960
-- bda: $0.04000000
-- **total: $0.05419320**
+- us.amazon.nova-lite-v1:0: $0.00012384 (1956 in / 27 out)
+- us.amazon.nova-pro-v1:0: $0.01410480 (15191 in / 610 out)
+- bda: $0.04000000 (1 page(s))
+- analyze_document_layout: $0.00400000 (1 page(s))
+- **total: $0.05822864**
 
 _By Extraction Method_
-- shared (preclassification): $0.00927560
-- ocr-mapping extraction: $0.00491760
+- shared (preclassification): $0.00931104
+- ocr-mapping extraction: $0.00891760
 - primary (bda): $0.04000000
-- **total: $0.05419320**
+- **total: $0.05822864**
 
 
 ## Accuracy
 
 _By Extracted Data_
 - BDA: 11/11 (100%) equivalent match, 11/11 (100%) close, 0 misses
-- OCR Mapping: 10/11 (91%) equivalent match, 11/11 (100%) close, 0 misses
+- OCR Mapping: 9/11 (82%) equivalent match, 11/11 (100%) close, 0 misses
 
 _By Bounding Box_
 - BDA: 4/5 exact, 1 miss
@@ -40,7 +41,7 @@ _By Bounding Box_
 | Field | Expected | BDA Value | LLM (via Textract) Value | BDA Conf | LLM Conf | Expected Bounding Box | BDA Bounding Box | LLM Bounding Box |
 |---|---|---|---|---|---|---|---|---|
 | coverage_end_date | 2026-09-30 | ✅ 2026-09-30 | ✅ 2026-09-30 | 0.91 | 0.8500 | - | 0.890,0.087,0.081,0.012 | 0.890,0.087,0.081,0.012 |
-| coverage_start_date | 2026-09-01 | ✅ 2026-09-01 | ✅ 2026-09-01 | 0.82 | 1.0000 | - | - | 0.791,0.068,0.081,0.011 |
+| coverage_start_date | 2026-09-01 | ✅ 2026-09-01 | 🟡 2026-01-01 | 0.82 | 1.0000 | - | - | 0.272,0.382,0.074,0.010 |
 | employer_name | - | - | - | 0.94 | - | - | - | - |
 | insurer_or_marketplace_name | Harbor Health Plan, Inc. | ✅ Harbor Health Plan, Inc. | ✅ Harbor Health Plan, Inc. | 0.39 | 1.0000 | 0.353,0.039,0.499,0.016 | ❌ 0.135,0.042,0.185,0.045 | ❌ 0.352,0.039,0.111,0.012 |
 | payment_due_date | 2026-09-15 | ✅ 2026-09-15 | ✅ 2026-09-15 | 0.92 | 1.0000 | 0.789,0.103,0.081,0.010 | ✅ 0.789,0.103,0.081,0.011 | ✅ 0.789,0.103,0.082,0.011 |

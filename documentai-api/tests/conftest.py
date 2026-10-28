@@ -255,19 +255,9 @@ _COMPARE_TEST_FILE = Path(__file__).parent / "e2e" / "test_extraction_compare.py
 
 
 def pytest_collection_finish(session):
-    import shutil
-
-    session.config._extraction_compare_controller = has_compare = any(
+    session.config._extraction_compare_controller = any(
         Path(item.fspath) == _COMPARE_TEST_FILE for item in session.items
     )
-
-    if not has_compare or hasattr(session.config, "workerinput"):
-        return
-
-    if _COMPARE_RESULTS_DIR.exists():
-        shutil.rmtree(_COMPARE_RESULTS_DIR)
-
-    _COMPARE_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def pytest_sessionfinish(session, exitstatus):

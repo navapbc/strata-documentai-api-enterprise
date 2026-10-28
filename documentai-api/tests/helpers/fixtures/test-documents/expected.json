@@ -317,7 +317,8 @@
       "Genuinely non-deterministic: observed matching the custom 'Trust-Fund-Statement'",
       "blueprint (000) in one run and finding no match at all (002) in another, within the",
       "same test session. Marking e2e_enabled: false to avoid flaky assertions; revisit if",
-      "a more deterministic fixture is found."
+      "a more deterministic fixture is found.",
+      "compareEnabled false: BDA routing is non-deterministic here (match or 002), so the compare run, which needs both paths, only sometimes produces a result."
     ],
     "bdaMatchedDocumentClass": "Trust-Fund-Statement",
     "contentType": "image/jpeg",
@@ -326,7 +327,7 @@
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
     "responseCode": "000",
-    "compareEnabled": true
+    "compareEnabled": false
   },
   "happy-path/synthetic-expense-child-support-rendered.pdf": {
     "//": [
@@ -367,7 +368,8 @@
       "'Bank-Statement' (105 or 000) or no match at all (002) the rest of the time.",
       "Previously marked re-enabled after only 2 consistent live checks; a larger",
       "sample (~16 runs) shows a roughly even split across 4 distinct outcomes.",
-      "Marking e2e_enabled: false again."
+      "Marking e2e_enabled: false again.",
+      "compareEnabled false: BDA routing is non-deterministic here (match or no match), so the compare run, which needs both paths, only sometimes produces a result."
     ],
     "bdaMatchedDocumentClass": "Child-Support-Document",
     "contentType": "image/png",
@@ -376,13 +378,14 @@
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
     "responseCode": "000",
-    "compareEnabled": true
+    "compareEnabled": false
   },
   "happy-path/synthetic-expense-dependent-care-render-spanish.png": {
     "//": [
       "Verified live (2x, consistent). Now correctly routes to the 'expenses' per-category",
       "project, but finds no specific blueprint match there (002) instead of falling back",
-      "to a generic blueprint as it did before the per-category BDA project consolidation."
+      "to a generic blueprint as it did before the per-category BDA project consolidation.",
+      "compareEnabled false: BDA finds no blueprint match (002), so the compare run has no primary result to compare."
     ],
     "bdaMatchedDocumentClass": null,
     "contentType": "image/png",
@@ -391,7 +394,7 @@
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
     "responseCode": "002",
-    "compareEnabled": true
+    "compareEnabled": false
   },
   "happy-path/synthetic-expense-dependent-care-render.pdf": {
     "//": [
@@ -769,7 +772,8 @@
     "//": [
       "Verified live (2x, consistent). Now correctly routes to the 'expenses' per-category",
       "project, but finds no specific blueprint match there (002) instead of falling back",
-      "to a generic blueprint as it did before the per-category BDA project consolidation."
+      "to a generic blueprint as it did before the per-category BDA project consolidation.",
+      "compareEnabled false: BDA finds no blueprint match (002), so the compare run has no primary result to compare."
     ],
     "bdaMatchedDocumentClass": null,
     "contentType": "image/jpeg",
@@ -778,7 +782,7 @@
     "isPasswordProtected": false,
     "preclassificationCategory": "present",
     "responseCode": "002",
-    "compareEnabled": true
+    "compareEnabled": false
   },
   "happy-path/synthetic-shelter-shelter-verification-render-spanish.png": {
     "//": [
