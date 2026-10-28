@@ -1,5 +1,11 @@
 """SSM Parameter Store helpers with caching."""
 
+from documentai_api.config.env import get_env_config
+from documentai_api.constants.defaults import (
+    PreClassificationDefaults,
+    PreprocessingBoundingBoxDefaults,
+    SystemDefaults,
+)
 from documentai_api.constants.features import FeatureFlags
 from documentai_api.logging import get_logger
 from documentai_api.services import ssm as ssm_service
@@ -10,7 +16,7 @@ logger = get_logger(__name__)
 _SSM_CACHE_TTL_MINUTES = 5
 
 
-def get_parameter_value(param_name: str, default: str | None = None) -> str:
+def _get_parameter_value(param_name: str, default: str | None = None) -> str:
     """Get SSM parameter with caching."""
     cache = get_cache()
     cached = cache.get(f"ssm:{param_name}")
@@ -29,16 +35,20 @@ def get_parameter_value(param_name: str, default: str | None = None) -> str:
 
 
 def _get_flag(flag: str, default: bool) -> bool:
-    from documentai_api.config.env import get_env_config
-
     config = get_env_config()
     if not config.ssm_prefix:
         logger.info(f"{flag}: {default} (default, no SSM prefix)")
         return default
     param = f"{config.ssm_prefix}/feature-flags/{flag}"
-    value = get_parameter_value(param, default=str(default).lower()).lower() == "true"
+    value = _get_parameter_value(param, default=str(default).lower()).lower() == "true"
     logger.info(f"{flag}: {value}")
     return value
+
+
+def _get_model_id(param_name: str | None, default: str) -> str:
+    if not param_name:
+        return default
+    return _get_parameter_value(param_name, default=default)
 
 
 def is_document_crop_enabled() -> bool:
@@ -115,3 +125,59 @@ def is_multipage_document_flagging_enabled() -> bool:
     distinct document type across pages is rejected with response code 401. Default: true.
     """
     return _get_flag(FeatureFlags.FLAG_MULTIPLE_DOCUMENTS_IN_MULTIPAGE, default=True)
+
+
+def is_ocr_mapping_enabled() -> bool:
+    """Whether OCR mapping extraction executes when a document type is known.
+
+    When enabled, documents with a matched blueprint type are routed to the OCR
+    mapping extraction path (instructor + Bedrock against Textract OCR blocks). Default: false.
+    """
+    return _get_flag(FeatureFlags.OCR_MAPPING_ENABLED, default=False)
+
+
+def get_classification_model_id() -> str:
+    """Bedrock model ID for document preclassification and blueprint matching."""
+    return _get_model_id(
+        get_env_config().bedrock_classification_model_id_param,
+        PreClassificationDefaults.MODEL_ID,
+    )
+
+
+def get_bounding_box_model_id() -> str:
+    """Bedrock model ID for document bounding-box detection."""
+    return _get_model_id(
+        get_env_config().bedrock_bounding_box_model_id_param,
+        PreprocessingBoundingBoxDefaults.MODEL_ID,
+    )
+
+
+def get_blur_quadrant_model_id() -> str:
+    """Bedrock model ID for empty-quadrant blur detection."""
+    return _get_model_id(
+        get_env_config().bedrock_blur_quadrant_model_id_param,
+        SystemDefaults.BLUR_QUADRANT_MODEL_ID,
+    )
+
+
+def get_supplemental_extraction_model_id() -> str:
+    """Bedrock model ID for Nova supplemental field extraction."""
+    return _get_model_id(
+        get_env_config().bedrock_supplemental_extraction_model_id_param,
+        "us.amazon.nova-micro-v1:0",
+    )
+
+
+def get_ocr_mapping_model_id() -> str:
+    """Bedrock model ID for OCR mapping extraction. SSM-configurable; default Nova Pro.
+
+    See docs/decisions/2026-09-29-ocr-mapping-model-selection.md - Nova Lite was
+    tested and reverted (accuracy dropped 82% -> 74%, including empty simple fields
+    and failure to disambiguate same-value fields like insured_name/policyholder_name).
+    Don't retry Lite/Micro here without re-validating against that ADR's failure modes.
+    """
+    config = get_env_config()
+    return _get_model_id(
+        f"{config.ssm_prefix}/ocr-mapping/model-id" if config.ssm_prefix else None,
+        "us.amazon.nova-pro-v1:0",
+    )

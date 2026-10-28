@@ -25,9 +25,14 @@ dependencies = [
   "opentelemetry-sdk>=1.20.0",
   "opentelemetry-exporter-otlp-proto-grpc>=1.20.0",
   "opentelemetry-instrumentation-fastapi>=0.41b0",
+  "instructor>=1.0.0",
 ]
 
 [project.optional-dependencies]
+cli-geo = [
+  "pytesseract>=0.3.10",
+  "pypdfium2>=4.0.0",
+]
 dev = [
   "pytest>=7.0.0",
   "pytest-cov>=4.1.0",
@@ -42,7 +47,7 @@ dev = [
   "freezegun>=1.2.0",
   "mypy>=1.20.0",
   "import-linter>=2.0",
-  "boto3-stubs[s3,dynamodb,bedrock,bedrock-runtime,bedrock-data-automation,bedrock-data-automation-runtime,sqs,athena,ssm,cognito-idp,cloudwatch]>=1.38.0",
+  "boto3-stubs[s3,dynamodb,bedrock,bedrock-runtime,bedrock-data-automation,bedrock-data-automation-runtime,sqs,athena,ssm,cognito-idp,cloudwatch,textract]>=1.38.0",
 ]
 
 [project.scripts]
@@ -60,6 +65,8 @@ pull-blueprint-schemas = "documentai_api.cli.pull_blueprint_schemas:app"
 preclassify = "documentai_api.cli.preclassify:app"
 generate-categories = "documentai_api.cli.generate_categories:app"
 generate-env-names = "documentai_api.cli.generate_env_names:app"
+generate-geometry-candidates = "documentai_api.cli.generate_geometry_candidates:app"
+run-extraction-compare = "documentai_api.cli.run_extraction_compare:app"
 
 [tool.mypy]
 pretty = true
@@ -76,6 +83,16 @@ strict_bytes = true
 module = "tests.*"
 disallow_untyped_defs = false
 disallow_untyped_decorators = false
+
+[[tool.mypy.overrides]]
+# pypdfium2 and pytesseract ship no stubs; ignore missing imports only in this module
+module = "documentai_api.cli.generate_geometry_candidates"
+ignore_missing_imports = true
+warn_unused_ignores = false
+
+[[tool.mypy.overrides]]
+module = ["pypdfium2", "pytesseract"]
+ignore_missing_imports = true
 
 [tool.ruff]
 line-length = 100

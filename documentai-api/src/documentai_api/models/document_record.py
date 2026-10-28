@@ -33,4 +33,5 @@ class DocumentRecord(BaseModel):
     ai_consent_flag: bool | None = None
     is_demo: bool = False
     is_test_run: bool = False
+    is_compare: bool = False
     ttl_days: int | None = None  # override default TTL (e.g. 3 for demo)

@@ -7,6 +7,7 @@
 	diagrams \
 	generate-categories \
 	generate-env-names \
+	generate-geometry-candidates \
 	tenant \
 	tenant-deactivate \
 	tenant-list \
@@ -40,6 +41,8 @@
 	test-smoke \
 	test-e2e \
 	test-e2e-routing \
+	test-extraction-compare \
+	regen-extraction-compare-summary \
 	test-integration \
 	test-regression \
 	metrics-agg \
@@ -66,12 +69,16 @@ __check_defined = \
 _require-jq:
 	@command -v jq >/dev/null || (echo "jq required" && exit 1)
 
+_require-tesseract:
+	@command -v tesseract >/dev/null || (echo "tesseract binary required: brew install tesseract" && exit 1)
+	@tesseract --list-langs 2>/dev/null | grep -q '^spa$$' || (echo "Tesseract Spanish language pack required: brew install tesseract-lang" && exit 1)
+
 define get_api_lambda_env_vars
 	FN=$$(aws lambda list-functions --query "Functions[?contains(FunctionName, 'docai') && ends_with(FunctionName, '-api')].FunctionName" --output text); \
 	test -n "$$FN" || (echo "No deployed docai *-api Lambda found" && exit 1); \
 	aws lambda get-function-configuration --function-name "$$FN" \
 	  --query "Environment.Variables" --output json | \
-	jq -r 'to_entries[] | "\(.key)=\(.value)"'
+	jq -r 'to_entries[] | "\(.key)=\(.value | @sh)"'
 endef
 
 define get_worker_lambda_env_vars
@@ -79,7 +86,7 @@ define get_worker_lambda_env_vars
 	test -n "$$FN" || (echo "No deployed docai *-document-processor Lambda found" && exit 1); \
 	aws lambda get-function-configuration --function-name "$$FN" \
 	  --query "Environment.Variables" --output json | \
-	jq -r 'to_entries[] | "\(.key)=\(.value)"'
+	jq -r 'to_entries[] | "\(.key)=\(.value | @sh)"'
 endef
 
 ##################################################
@@ -168,8 +175,13 @@ test: ## Run test suite
 test-coverage: ## Run tests with coverage report
 	$(PY_RUN_CMD) pytest --cov=src/documentai_api --cov-branch --cov-report=html:.coverage_report --cov-report=term-missing $(args)
 
+# Capped because -n auto spawns one worker per CPU, and on an 11-CPU machine with an 8 GB
+# Docker VM several workers crash ("node down: Not properly terminated"). Cause not pinned
+# down; likely memory pressure. Override with e.g. `make test-parallel WORKERS=auto`.
+WORKERS ?= 4
+
 test-parallel: ## Run test suite in parallel
-	$(PY_RUN_CMD) pytest -n auto $(args)
+	$(PY_RUN_CMD) pytest -n $(WORKERS) $(args)
 
 test-audit: ## Run audit logging tests
 	$(PY_RUN_CMD) pytest -m "audit" $(args)
@@ -194,6 +206,16 @@ test-e2e: ## Run e2e tests
 test-e2e-routing: .env.e2e
 test-e2e-routing: ## Run e2e routing tests
 	@set -a && . ./.env.e2e && set +a && uv run --frozen pytest tests/e2e -m e2e_routing $(args)
+
+test-extraction-compare: .env.e2e
+test-extraction-compare: ## Run the BDA vs LLM extraction-compare e2e test
+	@set -a && . ./.env.e2e && set +a && uv run --frozen pytest tests/e2e/test_extraction_compare.py -m e2e -n 4 $(args)
+
+regen-extraction-compare-summary: ## Regenerate per-doc and summary markdown from existing .data.json sidecars
+	uv run --frozen python3 -c "from pathlib import Path; from tests.e2e.test_extraction_compare import regen_comparison_md, write_extraction_compare_summary; p = Path('tests/e2e/results/extraction_compare'); regen_comparison_md(p); write_extraction_compare_summary(p)"
+
+generate-geometry-candidates: _require-tesseract ## Generate ground-truth geometry candidates for fixture documents
+	$(AWS_RUN_CMD) --extra cli-geo generate-geometry-candidates $(args)
 
 .env.e2e: _require-jq ## Generate .env.e2e from deployed Lambda env vars + API Gateway endpoint
 # BASE_URL/AWS_REGION aren't in the Lambda's own env (that's API Gateway infra

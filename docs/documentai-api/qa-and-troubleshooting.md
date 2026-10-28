@@ -107,7 +107,7 @@ For testing a document against a blueprint, use the **Extraction Test Runner** v
 | Required field should be present | Field is missing or has unexpectedly low confidence | Verify the field is defined as expected in the blueprint, then review extraction/confidence |
 | Required field is intentionally absent | DocumentAI returned a value anyway | Review the extracted output and geometry (the bounding-box location BDA returns for a field on the page). A value without supporting geometry may indicate an incorrect extraction |
 
-For an already processed document, the evaluation endpoint (`GET /v1/documents/{job_id}/evaluation`, takes an API key; implemented in `documentai-api/src/documentai_api/app_evaluation.py`) may provide a quicker explanation of which checks passed or failed before you dig into the underlying data.
+For an already processed document, the evaluation endpoint (`GET /v1/documents/{job_id}/evaluation`, takes an API key; implemented in `documentai-api/src/documentai_api/routers/evaluation.py`, backed by `utils/evaluations.py`) may provide a quicker explanation of which checks passed or failed before you dig into the underlying data.
 
 ## If you need to dig deeper
 

@@ -289,7 +289,7 @@ def ephemeral_cognito_user(jwt_client, reset_env):
             logger.warning(f"e2e: failed to delete ephemeral Cognito user {username}: {e}")
 
 
-def _wipe_e2e_tenant(tenant_id: str) -> None:
+def _wipe_test_tenant(tenant_id: str) -> None:
     """Delete every document and S3 object owned by the given e2e tenant.
 
     Best-effort: logs warnings on individual failures rather than raising,
@@ -355,19 +355,48 @@ def _sweep_stale_e2e_documents(_sweep_stale_e2e_keys, e2e_tenant_id):
     Belt-and-suspenders - `cleanup_e2e_tenant` handles the happy path; this
     handles 'previous run crashed and left documents behind.'
     """
-    _wipe_e2e_tenant(e2e_tenant_id)
+    _wipe_test_tenant(e2e_tenant_id)
     return
 
 
 @pytest.fixture(scope="session", autouse=True)
-def cleanup_e2e_tenant(api_key, e2e_tenant_id):
-    """Delete every document this worker created in its e2e tenant.
-
-    Runs after api_key teardown - depends on it so the key still exists if
-    we ever want to use the API for cleanup instead of going direct to DDB/S3.
-    """
+def cleanup_e2e_tenant(e2e_tenant_id):
+    """Delete every document this worker created in its e2e tenant."""
     yield
-    _wipe_e2e_tenant(e2e_tenant_id)
+    _wipe_test_tenant(e2e_tenant_id)
+
+
+@pytest.fixture(scope="session")
+def compare_tenant_id() -> str | None:
+    """The compare-{sub} tenant /v1/admin/extraction-compare writes to for this COMPARE_JWT.
+
+    None when COMPARE_JWT isn't set - the extraction-compare e2e tests are skipped
+    in that case, so there's nothing to clean up.
+    """
+    token = os.environ.get("COMPARE_JWT")
+    if not token:
+        return None
+
+    import jwt
+
+    claims = jwt.decode(token, options={"verify_signature": False})
+    return f"compare-{claims.get('sub', 'unknown')}"
+
+
+@pytest.fixture(scope="session", autouse=True)
+def cleanup_compare_tenant(compare_tenant_id):
+    """Wipe the compare-{sub} tenant used by /v1/admin/extraction-compare e2e tests.
+
+    Sweeps before the run too (belt-and-suspenders for a previous run that
+    crashed mid-session) and is a no-op when COMPARE_JWT isn't set.
+    """
+    if not compare_tenant_id:
+        yield
+        return
+
+    _wipe_test_tenant(compare_tenant_id)
+    yield
+    _wipe_test_tenant(compare_tenant_id)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -383,6 +412,7 @@ def _ensure_multipage_flagging_enabled(monkeypatch_session):
     from documentai_api.services import ssm as ssm_service
     from documentai_api.utils.cache import get_cache
 
+    get_env_config.cache_clear()
     config = get_env_config()
 
     if not config.ssm_prefix:

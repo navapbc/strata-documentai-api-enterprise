@@ -1,5 +1,6 @@
 """BDA processor: tracing, DDB lookup, extraction dispatch. Returns ProcessorResult."""
 
+from datetime import UTC, datetime
 from typing import Any
 
 from opentelemetry import trace
@@ -21,6 +22,7 @@ from documentai_api.utils.bda import (
     get_ddb_record_from_bda_output,
     get_text_from_standard_blueprint,
 )
+from documentai_api.utils.extraction_timing import get_elapsed_time_seconds
 
 logger = get_logger(__name__)
 tracer = trace.get_tracer(__name__)
@@ -67,6 +69,15 @@ def _process_bda_result(
     )
 
     if result is not None:
+        started_at_str = ddb_record.get(DocumentMetadata.EXTRACTION_STARTED_AT)
+
+        if started_at_str:
+            started = datetime.fromisoformat(started_at_str)
+            completed = datetime.now(UTC)
+            result.processing_started_at = started
+            result.processing_completed_at = completed
+            result.processing_duration_seconds = get_elapsed_time_seconds(started, completed)
+
         logger.info("Custom matching blueprint found, and document type matches. Success.")
         return ProcessorResult(
             object_key=file_name,

@@ -43,20 +43,18 @@ def load_test_cases() -> list[Any]:
                     is_blurry=expected.get("isDocumentBlurry", False),
                     is_password_protected=expected.get("isPasswordProtected", False),
                     bda_matched_document_class=expected.get("bdaMatchedDocumentClass"),
-                    content_type=expected.get("content_type"),
-                    required_fields_for_extraction=expected.get("requiredFieldsForExtraction"),
-                    skip_bda=expected.get("skip_bda", False),
+                    content_type=expected.get("contentType"),
                 ),
             ),
             marks=(
-                [pytest.mark.flaky(reruns=expected["reruns_override"])]
-                if "reruns_override" in expected
+                [pytest.mark.flaky(reruns=expected["rerunsOverride"])]
+                if "rerunsOverride" in expected
                 else []
             ),
             id=filename,
         )
         for filename, expected in cases.items()
-        if expected.get("e2e_enabled", False)
+        if expected.get("e2eEnabled", False)
     ]
 
 

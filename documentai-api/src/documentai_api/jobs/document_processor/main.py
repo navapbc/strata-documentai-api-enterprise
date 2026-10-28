@@ -27,11 +27,17 @@ from documentai_api.classifiers.document_classification import (
 )
 from documentai_api.config.env import get_env_config
 from documentai_api.constants.processing import (
+    LlmUsageReason,
     ProcessStatus,
     S3MetadataKeys,
 )
 from documentai_api.dtos.classification import ClassificationData
-from documentai_api.dtos.processing import CropResult, OptimizationResult, PreExtractionResult
+from documentai_api.dtos.processing import (
+    CropResult,
+    OcrMappingMessage,
+    OptimizationResult,
+    PreExtractionResult,
+)
 from documentai_api.pipeline.document_lifecycle import (
     set_bda_processing_status_started,
     set_processing_status_started,
@@ -41,16 +47,19 @@ from documentai_api.pipeline.textract import run_textract_pipeline
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.services import ddb as ddb_service
 from documentai_api.services import s3 as s3_service
+from documentai_api.services import sqs as sqs_service
 from documentai_api.services.exceptions import is_retryable
+from documentai_api.services.textract import get_layout_ocr_blocks
 from documentai_api.utils.bda_invoker import (
     invoke_bedrock_data_automation,
     resolve_project_arn,
     skip_bda_if_unclassified,
 )
 from documentai_api.utils.dates import strip_time
-from documentai_api.utils.ddb import get_ddb_record
+from documentai_api.utils.ddb import get_ddb_record, write_tokens_by_model
 from documentai_api.utils.image_optimization import optimize_s3_image
 from documentai_api.utils.s3 import parse_s3_uri
+from documentai_api.utils.ssm import is_ocr_mapping_enabled
 from documentai_api.utils.uploads import validate_s3_object_is_bda_native
 
 logger = documentai_api.logging.get_logger(__name__)
@@ -189,6 +198,19 @@ def _persist_optimization_metrics(
             table_name, {"fileName": ddb_key}, "SET " + ", ".join(updates), values
         )
 
+    if (
+        crop_result.model_id
+        and crop_result.input_tokens is not None
+        and crop_result.output_tokens is not None
+    ):
+        write_tokens_by_model(
+            ddb_key,
+            crop_result.model_id,
+            LlmUsageReason.CROP_DETECTION,
+            crop_result.input_tokens,
+            crop_result.output_tokens,
+        )
+
 
 def _invoke_textract_if_identity_path(
     pre_extraction_result: PreExtractionResult | None,
@@ -281,6 +303,70 @@ def invoke_bda(
             batch_id=batch_id,
         )
         raise
+
+
+def _invoke_ocr_mapping_path(
+    ddb_key: str,
+    existing_record: dict[str, Any],
+    file_bytes: bytes,
+    content_type: str,
+    tenant_id: str,
+    batch_id: str | None,
+) -> None:
+    """Write OCR blocks to S3 and enqueue an OCR mapping extraction request.
+
+    No-ops when the feature flag is off or no blueprint type was matched.
+    Errors are logged and swallowed - BDA is the authoritative extraction path.
+    """
+    import json
+
+    document_type = existing_record.get(DocumentMetadata.PRECLASSIFICATION_BLUEPRINT_MATCHED_TYPE)
+    is_compare = existing_record.get(DocumentMetadata.IS_COMPARE, False)
+
+    if not document_type or (not is_ocr_mapping_enabled() and not is_compare):
+        return
+
+    try:
+        output_location = get_env_config().documentai_output_location
+        if not output_location:
+            logger.warning("DOCUMENTAI_OUTPUT_LOCATION not set, skipping OCR mapping extraction")
+            return
+        output_bucket, output_prefix = parse_s3_uri(output_location)
+        ocr_blocks = get_layout_ocr_blocks(file_bytes)
+        ocr_key = f"{output_prefix}/ocr-mapping/ocr/{ddb_key}.json"
+        s3_service.put_object(
+            output_bucket,
+            ocr_key,
+            json.dumps(ocr_blocks).encode(),
+            content_type="application/json",
+        )
+        ocr_blocks_uri = f"s3://{output_bucket}/{ocr_key}"
+
+        queue_url = get_env_config().ocr_mapping_queue_url
+        if not queue_url:
+            logger.warning("OCR_MAPPING_QUEUE_URL not set, skipping OCR mapping extraction")
+            return
+
+        from opentelemetry.propagate import inject
+
+        carrier: dict[str, str] = {}
+        inject(carrier)
+        message_attributes = {
+            k: {"DataType": "String", "StringValue": v} for k, v in carrier.items()
+        } or None
+        payload = json.dumps(
+            OcrMappingMessage(
+                ddb_key=ddb_key,
+                document_type=document_type,
+                ocr_blocks_uri=ocr_blocks_uri,
+                tenant_id=tenant_id,
+                batch_id=batch_id,
+            ).to_dict()
+        )
+        sqs_service.send_message(queue_url, payload, message_attributes)
+        logger.info(f"Enqueued OCR mapping extraction for {ddb_key}")
+    except Exception as e:
+        logger.error(f"Failed to enqueue OCR mapping extraction for {ddb_key}: {e}")
 
 
 def _invoke_bda_path(
@@ -420,6 +506,15 @@ def _dispatch_document_processor(
     # Textract identity and BDA are mutually exclusive. Textract identity is
     # optimized for identity documents (driver's licenses, passports), and
     # is 5x to 20x faster than BDA.
+    _invoke_ocr_mapping_path(
+        ddb_key,
+        existing_record,
+        s3_file_bytes,
+        s3_content_type,
+        tenant_id,
+        batch_id,
+    )
+
     if _invoke_textract_if_identity_path(
         pre_extraction_result, ddb_key, s3_content_type, s3_file_bytes, tenant_id, batch_id
     ):

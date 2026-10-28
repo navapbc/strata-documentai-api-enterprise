@@ -177,6 +177,7 @@ def insert_minimal_ddb_record(record: DocumentRecord) -> None:
             api_key_name=record.api_key_name,
             is_demo=record.is_demo,
             is_test_run=record.is_test_run,
+            is_compare=record.is_compare,
             ttl_days=record.ttl_days,
         )
     )

@@ -9,6 +9,7 @@ from documentai_api.constants.processing import (
 )
 from documentai_api.dtos.classification import ClassificationData
 from documentai_api.dtos.ddb import UpdateDdbRecord
+from documentai_api.dtos.extraction import ExtractionResult
 from documentai_api.dtos.processing import InternalApiResponse
 from documentai_api.utils.response_codes import ResponseCodes
 
@@ -71,6 +72,7 @@ def test_classify_functions(
     )
     mock_update = mocker.patch(f"{_MODULE}.update_ddb")
     mocker.patch(f"{_MODULE}.finalize_v1_response")
+    mocker.patch(f"{_MODULE}.write_extract_method_response")
 
     args = ["test-file", data]
     if error_msg:
@@ -130,6 +132,7 @@ def test_classify_as_ai_consent_declined(mocker):
     )
     mock_update = mocker.patch(f"{_MODULE}.update_ddb")
     mocker.patch(f"{_MODULE}.finalize_v1_response")
+    mocker.patch(f"{_MODULE}.write_extract_method_response")
 
     classification_util.classify_as_ai_consent_declined("test-file")
 
@@ -143,3 +146,64 @@ def test_classify_as_ai_consent_declined(mocker):
         status=ProcessStatus.AI_CONSENT_DECLINED,
         internal_api_response=fake_response,
     )
+
+
+@pytest.mark.parametrize(
+    ("function", "status"),
+    [
+        (
+            classification_util.classify_as_no_document_detected,
+            ProcessStatus.NO_DOCUMENT_DETECTED,
+        ),
+        (
+            classification_util.classify_as_no_custom_blueprint_matched,
+            ProcessStatus.NO_CUSTOM_BLUEPRINT_MATCHED,
+        ),
+    ],
+)
+def test_classify_as_no_match_writes_method_response_and_falls_through(function, status, mocker):
+    """Under compare mode the method-response write is an addition; update_ddb must still run afterward."""
+    data = ClassificationData(matched_document_class="paystub")
+    fake_response = InternalApiResponse(
+        validation_passed=True,
+        document_category=None,
+        matched_document_class=None,
+        response_code="000",
+        response_message="ok",
+    )
+    mocker.patch(f"{_MODULE}.get_internal_api_response", return_value=fake_response)
+    mock_update = mocker.patch(f"{_MODULE}.update_ddb")
+    mock_finalize = mocker.patch(f"{_MODULE}.finalize_v1_response")
+    mock_write_method = mocker.patch(f"{_MODULE}.write_extract_method_response")
+
+    function("test-file", data, extraction_method=ExtractMethod.BDA)
+
+    mock_update.assert_called_once()
+    mock_finalize.assert_called_once()
+    mock_write_method.assert_called_once()
+
+
+def test_classify_extraction_result_passes_result_to_classify_as_success(mocker):
+    """classify_extraction_result passes extraction_result through to classify_as_success."""
+    result = ExtractionResult(document_type="paystub")
+    mocker.patch(
+        f"{_MODULE}.ClassificationData.from_extraction_result",
+        return_value=ClassificationData(matched_document_class="paystub"),
+    )
+    mocker.patch(f"{_MODULE}.get_extraction_confidence_floor", return_value=0.5)
+    mocker.patch(f"{_MODULE}.tenant_has_confidence_floor", return_value=True)
+    mocker.patch(f"{_MODULE}.calculate_average_non_empty_confidence", return_value=0.9)
+    mocker.patch(f"{_MODULE}.get_missing_required_fields", return_value=None)
+    mock_success = mocker.patch(
+        f"{_MODULE}.classify_as_success", return_value={"jobStatus": "completed"}
+    )
+
+    response = classification_util.classify_extraction_result(
+        ddb_key="test-file",
+        result=result,
+        output_uri="s3://bucket/key",
+        tenant_id="tenant",
+    )
+
+    assert mock_success.call_args.kwargs["extraction_result"] is result
+    assert response == {"jobStatus": "completed"}

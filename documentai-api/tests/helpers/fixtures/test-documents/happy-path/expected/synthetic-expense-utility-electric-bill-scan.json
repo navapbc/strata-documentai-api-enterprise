@@ -1,0 +1,370 @@
+{
+  "fields": {
+    "Account Number": "1234 5678 9012",
+    "Address.Service Address": "4912 W Willow Ridge Dr, West Jordan, UT 84081",
+    "Address.Service address pin code": "84081",
+    "BalanceDue Date": "2026-09-17",
+    "BalanceGreaterCheck": "Yes",
+    "Category": "Electricity",
+    "CountMeterIDs": 1,
+    "Current Balance": "118.63",
+    "End Date": "2026-08-26",
+    "Is_NumMeterIDsListed": null,
+    "Is_PrevGreaterThanCurr": "No",
+    "Is_ValidPinCode": true,
+    "Is_ValidState": true,
+    "Line_Item_Charges.Charge": "65.52, 47.49, 5.50, 0.96, 4.18, 2.98",
+    "Line_Item_Charges.Line item Description": "Supply (Generation) Charge, Delivery (Distribution) Charge, Customer Charge, Utah Clean Energy Program, State Sales Tax, Municipal Franchise Fee",
+    "Meter Number": "CGEM12345678",
+    "MeterRead.Current value": "36885",
+    "MeterRead.Delta or Metered value": "640",
+    "MeterRead.Meter ID": "CGEM12345678",
+    "MeterRead.Previous value": "36245",
+    "MeterRead.Usage Unit": "kWh",
+    "Previous Balance": "112.74",
+    "Provider": "Cedar Grove Energy",
+    "StartDate": "2026-07-28",
+    "Total Balance Due": "118.63",
+    "Usage.power factor": null,
+    "Usage.usage": "640 kWh",
+    "UsageMult": null
+  },
+  "geometry": {
+    "matched": {
+      "Account Number": {
+        "determination_method": "reviewed",
+        "explanation": "Multiple valid locations; all candidates accepted.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.6181640625,
+            "top": 0.0859375,
+            "width": 0.26953125,
+            "height": 0.008463541666666666
+          },
+          {
+            "page": 0,
+            "left": 0.1240234375,
+            "top": 0.8046875,
+            "width": 0.7138671875,
+            "height": 0.014973958333333334
+          }
+        ]
+      },
+      "Address.Service address pin code": {
+        "determination_method": "reviewed",
+        "explanation": "Multiple valid locations; all candidates accepted.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.7666015625,
+            "top": 0.19075520833333334,
+            "width": 0.037109375,
+            "height": 0.0078125
+          },
+          {
+            "page": 0,
+            "left": 0.1962890625,
+            "top": 0.21614583333333334,
+            "width": 0.04296875,
+            "height": 0.009114583333333334
+          }
+        ]
+      },
+      "Category": {
+        "determination_method": "reviewed",
+        "explanation": "Multiple valid locations; all candidates accepted.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.6591796875,
+            "top": 0.03125,
+            "width": 0.1572265625,
+            "height": 0.013671875
+          },
+          {
+            "page": 0,
+            "left": 0.0751953125,
+            "top": 0.4296875,
+            "width": 0.09375,
+            "height": 0.0078125
+          }
+        ]
+      },
+      "Current Balance": {
+        "determination_method": "reviewed",
+        "explanation": "Multiple valid locations; all candidates accepted.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.8701171875,
+            "top": 0.3079427083333333,
+            "width": 0.0595703125,
+            "height": 0.010416666666666666
+          },
+          {
+            "page": 0,
+            "left": 0.845703125,
+            "top": 0.3313802083333333,
+            "width": 0.083984375,
+            "height": 0.014973958333333334
+          }
+        ]
+      },
+      "Meter Number": {
+        "determination_method": "reviewed",
+        "explanation": "Multiple valid locations; all candidates accepted.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.658203125,
+            "top": 0.24479166666666666,
+            "width": 0.1025390625,
+            "height": 0.0078125
+          },
+          {
+            "page": 0,
+            "left": 0.072265625,
+            "top": 0.4049479166666667,
+            "width": 0.0966796875,
+            "height": 0.007161458333333333
+          }
+        ]
+      },
+      "MeterRead.Meter ID": {
+        "determination_method": "reviewed",
+        "explanation": "Multiple valid locations; all candidates accepted.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.658203125,
+            "top": 0.24479166666666666,
+            "width": 0.1025390625,
+            "height": 0.0078125
+          },
+          {
+            "page": 0,
+            "left": 0.072265625,
+            "top": 0.4049479166666667,
+            "width": 0.0966796875,
+            "height": 0.007161458333333333
+          }
+        ]
+      },
+      "Usage.usage": {
+        "determination_method": "reviewed",
+        "explanation": "Multiple valid locations; all candidates accepted.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.060546875,
+            "top": 0.6419270833333334,
+            "width": 0.8408203125,
+            "height": 0.011067708333333334
+          },
+          {
+            "page": 0,
+            "left": 0.060546875,
+            "top": 0.65625,
+            "width": 0.8056640625,
+            "height": 0.011067708333333334
+          },
+          {
+            "page": 0,
+            "left": 0.060546875,
+            "top": 0.6822916666666666,
+            "width": 0.751953125,
+            "height": 0.020833333333333332
+          }
+        ]
+      },
+      "Previous Balance": {
+        "determination_method": "reviewed",
+        "explanation": "Candidate 1 is the correct location.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.87890625,
+            "top": 0.2630208333333333,
+            "width": 0.05078125,
+            "height": 0.009765625
+          }
+        ]
+      },
+      "Total Balance Due": {
+        "determination_method": "reviewed",
+        "explanation": "Candidate 2 is the second (larger) instance of the total balance due.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.845703125,
+            "top": 0.3313802083333333,
+            "width": 0.083984375,
+            "height": 0.014973958333333334
+          }
+        ]
+      },
+      "MeterRead.Usage Unit": {
+        "determination_method": "reviewed",
+        "explanation": "Candidate 1 is the meter table kWh unit label (furthest right, middle of page).",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.90234375,
+            "top": 0.3873697916666667,
+            "width": 0.03515625,
+            "height": 0.009114583333333334
+          }
+        ]
+      },
+      "Address.Service Address": {
+        "determination_method": "reviewed",
+        "explanation": "Value spans two OCR lines; bounding box merged per block. Both locations are valid service address candidates.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.6582,
+            "top": 0.1771,
+            "width": 0.1377,
+            "height": 0.0228
+          },
+          {
+            "page": 0,
+            "left": 0.0703,
+            "top": 0.2025,
+            "width": 0.169,
+            "height": 0.024
+          }
+        ]
+      },
+      "MeterRead.Current value": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.7685546875,
+            "top": 0.40234375,
+            "width": 0.044921875,
+            "height": 0.014973958333333334
+          }
+        ]
+      },
+      "MeterRead.Previous value": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.6591796875,
+            "top": 0.4049479166666667,
+            "width": 0.041015625,
+            "height": 0.008463541666666666
+          }
+        ]
+      },
+      "Provider": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.1650390625,
+            "top": 0.039713541666666664,
+            "width": 0.3017578125,
+            "height": 0.022135416666666668
+          }
+        ]
+      }
+    },
+    "not_matched": {
+      "text_not_found": {
+        "Line_Item_Charges.Charge": {
+          "expected_value": "65.52, 47.49, 5.50, 0.96, 4.18, 2.98"
+        },
+        "Line_Item_Charges.Line item Description": {
+          "expected_value": "Supply (Generation) Charge, Delivery (Distribution) Charge, Customer Charge, Utah Clean Energy Program, State Sales Tax, Municipal Franchise Fee"
+        }
+      },
+      "ambiguous": {
+        "BalanceDue Date": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
+          "expected_value": "2026-09-17",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.05859375,
+              "top": 0.11848958333333333,
+              "width": 0.80859375,
+              "height": 0.014973958333333334
+            },
+            {
+              "page": 0,
+              "left": 0.060546875,
+              "top": 0.6419270833333334,
+              "width": 0.8408203125,
+              "height": 0.011067708333333334
+            },
+            {
+              "page": 0,
+              "left": 0.1240234375,
+              "top": 0.8248697916666666,
+              "width": 0.6337890625,
+              "height": 0.014322916666666666
+            }
+          ]
+        },
+        "End Date": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
+          "expected_value": "2026-08-26",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.44921875,
+              "top": 0.2265625,
+              "width": 0.4453125,
+              "height": 0.011067708333333334
+            },
+            {
+              "page": 0,
+              "left": 0.072265625,
+              "top": 0.40234375,
+              "width": 0.86328125,
+              "height": 0.014973958333333334
+            }
+          ]
+        },
+        "StartDate": {
+          "determination_method": "pytesseract",
+          "reason": "multiple_ocr_matches",
+          "expected_value": "2026-07-28",
+          "candidates": [
+            {
+              "page": 0,
+              "left": 0.44921875,
+              "top": 0.2265625,
+              "width": 0.4453125,
+              "height": 0.011067708333333334
+            },
+            {
+              "page": 0,
+              "left": 0.072265625,
+              "top": 0.40234375,
+              "width": 0.86328125,
+              "height": 0.014973958333333334
+            }
+          ]
+        }
+      }
+    }
+  },
+  "expected_document_class": "Invoices",
+  "notes": {
+    "BalanceGreaterCheck": "Neither extractor produced a value. Current ($118.63) > Previous ($112.74), so 'Yes'.",
+    "Line_Item_Charges": "LLM only captured 1 of the 6 itemized charge rows.",
+    "Usage.power factor": "No single per-kWh 'power factor' value - three different per-kWh rates apply to different charge types on this bill.",
+    "MeterRead": "Current/Delta/Previous values printed/derived with a \"kWh\" suffix (e.g. \"36885 kWh\"); kept as bare numbers here since these are 'number'-typed fields and the unit already lives separately in MeterRead.Usage Unit (\"kWh\")."
+  }
+}

@@ -1,3 +1,4 @@
+import json
 import os
 from typing import Any
 from urllib.parse import quote, unquote_plus
@@ -138,6 +139,13 @@ def get_truncated_object_key(object_key: str) -> str:
     """
     base, ext = os.path.splitext(object_key)
     return f"{base}_truncated{ext}"
+
+
+def read_json_from_s3(s3_uri: str) -> Any:
+    """Fetch and JSON-decode an S3 object by URI."""
+    bucket, key = parse_s3_uri(s3_uri)
+    body = s3_service.get_object(bucket, key)["Body"].read()
+    return json.loads(body)
 
 
 def sanitize_for_s3_metadata(value: str, max_length: int = 512) -> str:

@@ -11,19 +11,6 @@ from documentai_api.utils.dates import strip_time
 logger = get_logger(__name__)
 tracer = trace.get_tracer(__name__)
 
-NOVA_MICRO_MODEL_ID = "us.amazon.nova-micro-v1:0"
-
-
-def _get_supplemental_model_id() -> str:
-    """Resolve supplemental extraction model ID from SSM, with hardcoded fallback."""
-    from documentai_api.config.env import get_env_config
-    from documentai_api.utils.ssm import get_parameter_value
-
-    param_name = get_env_config().bedrock_supplemental_extraction_model_id_param
-    if not param_name:
-        return NOVA_MICRO_MODEL_ID
-    return get_parameter_value(param_name, default=NOVA_MICRO_MODEL_ID)
-
 
 def extract_fields_from_analyze_id(
     response: dict[str, Any], field_map: dict[str, str]
@@ -184,6 +171,27 @@ def _find_geometry_with_fallback(
     return None
 
 
+def build_citation_index(
+    ocr_blocks: list[dict[str, Any]],
+) -> tuple[dict[str, list[dict[str, Any]]], list[dict[str, Any]]]:
+    """Build a text-to-geometry index and collect WORD blocks from Textract OCR output.
+
+    Returns (block_index, word_blocks) where block_index maps text -> geometry entries.
+    """
+    word_blocks = [b for b in ocr_blocks if b.get("BlockType") == "WORD"]
+    block_index = _build_block_geometry_index(ocr_blocks)
+    return block_index, word_blocks
+
+
+def match_citation_to_geometry(
+    citation: str,
+    block_index: dict[str, list[dict[str, Any]]],
+    word_blocks: list[dict[str, Any]],
+) -> list[dict[str, Any]] | None:
+    """Find geometry for a citation string using the block index."""
+    return _find_geometry_with_fallback(citation, block_index, word_blocks)
+
+
 def get_id_type(response: dict[str, Any]) -> str | None:
     """Extract ID type from AnalyzeID response."""
     for doc in response.get("IdentityDocuments", []):
@@ -260,6 +268,7 @@ def _call_nova_supplemental(
     """Call Nova Micro to identify supplemental fields from word blocks."""
     from documentai_api.services.bedrock import invoke_model
     from documentai_api.utils.json_parsing import parse_llm_json
+    from documentai_api.utils.ssm import get_supplemental_extraction_model_id
 
     field_descriptions = "\n".join(
         f"- {name}: {desc}" for name, desc in supplemental_fields.items()
@@ -279,7 +288,7 @@ def _call_nova_supplemental(
     )
 
     response = invoke_model(
-        model_id=_get_supplemental_model_id(),
+        model_id=get_supplemental_extraction_model_id(),
         messages=[{"role": "user", "content": [{"text": prompt}]}],
         max_tokens=512,
         temperature=0.0,

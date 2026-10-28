@@ -87,9 +87,9 @@ fail, so the suite exercises the full failure taxonomy instead of one path.
    follow the watermarking conventions in the parent `README.md`.
 2. Add an entry to `../expected.json` keyed by the file's path relative to
    `test-documents/`, e.g. `"unhappy-path/synthetic-cut-off.pdf"`.
-3. Set `"e2e_enabled": true` and fill in the expected DDB fields
+3. Set `"e2eEnabled": true` and fill in the expected DDB fields
    (`responseCode`, `isDocumentBlurry`, `isPasswordProtected`,
-   `preclassificationCategory`, `bdaMatchedDocumentClass`, `content_type`)
+   `preclassificationCategory`, `bdaMatchedDocumentClass`, `contentType`)
    using the table above to pick `responseCode`. If the fixture needs
    `101 MISSING_FIELDS`, also add `"requiredFieldsForExtraction": [...]`
    (field names from `src/documentai_api/config/field_labels/<doctype>.json`)
@@ -97,6 +97,6 @@ fail, so the suite exercises the full failure taxonomy instead of one path.
    `tests/e2e/test_app_documents.py` seeds a matching extraction rule for the
    e2e tenant around that case's upload automatically, no other setup required.
 4. Update the defect coverage table above to point at the new fixture.
-5. `test_app_documents.py::test_post_document` picks up every `e2e_enabled`
+5. `test_app_documents.py::test_post_document` picks up every `e2eEnabled`
    entry in `expected.json` automatically - no code changes needed to add
    more documents here.

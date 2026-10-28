@@ -184,11 +184,21 @@ class ExtractMethod(StrEnum):
 
     BDA = "bda"
     TEXTRACT = "textract"
+    OCR_MAPPING = "ocr-mapping"
 
 
 class OutputFormatType(StrEnum):
     JSON = "json"
     CSV = "csv"
+
+
+class LlmUsageReason(StrEnum):
+    """Which pipeline step consumed the tokens."""
+
+    PRECLASSIFICATION = "preclassification"
+    BLUEPRINT_MATCH = "blueprintMatch"
+    OCR_MAPPING = "ocrMapping"
+    CROP_DETECTION = "cropDetection"
 
 
 class S3MetadataKeys:

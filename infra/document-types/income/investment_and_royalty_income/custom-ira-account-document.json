@@ -28,12 +28,12 @@
     "contribution_dates": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The dates on which contributions were made to the IRA."
+      "instruction": "The dates on which contributions were made to the IRA. YYYY-MM-DD format."
     },
     "distribution_dates": {
       "type": "string",
       "inferenceType": "explicit",
-      "instruction": "The dates on which distributions or withdrawals were made from the IRA, if any."
+      "instruction": "The dates on which distributions or withdrawals were made from the IRA, if any. YYYY-MM-DD format."
     },
     "account_balance": {
       "type": "string",

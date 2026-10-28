@@ -19,7 +19,7 @@ def convert_image_to_png(file_bytes: bytes, content_type: str) -> bytes:
     """
     try:
         if content_type in ("image/heic", "image/heif"):
-            from pillow_heif import register_heif_opener  # type: ignore[import-untyped]
+            from pillow_heif import register_heif_opener
 
             register_heif_opener()
 

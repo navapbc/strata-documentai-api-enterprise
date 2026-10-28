@@ -1,6 +1,10 @@
 import pytest
 
-from documentai_api.utils.dates import validate_date_range, validate_yyyymmdd_format
+from documentai_api.utils.dates import (
+    iso_to_str_variants,
+    validate_date_range,
+    validate_yyyymmdd_format,
+)
 
 
 def test_validate_yyyymmdd_format_valid():
@@ -67,3 +71,40 @@ def test_strip_time(input_val, expected):
     from documentai_api.utils.dates import strip_time
 
     assert strip_time(input_val) == expected
+
+
+@pytest.mark.parametrize(
+    ("iso", "expected_subset"),
+    [
+        (
+            "2026-08-01",
+            ["8/1/2026", "08/01/2026", "August 1, 2026", "Aug 1, 2026", "1 de agosto de 2026"],
+        ),
+        (
+            "2026-08-31",
+            ["8/31/2026", "08/31/2026", "August 31, 2026", "Aug 31, 2026", "31 de agosto de 2026"],
+        ),
+        (
+            "2026-09-05",
+            [
+                "9/5/2026",
+                "09/05/2026",
+                "September 5, 2026",
+                "Sep 5, 2026",
+                "5 de septiembre de 2026",
+            ],
+        ),
+        (
+            "2021-01-05",
+            ["1/5/2021", "01/05/2021", "January 5, 2021", "Jan 5, 2021", "5 de enero de 2021"],
+        ),
+    ],
+)
+def test_date_ocr_variants(iso, expected_subset):
+    variants = iso_to_str_variants(iso)
+    for expected in expected_subset:
+        assert expected in variants
+
+
+def test_date_ocr_variants_invalid():
+    assert iso_to_str_variants("not-a-date") == ["not-a-date"]

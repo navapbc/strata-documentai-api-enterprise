@@ -1,0 +1,112 @@
+{
+  "fields": {
+    "account_number": "****5678",
+    "account_holder_name": "Elias K. Thornton",
+    "account_holder_address": "7429 Oak Crest Drive, Little Rock, AR 72205",
+    "bank_name": "Riverbend Financial Institution",
+    "account_type": null,
+    "branch_transit_number": null,
+    "statement_start_date": "2026-06-01",
+    "statement_end_date": "2026-08-31",
+    "account_summary.summary_desc": "Beginning Balance, Total Deposits / Credits, Total Withdrawals / Debits, Fees, Ending Balance",
+    "account_summary.summary_amount": "2275.00, 4220.00, 3460.40, 0.00, 3034.60"
+  },
+  "geometry": {
+    "matched": {
+      "bank_name": {
+        "determination_method": "reviewed",
+        "explanation": "Bank name spans two header lines; geo merged from 'Riverbend Bank Statement -' and 'Financial Institution Deposit Income Verification'.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.229575,
+            "top": 0.046086,
+            "width": 0.652778,
+            "height": 0.059974
+          }
+        ]
+      },
+      "account_number": {
+        "determination_method": "reviewed",
+        "explanation": "Word-level match for '****5678' on the Account No. line.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.269,
+            "top": 0.207,
+            "width": 0.069,
+            "height": 0.011
+          }
+        ]
+      },
+      "statement_start_date": {
+        "determination_method": "reviewed",
+        "explanation": "Word-level match for '2026-06-01' on the Statement Period line.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.292,
+            "top": 0.177,
+            "width": 0.087,
+            "height": 0.011
+          }
+        ]
+      },
+      "statement_end_date": {
+        "determination_method": "reviewed",
+        "explanation": "Word-level match for '2026-08-31' on the Statement Period line.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.406,
+            "top": 0.177,
+            "width": 0.087,
+            "height": 0.011
+          }
+        ]
+      },
+      "account_holder_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.12418300653594772,
+            "top": 0.3068181818181818,
+            "width": 0.1503267973856209,
+            "height": 0.011363636363636364
+          }
+        ]
+      },
+      "account_holder_address": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.12336601307189543,
+            "top": 0.3301767676767677,
+            "width": 0.38235294117647056,
+            "height": 0.013257575757575758
+          }
+        ]
+      }
+    },
+    "not_matched": {
+      "text_not_found": {
+        "account_summary.summary_desc": {
+          "expected_value": "Beginning Balance, Total Deposits / Credits, Total Withdrawals / Debits, Fees, Ending Balance"
+        },
+        "account_summary.summary_amount": {
+          "expected_value": "2275.00, 4220.00, 3460.40, 0.00, 3034.60"
+        }
+      }
+    }
+  },
+  "expected_document_class": "Bank-Statement",
+  "notes": {
+    "account_type": "Not printed anywhere on this statement (a single summary-only page); BDA reported high confidence (0.91) with an empty value, which is correct here - genuinely absent, not a miss.",
+    "branch_transit_number": "Not printed anywhere on this statement; same as account_type - BDA's confident-but-empty result is correct.",
+    "account_summary.summary_desc/amount": "No transaction-level table on this page (doc explicitly notes 'No transactions listed on this page'), so transaction_details.* fields are absent; only the summary table's 5 rows apply."
+  }
+}
