@@ -9,7 +9,7 @@ from starlette.datastructures import Headers
 
 from documentai_api.annotations import AdminClaims
 from documentai_api.constants.api import ApiVisualizationTag
-from documentai_api.constants.processing import ExtractMethod, LlmUsageReason
+from documentai_api.constants.processing import ExtractMethod, LlmUsageReason, TextractOperation
 from documentai_api.logging import get_logger
 from documentai_api.models.extraction_compare import (
     CompareFieldResult,
@@ -38,6 +38,8 @@ _OCR_MAPPING = ExtractMethod.OCR_MAPPING.value
 _OCR_MAPPING_REASON = LlmUsageReason.OCR_MAPPING.value
 _PRIMARY_REASON = "primary"
 _SHARED_REASON = "shared"
+_LAYOUT_OCR = TextractOperation.ANALYZE_DOCUMENT_LAYOUT.value
+_LAYOUT_OCR_PAGES = 1  # sync AnalyzeDocument is billed for a single page
 
 
 def _extract_fields(v1_response_json: str | dict[str, Any]) -> dict[str, CompareFieldResult]:
@@ -122,10 +124,14 @@ def get_compare_result(job_id: str) -> CompareResponse:
         is_custom = bool(record.get(DocumentMetadata.BDA_MATCHED_BLUEPRINT_NAME))
         cost[ExtractMethod.BDA.value] = compute_bda_cost(pages, is_custom)
 
+    cost[_LAYOUT_OCR] = compute_textract_cost(
+        _LAYOUT_OCR_PAGES, TextractOperation.ANALYZE_DOCUMENT_LAYOUT
+    )
+
     # cost_by_reason: collapse per-model costs into reason buckets so callers
     # can compare primary-path cost vs ocr-mapping cost directly.
     # shared = preclassification + blueprintMatch + cropDetection (both paths pay)
-    # ocrMapping = OCR mapping extraction only
+    # ocrMapping = OCR mapping extraction tokens + the Textract layout OCR fee
     # primary = textract flat fee (when applicable)
     cost_by_reason: dict[str, float] = {}
     for composite_key, entry in get_token_usage_by_reason(object_key).items():
@@ -135,6 +141,10 @@ def get_compare_result(job_id: str) -> CompareResponse:
             continue
         bucket = _OCR_MAPPING_REASON if reason == _OCR_MAPPING_REASON else _SHARED_REASON
         cost_by_reason[bucket] = round(cost_by_reason.get(bucket, 0.0) + c, 8)
+
+    cost_by_reason[_OCR_MAPPING_REASON] = round(
+        cost_by_reason.get(_OCR_MAPPING_REASON, 0.0) + cost[_LAYOUT_OCR], 8
+    )
 
     if primary_method == ExtractMethod.TEXTRACT.value:
         cost_by_reason[_PRIMARY_REASON] = compute_textract_cost(pages)

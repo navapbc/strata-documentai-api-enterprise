@@ -2,6 +2,8 @@ import importlib.resources
 import json
 from functools import lru_cache
 
+from documentai_api.constants.processing import TextractOperation
+
 
 @lru_cache(maxsize=1)
 def _load_model_cost() -> dict[str, dict[str, float]]:
@@ -24,10 +26,12 @@ def compute_llm_cost(model_id: str, input_tokens: int, output_tokens: int) -> fl
     )
 
 
-def compute_textract_cost(pages: int) -> float:
-    """Return the cost in USD for Textract AnalyzeID on the given number of pages."""
+def compute_textract_cost(
+    pages: int, operation: TextractOperation = TextractOperation.ANALYZE_ID
+) -> float:
+    """Return the cost in USD for a Textract operation on the given number of pages."""
     pricing = _load_model_cost()["textract"]
-    return float(pages * pricing["per_page"])
+    return float(pages * pricing[f"{operation}_per_page"])
 
 
 def compute_bda_cost(pages: int, is_custom: bool) -> float:

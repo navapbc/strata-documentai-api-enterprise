@@ -251,13 +251,14 @@ def clear_env_vars():
 ######################
 
 _COMPARE_RESULTS_DIR = Path(__file__).parent / "e2e" / "results" / "extraction_compare"
+_COMPARE_TEST_FILE = Path(__file__).parent / "e2e" / "test_extraction_compare.py"
 
 
 def pytest_collection_finish(session):
     import shutil
 
     session.config._extraction_compare_controller = has_compare = any(
-        Path(item.fspath).name == "test_extraction_compare.py" for item in session.items
+        Path(item.fspath) == _COMPARE_TEST_FILE for item in session.items
     )
 
     if not has_compare or hasattr(session.config, "workerinput"):

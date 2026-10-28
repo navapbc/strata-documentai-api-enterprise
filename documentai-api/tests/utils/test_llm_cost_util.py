@@ -1,6 +1,7 @@
 import pytest
 
-from documentai_api.utils.llm_cost import compute_llm_cost
+from documentai_api.constants.processing import TextractOperation
+from documentai_api.utils.llm_cost import compute_bda_cost, compute_llm_cost, compute_textract_cost
 
 
 @pytest.mark.parametrize(
@@ -24,3 +25,28 @@ def test_compute_llm_cost(model_id, input_tokens, output_tokens, expected):
 
 def test_compute_llm_cost_unknown_model_returns_none():
     assert compute_llm_cost("unknown-model", input_tokens=1_234, output_tokens=567) is None
+
+
+@pytest.mark.parametrize(
+    ("operation", "pages", "expected"),
+    [
+        (TextractOperation.ANALYZE_ID, 3, 3 * 0.025),
+        (TextractOperation.ANALYZE_DOCUMENT_LAYOUT, 3, 3 * 0.004),
+        (TextractOperation.DETECT_DOCUMENT_TEXT, 3, 3 * 0.0015),
+        (TextractOperation.ANALYZE_DOCUMENT_LAYOUT, 0, 0.0),
+    ],
+)
+def test_compute_textract_cost(operation, pages, expected):
+    assert compute_textract_cost(pages, operation) == pytest.approx(expected)
+
+
+def test_compute_textract_cost_defaults_to_analyze_id():
+    assert compute_textract_cost(2) == pytest.approx(2 * 0.025)
+
+
+@pytest.mark.parametrize(
+    ("is_custom", "expected"),
+    [(False, 5 * 0.01), (True, 5 * 0.04)],
+)
+def test_compute_bda_cost(is_custom, expected):
+    assert compute_bda_cost(5, is_custom) == pytest.approx(expected)

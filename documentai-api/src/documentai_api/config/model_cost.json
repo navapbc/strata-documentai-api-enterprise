@@ -4,7 +4,9 @@
     "custom_output_per_page": 0.04
   },
   "textract": {
-    "per_page": 0.025
+    "analyze_id_per_page": 0.025,
+    "analyze_document_layout_per_page": 0.004,
+    "detect_document_text_per_page": 0.0015
   },
   "us.amazon.nova-lite-v1:0": {
     "input_per_1m": 0.06,
