@@ -212,10 +212,20 @@ test-extraction-compare: ## Run the BDA vs LLM extraction-compare e2e test (clea
 # A full run starts from an empty results dir; with args (e.g. -k) only the selected
 # documents' results are replaced and the rest are kept.
 	@[ -n "$(args)" ] || rm -rf tests/e2e/results/extraction_compare/*
-	@set -a && . ./.env.e2e && set +a && uv run --frozen pytest tests/e2e/test_extraction_compare.py -m e2e -n 4 $(args)
+	@set -a && . ./.env.e2e && set +a && uv run --frozen pytest tests/e2e/test_extraction_compare.py -m e2e -n 4 $(args); $(MAKE) extraction-compare-charts
 
 regen-extraction-compare-summary: ## Regenerate per-doc and summary markdown from existing .data.json sidecars
 	uv run --frozen python3 -c "from pathlib import Path; from tests.e2e.test_extraction_compare import regen_comparison_md, write_extraction_compare_summary; p = Path('tests/e2e/results/extraction_compare'); regen_comparison_md(p); write_extraction_compare_summary(p)"
+	$(MAKE) extraction-compare-charts
+
+extraction-compare-charts: ## Render extraction compare .vl.json specs to PNG charts
+	docker build -q \
+		-f tests/e2e/extraction_compare_charts/Dockerfile.altair \
+		-t extraction-compare-charts \
+		. > /dev/null
+	docker run --rm \
+		-v $(PWD)/tests/e2e/results/extraction_compare/charts:/data \
+		extraction-compare-charts
 
 generate-geometry-candidates: _require-tesseract ## Generate ground-truth geometry candidates for fixture documents
 	$(AWS_RUN_CMD) --extra cli-geo generate-geometry-candidates $(args)

@@ -47,6 +47,10 @@ TEST_DOCS_DIR = _FIXTURES_DIR / "happy-path"
 _EXTRACT_COMPARE_ADMIN_EMAIL = "extract-compare-admin@internal.invalid"
 _EXPECTED_DIR = TEST_DOCS_DIR / "expected"
 _RESULTS_DIR = Path(__file__).parent / "results" / "extraction_compare"
+_MD_DIR = _RESULTS_DIR / "md"
+_DATA_DIR = _RESULTS_DIR / "data"
+_CHARTS_DIR = _RESULTS_DIR / "charts"
+_RUN_STAMP_PREFIX = "Last run:"
 _GEO_TOLERANCE = 0.025
 # display labels for cost keys that are services rather than model IDs
 _COST_LABELS = {
@@ -77,6 +81,7 @@ class _CostRow:
     l_avg: _AccuracyDisplay
     p_geo_counts: str
     l_geo_counts: str
+    doc_count: int
 
 
 class _ResultData(StrEnum):
@@ -196,10 +201,9 @@ def compare_jwt(reset_env):
 
 def _clear_results(filename: str, results_dir: Path = _RESULTS_DIR) -> None:
     """Remove a document's results from earlier runs so a failed run cannot leave stale ones."""
-    results_dir.mkdir(parents=True, exist_ok=True)
-
-    for suffix in (".md", ".data.json"):
-        (results_dir / f"{Path(filename).stem}{suffix}").unlink(missing_ok=True)
+    for suffix, subdir in ((".md", _MD_DIR), (".data.json", _DATA_DIR)):
+        (results_dir / subdir.name).mkdir(parents=True, exist_ok=True)
+        (results_dir / subdir.name / f"{Path(filename).stem}{suffix}").unlink(missing_ok=True)
 
 
 @pytest.mark.parametrize("filename", _COMPARE_FILES)
@@ -419,7 +423,7 @@ def _write_result_data(
         _ResultData.PRIMARY: {f: r.model_dump() for f, r in result.primary.items()},
         _ResultData.OCR_MAPPING: {f: r.model_dump() for f, r in result.ocr_mapping.items()},
     }
-    (_RESULTS_DIR / f"{Path(filename).stem}.data.json").write_text(
+    (_DATA_DIR / f"{Path(filename).stem}.data.json").write_text(
         json.dumps(result_data, default=float)
     )
 
@@ -441,8 +445,8 @@ def _write_comparison_md(
         | set(result.ocr_mapping)
         | (set(expected) if expected is not None else set())
     )
-    results_file = _RESULTS_DIR / f"{Path(filename).stem}.md"
-    lines = [f"# {filename}\n", f"\n_Run: {_format_run_stamp(completed_at)}_\n"]
+    results_file = _MD_DIR / f"{Path(filename).stem}.md"
+    lines = [f"# {filename}\n", f"\n_{_RUN_STAMP_PREFIX} {_format_run_stamp(completed_at)}_\n"]
 
     if result.durations:
         lines.append("\n## Durations\n")
@@ -507,12 +511,12 @@ def _write_comparison_md(
             "Field",
             "Expected",
             f"{primary_method.upper()} Value",
-            "LLM (via Textract) Value",
+            "OCR / LLM Value",
             f"{primary_method.upper()} Conf",
-            "LLM Conf",
+            "OCR / LLM Conf",
             "Expected Bounding Box",
             f"{primary_method.upper()} Bounding Box",
-            "LLM Bounding Box",
+            "OCR / LLM Bounding Box",
         ]
     )
     lines.append(header)
@@ -547,7 +551,7 @@ def _write_comparison_md(
         lines.append(
             f"| {field} | {exp_val} | {p_cell} | {llm_cell} | {p_conf} | {llm_conf} | {_fmt_exp_geo(exp_geo) if exp_geo else EXPECTED_EMPTY} | {p_geo_cell} | {llm_geo_cell} |"
         )
-    _RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    _MD_DIR.mkdir(parents=True, exist_ok=True)
     results_file.write_text("\n".join(lines) + "\n")
 
 
@@ -595,7 +599,7 @@ def _aggregate_result_data(worker_files: list[Path], results_dir: Path) -> _Summ
     rows = []
 
     for md_file in worker_files:
-        result_data = results_dir / md_file.with_suffix(".data.json").name
+        result_data = results_dir / "data" / md_file.with_suffix(".data.json").name
         if not result_data.exists():
             continue
         data = json.loads(result_data.read_text())
@@ -705,16 +709,16 @@ def _write_doc_summary_table(
     """Append the per-document summary table to lines."""
     headers = [
         "Document",
-        "Method",
+        "Primary Method",
         "Total Cost",
         "Primary Cost",
-        "LLM Cost",
+        "OCR/LLM Cost",
         "Cost Delta",
         "Primary Duration",
-        "LLM Duration",
+        "OCR/LLM Duration",
         "Duration Delta",
         "Primary Match Rate (Equiv+Approx.)",
-        "LLM Match Rate (Equiv+Approx.)",
+        "OCR/LLM Match Rate (Equiv+Approx.)",
         "Match Rate Delta",
     ]
     lines.append("\n## Document Summary")
@@ -723,7 +727,7 @@ def _write_doc_summary_table(
 
     for filename, primary_method, durations, file_cost, cost_by_reason, acc in rows:
         stem = Path(filename).stem
-        link = f"[{filename}]({stem}.md)"
+        link = f"[{stem}](md/{stem}.md)"
         shared_cost = cost_by_reason.get("shared", 0.0)
         primary_cost = cost_by_reason.get("primary", 0.0) + shared_cost
         llm_cost = cost_by_reason.get(LlmUsageReason.OCR_MAPPING, 0.0) + shared_cost
@@ -832,13 +836,14 @@ def _cost_compare_section(
             l_avg=l_avg,
             p_geo_counts=p_geo_counts,
             l_geo_counts=l_geo_counts,
+            doc_count=len(primary_dur_by_method.get(primary_method_key, [])),
         )
     ]
 
 
 def regen_comparison_md(results_dir: Path) -> None:
     """Re-render per-document markdown files from existing .data.json sidecars."""
-    for sidecar in sorted(results_dir.glob("*.data.json")):
+    for sidecar in sorted((results_dir / "data").glob("*.data.json")):
         data = json.loads(sidecar.read_text())
         filename = data[_ResultData.FILENAME]
         primary_method = data.get(_ResultData.PRIMARY_METHOD, ExtractMethod.BDA)
@@ -857,9 +862,9 @@ def regen_comparison_md(results_dir: Path) -> None:
         all_fields = sorted(
             set(primary) | set(ocr_mapping) | (set(expected) if expected else set())
         )
-        results_file = results_dir / f"{Path(filename).stem}.md"
+        results_file = results_dir / "md" / f"{Path(filename).stem}.md"
         run_ts = _format_run_stamp(_sidecar_completed_at(sidecar, data))
-        lines = [f"# {filename}\n", f"\n_Run: {run_ts}_\n"]
+        lines = [f"# {filename}\n", f"\n_{_RUN_STAMP_PREFIX} {run_ts}_\n"]
 
         durations = data.get(_ResultData.DURATIONS, {})
         if durations:
@@ -915,12 +920,12 @@ def regen_comparison_md(results_dir: Path) -> None:
                 "Field",
                 "Expected",
                 f"{primary_method.upper()} Value",
-                "LLM (via Textract) Value",
+                "OCR / LLM Value",
                 f"{primary_method.upper()} Conf",
-                "LLM Conf",
+                "OCR / LLM Conf",
                 "Expected Bounding Box",
                 f"{primary_method.upper()} Bounding Box",
-                "LLM Bounding Box",
+                "OCR / LLM Bounding Box",
             ]
         )
         lines.append(header)
@@ -965,7 +970,7 @@ def regen_comparison_md(results_dir: Path) -> None:
 def write_extraction_compare_summary(results_dir: Path) -> None:
     """Aggregate per-document .data.json files into a single summary markdown report."""
     worker_files = sorted(
-        (f for f in results_dir.glob("*.md") if f.name != "extraction_compare_summary.md"),
+        (f for f in (results_dir / "md").glob("*.md") if f.name != "extraction_compare_summary.md"),
         key=lambda f: f.name,
     )
     if not worker_files:
@@ -974,16 +979,14 @@ def write_extraction_compare_summary(results_dir: Path) -> None:
     result = _aggregate_result_data(worker_files, results_dir)
     completed = [
         _sidecar_completed_at(sidecar, json.loads(sidecar.read_text()))
-        for sidecar in results_dir.glob("*.data.json")
+        for sidecar in (results_dir / "data").glob("*.data.json")
     ]
     run_ts = _format_run_stamp(max(completed, default=datetime.now(UTC)))
-    lines = ["# Extraction Compare Results\n", f"\n_Run: {run_ts}_\n"]
-
-    if result["avg_durations"]:
-        lines.append("\n## Avg Durations\n")
-        for method, avg in sorted(result["avg_durations"].items()):
-            lines.append(f"- {method}: {avg:.2f}s")
-        lines.append("")
+    doc_count = len(worker_files)
+    lines = [
+        "# Extraction Compare Results\n",
+        f"\n_{_RUN_STAMP_PREFIX} {run_ts} - {doc_count} documents_\n",
+    ]
 
     if result["cost_by_type"]:
         llm_costs = {
@@ -1016,66 +1019,303 @@ def write_extraction_compare_summary(results_dir: Path) -> None:
     )
 
     if cost_rows:
-        lines.append("\n## Primary Extraction Method vs. LLM via Textract\n")
-        lines.append("### Cost & Duration ")
-        header, sep = _md_table_header(
-            [
-                "Primary Method",
-                "Shared (preclass)",
-                "Primary Total",
-                "LLM Total",
-                "Cost Ratio",
-                "Median Primary Duration",
-                "Median LLM Duration",
-                "Speed Ratio",
-            ]
-        )
-        lines.append(header)
-        lines.append(sep)
-        for r in cost_rows:
-            med_p_cell = f"{r.median_primary:.2f}s" if r.median_primary is not None else "-"
-            med_l_cell = f"{r.median_ocr_mapping:.2f}s" if r.median_ocr_mapping is not None else "-"
-            lines.append(
-                f"| {r.method} | ${r.shared:.6f} | ${r.primary:.6f} | ${r.ocr_mapping:.6f} | {r.ratio} | {med_p_cell} | {med_l_cell} | {r.dur_ratio} |"
-            )
-        lines.append("")
-
-        lines.append("\n### Accuracy")
-        a = result["accuracy_by_method"]
-        all_exact = sum(
-            sum(v[_ResultData.L_EXACT]) + sum(v[_ResultData.L_APPROX]) + sum(v[_ResultData.L_MISS])
-            for v in a.values()
-        )
-        all_geo = sum(
-            sum(v[_ResultData.L_GEO_EXACT])
-            + sum(v[_ResultData.L_GEO_APPROX])
-            + sum(v[_ResultData.L_GEO_MISS])
-            for v in a.values()
-        )
-        lines.append(
-            f"\n_Expected field values defined for {all_exact} scored fields ({', '.join(f'{sum(v[_ResultData.L_EXACT]) + sum(v[_ResultData.L_APPROX]) + sum(v[_ResultData.L_MISS])} {k}' for k, v in a.items())}); bounding-box ground truth resolved for {all_geo} fields._\n"
-        )
-        header, sep = _md_table_header(
-            [
-                "Primary Method",
-                "Primary Match (Equiv.)",
-                "LLM Match (Equiv.)",
-                "Primary Match (Equiv+Approx.)",
-                "LLM Match (Equiv+Approx.)",
-                "Primary Bounding Box Match",
-                "LLM Bounding Box Match",
-            ]
-        )
-        lines.append(header)
-        lines.append(sep)
-        lines.extend(
-            f"| {r.method} | {r.p_avg['exact']} | {r.l_avg['exact']} | {r.p_avg['loose']} | {r.l_avg['loose']} | {_fmt_geo_pct(r.p_geo_counts)} | {_fmt_geo_pct(r.l_geo_counts)} |"
-            for r in cost_rows
-        )
-        lines.append("")
+        lines.append("\n## Extraction Comparison\n")
+        for row in cost_rows:
+            is_bda = row.method == ExtractMethod.BDA
+            primary_label = "BDA" if is_bda else "Textract Identity"
+            lines.append(f"\n### {primary_label} vs. Textract OCR / LLM Mapping\n")
+            lines.append(_build_chart_table([row]))
 
     if result["rows"]:
         _write_doc_summary_table(lines, result["rows"])
 
     summary = results_dir / "extraction_compare_summary.md"
     summary.write_text("".join(f"{line}\n" if not line.endswith("\n") else line for line in lines))
+    write_extraction_compare_charts(cost_rows, results_dir)
+
+
+def _parse_rate(s: str) -> float:
+    """Parse a loose accuracy string like '389/507 (77%)' into a float rate."""
+    try:
+        num, rest = s.split("/", 1)
+        denom = rest.split(" ")[0]
+        return int(num) / int(denom)
+    except (ValueError, ZeroDivisionError):
+        return 0.0
+
+
+def _row_stat_cards(row: _CostRow) -> tuple[str, str, str, str, str, str, int]:
+    """Return (speed_card, speed_color, cost_card, cost_color, accuracy_card, accuracy_color, n)."""
+    n = row.doc_count
+
+    primary_accuracy = _parse_rate(row.p_avg["loose"])
+    llm_accuracy = _parse_rate(row.l_avg["loose"])
+    acc_delta_pts = round((llm_accuracy - primary_accuracy) * 100)
+    accuracy_card = f"+{acc_delta_pts} pts" if acc_delta_pts >= 0 else f"{acc_delta_pts} pts"
+    accuracy_color = "#16a34a" if acc_delta_pts >= 0 else "#dc2626"
+
+    if row.median_primary and row.median_ocr_mapping:
+        if row.median_primary > row.median_ocr_mapping:
+            speed_card = f"{row.median_primary / row.median_ocr_mapping:.1f}x faster"
+            speed_color = "#16a34a"
+        else:
+            speed_card = f"{row.median_ocr_mapping / row.median_primary:.1f}x slower"
+            speed_color = "#dc2626"
+    else:
+        speed_card, speed_color = "-", "#1a1a2e"
+
+    if row.ocr_mapping and row.primary:
+        if row.primary > row.ocr_mapping:
+            cost_card = f"{row.primary / row.ocr_mapping:.1f}x cheaper"
+            cost_color = "#16a34a"
+        else:
+            cost_card = f"{row.ocr_mapping / row.primary:.1f}x pricier"
+            cost_color = "#dc2626"
+    else:
+        cost_card, cost_color = "-", "#1a1a2e"
+
+    return speed_card, speed_color, cost_card, cost_color, accuracy_card, accuracy_color, n
+
+
+def _build_stats_table(row: _CostRow) -> str:
+    """Build an HTML stats table for a cost row."""
+    speed_card, speed_color, cost_card, cost_color, _accuracy_card, _accuracy_color, _ = (
+        _row_stat_cards(row)
+    )
+    is_bda = row.method == ExtractMethod.BDA
+    primary_label = "BDA" if is_bda else "Textract"
+    primary_accuracy = _parse_rate(row.p_avg["loose"])
+    llm_accuracy = _parse_rate(row.l_avg["loose"])
+    primary_exact = _parse_rate(row.p_avg["exact"])
+    llm_exact = _parse_rate(row.l_avg["exact"])
+    med_p = f"{row.median_primary:.2f}s" if row.median_primary else "-"
+    med_l = f"{row.median_ocr_mapping:.2f}s" if row.median_ocr_mapping else "-"
+
+    def _delta_pts(p: float, llm: float) -> tuple[str, str]:
+        d = round((llm - p) * 100)
+        return (f"+{d} pts" if d >= 0 else f"{d} pts"), ("#16a34a" if d >= 0 else "#dc2626")
+
+    equiv_delta, equiv_color = _delta_pts(primary_exact, llm_exact)
+    loose_delta, loose_color = _delta_pts(primary_accuracy, llm_accuracy)
+
+    p_geo = _fmt_geo_pct(row.p_geo_counts)
+    l_geo = _fmt_geo_pct(row.l_geo_counts)
+    try:
+        geo_delta, geo_color = _delta_pts(
+            _parse_rate(p_geo.split(" ")[0]), _parse_rate(l_geo.split(" ")[0])
+        )
+    except Exception:
+        geo_delta, geo_color = "-", "#1a1a2e"
+
+    rows = [
+        ("Speed (median)", med_p, med_l, speed_card, speed_color),
+        ("Cost", f"${row.primary:.4f}", f"${row.ocr_mapping:.4f}", cost_card, cost_color),
+        ("Accuracy (Equiv.)", row.p_avg["exact"], row.l_avg["exact"], equiv_delta, equiv_color),
+        (
+            "Accuracy (Equiv+Approx.)",
+            row.p_avg["loose"],
+            row.l_avg["loose"],
+            loose_delta,
+            loose_color,
+        ),
+        ("Bounding Box", p_geo, l_geo, geo_delta, geo_color),
+    ]
+    header = f"<tr><th>Metric</th><th>{primary_label}</th><th>OCR / LLM</th><th>Delta</th></tr>"
+    body = "".join(
+        f'<tr><td>{m}</td><td>{p}</td><td>{ocr}</td><td style="color:{c}">{d}</td></tr>'
+        for m, p, ocr, d, c in rows
+    )
+    return f"<table>{header}{body}</table>"
+
+
+def _build_chart_table(cost_rows: list[_CostRow]) -> str:
+    """Build the HTML table with chart image and stats table for the summary markdown."""
+    rows = []
+    for row in cost_rows:
+        is_bda = row.method == ExtractMethod.BDA
+        primary_label = "BDA" if is_bda else "Textract"
+        slug = "bda_vs_llm" if is_bda else "textract_vs_llm"
+        stats = _build_stats_table(row)
+        rows.append(
+            f"""<tr>
+<td><img src="charts/extraction_compare_{slug}_chart.png" alt="{primary_label} vs LLM" height="450"/></td>
+<td valign="middle">{stats}</td>
+</tr>"""
+        )
+    return '<table align="center">' + "".join(rows) + "</table>\n\n"
+
+
+def _build_chart_spec(row: _CostRow) -> dict[str, object]:
+    """Build a Vega-Lite spec: stat cards on top, dual-axis bar+line chart below."""
+    is_bda = row.method == ExtractMethod.BDA
+    primary_label = "BDA" if is_bda else "Textract"
+    _, _, _, _, _, _, n = _row_stat_cards(row)
+    primary_accuracy = _parse_rate(row.p_avg["loose"])
+    llm_accuracy = _parse_rate(row.l_avg["loose"])
+
+    bar_data = [
+        {"method": primary_label, "cost": round(row.primary, 4)},
+        {"method": "OCR/LLM", "cost": round(row.ocr_mapping, 4)},
+    ]
+    line_data = [
+        {"method": primary_label, "accuracy": round(primary_accuracy * 100, 1)},
+        {"method": "OCR/LLM", "accuracy": round(llm_accuracy * 100, 1)},
+    ]
+
+    accuracy_min = max(0, min(primary_accuracy, llm_accuracy) * 100 - 15)
+    accuracy_max = min(100, max(primary_accuracy, llm_accuracy) * 100 + 8)
+
+    cost_max = round(max(row.primary, row.ocr_mapping) * 1.2, 4)
+
+    bar_layer = {
+        "data": {"values": bar_data},
+        "layer": [
+            {
+                "mark": {"type": "bar", "cornerRadiusTopLeft": 4, "cornerRadiusTopRight": 4},
+                "encoding": {
+                    "x": {
+                        "field": "method",
+                        "type": "nominal",
+                        "axis": {"labelAngle": 0, "title": None},
+                        "sort": None,
+                    },
+                    "y": {
+                        "field": "cost",
+                        "type": "quantitative",
+                        "axis": {"title": "Cost (USD)", "format": "$.4f", "titlePadding": 10},
+                        "scale": {"zero": True, "domainMax": cost_max},
+                    },
+                    "color": {
+                        "field": "method",
+                        "type": "nominal",
+                        "scale": {"range": ["#4a6fa5", "#384860"]},
+                        "legend": None,
+                    },
+                    "tooltip": [
+                        {"field": "method", "type": "nominal", "title": "Primary Method"},
+                        {
+                            "field": "cost",
+                            "type": "quantitative",
+                            "title": "Cost",
+                            "format": "$.4f",
+                        },
+                    ],
+                },
+            },
+            {
+                "mark": {"type": "text", "dy": -8, "fontWeight": "bold"},
+                "encoding": {
+                    "x": {"field": "method", "type": "nominal", "sort": None},
+                    "y": {"field": "cost", "type": "quantitative"},
+                    "text": {"field": "cost", "type": "quantitative", "format": "$.4f"},
+                    "color": {"value": "#1a1a2e"},
+                },
+            },
+        ],
+    }
+
+    line_layer = {
+        "data": {"values": line_data},
+        "layer": [
+            {
+                "mark": {
+                    "type": "line",
+                    "point": {"filled": True, "size": 80, "color": "#1a1a2e"},
+                    "strokeWidth": 2.5,
+                    "color": "#1a1a2e",
+                },
+                "encoding": {
+                    "x": {"field": "method", "type": "nominal", "sort": None},
+                    "y": {
+                        "field": "accuracy",
+                        "type": "quantitative",
+                        "axis": {
+                            "title": "Accuracy (%)",
+                            "orient": "right",
+                            "labelExpr": "datum.value + '%'",
+                            "titlePadding": 10,
+                        },
+                        "scale": {"domain": [accuracy_min, accuracy_max]},
+                    },
+                    "tooltip": [
+                        {"field": "method", "type": "nominal", "title": "Primary Method"},
+                        {
+                            "field": "accuracy",
+                            "type": "quantitative",
+                            "title": "Accuracy",
+                            "format": ".1f",
+                        },
+                    ],
+                },
+            },
+            {
+                "transform": [{"calculate": "datum.accuracy + '%'", "as": "acc_label"}],
+                "mark": {
+                    "type": "text",
+                    "dy": -12,
+                    "fontSize": 11,
+                    "fontWeight": "bold",
+                    "color": "#1a1a2e",
+                },
+                "encoding": {
+                    "x": {"field": "method", "type": "nominal", "sort": None},
+                    "y": {
+                        "field": "accuracy",
+                        "type": "quantitative",
+                        "scale": {"domain": [accuracy_min, accuracy_max]},
+                    },
+                    "text": {"field": "acc_label", "type": "nominal"},
+                },
+            },
+        ],
+    }
+
+    chart = {
+        "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+        "title": {
+            "text": f"{primary_label} vs OCR Mapping",
+            "fontSize": 16,
+            "offset": 12,
+        },
+        "width": 300,
+        "height": 220,
+        "resolve": {"scale": {"y": "independent"}},
+        "layer": [bar_layer, line_layer],
+        "config": {
+            "background": "#ffffff",
+            "font": "Inter, system-ui, sans-serif",
+            "view": {"stroke": None},
+            "axis": {"grid": False, "domainColor": "#e5e7eb", "tickColor": "#e5e7eb"},
+        },
+    }
+
+    n_label = {
+        "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+        "width": 300,
+        "height": 16,
+        "data": {"values": [{"x": 0}]},
+        "mark": {"type": "text", "fontSize": 12, "color": "#6b7280"},
+        "encoding": {"text": {"value": f"n={n} documents"}},
+        "config": {"background": "#ffffff", "view": {"stroke": None}},
+    }
+
+    return {
+        "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+        "vconcat": [chart, n_label],
+        "config": {
+            "background": "#ffffff",
+            "font": "Inter, system-ui, sans-serif",
+            "view": {"stroke": None},
+        },
+    }
+
+
+def write_extraction_compare_charts(cost_rows: list[_CostRow], results_dir: Path) -> None:
+    """Write Vega-Lite JSON chart specs for each primary method comparison."""
+    charts_dir = results_dir / "charts"
+    charts_dir.mkdir(parents=True, exist_ok=True)
+    for row in cost_rows:
+        slug = "bda_vs_llm" if row.method == ExtractMethod.BDA else "textract_vs_llm"
+        (charts_dir / f"extraction_compare_{slug}_chart.vl.json").write_text(
+            json.dumps(_build_chart_spec(row), indent=2)
+        )

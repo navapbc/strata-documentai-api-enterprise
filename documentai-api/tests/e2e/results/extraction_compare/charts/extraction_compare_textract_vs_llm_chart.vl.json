@@ -1,0 +1,266 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "vconcat": [
+    {
+      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+      "title": {
+        "text": "Textract vs OCR Mapping",
+        "fontSize": 16,
+        "offset": 12
+      },
+      "width": 300,
+      "height": 220,
+      "resolve": {
+        "scale": {
+          "y": "independent"
+        }
+      },
+      "layer": [
+        {
+          "data": {
+            "values": [
+              {
+                "method": "Textract",
+                "cost": 0.025
+              },
+              {
+                "method": "OCR/LLM",
+                "cost": 0.0106
+              }
+            ]
+          },
+          "layer": [
+            {
+              "mark": {
+                "type": "bar",
+                "cornerRadiusTopLeft": 4,
+                "cornerRadiusTopRight": 4
+              },
+              "encoding": {
+                "x": {
+                  "field": "method",
+                  "type": "nominal",
+                  "axis": {
+                    "labelAngle": 0,
+                    "title": null
+                  },
+                  "sort": null
+                },
+                "y": {
+                  "field": "cost",
+                  "type": "quantitative",
+                  "axis": {
+                    "title": "Cost (USD)",
+                    "format": "$.4f",
+                    "titlePadding": 10
+                  },
+                  "scale": {
+                    "zero": true,
+                    "domainMax": 0.03
+                  }
+                },
+                "color": {
+                  "field": "method",
+                  "type": "nominal",
+                  "scale": {
+                    "range": [
+                      "#4a6fa5",
+                      "#384860"
+                    ]
+                  },
+                  "legend": null
+                },
+                "tooltip": [
+                  {
+                    "field": "method",
+                    "type": "nominal",
+                    "title": "Primary Method"
+                  },
+                  {
+                    "field": "cost",
+                    "type": "quantitative",
+                    "title": "Cost",
+                    "format": "$.4f"
+                  }
+                ]
+              }
+            },
+            {
+              "mark": {
+                "type": "text",
+                "dy": -8,
+                "fontWeight": "bold"
+              },
+              "encoding": {
+                "x": {
+                  "field": "method",
+                  "type": "nominal",
+                  "sort": null
+                },
+                "y": {
+                  "field": "cost",
+                  "type": "quantitative"
+                },
+                "text": {
+                  "field": "cost",
+                  "type": "quantitative",
+                  "format": "$.4f"
+                },
+                "color": {
+                  "value": "#1a1a2e"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "data": {
+            "values": [
+              {
+                "method": "Textract",
+                "accuracy": 100.0
+              },
+              {
+                "method": "OCR/LLM",
+                "accuracy": 100.0
+              }
+            ]
+          },
+          "layer": [
+            {
+              "mark": {
+                "type": "line",
+                "point": {
+                  "filled": true,
+                  "size": 80,
+                  "color": "#1a1a2e"
+                },
+                "strokeWidth": 2.5,
+                "color": "#1a1a2e"
+              },
+              "encoding": {
+                "x": {
+                  "field": "method",
+                  "type": "nominal",
+                  "sort": null
+                },
+                "y": {
+                  "field": "accuracy",
+                  "type": "quantitative",
+                  "axis": {
+                    "title": "Accuracy (%)",
+                    "orient": "right",
+                    "labelExpr": "datum.value + '%'",
+                    "titlePadding": 10
+                  },
+                  "scale": {
+                    "domain": [
+                      85.0,
+                      100
+                    ]
+                  }
+                },
+                "tooltip": [
+                  {
+                    "field": "method",
+                    "type": "nominal",
+                    "title": "Primary Method"
+                  },
+                  {
+                    "field": "accuracy",
+                    "type": "quantitative",
+                    "title": "Accuracy",
+                    "format": ".1f"
+                  }
+                ]
+              }
+            },
+            {
+              "transform": [
+                {
+                  "calculate": "datum.accuracy + '%'",
+                  "as": "acc_label"
+                }
+              ],
+              "mark": {
+                "type": "text",
+                "dy": -12,
+                "fontSize": 11,
+                "fontWeight": "bold",
+                "color": "#1a1a2e"
+              },
+              "encoding": {
+                "x": {
+                  "field": "method",
+                  "type": "nominal",
+                  "sort": null
+                },
+                "y": {
+                  "field": "accuracy",
+                  "type": "quantitative",
+                  "scale": {
+                    "domain": [
+                      85.0,
+                      100
+                    ]
+                  }
+                },
+                "text": {
+                  "field": "acc_label",
+                  "type": "nominal"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "config": {
+        "background": "#ffffff",
+        "font": "Inter, system-ui, sans-serif",
+        "view": {
+          "stroke": null
+        },
+        "axis": {
+          "grid": false,
+          "domainColor": "#e5e7eb",
+          "tickColor": "#e5e7eb"
+        }
+      }
+    },
+    {
+      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+      "width": 300,
+      "height": 16,
+      "data": {
+        "values": [
+          {
+            "x": 0
+          }
+        ]
+      },
+      "mark": {
+        "type": "text",
+        "fontSize": 12,
+        "color": "#6b7280"
+      },
+      "encoding": {
+        "text": {
+          "value": "n=1 documents"
+        }
+      },
+      "config": {
+        "background": "#ffffff",
+        "view": {
+          "stroke": null
+        }
+      }
+    }
+  ],
+  "config": {
+    "background": "#ffffff",
+    "font": "Inter, system-ui, sans-serif",
+    "view": {
+      "stroke": null
+    }
+  }
+}

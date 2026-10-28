@@ -42,21 +42,23 @@ def test_completed_at_falls_back_to_the_sidecar_mtime_for_legacy_files(tmp_path:
 
 
 def test_clear_results_removes_only_that_documents_results(tmp_path: Path) -> None:
-    for name in ("a.md", "a.data.json", "b.md", "b.data.json", "extraction_compare_summary.md"):
-        (tmp_path / name).write_text("from an earlier run")
+    (tmp_path / "md").mkdir()
+    (tmp_path / "data").mkdir()
+    for name in ("a.md", "b.md"):
+        (tmp_path / "md" / name).write_text("from an earlier run")
+    for name in ("a.data.json", "b.data.json"):
+        (tmp_path / "data" / name).write_text("from an earlier run")
 
     compare_results._clear_results("a.pdf", results_dir=tmp_path)
 
-    assert {p.name for p in tmp_path.iterdir()} == {
-        "b.md",
-        "b.data.json",
-        "extraction_compare_summary.md",
-    }
+    assert {p.name for p in (tmp_path / "md").iterdir()} == {"b.md"}
+    assert {p.name for p in (tmp_path / "data").iterdir()} == {"b.data.json"}
 
 
-def test_clear_results_creates_the_results_dir_and_tolerates_missing_files(tmp_path: Path) -> None:
+def test_clear_results_creates_the_result_dirs_and_tolerates_missing_files(tmp_path: Path) -> None:
     results_dir = tmp_path / "results"
 
     compare_results._clear_results("a.pdf", results_dir=results_dir)
 
-    assert results_dir.is_dir()
+    assert (results_dir / "md").is_dir()
+    assert (results_dir / "data").is_dir()
