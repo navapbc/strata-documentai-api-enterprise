@@ -23,15 +23,16 @@ _KEEP_COLS = {0, 1, 2, 3}
 
 def _slim_field_comparison_tables(html: str) -> str:
     """Drop conf and bounding box columns from Field Comparison tables."""
+
     def _process_row(m: re.Match) -> str:
         row_open, content, row_close = m.group(1), m.group(2), m.group(3)
-        cells = re.findall(r'<(?:th|td)\b.*?</(?:th|td)>', content, re.DOTALL)
+        cells = re.findall(r"<(?:th|td)\b.*?</(?:th|td)>", content, re.DOTALL)
         if len(cells) != 9:
             return m.group(0)
         kept = "".join(cells[i] for i in sorted(_KEEP_COLS))
         return f"{row_open}{kept}{row_close}"
 
-    return re.sub(r'(<tr[^>]*>)(.*?)(</tr>)', _process_row, html, flags=re.DOTALL)
+    return re.sub(r"(<tr[^>]*>)(.*?)(</tr>)", _process_row, html, flags=re.DOTALL)
 
 
 def _md_to_html(md_path: Path, base_dir: Path) -> str:
@@ -70,9 +71,10 @@ def main() -> None:
         sections.append(f'<div class="page-break" id="{md.stem}"></div>')
         html = _slim_field_comparison_tables(_md_to_html(md, DATA / "md"))
         html = re.sub(
-            r'<h1([^>]*)>(.*?)</h1>',
-            lambda m: f'<h1{m.group(1)}>{m.group(2)}</h1>',
-            html, count=1,
+            r"<h1([^>]*)>(.*?)</h1>",
+            lambda m: f"<h1{m.group(1)}>{m.group(2)}</h1>",
+            html,
+            count=1,
         )
         html += '<p style="text-align:right;"><a href="#document-summary">↑ Return to Document Summary</a></p>'
         sections.append(html)
@@ -89,7 +91,7 @@ def main() -> None:
 </body>
 </html>"""
 
-    from weasyprint import HTML, CSS as WeasyprintCSS  # type: ignore[import-not-found]
+    from weasyprint import HTML  # type: ignore[import-not-found]
 
     HTML(string=html, base_url=str(DATA)).write_pdf(str(OUTPUT))
     print(f"Wrote {OUTPUT}")

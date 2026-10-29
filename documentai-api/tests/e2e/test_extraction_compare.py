@@ -553,7 +553,7 @@ def _write_comparison_md(
             p_cell = p_val
             llm_cell = llm_val
         lines.append(
-            f"| {field} | {exp_val} | {p_cell} | {llm_cell} |"
+            f"| {field} | {exp_val} | {p_cell} | {llm_cell} | {p_conf} | {llm_conf} | {_fmt_exp_geo(exp_geo) if exp_geo else EXPECTED_EMPTY} | {p_geo_cell} | {llm_geo_cell} |"
         )
     _MD_DIR.mkdir(parents=True, exist_ok=True)
     results_file.write_text("\n".join(lines) + "\n")
