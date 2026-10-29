@@ -1,51 +1,69 @@
 architecture-beta
   %% Groups
-  group admin(logos:aws-cloudfront)[Admin Console]
-  group api(logos:aws-vpc)[API Layer]
-  group processing(logos:aws-vpc)[Document Processing]
-  group data-extraction(logos:aws-vpc)[Data Extraction]
-  group metrics(logos:aws-vpc)[Metrics Pipeline]
+  group admin(aws:arch-amazon-cloudfront)[Admin Console]
+  group api(aws:arch-amazon-api-gateway)[API Layer]
+  group processing(aws:arch-aws-lambda)[Document Processing]
+  group data-extraction(aws:arch-amazon-bedrock)[Data Extraction]
+  group ocr-mapping(aws:arch-amazon-textract)[OCR / LLM Mapping]
+  group metrics(aws:arch-aws-glue)[Metrics Pipeline]
 
   %% Admin
   %% NOTE: 'material-symbols' requires external JSON injection.
   %% The material-symbols:manage-accounts icon render as a '?' inside the native
-  %% VS Code preview window, but generates perfectly centered 1:1 square nodes 
+  %% VS Code preview window, but generates perfectly centered 1:1 square nodes
   %% when generated via 'make'.
   service user(material-symbols:manage-accounts)[Admin User]
-  service cloudfront(logos:aws-cloudfront)[CloudFront] in admin
-  service s3ui(logos:aws-s3)[S3 Static Site] in admin
+  service cloudfront(aws:arch-amazon-cloudfront)[CloudFront] in admin
+  service s3ui(aws:arch-amazon-s3)[S3 Static Site] in admin
 
   %% API Layer
-  service cognito(logos:aws-cognito)[Cognito User Pool] in api
-  service apigw(logos:aws-api-gateway)[API Gateway] in api
-  service api-lambda(logos:aws-lambda)[API Lambda] in api
-  service ddb-apikeys(logos:aws-dynamodb)[API Keys] in api
-  service ddb-audit(logos:aws-dynamodb)[Audit Events] in api
+  service cognito(aws:arch-amazon-cognito)[Cognito User Pool] in api
+  service apigw(aws:arch-amazon-api-gateway)[API Gateway] in api
+  service api-lambda(aws:arch-aws-lambda)[API Lambda] in api
+  service ddb-apikeys(aws:arch-amazon-dynamodb)[API Keys] in api
+  service ddb-audit(aws:arch-amazon-dynamodb)[Audit Events] in api
 
   %% Document Processing
-  service s3input(logos:aws-s3)[S3 Input] in processing
-  service eventbridge1(logos:aws-eventbridge)[EventBridge] in processing
-  service document-processor(logos:aws-lambda)[Document Processor] in processing
-  service ddb(logos:aws-dynamodb)[Document Metadata] in processing
-  service bedrock-preclassify(server)[AWS Bedrock Preclassify] in processing
-  service document-reaper(logos:aws-lambda)[Document Reaper] in processing
+  service s3input(aws:arch-amazon-s3)[S3 Input] in processing
+  service eventbridge1(aws:arch-amazon-eventbridge)[EventBridge] in processing
+  service document-processor(aws:arch-aws-lambda)[Document Processor] in processing
+  %% spacer junctions: give Document Metadata clearance so the Reaper can sit above it
+  junction doc-spacer-s3 in processing
+  junction doc-spacer-in in processing
+  junction doc-spacer in processing
+  service ddb(aws:arch-amazon-dynamodb)[Document Metadata] in processing
+  service bedrock-preclassify(aws:arch-amazon-bedrock)[AWS Bedrock Preclassify] in processing
+  service document-reaper(aws:arch-aws-lambda)[Document Reaper] in processing
+
+  %% Dispatch
+  group dispatch(material-symbols:alt-route)[Dispatch]
+  junction dispatch-bda in dispatch
+  junction dispatch-ocr in dispatch
 
   %% Data Extraction
-  service bda(server)[Bedrock Data Automation] in data-extraction
-  service s3output(logos:aws-s3)[S3 Output] in data-extraction
-  service eventbridge2(logos:aws-eventbridge)[EventBridge] in data-extraction
-  service bda-result-processor(logos:aws-lambda)[BDA Result Processor] in data-extraction
-  service ddb2(logos:aws-dynamodb)[Document Metadata] in data-extraction
+  service bda(aws:arch-amazon-bedrock)[Bedrock Data Automation] in data-extraction
+  service s3output(aws:arch-amazon-s3)[S3 Output] in data-extraction
+  service eventbridge2(aws:arch-amazon-eventbridge)[EventBridge] in data-extraction
+  service bda-result-processor(aws:arch-aws-lambda)[BDA Result Processor] in data-extraction
+  service ddb-bda(aws:arch-amazon-dynamodb)[Document Metadata] in data-extraction
+
+  %% OCR / LLM Mapping
+  service textract(aws:arch-amazon-textract)[Textract AnalyzeDocument] in ocr-mapping
+  %% spacer junction: gives this row the same step count as Data Extraction so the lambdas can align
+  junction ocr-spacer in ocr-mapping
+  service ocr-mapping-sqs(aws:arch-amazon-sqs)[OCR Mapping Queue] in ocr-mapping
+  service ocr-mapping-processor(aws:arch-aws-lambda)[OCR Mapping Processor] in ocr-mapping
+  service ddb-ocr(aws:arch-amazon-dynamodb)[Document Metadata] in ocr-mapping
 
   %% Metrics Pipeline
-  service sqs(logos:aws-sqs)[SQS Queue] in metrics
-  service metrics-processor(logos:aws-lambda)[Metrics Processor] in metrics
-  service s3-base-metrics(logos:aws-s3)[Base Processing Metrics] in metrics
-  service glue(logos:aws-glue)[Glue Database] in metrics
-  service metrics-aggregator(logos:aws-lambda)[Metrics Aggregator] in metrics
-  service s3-agg-metrics(logos:aws-s3)[Aggregated Processing Metrics] in metrics
-  service tenant-schedule(logos:aws-lambda)[Tenant Usage Report] in metrics
-  service s3-tenant-usage-metrics(logos:aws-s3)[Tenant Usage Metrics] in metrics
+  service sqs(aws:arch-amazon-sqs)[SQS Queue] in metrics
+  service metrics-processor(aws:arch-aws-lambda)[Metrics Processor] in metrics
+  service s3-base-metrics(aws:arch-amazon-s3)[Base Processing Metrics] in metrics
+  service glue(aws:arch-aws-glue)[Glue Database] in metrics
+  service metrics-aggregator(aws:arch-aws-lambda)[Metrics Aggregator] in metrics
+  service s3-agg-metrics(aws:arch-amazon-s3)[Aggregated Processing Metrics] in metrics
+  service tenant-schedule(aws:arch-aws-lambda)[Tenant Usage Report] in metrics
+  service s3-tenant-usage-metrics(aws:arch-amazon-s3)[Tenant Usage Metrics] in metrics
 
   %% Admin flow
   user:B --> T:cloudfront
@@ -60,21 +78,42 @@ architecture-beta
   api-lambda:B --> T:s3input
 
   %% Processing flow
-  s3input:R --> L:eventbridge1
-  eventbridge1:R --> L:document-processor
+  s3input:R -- L:doc-spacer-s3
+  doc-spacer-s3:R --> L:eventbridge1
+  eventbridge1:R -- L:doc-spacer-in
+  doc-spacer-in:R --> L:document-processor
   document-processor:T --> B:bedrock-preclassify
-  document-processor:R --> L:ddb
-  %% force mermaid chart to render adequate space between groups by using a junction
-  document-processor:B -- T:processing-junc1
-  junction processing-junc1
-  processing-junc1:B --> T:bda
-  document-reaper:L --> R:ddb
+  document-processor:R -- L:doc-spacer
+  doc-spacer:R --> L:ddb
+  document-processor:B -- T:dispatch-bda
+  document-reaper:B --> T:ddb
+
+  %% Dispatch
+  dispatch-bda:B -- T:dispatch-ocr
+  %% junctions push the extraction/OCR groups right so they clear the Dispatch group
+  junction dispatch-junc-bda
+  junction dispatch-junc-ocr
+  dispatch-bda:R -- L:dispatch-junc-bda
+  dispatch-junc-bda:R --> L:bda
+  dispatch-ocr:R -- L:dispatch-junc-ocr
+  dispatch-junc-ocr:R --> L:textract
+  %% align BDA/Textract and the two result-processor columns (group-to-group edge, avoids crossing node labels)
+  bda{group}:B -- T:textract{group}
+  bda-result-processor{group}:B -- T:ocr-mapping-processor{group}
+
+  %% OCR mapping path (always runs alongside primary; required for is_compare)
+
+  textract:R -- L:ocr-spacer
+  ocr-spacer:R --> L:ocr-mapping-sqs
+  ocr-mapping-sqs:R --> L:ocr-mapping-processor
+  ocr-mapping-processor:R --> L:ddb-ocr
+  ocr-mapping-processor:B --> T:sqs
 
   %% Extraction flow
   bda:R --> L:s3output
   s3output:R --> L:eventbridge2
   eventbridge2:R --> L:bda-result-processor
-  bda-result-processor:R --> L:ddb2
+  bda-result-processor:R --> L:ddb-bda
   %% force mermaid chart to render adequate space between groups by using a junction
   bda-result-processor:B -- T:extract-junc1
   junction extract-junc1

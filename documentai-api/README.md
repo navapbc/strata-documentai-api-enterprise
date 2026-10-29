@@ -139,6 +139,7 @@ Set by infrastructure on deploy:
 | `API_AUTH_ENABLED` | Enable DynamoDB-backed auth. Defaults to `false` (insecure single-key dev mode); **must be `true` for any hosted/production deploy** - see [api-authentication.md](../docs/documentai-api/api-authentication.md) |
 | `API_KEYS_TABLE_NAME` | DynamoDB API keys table |
 | `COGNITO_USER_POOL_ID` | Cognito User Pool ID (admin auth) |
+| `OCR_MAPPING_QUEUE_URL` | SQS queue URL for OCR mapping processor (required for OCR/LLM mapping path) |
 
 ### Optional
 
@@ -251,6 +252,32 @@ metrics data and writes `usage-report/month=<MONTH>/report.json` to the metrics 
 > only cover data still in the raw metrics table - if S3 lifecycle rules have archived
 > or expired older records, those months will be incomplete or empty.
 
+## Extraction Compare
+
+The extraction compare tool runs a document through both the primary extraction path (BDA or Textract Identity) and the Textract OCR / LLM mapping path in parallel, then produces a side-by-side accuracy, cost, and speed comparison.
+
+**How it works:**
+1. `POST /v1/admin/extraction-compare` submits a document with `is_compare=true`, which forces both paths to run regardless of feature flags
+2. Document Processor calls Textract AnalyzeDocument (layout OCR) synchronously, enqueues the result to the OCR Mapping SQS queue, and invokes BDA as normal
+3. OCR Mapping Processor consumes the queue, runs LLM field mapping via Bedrock, and writes results to `apiResponsesByMethod` in DynamoDB alongside the BDA result
+4. `GET /v1/admin/extraction-compare/{job_id}` returns both results with a cost breakdown by reason bucket (`primary`, `ocrMapping`, `shared`)
+
+**Running the e2e comparison suite:**
+
+```bash
+make test-extraction-compare          # Run against all documents in tests/e2e/compare-files/
+make regen-extraction-compare-summary # Regenerate markdown from existing .data.json sidecars
+make extraction-compare-charts        # Re-render Vega-Lite chart specs to PNG
+```
+
+Results are written to `tests/e2e/results/extraction_compare/`:
+- `extraction_compare_summary.md` - top-level summary with cost/speed/accuracy stats and charts
+- `md/` - per-document breakdown with field-level comparison table
+- `data/` - raw `.data.json` sidecars (source of truth for regen)
+- `charts/` - Vega-Lite specs and rendered PNG charts
+
+Requires a deployed environment with `OCR_MAPPING_QUEUE_URL` set and the OCR Mapping Processor Lambda deployed.
+
 ## Testing
 
 Most tests use pytest with moto for AWS service mocking - no real AWS infrastructure required. Tests are split into three tiers via pytest markers:
@@ -321,6 +348,7 @@ src/documentai_api/
 │   ├── document_processor/         # EventBridge → process upload → invoke BDA
 │   ├── bda_result_processor/       # EventBridge → extract fields → update DDB
 │   ├── metrics_processor/          # SQS → write Parquet to S3
+│   ├── ocr_mapping_processor/      # SQS → Textract OCR blocks → LLM field mapping
 │   ├── metrics_aggregator/         # Scheduled → aggregate daily metrics
 │   ├── document_reaper/            # Scheduled → resolve stuck non-terminal records
 │   └── usage_report/               # Scheduled → per-tenant usage report via Athena

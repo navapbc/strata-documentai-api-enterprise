@@ -67,6 +67,7 @@ generate-categories = "documentai_api.cli.generate_categories:app"
 generate-env-names = "documentai_api.cli.generate_env_names:app"
 generate-geometry-candidates = "documentai_api.cli.generate_geometry_candidates:app"
 run-extraction-compare = "documentai_api.cli.run_extraction_compare:app"
+build-aws-icon-pack = "documentai_api.cli.build_aws_icon_pack:app"
 
 [tool.mypy]
 pretty = true

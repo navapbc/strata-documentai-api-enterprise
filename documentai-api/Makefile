@@ -390,14 +390,20 @@ postman: ## Regenerate the Postman collection from openapi.json
 diagrams: ## Render all .mmd diagrams to SVG
 diagrams: $(DIAGRAMS)
 
-$(APP_DOCS_DIR)/media/%.svg: $(APP_DOCS_DIR)/diagrams/%.mmd
+aws-icon-pack: ## Rebuild docs/documentai-api/icons/aws/icons.json from AWS icon zip (usage: make aws-icon-pack ZIP=/path/to/aws-icons.zip)
+	$(if $(ZIP),,$(error ZIP=/path/to/aws-icons.zip required))
+	$(AWS_RUN_CMD) build-aws-icon-pack $(ZIP) $(APP_DOCS_DIR)/icons/aws/icons.json
+
+$(APP_DOCS_DIR)/media/%.svg: $(APP_DOCS_DIR)/diagrams/%.mmd $(APP_DOCS_DIR)/icons/aws/icons.json $(CURDIR)/Dockerfile.mermaid
+	docker build -q -t documentai-mermaid - < $(CURDIR)/Dockerfile.mermaid > /dev/null
 	docker run --rm \
 	-v $(APP_DOCS_DIR):/data \
-	ghcr.io/mermaid-js/mermaid-cli/mermaid-cli:latest \
+	documentai-mermaid \
 	-i diagrams/$*.mmd \
 	-o media/$*.svg \
-	--iconPacks '@iconify-json/logos' \
-	--iconPacks '@iconify-json/material-symbols'
+	$(if $(wildcard $(APP_DOCS_DIR)/diagrams/$*.css),--cssFile diagrams/$*.css) \
+	--iconPacks '@iconify-json/material-symbols' \
+	--iconPacks '/data/icons/aws'
 
 help: ## Show help
 	@grep -Eh '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'

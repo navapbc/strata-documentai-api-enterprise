@@ -1,0 +1,4 @@
+/* Alignment-only edge between the Data Extraction and OCR groups (keeps BDA and Textract in the same column); hide it. */
+#my-svg-L_bda_textract_0 {
+  display: none;
+}
