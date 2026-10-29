@@ -13,12 +13,14 @@ _Last run: 2026-10-28 20:00 UTC_
 ## Cost
 
 _By Service_
+
 - us.amazon.nova-pro-v1:0: $0.01300560
 - bda: $0.04000000
 - analyze_document_layout: $0.00400000
 - **total: $0.05700560**
 
 _By Extraction Method_
+
 - shared (preclassification): $0.00881760
 - ocr-mapping extraction: $0.00818800
 - primary (bda): $0.04000000
@@ -28,10 +30,12 @@ _By Extraction Method_
 ## Accuracy
 
 _By Extracted Data_
+
 - BDA: 9/11 (82%) equivalent match, 9/11 (82%) close, 2 misses
 - OCR Mapping: 11/11 (100%) equivalent match, 11/11 (100%) close, 0 misses
 
 _By Bounding Box_
+
 - BDA: 2/7 exact, 4 miss
 - OCR Mapping: 5/7 exact, 2 miss
 

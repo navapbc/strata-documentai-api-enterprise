@@ -461,6 +461,7 @@ def _write_comparison_md(
     if result.cost or result.tokens:
         lines.append("\n## Cost\n")
         lines.append("_By Service_")
+        lines.append("")
         for model_id, entry_cost in result.cost.items():
             t = result.tokens.get(model_id, {})
             if t:
@@ -475,6 +476,7 @@ def _write_comparison_md(
         if result.cost_by_reason:
             lines.append("")
             lines.append("_By Extraction Method_")
+            lines.append("")
             lines.append(
                 f"- shared (preclassification): ${result.cost_by_reason.get('shared', 0.0):.8f}"
             )
@@ -494,6 +496,7 @@ def _write_comparison_md(
         l_geo_acc = _fmt_geo_accuracy(accuracy.get(_ResultData.OCR_MAPPING_GEO))
         lines.append("\n## Accuracy")
         lines.append("\n_By Extracted Data_")
+        lines.append("")
         lines.append(
             f"- {primary_method.upper()}: {p_acc['exact']} equivalent match, {p_acc['loose']} close, {p_acc['miss']} {'miss' if p_acc['miss'] == '1' else 'misses'}"
         )
@@ -501,6 +504,7 @@ def _write_comparison_md(
             f"- OCR Mapping: {l_acc['exact']} equivalent match, {l_acc['loose']} close, {l_acc['miss']} {'miss' if l_acc['miss'] == '1' else 'misses'}"
         )
         lines.append("\n_By Bounding Box_")
+        lines.append("")
         lines.append(f"- {primary_method.upper()}: {p_geo_acc}")
         lines.append(f"- OCR Mapping: {l_geo_acc}")
         lines.append("")
@@ -549,7 +553,7 @@ def _write_comparison_md(
             p_cell = p_val
             llm_cell = llm_val
         lines.append(
-            f"| {field} | {exp_val} | {p_cell} | {llm_cell} | {p_conf} | {llm_conf} | {_fmt_exp_geo(exp_geo) if exp_geo else EXPECTED_EMPTY} | {p_geo_cell} | {llm_geo_cell} |"
+            f"| {field} | {exp_val} | {p_cell} | {llm_cell} |"
         )
     _MD_DIR.mkdir(parents=True, exist_ok=True)
     results_file.write_text("\n".join(lines) + "\n")
@@ -877,6 +881,7 @@ def regen_comparison_md(results_dir: Path) -> None:
         if cost:
             lines.append("\n## Cost\n")
             lines.append("_By Service_")
+            lines.append("")
             for model_id, entry_cost in cost.items():
                 lines.append(f"- {model_id}: ${entry_cost:.8f}")
             lines.append(f"- **total: ${sum(cost.values()):.8f}**")
@@ -884,6 +889,7 @@ def regen_comparison_md(results_dir: Path) -> None:
             if cost_by_reason:
                 lines.append("")
                 lines.append("_By Extraction Method_")
+                lines.append("")
                 lines.append(
                     f"- shared (preclassification): ${cost_by_reason.get('shared', 0.0):.8f}"
                 )
@@ -903,6 +909,7 @@ def regen_comparison_md(results_dir: Path) -> None:
             l_geo_acc = _fmt_geo_accuracy(accuracy.get(_ResultData.OCR_MAPPING_GEO))
             lines.append("\n## Accuracy")
             lines.append("\n_By Extracted Data_")
+            lines.append("")
             lines.append(
                 f"- {primary_method.upper()}: {p_acc['exact']} equivalent match, {p_acc['loose']} close, {p_acc['miss']} {'miss' if p_acc['miss'] == '1' else 'misses'}"
             )
@@ -910,6 +917,7 @@ def regen_comparison_md(results_dir: Path) -> None:
                 f"- OCR Mapping: {l_acc['exact']} equivalent match, {l_acc['loose']} close, {l_acc['miss']} {'miss' if l_acc['miss'] == '1' else 'misses'}"
             )
             lines.append("\n_By Bounding Box_")
+            lines.append("")
             lines.append(f"- {primary_method.upper()}: {p_geo_acc}")
             lines.append(f"- OCR Mapping: {l_geo_acc}")
             lines.append("")
@@ -984,7 +992,7 @@ def write_extraction_compare_summary(results_dir: Path) -> None:
     run_ts = _format_run_stamp(max(completed, default=datetime.now(UTC)))
     doc_count = len(worker_files)
     lines = [
-        "# Extraction Compare Results\n",
+        "# DocumentAI - Extraction Comparison\n",
         f"\n_{_RUN_STAMP_PREFIX} {run_ts} - {doc_count} documents_\n",
     ]
 
@@ -999,6 +1007,7 @@ def write_extraction_compare_summary(results_dir: Path) -> None:
         lines.append(
             "_Excludes the primary-path fee (BDA or Textract AnalyzeID); see the tables below._"
         )
+        lines.append("")
         for cost_key, amount in sorted(llm_costs.items()):
             lines.append(f"- {_COST_LABELS.get(cost_key, cost_key)}: ${amount:.6f}")
         lines.append(f"- **subtotal: ${sum(llm_costs.values()):.6f}**")
@@ -1129,7 +1138,7 @@ def _build_stats_table(row: _CostRow) -> str:
 
 
 def _build_chart_table(cost_rows: list[_CostRow]) -> str:
-    """Build the HTML table with chart image and stats table for the summary markdown."""
+    """Build the chart image and stats table stacked vertically for the summary markdown."""
     rows = []
     for row in cost_rows:
         is_bda = row.method == ExtractMethod.BDA
@@ -1138,11 +1147,13 @@ def _build_chart_table(cost_rows: list[_CostRow]) -> str:
         stats = _build_stats_table(row)
         rows.append(
             f"""<tr>
-<td><img src="charts/extraction_compare_{slug}_chart.png" alt="{primary_label} vs LLM" height="450"/></td>
-<td valign="middle">{stats}</td>
+<td style="text-align:center;"><img src="charts/extraction_compare_{slug}_chart.png" alt="{primary_label} vs LLM" style="max-width:400px;"/></td>
+</tr>
+<tr>
+<td>{stats}</td>
 </tr>"""
         )
-    return '<table align="center">' + "".join(rows) + "</table>\n\n"
+    return '<table style="width:100%">' + "".join(rows) + "</table>\n\n"
 
 
 def _build_chart_spec(row: _CostRow) -> dict[str, object]:

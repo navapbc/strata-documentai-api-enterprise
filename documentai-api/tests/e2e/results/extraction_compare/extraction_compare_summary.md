@@ -1,9 +1,10 @@
-# Extraction Compare Results
+# DocumentAI - Extraction Comparison
 
 _Last run: 2026-10-28 20:04 UTC - 35 documents_
 
 ## Cost by Model and Service
 _Excludes the primary-path fee (BDA or Textract AnalyzeID); see the tables below._
+
 - textract - AnalyzeDocument (layout): $0.140000
 - us.amazon.nova-lite-v1:0: $0.002790
 - us.amazon.nova-pro-v1:0: $0.541558
@@ -13,16 +14,20 @@ _Excludes the primary-path fee (BDA or Textract AnalyzeID); see the tables below
 ## Extraction Comparison
 
 ### BDA vs. Textract OCR / LLM Mapping
-<table align="center"><tr>
-<td><img src="charts/extraction_compare_bda_vs_llm_chart.png" alt="BDA vs LLM" height="450"/></td>
-<td valign="middle"><table><tr><th>Metric</th><th>BDA</th><th>OCR / LLM</th><th>Delta</th></tr><tr><td>Speed (median)</td><td>25.00s</td><td>3.29s</td><td style="color:#16a34a">7.6x faster</td></tr><tr><td>Cost</td><td>$1.3600</td><td>$0.3562</td><td style="color:#16a34a">3.8x cheaper</td></tr><tr><td>Accuracy (Equiv.)</td><td>359/485 (74%)</td><td>411/485 (85%)</td><td style="color:#16a34a">+11 pts</td></tr><tr><td>Accuracy (Equiv+Approx.)</td><td>368/485 (76%)</td><td>428/485 (88%)</td><td style="color:#16a34a">+12 pts</td></tr><tr><td>Bounding Box</td><td>165/302 (55%)</td><td>171/302 (57%)</td><td style="color:#16a34a">+2 pts</td></tr></table></td>
+<table style="width:100%"><tr>
+<td style="text-align:center;"><img src="charts/extraction_compare_bda_vs_llm_chart.png" alt="BDA vs LLM" style="max-width:400px;"/></td>
+</tr>
+<tr>
+<td><table><tr><th>Metric</th><th>BDA</th><th>OCR / LLM</th><th>Delta</th></tr><tr><td>Speed (median)</td><td>25.00s</td><td>3.29s</td><td style="color:#16a34a">7.6x faster</td></tr><tr><td>Cost</td><td>$1.3600</td><td>$0.3562</td><td style="color:#16a34a">3.8x cheaper</td></tr><tr><td>Accuracy (Equiv.)</td><td>359/485 (74%)</td><td>411/485 (85%)</td><td style="color:#16a34a">+11 pts</td></tr><tr><td>Accuracy (Equiv+Approx.)</td><td>368/485 (76%)</td><td>428/485 (88%)</td><td style="color:#16a34a">+12 pts</td></tr><tr><td>Bounding Box</td><td>165/302 (55%)</td><td>171/302 (57%)</td><td style="color:#16a34a">+2 pts</td></tr></table></td>
 </tr></table>
 
 
 ### Textract Identity vs. Textract OCR / LLM Mapping
-<table align="center"><tr>
-<td><img src="charts/extraction_compare_textract_vs_llm_chart.png" alt="Textract vs LLM" height="450"/></td>
-<td valign="middle"><table><tr><th>Metric</th><th>Textract</th><th>OCR / LLM</th><th>Delta</th></tr><tr><td>Speed (median)</td><td>1.41s</td><td>2.77s</td><td style="color:#dc2626">2.0x slower</td></tr><tr><td>Cost</td><td>$0.0250</td><td>$0.0106</td><td style="color:#16a34a">2.4x cheaper</td></tr><tr><td>Accuracy (Equiv.)</td><td>12/13 (92%)</td><td>13/13 (100%)</td><td style="color:#16a34a">+8 pts</td></tr><tr><td>Accuracy (Equiv+Approx.)</td><td>13/13 (100%)</td><td>13/13 (100%)</td><td style="color:#16a34a">+0 pts</td></tr><tr><td>Bounding Box</td><td>7/10 (70%)</td><td>7/10 (70%)</td><td style="color:#16a34a">+0 pts</td></tr></table></td>
+<table style="width:100%"><tr>
+<td style="text-align:center;"><img src="charts/extraction_compare_textract_vs_llm_chart.png" alt="Textract vs LLM" style="max-width:400px;"/></td>
+</tr>
+<tr>
+<td><table><tr><th>Metric</th><th>Textract</th><th>OCR / LLM</th><th>Delta</th></tr><tr><td>Speed (median)</td><td>1.41s</td><td>2.77s</td><td style="color:#dc2626">2.0x slower</td></tr><tr><td>Cost</td><td>$0.0250</td><td>$0.0106</td><td style="color:#16a34a">2.4x cheaper</td></tr><tr><td>Accuracy (Equiv.)</td><td>12/13 (92%)</td><td>13/13 (100%)</td><td style="color:#16a34a">+8 pts</td></tr><tr><td>Accuracy (Equiv+Approx.)</td><td>13/13 (100%)</td><td>13/13 (100%)</td><td style="color:#16a34a">+0 pts</td></tr><tr><td>Bounding Box</td><td>7/10 (70%)</td><td>7/10 (70%)</td><td style="color:#16a34a">+0 pts</td></tr></table></td>
 </tr></table>
 
 

@@ -13,12 +13,14 @@ _Last run: 2026-10-28 20:03 UTC_
 ## Cost
 
 _By Service_
+
 - us.amazon.nova-pro-v1:0: $0.01547360
 - textract: $0.02500000
 - analyze_document_layout: $0.00400000
 - **total: $0.04447360**
 
 _By Extraction Method_
+
 - shared (preclassification): $0.00887360
 - ocr-mapping extraction: $0.01060000
 - primary (textract): $0.02500000
@@ -28,10 +30,12 @@ _By Extraction Method_
 ## Accuracy
 
 _By Extracted Data_
+
 - TEXTRACT: 12/13 (92%) equivalent match, 13/13 (100%) close, 0 misses
 - OCR Mapping: 13/13 (100%) equivalent match, 13/13 (100%) close, 0 misses
 
 _By Bounding Box_
+
 - TEXTRACT: 7/10 exact, 3 miss
 - OCR Mapping: 7/10 exact, 3 miss
 

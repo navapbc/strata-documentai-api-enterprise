@@ -43,6 +43,8 @@
 	test-e2e-routing \
 	test-extraction-compare \
 	regen-extraction-compare-summary \
+	extraction-compare-charts \
+	extraction-compare-pdf \
 	test-integration \
 	test-regression \
 	metrics-agg \
@@ -226,6 +228,16 @@ extraction-compare-charts: ## Render extraction compare .vl.json specs to PNG ch
 	docker run --rm \
 		-v $(PWD)/tests/e2e/results/extraction_compare/charts:/data \
 		extraction-compare-charts
+
+extraction-compare-pdf: ## Render extraction compare results to a single PDF
+	docker build -q \
+		-f tests/e2e/extraction_compare_charts/Dockerfile.weasyprint \
+		-t extraction-compare-pdf \
+		. > /dev/null
+	docker run --rm \
+		-v $(PWD)/tests/e2e/results/extraction_compare:/data \
+		-v $(PWD)/tests/e2e/extraction_compare_charts/print.css:/render_pdf.css:ro \
+		extraction-compare-pdf
 
 generate-geometry-candidates: _require-tesseract ## Generate ground-truth geometry candidates for fixture documents
 	$(AWS_RUN_CMD) --extra cli-geo generate-geometry-candidates $(args)
