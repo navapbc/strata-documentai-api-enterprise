@@ -1,27 +1,27 @@
 # synthetic-assets-bank-statement-render.pdf
 
-_Last run:: 2026-10-29 21:20 UTC_
+_Last run: 2026-10-30 03:17 UTC_
 
 ## Durations
 
-- bda: 25.13s extraction
-- ocr-mapping: 19.119s extraction
+- bda: 25.46s extraction
+- llm: 5.917s extraction
 
 ## Cost
 
 _By Service_
 
-- us.amazon.nova-pro-v1:0: $0.01378400 (14906 in / 581 out)
+- us.amazon.nova-pro-v1:0: $0.01380320 (14906 in / 587 out)
 - bda: $0.04000000 (1 page(s))
 - analyze_document_layout: $0.00400000 (1 page(s))
-- **total: $0.05778400**
+- **total: $0.05780320**
 
 _By Extraction Method_
 
-- shared (preclassification): $0.00876960
+- shared (preclassification): $0.00878880
 - ocr-mapping extraction: $0.00901440
 - primary (bda): $0.04000000
-- **total: $0.05778400**
+- **total: $0.05780320**
 
 ## Accuracy
 
@@ -32,8 +32,8 @@ _By Extracted Data_
 
 _By Bounding Box_
 
-- BDA: 5/6 exact, 1 miss
-- OCR Mapping: 5/6 exact, 1 miss
+- BDA: 5/6 (83%) exact, 1 miss
+- OCR Mapping: 5/6 (83%) exact, 1 miss
 
 ## Field Comparison
 

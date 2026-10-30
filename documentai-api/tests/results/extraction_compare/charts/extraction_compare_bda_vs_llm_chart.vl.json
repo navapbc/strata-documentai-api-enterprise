@@ -9,7 +9,7 @@
       "resolve": { "scale": { "y": "independent" } },
       "layer": [
         {
-          "data": { "values": [{"cost": 1.36, "method": "BDA"}, {"cost": 0.3528, "method": "OCR/LLM"}] },
+          "data": { "values": [{"cost": 1.36, "method": "BDA"}, {"cost": 0.3576, "method": "OCR/LLM"}] },
           "layer": [
             {
               "mark": { "type": "bar", "cornerRadiusTopLeft": 4, "cornerRadiusTopRight": 4 },
@@ -43,7 +43,7 @@
           ]
         },
         {
-          "data": { "values": [{"accuracy": 76.1, "method": "BDA"}, {"accuracy": 87.8, "method": "OCR/LLM"}] },
+          "data": { "values": [{"accuracy": 74.8, "method": "BDA"}, {"accuracy": 89.9, "method": "OCR/LLM"}] },
           "layer": [
             {
               "mark": {
@@ -57,7 +57,7 @@
                 "y": {
                   "field": "accuracy", "type": "quantitative",
                   "axis": { "title": "Accuracy (%)", "orient": "right", "labelExpr": "datum.value + '%'", "titlePadding": 10 },
-                  "scale": { "domain": [61.08247422680412, 95.83505154639175] }
+                  "scale": { "domain": [59.84536082474227, 97.89690721649485] }
                 },
                 "tooltip": [
                   { "field": "method", "type": "nominal", "title": "Primary Method" },
@@ -72,7 +72,7 @@
                 "x": { "field": "method", "type": "nominal", "sort": null },
                 "y": {
                   "field": "accuracy", "type": "quantitative",
-                  "scale": { "domain": [61.08247422680412, 95.83505154639175] }
+                  "scale": { "domain": [59.84536082474227, 97.89690721649485] }
                 },
                 "text": { "field": "acc_label", "type": "nominal" }
               }

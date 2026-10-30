@@ -9,6 +9,7 @@ import secrets
 import time
 from collections.abc import Generator
 from contextlib import contextmanager, suppress
+from datetime import datetime
 from pathlib import Path
 
 import boto3
@@ -70,7 +71,7 @@ def cognito_jwt(
 
 
 def submit_and_poll(
-    base_url: str, file_path: Path, jwt: str, timeout: int = 120, interval: int = 10
+    base_url: str, file_path: Path, jwt: str, timeout: int = 120, interval: int = 5
 ) -> CompareResponse:
     """Submit a file to the extraction-compare endpoint and poll until complete."""
     headers = {"Authorization": f"Bearer {jwt}"}
@@ -106,6 +107,28 @@ def submit_and_poll(
         time.sleep(interval)
 
     raise ExtractionCompareTimeoutError(f"compare job {job_id} did not complete within {timeout}s")
+
+
+def processing_span_seconds(result: CompareResponse) -> float | None:
+    """Return the server-side window from the earliest processing start to the latest completion.
+
+    Uses the per-method timestamps the API reports, so it is not affected by poll granularity.
+    Returns None if the response doesn't carry them.
+    """
+    starts = [d.processing_started_at for d in result.durations.values() if d.processing_started_at]
+    ends = [
+        d.processing_completed_at for d in result.durations.values() if d.processing_completed_at
+    ]
+    if not starts or not ends:
+        return None
+
+    try:
+        first = min(datetime.fromisoformat(s) for s in starts)
+        last = max(datetime.fromisoformat(e) for e in ends)
+    except (ValueError, TypeError):
+        return None
+
+    return (last - first).total_seconds()
 
 
 def field_display_values(

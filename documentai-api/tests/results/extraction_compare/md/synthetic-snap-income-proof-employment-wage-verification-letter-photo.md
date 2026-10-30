@@ -1,28 +1,28 @@
 # synthetic-snap-income-proof-employment-wage-verification-letter-photo.png
 
-_Last run:: 2026-10-29 21:23 UTC_
+_Last run: 2026-10-30 03:20 UTC_
 
 ## Durations
 
-- bda: 20.44s extraction
-- ocr-mapping: 1.507s extraction
+- bda: 22.23s extraction
+- llm: 1.789s extraction
 
 ## Cost
 
 _By Service_
 
 - us.amazon.nova-lite-v1:0: $0.00011394 (1791 in / 27 out)
-- us.amazon.nova-pro-v1:0: $0.01182960 (13235 in / 388 out)
+- us.amazon.nova-pro-v1:0: $0.01182640 (13235 in / 387 out)
 - bda: $0.04000000 (1 page(s))
 - analyze_document_layout: $0.00400000 (1 page(s))
-- **total: $0.05594354**
+- **total: $0.05594034**
 
 _By Extraction Method_
 
-- shared (preclassification): $0.00900194
+- shared (preclassification): $0.00899874
 - ocr-mapping extraction: $0.00694160
 - primary (bda): $0.04000000
-- **total: $0.05594354**
+- **total: $0.05594034**
 
 ## Accuracy
 
@@ -33,8 +33,8 @@ _By Extracted Data_
 
 _By Bounding Box_
 
-- BDA: 2/7 exact, 5 miss
-- OCR Mapping: 2/7 exact, 5 miss
+- BDA: 2/7 (29%) exact, 5 miss
+- OCR Mapping: 2/7 (29%) exact, 5 miss
 
 ## Field Comparison
 

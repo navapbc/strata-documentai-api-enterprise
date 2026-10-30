@@ -3,7 +3,6 @@ from pathlib import Path
 from documentai_api.constants.processing import ExtractMethod
 from documentai_api.utils.extraction_compare_client import EXPECTED_EMPTY
 
-from ._accuracy import _fmt_geo_pct
 from ._render import render_template
 from ._types import _CostRow
 
@@ -51,24 +50,24 @@ def _build_stats_table(row: _CostRow) -> str:
     else:
         cost_card, cost_color = "-", "#1a1a2e"
 
-    primary_accuracy = _parse_rate(row.p_avg["loose"])
-    llm_accuracy = _parse_rate(row.l_avg["loose"])
-    primary_exact = _parse_rate(row.p_avg["exact"])
-    llm_exact = _parse_rate(row.l_avg["exact"])
+    primary_accuracy = _parse_rate(row.accuracy.primary["loose"])
+    llm_accuracy = _parse_rate(row.accuracy.llm["loose"])
+    primary_exact = _parse_rate(row.accuracy.primary["exact"])
+    llm_exact = _parse_rate(row.accuracy.llm["exact"])
     med_p = f"{row.median_primary:.2f}s" if row.median_primary else "-"
     med_l = f"{row.median_ocr_mapping:.2f}s" if row.median_ocr_mapping else "-"
 
     equiv_delta, equiv_color = _delta_pts(primary_exact, llm_exact)
     loose_delta, loose_color = _delta_pts(primary_accuracy, llm_accuracy)
 
-    p_geo = _fmt_geo_pct(row.p_geo_counts)
-    l_geo = _fmt_geo_pct(row.l_geo_counts)
+    primary_geo = row.accuracy.primary_geo
+    llm_geo = row.accuracy.llm_geo
 
-    if p_geo == EXPECTED_EMPTY or l_geo == EXPECTED_EMPTY:
+    if primary_geo is None or llm_geo is None:
         geo_delta, geo_color = "-", "#1a1a2e"
     else:
         geo_delta, geo_color = _delta_pts(
-            _parse_rate(p_geo.split(" ")[0]), _parse_rate(l_geo.split(" ")[0])
+            _parse_rate(primary_geo["exact"]), _parse_rate(llm_geo["exact"])
         )
 
     return render_template(
@@ -83,16 +82,16 @@ def _build_stats_table(row: _CostRow) -> str:
             "cost_ocr": row.ocr_mapping,
             "cost_card": cost_card,
             "cost_color": cost_color,
-            "p_exact": row.p_avg["exact"],
-            "l_exact": row.l_avg["exact"],
+            "primary_exact": row.accuracy.primary["exact"],
+            "llm_exact": row.accuracy.llm["exact"],
             "equiv_delta": equiv_delta,
             "equiv_color": equiv_color,
-            "p_loose": row.p_avg["loose"],
-            "l_loose": row.l_avg["loose"],
+            "primary_loose": row.accuracy.primary["loose"],
+            "llm_loose": row.accuracy.llm["loose"],
             "loose_delta": loose_delta,
             "loose_color": loose_color,
-            "p_geo": p_geo,
-            "l_geo": l_geo,
+            "primary_geo": primary_geo["exact"] if primary_geo else EXPECTED_EMPTY,
+            "llm_geo": llm_geo["exact"] if llm_geo else EXPECTED_EMPTY,
             "geo_delta": geo_delta,
             "geo_color": geo_color,
         },
@@ -120,8 +119,8 @@ def _build_chart_spec(row: _CostRow) -> str:
     """Render a Vega-Lite chart spec from template."""
     is_bda = row.method == ExtractMethod.BDA
     primary_label = "BDA" if is_bda else "Textract"
-    primary_accuracy = _parse_rate(row.p_avg["loose"])
-    llm_accuracy = _parse_rate(row.l_avg["loose"])
+    primary_accuracy = _parse_rate(row.accuracy.primary["loose"])
+    llm_accuracy = _parse_rate(row.accuracy.llm["loose"])
     return render_template(
         "cost_accuracy_chart.vl.json.j2",
         {

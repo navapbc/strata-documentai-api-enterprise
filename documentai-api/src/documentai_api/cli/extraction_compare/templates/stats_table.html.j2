@@ -2,7 +2,7 @@
 <tr><th>Metric</th><th>{{ primary_label }}</th><th>OCR / LLM</th><th>Delta</th></tr>
 <tr><td>Speed (median)</td><td>{{ med_p }}</td><td>{{ med_l }}</td><td style="color:{{ speed_color }}">{{ speed_card }}</td></tr>
 <tr><td>Cost</td><td>${{ "%.4f"|format(cost_primary) }}</td><td>${{ "%.4f"|format(cost_ocr) }}</td><td style="color:{{ cost_color }}">{{ cost_card }}</td></tr>
-<tr><td>Accuracy (Equiv.)</td><td>{{ p_exact }}</td><td>{{ l_exact }}</td><td style="color:{{ equiv_color }}">{{ equiv_delta }}</td></tr>
-<tr><td>Accuracy (Equiv+Approx.)</td><td>{{ p_loose }}</td><td>{{ l_loose }}</td><td style="color:{{ loose_color }}">{{ loose_delta }}</td></tr>
-<tr><td>Bounding Box</td><td>{{ p_geo }}</td><td>{{ l_geo }}</td><td style="color:{{ geo_color }}">{{ geo_delta }}</td></tr>
+<tr><td>Accuracy (Equiv.)</td><td>{{ primary_exact }}</td><td>{{ llm_exact }}</td><td style="color:{{ equiv_color }}">{{ equiv_delta }}</td></tr>
+<tr><td>Accuracy (Equiv+Approx.)</td><td>{{ primary_loose }}</td><td>{{ llm_loose }}</td><td style="color:{{ loose_color }}">{{ loose_delta }}</td></tr>
+<tr><td>Bounding Box</td><td>{{ primary_geo }}</td><td>{{ llm_geo }}</td><td style="color:{{ geo_color }}">{{ geo_delta }}</td></tr>
 </table>

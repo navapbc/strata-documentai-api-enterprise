@@ -1,28 +1,28 @@
 # synthetic-insurance-health-insurance-premium-render-spanish.png
 
-_Last run:: 2026-10-29 21:22 UTC_
+_Last run: 2026-10-30 03:18 UTC_
 
 ## Durations
 
-- bda: 27.21s extraction
-- ocr-mapping: 3.085s extraction
+- bda: 26.12s extraction
+- llm: 2.316s extraction
 
 ## Cost
 
 _By Service_
 
 - us.amazon.nova-lite-v1:0: $0.00012384 (1956 in / 27 out)
-- us.amazon.nova-pro-v1:0: $0.01420160 (15260 in / 623 out)
+- us.amazon.nova-pro-v1:0: $0.01418880 (15260 in / 619 out)
 - bda: $0.04000000 (1 page(s))
 - analyze_document_layout: $0.00400000 (1 page(s))
-- **total: $0.05832544**
+- **total: $0.05831264**
 
 _By Extraction Method_
 
-- shared (preclassification): $0.00928544
+- shared (preclassification): $0.00927264
 - ocr-mapping extraction: $0.00904000
 - primary (bda): $0.04000000
-- **total: $0.05832544**
+- **total: $0.05831264**
 
 ## Accuracy
 
@@ -33,8 +33,8 @@ _By Extracted Data_
 
 _By Bounding Box_
 
-- BDA: 3/6 exact, 2 miss
-- OCR Mapping: 3/6 exact, 2 miss
+- BDA: 3/6 (50%) exact, 2 miss
+- OCR Mapping: 3/6 (50%) exact, 2 miss
 
 ## Field Comparison
 

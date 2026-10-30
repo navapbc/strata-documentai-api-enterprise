@@ -1,28 +1,28 @@
 # synthetic-investment-and-royalty-income-scan.jpg
 
-_Last run:: 2026-10-29 21:22 UTC_
+_Last run: 2026-10-30 03:19 UTC_
 
 ## Durations
 
-- bda: 26.82s extraction
-- ocr-mapping: 2.009s extraction
+- bda: 27.27s extraction
+- llm: 1.763s extraction
 
 ## Cost
 
 _By Service_
 
 - us.amazon.nova-lite-v1:0: $0.00012384 (1956 in / 27 out)
-- us.amazon.nova-pro-v1:0: $0.01306080 (14374 in / 488 out)
+- us.amazon.nova-pro-v1:0: $0.01303840 (14374 in / 481 out)
 - bda: $0.04000000 (1 page(s))
 - analyze_document_layout: $0.00400000 (1 page(s))
-- **total: $0.05718464**
+- **total: $0.05716224**
 
 _By Extraction Method_
 
-- shared (preclassification): $0.00930784
+- shared (preclassification): $0.00928544
 - ocr-mapping extraction: $0.00787680
 - primary (bda): $0.04000000
-- **total: $0.05718464**
+- **total: $0.05716224**
 
 ## Accuracy
 
@@ -33,8 +33,8 @@ _By Extracted Data_
 
 _By Bounding Box_
 
-- BDA: 3/5 exact, 2 miss
-- OCR Mapping: 3/5 exact, 2 miss
+- BDA: 3/5 (60%) exact, 2 miss
+- OCR Mapping: 3/5 (60%) exact, 2 miss
 
 ## Field Comparison
 
@@ -53,5 +53,5 @@ _By Bounding Box_
 | interest_credits_cumulative | - | - | - | - | - | - | - | - |
 | statement_period_end | 2026-08-31 | ❌ - | ❌ - | - | - | - | - | - |
 | statement_period_start | 2026-01-01 | ❌ - | ❌ - | - | - | - | - | - |
-| tax_year | 2026 | ✅ 2026 | ✅ 2026 | 0.73 | 1.0000 | - | 0.665,0.199,0.034,0.009 | 0.743,0.114,0.033,0.009 |
+| tax_year | 2026 | ✅ 2026 | ✅ 2026 | 0.72 | 1.0000 | - | 0.665,0.199,0.034,0.009 | 0.743,0.114,0.033,0.009 |
 | total_value | 46000.00 | ❌ - | ❌ - | - | - | - | - | - |

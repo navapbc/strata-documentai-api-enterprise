@@ -1,40 +1,40 @@
 # synthetic-expense-utility-water-sewer-bill-scan.jpg
 
-_Last run:: 2026-10-29 21:22 UTC_
+_Last run: 2026-10-30 03:18 UTC_
 
 ## Durations
 
-- bda: 23.37s extraction
-- ocr-mapping: 4.817s extraction
+- bda: 24.19s extraction
+- llm: 3.817s extraction
 
 ## Cost
 
 _By Service_
 
-- us.amazon.nova-lite-v1:0: $0.00012408 (1956 in / 28 out)
-- us.amazon.nova-pro-v1:0: $0.01773360 (17751 in / 1104 out)
+- us.amazon.nova-lite-v1:0: $0.00012384 (1956 in / 27 out)
+- us.amazon.nova-pro-v1:0: $0.01764080 (17751 in / 1075 out)
 - bda: $0.04000000 (1 page(s))
 - analyze_document_layout: $0.00400000 (1 page(s))
-- **total: $0.06185768**
+- **total: $0.06176464**
 
 _By Extraction Method_
 
-- shared (preclassification): $0.00931128
-- ocr-mapping extraction: $0.01254640
+- shared (preclassification): $0.00929184
+- ocr-mapping extraction: $0.01247280
 - primary (bda): $0.04000000
-- **total: $0.06185768**
+- **total: $0.06176464**
 
 ## Accuracy
 
 _By Extracted Data_
 
 - BDA: 19/21 (90%) equivalent match, 19/21 (90%) close, 2 misses
-- OCR Mapping: 21/21 (100%) equivalent match, 21/21 (100%) close, 0 misses
+- OCR Mapping: 19/21 (90%) equivalent match, 20/21 (95%) close, 1 miss
 
 _By Bounding Box_
 
-- BDA: 5/14 exact, 8 miss
-- OCR Mapping: 5/14 exact, 8 miss
+- BDA: 5/14 (36%) exact, 8 miss
+- OCR Mapping: 5/14 (36%) exact, 8 miss
 
 ## Field Comparison
 
@@ -44,8 +44,8 @@ _By Bounding Box_
 | Account_Info.Acct_No | XXXX-XXXX-7821 | ✅ XXXX-XXXX-7821 | ✅ XXXX-XXXX-7821 | 0.71 | 1.0000 | 0.698,0.257,0.116,0.009 | ✅ 0.698,0.257,0.118,0.009 | ✅ 0.698,0.257,0.118,0.009 |
 | Account_Info.Meter_Number | MTR-1845726 | ✅ MTR-1845726 | ✅ MTR-1845726 | 0.91 | 1.0000 | 0.699,0.275,0.094,0.008 | ✅ 0.699,0.275,0.095,0.010 | ✅ 0.699,0.275,0.096,0.009 |
 | Curr_Meter_Reading | 26730 | ✅ 26,730 | ✅ 26,730 | 0.64 | 1.0000 | 0.326,0.408,0.040,0.018 | ✅ 0.326,0.413,0.042,0.010 | ✅ 0.326,0.413,0.041,0.010 |
-| Dates.Bill_From_Date | 2026-07-24 | ✅ 07/24/2026 | ✅ 2026-07-24 | 0.67 | 0.9800 | 0.078,0.344,0.362,0.011 | ❌ 0.191,0.344,0.082,0.010 | ❌ 0.191,0.344,0.183,0.009 |
-| Dates.Bill_To_Date | 2026-08-24 | ✅ 08/24/2026 | ✅ 2026-08-24 | 0.65 | 0.9800 | 0.078,0.344,0.362,0.011 | ❌ 0.288,0.345,0.086,0.010 | ❌ 0.242,0.344,0.132,0.009 |
+| Dates.Bill_From_Date | 2026-07-24 | ✅ 07/24/2026 | 🟡 2026-08-25 | 0.67 | 1.0000 | 0.078,0.344,0.362,0.011 | ❌ 0.191,0.344,0.082,0.010 | ❌ 0.824,0.074,0.095,0.012 |
+| Dates.Bill_To_Date | 2026-08-24 | ✅ 08/24/2026 | ❌ 2026-09-15 | 0.65 | 1.0000 | 0.078,0.344,0.362,0.011 | ❌ 0.288,0.345,0.086,0.010 | ❌ 0.824,0.090,0.095,0.012 |
 | Dates.Billing_Date | 2026-08-25 | ✅ 08/25/2026 | ✅ 2026-08-25 | 0.71 | 1.0000 | 0.689,0.074,0.229,0.012 | 🟡 0.824,0.074,0.094,0.012 | 🟡 0.824,0.074,0.095,0.012 |
 | Dates.Due_Date | 2026-09-15 | ✅ 09/15/2026 | ✅ 2026-09-15 | 0.72 | 1.0000 | 0.805,0.842,0.102,0.012 | ❌ 0.824,0.090,0.095,0.012 | ❌ 0.824,0.090,0.095,0.012 |
 | Line_Items.Amount or Value | 14.45, 18.99, 20.37, 17.54, 3.50, 0.04 | ❌ - | ✅ 14.45, 18.99, 20.37, 17.54, 3.50, 0.04 | - | N/A | - | - | 0.888,0.655,0.035,0.011 |
@@ -60,4 +60,4 @@ _By Bounding Box_
 | Service_Address.Zip_Code | 80538 | ✅ 80538 | ✅ 80538 | 0.90 | 0.9800 | - | 0.793,0.207,0.043,0.009 | 0.793,0.207,0.042,0.009 |
 | Tot_Amt | 64.86 | ✅ 64.86 | ✅ 64.86 | 0.90 | 1.0000 | 0.843,0.868,0.063,0.014 | ❌ 0.430,0.244,0.046,0.011 | ❌ 0.430,0.244,0.046,0.011 |
 | Total_Current_Charges | 64.86 | ✅ 64.86 | ✅ 64.86 | 0.91 | 1.0000 | 0.843,0.868,0.063,0.014 | ❌ 0.430,0.244,0.046,0.011 | ❌ 0.430,0.244,0.046,0.011 |
-| is_total_amount_greater_than_equal_to_current_charges | True | ✅ True | ✅ True | 0.89 | N/A | - | 0.430,0.244,0.046,0.011 | 0.075,0.673,0.200,0.011 |
+| is_total_amount_greater_than_equal_to_current_charges | True | ✅ True | ✅ True | 0.89 | 1.0000 | - | 0.430,0.244,0.046,0.011 | 0.430,0.244,0.046,0.011 |

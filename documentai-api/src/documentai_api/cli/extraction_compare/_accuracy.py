@@ -11,7 +11,7 @@ from documentai_api.utils.extraction_compare_client import (
     match_icon,
 )
 
-from ._types import _NO_ACCURACY, _AccuracyDisplay, _ResultData
+from ._types import _NO_ACCURACY, _AccuracyDisplay, _GeoDisplay, _ResultData
 
 _GEO_TOLERANCE = 0.025
 
@@ -56,30 +56,19 @@ def _fmt_accuracy(a: dict[str, int] | None) -> _AccuracyDisplay:
     )
 
 
-def _fmt_geo_accuracy(a: dict[str, int] | None) -> str:
-    """Format geo accuracy as 'n/total exact, n miss' raw counts."""
+def _fmt_geo_accuracy(a: dict[str, int] | None) -> _GeoDisplay | None:
+    """Format geo accuracy counts for display."""
     if not a:
-        return "-"
+        return None
     exact = a.get(_ResultData.EXACT, 0)
     miss = a.get(_ResultData.MISS, 0)
     total = exact + a.get(_ResultData.APPROX, 0) + miss
     if total == 0:
-        return "-"
-    return f"{exact}/{total} exact, {miss} miss"
-
-
-def _fmt_geo_pct(geo_counts: str) -> str:
-    """Append percentage to a 'n/total' geo counts string, e.g. '141/238 (59%)'."""
-    if geo_counts == "-" or "/" not in geo_counts:
-        return geo_counts
-
-    exact_str, total_str = geo_counts.split("/", 1)
-
-    try:
-        exact, total = int(exact_str), int(total_str)
-        return f"{exact}/{total} ({exact / total:.0%})" if total else geo_counts
-    except ValueError:
-        return geo_counts
+        return None
+    return _GeoDisplay(
+        exact=f"{exact}/{total} ({exact / total:.0%})",
+        miss=f"{miss}",
+    )
 
 
 def _avg_accuracy(exact: list[int], approx: list[int], miss: list[int]) -> _AccuracyDisplay:
@@ -144,7 +133,7 @@ def _compute_accuracy(
             _ResultData.APPROX: pc[ICON_APPROX],
             _ResultData.MISS: pc[ICON_MISS],
         },
-        _ResultData.OCR_MAPPING: {
+        _ResultData.LLM: {
             _ResultData.EXACT: lc[ICON_EXACT],
             _ResultData.APPROX: lc[ICON_APPROX],
             _ResultData.MISS: lc[ICON_MISS],
@@ -156,7 +145,7 @@ def _compute_accuracy(
             _ResultData.APPROX: pgc[ICON_APPROX],
             _ResultData.MISS: pgc[ICON_MISS],
         }
-        result[_ResultData.OCR_MAPPING_GEO] = {
+        result[_ResultData.LLM_GEO] = {
             _ResultData.EXACT: lgc[ICON_EXACT],
             _ResultData.APPROX: lgc[ICON_APPROX],
             _ResultData.MISS: lgc[ICON_MISS],

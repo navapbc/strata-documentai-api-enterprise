@@ -1,28 +1,28 @@
 # synthetic-expense-utility-electric-bill-render-spanish.png
 
-_Last run:: 2026-10-29 21:21 UTC_
+_Last run: 2026-10-30 03:18 UTC_
 
 ## Durations
 
-- bda: 25.62s extraction
-- ocr-mapping: 10.257s extraction
+- bda: 24.19s extraction
+- llm: 9.274s extraction
 
 ## Cost
 
 _By Service_
 
 - us.amazon.nova-lite-v1:0: $0.00012384 (1956 in / 27 out)
-- us.amazon.nova-pro-v1:0: $0.02002080 (19606 in / 1355 out)
+- us.amazon.nova-pro-v1:0: $0.02005280 (19606 in / 1365 out)
 - bda: $0.04000000 (1 page(s))
 - analyze_document_layout: $0.00400000 (1 page(s))
-- **total: $0.06414464**
+- **total: $0.06417664**
 
 _By Extraction Method_
 
-- shared (preclassification): $0.00927264
-- ocr-mapping extraction: $0.01487200
+- shared (preclassification): $0.00929504
+- ocr-mapping extraction: $0.01488160
 - primary (bda): $0.04000000
-- **total: $0.06414464**
+- **total: $0.06417664**
 
 ## Accuracy
 
@@ -33,8 +33,8 @@ _By Extracted Data_
 
 _By Bounding Box_
 
-- BDA: 2/6 exact, 3 miss
-- OCR Mapping: 1/6 exact, 3 miss
+- BDA: 2/6 (33%) exact, 3 miss
+- OCR Mapping: 1/6 (17%) exact, 3 miss
 
 ## Field Comparison
 
@@ -50,7 +50,7 @@ _By Bounding Box_
 | Current Balance | 134.28 | ❌ 105.51 | ❌ 105.51 | 0.82 | 1.0000 | - | 0.583,0.623,0.045,0.010 | 0.583,0.623,0.045,0.010 |
 | End Date | 2026-05-15 | ✅ 05/15/26 | ✅ 2026-05-15 | 0.86 | 0.9600 | 0.527,0.257,0.064,0.009 | ✅ 0.527,0.257,0.068,0.010 | ✅ 0.527,0.257,0.068,0.009 |
 | Is_NumMeterIDsListed | - | - | ❌ True | 0.29 | 0.9300 | - | 0.445,0.314,0.091,0.009 | 0.915,0.103,0.031,0.008 |
-| Is_PrevGreaterThanCurr | No | ❌ - | ✅ False | 0.89 | 0.9800 | - | 0.445,0.351,0.038,0.010 | 0.445,0.332,0.151,0.010 |
+| Is_PrevGreaterThanCurr | No | ❌ - | ✅ False | 0.89 | N/A | - | 0.445,0.351,0.038,0.010 | 0.445,0.332,0.151,0.010 |
 | Is_ValidPinCode | True | ✅ True | ✅ True | 0.89 | 1.0000 | - | 0.129,0.340,0.039,0.010 | 0.129,0.282,0.039,0.009 |
 | Is_ValidState | True | ✅ True | ✅ True | 0.90 | 0.9900 | - | 0.107,0.281,0.017,0.009 | 0.567,0.057,0.016,0.009 |
 | Line_Item_Charges.Charge | 33.34, 51.32, 12.00, 1.04, 5.86, 1.95 | ❌ - | ✅ 33.34, 51.32, 12.00, 1.04, 5.86, 1.95 | - | N/A | - | - | 0.595,0.597,0.034,0.010 |

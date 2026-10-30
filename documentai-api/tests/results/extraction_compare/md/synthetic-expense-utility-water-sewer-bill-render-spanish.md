@@ -1,28 +1,28 @@
 # synthetic-expense-utility-water-sewer-bill-render-spanish.png
 
-_Last run:: 2026-10-29 21:21 UTC_
+_Last run: 2026-10-30 03:18 UTC_
 
 ## Durations
 
-- bda: 28.47s extraction
-- ocr-mapping: 5.585s extraction
+- bda: 32.27s extraction
+- llm: 5.791s extraction
 
 ## Cost
 
 _By Service_
 
-- us.amazon.nova-lite-v1:0: $0.00012384 (1956 in / 27 out)
-- us.amazon.nova-pro-v1:0: $0.01816160 (17990 in / 1178 out)
+- us.amazon.nova-lite-v1:0: $0.00012360 (1956 in / 26 out)
+- us.amazon.nova-pro-v1:0: $0.01817440 (17990 in / 1182 out)
 - bda: $0.04000000 (1 page(s))
 - analyze_document_layout: $0.00400000 (1 page(s))
-- **total: $0.06228544**
+- **total: $0.06229800**
 
 _By Extraction Method_
 
-- shared (preclassification): $0.00929504
+- shared (preclassification): $0.00930760
 - ocr-mapping extraction: $0.01299040
 - primary (bda): $0.04000000
-- **total: $0.06228544**
+- **total: $0.06229800**
 
 ## Accuracy
 
@@ -33,14 +33,14 @@ _By Extracted Data_
 
 _By Bounding Box_
 
-- BDA: 4/7 exact, 2 miss
-- OCR Mapping: 4/7 exact, 1 miss
+- BDA: 4/7 (57%) exact, 2 miss
+- OCR Mapping: 4/7 (57%) exact, 1 miss
 
 ## Field Comparison
 
 | Field | Expected | BDA Value | OCR / LLM Value | BDA Conf | OCR / LLM Conf | Expected Bounding Box | BDA Bounding Box | OCR / LLM Bounding Box |
 |---|---|---|---|---|---|---|---|---|
-| Account_Info.Acct_Name | Mariana López | ✅ Mariana López | ✅ Mariana López | 0.89 | 0.9800 | 0.038,0.235,0.095,0.011 | ✅ 0.039,0.235,0.094,0.011 | ✅ 0.039,0.235,0.094,0.011 |
+| Account_Info.Acct_Name | Mariana López | ✅ Mariana López | ✅ Mariana López | 0.88 | 0.9800 | 0.038,0.235,0.095,0.011 | ✅ 0.039,0.235,0.094,0.011 | ✅ 0.039,0.235,0.094,0.011 |
 | Account_Info.Acct_No | 1234-5678-90 | ✅ 1234-5678-90 | ✅ 1234-5678-90 | 0.94 | 1.0000 | 0.224,0.844,0.092,0.008 | ❌ 0.829,0.067,0.107,0.009 | ❌ 0.829,0.067,0.107,0.009 |
 | Account_Info.Meter_Number | MTR-78543210 | ✅ MTR-78543210 | ✅ MTR-78543210 | 0.91 | 0.9900 | 0.720,0.569,0.104,0.008 | ✅ 0.719,0.569,0.105,0.009 | ✅ 0.719,0.569,0.105,0.009 |
 | Curr_Meter_Reading | 68200 | ✅ 68,200 | ✅ 68,200 | 0.57 | 1.0000 | 0.806,0.625,0.046,0.008 | ✅ 0.805,0.625,0.046,0.010 | ✅ 0.806,0.625,0.046,0.010 |
@@ -51,7 +51,7 @@ _By Bounding Box_
 | Line_Items.Amount or Value | 22.50, 45.00, 12.75, 19.20, 4.50, 6.24 | ❌ - | ✅ $22.50, $45.00, $12.75, $19.20, $4.50, $6.24 | - | N/A | - | - | 0.572,0.369,0.042,0.010 |
 | Line_Items.LineItemDescription | Cargo base de agua, Uso de agua, Cargo base de alcantarillado, Cargo de alcantarillado, Tarifa de aguas pluviales, Impuesto local sobre servicios públicos (6%) | ❌ - | ✅ Cargo base de agua, Uso de agua, Cargo base de alcantarillado, Cargo de alcantarillado, Tarifa de aguas pluviales, Impuesto local sobre servicios públicos (6%) | - | N/A | - | - | 0.051,0.463,0.239,0.010 |
 | Prev_Bal | 88.03 | ✅ 88.03 | ❌ 0.00 | 0.90 | 1.0000 | - | 0.896,0.352,0.049,0.011 | 0.905,0.431,0.040,0.010 |
-| Prev_Meter_Reading | 62200 | ✅ 62,200 | ✅ 62,200 | 0.66 | 1.0000 | 0.806,0.653,0.046,0.009 | ✅ 0.806,0.653,0.045,0.010 | ✅ 0.806,0.653,0.046,0.010 |
+| Prev_Meter_Reading | 62200 | ✅ 62,200 | ✅ 62,200 | 0.65 | 1.0000 | 0.806,0.653,0.046,0.009 | ✅ 0.806,0.653,0.045,0.010 | ✅ 0.806,0.653,0.046,0.010 |
 | Provider Name | SERVICIO DE AGUA DEL CONDADO DE HARBOR | ✅ SERVICIO DE AGUA DEL CONDADO DE HARBOR | ✅ SERVICIO DE AGUA DEL CONDADO DE HARBOR | 0.88 | 0.9800 | - | 0.146,0.045,0.356,0.038 | 0.442,0.798,0.254,0.010 |
 | Service_Address.Building_Line 1 | 214 Maple Way | ✅ 214 Maple Way | ✅ 214 Maple Way | 0.61 | 1.0000 | 0.038,0.250,0.099,0.010 | 🟡 0.038,0.250,0.068,0.010 | 🟡 0.348,0.235,0.098,0.011 |
 | Service_Address.City | Pocatello | ✅ Pocatello | ✅ Pocatello | 0.86 | N/A | - | 0.038,0.264,0.062,0.010 | - |

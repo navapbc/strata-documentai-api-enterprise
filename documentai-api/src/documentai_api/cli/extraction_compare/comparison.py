@@ -25,14 +25,18 @@ from ._accuracy import (
 )
 from ._render import render_template
 from ._types import (
-    _AccuracyCtx,
+    _RUN_STAMP_PREFIX,
+    _AccuracyComparison,
     _ComparisonCtx,
     _CostByReason,
     _CostEntry,
     _ResultData,
 )
 
-_RUN_STAMP_PREFIX = "Last run:"
+
+def _method_key(method: str) -> str:
+    """Name a method as sidecars and reports do: the OCR-mapping path is recorded as 'llm'."""
+    return _ResultData.LLM if method == ExtractMethod.OCR_MAPPING else method
 
 
 def _build_comparison_ctx(
@@ -54,7 +58,8 @@ def _build_comparison_ctx(
     """Build the Jinja2 context for comparison.md.j2."""
     duration_lines = []
     if durations:
-        for method, d in durations.items():
+        for raw_method, d in durations.items():
+            method = _method_key(raw_method)
             if hasattr(d, "extraction_duration_seconds"):
                 extraction = d.extraction_duration_seconds or EXPECTED_EMPTY
                 line = f"{method}: {extraction}s extraction"
@@ -85,11 +90,11 @@ def _build_comparison_ctx(
 
     acc_ctx = None
     if accuracy:
-        acc_ctx = _AccuracyCtx(
-            p=_fmt_accuracy(accuracy.get(_ResultData.PRIMARY)),
-            ocr=_fmt_accuracy(accuracy.get(_ResultData.OCR_MAPPING)),
-            p_geo=_fmt_geo_accuracy(accuracy.get(_ResultData.PRIMARY_GEO)),
-            ocr_geo=_fmt_geo_accuracy(accuracy.get(_ResultData.OCR_MAPPING_GEO)),
+        acc_ctx = _AccuracyComparison(
+            primary=_fmt_accuracy(accuracy.get(_ResultData.PRIMARY)),
+            llm=_fmt_accuracy(accuracy.get(_ResultData.LLM)),
+            primary_geo=_fmt_geo_accuracy(accuracy.get(_ResultData.PRIMARY_GEO)),
+            llm_geo=_fmt_geo_accuracy(accuracy.get(_ResultData.LLM_GEO)),
         )
 
     table_headers = [
@@ -110,12 +115,12 @@ def _build_comparison_ctx(
         p_val, llm_val, p_conf, llm_conf, exp_val = field_display_values(p, lm, expected, field)
         p_val = p_val.replace("\n", " ")
         llm_val = llm_val.replace("\n", " ")
-        p_geo = _fmt_geometry(p.geometry)
+        primary_geo = _fmt_geometry(p.geometry)
         llm_geo = _fmt_geometry(lm.geometry)
         exp_geo = expected_geo.get(field) if expected_geo else None
         p_geo_cell = (
-            f"{_geo_match_icon(exp_geo, p_geo, tolerance=_GEO_TOLERANCE)} " if exp_geo else ""
-        ) + p_geo
+            f"{_geo_match_icon(exp_geo, primary_geo, tolerance=_GEO_TOLERANCE)} " if exp_geo else ""
+        ) + primary_geo
         llm_geo_cell = (
             f"{_geo_match_icon(exp_geo, llm_geo, tolerance=_GEO_TOLERANCE)} " if exp_geo else ""
         ) + llm_geo
@@ -219,13 +224,16 @@ def _write_result_data(
         _ResultData.COMPLETED_AT: completed_at.isoformat(),
         _ResultData.PRIMARY_METHOD: result.primary_method,
         _ResultData.DURATIONS: {
-            method: d.extraction_duration_seconds for method, d in result.durations.items()
+            _method_key(method): d.extraction_duration_seconds
+            for method, d in result.durations.items()
         },
         _ResultData.COST: result.cost,
         _ResultData.COST_BY_REASON: result.cost_by_reason,
+        _ResultData.TOKENS: result.tokens,
+        _ResultData.PAGES: result.pages,
         _ResultData.ACCURACY: accuracy,
         _ResultData.PRIMARY: {f: r.model_dump() for f, r in result.primary.items()},
-        _ResultData.OCR_MAPPING: {f: r.model_dump() for f, r in result.ocr_mapping.items()},
+        _ResultData.LLM: {f: r.model_dump() for f, r in result.ocr_mapping.items()},
     }
     data_dir.mkdir(parents=True, exist_ok=True)
     (data_dir / f"{Path(filename).stem}.data.json").write_text(
@@ -245,7 +253,7 @@ def regen_comparison_md(results_dir: Path, expected_dir: Path) -> None:
         }
         ocr_mapping = {
             f: CompareFieldResult.model_validate(v)
-            for f, v in data.get(_ResultData.OCR_MAPPING, {}).items()
+            for f, v in data.get(_ResultData.LLM, {}).items()
         }
         expected = _load_expected(filename, expected_dir)
         expected_geo = _load_expected_geometry(filename, expected_dir)
@@ -265,7 +273,9 @@ def regen_comparison_md(results_dir: Path, expected_dir: Path) -> None:
             run_ts=get_utc_str(_sidecar_completed_at(sidecar, data)),
             durations=data.get(_ResultData.DURATIONS, {}),
             cost=data.get(_ResultData.COST, {}),
+            tokens=data.get(_ResultData.TOKENS),
             cost_by_reason=data.get(_ResultData.COST_BY_REASON, {}),
+            pages=data.get(_ResultData.PAGES),
         )
         (results_dir / "md" / f"{Path(filename).stem}.md").write_text(
             render_template("comparison.md.j2", ctx)
@@ -281,8 +291,6 @@ def _sidecar_completed_at(sidecar: Path, data: dict[str, Any]) -> datetime:
 
 
 def _load_expected(filename: str, expected_dir: Path) -> dict[str, str] | None:
-    from documentai_api.utils.extraction_compare_client import EXPECTED_EMPTY
-
     path = expected_dir / f"{Path(filename).stem}.json"
     if not path.exists():
         return None

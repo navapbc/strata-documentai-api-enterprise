@@ -5,6 +5,7 @@ from typing import Any
 
 import pytest
 
+from documentai_api.models.extraction_compare import CompareDuration, CompareResponse
 from documentai_api.utils import extraction_compare_client as client
 
 _BASE = "https://api.example.test"
@@ -92,3 +93,28 @@ def test_match_icon_exact_match():
 
 def test_match_icon_miss_when_received_empty():
     assert client.match_icon("foo", client.EXPECTED_EMPTY) == client.ICON_MISS
+
+
+def _durations(**spans: tuple[str | None, str | None]) -> CompareResponse:
+    return CompareResponse(
+        job_id="job-1",
+        primary_method="bda",
+        durations={
+            method: CompareDuration(processing_started_at=start, processing_completed_at=end)
+            for method, (start, end) in spans.items()
+        },
+    )
+
+
+def test_processing_span_covers_earliest_start_to_latest_completion():
+    result = _durations(
+        bda=("2026-10-30T02:31:00+00:00", "2026-10-30T02:31:25+00:00"),
+        **{"ocr-mapping": ("2026-10-30T02:31:02+00:00", "2026-10-30T02:31:08+00:00")},
+    )
+
+    assert client.processing_span_seconds(result) == 25.0
+
+
+def test_processing_span_is_none_without_timestamps():
+    assert client.processing_span_seconds(_durations(bda=(None, None))) is None
+    assert client.processing_span_seconds(_durations()) is None

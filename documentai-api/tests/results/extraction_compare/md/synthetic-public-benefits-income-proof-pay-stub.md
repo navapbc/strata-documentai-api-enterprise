@@ -1,40 +1,40 @@
 # synthetic-public-benefits-income-proof-pay-stub.jpg
 
-_Last run:: 2026-10-29 21:22 UTC_
+_Last run: 2026-10-30 03:19 UTC_
 
 ## Durations
 
-- bda: 25.17s extraction
-- ocr-mapping: 13.968s extraction
+- bda: 25.8s extraction
+- llm: 12.065s extraction
 
 ## Cost
 
 _By Service_
 
 - us.amazon.nova-lite-v1:0: $0.00011328 (1780 in / 27 out)
-- us.amazon.nova-pro-v1:0: $0.02350160 (23149 in / 1557 out)
+- us.amazon.nova-pro-v1:0: $0.02349200 (23149 in / 1554 out)
 - bda: $0.04000000 (1 page(s))
 - analyze_document_layout: $0.00400000 (1 page(s))
-- **total: $0.06761488**
+- **total: $0.06760528**
 
 _By Extraction Method_
 
-- shared (preclassification): $0.00897408
-- ocr-mapping extraction: $0.01864080
+- shared (preclassification): $0.00896768
+- ocr-mapping extraction: $0.01863760
 - primary (bda): $0.04000000
-- **total: $0.06761488**
+- **total: $0.06760528**
 
 ## Accuracy
 
 _By Extracted Data_
 
 - BDA: 23/29 (79%) equivalent match, 23/29 (79%) close, 6 misses
-- OCR Mapping: 26/29 (90%) equivalent match, 26/29 (90%) close, 3 misses
+- OCR Mapping: 25/29 (86%) equivalent match, 25/29 (86%) close, 4 misses
 
 _By Bounding Box_
 
-- BDA: 12/16 exact, 4 miss
-- OCR Mapping: 12/16 exact, 4 miss
+- BDA: 12/16 (75%) exact, 4 miss
+- OCR Mapping: 12/16 (75%) exact, 4 miss
 
 ## Field Comparison
 
@@ -82,6 +82,6 @@ _By Bounding Box_
 | YTDStateTax | 416.36 | ✅ 416.36 | ✅ 416.36 | 0.96 | 1.0000 | - | 0.829,0.355,0.031,0.014 | 0.829,0.355,0.031,0.014 |
 | YTDTotalDeductions | 2887.08 | ✅ 2887.08 | ✅ 2887.08 | 0.58 | 1.0000 | 0.844,0.525,0.037,0.012 | ✅ 0.844,0.523,0.037,0.016 | ✅ 0.844,0.523,0.037,0.016 |
 | are_field_names_sufficient | True | ✅ True | ❌ - | 0.06 | N/A | - | - | - |
-| currency | USD | ✅ USD | ✅ USD | 0.92 | N/A | - | 0.182,0.288,0.013,0.012 | - |
+| currency | USD | ✅ USD | ❌ - | 0.92 | N/A | - | 0.182,0.288,0.013,0.012 | - |
 | is_gross_pay_valid | True | ✅ True | ❌ - | 0.92 | N/A | - | 0.481,0.611,0.047,0.020 | - |
 | is_ytd_gross_pay_highest | True | ✅ True | ❌ - | 0.92 | N/A | - | 0.481,0.611,0.047,0.020 | - |

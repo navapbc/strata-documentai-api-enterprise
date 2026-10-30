@@ -1,28 +1,28 @@
 # synthetic-assets-life-insurance-policy-scan.jpg
 
-_Last run:: 2026-10-29 21:20 UTC_
+_Last run: 2026-10-30 03:17 UTC_
 
 ## Durations
 
-- bda: 22.56s extraction
-- ocr-mapping: 5.066s extraction
+- bda: 22.79s extraction
+- llm: 5.617s extraction
 
 ## Cost
 
 _By Service_
 
-- us.amazon.nova-lite-v1:0: $0.00012360 (1956 in / 26 out)
-- us.amazon.nova-pro-v1:0: $0.01322160 (14491 in / 509 out)
+- us.amazon.nova-lite-v1:0: $0.00012384 (1956 in / 27 out)
+- us.amazon.nova-pro-v1:0: $0.01321200 (14491 in / 506 out)
 - bda: $0.04000000 (1 page(s))
 - analyze_document_layout: $0.00400000 (1 page(s))
-- **total: $0.05734520**
+- **total: $0.05733584**
 
 _By Extraction Method_
 
-- shared (preclassification): $0.00929800
+- shared (preclassification): $0.00928864
 - ocr-mapping extraction: $0.00804720
 - primary (bda): $0.04000000
-- **total: $0.05734520**
+- **total: $0.05733584**
 
 ## Accuracy
 
@@ -33,8 +33,8 @@ _By Extracted Data_
 
 _By Bounding Box_
 
-- BDA: 9/9 exact, 0 miss
-- OCR Mapping: 6/9 exact, 3 miss
+- BDA: 9/9 (100%) exact, 0 miss
+- OCR Mapping: 6/9 (67%) exact, 3 miss
 
 ## Field Comparison
 

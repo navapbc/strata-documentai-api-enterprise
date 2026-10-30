@@ -36,13 +36,13 @@ _By Extraction Method_
 
 _By Extracted Data_
 
-- {{ primary_method|upper }}: {{ accuracy.p.exact }} equivalent match, {{ accuracy.p.loose }} close, {{ accuracy.p.miss }} {{ "miss" if accuracy.p.miss == "1" else "misses" }}
-- OCR Mapping: {{ accuracy.ocr.exact }} equivalent match, {{ accuracy.ocr.loose }} close, {{ accuracy.ocr.miss }} {{ "miss" if accuracy.ocr.miss == "1" else "misses" }}
+- {{ primary_method|upper }}: {{ accuracy.primary.exact }} equivalent match, {{ accuracy.primary.loose }} close, {{ accuracy.primary.miss }} {{ "miss" if accuracy.primary.miss == "1" else "misses" }}
+- OCR Mapping: {{ accuracy.llm.exact }} equivalent match, {{ accuracy.llm.loose }} close, {{ accuracy.llm.miss }} {{ "miss" if accuracy.llm.miss == "1" else "misses" }}
 
 _By Bounding Box_
 
-- {{ primary_method|upper }}: {{ accuracy.p_geo }}
-- OCR Mapping: {{ accuracy.ocr_geo }}
+- {{ primary_method|upper }}: {{ accuracy.primary_geo.exact ~ " exact, " ~ accuracy.primary_geo.miss ~ " miss" if accuracy.primary_geo else "-" }}
+- OCR Mapping: {{ accuracy.llm_geo.exact ~ " exact, " ~ accuracy.llm_geo.miss ~ " miss" if accuracy.llm_geo else "-" }}
 
 {% endif %}
 ## Field Comparison

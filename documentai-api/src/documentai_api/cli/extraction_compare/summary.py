@@ -10,22 +10,71 @@ from documentai_api.utils.dates import get_utc_str
 from documentai_api.utils.md import to_table
 from documentai_api.utils.numbers import median
 
-from ._accuracy import _avg_accuracy, _compute_accuracy, _fmt_accuracy
+from ._accuracy import _avg_accuracy, _compute_accuracy, _fmt_accuracy, _fmt_geo_accuracy
 from ._render import render_template
 from ._types import (
     _NO_ACCURACY,
+    _RUN_STAMP_PREFIX,
+    _AccuracyComparison,
     _CostRow,
     _CostSection,
     _DocSummaryRow,
+    _GeoDisplay,
     _ResultData,
 )
 from .charts import _build_chart_table, write_extraction_compare_charts
 from .comparison import _load_expected, _load_expected_geometry, _sidecar_completed_at
 
-_RUN_STAMP_PREFIX = "Last run:"
 _COST_LABELS = {
     TextractOperation.ANALYZE_DOCUMENT_LAYOUT.value: "textract - AnalyzeDocument (layout)",
 }
+
+
+# (primary key, llm key, count key, primary accumulator key, llm accumulator key)
+_ACCURACY_APPEND_MAP = [
+    (
+        _ResultData.PRIMARY,
+        _ResultData.LLM,
+        _ResultData.EXACT,
+        _ResultData.PRIMARY_EXACT,
+        _ResultData.LLM_EXACT,
+    ),
+    (
+        _ResultData.PRIMARY,
+        _ResultData.LLM,
+        _ResultData.APPROX,
+        _ResultData.PRIMARY_APPROX,
+        _ResultData.LLM_APPROX,
+    ),
+    (
+        _ResultData.PRIMARY,
+        _ResultData.LLM,
+        _ResultData.MISS,
+        _ResultData.PRIMARY_MISS,
+        _ResultData.LLM_MISS,
+    ),
+    (
+        _ResultData.PRIMARY_GEO,
+        _ResultData.LLM_GEO,
+        _ResultData.EXACT,
+        _ResultData.PRIMARY_GEO_EXACT,
+        _ResultData.LLM_GEO_EXACT,
+    ),
+    (
+        _ResultData.PRIMARY_GEO,
+        _ResultData.LLM_GEO,
+        _ResultData.APPROX,
+        _ResultData.PRIMARY_GEO_APPROX,
+        _ResultData.LLM_GEO_APPROX,
+    ),
+    (
+        _ResultData.PRIMARY_GEO,
+        _ResultData.LLM_GEO,
+        _ResultData.MISS,
+        _ResultData.PRIMARY_GEO_MISS,
+        _ResultData.LLM_GEO_MISS,
+    ),
+]
 
 
 class _SummaryData(TypedDict):
@@ -50,18 +99,18 @@ def _aggregate_result_data(
     reason_totals: dict[str, dict[str, float]] = defaultdict(lambda: defaultdict(float))
     accuracy_by_method: dict[str, dict[str, list[int]]] = defaultdict(
         lambda: {
-            _ResultData.P_EXACT: [],
-            _ResultData.P_APPROX: [],
-            _ResultData.P_MISS: [],
-            _ResultData.L_EXACT: [],
-            _ResultData.L_APPROX: [],
-            _ResultData.L_MISS: [],
-            _ResultData.P_GEO_EXACT: [],
-            _ResultData.P_GEO_APPROX: [],
-            _ResultData.P_GEO_MISS: [],
-            _ResultData.L_GEO_EXACT: [],
-            _ResultData.L_GEO_APPROX: [],
-            _ResultData.L_GEO_MISS: [],
+            _ResultData.PRIMARY_EXACT: [],
+            _ResultData.PRIMARY_APPROX: [],
+            _ResultData.PRIMARY_MISS: [],
+            _ResultData.LLM_EXACT: [],
+            _ResultData.LLM_APPROX: [],
+            _ResultData.LLM_MISS: [],
+            _ResultData.PRIMARY_GEO_EXACT: [],
+            _ResultData.PRIMARY_GEO_APPROX: [],
+            _ResultData.PRIMARY_GEO_MISS: [],
+            _ResultData.LLM_GEO_EXACT: [],
+            _ResultData.LLM_GEO_APPROX: [],
+            _ResultData.LLM_GEO_MISS: [],
         }
     )
     rows: list[_DocSummaryRow] = []
@@ -87,7 +136,7 @@ def _aggregate_result_data(
                 duration_counts[method] += 1
 
         p_dur = data[_ResultData.DURATIONS].get(primary_method)
-        llm_dur = data[_ResultData.DURATIONS].get(ExtractMethod.OCR_MAPPING)
+        llm_dur = data[_ResultData.DURATIONS].get(_ResultData.LLM)
 
         if p_dur is not None:
             primary_dur_by_method[primary_method].append(p_dur)
@@ -100,47 +149,25 @@ def _aggregate_result_data(
         }
         ocr_mapping = {
             f: CompareFieldResult.model_validate(v)
-            for f, v in data.get(_ResultData.OCR_MAPPING, {}).items()
+            for f, v in data.get(_ResultData.LLM, {}).items()
         }
         expected = _load_expected(filename, expected_dir)
         expected_geo = _load_expected_geometry(filename, expected_dir)
-        acc = _compute_accuracy(primary, ocr_mapping, expected, expected_geo)
-        if acc:
-            a = accuracy_by_method[primary_method]
-            a[_ResultData.P_EXACT].append(
-                acc.get(_ResultData.PRIMARY, {}).get(_ResultData.EXACT, 0)
-            )
-            a[_ResultData.P_APPROX].append(
-                acc.get(_ResultData.PRIMARY, {}).get(_ResultData.APPROX, 0)
-            )
-            a[_ResultData.P_MISS].append(acc.get(_ResultData.PRIMARY, {}).get(_ResultData.MISS, 0))
-            a[_ResultData.L_EXACT].append(
-                acc.get(_ResultData.OCR_MAPPING, {}).get(_ResultData.EXACT, 0)
-            )
-            a[_ResultData.L_APPROX].append(
-                acc.get(_ResultData.OCR_MAPPING, {}).get(_ResultData.APPROX, 0)
-            )
-            a[_ResultData.L_MISS].append(
-                acc.get(_ResultData.OCR_MAPPING, {}).get(_ResultData.MISS, 0)
-            )
-            a[_ResultData.P_GEO_EXACT].append(
-                acc.get(_ResultData.PRIMARY_GEO, {}).get(_ResultData.EXACT, 0)
-            )
-            a[_ResultData.P_GEO_APPROX].append(
-                acc.get(_ResultData.PRIMARY_GEO, {}).get(_ResultData.APPROX, 0)
-            )
-            a[_ResultData.P_GEO_MISS].append(
-                acc.get(_ResultData.PRIMARY_GEO, {}).get(_ResultData.MISS, 0)
-            )
-            a[_ResultData.L_GEO_EXACT].append(
-                acc.get(_ResultData.OCR_MAPPING_GEO, {}).get(_ResultData.EXACT, 0)
-            )
-            a[_ResultData.L_GEO_APPROX].append(
-                acc.get(_ResultData.OCR_MAPPING_GEO, {}).get(_ResultData.APPROX, 0)
-            )
-            a[_ResultData.L_GEO_MISS].append(
-                acc.get(_ResultData.OCR_MAPPING_GEO, {}).get(_ResultData.MISS, 0)
-            )
+        accuracy = _compute_accuracy(primary, ocr_mapping, expected, expected_geo)
+
+        if accuracy:
+            method_accuracy = accuracy_by_method[primary_method]
+            for (
+                primary_key,
+                llm_key,
+                count_key,
+                primary_acc_key,
+                llm_acc_key,
+            ) in _ACCURACY_APPEND_MAP:
+                method_accuracy[primary_acc_key].append(
+                    accuracy.get(primary_key, {}).get(count_key, 0)
+                )
+                method_accuracy[llm_acc_key].append(accuracy.get(llm_key, {}).get(count_key, 0))
 
         rows.append(
             (
@@ -149,7 +176,7 @@ def _aggregate_result_data(
                 data[_ResultData.DURATIONS],
                 file_cost,
                 data.get(_ResultData.COST_BY_REASON) or {},
-                acc,
+                accuracy,
             )
         )
 
@@ -164,6 +191,44 @@ def _aggregate_result_data(
         primary_dur_by_method=primary_dur_by_method,
         llm_dur_by_method=llm_dur_by_method,
         accuracy_by_method=accuracy_by_method,
+    )
+
+
+def _pooled_accuracy(counts: dict[str, list[int]] | None) -> _AccuracyComparison:
+    """Pool per-document accuracy counts for a primary method into display values."""
+    if not counts:
+        return _AccuracyComparison(
+            primary=_NO_ACCURACY, llm=_NO_ACCURACY, primary_geo=None, llm_geo=None
+        )
+
+    def _geo(exact_key: str, approx_key: str, miss_key: str) -> _GeoDisplay | None:
+        return _fmt_geo_accuracy(
+            {
+                _ResultData.EXACT: sum(counts[exact_key]),
+                _ResultData.APPROX: sum(counts[approx_key]),
+                _ResultData.MISS: sum(counts[miss_key]),
+            }
+        )
+
+    return _AccuracyComparison(
+        primary=_avg_accuracy(
+            counts[_ResultData.PRIMARY_EXACT],
+            counts[_ResultData.PRIMARY_APPROX],
+            counts[_ResultData.PRIMARY_MISS],
+        ),
+        llm=_avg_accuracy(
+            counts[_ResultData.LLM_EXACT],
+            counts[_ResultData.LLM_APPROX],
+            counts[_ResultData.LLM_MISS],
+        ),
+        primary_geo=_geo(
+            _ResultData.PRIMARY_GEO_EXACT,
+            _ResultData.PRIMARY_GEO_APPROX,
+            _ResultData.PRIMARY_GEO_MISS,
+        ),
+        llm_geo=_geo(
+            _ResultData.LLM_GEO_EXACT, _ResultData.LLM_GEO_APPROX, _ResultData.LLM_GEO_MISS
+        ),
     )
 
 
@@ -192,38 +257,7 @@ def _cost_compare_section(
         if median_primary and median_ocr_mapping
         else "-"
     )
-    a = accuracy_by_method.get(primary_method_key)
-
-    p_avg = (
-        _avg_accuracy(a[_ResultData.P_EXACT], a[_ResultData.P_APPROX], a[_ResultData.P_MISS])
-        if a
-        else _NO_ACCURACY
-    )
-    l_avg = (
-        _avg_accuracy(a[_ResultData.L_EXACT], a[_ResultData.L_APPROX], a[_ResultData.L_MISS])
-        if a
-        else _NO_ACCURACY
-    )
-
-    def _geo_counts(exact_list: list[int], approx_list: list[int], miss_list: list[int]) -> str:
-        exact = sum(exact_list)
-        total = exact + sum(approx_list) + sum(miss_list)
-        return f"{exact}/{total}" if total else "-"
-
-    p_geo_counts = (
-        _geo_counts(
-            a[_ResultData.P_GEO_EXACT], a[_ResultData.P_GEO_APPROX], a[_ResultData.P_GEO_MISS]
-        )
-        if a
-        else "-"
-    )
-    l_geo_counts = (
-        _geo_counts(
-            a[_ResultData.L_GEO_EXACT], a[_ResultData.L_GEO_APPROX], a[_ResultData.L_GEO_MISS]
-        )
-        if a
-        else "-"
-    )
+    accuracy = _pooled_accuracy(accuracy_by_method.get(primary_method_key))
 
     return [
         _CostRow(
@@ -235,10 +269,7 @@ def _cost_compare_section(
             median_primary=median_primary,
             median_ocr_mapping=median_ocr_mapping,
             dur_ratio=dur_ratio,
-            p_avg=p_avg,
-            l_avg=l_avg,
-            p_geo_counts=p_geo_counts,
-            l_geo_counts=l_geo_counts,
+            accuracy=accuracy,
             doc_count=len(primary_dur_by_method.get(primary_method_key, [])),
         )
     ]
@@ -269,7 +300,7 @@ def _build_doc_summary_table(rows: list[_DocSummaryRow]) -> str:
         llm_cost = cost_by_reason.get(LlmUsageReason.OCR_MAPPING, 0.0) + shared_cost
         cost_delta = llm_cost - primary_cost
         primary_dur = durations.get(primary_method)
-        llm_dur = durations.get(ExtractMethod.OCR_MAPPING)
+        llm_dur = durations.get(_ResultData.LLM)
         dur_delta = (
             f"{llm_dur - primary_dur:+.2f}s"
             if llm_dur is not None and primary_dur is not None
@@ -277,20 +308,24 @@ def _build_doc_summary_table(rows: list[_DocSummaryRow]) -> str:
         )
         primary_dur_cell = f"{primary_dur:.2f}s" if primary_dur is not None else "-"
         llm_dur_cell = f"{llm_dur:.2f}s" if llm_dur is not None else "-"
-        p_acc = acc.get(_ResultData.PRIMARY) if acc else None
-        l_acc = acc.get(_ResultData.OCR_MAPPING) if acc else None
-        p_fmt = _fmt_accuracy(p_acc)
-        l_fmt = _fmt_accuracy(l_acc)
-        p_loose = (
-            p_acc.get(_ResultData.EXACT, 0) + p_acc.get(_ResultData.APPROX, 0) if p_acc else None
+        primary_acc = acc.get(_ResultData.PRIMARY) if acc else None
+        llm_acc = acc.get(_ResultData.LLM) if acc else None
+        primary_fmt = _fmt_accuracy(primary_acc)
+        llm_fmt = _fmt_accuracy(llm_acc)
+        primary_loose = (
+            primary_acc.get(_ResultData.EXACT, 0) + primary_acc.get(_ResultData.APPROX, 0)
+            if primary_acc
+            else None
         )
-        p_total = sum(p_acc.values()) if p_acc else None
-        l_loose = (
-            l_acc.get(_ResultData.EXACT, 0) + l_acc.get(_ResultData.APPROX, 0) if l_acc else None
+        primary_total = sum(primary_acc.values()) if primary_acc else None
+        llm_loose = (
+            llm_acc.get(_ResultData.EXACT, 0) + llm_acc.get(_ResultData.APPROX, 0)
+            if llm_acc
+            else None
         )
-        l_total = sum(l_acc.values()) if l_acc else None
-        if p_loose is not None and p_total and l_loose is not None and l_total:
-            delta = (l_loose / l_total) - (p_loose / p_total)
+        llm_total = sum(llm_acc.values()) if llm_acc else None
+        if primary_loose is not None and primary_total and llm_loose is not None and llm_total:
+            delta = (llm_loose / llm_total) - (primary_loose / primary_total)
             match_rate_delta = "0%" if delta == 0 else f"{delta:+.1%}"
         else:
             match_rate_delta = "-"
@@ -305,8 +340,8 @@ def _build_doc_summary_table(rows: list[_DocSummaryRow]) -> str:
                 primary_dur_cell,
                 llm_dur_cell,
                 dur_delta,
-                p_fmt["loose"],
-                l_fmt["loose"],
+                primary_fmt["loose"],
+                llm_fmt["loose"],
                 match_rate_delta,
             ]
         )

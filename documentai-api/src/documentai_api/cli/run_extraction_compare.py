@@ -30,6 +30,7 @@ from documentai_api.utils.extraction_compare_client import (
     ExtractionCompareTimeoutError,
     cognito_jwt,
     print_comparison,
+    processing_span_seconds,
     submit_and_poll,
 )
 from documentai_api.utils.s3 import parse_s3_uri
@@ -133,15 +134,12 @@ def run_fixtures(
                 status = typer.style("PASSED", fg=typer.colors.GREEN)
                 typer.echo(f"{filename:<{col}}  {status}  {elapsed:>6.1f}s")
 
-        total = sum(e for e, _ in timings.values())
         n_fail = sum(1 for _, err in timings.values() if err)
         typer.echo(f"{'─' * (col + 30)}")
         n_ok = len(filenames) - n_fail
         ok_str = typer.style(str(n_ok), fg=typer.colors.GREEN)
         fail_str = typer.style(str(n_fail), fg=typer.colors.RED if n_fail else typer.colors.GREEN)
-        summary = (
-            f"{ok_str} completed, {fail_str} failed  |  total: {total:.1f}s  |  wall: {wall:.1f}s"
-        )
+        summary = f"{ok_str} completed, {fail_str} failed  |  wall: {wall:.1f}s"
         typer.echo(summary)
         typer.echo("")
 
@@ -180,7 +178,7 @@ async def _run_all(
                     except (ExtractionCompareTimeoutError, RuntimeError):
                         if attempt == 1:
                             raise
-                        typer.echo(f"  retrying {filename}...", err=True)
+                        typer.echo(f"  - Retrying {filename}...", err=True)
 
                 if result is None:
                     raise RuntimeError("no result after retry")
@@ -199,7 +197,8 @@ async def _run_all(
                     data_dir=data_dir,
                 )
                 typer.echo(f"  - Wrote {md_dir / Path(filename).stem}.md")
-                return filename, time.monotonic() - t0, None
+                elapsed = processing_span_seconds(result) or time.monotonic() - t0
+                return filename, elapsed, None
             except Exception as e:
                 typer.echo(f"  ERROR: {e}", err=True)
                 return filename, time.monotonic() - t0, str(e)

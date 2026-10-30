@@ -1,28 +1,28 @@
 # synthetic-assets-trust-funds-investment-accounts-scan.jpg
 
-_Last run:: 2026-10-29 21:20 UTC_
+_Last run: 2026-10-30 03:17 UTC_
 
 ## Durations
 
-- bda: 21.31s extraction
-- ocr-mapping: 2.256s extraction
+- bda: 21.12s extraction
+- llm: 2.3s extraction
 
 ## Cost
 
 _By Service_
 
-- us.amazon.nova-lite-v1:0: $0.00012360 (1956 in / 26 out)
-- us.amazon.nova-pro-v1:0: $0.01374080 (14904 in / 568 out)
+- us.amazon.nova-lite-v1:0: $0.00012384 (1956 in / 27 out)
+- us.amazon.nova-pro-v1:0: $0.01373440 (14904 in / 566 out)
 - bda: $0.04000000 (1 page(s))
 - analyze_document_layout: $0.00400000 (1 page(s))
-- **total: $0.05786440**
+- **total: $0.05785824**
 
 _By Extraction Method_
 
-- shared (preclassification): $0.00928840
-- ocr-mapping extraction: $0.00857600
+- shared (preclassification): $0.00927264
+- ocr-mapping extraction: $0.00858560
 - primary (bda): $0.04000000
-- **total: $0.05786440**
+- **total: $0.05785824**
 
 ## Accuracy
 
@@ -33,8 +33,8 @@ _By Extracted Data_
 
 _By Bounding Box_
 
-- BDA: 4/9 exact, 5 miss
-- OCR Mapping: 3/9 exact, 6 miss
+- BDA: 4/9 (44%) exact, 5 miss
+- OCR Mapping: 3/9 (33%) exact, 6 miss
 
 ## Field Comparison
 
@@ -49,4 +49,4 @@ _By Bounding Box_
 | statement_period_start | 2026-06-01 | ✅ 2026-06-01 | ✅ 2026-06-01 | 0.91 | 1.0000 | 0.056,0.591,0.067,0.007 | ❌ 0.699,0.107,0.089,0.010 | ❌ 0.699,0.105,0.212,0.012 |
 | trust_name | The Morgan E. Dalton Revocable Trust | ✅ The Morgan E. Dalton Revocable Trust | ✅ The Morgan E. Dalton Revocable Trust | 0.90 | 1.0000 | 0.646,0.257,0.253,0.010 | ✅ 0.646,0.257,0.255,0.013 | ✅ 0.645,0.257,0.255,0.013 |
 | trust_type | Revocable Living Trust | ✅ Revocable Living Trust | ✅ Revocable Living Trust | 0.94 | 1.0000 | 0.646,0.327,0.150,0.010 | ❌ 0.700,0.156,0.151,0.011 | ❌ 0.701,0.156,0.150,0.011 |
-| trustee_name | Cedar Grove Trust Company, as Trustee | ✅ Cedar Grove Trust Company, as Trustee | 🟡 Cedar Grove Trust Company | 0.60 | 1.0000 | 0.045,0.289,0.867,0.020 | ❌ 0.268,0.058,0.092,0.018 | ❌ 0.646,0.292,0.193,0.010 |
+| trustee_name | Cedar Grove Trust Company, as Trustee | ✅ Cedar Grove Trust Company, as Trustee | 🟡 Cedar Grove Trust Company | 0.60 | 1.0000 | 0.045,0.289,0.867,0.020 | ❌ 0.268,0.058,0.092,0.018 | ❌ 0.646,0.291,0.267,0.011 |

@@ -1,27 +1,27 @@
 # synthetic-expense-utility-cable-bill-render.pdf
 
-_Last run:: 2026-10-29 21:21 UTC_
+_Last run: 2026-10-30 03:18 UTC_
 
 ## Durations
 
-- bda: 26.04s extraction
-- ocr-mapping: 4.406s extraction
+- bda: 24.23s extraction
+- llm: 3.658s extraction
 
 ## Cost
 
 _By Service_
 
-- us.amazon.nova-pro-v1:0: $0.01412240 (14217 in / 859 out)
+- us.amazon.nova-pro-v1:0: $0.01415440 (14217 in / 869 out)
 - bda: $0.04000000 (1 page(s))
 - analyze_document_layout: $0.00400000 (1 page(s))
-- **total: $0.05812240**
+- **total: $0.05815440**
 
 _By Extraction Method_
 
-- shared (preclassification): $0.00881440
+- shared (preclassification): $0.00884640
 - ocr-mapping extraction: $0.00930800
 - primary (bda): $0.04000000
-- **total: $0.05812240**
+- **total: $0.05815440**
 
 ## Accuracy
 
@@ -32,8 +32,8 @@ _By Extracted Data_
 
 _By Bounding Box_
 
-- BDA: 1/4 exact, 3 miss
-- OCR Mapping: 2/4 exact, 2 miss
+- BDA: 1/4 (25%) exact, 3 miss
+- OCR Mapping: 2/4 (50%) exact, 2 miss
 
 ## Field Comparison
 
@@ -41,7 +41,7 @@ _By Bounding Box_
 |---|---|---|---|---|---|---|---|---|
 | Account_Number | 8372-XX-3498 | 🟡 ACCT# 8372-XX-3498 | ✅ 8372-XX-3498 | 0.69 | 1.0000 | 0.270,0.884,0.106,0.010 | ❌ 0.797,0.073,0.100,0.008 | ❌ 0.797,0.073,0.099,0.008 |
 | Balance_DueDate | 2026-09-15 | ✅ 09/15/26 | ✅ 2026-09-15 | 0.82 | 1.0000 | 0.270,0.929,0.087,0.011 | ❌ 0.827,0.050,0.069,0.008 | ✅ 0.270,0.929,0.088,0.011 |
-| BillingDateBeforeDueDate | True | ✅ True | ✅ True | 0.40 | N/A | - | 0.827,0.026,0.069,0.009 | 0.827,0.026,0.069,0.009 |
+| BillingDateBeforeDueDate | True | ✅ True | ✅ True | 0.39 | N/A | - | 0.827,0.026,0.069,0.009 | 0.827,0.026,0.069,0.009 |
 | Billing_Date | 2026-08-28 | ✅ 08/28/26 | ✅ 2026-08-28 | 0.80 | 1.0000 | 0.828,0.027,0.069,0.008 | ✅ 0.827,0.026,0.069,0.009 | ✅ 0.827,0.026,0.069,0.009 |
 | End_Date | 2026-08-31 | ✅ 08/31/26 | ✅ 2026-08-31 | 0.82 | 0.9900 | 0.109,0.202,0.776,0.014 | ❌ 0.764,0.203,0.122,0.013 | ❌ 0.627,0.203,0.258,0.013 |
 | Line_Item_table.Amount | 54.99, 48.00, 8.00, 7.50, 4.76 | ❌ - | 🟡 $54.99, $48.00, $8.00, $7.50, $4.76, $112.25 | - | N/A | - | - | 0.828,0.292,0.057,0.012 |
