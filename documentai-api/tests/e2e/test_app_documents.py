@@ -44,6 +44,8 @@ def load_test_cases() -> list[Any]:
                     is_password_protected=expected.get("isPasswordProtected", False),
                     bda_matched_document_class=expected.get("bdaMatchedDocumentClass"),
                     content_type=expected.get("contentType"),
+                    required_fields_for_extraction=expected.get("requiredFieldsForExtraction"),
+                    skip_bda=expected.get("skipBda", False),
                 ),
             ),
             marks=(
