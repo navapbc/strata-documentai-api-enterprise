@@ -367,31 +367,31 @@ def test_has_multipage_inconsistency_defaults_to_false(monkeypatch):
 def test_get_model_id_uses_default(monkeypatch):
     """When no SSM param configured, returns the default model ID."""
     from documentai_api.constants.defaults import PreClassificationDefaults
-    from documentai_api.utils.preclassification import _get_model_id
+    from documentai_api.utils.ssm import get_classification_model_id
 
     monkeypatch.setattr(
-        "documentai_api.utils.preclassification.get_env_config",
+        "documentai_api.utils.ssm.get_env_config",
         lambda: type("C", (), {"bedrock_classification_model_id_param": None})(),
     )
 
-    result = _get_model_id()
+    result = get_classification_model_id()
     assert result == PreClassificationDefaults.MODEL_ID
 
 
 def test_get_model_id_reads_ssm(monkeypatch):
     """When SSM param is configured, reads model ID from SSM."""
-    from documentai_api.utils.preclassification import _get_model_id
+    from documentai_api.utils.ssm import get_classification_model_id
 
     monkeypatch.setattr(
-        "documentai_api.utils.preclassification.get_env_config",
+        "documentai_api.utils.ssm.get_env_config",
         lambda: type("C", (), {"bedrock_classification_model_id_param": "/test/model"})(),
     )
     monkeypatch.setattr(
-        "documentai_api.utils.preclassification.get_parameter_value",
+        "documentai_api.utils.ssm._get_parameter_value",
         lambda name, default=None: "us.amazon.nova-pro-v1:0",
     )
 
-    result = _get_model_id()
+    result = get_classification_model_id()
     assert result == "us.amazon.nova-pro-v1:0"
 
 
@@ -418,7 +418,7 @@ def test_invoke_uses_max_tokens(monkeypatch):
 
     monkeypatch.setattr("documentai_api.utils.preclassification.invoke_model", mock_invoke_model)
     monkeypatch.setattr(
-        "documentai_api.utils.preclassification._get_model_id", lambda: "test-model"
+        "documentai_api.utils.preclassification.get_classification_model_id", lambda: "test-model"
     )
 
     preclassify_document(SAMPLE_IMAGE, "image/png")
@@ -563,7 +563,7 @@ def test_find_matching_blueprint_uses_pdf_document_block(monkeypatch):
 
     monkeypatch.setattr("documentai_api.utils.preclassification.invoke_model", capture_invoke)
     monkeypatch.setattr(
-        "documentai_api.utils.preclassification._get_model_id", lambda: "test-model"
+        "documentai_api.utils.preclassification.get_classification_model_id", lambda: "test-model"
     )
     monkeypatch.setattr("documentai_api.utils.schemas.get_all_schemas", lambda: SAMPLE_SCHEMAS)
 
@@ -614,7 +614,7 @@ _expected_items: list[tuple[str, str]] = [
 def test_preclassify_real_document(filename, expected_category, monkeypatch, real_aws_credentials):
     """Classify a real document and assert it routes to the correct category."""
     monkeypatch.setattr(
-        "documentai_api.utils.preclassification._get_model_id",
+        "documentai_api.utils.preclassification.get_classification_model_id",
         lambda: "us.amazon.nova-lite-v1:0",
     )
 
@@ -716,7 +716,7 @@ def test_find_matching_blueprint_real(
 ):
     """Match a real document against the preloaded blueprint schemas via Bedrock."""
     monkeypatch.setattr(
-        "documentai_api.utils.preclassification._get_model_id",
+        "documentai_api.utils.preclassification.get_classification_model_id",
         lambda: "us.amazon.nova-lite-v1:0",
     )
 

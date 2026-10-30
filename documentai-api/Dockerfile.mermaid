@@ -1,0 +1,4 @@
+FROM ghcr.io/mermaid-js/mermaid-cli/mermaid-cli@sha256:b4e90c56d42f2ff2960b619456b9b876f6d9d2218593eace7d53f3fcbbdb5b23
+USER root
+RUN npm install --prefix /home/mermaidcli @iconify-json/material-symbols
+USER mermaidcli

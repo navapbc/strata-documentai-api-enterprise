@@ -40,6 +40,9 @@ class EnvConfig(PydanticBaseEnvConfig):
     # Resolved dynamically from PreclassificationCategory rather than hand-maintained.
     bda_project_arn_prefix: str | None = None
 
+    # AWS
+    aws_region: str = "us-east-1"
+
     # Cognito
     cognito_user_pool_id: str | None = None
     cognito_client_id: str | None = None
@@ -96,6 +99,7 @@ class EnvConfig(PydanticBaseEnvConfig):
     ddb_metrics_input_queue_url: str | None = None
     ddb_raw_data_table_name: str | None = None
     glue_database_name: str | None = None
+    ocr_mapping_queue_url: str | None = None
 
     # =========================================================================
     # Accessor methods

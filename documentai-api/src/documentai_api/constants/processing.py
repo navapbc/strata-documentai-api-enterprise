@@ -184,11 +184,29 @@ class ExtractMethod(StrEnum):
 
     BDA = "bda"
     TEXTRACT = "textract"
+    OCR_MAPPING = "ocr-mapping"
+
+
+class TextractOperation(StrEnum):
+    """Textract API operations, each billed at its own per-page rate (see model_cost.json)."""
+
+    ANALYZE_ID = "analyze_id"
+    ANALYZE_DOCUMENT_LAYOUT = "analyze_document_layout"
+    DETECT_DOCUMENT_TEXT = "detect_document_text"
 
 
 class OutputFormatType(StrEnum):
     JSON = "json"
     CSV = "csv"
+
+
+class LlmUsageReason(StrEnum):
+    """Which pipeline step consumed the tokens."""
+
+    PRECLASSIFICATION = "preclassification"
+    BLUEPRINT_MATCH = "blueprintMatch"
+    OCR_MAPPING = "ocrMapping"
+    CROP_DETECTION = "cropDetection"
 
 
 class S3MetadataKeys:

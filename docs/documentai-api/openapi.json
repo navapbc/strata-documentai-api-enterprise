@@ -3699,6 +3699,101 @@
         ]
       }
     },
+    "/v1/admin/extraction-compare": {
+      "post": {
+        "tags": [
+          "Admin:Compare"
+        ],
+        "summary": "Run Compare",
+        "description": "Submit a document through the real pipeline with both BDA and OCR mapping extraction.\n\nReturns immediately with a job_id. Poll GET /{job_id} until isCompleted is true.\n\nUses is_compare=True which:\n- Forces OCR mapping extraction regardless of the feature flag\n- Writes each path's output to apiResponsesByMethod map instead of terminal status\n- Suppresses metrics queue emission and batch counter increments",
+        "operationId": "run_compare_v1_admin_extraction_compare_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_run_compare_v1_admin_extraction_compare_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompareSubmitResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/admin/extraction-compare/{job_id}": {
+      "get": {
+        "tags": [
+          "Admin:Compare"
+        ],
+        "summary": "Get Compare Result",
+        "description": "Poll for compare results.\n\nReturns 200 with isCompleted=false while either path is still running, and\nisCompleted=true once both finish. 404 when the job is unknown or not visible to the caller.",
+        "operationId": "get_compare_result_v1_admin_extraction_compare__job_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompareResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/documents/{job_id}/evaluation": {
       "get": {
         "tags": [
@@ -4776,6 +4871,20 @@
         ],
         "title": "Body_create_presigned_upload_url_v1_documents_presigned_url_post"
       },
+      "Body_run_compare_v1_admin_extraction_compare_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_run_compare_v1_admin_extraction_compare_post"
+      },
       "Body_start_extraction_test_v1_admin_extraction_test_post": {
         "properties": {
           "file": {
@@ -5361,6 +5470,172 @@
         ],
         "title": "CognitoUserItem",
         "description": "User response item.\n\nWhen presentation mode is active, `email` and `username` are masked and\n`masked_tenant_id` is populated. The real `tenant_id` is always returned so that\nfrontend filter calls continue to work - `masked_tenant_id` is for display only."
+      },
+      "CompareDuration": {
+        "properties": {
+          "extractionDurationSeconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extractiondurationseconds"
+          },
+          "bdaInvocationDurationSeconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bdainvocationdurationseconds"
+          },
+          "processingStartedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Processingstartedat"
+          },
+          "processingCompletedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Processingcompletedat"
+          }
+        },
+        "type": "object",
+        "title": "CompareDuration"
+      },
+      "CompareFieldResult": {
+        "properties": {
+          "value": {
+            "title": "Value"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "geometry": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geometry"
+          }
+        },
+        "type": "object",
+        "title": "CompareFieldResult"
+      },
+      "CompareResponse": {
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "title": "Jobid"
+          },
+          "primaryMethod": {
+            "type": "string",
+            "title": "Primarymethod"
+          },
+          "isCompleted": {
+            "type": "boolean",
+            "title": "Iscompleted",
+            "default": false
+          },
+          "primary": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CompareFieldResult"
+            },
+            "type": "object",
+            "title": "Primary"
+          },
+          "ocrMapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CompareFieldResult"
+            },
+            "type": "object",
+            "title": "Ocrmapping"
+          },
+          "durations": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CompareDuration"
+            },
+            "type": "object",
+            "title": "Durations"
+          },
+          "tokens": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Tokens"
+          },
+          "pages": {
+            "type": "integer",
+            "title": "Pages",
+            "default": 1
+          },
+          "cost": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Cost"
+          },
+          "costByReason": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Costbyreason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "jobId",
+          "primaryMethod"
+        ],
+        "title": "CompareResponse"
+      },
+      "CompareSubmitResponse": {
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "title": "Jobid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "jobId"
+        ],
+        "title": "CompareSubmitResponse"
       },
       "ConfigResponse": {
         "properties": {

@@ -128,6 +128,21 @@ class DocumentMetadata:
     # extraction method
     EXTRACT_METHOD = "extractionMethod"
 
+    # ocr mapping extraction telemetry
+
+    # compare flag
+    IS_COMPARE = "isCompare"
+
+    # per-extraction method fields - stored as maps keyed by method name
+    API_RESPONSES_BY_METHOD = "apiResponsesByMethod"
+    DURATIONS_BY_METHOD = "durationsByMethod"
+    TOKENS_BY_MODEL = "tokensByModel"
+    # nested fields within durationsByMethod map
+    EXTRACTION_DURATION_SECONDS = "extractionDurationSeconds"
+    PROCESSING_STARTED_AT = "processingStartedAt"
+    PROCESSING_COMPLETED_AT = "processingCompletedAt"
+    BDA_INVOCATION_DURATION_SECONDS = "bdaInvocationDurationSeconds"
+
     # otel trace propagation
     TRACEPARENT = "traceparent"
 

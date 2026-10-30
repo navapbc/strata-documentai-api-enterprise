@@ -330,6 +330,7 @@ data "aws_iam_policy_document" "document_processor" {
     actions = [
       "textract:AnalyzeID",
       "textract:DetectDocumentText",
+      "textract:AnalyzeDocument",
     ]
     resources = ["*"]
   }
@@ -338,6 +339,26 @@ data "aws_iam_policy_document" "document_processor" {
 resource "aws_iam_policy" "document_processor" {
   name   = "${local.service_name}-bedrock-worker"
   policy = data.aws_iam_policy_document.document_processor.json
+}
+
+# ocr-mapping-processor: invoke Bedrock models to map Textract OCR blocks to fields.
+# No BDA or Textract access - Textract runs in the document processor.
+data "aws_iam_policy_document" "ocr_mapping_processor" {
+  statement {
+    actions = [
+      "bedrock:InvokeModel",
+      "bedrock:Converse",
+    ]
+    resources = [
+      "arn:aws:bedrock:${var.region}:*:inference-profile/*",
+      "arn:aws:bedrock:*::foundation-model/*",
+    ]
+  }
+}
+
+resource "aws_iam_policy" "ocr_mapping_processor" {
+  name   = "${local.service_name}-bedrock-ocr-mapping"
+  policy = data.aws_iam_policy_document.ocr_mapping_processor.json
 }
 
 # bda-result-processor: check job status and read blueprints only.
@@ -411,7 +432,7 @@ data "aws_iam_policy_document" "pipeline_api" {
 
   statement {
     actions   = ["sqs:SendMessage"]
-    resources = [module.metrics_queue.queue_arn]
+    resources = [module.metrics_queue.queue_arn, module.ocr_mapping_queue.queue_arn]
   }
 
   statement {
@@ -439,7 +460,7 @@ data "aws_iam_policy_document" "metrics_producer" {
 
   statement {
     actions   = ["sqs:SendMessage"]
-    resources = [module.metrics_queue.queue_arn]
+    resources = [module.metrics_queue.queue_arn, module.ocr_mapping_queue.queue_arn]
   }
 
   statement {

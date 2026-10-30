@@ -10,6 +10,7 @@ from documentai_api.constants.defaults import SystemDefaults
 from documentai_api.constants.processing import (
     DeletionType,
     ExtractMethod,
+    LlmUsageReason,
     ProcessStatus,
 )
 from documentai_api.dtos.classification import ClassificationData
@@ -312,8 +313,10 @@ def _send_record_to_metrics_queue(object_key: str) -> None:
 
         if not ddb_record:
             logger.warning(f"DDB record not found for {object_key}, skipping metrics")
-            # do not raise an exception here. metrics are optional and shouldn't
-            # prevent process from completing successfully
+            return
+
+        if ddb_record.get(DocumentMetadata.IS_COMPARE):
+            logger.info(f"Skipping metrics queue for compare document {object_key}")
             return
 
         # Inject traceparent into SQS MessageAttributes so metrics-processor can
@@ -452,6 +455,57 @@ def set_extract_method(object_key: str, method: ExtractMethod, started_at: str) 
     )
 
 
+def sum_token_usage_by_model(object_key: str) -> dict[str, dict[str, int]]:
+    """Return per-model token totals for a document.
+
+    Collapses composite "{model_id}#{reason}" keys into per-model sums.
+    """
+    record = get_ddb_record(object_key)
+    tokens_by_model = (record.get(DocumentMetadata.TOKENS_BY_MODEL) or {}) if record else {}
+    totals: dict[str, dict[str, int]] = {}
+    for composite_key, entry in tokens_by_model.items():
+        model_id, _, _ = composite_key.partition("#")
+        bucket = totals.setdefault(model_id, {"inputTokens": 0, "outputTokens": 0})
+        bucket["inputTokens"] += int(entry.get("inputTokens", 0))
+        bucket["outputTokens"] += int(entry.get("outputTokens", 0))
+
+    return totals
+
+
+def get_token_usage_by_reason(object_key: str) -> dict[str, dict[str, int]]:
+    """Return token totals keyed by "{model_id}#{reason}" as stored in DDB."""
+    record = get_ddb_record(object_key)
+    tokens_by_model = (record.get(DocumentMetadata.TOKENS_BY_MODEL) or {}) if record else {}
+    return {
+        k: {
+            "inputTokens": int(v.get("inputTokens", 0)),
+            "outputTokens": int(v.get("outputTokens", 0)),
+        }
+        for k, v in tokens_by_model.items()
+    }
+
+
+def write_tokens_by_model(
+    object_key: str,
+    model_id: str,
+    reason: LlmUsageReason,
+    input_tokens: int,
+    output_tokens: int,
+) -> None:
+    """Write per-model, per-reason token counts into the tokensByModel map.
+
+    Keyed by "{model_id}#{reason}" to avoid nested path initialization issues.
+    tokensByModel is guaranteed to exist as an empty map from upsert_ddb.
+    """
+    composite_key = f"{model_id}#{reason}"
+    _execute_ddb_update(
+        object_key,
+        f"SET {DocumentMetadata.TOKENS_BY_MODEL}.#key = :entry",
+        {":entry": {"inputTokens": Decimal(input_tokens), "outputTokens": Decimal(output_tokens)}},
+        expression_names={"#key": composite_key},
+    )
+
+
 def _apply_ddb_fields(
     model: BaseModel,
     set_fields: dict[str, Any],
@@ -546,6 +600,20 @@ def upsert_ddb(data: InitialDdbRecord) -> None:
             expr_fields.append(f"{DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY} = :category")
             expr_values[":category"] = data.user_provided_document_category
 
+        if data.is_compare:
+            expr_fields.append(
+                f"{DocumentMetadata.API_RESPONSES_BY_METHOD} = if_not_exists({DocumentMetadata.API_RESPONSES_BY_METHOD}, :emptyMap)"
+            )
+            expr_fields.append(
+                f"{DocumentMetadata.DURATIONS_BY_METHOD} = if_not_exists({DocumentMetadata.DURATIONS_BY_METHOD}, :emptyMap)"
+            )
+            expr_values[":emptyMap"] = {}
+
+        expr_fields.append(
+            f"{DocumentMetadata.TOKENS_BY_MODEL} = if_not_exists({DocumentMetadata.TOKENS_BY_MODEL}, :emptyTokenMap)"
+        )
+        expr_values[":emptyTokenMap"] = {}
+
         # internal_api_response and pre_classification are handled by dedicated
         # paths below, so exclude them here - dumping them is dead work and would
         # needlessly re-serialize the nested objects.
@@ -573,6 +641,28 @@ def upsert_ddb(data: InitialDdbRecord) -> None:
             expr_values,
             expression_names={"#ttl": DocumentMetadata.TIME_TO_LIVE},
         )
+
+        if data.pre_classification and data.pre_classification.model_id:
+            model_id = data.pre_classification.model_id
+            if data.pre_classification.input_tokens or data.pre_classification.output_tokens:
+                write_tokens_by_model(
+                    data.object_key,
+                    model_id,
+                    LlmUsageReason.PRECLASSIFICATION,
+                    data.pre_classification.input_tokens or 0,
+                    data.pre_classification.output_tokens or 0,
+                )
+            if (
+                data.pre_classification.blueprint_match_input_tokens
+                or data.pre_classification.blueprint_match_output_tokens
+            ):
+                write_tokens_by_model(
+                    data.object_key,
+                    model_id,
+                    LlmUsageReason.BLUEPRINT_MATCH,
+                    data.pre_classification.blueprint_match_input_tokens or 0,
+                    data.pre_classification.blueprint_match_output_tokens or 0,
+                )
 
         # finalize terminal statuses: enqueue metrics
         if data.process_status and ProcessStatus.is_classified(data.process_status):

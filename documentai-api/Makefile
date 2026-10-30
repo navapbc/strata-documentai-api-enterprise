@@ -7,6 +7,7 @@
 	diagrams \
 	generate-categories \
 	generate-env-names \
+	generate-geometry-candidates \
 	tenant \
 	tenant-deactivate \
 	tenant-list \
@@ -40,6 +41,10 @@
 	test-smoke \
 	test-e2e \
 	test-e2e-routing \
+	run-extraction-compare-fixtures \
+	regen-extraction-compare-summary \
+	extraction-compare-charts \
+	extraction-compare-pdf \
 	test-integration \
 	test-regression \
 	metrics-agg \
@@ -66,12 +71,16 @@ __check_defined = \
 _require-jq:
 	@command -v jq >/dev/null || (echo "jq required" && exit 1)
 
+_require-tesseract:
+	@command -v tesseract >/dev/null || (echo "tesseract binary required: brew install tesseract" && exit 1)
+	@tesseract --list-langs 2>/dev/null | grep -q '^spa$$' || (echo "Tesseract Spanish language pack required: brew install tesseract-lang" && exit 1)
+
 define get_api_lambda_env_vars
 	FN=$$(aws lambda list-functions --query "Functions[?contains(FunctionName, 'docai') && ends_with(FunctionName, '-api')].FunctionName" --output text); \
 	test -n "$$FN" || (echo "No deployed docai *-api Lambda found" && exit 1); \
 	aws lambda get-function-configuration --function-name "$$FN" \
 	  --query "Environment.Variables" --output json | \
-	jq -r 'to_entries[] | "\(.key)=\(.value)"'
+	jq -r 'to_entries[] | "\(.key)=\(.value | @sh)"'
 endef
 
 define get_worker_lambda_env_vars
@@ -79,7 +88,7 @@ define get_worker_lambda_env_vars
 	test -n "$$FN" || (echo "No deployed docai *-document-processor Lambda found" && exit 1); \
 	aws lambda get-function-configuration --function-name "$$FN" \
 	  --query "Environment.Variables" --output json | \
-	jq -r 'to_entries[] | "\(.key)=\(.value)"'
+	jq -r 'to_entries[] | "\(.key)=\(.value | @sh)"'
 endef
 
 ##################################################
@@ -168,8 +177,13 @@ test: ## Run test suite
 test-coverage: ## Run tests with coverage report
 	$(PY_RUN_CMD) pytest --cov=src/documentai_api --cov-branch --cov-report=html:.coverage_report --cov-report=term-missing $(args)
 
+# Capped because -n auto spawns one worker per CPU, and on an 11-CPU machine with an 8 GB
+# Docker VM several workers crash ("node down: Not properly terminated"). Cause not pinned
+# down; likely memory pressure. Override with e.g. `make test-parallel WORKERS=auto`.
+WORKERS ?= 4
+
 test-parallel: ## Run test suite in parallel
-	$(PY_RUN_CMD) pytest -n auto $(args)
+	$(PY_RUN_CMD) pytest -n $(WORKERS) $(args)
 
 test-audit: ## Run audit logging tests
 	$(PY_RUN_CMD) pytest -m "audit" $(args)
@@ -194,6 +208,37 @@ test-e2e: ## Run e2e tests
 test-e2e-routing: .env.e2e
 test-e2e-routing: ## Run e2e routing tests
 	@set -a && . ./.env.e2e && set +a && uv run --frozen pytest tests/e2e -m e2e_routing $(args)
+
+run-extraction-compare-fixtures: .env.e2e
+run-extraction-compare-fixtures: ## Run BDA vs LLM extraction compare for all fixture documents
+	@rm -rf tests/results/extraction_compare/*
+	@set -a && . ./.env.e2e && set +a && uv run --frozen run-extraction-compare-fixtures $(args); $(MAKE) extraction-compare-charts
+
+regen-extraction-compare-summary: ## Regenerate per-doc and summary markdown from existing .data.json sidecars
+	uv run --frozen python3 -c "from pathlib import Path; from documentai_api.cli.extraction_compare import regen_comparison_md, write_extraction_compare_summary; p = Path('tests/results/extraction_compare'); e = Path('tests/helpers/fixtures/test-documents/happy-path/expected'); regen_comparison_md(p, e); write_extraction_compare_summary(p, e)"
+	$(MAKE) extraction-compare-charts
+
+extraction-compare-charts: ## Render extraction compare .vl.json specs to PNG charts
+	docker build -q \
+		-f tests/e2e/extraction_compare/Dockerfile.altair \
+		-t extraction-compare-charts \
+		. > /dev/null
+	docker run --rm \
+		-v $(PWD)/tests/results/extraction_compare/charts:/data \
+		extraction-compare-charts
+
+extraction-compare-pdf: ## Render extraction compare results to a single PDF
+	docker build -q \
+		-f tests/e2e/extraction_compare/Dockerfile.weasyprint \
+		-t extraction-compare-pdf \
+		. > /dev/null
+	docker run --rm \
+		-v $(PWD)/tests/results/extraction_compare:/data \
+		-v $(PWD)/tests/e2e/extraction_compare/print.css:/render_pdf.css:ro \
+		extraction-compare-pdf
+
+generate-geometry-candidates: _require-tesseract ## Generate ground-truth geometry candidates for fixture documents
+	$(AWS_RUN_CMD) --extra cli-geo generate-geometry-candidates $(args)
 
 .env.e2e: _require-jq ## Generate .env.e2e from deployed Lambda env vars + API Gateway endpoint
 # BASE_URL/AWS_REGION aren't in the Lambda's own env (that's API Gateway infra
@@ -237,8 +282,13 @@ env-from-aws: _require-jq ## Append real dev AWS resource identifiers to .env fo
 # any object landing in the real input bucket, regardless of who uploaded it.
 # So a document posted to the local API *does* get fully processed, as long as
 # .env points at real dev resources instead of the documentai-*-local placeholders.
+# BDA_PROJECT_ID_* is only on the document-processor Lambda (the API Lambda's env drops
+# it to stay under the 4KB limit), so read both; the API values win on duplicates.
 	@test -f .env || (echo ".env not found - run 'make setup-env' first" && exit 1)
-	@$(get_api_lambda_env_vars) | grep -E "$(ENV_FROM_AWS_KEEP)" >> .env
+	@{ \
+	  $(get_worker_lambda_env_vars); \
+	  $(get_api_lambda_env_vars); \
+	} | grep -E "$(ENV_FROM_AWS_KEEP)" >> .env
 	@tail -r .env | awk -F'=' '!seen[$$1]++' | tail -r > .env.clean && mv .env.clean .env
 	@echo "Appended real dev AWS resource identifiers to .env"
 
@@ -355,14 +405,20 @@ postman: ## Regenerate the Postman collection from openapi.json
 diagrams: ## Render all .mmd diagrams to SVG
 diagrams: $(DIAGRAMS)
 
-$(APP_DOCS_DIR)/media/%.svg: $(APP_DOCS_DIR)/diagrams/%.mmd
+aws-icon-pack: ## Rebuild docs/documentai-api/icons/aws/icons.json from AWS icon zip (usage: make aws-icon-pack ZIP=/path/to/aws-icons.zip)
+	$(if $(ZIP),,$(error ZIP=/path/to/aws-icons.zip required))
+	$(AWS_RUN_CMD) build-aws-icon-pack $(ZIP) $(APP_DOCS_DIR)/icons/aws/icons.json
+
+$(APP_DOCS_DIR)/media/%.svg: $(APP_DOCS_DIR)/diagrams/%.mmd $(APP_DOCS_DIR)/icons/aws/icons.json $(CURDIR)/Dockerfile.mermaid
+	docker build -q -t documentai-mermaid - < $(CURDIR)/Dockerfile.mermaid > /dev/null
 	docker run --rm \
 	-v $(APP_DOCS_DIR):/data \
-	ghcr.io/mermaid-js/mermaid-cli/mermaid-cli:latest \
+	documentai-mermaid \
 	-i diagrams/$*.mmd \
 	-o media/$*.svg \
-	--iconPacks '@iconify-json/logos' \
-	--iconPacks '@iconify-json/material-symbols'
+	$(if $(wildcard $(APP_DOCS_DIR)/diagrams/$*.css),--cssFile diagrams/$*.css) \
+	--iconPacks '@iconify-json/material-symbols' \
+	--iconPacks '/data/icons/aws'
 
 help: ## Show help
 	@grep -Eh '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'

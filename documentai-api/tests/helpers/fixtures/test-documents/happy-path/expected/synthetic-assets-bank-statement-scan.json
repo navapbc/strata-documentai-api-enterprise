@@ -1,0 +1,120 @@
+{
+  "fields": {
+    "account_number": "********5342",
+    "account_holder_name": "Alex M. Thompson",
+    "account_holder_address": "237 WILLOW BEND WAY BALTIMORE, MD 21224",
+    "bank_name": "Harbor Community Bank",
+    "account_type": "Checking",
+    "branch_transit_number": "******1250",
+    "statement_start_date": "2026-08-01",
+    "statement_end_date": "2026-08-31",
+    "account_summary.summary_desc": "Beginning Balance, Total Deposits/Credits, Total Withdrawals/Debits, Total Fees, Ending Balance",
+    "account_summary.summary_amount": "1225.00, 3110.00, 2550.20, 0.00, 1784.80",
+    "transaction_details.date": "2026-08-06, 2026-08-20, 2026-08-27, 2026-08-10, 2026-08-18, 2026-08-25",
+    "transaction_details.description": "DIRECT DEPOSIT Bluewater Solutions LLC PAYROLL, DIRECT DEPOSIT Bluewater Solutions LLC PAYROLL, DIRECT DEPOSIT Bluewater Solutions LLC BONUS, DEBIT CARD PURCHASE Giant Food #6207 Baltimore MD, RENT PAYMENT Greenfield Apartments, ONLINE TRANSFER Alex M. Thompson Savings",
+    "transaction_details.deposits": "1375.00, 1375.00, 360.00, 0.00, 0.00, 0.00",
+    "transaction_details.withdrawals": "0.00, 0.00, 0.00, 1402.61, 765.06, 382.53",
+    "transaction_details.balance": "2600.00, 3975.00, 4335.60, 2932.39, 2167.33, 1784.80"
+  },
+  "geometry": {
+    "matched": {
+      "account_holder_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.107421875,
+            "top": 0.24348958333333334,
+            "width": 0.181640625,
+            "height": 0.010416666666666666
+          }
+        ]
+      },
+      "bank_name": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.1591796875,
+            "top": 0.9244791666666666,
+            "width": 0.20703125,
+            "height": 0.011067708333333334
+          }
+        ]
+      },
+      "account_type": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.283203125,
+            "top": 0.357421875,
+            "width": 0.0673828125,
+            "height": 0.01171875
+          }
+        ]
+      },
+      "statement_end_date": {
+        "determination_method": "pytesseract",
+        "explanation": "Resolved via pytesseract OCR match.",
+        "candidates": [
+          {
+            "page": 0,
+            "left": 0.6083984375,
+            "top": 0.091796875,
+            "width": 0.2568359375,
+            "height": 0.011067708333333334
+          }
+        ]
+      }
+    },
+    "not_matched": {
+      "text_not_found": {
+        "account_number": {
+          "expected_value": "********5342"
+        },
+        "account_holder_address": {
+          "expected_value": "237 WILLOW BEND WAY BALTIMORE, MD 21224"
+        },
+        "branch_transit_number": {
+          "expected_value": "******1250"
+        },
+        "statement_start_date": {
+          "expected_value": "2026-08-01"
+        },
+        "account_summary.summary_desc": {
+          "expected_value": "Beginning Balance, Total Deposits/Credits, Total Withdrawals/Debits, Total Fees, Ending Balance"
+        },
+        "account_summary.summary_amount": {
+          "expected_value": "1225.00, 3110.00, 2550.20, 0.00, 1784.80"
+        },
+        "transaction_details.date": {
+          "expected_value": "2026-08-06, 2026-08-20, 2026-08-27, 2026-08-10, 2026-08-18, 2026-08-25"
+        },
+        "transaction_details.description": {
+          "expected_value": "DIRECT DEPOSIT Bluewater Solutions LLC PAYROLL, DIRECT DEPOSIT Bluewater Solutions LLC PAYROLL, DIRECT DEPOSIT Bluewater Solutions LLC BONUS, DEBIT CARD PURCHASE Giant Food #6207 Baltimore MD, RENT PAYMENT Greenfield Apartments, ONLINE TRANSFER Alex M. Thompson Savings"
+        },
+        "transaction_details.deposits": {
+          "expected_value": "1375.00, 1375.00, 360.00, 0.00, 0.00, 0.00"
+        },
+        "transaction_details.withdrawals": {
+          "expected_value": "0.00, 0.00, 0.00, 1402.61, 765.06, 382.53"
+        },
+        "transaction_details.balance": {
+          "expected_value": "2600.00, 3975.00, 4335.60, 2932.39, 2167.33, 1784.80"
+        }
+      }
+    }
+  },
+  "expected_document_class": "Bank-Statement",
+  "notes": {
+    "account_number": "Image shows 8 masking asterisks before the last 4 digits (\"********5342\"). BDA matched this exactly; LLM's OCR read only 7 asterisks.",
+    "transaction_details.description": "Each transaction cell has a bold header line plus a detail sub-line (e.g. \"DIRECT DEPOSIT\" + \"Bluewater Solutions LLC PAYROLL\"); this fixture combines both lines as the fuller/more complete answer. LLM only captured the header line for each row.",
+    "transaction_details.deposits": "LLM's last value (382.53) is wrong - that's the Online Transfer row's withdrawal amount, not a deposit (the row has $0.00 in the deposits column, per the image).",
+    "transaction_details.withdrawals": "Not extracted by either method for this document, despite being a defined schema field - included here as a known gap, not because either extractor got it right.",
+    "transaction_details.date": "Printed as MM/DD/YYYY ('08/06/2026', etc.); normalized to ISO 8601 (YYYY-MM-DD) here, consistent with statement_start_date/statement_end_date and every other date field in this schema. BDA's blueprint (AWS-managed, not ours) instructs it to always return MM/DD/YYYY for this field. Note extraction-compare's loose-match normalizer only handles a single date value, not a comma-joined list, so BDA will show as a hard miss here rather than a loose match, unlike the single-value date fields."
+  }
+}

@@ -91,6 +91,7 @@ async def upload_document(
     ai_consent_flag: AiConsentFlag = True,
     is_demo: bool = False,
     is_test_run: bool = False,
+    is_compare: bool = False,
     upload_source: UploadSourceField = None,
 ) -> _UploadResult:
     """Shared upload logic. Returns an _UploadResult with job_id, status, and message."""
@@ -148,7 +149,10 @@ async def upload_document(
             if is_demo
             else SystemDefaults.TEST_RUN_DOCUMENT_TTL_DAYS
             if is_test_run
+            else SystemDefaults.COMPARE_DOCUMENT_TTL_DAYS
+            if is_compare
             else None,
+            is_compare=is_compare,
         )
         await asyncio.to_thread(insert_minimal_ddb_record, record)
     except Exception:

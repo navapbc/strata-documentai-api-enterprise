@@ -7,3 +7,4 @@ class FeatureFlags:
     SKIP_BDA_IF_UNCLASSIFIED = "skip-bda-if-unclassified"
     ENABLE_PRECLASSIFICATION_BLUEPRINT_MATCHING = "enable-preclassification-blueprint-matching"
     FLAG_MULTIPLE_DOCUMENTS_IN_MULTIPAGE = "flag-multiple-documents-in-multipage"
+    OCR_MAPPING_ENABLED = "ocr-mapping-enabled"

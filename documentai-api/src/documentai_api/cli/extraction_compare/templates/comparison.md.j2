@@ -1,0 +1,50 @@
+# {{ filename }}
+
+_{{ run_stamp_prefix }}: {{ run_ts }}_
+
+{% if durations %}
+## Durations
+
+{% for method, line in durations %}
+- {{ line }}
+{% endfor %}
+
+{% endif %}
+{% if cost %}
+## Cost
+
+_By Service_
+
+{% for model_id, entry in cost_by_service %}
+- {{ model_id }}: ${{ "%.8f"|format(entry.amount) }}{% if entry.tokens %} ({{ entry.tokens.input }} in / {{ entry.tokens.output }} out){% else %} ({{ pages }} page(s)){% endif %}
+
+{% endfor %}
+- **total: ${{ "%.8f"|format(cost_total) }}**
+{% if cost_by_reason %}
+
+_By Extraction Method_
+
+- shared (preclassification): ${{ "%.8f"|format(cost_by_reason.shared) }}
+- ocr-mapping extraction: ${{ "%.8f"|format(cost_by_reason.ocr_mapping) }}
+- primary ({{ primary_method }}): ${{ "%.8f"|format(cost_by_reason.primary) }}
+- **total: ${{ "%.8f"|format(cost_total) }}**
+{% endif %}
+
+{% endif %}
+{% if accuracy %}
+## Accuracy
+
+_By Extracted Data_
+
+- {{ primary_method|upper }}: {{ accuracy.primary.exact }} equivalent match, {{ accuracy.primary.loose }} close, {{ accuracy.primary.miss }} {{ "miss" if accuracy.primary.miss == "1" else "misses" }}
+- OCR Mapping: {{ accuracy.llm.exact }} equivalent match, {{ accuracy.llm.loose }} close, {{ accuracy.llm.miss }} {{ "miss" if accuracy.llm.miss == "1" else "misses" }}
+
+_By Bounding Box_
+
+- {{ primary_method|upper }}: {{ accuracy.primary_geo.exact ~ " exact, " ~ accuracy.primary_geo.miss ~ " miss" if accuracy.primary_geo else "-" }}
+- OCR Mapping: {{ accuracy.llm_geo.exact ~ " exact, " ~ accuracy.llm_geo.miss ~ " miss" if accuracy.llm_geo else "-" }}
+
+{% endif %}
+## Field Comparison
+
+{{ field_table }}

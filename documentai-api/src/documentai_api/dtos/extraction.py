@@ -15,10 +15,11 @@ class ExtractionResult:
 
     document_type: str
     body: bytes | None = None
+    output_uri: str | None = None
     field_confidence_scores: list[dict[str, float]] = field(default_factory=list)
-    extract_started_at: datetime | None = None
-    extract_completed_at: datetime | None = None
-    extract_time: Decimal | None = None
+    processing_started_at: datetime | None = None
+    processing_completed_at: datetime | None = None
+    processing_duration_seconds: Decimal | None = None
     field_empty_list: list[str] = field(default_factory=list)
     field_missing_geometry_list: list[str] = field(default_factory=list)
     # BDA-only

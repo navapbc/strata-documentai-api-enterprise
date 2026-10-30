@@ -7,6 +7,10 @@ sequenceDiagram
     participant EB as EventBridge
     participant DP as Document Processor
     participant BDA
+    participant Textract
+    participant OCRQ as OCR Mapping Queue
+    participant OCRP as OCR Mapping Processor
+    participant Bedrock as Bedrock (LLM)
     participant S3out as S3 (output)
     participant RP as Result Processor
     participant SQS
@@ -21,6 +25,17 @@ sequenceDiagram
     S3in->>EB: ObjectCreated
     EB->>DP: invoke
     DP->>BDA: InvokeDataAutomationAsync
+
+    par OCR / LLM mapping path (feature flag or is_compare)
+        DP->>Textract: AnalyzeDocument (layout)
+        Textract-->>DP: OCR blocks
+        DP->>OCRQ: enqueue OCR blocks
+        OCRQ->>OCRP: invoke
+        OCRP->>Bedrock: map fields via LLM
+        Bedrock-->>OCRP: extracted fields
+        OCRP->>DDB: write ocr-mapping result
+    end
+
     BDA->>S3out: write result
     S3out->>EB: ObjectCreated
     EB->>RP: invoke

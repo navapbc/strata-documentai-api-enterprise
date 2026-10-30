@@ -1,0 +1,29 @@
+# DocumentAI - Extraction Comparison
+
+_{{ run_stamp_prefix }}: {{ run_ts }} - {{ doc_count }} documents_
+
+{% if llm_costs %}
+## Cost by Model and Service
+
+_Excludes the primary-path fee (BDA or Textract AnalyzeID); see the tables below._
+
+{% for label, amount in llm_costs %}
+- {{ label }}: ${{ "%.6f"|format(amount) }}
+{% endfor %}
+- **subtotal: ${{ "%.6f"|format(llm_cost_subtotal) }}**
+
+{% endif %}
+{% if cost_sections %}
+## Extraction Comparison
+
+{% for section in cost_sections %}
+### {{ section.primary_label }} vs. Textract OCR / LLM Mapping
+
+{{ section.chart_table }}
+{% endfor %}
+{% endif %}
+{% if doc_rows %}
+## Document Summary
+
+{{ doc_summary_table }}
+{% endif %}

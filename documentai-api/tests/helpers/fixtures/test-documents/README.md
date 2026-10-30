@@ -24,7 +24,7 @@ demonstration workflows.
 `expected.json` keys every fixture by its path relative to this folder (e.g.
 `unhappy-path/synthetic-corrupted-scan.jpg`), and
 `tests/e2e/test_app_documents.py` automatically parametrizes a test for every
-entry with `"e2e_enabled": true` - no code changes are needed to add more
+entry with `"e2eEnabled": true` - no code changes are needed to add more
 documents to any of these folders.
 
 ## Why synthetic documents are in this public repository

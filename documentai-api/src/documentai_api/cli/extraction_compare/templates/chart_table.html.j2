@@ -1,0 +1,11 @@
+<table style="width:100%">
+{% for slug, primary_label, stats in rows %}
+<tr>
+<td style="text-align:center;"><img src="charts/extraction_compare_{{ slug }}_chart.png" alt="{{ primary_label }} vs LLM" style="max-width:400px;"/></td>
+</tr>
+<tr>
+<td>{{ stats }}</td>
+</tr>
+{% endfor %}
+</table>
+
