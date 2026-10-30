@@ -332,8 +332,8 @@ name = "awslambdaric"
 version = "4.2.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "simplejson" },
-    { name = "snapshot-restore-py" },
+    { name = "simplejson", marker = "python_full_version != '3.12.*' or sys_platform != 'emscripten'" },
+    { name = "snapshot-restore-py", marker = "python_full_version != '3.12.*' or sys_platform != 'emscripten'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/75/af/4e4e9359f856a5ef001d3084455bcfd2f939217f6c4be7e5584e8687080a/awslambdaric-4.2.3.tar.gz", hash = "sha256:b0e687a1b6a0ef7169c19bde57e7b63086b9e66f8a461fb8c38db6810436cb23", size = 4507186, upload-time = "2026-10-27T16:37:41.851Z" }
 wheels = [
@@ -1056,6 +1056,7 @@ dependencies = [
 
 [package.optional-dependencies]
 cli-geo = [
+    { name = "jinja2" },
     { name = "pypdfium2" },
     { name = "pytesseract" },
 ]
@@ -1088,6 +1089,7 @@ requires-dist = [
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.24.0" },
     { name = "import-linter", marker = "extra == 'dev'", specifier = ">=2.0" },
     { name = "instructor", specifier = ">=1.0.0" },
+    { name = "jinja2", marker = "extra == 'cli-geo'", specifier = ">=3.1.0" },
     { name = "mangum", specifier = ">=0.19.0" },
     { name = "moto", extras = ["all"], marker = "extra == 'dev'", specifier = ">=4.2.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.20.0" },

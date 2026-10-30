@@ -30,6 +30,7 @@ dependencies = [
 
 [project.optional-dependencies]
 cli-geo = [
+  "jinja2>=3.1.0",
   "pytesseract>=0.3.10",
   "pypdfium2>=4.0.0",
 ]
@@ -66,7 +67,8 @@ preclassify = "documentai_api.cli.preclassify:app"
 generate-categories = "documentai_api.cli.generate_categories:app"
 generate-env-names = "documentai_api.cli.generate_env_names:app"
 generate-geometry-candidates = "documentai_api.cli.generate_geometry_candidates:app"
-run-extraction-compare = "documentai_api.cli.run_extraction_compare:app"
+run-extraction-compare-file = "documentai_api.cli.run_extraction_compare:file_app"
+run-extraction-compare-fixtures = "documentai_api.cli.run_extraction_compare:fixtures_app"
 build-aws-icon-pack = "documentai_api.cli.build_aws_icon_pack:app"
 
 [tool.mypy]

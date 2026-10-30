@@ -1,9 +1,0 @@
-FROM python:3.12-slim
-
-RUN pip install --no-cache-dir vl-convert-python==1.7.0
-
-COPY tests/e2e/extraction_compare_charts/render_charts.py /render_charts.py
-
-WORKDIR /data
-
-ENTRYPOINT ["python", "/render_charts.py"]

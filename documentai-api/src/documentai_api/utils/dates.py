@@ -70,6 +70,11 @@ def get_today_iso() -> str:
     return datetime.now(UTC).date().isoformat()
 
 
+def get_utc_str(dt: datetime) -> str:
+    """Return a datetime as a human-readable UTC string (YYYY-MM-DD HH:MM UTC)."""
+    return dt.astimezone(UTC).strftime("%Y-%m-%d %H:%M UTC")
+
+
 def get_month_prefix(date: str) -> str:
     """Return the year-month portion of an ISO date string (YYYY-MM)."""
     return date[:7]

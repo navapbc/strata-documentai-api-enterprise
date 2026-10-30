@@ -41,7 +41,7 @@
 	test-smoke \
 	test-e2e \
 	test-e2e-routing \
-	test-extraction-compare \
+	run-extraction-compare-fixtures \
 	regen-extraction-compare-summary \
 	extraction-compare-charts \
 	extraction-compare-pdf \
@@ -209,34 +209,32 @@ test-e2e-routing: .env.e2e
 test-e2e-routing: ## Run e2e routing tests
 	@set -a && . ./.env.e2e && set +a && uv run --frozen pytest tests/e2e -m e2e_routing $(args)
 
-test-extraction-compare: .env.e2e
-test-extraction-compare: ## Run the BDA vs LLM extraction-compare e2e test (clears old results unless args are given)
-# A full run starts from an empty results dir; with args (e.g. -k) only the selected
-# documents' results are replaced and the rest are kept.
-	@[ -n "$(args)" ] || rm -rf tests/e2e/results/extraction_compare/*
-	@set -a && . ./.env.e2e && set +a && uv run --frozen pytest tests/e2e/test_extraction_compare.py -m e2e -n 4 $(args); $(MAKE) extraction-compare-charts
+run-extraction-compare-fixtures: .env.e2e
+run-extraction-compare-fixtures: ## Run BDA vs LLM extraction compare for all fixture documents
+	@rm -rf tests/results/extraction_compare/*
+	@set -a && . ./.env.e2e && set +a && uv run --frozen run-extraction-compare-fixtures $(args); $(MAKE) extraction-compare-charts
 
 regen-extraction-compare-summary: ## Regenerate per-doc and summary markdown from existing .data.json sidecars
-	uv run --frozen python3 -c "from pathlib import Path; from tests.e2e.test_extraction_compare import regen_comparison_md, write_extraction_compare_summary; p = Path('tests/e2e/results/extraction_compare'); regen_comparison_md(p); write_extraction_compare_summary(p)"
+	uv run --frozen python3 -c "from pathlib import Path; from documentai_api.cli.extraction_compare import regen_comparison_md, write_extraction_compare_summary; p = Path('tests/results/extraction_compare'); e = Path('tests/helpers/fixtures/test-documents/happy-path/expected'); regen_comparison_md(p, e); write_extraction_compare_summary(p, e)"
 	$(MAKE) extraction-compare-charts
 
 extraction-compare-charts: ## Render extraction compare .vl.json specs to PNG charts
 	docker build -q \
-		-f tests/e2e/extraction_compare_charts/Dockerfile.altair \
+		-f tests/e2e/extraction_compare/Dockerfile.altair \
 		-t extraction-compare-charts \
 		. > /dev/null
 	docker run --rm \
-		-v $(PWD)/tests/e2e/results/extraction_compare/charts:/data \
+		-v $(PWD)/tests/results/extraction_compare/charts:/data \
 		extraction-compare-charts
 
 extraction-compare-pdf: ## Render extraction compare results to a single PDF
 	docker build -q \
-		-f tests/e2e/extraction_compare_charts/Dockerfile.weasyprint \
+		-f tests/e2e/extraction_compare/Dockerfile.weasyprint \
 		-t extraction-compare-pdf \
 		. > /dev/null
 	docker run --rm \
-		-v $(PWD)/tests/e2e/results/extraction_compare:/data \
-		-v $(PWD)/tests/e2e/extraction_compare_charts/print.css:/render_pdf.css:ro \
+		-v $(PWD)/tests/results/extraction_compare:/data \
+		-v $(PWD)/tests/e2e/extraction_compare/print.css:/render_pdf.css:ro \
 		extraction-compare-pdf
 
 generate-geometry-candidates: _require-tesseract ## Generate ground-truth geometry candidates for fixture documents

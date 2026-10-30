@@ -5,7 +5,6 @@ import threading
 import time
 import warnings
 from collections.abc import Generator
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -244,29 +243,6 @@ def clear_env_vars():
     """
     with patch.dict(os.environ, {}, clear=True):
         yield
-
-
-######################
-# Extraction compare #
-######################
-
-_COMPARE_RESULTS_DIR = Path(__file__).parent / "e2e" / "results" / "extraction_compare"
-_COMPARE_TEST_FILE = Path(__file__).parent / "e2e" / "test_extraction_compare.py"
-
-
-def pytest_collection_finish(session):
-    session.config._extraction_compare_controller = any(
-        Path(item.fspath) == _COMPARE_TEST_FILE for item in session.items
-    )
-
-
-def pytest_sessionfinish(session, exitstatus):
-    if not getattr(session.config, "_extraction_compare_controller", False):
-        return
-
-    from tests.e2e.test_extraction_compare import write_extraction_compare_summary
-
-    write_extraction_compare_summary(_COMPARE_RESULTS_DIR)
 
 
 ######################

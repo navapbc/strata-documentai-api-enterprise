@@ -1,15 +1,17 @@
 """Shared client for calling /v1/admin/extraction-compare and formatting field results.
 
-Used by both the extraction-compare e2e test (tests/e2e/test_extraction_compare.py) and the
-run-extraction-compare CLI (documentai_api.cli.run_extraction_compare) so the submit/poll and
-console-display logic isn't duplicated between the two.
+Used by the run-extraction-compare CLI (documentai_api.cli.run_extraction_compare).
 """
 
 import difflib
 import re
+import secrets
 import time
+from collections.abc import Generator
+from contextlib import contextmanager, suppress
 from pathlib import Path
 
+import boto3
 import requests
 
 from documentai_api.models.extraction_compare import CompareFieldResult, CompareResponse
@@ -27,6 +29,44 @@ APPROX_SIMILARITY_THRESHOLD = 0.8
 
 class ExtractionCompareTimeoutError(Exception):
     """Raised when a compare job doesn't complete within the poll timeout."""
+
+
+@contextmanager
+def cognito_jwt(
+    user_pool_id: str,
+    client_id: str,
+    region: str = "us-east-1",
+) -> Generator[str, None, None]:
+    """Create a temporary super-admin Cognito user, yield its JWT, then delete the user."""
+    cognito = boto3.client("cognito-idp", region_name=region)
+    username = f"e2e-admin-{secrets.token_hex(4)}@example.com"
+    password = secrets.token_urlsafe(16) + "!1Aa"
+
+    cognito.admin_create_user(
+        UserPoolId=user_pool_id,
+        Username=username,
+        UserAttributes=[
+            {"Name": "email", "Value": username},
+            {"Name": "email_verified", "Value": "true"},
+        ],
+        MessageAction="SUPPRESS",
+    )
+    try:
+        cognito.admin_set_user_password(
+            UserPoolId=user_pool_id, Username=username, Password=password, Permanent=True
+        )
+        cognito.admin_add_user_to_group(
+            UserPoolId=user_pool_id, Username=username, GroupName="super-admin"
+        )
+        resp = cognito.initiate_auth(
+            AuthFlow="USER_PASSWORD_AUTH",
+            AuthParameters={"USERNAME": username, "PASSWORD": password},
+            ClientId=client_id,
+        )
+        yield resp["AuthenticationResult"]["IdToken"]
+    finally:
+        with suppress(Exception):
+            cognito.admin_delete_user(UserPoolId=user_pool_id, Username=username)
 
 
 def submit_and_poll(

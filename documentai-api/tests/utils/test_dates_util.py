@@ -1,6 +1,7 @@
 import pytest
 
 from documentai_api.utils.dates import (
+    get_utc_str,
     iso_to_str_variants,
     validate_date_range,
     validate_yyyymmdd_format,
@@ -108,3 +109,19 @@ def test_date_ocr_variants(iso, expected_subset):
 
 def test_date_ocr_variants_invalid():
     assert iso_to_str_variants("not-a-date") == ["not-a-date"]
+
+
+def test_get_utc_str_renders_to_the_minute() -> None:
+    from datetime import UTC, datetime
+
+    completed = datetime(2026, 10, 28, 15, 13, 22, 123456, tzinfo=UTC)
+
+    assert get_utc_str(completed) == "2026-10-28 15:13 UTC"
+
+
+def test_get_utc_str_converts_other_timezones_to_utc() -> None:
+    from datetime import datetime, timedelta, timezone
+
+    completed = datetime(2026, 10, 28, 11, 13, tzinfo=timezone(timedelta(hours=-4)))
+
+    assert get_utc_str(completed) == "2026-10-28 15:13 UTC"
