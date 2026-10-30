@@ -421,39 +421,6 @@ module "identity_provider" {
   google_allowed_domains         = var.google_allowed_domains
 }
 
-# --- Extract Compare (dev-only Cognito user for e2e compare tests) ---
-
-resource "random_password" "extract_compare_admin" {
-  length           = 24
-  special          = true
-  override_special = "!@#$%^&*()_+-=" # Cognito-safe subset
-}
-
-resource "aws_ssm_parameter" "extract_compare_admin_password" {
-  name  = "${local.ssm_prefix}/extract-compare-admin-password"
-  type  = "SecureString"
-  value = random_password.extract_compare_admin.result
-}
-
-resource "aws_cognito_user" "extract_compare_admin" {
-  user_pool_id = module.identity_provider.user_pool_id
-  username     = "extract-compare-admin@internal.invalid"
-
-  attributes = {
-    email          = "extract-compare-admin@internal.invalid"
-    email_verified = "true"
-  }
-
-  message_action = "SUPPRESS"
-  password       = random_password.extract_compare_admin.result
-}
-
-resource "aws_cognito_user_in_group" "extract_compare_admin_super_admin" {
-  user_pool_id = module.identity_provider.user_pool_id
-  group_name   = "super-admin"
-  username     = aws_cognito_user.extract_compare_admin.username
-}
-
 # --- Secrets ---
 
 module "secrets" {
