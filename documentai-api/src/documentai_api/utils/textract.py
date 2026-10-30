@@ -1,6 +1,7 @@
 """Utilities for Textract AnalyzeID: parsing and field extraction helpers."""
 
 import json
+from collections.abc import Mapping
 from typing import Any
 
 from opentelemetry import trace
@@ -13,7 +14,7 @@ tracer = trace.get_tracer(__name__)
 
 
 def extract_fields_from_analyze_id(
-    response: dict[str, Any], field_map: dict[str, str]
+    response: Mapping[str, Any], field_map: dict[str, str]
 ) -> dict[str, Any]:
     """Extract structured fields from Textract AnalyzeID response using a field map.
 

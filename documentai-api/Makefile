@@ -282,8 +282,13 @@ env-from-aws: _require-jq ## Append real dev AWS resource identifiers to .env fo
 # any object landing in the real input bucket, regardless of who uploaded it.
 # So a document posted to the local API *does* get fully processed, as long as
 # .env points at real dev resources instead of the documentai-*-local placeholders.
+# BDA_PROJECT_ID_* is only on the document-processor Lambda (the API Lambda's env drops
+# it to stay under the 4KB limit), so read both; the API values win on duplicates.
 	@test -f .env || (echo ".env not found - run 'make setup-env' first" && exit 1)
-	@$(get_api_lambda_env_vars) | grep -E "$(ENV_FROM_AWS_KEEP)" >> .env
+	@{ \
+	  $(get_worker_lambda_env_vars); \
+	  $(get_api_lambda_env_vars); \
+	} | grep -E "$(ENV_FROM_AWS_KEEP)" >> .env
 	@tail -r .env | awk -F'=' '!seen[$$1]++' | tail -r > .env.clean && mv .env.clean .env
 	@echo "Appended real dev AWS resource identifiers to .env"
 

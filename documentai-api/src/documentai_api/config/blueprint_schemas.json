@@ -1962,7 +1962,7 @@
         "type": "string"
       },
       {
-        "description": "The dates on which contributions were made to the IRA.",
+        "description": "The dates on which contributions were made to the IRA. YYYY-MM-DD format.",
         "name": "contribution_dates",
         "type": "string"
       },
@@ -1992,7 +1992,7 @@
         "type": "string"
       },
       {
-        "description": "The dates on which distributions or withdrawals were made from the IRA, if any.",
+        "description": "The dates on which distributions or withdrawals were made from the IRA, if any. YYYY-MM-DD format.",
         "name": "distribution_dates",
         "type": "string"
       }
@@ -2312,14 +2312,14 @@
     "document_type": "Miscellaneous-Assets-Statement",
     "fields": [
       {
-        "description": "The date of the statement or appraisal. YYYY-MM-DD format.",
-        "name": "statement_date",
-        "type": "string"
-      },
-      {
         "description": "The description of each individual itemized asset, such as its name, brand, model, or identifying details. Return one entry per asset item listed, in the same order as asset_categories and estimated_values.",
         "name": "asset_descriptions",
         "type": "array"
+      },
+      {
+        "description": "The date of the statement or appraisal. YYYY-MM-DD format.",
+        "name": "statement_date",
+        "type": "string"
       },
       {
         "description": "The estimated or appraised value of each individual asset item. Return one entry per asset item listed, in the same order as asset_descriptions and asset_categories.",
@@ -3440,14 +3440,14 @@
         "type": "string"
       },
       {
-        "description": "The total amount distributed from the trust during the statement period, if any.",
-        "name": "distributions_during_period",
-        "type": "number"
-      },
-      {
         "description": "The types of assets held within the trust, such as cash, stocks, bonds, mutual funds, or real estate, as listed on the statement. Return one entry per asset type shown.",
         "name": "asset_types",
         "type": "array"
+      },
+      {
+        "description": "The total amount distributed from the trust during the statement period, if any.",
+        "name": "distributions_during_period",
+        "type": "number"
       }
     ]
   },
