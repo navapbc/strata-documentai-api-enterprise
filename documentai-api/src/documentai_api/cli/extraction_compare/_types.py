@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import TypedDict
 
@@ -25,10 +25,24 @@ class _AccuracyComparison:
     llm_geo: _GeoDisplay | None
 
 
+class _TokenCounts(TypedDict):
+    input: int
+    output: int
+
+
+@dataclass
+class _CountsPerDoc:
+    """Per-document match counts for one kind of extraction, collected across a run."""
+
+    exact: list[int] = field(default_factory=list)
+    approx: list[int] = field(default_factory=list)
+    miss: list[int] = field(default_factory=list)
+
+
 @dataclass
 class _CostEntry:
     amount: float
-    tokens: dict[str, int] | None  # {"input": int, "output": int}
+    tokens: _TokenCounts | None
 
 
 @dataclass
@@ -91,24 +105,18 @@ class _ResultData(StrEnum):
     EXACT = "exact"
     APPROX = "approx"
     MISS = "miss"
-    PRIMARY_EXACT = "primary_exact"
-    PRIMARY_APPROX = "primary_approx"
-    PRIMARY_MISS = "primary_miss"
-    LLM_EXACT = "llm_exact"
-    LLM_APPROX = "llm_approx"
-    LLM_MISS = "llm_miss"
     PRIMARY_GEO = "primary_geo"
     LLM_GEO = "llm_geo"
-    PRIMARY_GEO_EXACT = "primary_geo_exact"
-    PRIMARY_GEO_APPROX = "primary_geo_approx"
-    PRIMARY_GEO_MISS = "primary_geo_miss"
-    LLM_GEO_EXACT = "llm_geo_exact"
-    LLM_GEO_APPROX = "llm_geo_approx"
-    LLM_GEO_MISS = "llm_geo_miss"
 
 
 _RUN_STAMP_PREFIX = "Last run"
 
-_DocSummaryRow = tuple[
-    str, str, dict[str, float | None], float, dict[str, float], dict[str, dict[str, int]]
-]
+
+@dataclass
+class _DocSummaryRow:
+    filename: str
+    primary_method: str
+    durations: dict[str, float | None]
+    cost: float
+    cost_by_reason: dict[str, float]
+    accuracy: dict[str, dict[str, int]]

@@ -1,7 +1,7 @@
 """CLI tools for extraction compare.
 
-run-extraction-compare-file     — submit a single ad-hoc document and print results
-run-extraction-compare-fixtures — run all compareEnabled fixture documents and write reports
+run-extraction-compare-file     - submit a single ad-hoc document and print results
+run-extraction-compare-fixtures - run all compareEnabled fixture documents and write reports
 """
 
 import asyncio

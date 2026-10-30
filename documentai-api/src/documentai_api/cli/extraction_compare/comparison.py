@@ -31,6 +31,7 @@ from ._types import (
     _CostByReason,
     _CostEntry,
     _ResultData,
+    _TokenCounts,
 )
 
 
@@ -78,10 +79,9 @@ def _build_comparison_ctx(
                     model_id,
                     _CostEntry(
                         amount=entry_cost,
-                        tokens={
-                            "input": t.get("inputTokens", 0),
-                            "output": t.get("outputTokens", 0),
-                        }
+                        tokens=_TokenCounts(
+                            input=t.get("inputTokens", 0), output=t.get("outputTokens", 0)
+                        )
                         if t
                         else None,
                     ),
