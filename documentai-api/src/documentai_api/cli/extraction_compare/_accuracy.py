@@ -1,3 +1,4 @@
+from collections import Counter
 from typing import Any
 
 from documentai_api.models.extraction_compare import CompareFieldResult
@@ -71,7 +72,9 @@ def _fmt_geo_pct(geo_counts: str) -> str:
     """Append percentage to a 'n/total' geo counts string, e.g. '141/238 (59%)'."""
     if geo_counts == "-" or "/" not in geo_counts:
         return geo_counts
+
     exact_str, total_str = geo_counts.split("/", 1)
+
     try:
         exact, total = int(exact_str), int(total_str)
         return f"{exact}/{total} ({exact / total:.0%})" if total else geo_counts
@@ -101,8 +104,6 @@ def _compute_accuracy(
     expected_geo: dict[str, list[str]] | None = None,
 ) -> dict[str, dict[str, int]]:
     """Count exact/approx/non-match for primary and llm against expected fields and geometry."""
-    from collections import Counter
-
     if expected is None:
         return {}
 

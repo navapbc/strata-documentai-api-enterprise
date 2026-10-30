@@ -74,3 +74,21 @@ def test_times_out_while_still_pending(mocker, doc, no_sleep):
 
     with pytest.raises(client.ExtractionCompareTimeoutError):
         client.submit_and_poll(_BASE, doc, "jwt", timeout=10)
+
+
+def test_match_icon_no_ground_truth_returns_no_expected():
+    assert client.match_icon(client.NO_GROUND_TRUTH, "some value") == client.ICON_NO_EXPECTED
+
+
+def test_match_icon_both_empty_returns_no_expected():
+    assert (
+        client.match_icon(client.EXPECTED_EMPTY, client.EXPECTED_EMPTY) == client.ICON_NO_EXPECTED
+    )
+
+
+def test_match_icon_exact_match():
+    assert client.match_icon("foo", "foo") == client.ICON_EXACT
+
+
+def test_match_icon_miss_when_received_empty():
+    assert client.match_icon("foo", client.EXPECTED_EMPTY) == client.ICON_MISS

@@ -153,16 +153,16 @@ def normalize_value(v: str) -> str:
 
 def match_icon(expected: str, received: str, tolerance: float = 0.0, field_name: str = "") -> str:
     """Return an icon indicating exact, approximate, or no match. Tolerance applies to numeric geo coordinates."""
-    if expected in ("—", NO_GROUND_TRUTH):
+    if expected == NO_GROUND_TRUTH:
         return ICON_NO_EXPECTED
 
-    if expected in ("—", EXPECTED_EMPTY) and received in ("—", EXPECTED_EMPTY):
+    if expected == EXPECTED_EMPTY and received == EXPECTED_EMPTY:
         return ICON_NO_EXPECTED
 
-    if received in ("—", EXPECTED_EMPTY):
+    if received == EXPECTED_EMPTY:
         return ICON_MISS
 
-    if expected in ("—", EXPECTED_EMPTY):
+    if expected == EXPECTED_EMPTY:
         return ICON_MISS
 
     if expected == received:
