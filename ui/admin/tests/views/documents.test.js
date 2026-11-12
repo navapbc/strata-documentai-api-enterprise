@@ -71,6 +71,15 @@ describe("documents view", () => {
       PRESENTATION_MODE_KEY: "presentation_mode",
     }));
 
+    // jsdom has no ResizeObserver; the PDF preview observes its panel for refit.
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe() {}
+        disconnect() {}
+      },
+    );
+
     vi.doMock("pdfjs-dist", () => ({
       GlobalWorkerOptions: { workerSrc: "" },
       getDocument: () => ({
@@ -94,6 +103,8 @@ describe("documents view", () => {
   afterEach(() => {
     document.body.innerHTML = "";
     sessionStorage.clear();
+    // ResizeObserver stays stubbed: the un-awaited PDF render can finish after
+    // teardown, and it still needs the stub (re-applied in beforeEach).
   });
 
   it("mounts with status filter dropdown", () => {
