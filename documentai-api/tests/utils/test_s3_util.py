@@ -175,3 +175,169 @@ def test_write_extraction_output_raises_without_tenant(monkeypatch, mocker):
 )
 def test_sanitize_for_s3_key(value, expected):
     assert s3_util.sanitize_for_s3_key(value) == expected
+
+
+# === get_lifecycle_expiration_days ===
+
+
+def test_lifecycle_returns_none_when_no_rules_match(mocker):
+    mocker.patch(
+        "documentai_api.utils.s3.s3_service.get_bucket_lifecycle_configuration",
+        return_value={"Rules": []},
+    )
+    assert s3_util.get_lifecycle_expiration_days("test-bucket", "input/tenant/file.pdf") is None
+
+
+def test_lifecycle_matches_prefix(mocker):
+    mocker.patch(
+        "documentai_api.utils.s3.s3_service.get_bucket_lifecycle_configuration",
+        return_value={
+            "Rules": [
+                {"Status": "Enabled", "Filter": {"Prefix": "input/"}, "Expiration": {"Days": 30}},
+            ]
+        },
+    )
+    assert s3_util.get_lifecycle_expiration_days("test-bucket", "input/tenant/file.pdf") == 30
+
+
+def test_lifecycle_longest_prefix_wins(mocker):
+    mocker.patch(
+        "documentai_api.utils.s3.s3_service.get_bucket_lifecycle_configuration",
+        return_value={
+            "Rules": [
+                {"Status": "Enabled", "Filter": {"Prefix": ""}, "Expiration": {"Days": 90}},
+                {"Status": "Enabled", "Filter": {"Prefix": "input/"}, "Expiration": {"Days": 30}},
+            ]
+        },
+    )
+    assert s3_util.get_lifecycle_expiration_days("test-bucket", "input/tenant/file.pdf") == 30
+
+
+def test_lifecycle_skips_and_filter(mocker):
+    mocker.patch(
+        "documentai_api.utils.s3.s3_service.get_bucket_lifecycle_configuration",
+        return_value={
+            "Rules": [
+                {
+                    "Status": "Enabled",
+                    "Filter": {"And": {"Prefix": "input/", "Tags": [{"Key": "k", "Value": "v"}]}},
+                    "Expiration": {"Days": 30},
+                },
+            ]
+        },
+    )
+    assert s3_util.get_lifecycle_expiration_days("test-bucket", "input/tenant/file.pdf") is None
+
+
+def test_lifecycle_skips_disabled_rules(mocker):
+    mocker.patch(
+        "documentai_api.utils.s3.s3_service.get_bucket_lifecycle_configuration",
+        return_value={
+            "Rules": [
+                {"Status": "Disabled", "Filter": {"Prefix": "input/"}, "Expiration": {"Days": 30}},
+            ]
+        },
+    )
+    assert s3_util.get_lifecycle_expiration_days("test-bucket", "input/tenant/file.pdf") is None
+
+
+def test_lifecycle_caches_on_failure(mocker):
+    mock_fetch = mocker.patch(
+        "documentai_api.utils.s3.s3_service.get_bucket_lifecycle_configuration",
+        side_effect=Exception("AccessDenied"),
+    )
+    s3_util.get_lifecycle_expiration_days("test-bucket", "input/file.pdf")
+    s3_util.get_lifecycle_expiration_days("test-bucket", "input/file.pdf")
+    mock_fetch.assert_called_once()
+
+
+def test_lifecycle_caches_rules(mocker):
+    mock_fetch = mocker.patch(
+        "documentai_api.utils.s3.s3_service.get_bucket_lifecycle_configuration",
+        return_value={
+            "Rules": [
+                {"Status": "Enabled", "Filter": {"Prefix": "input/"}, "Expiration": {"Days": 30}},
+            ]
+        },
+    )
+    s3_util.get_lifecycle_expiration_days("test-bucket", "input/a.pdf")
+    s3_util.get_lifecycle_expiration_days("test-bucket", "input/b.pdf")
+    mock_fetch.assert_called_once()
+
+
+# === assert_object_exists ===
+
+
+def test_assert_object_exists_passes_when_object_present(mocker):
+    mocker.patch("documentai_api.utils.s3.s3_service.head_object")
+    s3_util.assert_object_exists("test-bucket", "input/file.pdf")  # should not raise
+
+
+def test_assert_object_exists_raises_404_on_nosuchkey(mocker):
+    from botocore.exceptions import ClientError
+    from fastapi import HTTPException
+
+    mocker.patch(
+        "documentai_api.utils.s3.s3_service.head_object",
+        side_effect=ClientError(
+            {"Error": {"Code": "NoSuchKey", "Message": "Not Found"}}, "HeadObject"
+        ),
+    )
+    mocker.patch(
+        "documentai_api.utils.s3.s3_service.get_bucket_lifecycle_configuration",
+        return_value={"Rules": []},
+    )
+    with pytest.raises(HTTPException) as exc_info:
+        s3_util.assert_object_exists("test-bucket", "input/file.pdf")
+    assert exc_info.value.status_code == 404
+
+
+def test_assert_object_exists_raises_404_on_404_code(mocker):
+    from botocore.exceptions import ClientError
+    from fastapi import HTTPException
+
+    mocker.patch(
+        "documentai_api.utils.s3.s3_service.head_object",
+        side_effect=ClientError({"Error": {"Code": "404", "Message": "Not Found"}}, "HeadObject"),
+    )
+    mocker.patch(
+        "documentai_api.utils.s3.s3_service.get_bucket_lifecycle_configuration",
+        return_value={"Rules": []},
+    )
+    with pytest.raises(HTTPException) as exc_info:
+        s3_util.assert_object_exists("test-bucket", "input/file.pdf")
+    assert exc_info.value.status_code == 404
+
+
+def test_assert_object_exists_includes_lifecycle_days_in_message(mocker):
+    from botocore.exceptions import ClientError
+    from fastapi import HTTPException
+
+    mocker.patch(
+        "documentai_api.utils.s3.s3_service.head_object",
+        side_effect=ClientError(
+            {"Error": {"Code": "NoSuchKey", "Message": "Not Found"}}, "HeadObject"
+        ),
+    )
+    mocker.patch(
+        "documentai_api.utils.s3.s3_service.get_bucket_lifecycle_configuration",
+        return_value={
+            "Rules": [
+                {"Status": "Enabled", "Filter": {"Prefix": "input/"}, "Expiration": {"Days": 30}},
+            ]
+        },
+    )
+    with pytest.raises(HTTPException) as exc_info:
+        s3_util.assert_object_exists("test-bucket", "input/file.pdf")
+    assert "30 days" in exc_info.value.detail
+
+
+def test_assert_object_exists_reraises_non_404_client_error(mocker):
+    from botocore.exceptions import ClientError
+
+    mocker.patch(
+        "documentai_api.utils.s3.s3_service.head_object",
+        side_effect=ClientError({"Error": {"Code": "403", "Message": "Forbidden"}}, "HeadObject"),
+    )
+    with pytest.raises(ClientError):
+        s3_util.assert_object_exists("test-bucket", "input/file.pdf")

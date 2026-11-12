@@ -168,6 +168,7 @@ data "aws_iam_policy_document" "s3_api" {
       "s3:DeleteObject",
       "s3:ListBucket",
       "s3:GetBucketLocation",
+      "s3:GetLifecycleConfiguration",
     ]
     resources = [
       module.input_bucket.bucket_arn,

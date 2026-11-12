@@ -348,9 +348,10 @@ PREVIEW_URL = "/v1/admin/documents/{job_id}/preview"
 
 
 @pytest.fixture
-def seeded_docs_with_content_type(ddb_doc_metadata_table, monkeypatch):
+def seeded_docs_with_content_type(ddb_doc_metadata_table, monkeypatch, mocker):
     """Seed documents with content_type for preview tests."""
     monkeypatch.setenv(EnvVarNames.DOCUMENTAI_INPUT_LOCATION, "s3://test-bucket/input")
+    mocker.patch("documentai_api.utils.s3.s3_service.head_object")
 
     ddb_doc_metadata_table.put_item(
         Item={
@@ -457,6 +458,64 @@ def test_preview_tenant_admin_cannot_view_other(api_client, seeded_docs_with_con
     override_jwt(TENANT_ADMIN_CLAIMS)
     response = api_client.get(PREVIEW_URL.format(job_id="job-preview-other"))
     assert response.status_code == 404
+
+
+def test_preview_missing_s3_object_returns_404(api_client, seeded_docs_with_content_type, mocker):
+    from botocore.exceptions import ClientError
+
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    mocker.patch(
+        "documentai_api.utils.s3.s3_service.head_object",
+        side_effect=ClientError(
+            {"Error": {"Code": "NoSuchKey", "Message": "Not Found"}}, "HeadObject"
+        ),
+    )
+    mocker.patch(
+        "documentai_api.utils.s3.s3_service.get_bucket_lifecycle_configuration",
+        return_value={"Rules": []},
+    )
+    response = api_client.get(PREVIEW_URL.format(job_id="job-preview-pdf"))
+    assert response.status_code == 404
+    assert "no longer exists" in response.json()["detail"]
+
+
+def test_preview_missing_s3_object_includes_lifecycle_days(
+    api_client, seeded_docs_with_content_type, mocker
+):
+    from botocore.exceptions import ClientError
+
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    mocker.patch(
+        "documentai_api.utils.s3.s3_service.head_object",
+        side_effect=ClientError(
+            {"Error": {"Code": "NoSuchKey", "Message": "Not Found"}}, "HeadObject"
+        ),
+    )
+    mocker.patch(
+        "documentai_api.utils.s3.s3_service.get_bucket_lifecycle_configuration",
+        return_value={
+            "Rules": [
+                {"Status": "Enabled", "Filter": {"Prefix": "input/"}, "Expiration": {"Days": 30}},
+            ]
+        },
+    )
+    response = api_client.get(PREVIEW_URL.format(job_id="job-preview-pdf"))
+    assert response.status_code == 404
+    assert "30 days" in response.json()["detail"]
+
+
+def test_preview_s3_throttle_returns_500(api_client, seeded_docs_with_content_type, mocker):
+    from botocore.exceptions import ClientError
+
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    mocker.patch(
+        "documentai_api.utils.s3.s3_service.head_object",
+        side_effect=ClientError(
+            {"Error": {"Code": "SlowDown", "Message": "Slow Down"}}, "HeadObject"
+        ),
+    )
+    response = api_client.get(PREVIEW_URL.format(job_id="job-preview-pdf"))
+    assert response.status_code == 500
 
 
 def test_preview_logs_audit_event(api_client, seeded_docs_with_content_type, mocker):

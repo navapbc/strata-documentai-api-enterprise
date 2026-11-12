@@ -233,8 +233,9 @@ export function mount(root) {
         watermarkEmail: isPresentationMode() ? "user@example.com" : Session.getEmail() || "",
         onRotate: () => previewPanel._bboxRerender?.(),
       });
-    } catch {
-      previewPanel.innerHTML = '<p class="empty-state">Preview unavailable</p>';
+    } catch (e) {
+      // eslint-disable-next-line no-unsanitized/property -- e.message escaped with Helpers.esc()
+      previewPanel.innerHTML = `<p class="empty-state">${e.status === 404 ? Helpers.esc(e.message) : "Preview unavailable"}</p>`;
       previewPanel.classList.remove("watermarked", "watermark-block");
     }
   }

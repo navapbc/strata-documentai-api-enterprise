@@ -29,7 +29,7 @@ from documentai_api.utils.jwt_auth import assert_tenant_scope, tenant_scope
 from documentai_api.utils.pagination import decode_cursor, encode_cursor
 from documentai_api.utils.presentation_mask import mask_tenant
 from documentai_api.utils.response_builder import nest_fields
-from documentai_api.utils.s3 import get_bucket_and_key
+from documentai_api.utils.s3 import assert_object_exists, get_bucket_and_key
 
 logger = get_logger(__name__)
 
@@ -327,6 +327,8 @@ async def get_document_preview(
             )
 
         bucket, object_key = get_bucket_and_key(input_location, tenant_id, file_name)
+
+        assert_object_exists(bucket, object_key)
 
         url = s3_service.generate_presigned_get_url(
             bucket=bucket,

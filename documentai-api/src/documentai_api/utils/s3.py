@@ -3,9 +3,13 @@ import os
 from typing import Any
 from urllib.parse import quote, unquote_plus
 
+from botocore.exceptions import ClientError
+from fastapi import HTTPException
+
 from documentai_api.config.env import get_env_config
 from documentai_api.constants.processing import ExtractMethod
 from documentai_api.services import s3 as s3_service
+from documentai_api.utils.cache import get_cache
 
 
 def parse_s3_uri(s3_uri: str) -> tuple[str, str]:
@@ -146,6 +150,83 @@ def read_json_from_s3(s3_uri: str) -> Any:
     bucket, key = parse_s3_uri(s3_uri)
     body = s3_service.get_object(bucket, key)["Body"].read()
     return json.loads(body)
+
+
+def get_lifecycle_expiration_days(bucket: str, key: str) -> int | None:
+    """Return the expiration days from the most specific matching lifecycle rule for a key.
+
+    Matches rules by prefix (longest prefix wins). The full lifecycle config is
+    cached per bucket for 60 minutes so repeated lookups for different keys in
+    the same bucket don't each hit S3. On fetch failure, an empty list is cached
+    for 5 minutes to avoid hammering S3 (e.g. when the role lacks
+    s3:GetLifecycleConfiguration).
+    """
+    cache = get_cache()
+    cache_key = f"lifecycle:{bucket}"
+    rules: list[dict[str, Any]] | None = cache.get(cache_key)
+
+    if rules is None:
+        try:
+            config = s3_service.get_bucket_lifecycle_configuration(bucket)
+            rules = [
+                {
+                    "prefix": _lifecycle_prefix(r),
+                    "days": r.get("Expiration", {}).get("Days"),
+                }
+                for r in config.get("Rules", [])
+                if r.get("Status") == "Enabled"
+                and r.get("Expiration", {}).get("Days")
+                and _lifecycle_prefix(r) is not None
+            ]
+            cache.add(cache_key, rules, ttl_minutes=60)
+        except Exception:
+            cache.add(cache_key, [], ttl_minutes=5)
+            return None
+
+    rules_sorted = sorted(rules, key=lambda r: len(r["prefix"]), reverse=True)
+    for rule in rules_sorted:
+        if key.startswith(rule["prefix"]):
+            return int(rule["days"])
+
+    return None
+
+
+def _lifecycle_prefix(rule: dict[str, Any]) -> str | None:
+    """Extract the prefix string from a lifecycle rule, or None if the filter shape is unsupported.
+
+    Only simple Prefix filters are supported. Rules using And (tag/size filters)
+    are skipped to avoid silently matching the wrong rule.
+    """
+    f = rule.get("Filter", {})
+    if "And" in f:
+        return None
+    if "Prefix" in f:
+        return str(f["Prefix"])
+    # Legacy top-level Prefix field (pre-2016 lifecycle API)
+    return str(rule.get("Prefix", ""))
+
+
+def assert_object_exists(bucket: str, key: str) -> None:
+    """Check that an S3 object exists, raising HTTPException if not.
+
+    Raises 404 when the object is missing (NoSuchKey or 404 from head_object),
+    with a lifecycle-aware message if expiration days can be determined.
+    Re-raises ClientError for all other error codes so the caller's outer
+    handler can return a 5xx.
+    """
+    try:
+        s3_service.head_object(bucket, key)
+    except ClientError as e:
+        code = e.response.get("Error", {}).get("Code", "")
+        if code in ("404", "NoSuchKey"):
+            days = get_lifecycle_expiration_days(bucket, key)
+            detail = (
+                f"Preview file no longer exists - files are purged after {days} days"
+                if days
+                else "Preview file no longer exists"
+            )
+            raise HTTPException(status_code=404, detail=detail) from e
+        raise
 
 
 def sanitize_for_s3_metadata(value: str, max_length: int = 512) -> str:
