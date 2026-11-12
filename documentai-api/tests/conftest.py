@@ -21,6 +21,7 @@ from documentai_api.utils.auth import (
     get_user_context_with_fallback,
     verify_api_key,
 )
+from documentai_api.utils.cache import get_cache
 from documentai_api.utils.document_categories import _registered_categories
 from documentai_api.utils.jwt_auth import verify_jwt
 from documentai_api.utils.tenant_access import (
@@ -83,11 +84,13 @@ def clear_config_cache(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None,
     get_app_config.cache_clear()
     _get_pepper.cache_clear()
     _registered_categories.clear()
+    get_cache().clear()
     yield
     get_env_config.cache_clear()
     get_app_config.cache_clear()
     _get_pepper.cache_clear()
     _registered_categories.clear()
+    get_cache().clear()
 
 
 @pytest.fixture(autouse=True)

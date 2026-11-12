@@ -26,7 +26,7 @@ from documentai_api.services import s3 as s3_service
 from documentai_api.utils.auth import UserContext, get_user_context_with_fallback
 from documentai_api.utils.document_metadata_table import DocumentMetadataTable
 from documentai_api.utils.pagination import decode_cursor, encode_cursor
-from documentai_api.utils.s3 import get_bucket_and_key
+from documentai_api.utils.s3 import assert_object_exists, get_bucket_and_key
 
 router = APIRouter(prefix="/v1/demo")
 
@@ -179,6 +179,14 @@ async def get_demo_document_preview(
         raise HTTPException(status_code=500, detail="Incomplete document record")
 
     bucket, object_key = get_bucket_and_key(_get_demo_input_location(), auth.tenant_id, file_name)
+
+    try:
+        assert_object_exists(bucket, object_key)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to generate demo preview URL: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate preview URL") from e
 
     url = s3_service.generate_presigned_get_url(
         bucket=bucket,

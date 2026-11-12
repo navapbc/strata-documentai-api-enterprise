@@ -178,6 +178,56 @@ def test_demo_preview_wrong_tenant_returns_404(api_client, ddb_doc_metadata_tabl
     assert response.status_code == 404
 
 
+@pytest.fixture
+def demo_preview_doc(ddb_doc_metadata_table, monkeypatch):
+    from documentai_api.generated.env_var_names_generated import EnvVarNames
+
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_DEMO_INPUT_LOCATION, "s3://test-bucket/demo-input")
+    ddb_doc_metadata_table.put_item(
+        Item={
+            DocumentMetadata.FILE_NAME: "mine.pdf",
+            DocumentMetadata.JOB_ID: "job-demo-preview",
+            DocumentMetadata.TENANT_ID: "test-demo-tenant-id",
+            DocumentMetadata.CONTENT_TYPE: "application/pdf",
+            DocumentMetadata.ORIGINAL_FILE_NAME: "mine.pdf",
+            DocumentMetadata.CREATED_AT: "2026-01-01T00:00:00Z",
+        }
+    )
+
+
+@pytest.mark.usefixtures("demo_preview_doc")
+def test_demo_preview_missing_s3_object_returns_404(api_client, mocker):
+    from botocore.exceptions import ClientError
+
+    mocker.patch(
+        "documentai_api.utils.s3.s3_service.head_object",
+        side_effect=ClientError(
+            {"Error": {"Code": "NoSuchKey", "Message": "Not Found"}}, "HeadObject"
+        ),
+    )
+    mocker.patch(
+        "documentai_api.utils.s3.s3_service.get_bucket_lifecycle_configuration",
+        return_value={"Rules": []},
+    )
+    response = api_client.get("/v1/demo/documents/job-demo-preview/preview")
+    assert response.status_code == 404
+    assert "no longer exists" in response.json()["detail"]
+
+
+@pytest.mark.usefixtures("demo_preview_doc")
+def test_demo_preview_s3_throttle_returns_500(api_client, mocker):
+    from botocore.exceptions import ClientError
+
+    mocker.patch(
+        "documentai_api.utils.s3.s3_service.head_object",
+        side_effect=ClientError(
+            {"Error": {"Code": "SlowDown", "Message": "Slow Down"}}, "HeadObject"
+        ),
+    )
+    response = api_client.get("/v1/demo/documents/job-demo-preview/preview")
+    assert response.status_code == 500
+
+
 def test_demo_upload_rejects_without_auth(api_client, blank_pdf_bytes):
     """POST /v1/demo/documents returns 401 without valid credentials."""
     # Remove the auth override so the real dependency runs

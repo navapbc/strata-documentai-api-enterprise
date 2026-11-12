@@ -130,6 +130,13 @@ def get_last_modified_at(bucket: str, key: str) -> datetime:
     return response["LastModified"]
 
 
+def get_bucket_lifecycle_configuration(bucket: str) -> dict[str, Any]:
+    """Fetch the lifecycle configuration for a bucket."""
+    s3_client = AWSClientFactory.get_s3_client()
+    result: dict[str, Any] = s3_client.get_bucket_lifecycle_configuration(Bucket=bucket)  # type: ignore[assignment]
+    return result
+
+
 def generate_presigned_get_url(
     bucket: str,
     key: str,

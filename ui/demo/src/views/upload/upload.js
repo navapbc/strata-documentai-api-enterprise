@@ -363,12 +363,14 @@ async function loadPreview(doc) {
   try {
     const resp = await Documents.getPreviewUrl(doc.jobId);
     previewUrl = resp.url;
-  } catch {
-    // no preview available
+  } catch (e) {
+    // eslint-disable-next-line no-unsanitized/property -- e.message escaped with esc()
+    _previewPanel.innerHTML = `<p class="empty-state">${e.status === 404 ? esc(e.message) : "Preview unavailable"}</p>`;
+    return;
   }
 
   if (!previewUrl) {
-    _previewPanel.innerHTML = '<p class="empty-state">No preview available</p>';
+    _previewPanel.innerHTML = '<p class="empty-state">Preview unavailable</p>';
     return;
   }
 
