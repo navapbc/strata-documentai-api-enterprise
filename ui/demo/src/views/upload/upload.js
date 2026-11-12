@@ -1,6 +1,7 @@
 import * as Session from "../../../../shared/utils/session.js";
 import * as Toast from "../../../../shared/utils/toast.js";
 import * as Documents from "../../services/documents.js";
+import * as pdfjsLib from "pdfjs-dist";
 import { h } from "../../../../shared/utils/dom.js";
 import { tpl } from "../../../../shared/utils/tpl.js";
 import { esc } from "../../../../shared/utils/helpers.js";
@@ -374,24 +375,36 @@ async function loadPreview(doc) {
     return;
   }
 
-  _previewPanel._bboxRerender = null; // drop the previous document's overlay
+  _previewPanel._bboxRerender = null;
   renderPreview(_previewPanel, {
     url: previewUrl,
     contentType: doc.contentType,
     watermarkEmail: Session.getEmail() || "",
+    pdfjsLib,
     onRotate: () => _previewPanel._bboxRerender?.(),
+    onRender: () => {
+      const geo = extractGeometry(doc.fields || {});
+      if (geo) {
+        _resizeObserver?.disconnect();
+        const { observer, rerender } = renderBboxOverlay(_previewPanel, geo);
+        _resizeObserver = observer;
+        _previewPanel._bboxRerender = rerender;
+      }
+    },
   });
 
   const geo = extractGeometry(doc.fields || {});
-  if (geo) {
-    const { observer, rerender } = renderBboxOverlay(_previewPanel, geo);
-    _resizeObserver = observer;
-    _previewPanel._bboxRerender = rerender;
-  } else if (doc.fields && Object.keys(doc.fields).length) {
-    const note = document.createElement("p");
-    note.className = "empty-state bbox-unavailable-note";
-    note.textContent = "Bounding boxes not available for this document";
-    _previewPanel.appendChild(note);
+  if (doc.contentType !== "application/pdf") {
+    if (geo) {
+      const { observer, rerender } = renderBboxOverlay(_previewPanel, geo);
+      _resizeObserver = observer;
+      _previewPanel._bboxRerender = rerender;
+    } else if (doc.fields && Object.keys(doc.fields).length) {
+      const note = document.createElement("p");
+      note.className = "empty-state bbox-unavailable-note";
+      note.textContent = "Bounding boxes not available for this document";
+      _previewPanel.appendChild(note);
+    }
   }
   markFieldsWithGeometry(_results, geo);
 }

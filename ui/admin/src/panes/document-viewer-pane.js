@@ -11,6 +11,7 @@
 import * as DocumentsService from "../services/documents.js";
 import * as Helpers from "../utils/helpers.js";
 import * as Session from "../../../shared/utils/session.js";
+import * as pdfjsLib from "pdfjs-dist";
 import { isPresentationMode, MASKED_VALUE } from "../../../shared/utils/presentation-mode.js";
 import { h } from "../utils/dom.js";
 import { tpl } from "../utils/tpl.js";
@@ -194,10 +195,14 @@ export function mount(root) {
       }
       renderDetail(detail);
       await loadPreview(jobId, detail.contentType, detail.processStatus);
-      if (fieldGeometry) {
+      // For images, render bbox overlay immediately after preview loads.
+      // For PDFs, onRender inside loadPreview handles it after all pages are drawn.
+      if (fieldGeometry && detail.contentType !== "application/pdf") {
         const { observer, rerender } = renderBboxOverlay(previewPanel, fieldGeometry);
         resizeObserver = observer;
         previewPanel._bboxRerender = rerender;
+        markFieldsWithGeometry(detailContent, fieldGeometry);
+      } else if (fieldGeometry) {
         markFieldsWithGeometry(detailContent, fieldGeometry);
       } else {
         if (!detailContent.querySelector(".bbox-unavailable-note")) {
@@ -231,7 +236,16 @@ export function mount(root) {
         url: resp.url,
         contentType,
         watermarkEmail: isPresentationMode() ? "user@example.com" : Session.getEmail() || "",
+        pdfjsLib,
         onRotate: () => previewPanel._bboxRerender?.(),
+        onRender: () => {
+          if (fieldGeometry) {
+            resizeObserver?.disconnect();
+            const { observer, rerender } = renderBboxOverlay(previewPanel, fieldGeometry);
+            resizeObserver = observer;
+            previewPanel._bboxRerender = rerender;
+          }
+        },
       });
     } catch (e) {
       // eslint-disable-next-line no-unsanitized/property -- e.message escaped with Helpers.esc()

@@ -61,6 +61,33 @@
   z-index: 2;
 }
 
+.pdf-scroll-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.pdf-scroll {
+  display: block;
+  transform-origin: top left;
+}
+
+.pdf-page {
+  position: relative;
+  display: block;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.pdf-page:last-child {
+  margin-bottom: 0;
+}
+
+.document-preview-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 .bbox-overlay {
   position: absolute;
   top: 0;

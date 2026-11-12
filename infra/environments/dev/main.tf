@@ -84,6 +84,7 @@ module "input_bucket" {
   source                         = "../../modules/storage"
   name                           = "${local.service_name}-dde-input"
   service_principals_with_access = ["bedrock.amazonaws.com"]
+  cors_allowed_origins           = local.cors_allowed_origins
 
   lifecycle_rules = [
     {
