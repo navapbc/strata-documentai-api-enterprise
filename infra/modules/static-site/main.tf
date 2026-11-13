@@ -34,7 +34,7 @@ resource "aws_cloudfront_response_headers_policy" "security" {
         "script-src 'self'",
         "style-src 'self' https://fonts.googleapis.com 'unsafe-inline'",
         "font-src 'self' https://fonts.gstatic.com",
-        "connect-src 'self' https://*.execute-api.us-east-1.amazonaws.com https://cognito-idp.us-east-1.amazonaws.com https://*.auth.us-east-1.amazoncognito.com",
+        "connect-src 'self' https://*.execute-api.us-east-1.amazonaws.com https://cognito-idp.us-east-1.amazonaws.com https://*.auth.us-east-1.amazoncognito.com https://*.s3.amazonaws.com https://*.s3.us-east-1.amazonaws.com",
         "img-src 'self' data: https://*.s3.amazonaws.com https://*.s3.us-east-1.amazonaws.com",
         "object-src https://*.s3.amazonaws.com https://*.s3.us-east-1.amazonaws.com",
         "frame-ancestors 'none'",

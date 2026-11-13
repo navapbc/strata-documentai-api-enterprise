@@ -531,4 +531,88 @@ describe("renderBboxOverlay", () => {
     expect(wraps).toHaveLength(1);
     expect(wraps[0].style.transform).toBe("rotate(90deg)");
   });
+
+  describe("PDF bbox coordinate rotation", () => {
+    const box = { left: 0.1, top: 0.2, width: 0.3, height: 0.1 };
+
+    const makePdfContainer = (rot) => {
+      const c = document.createElement("div");
+      const scroll = document.createElement("div");
+      scroll.className = "pdf-scroll";
+      scroll._rotation = rot;
+      const pageEl = document.createElement("div");
+      pageEl.className = "pdf-page";
+      pageEl.dataset.page = "1";
+      const canvas = document.createElement("canvas");
+      pageEl.appendChild(canvas);
+      scroll.appendChild(pageEl);
+      c.appendChild(scroll);
+      document.body.appendChild(c);
+      return c;
+    };
+
+    afterEach(() => {
+      document.body.querySelectorAll(".pdf-scroll").forEach((el) => el.closest("div")?.remove());
+    });
+
+    it("places overlay without transform at 0 degrees", () => {
+      const c = makePdfContainer(0);
+      renderBboxOverlay(c, {
+        name: { geometry: [{ page: 1, boundingBox: box }], fieldType: "string" },
+      });
+      const rect = c.querySelector(".bbox-overlay rect");
+      expect(Number(rect.getAttribute("x"))).toBeCloseTo(box.left);
+      expect(Number(rect.getAttribute("y"))).toBeCloseTo(box.top);
+    });
+
+    it("transforms coordinates at 90 degrees", () => {
+      const c = makePdfContainer(90);
+      renderBboxOverlay(c, {
+        name: { geometry: [{ page: 1, boundingBox: box }], fieldType: "string" },
+      });
+      const rect = c.querySelector(".bbox-overlay rect");
+      expect(Number(rect.getAttribute("x"))).toBeCloseTo(1 - box.top - box.height);
+      expect(Number(rect.getAttribute("y"))).toBeCloseTo(box.left);
+      expect(Number(rect.getAttribute("width"))).toBeCloseTo(box.height);
+      expect(Number(rect.getAttribute("height"))).toBeCloseTo(box.width);
+    });
+
+    it("transforms coordinates at 180 degrees", () => {
+      const c = makePdfContainer(180);
+      renderBboxOverlay(c, {
+        name: { geometry: [{ page: 1, boundingBox: box }], fieldType: "string" },
+      });
+      const rect = c.querySelector(".bbox-overlay rect");
+      expect(Number(rect.getAttribute("x"))).toBeCloseTo(1 - box.left - box.width);
+      expect(Number(rect.getAttribute("y"))).toBeCloseTo(1 - box.top - box.height);
+    });
+
+    it("transforms coordinates at 270 degrees", () => {
+      const c = makePdfContainer(270);
+      renderBboxOverlay(c, {
+        name: { geometry: [{ page: 1, boundingBox: box }], fieldType: "string" },
+      });
+      const rect = c.querySelector(".bbox-overlay rect");
+      expect(Number(rect.getAttribute("x"))).toBeCloseTo(box.top);
+      expect(Number(rect.getAttribute("y"))).toBeCloseTo(1 - box.left - box.width);
+      expect(Number(rect.getAttribute("width"))).toBeCloseTo(box.height);
+      expect(Number(rect.getAttribute("height"))).toBeCloseTo(box.width);
+    });
+
+    it("renders one overlay per page and skips pages with no boxes", () => {
+      const c = makePdfContainer(0);
+      // Add a second page with no matching geometry
+      const scroll = c.querySelector(".pdf-scroll");
+      const page2 = document.createElement("div");
+      page2.className = "pdf-page";
+      page2.dataset.page = "2";
+      page2.appendChild(document.createElement("canvas"));
+      scroll.appendChild(page2);
+
+      renderBboxOverlay(c, {
+        name: { geometry: [{ page: 1, boundingBox: box }], fieldType: "string" },
+      });
+      expect(c.querySelectorAll(".bbox-overlay-wrap")).toHaveLength(1);
+    });
+  });
 });

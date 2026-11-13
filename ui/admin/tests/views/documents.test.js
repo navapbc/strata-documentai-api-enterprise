@@ -71,6 +71,30 @@ describe("documents view", () => {
       PRESENTATION_MODE_KEY: "presentation_mode",
     }));
 
+    // jsdom has no ResizeObserver; the PDF preview observes its panel for refit.
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe() {}
+        disconnect() {}
+      },
+    );
+
+    vi.doMock("pdfjs-dist", () => ({
+      GlobalWorkerOptions: { workerSrc: "" },
+      getDocument: () => ({
+        promise: Promise.resolve({
+          numPages: 1,
+          getPage: () =>
+            Promise.resolve({
+              getViewport: () => ({ width: 100, height: 140, scale: 1 }),
+              render: () => ({ promise: Promise.resolve() }),
+            }),
+          destroy: vi.fn(),
+        }),
+      }),
+    }));
+
     DocumentsView = await import("../../src/views/documents/documents.js");
     root = document.createElement("div");
     document.body.appendChild(root);
@@ -79,6 +103,8 @@ describe("documents view", () => {
   afterEach(() => {
     document.body.innerHTML = "";
     sessionStorage.clear();
+    // ResizeObserver stays stubbed: the un-awaited PDF render can finish after
+    // teardown, and it still needs the stub (re-applied in beforeEach).
   });
 
   it("mounts with status filter dropdown", () => {
@@ -184,7 +210,7 @@ describe("documents view", () => {
 
     expect(mockGetPreviewUrl).toHaveBeenCalledWith("j-1");
     const preview = root.querySelector("#doc-pane-preview");
-    expect(preview.querySelector("object")).not.toBeNull();
+    expect(preview.querySelector("canvas")).not.toBeNull();
   });
 
   it("tenant change clears active job and reloads", async () => {

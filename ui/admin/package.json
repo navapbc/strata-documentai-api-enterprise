@@ -7,8 +7,8 @@
     "node": ">=20.19"
   },
   "scripts": {
-    "dev": "node scripts/gen-build-info.js && esbuild bundle=src/main.js style=styles/style.css --bundle --outdir=dist --sourcemap --watch --serve=3000 --servedir=. --loader:.html=text",
-    "build": "node scripts/gen-build-info.js && esbuild bundle=src/main.js style=styles/style.css --bundle --outdir=dist --minify --loader:.html=text",
+    "dev": "node scripts/gen-build-info.js && mkdir -p dist && cp node_modules/pdfjs-dist/build/pdf.worker.min.mjs dist/pdf.worker.min.mjs && NODE_PATH=node_modules esbuild bundle=src/main.js style=styles/style.css --bundle --outdir=dist --sourcemap --watch --serve=3000 --servedir=. --loader:.html=text",
+    "build": "node scripts/gen-build-info.js && NODE_PATH=node_modules esbuild bundle=src/main.js style=styles/style.css --bundle --outdir=dist --minify --loader:.html=text && cp node_modules/pdfjs-dist/build/pdf.worker.min.mjs dist/pdf.worker.min.mjs",
     "lint": "eslint src/ tests/ e2e/",
     "pretest": "node scripts/gen-build-info.js",
     "test": "vitest run",
@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "chart.js": "^4.5.1",
+    "pdfjs-dist": "^4.10.38",
     "qrcode": "^1.5.4"
   }
 }

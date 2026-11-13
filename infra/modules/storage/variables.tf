@@ -37,3 +37,9 @@ variable "lifecycle_rules" {
   description = "Lifecycle rules for object expiration and storage-class transitions."
   default     = []
 }
+
+variable "cors_allowed_origins" {
+  type        = list(string)
+  description = "Origins allowed to make cross-origin GET requests (e.g. UI CloudFront URLs). Empty list disables CORS."
+  default     = []
+}

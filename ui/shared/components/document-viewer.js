@@ -13,7 +13,38 @@ import {
   ICON_ROTATE_RIGHT,
 } from "../utils/icons.js";
 
+const BBOX_ROTATE = {
+  90: ({ left, top, width, height }) => ({
+    left: 1 - top - height,
+    top: left,
+    width: height,
+    height: width,
+  }),
+  180: ({ left, top, width, height }) => ({
+    left: 1 - left - width,
+    top: 1 - top - height,
+    width,
+    height,
+  }),
+  270: ({ left, top, width, height }) => ({
+    left: top,
+    top: 1 - left - width,
+    width: height,
+    height: width,
+  }),
+};
+
 export const PREVIEWABLE_TYPES = ["application/pdf", "image/jpeg", "image/png"];
+
+/** Width of container minus its horizontal padding — the space content should fill. */
+function fitWidth(container) {
+  const cs = getComputedStyle(container);
+  return (
+    container.clientWidth -
+    parseFloat(cs.paddingLeft) -
+    parseFloat(cs.paddingRight)
+  );
+}
 
 const TYPE_COLORS = {
   string: "#44aaff",
@@ -97,128 +128,161 @@ export function extractGeometry(fields) {
  * @returns {{observer: ResizeObserver|null, rerender: () => void}} - observer
  *   to disconnect on cleanup; rerender redraws the overlay (e.g. after rotate)
  */
-export function renderBboxOverlay(container, fieldGeometry, { page = 1 } = {}) {
+export function renderBboxOverlay(container, fieldGeometry) {
   clearBboxOverlay(container);
   const none = { observer: null, rerender: () => {} };
   if (!fieldGeometry) return none;
 
-  const img = container.querySelector("img");
-  if (!img) return none;
+  const pageEls = container.querySelectorAll(".pdf-page");
+  const isPdf = pageEls.length > 0;
+  const img = !isPdf && container.querySelector("img");
+  if (!isPdf && !img) return none;
 
-  let resizeObserver = null;
+  const renderPdfOverlays = () => {
+    const rot = container.querySelector(".pdf-scroll")?._rotation || 0;
+    container.querySelectorAll(".pdf-page").forEach((pageEl) => {
+      const canvas = pageEl.querySelector("canvas");
+      if (!canvas) return;
+      const pageNum = Number(pageEl.dataset.page);
+      const boxes = [];
+      for (const [
+        fieldName,
+        { geometry: geoList, fieldType, displayName },
+      ] of Object.entries(fieldGeometry)) {
+        for (const entry of geoList) {
+          if (
+            !entry.boundingBox ||
+            (entry.page != null && entry.page !== pageNum)
+          )
+            continue;
+          boxes.push({
+            ...(BBOX_ROTATE[rot] ?? ((b) => b))(entry.boundingBox),
+            fieldName,
+            fieldType,
+            displayName,
+          });
+        }
+      }
+      if (!boxes.length) return;
+      const wrap = _buildOverlayWrap(
+        mergeOverlappingBoxes(boxes),
+        canvas.offsetWidth,
+        canvas.offsetHeight,
+        0,
+      );
+      wrap.style.top = canvas.offsetTop + "px";
+      wrap.style.left = canvas.offsetLeft + "px";
+      pageEl.appendChild(wrap);
+    });
+  };
 
-  const doRender = () => {
-    clearBboxOverlay(container);
+  const renderImageOverlay = () => {
     const rotation = container._previewRotation || 0;
-
-    const wrap = document.createElement("div");
-    wrap.className = "bbox-overlay-wrap";
-    wrap.style.width = img.offsetWidth + "px";
-    wrap.style.height = img.offsetHeight + "px";
+    const wrap = _buildOverlayWrap(
+      mergeOverlappingBoxes(
+        Object.entries(fieldGeometry).flatMap(
+          ([fieldName, { geometry: geoList, fieldType, displayName }]) =>
+            geoList
+              .filter((g) => g.boundingBox)
+              .map(({ boundingBox: { left, top, width, height } }) => ({
+                left,
+                top,
+                width,
+                height,
+                fieldName,
+                fieldType,
+                displayName,
+              })),
+        ),
+      ),
+      img.offsetWidth,
+      img.offsetHeight,
+      rotation,
+    );
     wrap.style.top = img.offsetTop + "px";
     wrap.style.left = img.offsetLeft + "px";
-    if (rotation) {
-      wrap.style.transform = `rotate(${rotation}deg)`;
-      wrap.style.transformOrigin = "center center";
-    }
-
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.classList.add("bbox-overlay");
-    svg.setAttribute("viewBox", "0 0 1 1");
-    svg.setAttribute("preserveAspectRatio", "none");
-
-    const tooltip = document.createElement("div");
-    tooltip.className = "bbox-tooltip";
-    tooltip.style.display = "none";
-
-    const boxes = [];
-    for (const [
-      fieldName,
-      { geometry: geoList, fieldType, displayName },
-    ] of Object.entries(fieldGeometry)) {
-      for (const geo of geoList) {
-        if (!geo.boundingBox) continue;
-        if (geo.page && geo.page !== page) continue;
-        const { left, top, width, height } = geo.boundingBox;
-        boxes.push({
-          left,
-          top,
-          width,
-          height,
-          fieldName,
-          fieldType,
-          displayName,
-        });
-      }
-    }
-
-    const merged = mergeOverlappingBoxes(boxes);
-
-    for (const box of merged) {
-      const color =
-        box.fields.length > 1
-          ? TYPE_COLORS.merged
-          : TYPE_COLORS[box.fields[0].fieldType] || TYPE_COLORS.unknown;
-      const rect = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "rect",
-      );
-      rect.setAttribute("x", box.left);
-      rect.setAttribute("y", box.top);
-      rect.setAttribute("width", box.width);
-      rect.setAttribute("height", box.height);
-      rect.setAttribute("fill", "none");
-      rect.setAttribute("stroke", color);
-      rect.setAttribute("stroke-width", "0.003");
-      // Human-readable label for the tooltip; falls back to the raw name.
-      rect.dataset.field = box.fields
-        .map((f) => f.displayName || f.fieldName)
-        .join("\n");
-      // Raw field names (newline-separated) for matching against table rows.
-      rect.dataset.fields = box.fields.map((f) => f.fieldName).join("\n");
-      svg.appendChild(rect);
-    }
-
-    svg.addEventListener("mouseenter", handleTooltip);
-    svg.addEventListener("mousemove", handleTooltip);
-    svg.addEventListener("mouseleave", () => {
-      tooltip.style.display = "none";
-    });
-
-    function handleTooltip(e) {
-      const rect = e.target.closest("rect");
-      if (!rect) {
-        tooltip.style.display = "none";
-        return;
-      }
-      // eslint-disable-next-line no-unsanitized/property -- field names from server
-      tooltip.innerHTML = rect.dataset.field.replace(/\n/g, "<br>");
-      tooltip.style.display = "block";
-      const wrapRect = wrap.getBoundingClientRect();
-      tooltip.style.left = e.clientX - wrapRect.left + 8 + "px";
-      tooltip.style.top = e.clientY - wrapRect.top - 24 + "px";
-    }
-
-    wrap.appendChild(svg);
-    wrap.appendChild(tooltip);
     container.appendChild(wrap);
   };
 
-  if (img.complete && img.naturalWidth) {
-    doRender();
-  } else {
-    img.addEventListener("load", doRender, { once: true });
+  const doRender = () => {
+    clearBboxOverlay(container);
+    if (isPdf) renderPdfOverlays();
+    else renderImageOverlay();
+  };
+
+  doRender();
+
+  const observed = isPdf ? container.querySelector(".pdf-page canvas") : img;
+  if (observed) {
+    const resizeObserver = new ResizeObserver(doRender);
+    resizeObserver.observe(observed);
+    return { observer: resizeObserver, rerender: doRender };
+  }
+  return { observer: null, rerender: doRender };
+}
+
+function _buildOverlayWrap(merged, width, height, rotation) {
+  const wrap = document.createElement("div");
+  wrap.className = "bbox-overlay-wrap";
+  wrap.style.width = width + "px";
+  wrap.style.height = height + "px";
+  if (rotation) {
+    wrap.style.transform = `rotate(${rotation}deg)`;
+    wrap.style.transformOrigin = "center center";
   }
 
-  // Observe the image, not the container: this fires on panel resize *and* on
-  // zoom (which changes the image's rendered width but not the container's), so
-  // the overlay always re-renders to match the current image size.
-  resizeObserver = new ResizeObserver(() => {
-    if (container.querySelector("img")) doRender();
-  });
-  resizeObserver.observe(img);
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.classList.add("bbox-overlay");
+  svg.setAttribute("viewBox", "0 0 1 1");
+  svg.setAttribute("preserveAspectRatio", "none");
 
-  return { observer: resizeObserver, rerender: doRender };
+  const tooltip = document.createElement("div");
+  tooltip.className = "bbox-tooltip";
+  tooltip.style.display = "none";
+
+  for (const box of merged) {
+    const color =
+      box.fields.length > 1
+        ? TYPE_COLORS.merged
+        : TYPE_COLORS[box.fields[0].fieldType] || TYPE_COLORS.unknown;
+    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    rect.setAttribute("x", box.left);
+    rect.setAttribute("y", box.top);
+    rect.setAttribute("width", box.width);
+    rect.setAttribute("height", box.height);
+    rect.setAttribute("fill", "none");
+    rect.setAttribute("stroke", color);
+    rect.setAttribute("stroke-width", "0.003");
+    rect.dataset.field = box.fields
+      .map((f) => f.displayName || f.fieldName)
+      .join("\n");
+    rect.dataset.fields = box.fields.map((f) => f.fieldName).join("\n");
+    svg.appendChild(rect);
+  }
+
+  svg.addEventListener("mouseenter", handleTooltip);
+  svg.addEventListener("mousemove", handleTooltip);
+  svg.addEventListener("mouseleave", () => {
+    tooltip.style.display = "none";
+  });
+
+  function handleTooltip(e) {
+    const rect = e.target.closest("rect");
+    if (!rect) {
+      tooltip.style.display = "none";
+      return;
+    }
+    // eslint-disable-next-line no-unsanitized/property -- field names from server
+    tooltip.innerHTML = rect.dataset.field.replace(/\n/g, "<br>");
+    tooltip.style.display = "block";
+    const wrapRect = wrap.getBoundingClientRect();
+    tooltip.style.left = e.clientX - wrapRect.left + 8 + "px";
+    tooltip.style.top = e.clientY - wrapRect.top - 24 + "px";
+  }
+
+  wrap.appendChild(svg);
+  wrap.appendChild(tooltip);
+  return wrap;
 }
 
 /**
@@ -226,8 +290,7 @@ export function renderBboxOverlay(container, fieldGeometry, { page = 1 } = {}) {
  * @param {HTMLElement} container
  */
 export function clearBboxOverlay(container) {
-  const existing = container.querySelector(".bbox-overlay-wrap");
-  if (existing) existing.remove();
+  container.querySelectorAll(".bbox-overlay-wrap").forEach((el) => el.remove());
 }
 
 /**
@@ -294,12 +357,24 @@ export function renderExtractedData(
  * @param {HTMLElement} container
  * @param {HTMLImageElement} img
  */
-function addImageZoom(container, img, { onRotate } = {}) {
+/**
+ * Shared zoom controls: buttons, Ctrl/Cmd-scroll, drag-to-pan.
+ * @param {HTMLElement} container - scrollable panel
+ * @param {object} opts
+ * @param {() => number} opts.getMaxScale
+ * @param {(scale: number) => void} opts.onZoom - called with new scale after clamping
+ * @param {boolean} [opts.withRotate=false] - include rotate buttons
+ * @param {(deg: number) => void} [opts.onRotate]
+ * @returns {{ setZoom: (n: number) => void, scale: () => number }}
+ */
+function _createZoomControls(
+  container,
+  { getMaxScale, onZoom, withRotate = false, onRotate } = {},
+) {
   const STEP = 1.25;
   let scale = 1;
-  let rotation = 0;
 
-  const btn = (label, icon) => {
+  const makeButton = (label, icon) => {
     const el = h("button", {
       type: "button",
       className: "zoom-btn",
@@ -309,135 +384,63 @@ function addImageZoom(container, img, { onRotate } = {}) {
     el.appendChild(svgIcon(icon));
     return el;
   };
-  const out = btn("Zoom out", ICON_ZOOM_OUT);
-  const inn = btn("Zoom in", ICON_ZOOM_IN);
-  out.disabled = true;
-  const rotL = btn("Rotate left", ICON_ROTATE_LEFT);
-  const rotR = btn("Rotate right", ICON_ROTATE_RIGHT);
+
+  const zoomOut = makeButton("Zoom out", ICON_ZOOM_OUT);
+  const zoomIn = makeButton("Zoom in", ICON_ZOOM_IN);
+  zoomOut.disabled = true;
+
+  const children = [];
+  if (withRotate) {
+    children.push(
+      makeButton("Rotate left", ICON_ROTATE_LEFT),
+      makeButton("Rotate right", ICON_ROTATE_RIGHT),
+    );
+    children.push(h("div", { className: "preview-controls-sep" }));
+    children[0].addEventListener("click", () => onRotate?.(-90));
+    children[1].addEventListener("click", () => onRotate?.(90));
+  }
+  children.push(zoomOut, zoomIn);
+
   const controls = h(
     "div",
     { className: "preview-zoom-controls" },
-    rotL,
-    rotR,
-    h("div", { className: "preview-controls-sep" }),
-    out,
-    inn,
+    ...children,
   );
   container.appendChild(controls);
 
-  // The controls live inside the scroll container, so they'd scroll out of view
-  // when zoomed. Counter-translate by the scroll offset to pin them top-right.
-  const pin = () => {
+  const pinControls = () => {
     controls.style.transform = `translate(${container.scrollLeft}px, ${container.scrollTop}px)`;
   };
 
-  // CSS transforms don't affect layout, so a 90/270 rotated image would keep
-  // its unrotated box: wrong scroll extents, and the overflow past the top/left
-  // edge is unreachable (the "chopped" document). Size the image explicitly in
-  // terms of its *visual* width and pad the layout box with margins so it
-  // matches the rotated footprint.
-  const applyLayout = () => {
-    // The bbox overlay is absolutely positioned inside the scroll container, so
-    // its stale (old-size) box keeps inflating the scroll extents until it
-    // re-renders a frame later. Hide it so the scroll math below and the
-    // browser's clamping see only the resized image.
-    container
-      .querySelector(".bbox-overlay-wrap")
-      ?.style.setProperty("display", "none");
-    // Same for the pinned controls: translated by the old scroll offset they
-    // stretch the scrollable area. pin() re-applies it once scroll is restored.
-    controls.style.transform = "";
-    const sideways = rotation === 90 || rotation === 270;
-    img.style.margin = "";
-    if (scale === 1 && !sideways) {
-      img.style.width = "";
-      img.style.height = "";
-      img.style.maxWidth = "";
-      img.style.maxHeight = "";
-      img.style.flexShrink = "";
-    } else if (img.naturalWidth) {
-      const cs = getComputedStyle(container);
-      const avail =
-        container.clientWidth -
-        parseFloat(cs.paddingLeft) -
-        parseFloat(cs.paddingRight);
-      const natVis = sideways ? img.naturalHeight : img.naturalWidth;
-      const vis = Math.min(avail, natVis) * scale;
-      const aspect = img.naturalWidth / img.naturalHeight;
-      const w = Math.round(sideways ? vis * aspect : vis);
-      const h = Math.round(sideways ? vis : vis / aspect);
-      img.style.maxWidth = "none";
-      img.style.maxHeight = "none";
-      img.style.flexShrink = "0";
-      img.style.width = w + "px";
-      img.style.height = h + "px";
-      if (sideways) {
-        img.style.margin = `${(w - h) / 2}px ${(h - w) / 2}px`;
-      }
-    }
-    img.style.transform = rotation ? `rotate(${rotation}deg)` : "";
-    container._previewRotation = rotation;
-    container.classList.toggle("preview-zoomed", scale > 1);
-    requestAnimationFrame(() => onRotate?.());
-  };
-
-  const maxScale = () => {
-    const sideways = rotation === 90 || rotation === 270;
-    const cs = getComputedStyle(container);
-    const avail =
-      container.clientWidth -
-      parseFloat(cs.paddingLeft) -
-      parseFloat(cs.paddingRight);
-    const natVis = sideways ? img.naturalHeight : img.naturalWidth;
-    const fit = Math.min(avail, natVis);
-    return fit > 0 ? natVis / fit : 1;
-  };
-
-  const setZoom = (next) => {
-    if (!img.naturalWidth) return; // image not loaded yet
-    const max = maxScale();
-    // Preserve how far through the pannable range the view is (0 = left/top
-    // edge, 1 = right/bottom edge). Anchoring on the viewport center instead
-    // lets a view scrolled to an edge drift off it when zooming out, which
-    // reads as the image jumping.
-    const frac = (pos, size, view) => (size > view ? pos / (size - view) : 0);
-    const fx = frac(
+  const setZoom = async (next) => {
+    const max = getMaxScale();
+    const scrollFraction = (pos, size, view) =>
+      size > view ? pos / (size - view) : 0;
+    const scrollFracX = scrollFraction(
       container.scrollLeft,
       container.scrollWidth,
       container.clientWidth,
     );
-    const fy = frac(
+    const scrollFracY = scrollFraction(
       container.scrollTop,
       container.scrollHeight,
       container.clientHeight,
     );
     scale = Math.min(max, Math.max(1, next));
-    out.disabled = scale <= 1;
-    inn.disabled = scale >= max;
-    applyLayout();
-    container.scrollLeft = fx * (container.scrollWidth - container.clientWidth);
+    zoomOut.disabled = scale <= 1;
+    zoomIn.disabled = scale >= max;
+    controls.style.transform = "";
+    await onZoom(scale);
+    container.scrollLeft =
+      scrollFracX * (container.scrollWidth - container.clientWidth);
     container.scrollTop =
-      fy * (container.scrollHeight - container.clientHeight);
-    pin();
+      scrollFracY * (container.scrollHeight - container.clientHeight);
+    pinControls();
   };
 
-  const setRotation = (deg) => {
-    rotation = ((deg % 360) + 360) % 360;
-    scale = 1;
-    out.disabled = true;
-    inn.disabled = maxScale() <= 1;
-    applyLayout();
-    container.scrollLeft = 0;
-    container.scrollTop = 0;
-    pin();
-  };
-
-  out.addEventListener("click", () => setZoom(scale / STEP));
-  inn.addEventListener("click", () => setZoom(scale * STEP));
-  rotL.addEventListener("click", () => setRotation(rotation - 90));
-  rotR.addEventListener("click", () => setRotation(rotation + 90));
-  container.addEventListener("scroll", pin);
-
+  zoomOut.addEventListener("click", () => setZoom(scale / STEP));
+  zoomIn.addEventListener("click", () => setZoom(scale * STEP));
+  container.addEventListener("scroll", pinControls);
   container.addEventListener(
     "wheel",
     (e) => {
@@ -448,15 +451,14 @@ function addImageZoom(container, img, { onRotate } = {}) {
     { passive: false },
   );
 
-  // Click-and-drag to pan when zoomed.
-  let dragging = false;
-  let startX = 0;
-  let startY = 0;
-  let startLeft = 0;
-  let startTop = 0;
+  let dragging = false,
+    startX = 0,
+    startY = 0,
+    startLeft = 0,
+    startTop = 0;
   container.addEventListener("pointerdown", (e) => {
     if (scale <= 1 || e.button !== 0) return;
-    if (e.target.closest(".preview-zoom-controls")) return; // let buttons click
+    if (e.target.closest(".preview-zoom-controls")) return;
     dragging = true;
     startX = e.clientX;
     startY = e.clientY;
@@ -478,58 +480,280 @@ function addImageZoom(container, img, { onRotate } = {}) {
     try {
       container.releasePointerCapture(e.pointerId);
     } catch {
-      /* pointer already released */
+      /* released */
     }
   };
   container.addEventListener("pointerup", endDrag);
   container.addEventListener("pointercancel", endDrag);
+
+  return { setZoom, scale: () => scale };
+}
+
+function addImageZoom(container, img, { onRotate } = {}) {
+  let rotation = 0;
+  let currentScale = 1;
+
+  const applyLayout = (scale) => {
+    currentScale = scale;
+    const isSideways = rotation === 90 || rotation === 270;
+    img.style.margin = "";
+    if (scale === 1 && !isSideways) {
+      img.style.width =
+        img.style.height =
+        img.style.maxWidth =
+        img.style.maxHeight =
+        img.style.flexShrink =
+          "";
+    } else if (img.naturalWidth) {
+      const natVis = isSideways ? img.naturalHeight : img.naturalWidth;
+      const vis = Math.min(fitWidth(container), natVis) * scale;
+      const aspect = img.naturalWidth / img.naturalHeight;
+      const imgWidth = Math.round(isSideways ? vis * aspect : vis);
+      const imgHeight = Math.round(isSideways ? vis : vis / aspect);
+      img.style.maxWidth = img.style.maxHeight = "none";
+      img.style.flexShrink = "0";
+      img.style.width = imgWidth + "px";
+      img.style.height = imgHeight + "px";
+      if (isSideways)
+        img.style.margin = `${(imgWidth - imgHeight) / 2}px ${(imgHeight - imgWidth) / 2}px`;
+    }
+    img.style.transform = rotation ? `rotate(${rotation}deg)` : "";
+    container._previewRotation = rotation;
+    container.classList.toggle("preview-zoomed", scale > 1);
+    requestAnimationFrame(() => onRotate?.());
+  };
+
+  const getMaxScale = () => {
+    const isSideways = rotation === 90 || rotation === 270;
+    const natVis = isSideways ? img.naturalHeight : img.naturalWidth;
+    const fit = Math.min(fitWidth(container), natVis);
+    return fit > 0 ? natVis / fit : 1;
+  };
+
+  const { setZoom } = _createZoomControls(container, {
+    getMaxScale,
+    onZoom: applyLayout,
+    withRotate: true,
+    onRotate: (delta) => {
+      rotation = (((rotation + delta) % 360) + 360) % 360;
+      setZoom(1);
+      container.scrollLeft = container.scrollTop = 0;
+    },
+  });
+
+  if (img.complete && img.naturalWidth) applyLayout(currentScale);
+  else
+    img.addEventListener("load", () => applyLayout(currentScale), {
+      once: true,
+    });
+}
+
+export async function renderPdfPreview(
+  container,
+  url,
+  { pdfjsLib, onRender } = {},
+) {
+  if (!pdfjsLib) {
+    container.innerHTML = `<object data="${esc(url)}" type="application/pdf" class="document-preview-frame"><p class="empty-state">Preview unavailable</p></object>`;
+    return;
+  }
+  if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+      "/dist/pdf.worker.min.mjs",
+      location.origin,
+    ).href;
+  }
+
+  // previewToken guards against a new document being selected while this one
+  // is still fetching - renderPreview bumps container._previewToken on every
+  // call so a stale load can detect it was superseded and bail out.
+  const previewToken = (container._previewToken =
+    (container._previewToken ?? 0) + 1);
+
+  container.innerHTML = '<p class="empty-state">Loading PDF…</p>';
+
+  let pdf;
+  try {
+    pdf = await pdfjsLib.getDocument(url).promise;
+  } catch (e) {
+    if (previewToken === container._previewToken)
+      container.innerHTML = `<p class="empty-state">Preview unavailable: ${esc(String(e?.message || e))}</p>`;
+    return;
+  }
+
+  if (previewToken !== container._previewToken) {
+    pdf.destroy();
+    return;
+  }
+
+  container._pdfDoc?.destroy();
+  container._pdfDoc = pdf;
+  container.innerHTML = "";
+
+  const dpr = window.devicePixelRatio || 1;
+
+  const scrollWrap = document.createElement("div");
+  scrollWrap.className = "pdf-scroll-wrap";
+  const scroll = document.createElement("div");
+  scroll.className = "pdf-scroll";
+  scrollWrap.appendChild(scroll);
+  container.appendChild(scrollWrap);
+
+  let rotation = 0;
+  // naturalW/H are captured after each render so applyScale always multiplies
+  // from the true unscaled dimensions, not from a previously-scaled scrollWidth.
+  let naturalW = 0;
+  let naturalH = 0;
+  let token = 0;
+
+  const renderAllPages = async () => {
+    // renderToken guards against concurrent renders within this document
+    // (e.g. rotate fired twice quickly) - a new call increments token so the
+    // previous loop detects it's stale and stops writing to the DOM.
+    const renderToken = ++token;
+    const stale = () =>
+      renderToken !== token || previewToken !== container._previewToken;
+    scroll._rotation = rotation;
+    scroll.replaceChildren();
+    for (let i = 1; i <= pdf.numPages; i++) {
+      if (stale()) return;
+
+      try {
+        const page = await pdf.getPage(i);
+        if (stale()) return;
+        const baseViewport = page.getViewport({ scale: 1, rotation });
+        const cssScale = (fitWidth(container) || 800) / baseViewport.width;
+        const viewport = page.getViewport({ scale: cssScale * dpr, rotation });
+
+        const canvas = document.createElement("canvas");
+        canvas.className = "document-preview-canvas";
+        // Canvas buffer is dpr times the CSS size for sharp rendering on retina displays.
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        canvas.style.width = viewport.width / dpr + "px";
+        canvas.style.height = viewport.height / dpr + "px";
+
+        // Explicit pixel width prevents .pdf-page { width: 100% } from
+        // interfering with transform: scale() zoom - only the transform scales it.
+        scroll.style.width = viewport.width / dpr + "px";
+
+        const pageEl = document.createElement("div");
+        pageEl.className = "pdf-page";
+        pageEl.dataset.page = i;
+        pageEl.appendChild(canvas);
+        scroll.appendChild(pageEl);
+
+        await page.render({ canvasContext: canvas.getContext("2d"), viewport })
+          .promise;
+        if (stale()) return;
+      } catch (e) {
+        // pdf.js rejects in-flight getPage/render promises when the document is
+        // destroyed by a superseding load. Swallow the error if we're stale;
+        // otherwise re-throw so real errors surface.
+        if (stale()) return;
+        throw e;
+      }
+    }
+    naturalW = scroll.scrollWidth;
+    naturalH = scroll.scrollHeight;
+    onRender?.();
+  };
+
+  const applyScale = (scale) => {
+    scroll.style.transform = scale === 1 ? "" : `scale(${scale})`;
+    scroll.style.transformOrigin = "top left";
+    scrollWrap.style.width = naturalW * scale + "px";
+    scrollWrap.style.height = naturalH * scale + "px";
+    container.classList.toggle("preview-zoomed", scale > 1);
+  };
+
+  const { scale: getScale } = _createZoomControls(container, {
+    getMaxScale: () => 2,
+    onZoom: applyScale,
+    withRotate: true,
+    onRotate: async (delta) => {
+      rotation = (((rotation + delta) % 360) + 360) % 360;
+      await renderAllPages();
+      applyScale(getScale());
+      container.scrollLeft = container.scrollTop = 0;
+    },
+  });
+
+  await renderAllPages();
+  applyScale(1);
+
+  // Re-render pages when the panel is resized so they refit to the new width.
+  // lastRenderedWidth skips the initial observer fire and pure-height changes.
+  // Debounced to avoid hammering pdf.js while the splitter is being dragged.
+  let lastRenderedWidth = fitWidth(container);
+  let resizeTimer;
+  const resizeObserver = new ResizeObserver(() => {
+    if (previewToken !== container._previewToken) {
+      resizeObserver.disconnect();
+      return;
+    }
+    if (Math.abs(fitWidth(container) - lastRenderedWidth) <= 1) return;
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(async () => {
+      if (previewToken !== container._previewToken) return;
+      lastRenderedWidth = fitWidth(container);
+      await renderAllPages();
+      applyScale(getScale());
+    }, 150);
+  });
+  resizeObserver.observe(container);
 }
 
 /**
- * Render a document preview (PDF object or watermarked image) into a container.
- * Callers handle fetching the URL and any "previewable type" gating.
+ * Render a document preview (pdf.js canvas or watermarked image) into a container.
  * @param {HTMLElement} container
  * @param {object} opts
  * @param {string} opts.url - presigned preview URL
  * @param {string} opts.contentType
  * @param {string} [opts.watermarkEmail=""] - email tiled over image previews
+ * @param {Function} [opts.onRotate]
+ * @param {Function} [opts.onRender] - called after all pages are drawn (PDF) or image loads
+ * @param {object} [opts.pdfjsLib]
  */
 export function renderPreview(
   container,
-  { url, contentType, watermarkEmail = "", onRotate } = {},
+  { url, contentType, watermarkEmail = "", onRotate, onRender, pdfjsLib } = {},
 ) {
-  // The panel is reused across documents; a new preview starts unrotated.
   container._previewRotation = 0;
-  const options = { onRotate };
-  if (contentType === "application/pdf") {
-    // eslint-disable-next-line no-unsanitized/property -- URL escaped with esc()
-    container.innerHTML = `<object data="${esc(url)}" type="application/pdf" class="document-preview-frame"><p class=\"empty-state\">Preview unavailable</p></object>`;
-  } else {
-    // eslint-disable-next-line no-unsanitized/property -- URL escaped with esc()
-    container.innerHTML = `<img src="${esc(url)}" class="document-preview-img" alt="Document preview" draggable="false" oncontextmenu="return false" onerror="this.parentElement.innerHTML='<p class=empty-state>Preview unavailable</p>'" />`;
-    container.classList.add("watermark-block");
-    const img = container.querySelector("img");
-    if (img) {
-      addImageZoom(container, img, { onRotate: options.onRotate });
-      // Lets responsive layouts split preview + extracted-data side by side
-      // for a wide/landscape document but stack them for a tall/portrait one
-      // (a portrait page squeezed into a half-width column reads worse than
-      // one given the full page width instead).
-      const markOrientation = () => {
-        container.classList.toggle(
-          "preview-landscape",
-          img.naturalWidth > img.naturalHeight,
-        );
-      };
-      if (img.complete && img.naturalWidth) markOrientation();
-      else img.addEventListener("load", markOrientation, { once: true });
-    }
-  }
+  container._previewToken = (container._previewToken ?? 0) + 1;
+  // Apply watermark setup for all content types so PDFs get it too.
+  container.classList.add("watermark-block");
   container.style.setProperty(
     "--watermark-bg",
     `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='300' height='150'><text x='50%' y='50%' font-family='sans-serif' font-size='18' fill='black' text-anchor='middle' dominant-baseline='middle' transform='rotate(-30 150 75)'>${watermarkEmail}</text></svg>`)}")`,
   );
   container.classList.add("watermarked");
+
+  if (contentType === "application/pdf") {
+    renderPdfPreview(container, url, { pdfjsLib, onRender });
+    return;
+  }
+  // Built with DOM APIs + listeners, not inline on* attributes: the deployed
+  // CSP (script-src 'self') blocks inline event handlers.
+  const img = document.createElement("img");
+  img.className = "document-preview-img";
+  img.alt = "Document preview";
+  img.draggable = false;
+  img.addEventListener("contextmenu", (e) => e.preventDefault());
+  img.addEventListener("error", () => {
+    container.innerHTML = '<p class="empty-state">Preview unavailable</p>';
+  });
+  img.src = url;
+  container.replaceChildren(img);
+  addImageZoom(container, img, { onRotate });
+  const markOrientation = () => {
+    container.classList.toggle(
+      "preview-landscape",
+      img.naturalWidth > img.naturalHeight,
+    );
+  };
+  if (img.complete && img.naturalWidth) markOrientation();
+  else img.addEventListener("load", markOrientation, { once: true });
 }
 
 /**

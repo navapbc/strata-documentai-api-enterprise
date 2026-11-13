@@ -75,6 +75,18 @@ resource "aws_s3_bucket_notification" "this" {
   eventbridge = true
 }
 
+resource "aws_s3_bucket_cors_configuration" "this" {
+  count  = length(var.cors_allowed_origins) > 0 ? 1 : 0
+  bucket = aws_s3_bucket.this.id
+
+  cors_rule {
+    allowed_methods = ["GET"]
+    allowed_origins = var.cors_allowed_origins
+    allowed_headers = ["*"]
+    max_age_seconds = 3600
+  }
+}
+
 # Access policy for the service to read/write
 data "aws_iam_policy_document" "access" {
   statement {

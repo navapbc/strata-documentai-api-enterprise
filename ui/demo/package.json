@@ -7,8 +7,8 @@
     "node": ">=20.19"
   },
   "scripts": {
-    "dev": "esbuild src/main.js styles/style.css --bundle --outdir=dist --outbase=. --sourcemap --watch --serve=3001 --servedir=. --loader:.html=text",
-    "build": "esbuild src/main.js styles/style.css --bundle --outdir=dist --outbase=. --minify --loader:.html=text",
+    "dev": "mkdir -p dist && cp node_modules/pdfjs-dist/build/pdf.worker.min.mjs dist/pdf.worker.min.mjs && NODE_PATH=node_modules esbuild src/main.js styles/style.css --bundle --outdir=dist --outbase=. --sourcemap --watch --serve=3001 --servedir=. --loader:.html=text",
+    "build": "NODE_PATH=node_modules esbuild src/main.js styles/style.css --bundle --outdir=dist --outbase=. --minify --loader:.html=text && cp node_modules/pdfjs-dist/build/pdf.worker.min.mjs dist/pdf.worker.min.mjs",
     "lint": "eslint src/ tests/ e2e/",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -28,6 +28,7 @@
     "vitest": "^5.0.1"
   },
   "dependencies": {
+    "pdfjs-dist": "^4.10.38",
     "qrcode": "^1.5.4"
   }
 }
