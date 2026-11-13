@@ -5,6 +5,12 @@ variable "function_name" {
   description = "Name of the Lambda function fronted by the HTTP API."
 }
 
+variable "description" {
+  type        = string
+  description = "Human-readable description shown in the Lambda console."
+  default     = null
+}
+
 variable "image_uri" {
   type        = string
   description = "ECR container image URI (including tag) for the Lambda function."

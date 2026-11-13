@@ -46,6 +46,7 @@ resource "aws_iam_role_policy_attachment" "extra" {
 
 resource "aws_lambda_function" "this" {
   function_name = var.function_name
+  description   = var.description
   role          = aws_iam_role.this.arn
   package_type  = "Image"
   image_uri     = var.image_uri

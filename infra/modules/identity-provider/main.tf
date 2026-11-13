@@ -233,6 +233,7 @@ PYTHON
 resource "aws_lambda_function" "pre_signup" {
   count         = local.domain_restriction_enabled ? 1 : 0
   function_name = "${var.name}-pre-signup"
+  description   = "Cognito pre-signup trigger: blocks federated sign-ups from non-allowlisted email domains"
   role          = aws_iam_role.pre_signup[0].arn
   handler       = "index.handler"
   runtime       = "python3.11"
