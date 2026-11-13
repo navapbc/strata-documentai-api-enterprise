@@ -58,6 +58,10 @@ locals {
   api_auth_enabled              = "true"
   api_auth_cache_ttl            = "300"
 
+  worker_timeout_seconds = 300
+  # AWS recommends visibility timeout >= 6× the function timeout for SQS event sources.
+  sqs_visibility_timeout_seconds = 6 * local.worker_timeout_seconds
+
   # DynamoDB GSI names - single source of truth for infra + env vars
   gsi_job_id                = "JobIdIndex"
   gsi_external_document_id  = "ExternalDocumentIdIndex"
@@ -292,13 +296,15 @@ module "document_builds" {
 # --- SQS (Metrics Pipeline) ---
 
 module "metrics_queue" {
-  source = "../../modules/queue"
-  name   = "${local.service_name}-metrics"
+  source                     = "../../modules/queue"
+  name                       = "${local.service_name}-metrics"
+  visibility_timeout_seconds = local.sqs_visibility_timeout_seconds
 }
 
 module "ocr_mapping_queue" {
-  source = "../../modules/queue"
-  name   = "${local.service_name}-ocr-mapping"
+  source                     = "../../modules/queue"
+  name                       = "${local.service_name}-ocr-mapping"
+  visibility_timeout_seconds = local.sqs_visibility_timeout_seconds
 }
 
 # --- Analytics (Athena + Glue) ---
@@ -560,6 +566,7 @@ module "api_gateway" {
   source = "../../modules/api-gateway"
 
   function_name = "${local.service_name}-api"
+  description   = "DocumentAI HTTP API handler"
   image_uri     = "${module.ecr.repository_url}:${var.image_tag}"
   timeout       = 30
   memory_size   = 1024
@@ -746,17 +753,55 @@ module "monitoring" {
 
   # Worker Lambdas
   workers = {
-    "Document Processor"    = { function_name = module.workers["document-processor"].function_name, timeout_seconds = 300, pipeline = true, scheduled = false }
-    "BDA Result Processor"  = { function_name = module.workers["bda-result-processor"].function_name, timeout_seconds = 300, pipeline = true, scheduled = false }
-    "OCR Mapping Processor" = { function_name = module.workers["ocr-mapping-processor"].function_name, timeout_seconds = 300, pipeline = true, scheduled = false }
-    "Metrics Processor"     = { function_name = module.workers["metrics-processor"].function_name, timeout_seconds = 300, pipeline = false, scheduled = false }
-    "Metrics Aggregator"    = { function_name = module.workers["metrics-aggregator"].function_name, timeout_seconds = 300, pipeline = false, scheduled = true, invocation_window_seconds = 600 }
+    "Document Processor" = {
+      function_name   = module.workers["document-processor"].function_name
+      timeout_seconds = local.worker_timeout_seconds
+      pipeline        = true
+      scheduled       = false
+    }
+    "BDA Result Processor" = {
+      function_name   = module.workers["bda-result-processor"].function_name
+      timeout_seconds = local.worker_timeout_seconds
+      pipeline        = true
+      scheduled       = false
+    }
+    "OCR Mapping Processor" = {
+      function_name   = module.workers["ocr-mapping-processor"].function_name
+      timeout_seconds = local.worker_timeout_seconds
+      pipeline        = true
+      scheduled       = false
+    }
+    "Metrics Processor" = {
+      function_name   = module.workers["metrics-processor"].function_name
+      timeout_seconds = local.worker_timeout_seconds
+      pipeline        = false
+      scheduled       = false
+    }
+    "Metrics Aggregator" = {
+      function_name             = module.workers["metrics-aggregator"].function_name
+      timeout_seconds           = local.worker_timeout_seconds
+      pipeline                  = false
+      scheduled                 = true
+      invocation_window_seconds = 600
+    }
     # invocation_window_seconds = 86400: current-month cron fires daily, so a full
     # day with zero runs means the schedule is broken. Note: on first apply with
     # create_alarms = true the alarm starts in ALARM until the next daily run lands
     # (~up to 24 hours) - expected bring-up behavior, not a recurring false positive.
-    "Usage Report"    = { function_name = module.workers["usage-report"].function_name, timeout_seconds = 300, pipeline = false, scheduled = true, invocation_window_seconds = 86400 }
-    "Document Reaper" = { function_name = module.workers["document-reaper"].function_name, timeout_seconds = 300, pipeline = false, scheduled = true, invocation_window_seconds = 7200 }
+    "Usage Report" = {
+      function_name             = module.workers["usage-report"].function_name
+      timeout_seconds           = local.worker_timeout_seconds
+      pipeline                  = false
+      scheduled                 = true
+      invocation_window_seconds = 86400
+    }
+    "Document Reaper" = {
+      function_name             = module.workers["document-reaper"].function_name
+      timeout_seconds           = local.worker_timeout_seconds
+      pipeline                  = false
+      scheduled                 = true
+      invocation_window_seconds = 7200
+    }
   }
 
   # API Lambda
@@ -778,26 +823,57 @@ module "monitoring" {
 # the map heterogeneous (which for_each rejects). Instead the command map drives
 # for_each and each trigger is resolved from its own homogeneous lookup map.
 locals {
-  worker_commands = {
-    "document-processor"    = ["documentai_api.jobs.document_processor.handler.handler"]
-    "bda-result-processor"  = ["documentai_api.jobs.bda_result_processor.handler.handler"]
-    "ocr-mapping-processor" = ["documentai_api.jobs.ocr_mapping_processor.handler.handler"]
-    "metrics-processor"     = ["documentai_api.jobs.metrics_processor.handler.handler"]
-    "metrics-aggregator"    = ["documentai_api.jobs.metrics_aggregator.handler.handler"]
-    "usage-report"          = ["documentai_api.jobs.usage_report.handler.handler"]
-    "document-reaper"       = ["documentai_api.jobs.document_reaper.handler.handler"]
+  worker_configs = {
+    "document-processor" = {
+      command     = ["documentai_api.jobs.document_processor.handler.handler"]
+      description = "Invokes BDA for each uploaded document and writes initial metadata"
+      # 4 GB: BDA response payloads + image preprocessing can be large; higher memory
+      # also gives ~2.5 vCPUs which reduces per-document wall-clock time.
+      memory_size = 4096
+    }
+    "bda-result-processor" = {
+      command     = ["documentai_api.jobs.bda_result_processor.handler.handler"]
+      description = "Processes BDA output and updates document metadata"
+      memory_size = 1024
+    }
+    "ocr-mapping-processor" = {
+      command     = ["documentai_api.jobs.ocr_mapping_processor.handler.handler"]
+      description = "Maps OCR word blocks to extracted fields via Nova"
+      memory_size = 1024
+    }
+    "metrics-processor" = {
+      command     = ["documentai_api.jobs.metrics_processor.handler.handler"]
+      description = "Writes per-request metrics from SQS into S3"
+      memory_size = 1024
+    }
+    "metrics-aggregator" = {
+      command     = ["documentai_api.jobs.metrics_aggregator.handler.handler"]
+      description = "Aggregates raw S3 metrics into Athena-queryable Parquet"
+      memory_size = 1024
+    }
+    "usage-report" = {
+      command     = ["documentai_api.jobs.usage_report.handler.handler"]
+      description = "Generates monthly per-tenant usage reports"
+      memory_size = 1024
+    }
+    "document-reaper" = {
+      command     = ["documentai_api.jobs.document_reaper.handler.handler"]
+      description = "Resolves documents stuck in PROCESSING by checking BDA job status"
+      memory_size = 1024
+    }
   }
 }
 
 module "workers" {
-  for_each = local.worker_commands
+  for_each = local.worker_configs
   source   = "../../modules/worker"
 
   function_name         = "${local.service_name}-${each.key}"
+  description           = each.value.description
   image_uri             = local.lambda_image_uri
-  command               = each.value
-  timeout               = 300
-  memory_size           = 1024
+  command               = each.value.command
+  timeout               = local.worker_timeout_seconds
+  memory_size           = each.value.memory_size
   environment_variables = each.key == "document-processor" ? local.lambda_env_vars : local.worker_env_vars_without_bda_project_ids
   policy_arns           = local.worker_policy_arns[each.key]
 
