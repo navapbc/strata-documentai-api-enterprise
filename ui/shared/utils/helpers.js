@@ -1,3 +1,9 @@
+export const EXTRACTION_METHOD_LABELS = {
+  bda: "BDA",
+  textract: "Textract",
+  "ocr-mapping": "OCR Mapping",
+};
+
 export function esc(str) {
   const el = document.createElement("span");
   el.textContent = str || "";

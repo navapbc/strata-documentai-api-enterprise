@@ -49,6 +49,7 @@ describe("tenants view", () => {
       getTenantId: vi.fn(() => null),
       onChange: vi.fn(() => () => {}),
       load: vi.fn(),
+      refresh: vi.fn().mockResolvedValue(undefined),
       mountSelect: vi.fn(),
       unmountSelect: vi.fn(),
     }));
@@ -111,6 +112,17 @@ describe("tenants view", () => {
     expect(mockToast.show).toHaveBeenCalledWith("Tenant created");
     expect(root.querySelector("#tenant-modal").classList.contains("hidden")).toBe(true);
     expect(mockList).toHaveBeenCalledTimes(2);
+  });
+
+  it("create form calls TenantContext.refresh after creation", async () => {
+    const { refresh } = await import("../../src/utils/tenant-context.js");
+    TenantsView.mount(root);
+    await flush();
+
+    submitTenantForm(root, "new-co", "New Company");
+    await flush();
+
+    expect(refresh).toHaveBeenCalledOnce();
   });
 
   it("create form shows error on failure", async () => {
@@ -283,6 +295,7 @@ describe("tenants view - presentation mode", () => {
       getTenantId: vi.fn(() => null),
       onChange: vi.fn(() => () => {}),
       load: vi.fn(),
+      refresh: vi.fn().mockResolvedValue(undefined),
       mountSelect: vi.fn(),
       unmountSelect: vi.fn(),
     }));

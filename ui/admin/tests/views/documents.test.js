@@ -62,6 +62,8 @@ describe("documents view", () => {
     vi.doMock("../../src/utils/helpers.js", () => ({
       esc: (s) => s,
       formatDate: (d) => d || "-",
+      formatDateTime: (d) => d || "-",
+      EXTRACTION_METHOD_LABELS: {},
       showLoading: vi.fn(),
       setViewActions: vi.fn(),
       clearViewActions: vi.fn(),
@@ -323,7 +325,7 @@ describe("documents view - presentation mode", () => {
       tenantId: "real-tenant-id",
       maskedTenantId: "Acme Corp",
       apiKeyName: "real-key-name",
-      matchedBlueprint: "real-blueprint",
+      matchedDocumentClass: "real-document-class",
     });
 
     root = document.createElement("div");
@@ -350,9 +352,9 @@ describe("documents view - presentation mode", () => {
     expect(html).not.toContain("real-key-name");
   });
 
-  it("masks matched blueprint in detail", () => {
+  it("masks matched document class in detail", () => {
     const html = root.querySelector("#doc-pane-detail-content").innerHTML;
     expect(html).toContain("••••••••");
-    expect(html).not.toContain("real-blueprint");
+    expect(html).not.toContain("real-document-class");
   });
 });

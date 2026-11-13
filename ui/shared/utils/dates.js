@@ -23,7 +23,10 @@ export function relativeTime(iso) {
 
 export function formatDate(iso) {
   if (!iso) return "-";
-  return new Date(iso).toLocaleDateString();
+  // Date-only strings (YYYY-MM-DD) must be parsed as local time to avoid
+  // UTC midnight shifting the date back a day in UTC- timezones.
+  const d = iso.includes("T") ? new Date(iso) : new Date(iso + "T00:00:00");
+  return d.toLocaleDateString();
 }
 
 export function formatDateTime(iso) {

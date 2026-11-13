@@ -90,3 +90,43 @@ describe("tenant-context onChange registration", () => {
     expect(calls).toEqual([]);
   });
 });
+
+describe("tenant-context refresh()", () => {
+  it("re-fetches tenants and re-populates selects after a no-op load", async () => {
+    // load() is a no-op once _loaded is true; refresh() must bypass that.
+    await TenantContext.load();
+    document.body.innerHTML = '<select id="tc-refresh"></select>';
+    TenantContext.mountSelect(document.querySelector("#tc-refresh"));
+
+    await TenantContext.refresh();
+
+    const select = document.querySelector("#tc-refresh");
+    // The mock returns [{ tenantId: "acme" }], so there should be an option for it.
+    const values = [...select.options].map((o) => o.value);
+    expect(values).toContain("acme");
+  });
+
+  it("re-fires onChange listeners with the restored tenant after refresh", async () => {
+    TenantContext.setTenantId("acme");
+    const calls = [];
+    TenantContext.onChange((tid) => calls.push(tid));
+
+    await TenantContext.refresh();
+
+    // load() restores the saved tenant from sessionStorage and fires listeners.
+    expect(calls).toContain("acme");
+  });
+
+  it("does not double-fetch when a load is already in flight", async () => {
+    const { list } = await import("../../src/services/tenants.js");
+    list.mockClear();
+
+    // Kick off two refreshes concurrently without awaiting the first.
+    const p1 = TenantContext.refresh();
+    const p2 = TenantContext.refresh();
+    await Promise.all([p1, p2]);
+
+    // The second refresh sees _loading=true and exits early, so list is called once.
+    expect(list).toHaveBeenCalledTimes(1);
+  });
+});
