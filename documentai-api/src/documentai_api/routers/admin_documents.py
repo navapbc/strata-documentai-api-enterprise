@@ -101,6 +101,7 @@ def _record_to_detail(
         bda_processing_time_seconds=record.get(DocumentMetadata.EXTRACTION_PROCESSING_TIME_SECONDS)
         or record.get(DocumentMetadata.BDA_PROCESSING_TIME_SECONDS),
         bda_region_used=record.get(DocumentMetadata.BDA_REGION_USED, ""),
+        extraction_method=record.get(DocumentMetadata.EXTRACT_METHOD),
         retry_count=record.get(DocumentMetadata.RETRY_COUNT, 0),
         field_confidence_scores=_parse_confidence_scores(record),
         external_document_id=record.get(DocumentMetadata.EXTERNAL_DOCUMENT_ID, ""),

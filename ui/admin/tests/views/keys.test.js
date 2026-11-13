@@ -28,6 +28,8 @@ describe("keys view", () => {
     vi.doMock("../../src/utils/tenant-context.js", () => ({
       getTenantId: mockGetTenantId,
       onChange: vi.fn(() => () => {}),
+      refresh: vi.fn().mockResolvedValue(undefined),
+      getOptions: vi.fn(() => []),
       mountSelect: vi.fn(),
       unmountSelect: vi.fn(),
     }));
@@ -190,6 +192,21 @@ describe("keys view", () => {
     expect(root.querySelector("#key-created-modal").classList.contains("hidden")).toBe(true);
   });
 
+  it("opening create modal calls TenantContext.refresh", async () => {
+    const { refresh } = await import("../../src/utils/tenant-context.js");
+    KeysView.mount(root);
+    await flush();
+
+    const Helpers = await import("../../src/utils/helpers.js");
+    const createBtn = Helpers.setViewActions.mock.calls
+      .flat()
+      .find((el) => el?.textContent === "Create Key");
+    createBtn.click();
+    await flush();
+
+    expect(refresh).toHaveBeenCalledOnce();
+  });
+
   // --- Cleanup ---
 
   it("unmount cleans up", () => {
@@ -218,6 +235,8 @@ describe("keys view - presentation mode", () => {
     vi.doMock("../../src/utils/tenant-context.js", () => ({
       getTenantId: vi.fn(() => null),
       onChange: vi.fn(() => () => {}),
+      refresh: vi.fn().mockResolvedValue(undefined),
+      getOptions: vi.fn(() => []),
       mountSelect: vi.fn(),
       unmountSelect: vi.fn(),
     }));

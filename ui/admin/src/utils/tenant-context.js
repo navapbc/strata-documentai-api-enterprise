@@ -76,6 +76,11 @@ export function getTenantId() {
   return _currentTenantId;
 }
 
+export async function refresh() {
+  _loaded = false;
+  await load();
+}
+
 export function getOptions() {
   return _options;
 }

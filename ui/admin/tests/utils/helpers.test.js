@@ -40,6 +40,15 @@ describe("formatDate()", () => {
     expect(formatDate("")).toBe("-");
     expect(formatDate(undefined)).toBe("-");
   });
+
+  it("date-only string renders the correct calendar date without UTC offset shift", () => {
+    // "2026-03-01" must display as March 1, not Feb 28 in UTC- timezones.
+    const result = formatDate("2026-03-01");
+    expect(result).toContain("2026");
+    // toLocaleDateString varies by locale, but the day must not be 28.
+    const d = new Date("2026-03-01T00:00:00");
+    expect(result).toBe(d.toLocaleDateString());
+  });
 });
 
 describe("formatDateTime()", () => {

@@ -21,6 +21,7 @@ describe("document-categories view", () => {
     vi.doMock("../../src/utils/tenant-context.js", () => ({
       getTenantId: vi.fn(() => "acme"),
       onChange: vi.fn(() => () => {}),
+      refresh: vi.fn().mockResolvedValue(undefined),
       getOptions: vi.fn(() => []),
       mountSelect: vi.fn(),
       unmountSelect: vi.fn(),
@@ -129,6 +130,21 @@ describe("document-categories view", () => {
     );
     createBtn?.click();
     expect(root.querySelector("#category-dates").classList.contains("hidden")).toBe(true);
+  });
+
+  it("opening create modal calls TenantContext.refresh", async () => {
+    const { refresh } = await import("../../src/utils/tenant-context.js");
+    DocCategoriesView.mount(root);
+    await new Promise((r) => setTimeout(r, 0));
+
+    const Helpers = await import("../../src/utils/helpers.js");
+    const createBtn = Helpers.setViewActions.mock.calls
+      .flat()
+      .find((el) => el?.textContent === "Create Category");
+    createBtn.click();
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(refresh).toHaveBeenCalledOnce();
   });
 
   it("shows dates in edit modal with formatted values", async () => {

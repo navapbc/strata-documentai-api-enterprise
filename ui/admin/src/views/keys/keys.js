@@ -124,8 +124,9 @@ async function handleConfirmRevoke() {
   }
 }
 
-function openCreateModal() {
+async function openCreateModal() {
   openModal(_createModal);
+  await TenantContext.refresh();
   const tenantSelect = _root.querySelector("#key-tenant");
   tenantSelect.innerHTML = '<option value="">\u2014 Select tenant \u2014</option>';
   for (const { value, label } of TenantContext.getOptions()) {

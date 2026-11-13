@@ -12,4 +12,5 @@ export {
   clearViewActions,
   sortRows,
   bindSortHeaders,
+  EXTRACTION_METHOD_LABELS,
 } from "../../../shared/utils/helpers.js";

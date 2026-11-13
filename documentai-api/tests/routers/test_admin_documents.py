@@ -340,6 +340,31 @@ def test_detail_malformed_json_returns_null(api_client, seeded_docs):
     assert response.json()["fields"] is None
 
 
+def test_detail_includes_extraction_method(api_client, ddb_doc_metadata_table):
+    ddb_doc_metadata_table.put_item(
+        Item={
+            DocumentMetadata.FILE_NAME: "bda-job-extract-method.pdf",
+            DocumentMetadata.JOB_ID: "job-extract-method",
+            DocumentMetadata.ORIGINAL_FILE_NAME: "bda.pdf",
+            DocumentMetadata.TENANT_ID: TENANT_ADMIN_ID,
+            DocumentMetadata.PROCESS_STATUS: "completed",
+            DocumentMetadata.CREATED_AT: "2026-01-01T00:00:00Z",
+            DocumentMetadata.EXTRACT_METHOD: "bda",
+        }
+    )
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(f"{DOCUMENTS_URL}/job-extract-method")
+    assert response.status_code == 200
+    assert response.json()["extractionMethod"] == "bda"
+
+
+def test_detail_extraction_method_absent_returns_none(api_client, seeded_docs):
+    override_jwt(SUPER_ADMIN_CLAIMS)
+    response = api_client.get(f"{DOCUMENTS_URL}/test-job-id-1")
+    assert response.status_code == 200
+    assert response.json()["extractionMethod"] is None
+
+
 ##############################################################################
 # GET /v1/admin/documents/{job_id}/preview
 ##############################################################################

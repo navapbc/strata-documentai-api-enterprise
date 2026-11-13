@@ -10,6 +10,7 @@
  */
 import * as DocumentsService from "../services/documents.js";
 import * as Helpers from "../utils/helpers.js";
+import { EXTRACTION_METHOD_LABELS } from "../utils/helpers.js";
 import * as Session from "../../../shared/utils/session.js";
 import * as pdfjsLib from "pdfjs-dist";
 import { isPresentationMode, MASKED_VALUE } from "../../../shared/utils/presentation-mode.js";
@@ -258,44 +259,48 @@ export function mount(root) {
     const presented = isPresentationMode();
     const sections = [
       renderSection("Overview", [
-        ["Job ID", doc.jobId],
         ["File Name", doc.fileName],
-        ["Status", doc.processStatus],
-        ["Category", doc.documentCategory],
-        ["Tenant", presented ? (doc.maskedTenantId ?? doc.tenantId) : doc.tenantId],
-        ["API Key", presented ? MASKED_VALUE : doc.apiKeyName],
+        ["Content Type", doc.contentType],
+        ["Pages", doc.pagesDetected],
+        ["Size", doc.fileSizeBytes != null ? `${(doc.fileSizeBytes / 1024).toFixed(1)} KB` : "-"],
         ["External ID", doc.externalDocumentId],
         ["Batch ID", doc.batchId],
+        ["Created", Helpers.formatDateTime(doc.createdAt)],
+      ]),
+      renderSection("Tenant", [
+        ["Tenant", presented ? (doc.maskedTenantId ?? doc.tenantId) : doc.tenantId],
+        ["API Key", presented ? MASKED_VALUE : doc.apiKeyName],
       ]),
       renderSection("Classification", [
-        ["Matched Blueprint", presented ? MASKED_VALUE : doc.matchedBlueprint],
+        ["Document Class", presented ? MASKED_VALUE : doc.matchedDocumentClass],
         [
-          "Blueprint Confidence",
+          "Classification Confidence",
           doc.matchedBlueprintConfidence != null
             ? `${(doc.matchedBlueprintConfidence * 100).toFixed(1)}%`
             : "-",
         ],
-        ["Document Class", doc.matchedDocumentClass],
       ]),
       renderSection("Processing", [
-        ["Created", doc.createdAt],
-        ["Processed", doc.processedDate],
+        ["Job ID", doc.jobId],
+        ["Status", doc.processStatus],
+        ["Upload Category", doc.documentCategory],
         [
-          "Total Time",
+          "Total Duration",
           doc.totalProcessingTimeSeconds != null ? `${doc.totalProcessingTimeSeconds}s` : "-",
         ],
         [
-          "BDA Time",
+          "Extraction Duration",
           doc.bdaProcessingTimeSeconds != null ? `${doc.bdaProcessingTimeSeconds}s` : "-",
         ],
-        ["BDA Region", doc.bdaRegionUsed],
+        ["Extraction Region", doc.bdaRegionUsed],
+        [
+          "Extraction Method",
+          doc.extractionMethod
+            ? (EXTRACTION_METHOD_LABELS[doc.extractionMethod] ?? doc.extractionMethod)
+            : null,
+        ],
         ["Retries", doc.retryCount],
         ["Error", doc.errorMessage],
-      ]),
-      renderSection("File", [
-        ["Content Type", doc.contentType],
-        ["Size", doc.fileSizeBytes != null ? `${(doc.fileSizeBytes / 1024).toFixed(1)} KB` : "-"],
-        ["Pages", doc.pagesDetected],
       ]),
     ];
     if (doc.fields) {

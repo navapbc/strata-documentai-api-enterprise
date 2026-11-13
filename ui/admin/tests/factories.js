@@ -70,6 +70,8 @@ export function buildDocument(overrides = {}) {
     processStatus: "completed",
     documentCategory: "general",
     matchedBlueprint: null,
+    matchedDocumentClass: null,
+    extractionMethod: null,
     createdAt: "2026-01-01T00:00:00Z",
     ...overrides,
   };

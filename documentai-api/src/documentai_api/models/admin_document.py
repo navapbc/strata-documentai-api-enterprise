@@ -44,6 +44,7 @@ class DocumentDetail(BaseApiResponse):
     total_processing_time_seconds: float | None = None
     bda_processing_time_seconds: float | None = None
     bda_region_used: str
+    extraction_method: str | None = None
     retry_count: int = 0
     field_confidence_scores: list[dict[str, Any]] | dict[str, Any] | None = None
     external_document_id: str

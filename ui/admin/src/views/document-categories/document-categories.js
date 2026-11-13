@@ -207,10 +207,11 @@ function populateTenantSelect(selectedTenantId, disabled) {
   _tenantSelect.disabled = disabled;
 }
 
-function openCreateModal() {
+async function openCreateModal() {
   _editingCategory = null;
   _editingTenantId = null;
   _titleEl.textContent = "Create category";
+  await TenantContext.refresh();
   populateTenantSelect(TenantContext.getTenantId(), false);
   _nameInput.value = "";
   _nameInput.disabled = false;

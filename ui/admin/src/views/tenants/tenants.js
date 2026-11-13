@@ -201,7 +201,7 @@ async function handleSubmit(e) {
         confidenceFloor,
       );
       Toast.show("Tenant created");
-      TenantContext.load();
+      await TenantContext.refresh();
     }
     closeTenantModal();
     load();
