@@ -6215,6 +6215,17 @@
             "type": "string",
             "title": "Bdaregionused"
           },
+          "extractionMethod": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extractionmethod"
+          },
           "retryCount": {
             "type": "integer",
             "title": "Retrycount",
