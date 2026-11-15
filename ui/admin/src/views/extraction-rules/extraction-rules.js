@@ -90,7 +90,7 @@ async function loadSchemas() {
     Store.set({ schemas: SchemasService.groupFieldsByDocType(data), schemasLoading: false });
   } catch (e) {
     Store.set({ schemasLoading: false });
-    Toast.show(`Failed to load schemas: ${e.message}`);
+    Toast.show(`Failed to load schemas: ${e.message}`, "error");
   }
 }
 

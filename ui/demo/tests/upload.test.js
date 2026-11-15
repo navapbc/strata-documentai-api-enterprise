@@ -93,7 +93,7 @@ describe("upload view", () => {
     // Advance past poll interval
     await vi.advanceTimersByTimeAsync(3500);
 
-    expect(Documents.upload).toHaveBeenCalledWith(file);
+    expect(Documents.upload).toHaveBeenCalledWith(file, expect.any(AbortSignal));
   });
 
   it("shows toast on upload failure", async () => {
@@ -109,7 +109,7 @@ describe("upload view", () => {
     root.querySelector("#demo-run-btn").click();
     await vi.advanceTimersByTimeAsync(100);
 
-    expect(Toast.show).toHaveBeenCalledWith("Extraction failed: Network error");
+    expect(Toast.show).toHaveBeenCalledWith("Extraction failed: Network error", "error");
   });
 
   it("fires onLogout callback when sign out clicked", () => {

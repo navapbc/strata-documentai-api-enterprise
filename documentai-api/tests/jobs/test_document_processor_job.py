@@ -455,6 +455,85 @@ def test_main_propagates_s3_metadata(input_pdf, mocker):
 
 
 # =============================================================================
+# original_file_name unquoting
+# =============================================================================
+
+
+@pytest.fixture
+def input_pdf_encoded_name(s3_bucket, ddb_doc_metadata_table):
+    ddb_doc_metadata_table.put_item(
+        Item={
+            "fileName": "test.pdf",
+            "tenantId": "test-tenant-id",
+            DocumentMetadata.PROCESS_STATUS: ProcessStatus.NOT_STARTED.value,
+        }
+    )
+    return s3_bucket.put_object(
+        Key="input/test.pdf",
+        Body=PDF_MAGIC,
+        ContentType="application/pdf",
+        Metadata={
+            "job-id": "test-job-id",
+            "trace-id": "test-trace-id",
+            "user-provided-document-category": "income",
+            "original-file-name": "294.%20WH-380-E%20Von%202.pdf",
+        },
+    )
+
+
+@pytest.fixture
+def input_pdf_non_ascii_name(s3_bucket, ddb_doc_metadata_table):
+    ddb_doc_metadata_table.put_item(
+        Item={
+            "fileName": "test.pdf",
+            "tenantId": "test-tenant-id",
+            DocumentMetadata.PROCESS_STATUS: ProcessStatus.NOT_STARTED.value,
+        }
+    )
+    return s3_bucket.put_object(
+        Key="input/test.pdf",
+        Body=PDF_MAGIC,
+        ContentType="application/pdf",
+        Metadata={
+            "job-id": "test-job-id",
+            "trace-id": "test-trace-id",
+            "user-provided-document-category": "income",
+            "original-file-name": "caf%C3%A9.pdf",
+        },
+    )
+
+
+def test_main_decodes_percent_encoded_filename(input_pdf_encoded_name, mocker):
+    """Presigned uploads store percent-encoded filenames in S3 metadata; processor must decode."""
+    mock_insert = mocker.patch(
+        "documentai_api.jobs.document_processor.main.upsert_initial_ddb_record"
+    )
+    mocker.patch("documentai_api.jobs.document_processor.main.get_ddb_record").side_effect = [
+        None,
+        {DocumentMetadata.PROCESS_STATUS: ProcessStatus.NOT_STARTED.value},
+    ]
+
+    main(input_pdf_encoded_name.key, input_pdf_encoded_name.bucket_name)
+
+    assert mock_insert.call_args.kwargs["original_file_name"] == "294. WH-380-E Von 2.pdf"
+
+
+def test_main_decodes_non_ascii_filename(input_pdf_non_ascii_name, mocker):
+    """Non-ASCII filenames round-trip through percent-encoding and back."""
+    mock_insert = mocker.patch(
+        "documentai_api.jobs.document_processor.main.upsert_initial_ddb_record"
+    )
+    mocker.patch("documentai_api.jobs.document_processor.main.get_ddb_record").side_effect = [
+        None,
+        {DocumentMetadata.PROCESS_STATUS: ProcessStatus.NOT_STARTED.value},
+    ]
+
+    main(input_pdf_non_ascii_name.key, input_pdf_non_ascii_name.bucket_name)
+
+    assert mock_insert.call_args.kwargs["original_file_name"] == "café.pdf"
+
+
+# =============================================================================
 # s3_fetch_duration ordering and arithmetic
 # =============================================================================
 

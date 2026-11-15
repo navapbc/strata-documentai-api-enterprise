@@ -467,6 +467,33 @@ def test_upsert_ddb_consent_set_once_not_overwritten(ddb_doc_metadata_table):
     )
 
 
+def test_upsert_ddb_filename_not_overwritten(ddb_doc_metadata_table):
+    """OriginalFileName set on first insert is preserved on subsequent upserts.
+
+    The processor upserts after reading S3 metadata. If the API already wrote
+    the real name, the processor's decoded-metadata value must not overwrite it.
+    """
+    object_key = "filename-fixed-file"
+
+    ddb_util.upsert_ddb(InitialDdbRecord(object_key=object_key, original_file_name="real name.pdf"))
+    ddb_util.upsert_ddb(InitialDdbRecord(object_key=object_key, original_file_name="overwrite.pdf"))
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"]
+    assert item[DocumentMetadata.ORIGINAL_FILE_NAME] == "real name.pdf"
+    assert item[DocumentMetadata.ORIGINAL_FILE_NAME_LOWER] == "real name.pdf"
+
+
+def test_upsert_ddb_filename_written_on_first_insert(ddb_doc_metadata_table):
+    """OriginalFileName is written when the record doesn't exist yet."""
+    object_key = "filename-new-file"
+
+    ddb_util.upsert_ddb(InitialDdbRecord(object_key=object_key, original_file_name="new name.pdf"))
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"]
+    assert item[DocumentMetadata.ORIGINAL_FILE_NAME] == "new name.pdf"
+    assert item[DocumentMetadata.ORIGINAL_FILE_NAME_LOWER] == "new name.pdf"
+
+
 def test_upsert_ddb_consent_defaults_true(ddb_doc_metadata_table):
     """AiConsentFlag defaults to True when the caller omits it."""
     object_key = "consent-default-file"

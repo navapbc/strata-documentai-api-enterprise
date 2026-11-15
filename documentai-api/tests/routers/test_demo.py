@@ -237,3 +237,138 @@ def test_demo_upload_rejects_without_auth(api_client, blank_pdf_bytes):
     response = api_client.post("/v1/demo/documents", files=files)
 
     assert response.status_code == 401
+
+
+# =============================================================================
+# Presigned upload endpoint
+# =============================================================================
+
+PRESIGN_URL = "/v1/demo/documents/presigned-url"
+
+_MOCK_POST_DATA = {
+    "url": "https://test-bucket.s3.amazonaws.com/",
+    "fields": {"key": "demo-input/demo-tenant/file-jobid.pdf", "Content-Type": "application/pdf"},
+}
+
+
+@pytest.fixture
+def _demo_input_env(monkeypatch):
+    from documentai_api.generated.env_var_names_generated import EnvVarNames
+
+    monkeypatch.setenv(EnvVarNames.DOCUMENTAI_DEMO_INPUT_LOCATION, "s3://test-bucket/demo-input")
+
+
+@pytest.mark.usefixtures("_demo_input_env")
+def test_demo_presigned_success(api_client, mocker):
+    """POST /v1/demo/documents/presigned-url returns uploadUrl, fields, and jobId."""
+    mocker.patch("documentai_api.routers.demo.insert_minimal_ddb_record")
+    mocker.patch("documentai_api.services.s3.generate_presigned_post", return_value=_MOCK_POST_DATA)
+
+    response = api_client.post(
+        PRESIGN_URL, data={"filename": "doc.pdf", "content_type": "application/pdf"}
+    )
+
+    assert response.status_code == 200
+    result = response.json()
+    assert result["uploadUrl"] == _MOCK_POST_DATA["url"]
+    assert result["fields"] == _MOCK_POST_DATA["fields"]
+    assert "jobId" in result
+
+
+@pytest.mark.usefixtures("_demo_input_env")
+def test_demo_presigned_ddb_record_is_demo(api_client, mocker):
+    """DDB record has is_demo=True, PENDING_UPLOAD status, and the demo tenant_id."""
+    from documentai_api.constants.processing import ProcessStatus, UploadMethod
+
+    mock_insert = mocker.patch("documentai_api.routers.demo.insert_minimal_ddb_record")
+    mocker.patch("documentai_api.services.s3.generate_presigned_post", return_value=_MOCK_POST_DATA)
+
+    api_client.post(PRESIGN_URL, data={"filename": "doc.pdf", "content_type": "application/pdf"})
+
+    record = mock_insert.call_args[0][0]
+    assert record.is_demo is True
+    assert record.process_status == ProcessStatus.PENDING_UPLOAD
+    assert record.upload_method == UploadMethod.PRESIGNED
+    assert record.tenant_id == "test-demo-tenant-id"
+
+
+@pytest.mark.usefixtures("_demo_input_env")
+def test_demo_presigned_s3_key_contains_tenant(api_client, mocker):
+    """S3 object key is scoped under the demo tenant_id."""
+    mocker.patch("documentai_api.routers.demo.insert_minimal_ddb_record")
+    mock_generate = mocker.patch(
+        "documentai_api.services.s3.generate_presigned_post", return_value=_MOCK_POST_DATA
+    )
+
+    api_client.post(PRESIGN_URL, data={"filename": "doc.pdf", "content_type": "application/pdf"})
+
+    key = mock_generate.call_args.kwargs["key"]
+    assert "test-demo-tenant-id" in key
+
+
+@pytest.mark.usefixtures("_demo_input_env")
+def test_demo_presigned_rejects_convertible_type(api_client):
+    """HEIC and other REQUIRES_CONVERSION types return 400."""
+    response = api_client.post(
+        PRESIGN_URL, data={"filename": "photo.heic", "content_type": "image/heic"}
+    )
+
+    assert response.status_code == 400
+    assert "direct upload endpoint" in response.json()["detail"]
+
+
+def test_demo_presigned_rejects_without_auth(api_client):
+    """POST /v1/demo/documents/presigned-url returns 401 without valid credentials."""
+    app.dependency_overrides.pop(_resolve_demo_context, None)
+
+    response = api_client.post(
+        PRESIGN_URL, data={"filename": "doc.pdf", "content_type": "application/pdf"}
+    )
+
+    assert response.status_code == 401
+
+
+@pytest.mark.usefixtures("_demo_input_env")
+def test_demo_presigned_does_not_increment_quota(api_client, mocker):
+    """Presigned demo upload must not count against the tenant's request quota."""
+    from documentai_api.utils import write_limit
+
+    mock_increment = mocker.patch.object(write_limit, "increment_and_check")
+    mocker.patch("documentai_api.routers.demo.insert_minimal_ddb_record")
+    mocker.patch("documentai_api.services.s3.generate_presigned_post", return_value=_MOCK_POST_DATA)
+
+    api_client.post(PRESIGN_URL, data={"filename": "doc.pdf", "content_type": "application/pdf"})
+
+    mock_increment.assert_not_called()
+
+
+@pytest.mark.usefixtures("_demo_input_env")
+def test_demo_presigned_signing_error_returns_500_no_ddb(api_client, mocker):
+    """A signing failure returns 500 and must not write a DDB row."""
+    mock_insert = mocker.patch("documentai_api.routers.demo.insert_minimal_ddb_record")
+    mocker.patch(
+        "documentai_api.services.s3.generate_presigned_post",
+        side_effect=Exception("signing failed"),
+    )
+
+    response = api_client.post(
+        PRESIGN_URL, data={"filename": "doc.pdf", "content_type": "application/pdf"}
+    )
+
+    assert response.status_code == 500
+    assert "Failed to generate upload URL" in response.json()["detail"]
+    mock_insert.assert_not_called()
+
+
+def test_demo_presigned_missing_input_location_returns_500(api_client, mocker):
+    """Missing DOCUMENTAI_DEMO_INPUT_LOCATION returns 500."""
+    mocker.patch(
+        "documentai_api.routers.demo.get_env_config"
+    ).return_value.documentai_demo_input_location = None
+
+    response = api_client.post(
+        PRESIGN_URL, data={"filename": "doc.pdf", "content_type": "application/pdf"}
+    )
+
+    assert response.status_code == 500
+    assert "Demo storage not configured" in response.json()["detail"]

@@ -190,7 +190,7 @@ async function saveRules() {
     Store.set({ dirty: false });
     Toast.show("Rules saved");
   } catch (e) {
-    Toast.show(`Failed to save: ${e.message}`);
+    Toast.show(`Failed to save: ${e.message}`, "error");
   }
 }
 
