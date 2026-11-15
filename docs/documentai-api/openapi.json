@@ -3308,6 +3308,53 @@
         }
       }
     },
+    "/v1/demo/documents/presigned-url": {
+      "post": {
+        "summary": "Create Demo Presigned Upload Url",
+        "description": "Generate a presigned POST URL for direct S3 upload from the demo UI.",
+        "operationId": "create_demo_presigned_upload_url_v1_demo_documents_presigned_url_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_demo_presigned_upload_url_v1_demo_documents_presigned_url_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresignedUploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/v1/demo/documents": {
       "post": {
         "summary": "Create Demo Document",
@@ -4641,6 +4688,27 @@
           "file"
         ],
         "title": "Body_create_demo_document_v1_demo_documents_post"
+      },
+      "Body_create_demo_presigned_upload_url_v1_demo_documents_presigned_url_post": {
+        "properties": {
+          "filename": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Filename",
+            "description": "Original filename"
+          },
+          "content_type": {
+            "type": "string",
+            "title": "Content Type",
+            "description": "MIME type of the file"
+          }
+        },
+        "type": "object",
+        "required": [
+          "filename",
+          "content_type"
+        ],
+        "title": "Body_create_demo_presigned_upload_url_v1_demo_documents_presigned_url_post"
       },
       "Body_create_document_v1_documents_post": {
         "properties": {

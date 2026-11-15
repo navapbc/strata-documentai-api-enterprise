@@ -121,7 +121,7 @@ UploadView.onLogout(() => logout());
 
 Session.onExpire(() => {
   showLogin();
-  Toast.show("Session expired due to inactivity");
+  Toast.show("Session expired due to inactivity", "error");
 });
 
 init();

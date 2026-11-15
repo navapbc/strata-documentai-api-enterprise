@@ -169,7 +169,7 @@ export function unmount(root) {
 function validateDates() {
   const { dateFrom, dateTo } = _datePicker.getRange();
   if (dateFrom && dateTo && dateFrom > dateTo) {
-    Toast.show("Date From cannot be after Date To.");
+    Toast.show("Date From cannot be after Date To.", "error");
     return false;
   }
   return true;
@@ -269,7 +269,7 @@ async function runSearch({ append = false } = {}) {
     _resultsTab.disabled = false;
     _resultsTab.click();
   } catch (e) {
-    Toast.show(`Search failed: ${e.message}`);
+    Toast.show(`Search failed: ${e.message}`, "error");
     _noDocuments.textContent = "Search failed.";
     _noDocuments.classList.remove("hidden");
   } finally {

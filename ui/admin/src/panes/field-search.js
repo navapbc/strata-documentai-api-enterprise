@@ -256,7 +256,7 @@ async function saveAllRules() {
     try {
       await RulesService.put(tenantId, docType, requiredFields, optionalFields);
     } catch (e) {
-      Toast.show(`Failed to save ${docType}: ${e.message}`);
+      Toast.show(`Failed to save ${docType}: ${e.message}`, "error");
     }
   }
 }

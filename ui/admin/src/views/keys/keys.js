@@ -120,7 +120,7 @@ async function handleConfirmRevoke() {
     Toast.show("API key revoked");
     await load();
   } catch (e) {
-    Toast.show(`Failed to revoke: ${e.message}`);
+    Toast.show(`Failed to revoke: ${e.message}`, "error");
   }
 }
 
@@ -160,7 +160,7 @@ async function handleCreate(e) {
     Toast.show("API key created");
     await load();
   } catch (err) {
-    Toast.show(`Failed to create key: ${err.message}`);
+    Toast.show(`Failed to create key: ${err.message}`, "error");
   }
 }
 

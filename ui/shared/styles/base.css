@@ -192,6 +192,9 @@ button {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
+.toast--error {
+  background: #dc2626;
+}
 
 /* Table */
 table {

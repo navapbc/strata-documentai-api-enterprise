@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
+from urllib.parse import unquote
 
 import typer
 from opentelemetry.propagate import inject
@@ -569,6 +570,8 @@ def main(
     if not original_file_name:
         logger.warning("Original file name not present in S3 metadata")
         original_file_name = ""
+    else:
+        original_file_name = unquote(original_file_name)
 
     if not all([job_id, trace_id, user_provided_document_category, batch_id]):
         try:

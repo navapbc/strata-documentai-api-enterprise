@@ -566,8 +566,8 @@ def upsert_ddb(data: InitialDdbRecord) -> None:
         now = datetime.now(UTC).isoformat()
 
         expr_fields: list[str] = [
-            f"{DocumentMetadata.ORIGINAL_FILE_NAME} = :originalFileName",
-            f"{DocumentMetadata.ORIGINAL_FILE_NAME_LOWER} = :originalFileNameLower",
+            f"{DocumentMetadata.ORIGINAL_FILE_NAME} = if_not_exists({DocumentMetadata.ORIGINAL_FILE_NAME}, :originalFileName)",
+            f"{DocumentMetadata.ORIGINAL_FILE_NAME_LOWER} = if_not_exists({DocumentMetadata.ORIGINAL_FILE_NAME_LOWER}, :originalFileNameLower)",
             f"{DocumentMetadata.PROCESS_STATUS} = :processStatus",
             f"{DocumentMetadata.CREATED_AT} = if_not_exists({DocumentMetadata.CREATED_AT}, :now)",
             f"{DocumentMetadata.UPDATED_AT} = :now",

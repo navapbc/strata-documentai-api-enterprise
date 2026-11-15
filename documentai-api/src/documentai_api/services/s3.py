@@ -196,7 +196,11 @@ def generate_presigned_post(
     Returns:
         Dict with 'url' and 'fields' for the client to POST.
     """
-    s3_client = AWSClientFactory.get_s3_client()
+    s3_client = AWSClientFactory.get_session().client(
+        "s3",
+        region_name=AWSClientFactory.get_region(),
+        config=_PRESIGN_CONFIG,
+    )
 
     fields: dict[str, str] = {"Content-Type": content_type}
     conditions: list[Any] = [

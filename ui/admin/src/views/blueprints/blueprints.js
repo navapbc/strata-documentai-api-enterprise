@@ -152,7 +152,7 @@ async function handleToggle(documentType, enabled, checkbox) {
         ? new Set([..._disabledSet, documentType])
         : new Set([documentType]);
     }
-    Toast.show(e.message);
+    Toast.show(e.message, "error");
     _tableView.setRows([..._allSchemas]);
   } finally {
     if (toggleCell && toggleEl) {

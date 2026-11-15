@@ -90,7 +90,7 @@ async function load() {
     renderTable();
   } catch (e) {
     _empty.textContent = `Failed to load: ${e.message}`;
-    Toast.show(`Usage load failed: ${e.message}`);
+    Toast.show(`Usage load failed: ${e.message}`, "error");
   }
 }
 

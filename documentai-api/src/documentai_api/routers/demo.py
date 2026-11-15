@@ -1,21 +1,27 @@
 """Demo router - JWT-authenticated document upload and read."""
 
+import asyncio
+import uuid
 from typing import Annotated
 
 from boto3.dynamodb.conditions import Attr
-from fastapi import APIRouter, Depends, HTTPException, Response, UploadFile, status
+from fastapi import APIRouter, Depends, Form, HTTPException, Response, UploadFile, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from documentai_api.config.env import get_env_config
+from documentai_api.config.env import get_app_config, get_env_config
 from documentai_api.constants.defaults import SystemDefaults
 from documentai_api.constants.file_validation import FileValidation
+from documentai_api.constants.processing import ProcessStatus, UploadMethod
 from documentai_api.logging import get_logger
 from documentai_api.models.admin_document import (
     DocumentDetail,
     DocumentListResponse,
     DocumentPreviewResponse,
 )
+from documentai_api.models.document_record import DocumentRecord
 from documentai_api.models.job_status import UploadAsyncResponse
+from documentai_api.models.presigned import PresignedUploadResponse
+from documentai_api.pipeline.document_lifecycle import insert_minimal_ddb_record
 from documentai_api.routers.admin_documents import (
     _record_to_detail,
     _record_to_item,
@@ -26,7 +32,14 @@ from documentai_api.services import s3 as s3_service
 from documentai_api.utils.auth import UserContext, get_user_context_with_fallback
 from documentai_api.utils.document_metadata_table import DocumentMetadataTable
 from documentai_api.utils.pagination import decode_cursor, encode_cursor
-from documentai_api.utils.s3 import assert_object_exists, get_bucket_and_key
+from documentai_api.utils.s3 import (
+    assert_object_exists,
+    build_s3_key,
+    get_bucket_and_key,
+    parse_s3_uri,
+    sanitize_for_s3_metadata,
+)
+from documentai_api.utils.uploads import generate_unique_filename
 
 router = APIRouter(prefix="/v1/demo")
 
@@ -80,6 +93,85 @@ def _get_demo_input_location() -> str:
 # =============================================================================
 # Upload
 # =============================================================================
+
+
+@router.post("/documents/presigned-url")
+async def create_demo_presigned_upload_url(
+    auth: DemoAuth,
+    filename: Annotated[str, Form(description="Original filename", max_length=255)],
+    content_type: Annotated[str, Form(description="MIME type of the file")],
+) -> PresignedUploadResponse:
+    """Generate a presigned POST URL for direct S3 upload from the demo UI."""
+    if content_type not in FileValidation.NO_CONVERSION_NEEDED:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Presigned uploads only support: {', '.join(FileValidation.NO_CONVERSION_NEEDED)}. "
+                f"For '{content_type}', use the direct upload endpoint."
+            ),
+        )
+
+    input_location = get_env_config().documentai_demo_input_location
+    if not input_location:
+        raise HTTPException(status_code=500, detail="Demo storage not configured")
+
+    try:
+        bucket_name, prefix = parse_s3_uri(input_location)
+    except Exception:
+        raise HTTPException(status_code=500, detail="Demo storage misconfigured") from None
+
+    job_id = str(uuid.uuid4())
+    unique_file_name = generate_unique_filename(filename, job_id)
+    object_key = build_s3_key(prefix, auth.tenant_id, unique_file_name)
+    safe_filename = sanitize_for_s3_metadata(filename)
+
+    metadata = {
+        "job-id": job_id,
+        "original-file-name": safe_filename,
+    }
+
+    try:
+        post_data = s3_service.generate_presigned_post(
+            bucket=bucket_name,
+            key=object_key,
+            content_type=content_type,
+            max_size_bytes=SystemDefaults.BDA_MAX_DOCUMENT_FILE_SIZE_BYTES,
+            metadata=metadata,
+            expiration=get_app_config().presigned_url_expiry_seconds,
+        )
+    except Exception:
+        logger.exception("Failed to generate demo presigned POST")
+        raise HTTPException(status_code=500, detail="Failed to generate upload URL") from None
+
+    try:
+        record = DocumentRecord(
+            ddb_key=unique_file_name,
+            original_file_name=filename,
+            job_id=job_id,
+            system_document_id=job_id,
+            process_status=ProcessStatus.PENDING_UPLOAD,
+            content_type=content_type,
+            upload_method=UploadMethod.PRESIGNED,
+            tenant_id=auth.tenant_id,
+            api_key_name=auth.api_key_name,
+            is_demo=True,
+        )
+        await asyncio.to_thread(insert_minimal_ddb_record, record)
+    except Exception:
+        logger.exception("Failed to create demo tracking record")
+        raise HTTPException(status_code=500, detail="Failed to create upload record") from None
+
+    logger.info(
+        "Demo presigned POST generated",
+        extra={"job_id": job_id, "tenant_id": auth.tenant_id, "content_type": content_type},
+    )
+    return PresignedUploadResponse(
+        upload_url=post_data["url"],
+        fields=post_data["fields"],
+        job_id=job_id,
+        expires_in=get_app_config().presigned_url_expiry_seconds,
+        max_size_bytes=SystemDefaults.BDA_MAX_DOCUMENT_FILE_SIZE_BYTES,
+    )
 
 
 @router.post("/documents", status_code=status.HTTP_202_ACCEPTED)

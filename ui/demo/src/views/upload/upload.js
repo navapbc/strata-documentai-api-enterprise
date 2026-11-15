@@ -262,20 +262,24 @@ async function loadHistory(activeJobId = null) {
   }
 }
 
+let _uploading = false;
+
 async function runExtraction() {
   const file = _selectedFile;
-  if (!file) {
+  if (!file || _uploading) {
     return;
   }
 
+  _uploading = true;
   _runBtn.disabled = true;
+  _abortController = new AbortController();
   _elapsed.classList.remove("hidden");
   _results.classList.add("hidden");
   _elapsedTimer = createElapsedTimer((s) => (_elapsed.textContent = `Processing… ${s}s`));
   _elapsedTimer.start();
 
   try {
-    const { jobId } = await Documents.upload(file);
+    const { jobId } = await Documents.upload(file, _abortController.signal);
     const result = await pollForCompletion(jobId);
     renderResults(result);
     loadPreview(result);
@@ -284,9 +288,10 @@ async function runExtraction() {
     switchTab("results");
   } catch (e) {
     if (e.name !== "AbortError") {
-      Toast.show(`Extraction failed: ${e.message}`);
+      Toast.show(`Extraction failed: ${e.message}`, "error");
     }
   } finally {
+    _uploading = false;
     _elapsedTimer.stop();
     _elapsed.classList.add("hidden");
     _runBtn.disabled = !_selectedFile;
@@ -335,7 +340,7 @@ async function loadDocument(jobId) {
     renderResults(doc);
     loadPreview(doc);
   } catch (e) {
-    Toast.show(`Failed to load document: ${e.message}`);
+    Toast.show(`Failed to load document: ${e.message}`, "error");
   }
 }
 
