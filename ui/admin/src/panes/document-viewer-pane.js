@@ -10,10 +10,9 @@
  */
 import * as DocumentsService from "../services/documents.js";
 import * as Helpers from "../utils/helpers.js";
-import { EXTRACTION_METHOD_LABELS } from "../utils/helpers.js";
 import * as Session from "../../../shared/utils/session.js";
 import * as pdfjsLib from "pdfjs-dist";
-import { isPresentationMode, MASKED_VALUE } from "../../../shared/utils/presentation-mode.js";
+import { isPresentationMode } from "../../../shared/utils/presentation-mode.js";
 import { h } from "../utils/dom.js";
 import { tpl } from "../utils/tpl.js";
 import {
@@ -26,6 +25,7 @@ import {
   markFieldsWithGeometry,
   PREVIEWABLE_TYPES,
 } from "../../../shared/components/document-viewer.js";
+import { renderDocumentDetailSections } from "../../../shared/components/document-detail.js";
 import html from "./document-viewer-pane.html";
 
 const tmpl = tpl(html);
@@ -205,7 +205,9 @@ export function mount(root) {
         markFieldsWithGeometry(detailContent, fieldGeometry);
       } else if (fieldGeometry) {
         markFieldsWithGeometry(detailContent, fieldGeometry);
-      } else {
+      } else if (detail.fields && Object.keys(detail.fields).length) {
+        // Only meaningful when there are fields to locate; an empty result
+        // already says "No fields extracted".
         if (!detailContent.querySelector(".bbox-unavailable-note")) {
           const p = document.createElement("p");
           p.className = "bbox-unavailable-note empty-state";
@@ -256,72 +258,16 @@ export function mount(root) {
   }
 
   function renderDetail(doc) {
-    const presented = isPresentationMode();
-    const sections = [
-      renderSection("Overview", [
-        ["File Name", doc.fileName],
-        ["Content Type", doc.contentType],
-        ["Pages", doc.pagesDetected],
-        ["Size", doc.fileSizeBytes != null ? `${(doc.fileSizeBytes / 1024).toFixed(1)} KB` : "-"],
-        ["External ID", doc.externalDocumentId],
-        ["Batch ID", doc.batchId],
-        ["Created", Helpers.formatDateTime(doc.createdAt)],
-      ]),
-      renderSection("Tenant", [
-        ["Tenant", presented ? (doc.maskedTenantId ?? doc.tenantId) : doc.tenantId],
-        ["API Key", presented ? MASKED_VALUE : doc.apiKeyName],
-      ]),
-      renderSection("Classification", [
-        ["Document Class", presented ? MASKED_VALUE : doc.matchedDocumentClass],
-        [
-          "Classification Confidence",
-          doc.matchedBlueprintConfidence != null
-            ? `${(doc.matchedBlueprintConfidence * 100).toFixed(1)}%`
-            : "-",
-        ],
-      ]),
-      renderSection("Processing", [
-        ["Job ID", doc.jobId],
-        ["Status", doc.processStatus],
-        ["Upload Category", doc.documentCategory],
-        [
-          "Total Duration",
-          doc.totalProcessingTimeSeconds != null ? `${doc.totalProcessingTimeSeconds}s` : "-",
-        ],
-        [
-          "Extraction Duration",
-          doc.bdaProcessingTimeSeconds != null ? `${doc.bdaProcessingTimeSeconds}s` : "-",
-        ],
-        ["Extraction Region", doc.bdaRegionUsed],
-        [
-          "Extraction Method",
-          doc.extractionMethod
-            ? (EXTRACTION_METHOD_LABELS[doc.extractionMethod] ?? doc.extractionMethod)
-            : null,
-        ],
-        ["Retries", doc.retryCount],
-        ["Error", doc.errorMessage],
-      ]),
-    ];
-    if (doc.fields) {
-      sections.push(renderExtractedData(doc.fields, { revealed: true, maskable: false }));
-    }
+    const sections = renderDocumentDetailSections(doc, {
+      showTenant: true,
+      presented: isPresentationMode(),
+    });
+    sections.push(
+      renderExtractedData(doc.fields, { revealed: true, maskable: false }) ||
+        '<p class="empty-state">No fields extracted</p>',
+    );
     // eslint-disable-next-line no-unsanitized/property -- server data rendered with esc()
     detailContent.innerHTML = sections.join("");
-  }
-
-  function renderSection(title, fields) {
-    const rows = fields
-      .filter(([, val]) => val != null && val !== "" && val !== "-")
-      .map(
-        ([label, val]) =>
-          `<tr><td class="detail-label">${Helpers.esc(label)}</td><td>${Helpers.esc(String(val))}</td></tr>`,
-      )
-      .join("");
-    if (!rows) {
-      return "";
-    }
-    return `<table class="detail-table"><thead><tr><th colspan="2">${Helpers.esc(title)}</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
   function hasSelection() {

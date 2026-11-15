@@ -14,6 +14,7 @@ import {
   renderPreview,
   linkFieldHighlighting,
 } from "../../../../shared/components/document-viewer.js";
+import { renderDocumentDetailSections } from "../../../../shared/components/document-detail.js";
 import html from "./upload.html";
 
 const tmpl = tpl(html);
@@ -349,13 +350,11 @@ let _resizeObserver = null;
 function renderResults(doc) {
   _results.classList.remove("hidden");
 
-  const tableHtml = renderExtractedData(doc.fields, { maskable: false });
-  const body = tableHtml || '<p class="empty-state">No fields extracted</p>';
-  const header = doc.matchedBlueprint
-    ? `<p class="demo-matched">Blueprint: ${esc(doc.matchedBlueprint)}</p>`
-    : "";
-  // eslint-disable-next-line no-unsanitized/property -- values escaped in renderExtractedData/esc
-  _results.innerHTML = header + body;
+  const sections = renderDocumentDetailSections(doc, { showTenant: false });
+  const tableHtml = renderExtractedData(doc.fields, { revealed: true, maskable: false });
+  sections.push(tableHtml || '<p class="empty-state">No fields extracted</p>');
+  // eslint-disable-next-line no-unsanitized/property -- values escaped in shared renderers
+  _results.innerHTML = sections.join("");
 }
 
 async function loadPreview(doc) {

@@ -3,6 +3,7 @@ import * as TenantContext from "../../utils/tenant-context.js";
 import * as Toast from "../../utils/toast.js";
 import { tpl } from "../../utils/tpl.js";
 import { h } from "../../utils/dom.js";
+import { formatFileSize } from "../../utils/helpers.js";
 import { isPresentationMode } from "../../../../shared/utils/presentation-mode.js";
 import html from "./usage.html";
 
@@ -181,7 +182,7 @@ function formatCell(key, value) {
     return "-";
   }
   if (key === "totalFileSizeBytes") {
-    return `${(value / 1024 / 1024).toFixed(1)} MB`;
+    return formatFileSize(value);
   }
   if (typeof value === "number") {
     return value.toLocaleString();

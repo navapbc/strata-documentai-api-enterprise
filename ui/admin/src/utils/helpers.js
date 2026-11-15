@@ -7,6 +7,7 @@ export {
 } from "../../../shared/utils/dates.js";
 export {
   esc,
+  formatFileSize,
   showLoading,
   setViewActions,
   clearViewActions,

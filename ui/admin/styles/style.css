@@ -1,4 +1,5 @@
 @import "../../shared/styles/document-viewer.css";
+@import "../../shared/styles/document-detail.css";
 @import "../../shared/styles/dropzone.css";
 
 :root {
@@ -2200,13 +2201,6 @@ td {
   overflow-y: auto;
 }
 
-.detail-table {
-  width: 100%;
-  font-size: 0.8125rem;
-  border-collapse: collapse;
-  margin-bottom: 1rem;
-}
-
 .extracted-data-table {
   margin-bottom: 1rem;
   /* Fixed layout so revealing values (••••• -> real text) doesn't reflow columns. */
@@ -2240,11 +2234,6 @@ td {
 .extracted-data-table .extracted-value {
   white-space: normal;
   overflow-wrap: anywhere;
-}
-
-.detail-table td {
-  padding: 0.25rem 0.5rem;
-  border-bottom: 1px solid var(--color-border, #f3f4f6);
 }
 
 /* Extracted Data: no overrides - inherit the global table/th/td styling so the

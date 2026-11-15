@@ -4,6 +4,19 @@ export const EXTRACTION_METHOD_LABELS = {
   "ocr-mapping": "OCR Mapping",
 };
 
+/**
+ * Human-readable file size: KB below 1 MB, MB from 1 MB up.
+ * @param {number|null|undefined} bytes
+ * @returns {string|null} null when the size is unknown
+ */
+export function formatFileSize(bytes) {
+  if (bytes == null) {
+    return null;
+  }
+  const mb = bytes / (1024 * 1024);
+  return mb >= 1 ? `${mb.toFixed(1)} MB` : `${(bytes / 1024).toFixed(1)} KB`;
+}
+
 export function esc(str) {
   const el = document.createElement("span");
   el.textContent = str || "";
