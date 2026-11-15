@@ -166,7 +166,7 @@ describe("blueprints view", () => {
     w2Checkbox.dispatchEvent(new Event("change"));
     await flush();
 
-    expect(mockToast.show).toHaveBeenCalledWith("Server error");
+    expect(mockToast.show).toHaveBeenCalledWith("Server error", "error");
   });
 
   // --- Search ---

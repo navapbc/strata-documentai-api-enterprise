@@ -192,7 +192,7 @@ describe("extraction-rule-editor saveRules", () => {
     root.querySelector(".btn-primary").click();
 
     await vi.waitFor(() => {
-      expect(Toast.show).toHaveBeenCalledWith("Failed to save: DDB error");
+      expect(Toast.show).toHaveBeenCalledWith("Failed to save: DDB error", "error");
     });
   });
 
