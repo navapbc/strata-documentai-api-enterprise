@@ -96,6 +96,10 @@ class FileValidation:
         return data[:4] == b"%PDF"
 
     @staticmethod
+    def is_pdf_content_type(content_type: str) -> bool:
+        return content_type == FileValidation.PDF_MIME
+
+    @staticmethod
     def is_image(data: bytes) -> bool:
         mime = filetype.guess_mime(data)
         return (

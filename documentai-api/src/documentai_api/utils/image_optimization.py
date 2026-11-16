@@ -105,7 +105,7 @@ def is_file_too_large_for_bda(content_type: str, file_size_bytes: int) -> bool:
     """Check if file exceeds BDA size limits based on content type."""
     if content_type in ["image/jpeg", "image/png"]:
         return int(file_size_bytes) > int(SystemDefaults.BDA_MAX_IMAGE_SIZE_BYTES)
-    elif content_type in ["application/pdf", "image/tiff"]:
+    elif content_type in [FileValidation.PDF_MIME, "image/tiff"]:
         return int(file_size_bytes) > int(SystemDefaults.BDA_MAX_DOCUMENT_FILE_SIZE_BYTES)
     else:
         # unknown file type, assume document limit

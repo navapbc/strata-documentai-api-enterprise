@@ -55,6 +55,105 @@ def merge_pages_to_pdf(pages: list[PageMetadata]) -> io.BytesIO:
     return output
 
 
+def get_pdf_page_count(pdf_bytes: bytes) -> int:
+    try:
+        return len(PdfReader(io.BytesIO(pdf_bytes)).pages)
+    except Exception as e:
+        logger.warning(f"Error getting PDF page count: {e}")
+        return 1
+
+
+def _chunk_pdf(pdf_bytes: bytes, chunk_size: int, stop_after_first: bool = False) -> list[bytes]:
+    try:
+        reader = PdfReader(io.BytesIO(pdf_bytes))
+        total = len(reader.pages)
+
+        if total <= chunk_size:
+            return [pdf_bytes]
+
+        chunks = []
+        for start in range(0, total, chunk_size):
+            writer = PdfWriter()
+            for page in reader.pages[start : start + chunk_size]:
+                writer.add_page(page)
+            out = io.BytesIO()
+            writer.write(out)
+            chunks.append(out.getvalue())
+
+            if stop_after_first:
+                return chunks
+
+        return chunks
+    except Exception as e:
+        logger.warning(f"PDF chunking failed, using original bytes: {e}")
+        return [pdf_bytes]
+
+
+def chunk_pdf(pdf_bytes: bytes, chunk_size: int) -> list[bytes]:
+    """Split a PDF into chunks of *chunk_size* pages, returning each as bytes.
+
+    Returns a list with the original bytes as the sole element if the PDF has
+    fewer pages than *chunk_size* or cannot be parsed.
+    """
+    return _chunk_pdf(pdf_bytes, chunk_size)
+
+
+def compress_pdf_for_classification(pdf_bytes: bytes, max_dimension_px: int) -> bytes:
+    """Return a copy of the PDF with oversized images downscaled in-place.
+
+    Each image whose longest side exceeds *max_dimension_px* is replaced via
+    pypdf's ImageFile.replace(), which swaps only the image stream and leaves
+    the page structure, text layer, and vector content untouched.  Pages with
+    no images, or whose images are already within the limit, are unchanged.
+
+    Falls back to the original bytes on any error so callers always get a usable PDF.
+    """
+    try:
+        reader = PdfReader(io.BytesIO(pdf_bytes))
+        writer = PdfWriter()
+        writer.append(reader)
+        is_page_compressed = False
+
+        for page in writer.pages:
+            for img_obj in page.images:
+                img = Image.open(io.BytesIO(img_obj.data))
+                if max(img.size) <= max_dimension_px:
+                    continue
+
+                img.thumbnail((max_dimension_px, max_dimension_px), Image.Resampling.LANCZOS)
+
+                if img.mode == "RGBA":
+                    background = Image.new("RGB", img.size, (255, 255, 255))
+                    background.paste(img, mask=img.split()[3])
+                    img = background
+                elif img.mode not in ("RGB", "L"):
+                    img = img.convert("RGB")
+
+                img_obj.replace(img, quality=85)
+                is_page_compressed = True
+
+        if is_page_compressed:
+            out = io.BytesIO()
+            writer.write(out)
+            compressed = out.getvalue()
+            logger.info(
+                f"Compressed PDF for classification: {len(pdf_bytes):,} -> {len(compressed):,} bytes"
+            )
+
+            return compressed
+        else:
+            return pdf_bytes
+
+    except Exception as e:
+        logger.warning(f"PDF compression for classification failed, using original: {e}")
+        return pdf_bytes
+
+
+def truncate_pdf_to_pages(pdf_bytes: bytes, max_pages: int) -> bytes:
+    """Return a new PDF containing only the first *max_pages* pages."""
+    return _chunk_pdf(pdf_bytes, max_pages, stop_after_first=True)[0]
+
+
 def _add_pdf_pages(writer: PdfWriter, pdf_bytes: bytes) -> None:
     """Add all pages from a PDF to the writer."""
     reader = PdfReader(io.BytesIO(pdf_bytes))

@@ -64,6 +64,25 @@ class SystemDefaults:
 
 class PreClassificationDefaults:
     MODEL_ID = "us.amazon.nova-pro-v1:0"
+    # PDFs are split into parallel windows of this size and classified concurrently.
+    # A document_type mismatch across windows sets has_multipage_inconsistency, catching
+    # cases where a different person's document appears later in the upload.
+    PAGES_PER_CLASSIFICATION_CALL = 5
+
+    # Maximum parallel Bedrock calls per document. Caps concurrency to avoid
+    # self-throttling on large PDFs while still processing all windows.
+    MAX_CLASSIFICATION_WORKERS = 8
+
+    # Minimum confidence for a chunk to participate in type-mismatch comparison.
+    # Does not affect whether a result is returned — that is determined by success/failure.
+    CONFIDENCE_THRESHOLD = 0.5
+
+    # Scanned PDF pages are downscaled to this pixel limit on the longest side before
+    # being sent to Bedrock for classification and blueprint matching. Digital PDFs
+    # (with a text layer) are left untouched. BDA always receives the original bytes.
+    # Chosen from 1200-1600px latency tests; ~60-65% reduction on 4-page scans
+    CLASSIFICATION_MAX_IMAGE_PX = 1400
+
     # Converse API supports more document types (csv, html, txt, md, docx, xlsx)
     # but those are rejected at the upload layer before reaching preclassification.
     SUPPORTED_CONTENT_TYPES = (
