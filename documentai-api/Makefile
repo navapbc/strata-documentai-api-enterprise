@@ -159,7 +159,7 @@ stop: ## Stop containers
 	docker compose down
 
 check: ## Run all checks
-check: format lint test test-audit test-pip-audit
+check: format lint test test-audit pip-audit
 
 release-build: ## Build production Docker image
 	docker buildx build \
@@ -188,7 +188,7 @@ test-parallel: ## Run test suite in parallel
 test-audit: ## Run audit logging tests
 	$(PY_RUN_CMD) pytest -m "audit" $(args)
 
-test-pip-audit: ## Run pip-audit dependency vulnerability scan
+pip-audit: ## Run pip-audit dependency vulnerability scan
 	$(PY_RUN_CMD) pip-audit --skip-editable
 
 test-integration: ## Run integration tests

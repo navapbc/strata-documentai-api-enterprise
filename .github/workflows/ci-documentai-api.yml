@@ -75,7 +75,7 @@ jobs:
           make test-audit
           make test-coverage args="-n auto"
 
-  test-pip-audit:
+  pip-audit:
     name: Audit dependencies
     needs: changes
     runs-on: ubuntu-latest
@@ -91,7 +91,7 @@ jobs:
 
       - name: Run pip-audit
         if: needs.changes.outputs.relevant == 'true'
-        run: make test-pip-audit
+        run: make pip-audit
 
   openapi:
     name: OpenAPI + Postman drift
