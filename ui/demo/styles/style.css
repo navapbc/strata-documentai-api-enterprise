@@ -1,5 +1,6 @@
 @import "../../shared/styles/base.css";
 @import "../../shared/styles/document-viewer.css";
+@import "../../shared/styles/document-detail.css";
 @import "../../shared/styles/dropzone.css";
 
 :root {
@@ -278,17 +279,6 @@
   font-variant-numeric: tabular-nums;
   text-align: center;
   padding: 0.25rem 0;
-}
-
-.demo-matched {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  margin-bottom: 0.5rem;
-}
-
-.demo-results {
-  padding: 0;
 }
 
 /* Field rows whose value is locatable in the preview: a left accent (at rest)

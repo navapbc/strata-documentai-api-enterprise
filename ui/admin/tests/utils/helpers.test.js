@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
   esc,
+  formatFileSize,
   formatDate,
   formatDateTime,
   setViewActions,
@@ -207,5 +208,22 @@ describe("showLoading()", () => {
     showLoading(tbody, empty);
     expect(tbody.innerHTML).toContain("Loading");
     expect(empty.classList.contains("hidden")).toBe(true);
+  });
+});
+
+describe("formatFileSize()", () => {
+  it("returns null when the size is unknown", () => {
+    expect(formatFileSize(null)).toBeNull();
+    expect(formatFileSize(undefined)).toBeNull();
+  });
+
+  it("uses KB below 1 MB", () => {
+    expect(formatFileSize(272_000)).toBe("265.6 KB");
+    expect(formatFileSize(1_048_575)).toBe("1024.0 KB");
+  });
+
+  it("uses MB from 1 MB up", () => {
+    expect(formatFileSize(1_048_576)).toBe("1.0 MB");
+    expect(formatFileSize(15_932_826)).toBe("15.2 MB");
   });
 });
