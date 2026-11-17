@@ -102,7 +102,8 @@ TF_DIR := ../infra/environments/dev
 
 DIAGRAMS := \
 	$(APP_DOCS_DIR)/media/architecture.svg \
-	$(APP_DOCS_DIR)/media/request-lifecycle.svg
+	$(APP_DOCS_DIR)/media/request-lifecycle.svg \
+	$(APP_DOCS_DIR)/media/preclassification.svg
 
 # By default, all python/uv commands will run inside of the docker container
 # if you wish to run this natively, add RUN_CMD_APPROACH=local to your environment vars
