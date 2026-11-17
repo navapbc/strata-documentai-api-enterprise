@@ -1047,6 +1047,7 @@ dependencies = [
     { name = "pydantic-settings" },
     { name = "pyjwt", extra = ["crypto"] },
     { name = "pypdf" },
+    { name = "pypdfium2" },
     { name = "python-multipart" },
     { name = "python-ulid" },
     { name = "tenacity" },
@@ -1057,7 +1058,6 @@ dependencies = [
 [package.optional-dependencies]
 cli-geo = [
     { name = "jinja2" },
-    { name = "pypdfium2" },
     { name = "pytesseract" },
 ]
 dev = [
@@ -1102,7 +1102,7 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.0.3" },
     { name = "pyjwt", extras = ["crypto"], specifier = ">=2.8.0" },
     { name = "pypdf", specifier = ">=6.21.4" },
-    { name = "pypdfium2", marker = "extra == 'cli-geo'", specifier = ">=4.0.0" },
+    { name = "pypdfium2", specifier = ">=4.0.0" },
     { name = "pytesseract", marker = "extra == 'cli-geo'", specifier = ">=0.3.10" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.23.0" },

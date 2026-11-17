@@ -12,6 +12,7 @@ This log lists the architectural decisions for DocumentAI API.
 * [ADR-2026-08-25](2026-08-25-blueprint-schema-preload.md) - Preload BDA Blueprint Schemas Instead of Fetching Them at Request Time
 * [ADR-2026-08-31](2026-08-31-deprecate-wait-endpoints.md) - Deprecate Synchronous /wait Endpoints
 * [ADR-2026-09-29](2026-09-29-ocr-mapping-model-selection.md) - Use Nova Pro, Not Lite/Micro, for OCR Mapping
+* [ADR-2026-11-16](2026-11-16-pdf-classification-compression.md) - Rasterize oversized scan PDFs before Bedrock classification
 
 <!-- adrlogstop -->
 

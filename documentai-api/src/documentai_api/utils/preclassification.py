@@ -91,8 +91,8 @@ def _aggregate_preclassification_results(
 
     - document_type / confidence: from the first successful chunk
     - max_document_count_on_page: max across successful chunks
-    - has_multipage_inconsistency: True if any chunk flagged it, or if
-      document_type differs across high-confidence chunks (different doc in a later window)
+    - has_multipage_inconsistency: True if any chunk flagged it (document_type is free
+      text, so it is not compared across chunks)
     - is_identity_document: True if any chunk flagged it
     - category_match: False if any chunk returned False
     - input_tokens / output_tokens: summed across successful chunks
@@ -120,31 +120,20 @@ def _aggregate_preclassification_results(
         return successful[0]
 
     first_chunk = successful[0]
-    # Only compare types across chunks that cleared the confidence threshold —
-    # a low-confidence result on a later window shouldn't trigger a false flag.
     # Failed chunks are None and excluded from successful, so they don't affect
-    # has_multipage_inconsistency — unseen pages are accepted as clean. This is
+    # has_multipage_inconsistency - unseen pages are accepted as clean. This is
     # intentional: transient errors shouldn't block processing.
-    high_confidence = [
-        r for r in successful if r.confidence >= PreClassificationDefaults.CONFIDENCE_THRESHOLD
-    ]
-    types = {r.document_type for r in high_confidence}
-    cross_chunk_inconsistency = len(types) > 1
-
-    if cross_chunk_inconsistency:
-        logger.info(f"Document type mismatch across classification windows: {types}")
+    flagged = next((r for r in successful if r.has_multipage_inconsistency), None)
 
     return BedrockClassificationResult(
         document_type=first_chunk.document_type,
         confidence=first_chunk.confidence,
         max_document_count_on_page=max(r.max_document_count_on_page for r in successful),
         max_document_count_on_page_reason=first_chunk.max_document_count_on_page_reason,
-        has_multipage_inconsistency=(
-            cross_chunk_inconsistency or any(r.has_multipage_inconsistency for r in successful)
-        ),
+        has_multipage_inconsistency=flagged is not None,
         has_multipage_inconsistency_reason=(
-            "document type differs across page windows"
-            if cross_chunk_inconsistency
+            flagged.has_multipage_inconsistency_reason
+            if flagged is not None
             else first_chunk.has_multipage_inconsistency_reason
         ),
         category_match=(
@@ -236,6 +225,10 @@ def preclassify_document(
         )
 
     if FileValidation.is_pdf_content_type(content_type):
+        # BDA only reads the first MAX_PAGES_PER_DOCUMENT pages, so classify only those.
+        document_bytes = truncate_pdf_to_pages(
+            document_bytes, int(SystemDefaults.MAX_PAGES_PER_DOCUMENT)
+        )
         with tracer.start_as_current_span("pdf.chunk_for_classification") as chunk_span:
             chunks = chunk_pdf(
                 document_bytes, PreClassificationDefaults.PAGES_PER_CLASSIFICATION_CALL
@@ -336,7 +329,7 @@ def find_matching_blueprint(
         logger.warning("No blueprint schemas available for matching")
         return PreclassificationMatchResult()
 
-    # Blueprint matching only needs the first window — it identifies the form type,
+    # Blueprint matching only needs the first window: it identifies the form type,
     # not consistency across the full document. Intentionally different from preclassify_document.
     with tracer.start_as_current_span("pdf.truncate_for_blueprint"):
         document_bytes = _prepare_document_bytes(document_bytes, content_type)

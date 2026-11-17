@@ -64,18 +64,16 @@ class SystemDefaults:
 
 class PreClassificationDefaults:
     MODEL_ID = "us.amazon.nova-pro-v1:0"
-    # PDFs are split into parallel windows of this size and classified concurrently.
-    # A document_type mismatch across windows sets has_multipage_inconsistency, catching
-    # cases where a different person's document appears later in the upload.
+    # PDFs are truncated to MAX_PAGES_PER_DOCUMENT, then split into windows of this size
+    # and classified concurrently. Equal to MAX_PAGES_PER_DOCUMENT, so an upload is one
+    # call that sees every page together (the per-call multipage-consistency judgement
+    # then covers all pages). Window size does not move latency: each Bedrock call has a
+    # ~7s floor.
     PAGES_PER_CLASSIFICATION_CALL = 5
 
     # Maximum parallel Bedrock calls per document. Caps concurrency to avoid
     # self-throttling on large PDFs while still processing all windows.
     MAX_CLASSIFICATION_WORKERS = 8
-
-    # Minimum confidence for a chunk to participate in type-mismatch comparison.
-    # Does not affect whether a result is returned — that is determined by success/failure.
-    CONFIDENCE_THRESHOLD = 0.5
 
     # Scanned PDF pages are downscaled to this pixel limit on the longest side before
     # being sent to Bedrock for classification and blueprint matching. Digital PDFs
