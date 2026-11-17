@@ -5,19 +5,9 @@ import io
 from documentai_api.constants.defaults import SystemDefaults
 from documentai_api.constants.file_validation import FileValidation
 from documentai_api.logging import get_logger
+from documentai_api.utils.pdf import get_pdf_page_count, truncate_pdf_to_pages
 
 logger = get_logger(__name__)
-
-
-def _get_pdf_page_count(file_bytes: bytes) -> int:
-    from pypdf import PdfReader
-
-    try:
-        reader = PdfReader(io.BytesIO(file_bytes))
-        return len(reader.pages)
-    except Exception as e:
-        logger.warning(f"Error getting PDF page count: {e}")
-        return 1
 
 
 def _get_tiff_page_count(file_bytes: bytes) -> int:
@@ -79,26 +69,10 @@ def get_page_count(file_bytes: bytes) -> int | None:
     file_type = detect_file_type(file_bytes)
 
     if file_type == "PDF":
-        return _get_pdf_page_count(file_bytes)
+        return get_pdf_page_count(file_bytes)
     elif file_type == "TIFF":
         return _get_tiff_page_count(file_bytes)
     return 1
-
-
-def _truncate_pdf(file_bytes: bytes, max_pages: int) -> bytes:
-    from pypdf import PdfReader, PdfWriter
-
-    reader = PdfReader(io.BytesIO(file_bytes))
-    if len(reader.pages) <= max_pages:
-        return file_bytes
-
-    writer = PdfWriter()
-    for i in range(min(max_pages, len(reader.pages))):
-        writer.add_page(reader.pages[i])
-
-    output = io.BytesIO()
-    writer.write(output)
-    return output.getvalue()
 
 
 def _truncate_tiff(file_bytes: bytes, max_pages: int) -> bytes:
@@ -138,7 +112,7 @@ def truncate_to_pages(
     file_type = detect_file_type(file_bytes)
 
     if file_type == "PDF":
-        return _truncate_pdf(file_bytes, max_pages)
+        return truncate_pdf_to_pages(file_bytes, max_pages)
     elif file_type == "TIFF":
         return _truncate_tiff(file_bytes, max_pages)
     else:

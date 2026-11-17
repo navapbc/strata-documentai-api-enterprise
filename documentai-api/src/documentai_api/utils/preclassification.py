@@ -2,22 +2,23 @@
 
 import re
 import time
+from concurrent.futures import ThreadPoolExecutor
 from decimal import Decimal
 from typing import Any
 
 from opentelemetry import trace
 from pydantic import BaseModel, ConfigDict, ValidationError
 
-from documentai_api.constants.defaults import (
-    PreClassificationDefaults,
-    SystemDefaults,
-)
+from documentai_api.constants.defaults import PreClassificationDefaults, SystemDefaults
+from documentai_api.constants.file_validation import FileValidation
 from documentai_api.dtos.classification import (
     BedrockClassificationResult,
     PreclassificationMatchResult,
 )
 from documentai_api.logging import get_logger
 from documentai_api.services.bedrock import invoke_model
+from documentai_api.utils.otel_context import submit_with_otel_context
+from documentai_api.utils.pdf import chunk_pdf, truncate_pdf_to_pages
 from documentai_api.utils.schemas import DocumentSchema
 from documentai_api.utils.ssm import get_classification_model_id
 
@@ -54,9 +55,13 @@ class _BlueprintMatchResponse(BaseModel):
     confidence: float = 0.0
 
 
+def _is_too_large_for_preclassification(content_type: str, size: int) -> bool:
+    return content_type.startswith("image/") and size > int(SystemDefaults.BDA_MAX_IMAGE_SIZE_BYTES)
+
+
 def _build_content_block(document_bytes: bytes, content_type: str) -> dict[str, Any]:
     """Build the Converse API content block for a document or image."""
-    if content_type == "application/pdf":
+    if FileValidation.is_pdf_content_type(content_type):
         return {
             "document": {"format": "pdf", "name": "document", "source": {"bytes": document_bytes}}
         }
@@ -70,38 +75,94 @@ def _sanitize_category(user_category: str | None) -> str:
     return re.sub(r"[^a-z0-9 _-]", " ", user_category.lower()).strip() or "unknown"
 
 
-def preclassify_document(
-    document_bytes: bytes, content_type: str, user_category: str | None = None
+def _prepare_document_bytes(document_bytes: bytes, content_type: str) -> bytes:
+    """Truncate PDFs to the first window before sending to Bedrock for blueprint matching."""
+    if FileValidation.is_pdf_content_type(content_type):
+        return truncate_pdf_to_pages(
+            document_bytes, PreClassificationDefaults.PAGES_PER_CLASSIFICATION_CALL
+        )
+    return document_bytes
+
+
+def _aggregate_preclassification_results(
+    results: list[BedrockClassificationResult | None],
 ) -> BedrockClassificationResult:
-    """Classify document type and count using Bedrock vision model."""
-    if content_type not in SUPPORTED_CLASSIFICATION_TYPES:
-        logger.info(f"Unsupported content type for classification: {content_type}")
+    """Merge per-chunk classification results into a single result.
+
+    - document_type / confidence: from the first successful chunk
+    - max_document_count_on_page: max across successful chunks
+    - has_multipage_inconsistency: True if any chunk flagged it (document_type is free
+      text, so it is not compared across chunks)
+    - is_identity_document: True if any chunk flagged it
+    - category_match: False if any chunk returned False
+    - input_tokens / output_tokens: summed across successful chunks
+    - duration_seconds: max across successful chunks (calls run in parallel)
+    """
+    successful = [r for r in results if r is not None]
+    failed_count = len(results) - len(successful)
+
+    if not successful:
+        logger.warning("All classification chunks failed")
         return BedrockClassificationResult(
             document_type="other_document", confidence=0.0, max_document_count_on_page=1
         )
 
-    if content_type.startswith("image/") and len(document_bytes) > int(
-        SystemDefaults.BDA_MAX_IMAGE_SIZE_BYTES
-    ):
-        logger.info("Image exceeds 5MB, skipping classification")
-        return BedrockClassificationResult(
-            document_type="other_document", confidence=0.0, max_document_count_on_page=1
-        )
+    if failed_count:
+        logger.warning(f"{failed_count} of {len(results)} classification chunk(s) failed")
 
+    input_tokens = sum(r.input_tokens or 0 for r in successful) or None
+    output_tokens = sum(r.output_tokens or 0 for r in successful) or None
+    duration_seconds = max(
+        (r.duration_seconds for r in successful if r.duration_seconds is not None), default=None
+    )
+
+    if len(successful) == 1:
+        return successful[0]
+
+    first_chunk = successful[0]
+    # Failed chunks are None and excluded from successful, so they don't affect
+    # has_multipage_inconsistency - unseen pages are accepted as clean. This is
+    # intentional: transient errors shouldn't block processing.
+    flagged = next((r for r in successful if r.has_multipage_inconsistency), None)
+
+    return BedrockClassificationResult(
+        document_type=first_chunk.document_type,
+        confidence=first_chunk.confidence,
+        max_document_count_on_page=max(r.max_document_count_on_page for r in successful),
+        max_document_count_on_page_reason=first_chunk.max_document_count_on_page_reason,
+        has_multipage_inconsistency=flagged is not None,
+        has_multipage_inconsistency_reason=(
+            flagged.has_multipage_inconsistency_reason
+            if flagged is not None
+            else first_chunk.has_multipage_inconsistency_reason
+        ),
+        category_match=(
+            None
+            if first_chunk.category_match is None
+            else all(r.category_match for r in successful if r.category_match is not None)
+        ),
+        is_identity_document=any(r.is_identity_document for r in successful),
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        duration_seconds=duration_seconds,
+        model_id=first_chunk.model_id,
+    )
+
+
+def _invoke_preclassification(
+    document_bytes: bytes, content_type: str, user_category: str | None, model_id: str
+) -> BedrockClassificationResult | None:
+    """Send a single content block to Bedrock and return the parsed result, or None on failure."""
     prompt = PreClassificationDefaults.PROMPT.replace(
         "{user_category}", _sanitize_category(user_category)
     )
-    content_block = _build_content_block(document_bytes, content_type)
-
     messages = [
         {
             "role": "user",
-            "content": [content_block, {"text": prompt}],
+            "content": [_build_content_block(document_bytes, content_type), {"text": prompt}],
         }
     ]
-
     try:
-        model_id = get_classification_model_id()
         start = time.time()
         with tracer.start_as_current_span("bedrock.preclassify") as span:
             span.set_attribute("bedrock.model_id", model_id)
@@ -116,14 +177,10 @@ def preclassify_document(
             parsed = _PreclassificationResponse.model_validate_json(text)
         except ValidationError as e:
             logger.warning(f"Bedrock classification returned output failing schema validation: {e}")
-            return BedrockClassificationResult(
-                document_type="other_document", confidence=0.0, max_document_count_on_page=1
-            )
-
-        document_type = parsed.document_type
+            return None
 
         classification = BedrockClassificationResult(
-            document_type=document_type,
+            document_type=parsed.document_type,
             confidence=max(0.0, min(1.0, parsed.confidence)),
             max_document_count_on_page=max(0, parsed.max_document_count_on_page),
             max_document_count_on_page_reason=parsed.max_document_count_on_page_reason,
@@ -145,13 +202,62 @@ def preclassify_document(
             f"user_category={user_category}, "
             f"category_match={classification.category_match}"
         )
-
         return classification
     except Exception as e:
         logger.error(f"Document preclassification error for content_type={content_type}: {e}")
+        return None
+
+
+def preclassify_document(
+    document_bytes: bytes, content_type: str, user_category: str | None = None
+) -> BedrockClassificationResult:
+    """Classify document type and count using Bedrock vision model."""
+    if content_type not in SUPPORTED_CLASSIFICATION_TYPES:
+        logger.info(f"Unsupported content type for classification: {content_type}")
         return BedrockClassificationResult(
             document_type="other_document", confidence=0.0, max_document_count_on_page=1
         )
+
+    if _is_too_large_for_preclassification(content_type, len(document_bytes)):
+        logger.info("Image exceeds 5MB, skipping classification")
+        return BedrockClassificationResult(
+            document_type="other_document", confidence=0.0, max_document_count_on_page=1
+        )
+
+    if FileValidation.is_pdf_content_type(content_type):
+        # BDA only reads the first MAX_PAGES_PER_DOCUMENT pages, so classify only those.
+        document_bytes = truncate_pdf_to_pages(
+            document_bytes, int(SystemDefaults.MAX_PAGES_PER_DOCUMENT)
+        )
+        with tracer.start_as_current_span("pdf.chunk_for_classification") as chunk_span:
+            chunks = chunk_pdf(
+                document_bytes, PreClassificationDefaults.PAGES_PER_CLASSIFICATION_CALL
+            )
+            chunk_span.set_attribute("pdf.chunk_count", len(chunks))
+        max_workers = min(len(chunks), PreClassificationDefaults.MAX_CLASSIFICATION_WORKERS)
+        model_id = get_classification_model_id()
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = [
+                submit_with_otel_context(
+                    executor,
+                    _invoke_preclassification,
+                    chunk,
+                    content_type,
+                    user_category,
+                    model_id,
+                )
+                for chunk in chunks
+            ]
+        return _aggregate_preclassification_results([f.result() for f in futures])
+    else:
+        result = _invoke_preclassification(
+            document_bytes, content_type, user_category, get_classification_model_id()
+        )
+        if result is None:
+            return BedrockClassificationResult(
+                document_type="other_document", confidence=0.0, max_document_count_on_page=1
+            )
+        return result
 
 
 def _build_blueprint_prompt(schemas: dict[str, DocumentSchema]) -> str:
@@ -222,6 +328,11 @@ def find_matching_blueprint(
     if not schemas:
         logger.warning("No blueprint schemas available for matching")
         return PreclassificationMatchResult()
+
+    # Blueprint matching only needs the first window: it identifies the form type,
+    # not consistency across the full document. Intentionally different from preclassify_document.
+    with tracer.start_as_current_span("pdf.truncate_for_blueprint"):
+        document_bytes = _prepare_document_bytes(document_bytes, content_type)
 
     prompt = _build_blueprint_prompt(schemas)
     content_block = _build_content_block(document_bytes, content_type)

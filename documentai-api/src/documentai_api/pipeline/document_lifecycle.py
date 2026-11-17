@@ -12,6 +12,7 @@ from opentelemetry.propagate import inject
 import documentai_api.utils.documents as document_utils
 from documentai_api.classifiers.api_response import finalize_v1_response
 from documentai_api.config.env import get_env_config
+from documentai_api.constants.defaults import PreClassificationDefaults, SystemDefaults
 from documentai_api.constants.file_validation import FileValidation
 from documentai_api.constants.processing import ProcessStatus
 from documentai_api.dtos.classification import PreclassificationMatchResult
@@ -28,6 +29,7 @@ from documentai_api.utils.ddb import update_ddb, upsert_ddb
 from documentai_api.utils.evaluations import BlurSkipReason
 from documentai_api.utils.image_optimization import get_bbox_if_enabled
 from documentai_api.utils.otel_context import submit_with_otel_context
+from documentai_api.utils.pdf import compress_pdf_for_classification, truncate_pdf_to_pages
 from documentai_api.utils.preclassification import find_matching_blueprint, preclassify_document
 from documentai_api.utils.response_builder import get_internal_api_response
 from documentai_api.utils.response_codes import ResponseCodes
@@ -249,14 +251,26 @@ def _run_preclassification(
     with tracer.start_as_current_span("document.preclassification") as span:
         span.set_attribute("document.content_type", content_type)
         span.set_attribute("document.key", ddb_key)
+        classification_bytes = file_bytes
+        if FileValidation.is_pdf_content_type(content_type):
+            # BDA reads only the first MAX_PAGES_PER_DOCUMENT pages, so neither compress
+            # nor classify the rest.
+            with tracer.start_as_current_span("pdf.truncate_for_classification"):
+                classification_bytes = truncate_pdf_to_pages(
+                    file_bytes, int(SystemDefaults.MAX_PAGES_PER_DOCUMENT)
+                )
+            with tracer.start_as_current_span("pdf.compress_for_classification"):
+                classification_bytes = compress_pdf_for_classification(
+                    classification_bytes, PreClassificationDefaults.CLASSIFICATION_MAX_IMAGE_PX
+                )
         with ThreadPoolExecutor(max_workers=2) as executor:
             blueprint_future: Future[PreclassificationMatchResult] = submit_with_otel_context(
-                executor, find_matching_blueprint, file_bytes, content_type
+                executor, find_matching_blueprint, classification_bytes, content_type
             )
 
             try:
                 preclassification = preclassify_document(
-                    file_bytes, content_type, user_provided_document_category or None
+                    classification_bytes, content_type, user_provided_document_category or None
                 )
             except Exception as e:
                 logger.error(f"Preclassification failed for {ddb_key}, falling through to BDA: {e}")

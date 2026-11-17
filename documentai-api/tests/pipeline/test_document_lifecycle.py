@@ -1,9 +1,12 @@
+import io
 from decimal import Decimal
 from typing import Any
 
 import pytest
 from botocore.exceptions import ClientError
+from pypdf import PdfReader
 
+from documentai_api.constants.defaults import SystemDefaults
 from documentai_api.constants.processing import ProcessStatus
 from documentai_api.dtos.classification import (
     BedrockClassificationResult,
@@ -14,6 +17,7 @@ from documentai_api.dtos.processing import PreExtractionResult
 from documentai_api.pipeline import document_lifecycle as lifecycle_util
 from documentai_api.schemas.document_metadata import DocumentMetadata
 from documentai_api.utils.blur_detection import BlurResult
+from tests.helpers.documents import generate_blank_pdf
 
 _LIFECYCLE_MODULE = "documentai_api.pipeline.document_lifecycle"
 
@@ -290,6 +294,23 @@ def test_upsert_returns_bbox_future_for_all_image_and_pdf_types(
     )
 
     assert result is not None
+
+
+def test_pdf_is_truncated_before_compress_and_classification(mocker, lifecycle_mocks):
+    """Pages beyond MAX_PAGES_PER_DOCUMENT (never read by BDA) are not compressed or classified."""
+    compress = mocker.patch(
+        f"{_LIFECYCLE_MODULE}.compress_pdf_for_classification", side_effect=lambda b, px: b
+    )
+
+    lifecycle_util._run_preclassification(
+        generate_blank_pdf(num_pages=32), "application/pdf", "income", 32, "test-file"
+    )
+
+    limit = int(SystemDefaults.MAX_PAGES_PER_DOCUMENT)
+    compressed_input = compress.call_args.args[0]
+    assert len(PdfReader(io.BytesIO(compressed_input)).pages) == limit
+    classified_input = lifecycle_mocks[_Mock.PRECLASSIFY_DOCUMENT].call_args.args[0]
+    assert len(PdfReader(io.BytesIO(classified_input)).pages) == limit
 
 
 def test_blur_detection_without_enforcement_proceeds_to_preclassify(

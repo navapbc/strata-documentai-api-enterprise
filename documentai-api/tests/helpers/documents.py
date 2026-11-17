@@ -2,6 +2,8 @@ import io
 import zipfile
 
 from PIL import Image
+from pypdf import PdfReader, PdfWriter
+from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
 
 
 def generate_ooxml_with_deep_entry(member: str = "word/document.xml") -> bytes:
@@ -24,8 +26,6 @@ def generate_ooxml_with_deep_entry(member: str = "word/document.xml") -> bytes:
 # 8.27 * 72 = 595.44, 11.7 * 72 = 842.4
 def generate_blank_pdf(num_pages: int = 1, width: int = 595, height: int = 842) -> bytes:
     """Generate a blank PDF with specified number of pages."""
-    from pypdf import PdfWriter
-
     # Create a writer object
     writer = PdfWriter()
 
@@ -49,6 +49,40 @@ def generate_blank_pdf_image(num_pages: int = 1, width: int = 100, height: int =
         images[0].save(pdf_bytes, format="PDF", save_all=True, append_images=images[1:])
 
     return pdf_bytes.getvalue()
+
+
+def generate_image_pdf_with_text(text: str, width: int = 100, height: int = 100) -> bytes:
+    """Generate a single-page PDF with a full-page image and a text layer."""
+    # Build a valid text-only PDF via pypdf writer primitives
+    text_writer = PdfWriter()
+    text_writer.add_blank_page(width=612, height=792)
+    font = DictionaryObject(
+        {
+            NameObject("/Type"): NameObject("/Font"),
+            NameObject("/Subtype"): NameObject("/Type1"),
+            NameObject("/BaseFont"): NameObject("/Helvetica"),
+        }
+    )
+    font_ref = text_writer._add_object(font)
+    page = text_writer.pages[0]
+    page[NameObject("/Resources")] = DictionaryObject(
+        {NameObject("/Font"): DictionaryObject({NameObject("/F1"): font_ref})}
+    )
+    stream = DecodedStreamObject()
+    stream.set_data(b"BT /F1 12 Tf 72 720 Td (" + text.encode("latin-1") + b") Tj ET")
+    page[NameObject("/Contents")] = text_writer._add_object(stream)
+    text_buf = io.BytesIO()
+    text_writer.write(text_buf)
+
+    img_buf = io.BytesIO()
+    Image.new("RGB", (width, height), "white").save(img_buf, format="PDF")
+
+    writer = PdfWriter()
+    writer.append(PdfReader(io.BytesIO(text_buf.getvalue())))
+    writer.pages[0].merge_page(PdfReader(io.BytesIO(img_buf.getvalue())).pages[0])
+    out = io.BytesIO()
+    writer.write(out)
+    return out.getvalue()
 
 
 def generate_blank_tiff(num_pages: int = 1, width: int = 100, height: int = 100) -> bytes:

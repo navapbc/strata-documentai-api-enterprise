@@ -1,0 +1,32 @@
+%%{init: {"flowchart": {"wrappingWidth": 240}}}%%
+flowchart LR
+    A([Upload]) --> B{Supported\ntype and filesize?}
+    B -- No --> C([Skip])
+    B -- Yes --> E["`**Prepare document**
+                    - *PDF*: Truncate to 5 pages, compress, split into windows
+                    - *Images*: Send as-is`"
+                ]
+    E --> parallel
+
+    subgraph parallel [Parallel Bedrock Calls]
+        G["`**Preclassify Document**
+            - Determine document type
+            - Check for multi-document inconsistencies
+            - Indicate if identity document`"
+        ]
+        H["`**Find Matching Blueprint**
+            - First window only`"
+        ]
+    end
+
+    parallel --> R
+
+    R[Routing rules\nfirst match wins]
+
+    R --> X1([Multiple documents\ndetected])
+    R --> X2([Blueprint disabled])
+    R --> X3([Textract AnalyzeID])
+    R --> X4([Excluded per\npreclassification])
+    R --> X5([Proceed to BDA])
+
+    style parallel fill:#f2f2f2,stroke:#b0b0b0

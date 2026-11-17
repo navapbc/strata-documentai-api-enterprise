@@ -6,19 +6,22 @@ real Bedrock and require AWS credentials:
     uv run pytest tests/utils/test_preclassification.py -m integration
 """
 
+import io
 import json
 from pathlib import Path
 from typing import Any
 
 import pytest
+from pypdf import PdfReader
 
-from documentai_api.constants.defaults import SystemDefaults
+from documentai_api.constants.defaults import PreClassificationDefaults, SystemDefaults
 from documentai_api.utils.preclassification import (
     _build_blueprint_prompt,
     find_matching_blueprint,
     preclassify_document,
 )
 from documentai_api.utils.schemas import DocumentSchema, SchemaField
+from tests.helpers.documents import generate_blank_pdf
 from tests.helpers.fixtures.paths import TEST_DOCS_DIR, TEST_DOCS_DIR_HAPPY_PATH
 
 SAMPLE_IMAGE = b"\x89PNG\r\n" + b"\x00" * 100
@@ -214,8 +217,6 @@ def test_empty_document_bytes(monkeypatch):
 
 
 def test_prompt_includes_category_match_placeholder():
-    from documentai_api.constants.defaults import PreClassificationDefaults
-
     prompt = PreClassificationDefaults.PROMPT
     assert "category_match" in prompt
     assert "{user_category}" in prompt
@@ -272,6 +273,218 @@ def test_pdf_uses_document_block(monkeypatch):
     assert doc_block["document"]["format"] == "pdf"
     assert doc_block["document"]["name"] == "document"
     assert doc_block["document"]["source"]["bytes"] == pdf_bytes
+
+
+def test_corrupt_pdf_falls_back_to_original_bytes(monkeypatch):
+    """A malformed PDF bypasses truncation and still reaches Bedrock."""
+    captured = {}
+
+    def capture_invoke(**kwargs):
+        captured["messages"] = kwargs["messages"]
+        return _mock_invoke_response(
+            {"document_type": "other_document", "confidence": 0.0, "max_document_count_on_page": 1}
+        )
+
+    monkeypatch.setattr("documentai_api.utils.preclassification.invoke_model", capture_invoke)
+
+    bad_pdf = b"%PDF-1.4 this is not a real pdf"
+    preclassify_document(bad_pdf, "application/pdf")
+
+    sent_bytes = captured["messages"][0]["content"][0]["document"]["source"]["bytes"]
+    assert sent_bytes is bad_pdf
+
+
+@pytest.fixture
+def small_window(monkeypatch):
+    """Window of 2 so a PDF within the page limit still splits into several windows."""
+    monkeypatch.setattr(PreClassificationDefaults, "PAGES_PER_CLASSIFICATION_CALL", 2)
+
+
+# =============================================================================
+# Multi-chunk PDF tests
+# =============================================================================
+
+
+@pytest.mark.usefixtures("small_window")
+def test_multi_chunk_all_chunks_fail_returns_default(monkeypatch):
+    """When every chunk fails, returns other_document at 0.0."""
+    monkeypatch.setattr(
+        "documentai_api.utils.preclassification.invoke_model",
+        lambda **kwargs: (_ for _ in ()).throw(RuntimeError("Bedrock timeout")),
+    )
+
+    pdf = generate_blank_pdf(num_pages=PreClassificationDefaults.PAGES_PER_CLASSIFICATION_CALL + 1)
+    result = preclassify_document(pdf, "application/pdf")
+
+    assert result.document_type == "other_document"
+    assert result.confidence == 0.0
+
+
+@pytest.mark.usefixtures("small_window")
+def test_multi_chunk_pdf_calls_invoke_once_per_chunk(monkeypatch):
+    """A PDF longer than PAGES_PER_CLASSIFICATION_CALL spawns one invoke call per window.
+
+    Input is truncated to MAX_PAGES_PER_DOCUMENT first, so the 7-page input is classified
+    as 5 pages: windows of 2 give 3 windows.
+    """
+    call_count = [0]
+
+    def counting_invoke(**kwargs):
+        call_count[0] += 1
+        return _mock_invoke_response(
+            {"document_type": "tax_documents", "confidence": 0.9, "max_document_count_on_page": 1}
+        )
+
+    monkeypatch.setattr("documentai_api.utils.preclassification.invoke_model", counting_invoke)
+
+    pdf = generate_blank_pdf(num_pages=7)
+    result = preclassify_document(pdf, "application/pdf")
+
+    assert call_count[0] == 3
+    assert result.document_type == "tax_documents"
+
+
+@pytest.mark.usefixtures("small_window")
+def test_multi_chunk_one_chunk_fails_does_not_flag_inconsistency(monkeypatch):
+    """A failed chunk (None) is excluded from type comparison."""
+    responses = [
+        _mock_invoke_response(
+            {"document_type": "tax_documents", "confidence": 0.9, "max_document_count_on_page": 1}
+        ),
+        {  # simulates a Bedrock error -> _invoke_preclassification returns None
+            "output": {"message": {"content": [{"text": "not json"}]}},
+            "usage": {"inputTokens": 10, "outputTokens": 5},
+        },
+    ]
+    call_index = [0]
+
+    def sequential_invoke(**kwargs):
+        resp = responses[min(call_index[0], len(responses) - 1)]
+        call_index[0] += 1
+        return resp
+
+    monkeypatch.setattr("documentai_api.utils.preclassification.invoke_model", sequential_invoke)
+
+    pdf = generate_blank_pdf(num_pages=PreClassificationDefaults.PAGES_PER_CLASSIFICATION_CALL + 1)
+    result = preclassify_document(pdf, "application/pdf")
+
+    assert result.document_type == "tax_documents"
+    assert result.has_multipage_inconsistency is False
+
+
+def _sequential_invoke(monkeypatch: pytest.MonkeyPatch, payloads: list[dict[str, Any]]) -> None:
+    responses = [_mock_invoke_response(p) for p in payloads]
+    call_index = [0]
+
+    def sequential_invoke(**kwargs):
+        resp = responses[min(call_index[0], len(responses) - 1)]
+        call_index[0] += 1
+        return resp
+
+    monkeypatch.setattr("documentai_api.utils.preclassification.invoke_model", sequential_invoke)
+
+
+@pytest.mark.usefixtures("small_window")
+def test_multi_chunk_type_mismatch_alone_does_not_flag_inconsistency(monkeypatch):
+    """document_type is free text, so differing labels across windows are not compared."""
+    _sequential_invoke(
+        monkeypatch,
+        [
+            {
+                "document_type": "application form",
+                "confidence": 0.9,
+                "max_document_count_on_page": 1,
+            },
+            {
+                "document_type": "privacy notice",
+                "confidence": 0.85,
+                "max_document_count_on_page": 1,
+            },
+        ],
+    )
+
+    pdf = generate_blank_pdf(num_pages=PreClassificationDefaults.PAGES_PER_CLASSIFICATION_CALL + 1)
+    result = preclassify_document(pdf, "application/pdf")
+
+    assert result.has_multipage_inconsistency is False
+    assert result.document_type == "application form"  # first successful chunk
+
+
+@pytest.mark.usefixtures("small_window")
+def test_multi_chunk_flagged_window_flags_inconsistency_with_its_reason(monkeypatch):
+    """A window's own multipage-consistency flag is carried through, with its reason."""
+    _sequential_invoke(
+        monkeypatch,
+        [
+            {"document_type": "w2", "confidence": 0.9, "max_document_count_on_page": 1},
+            {
+                "document_type": "w2",
+                "confidence": 0.9,
+                "max_document_count_on_page": 1,
+                "has_multipage_inconsistency": True,
+                "has_multipage_inconsistency_reason": "page 4 is for a different person",
+            },
+        ],
+    )
+
+    pdf = generate_blank_pdf(num_pages=PreClassificationDefaults.PAGES_PER_CLASSIFICATION_CALL + 1)
+    result = preclassify_document(pdf, "application/pdf")
+
+    assert result.has_multipage_inconsistency is True
+    assert result.has_multipage_inconsistency_reason == "page 4 is for a different person"
+
+
+def test_pdf_longer_than_page_limit_is_truncated_before_classification(monkeypatch):
+    """Pages beyond MAX_PAGES_PER_DOCUMENT (never read by BDA) are not classified."""
+    seen_pages = []
+
+    def capturing_invoke(**kwargs):
+        doc = kwargs["messages"][0]["content"][0]["document"]["source"]["bytes"]
+        seen_pages.append(len(PdfReader(io.BytesIO(doc)).pages))
+        return _mock_invoke_response(
+            {"document_type": "tax_documents", "confidence": 0.9, "max_document_count_on_page": 1}
+        )
+
+    monkeypatch.setattr("documentai_api.utils.preclassification.invoke_model", capturing_invoke)
+
+    preclassify_document(generate_blank_pdf(num_pages=32), "application/pdf")
+
+    # one window of MAX_PAGES_PER_DOCUMENT pages, not 32
+    assert seen_pages == [int(SystemDefaults.MAX_PAGES_PER_DOCUMENT)]
+
+
+@pytest.mark.usefixtures("small_window")
+def test_multi_chunk_token_sums(monkeypatch):
+    """Input and output tokens are summed across all chunks."""
+
+    def counting_invoke(**kwargs):
+        return {
+            "output": {
+                "message": {
+                    "content": [
+                        {
+                            "text": json.dumps(
+                                {
+                                    "document_type": "tax_documents",
+                                    "confidence": 0.9,
+                                    "max_document_count_on_page": 1,
+                                }
+                            )
+                        }
+                    ]
+                }
+            },
+            "usage": {"inputTokens": 100, "outputTokens": 50},
+        }
+
+    monkeypatch.setattr("documentai_api.utils.preclassification.invoke_model", counting_invoke)
+
+    pages = PreClassificationDefaults.PAGES_PER_CLASSIFICATION_CALL * 2
+    pdf = generate_blank_pdf(num_pages=pages)
+    result = preclassify_document(pdf, "application/pdf")
+
+    assert result.input_tokens == 200
+    assert result.output_tokens == 100
 
 
 def test_message_structure(monkeypatch):
@@ -366,7 +579,6 @@ def test_has_multipage_inconsistency_defaults_to_false(monkeypatch):
 
 def test_get_model_id_uses_default(monkeypatch):
     """When no SSM param configured, returns the default model ID."""
-    from documentai_api.constants.defaults import PreClassificationDefaults
     from documentai_api.utils.ssm import get_classification_model_id
 
     monkeypatch.setattr(
