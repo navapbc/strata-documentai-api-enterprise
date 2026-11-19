@@ -11,7 +11,7 @@
         "AWS via moto; BDA itself cannot be moto-mocked, so its output is canned).",
         "",
         "document_class and fields (names, nesting, types) are taken from",
-        "documentai_api/config/blueprint_schemas.json (the preloaded, real BDA",
+        "documentai_api/generated/blueprint_schemas_generated.json (the preloaded, real BDA",
         "blueprint schemas - see `make pull-blueprint-schemas`), not invented, so",
         "the suite exercises the actual field shape BDA returns for each blueprint,",
         "including nested/table fields (e.g. recipient_name.first_name) and",

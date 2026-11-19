@@ -189,6 +189,6 @@ jobs:
       - uses: ./.github/actions/setup-uv
         if: needs.changes.outputs.relevant == 'true'
 
-      - name: Check blueprint_schemas.json against infra/document-types/ custom blueprints
+      - name: Check blueprint_schemas_generated.json against infra/document-types/ custom blueprints
         if: needs.changes.outputs.relevant == 'true'
         run: make check-blueprint-schemas
