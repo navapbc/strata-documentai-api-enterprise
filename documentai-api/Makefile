@@ -366,7 +366,7 @@ pull-blueprint-schemas: ## Preload BDA blueprint schemas into the static schemas
 	@test -f .env || (echo ".env not found - run 'make setup-env' and 'make env-from-aws' first" && exit 1)
 	@set -a && . ./.env && set +a && $(AWS_RUN_CMD) pull-blueprint-schemas write
 
-check-blueprint-schemas: ## Verify blueprint_schemas.json matches infra/document-types/ custom blueprints (no AWS creds needed)
+check-blueprint-schemas: ## Verify blueprint_schemas_generated.json matches infra/document-types/ custom blueprints (no AWS creds needed)
 	$(AWS_RUN_CMD) pull-blueprint-schemas check
 
 generate-categories: ## Regenerate the PreclassificationCategory enum from infra/document-types/ folder names

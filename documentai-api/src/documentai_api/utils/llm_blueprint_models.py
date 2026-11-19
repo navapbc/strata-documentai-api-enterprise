@@ -8,7 +8,7 @@ from documentai_api.utils.schemas import DocumentSchema
 
 # AWS Bedrock blueprint descriptions are sometimes too generic to disambiguate
 # similarly-named field groups (e.g. CompanyAddress vs EmployeeAddress both
-# describe themselves as just "the address"). Since blueprint_schemas.json is
+# describe themselves as just "the address"). Since blueprint_schemas_generated.json is
 # pulled from Bedrock and can't be edited directly, clarifications are appended
 # here instead, scoped to the LLM extraction path only.
 _DESCRIPTION_CLARIFICATIONS: dict[str, str] = {

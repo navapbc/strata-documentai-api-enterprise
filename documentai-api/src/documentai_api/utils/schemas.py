@@ -14,7 +14,9 @@ from documentai_api.services.bda import get_blueprint, get_data_automation_proje
 
 logger = get_logger(__name__)
 
-SCHEMAS_FILE = Path(__file__).resolve().parent.parent / "config" / "blueprint_schemas.json"
+SCHEMAS_FILE = (
+    Path(__file__).resolve().parent.parent / "generated" / "blueprint_schemas_generated.json"
+)
 
 
 @dataclass

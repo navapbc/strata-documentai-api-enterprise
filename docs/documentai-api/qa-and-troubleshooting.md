@@ -24,7 +24,7 @@ Use this section whenever you:
 2. If you added a new category folder, run `make -C documentai-api generate-categories` to regenerate the `PreclassificationCategory` enum from the folder names.
 3. Apply the infrastructure change (`make infra-apply ENVIRONMENT=dev` from `infra/`, or the relevant Terraform workflow for your change).
 4. Refresh the committed blueprint metadata so the API serves the new/changed blueprint without live BDA calls (see [2026-08-25-blueprint-schema-preload.md](../decisions/2026-08-25-blueprint-schema-preload.md)). This requires `documentai-api/.env` to exist first (`make -C documentai-api setup-env` and `make -C documentai-api env-from-aws`, if you haven't already):
-   - `make -C documentai-api pull-blueprint-schemas` - regenerates `documentai-api/src/documentai_api/config/blueprint_schemas.json`
+   - `make -C documentai-api pull-blueprint-schemas` - regenerates `documentai-api/src/documentai_api/generated/blueprint_schemas_generated.json`
    - `make -C documentai-api pull-blueprint-fields ARN=<project-arn>` - regenerates field labels for a project, if field labels changed
    - `make -C documentai-api check-blueprint-schemas` - verifies the committed schemas file matches `infra/document-types/`, no AWS creds required; run this before opening a PR
 

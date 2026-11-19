@@ -49,7 +49,7 @@ def write() -> None:
 
 @app.command()
 def check() -> None:
-    """Verify blueprint_schemas.json matches infra/document-types/.
+    """Verify blueprint_schemas_generated.json matches infra/document-types/.
 
     Three checks, all using only local files (no AWS access):
 
@@ -151,13 +151,15 @@ def check() -> None:
     )
 
     if problems:
-        typer.echo("blueprint_schemas.json is out of sync with infra/document-types/:", err=True)
+        typer.echo(
+            "blueprint_schemas_generated.json is out of sync with infra/document-types/:", err=True
+        )
         for problem in problems:
             typer.echo(f"  - {problem}", err=True)
         typer.echo("Run 'make pull-blueprint-schemas' and commit the result.", err=True)
         raise typer.Exit(code=1)
 
-    typer.echo("blueprint_schemas.json matches infra/document-types/.")
+    typer.echo("blueprint_schemas_generated.json matches infra/document-types/.")
 
 
 if __name__ == "__main__":
