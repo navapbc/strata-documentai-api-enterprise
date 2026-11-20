@@ -347,6 +347,21 @@ def _wipe_test_tenant(tenant_id: str) -> None:
 
     logger.info(f"e2e wipe: deleted {deleted_docs} doc records, {deleted_objects} s3 objects")
 
+    # Extraction rules are seeded per-case (see payslip_extraction_rule in
+    # test_app_documents_probes.py); sweep any left behind by a crashed run.
+    if cfg.extraction_rules_table_name:
+        from documentai_api.utils import extraction_rules
+
+        for rule in extraction_rules.get_rules(tenant_id):
+            document_type = rule.get("documentType")
+            try:
+                extraction_rules.delete_rule(tenant_id, document_type)
+                logger.info(f"e2e wipe: deleted extraction rule {tenant_id}/{document_type}")
+            except Exception as e:
+                logger.warning(
+                    f"e2e wipe: failed to delete extraction rule {tenant_id}/{document_type}: {e}"
+                )
+
 
 @pytest.fixture(scope="session", autouse=True)
 def _sweep_stale_e2e_documents(_sweep_stale_e2e_keys, e2e_tenant_id):
