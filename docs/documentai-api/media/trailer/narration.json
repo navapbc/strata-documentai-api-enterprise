@@ -1,0 +1,56 @@
+{
+  "voice": "af_heart",
+  "speed": 1.25,
+  "repoUrl": "https://github.com/navapbc/strata-documentai-api-enterprise",
+  "question": "What would *your* agency need to configure, understand or measure before trying DocumentAI?",
+  "intro": {
+    "start": 0,
+    "end": 1.25,
+    "title": "DocumentAI",
+    "subtitle": "An open-source, configurable document processing service"
+  },
+  "interstitial": {
+    "title": "Administrator view",
+    "subtitle": "Configure rules and monitor operations",
+    "followsSegment": "inspect",
+    "duration": 1.25
+  },
+  "segments": [
+    {
+      "id": "overview",
+      "text": "DocumentAI is an open-source, configurable document processing service that evaluates and extracts structured information from uploaded documents. It can help determine whether a document is processable, readable, complete and consistent with configured document requirements.",
+      "voiceStart": 0.15
+    },
+    {
+      "id": "upload",
+      "text": "Here, we upload a synthetic paystub. DocumentAI evaluates the file, extracting information from the document in a consistent, structured format."
+    },
+    {
+      "id": "inspect",
+      "text": "Extracted values link back to their associated bounding box in the source document. Every value has a confidence score, and lower scores, like the employee ID, appear in red."
+    },
+    {
+      "id": "configure",
+      "text": "Administrators can define which fields are required for each document type. Here, employee ID, gross pay and pay period are required, while the rest are optional."
+    },
+    {
+      "id": "monitor",
+      "text": "Operational metrics show volume, outcomes and processing time, providing insight into how the system is performing."
+    },
+    {
+      "id": "ask",
+      "text": "What would *your* agency need to configure, understand or measure before trying DocumentAI?"
+    }
+  ],
+  "chips": {
+    "segment": "overview",
+    "words": [
+      "processable",
+      "readable",
+      "complete",
+      "consistent"
+    ]
+  },
+  "emphasis": "phonemes",
+  "extraTimeTo": "upload"
+}

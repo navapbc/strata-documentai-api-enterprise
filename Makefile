@@ -6,6 +6,7 @@
 	deploy-demo-ui \
 	deploy-ui \
 	record-ui \
+	trailer \
 	record-api-setup \
 	gifs-to-mp4 \
 	playwright-install \
@@ -27,6 +28,7 @@ AWS_PROFILE ?= nava-sandbox
 AWS_ARGS := --profile $(AWS_PROFILE)
 TF_DIR := infra/environments/$(ENVIRONMENT)
 MEDIA_DIR := docs/documentai-api/media
+TRAILER_DIR := $(MEDIA_DIR)/trailer
 
 deploy: ## Deploy everything (infra + UIs)
 deploy: deploy-infra deploy-ui
@@ -104,6 +106,12 @@ record-ui: playwright-install
 		webm=$$(ls $$root/video-output/*/video.webm 2>/dev/null | head -1); \
 		[ -n "$$webm" ] && ui/shared/scripts/webm-to-gif.sh "$$webm" "$(MEDIA_DIR)/$$stem.gif" || echo "Warning: no webm found for $$stem"; \
 	done
+
+trailer: ## Build the 60s trailer -> docs/documentai-api/media/trailer/out/trailer.mp4. Optional: args=--no-audio
+trailer: playwright-install
+	@which ffmpeg > /dev/null 2>&1 || (echo "Error: ffmpeg not found. Install with: brew install ffmpeg" && exit 1)
+	@[ "$(args)" = "--no-audio" ] || which uv > /dev/null 2>&1 || (echo "Error: uv not found (needed for the voiceover). Install with: brew install uv, or run: make trailer args=--no-audio" && exit 1)
+	$(TRAILER_DIR)/build.sh $(args)
 
 playwright-install: ## Install Playwright Chromium browser for both UIs
 	cd ui/admin && npx playwright install chromium

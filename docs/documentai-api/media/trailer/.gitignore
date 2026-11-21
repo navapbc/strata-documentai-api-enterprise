@@ -1,0 +1,3 @@
+# Everything generated: model weights, audio, overlays, and the final video.
+out/
+__pycache__/

@@ -1,0 +1,24 @@
+<!doctype html>
+<!--
+  Markup for the trailer overlays. render_overlays.mjs opens this page once, then
+  for each overlay clones a <template>, fills in its content and screenshots the page.
+  Open this file in a browser to see the styling work; call
+  fillTemplate("caption", { p: ["Hello *world*"] }) in the console to try one.
+-->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="overlays.css" />
+  </head>
+  <body>
+    <div id="stage"></div>
+
+    <template id="caption"><div class="caption"><p></p></div></template>
+    <template id="chip"><div class="chip"><span class="icon"></span><span class="text"></span></div></template>
+    <template id="badge"><div class="badge"></div></template>
+    <template id="title-card"><div class="card"><h1></h1><div class="sub"></div></div></template>
+    <template id="end-card"><div class="card"><h1></h1><div class="repo"></div></div></template>
+
+    <script src="overlays.js"></script>
+  </body>
+</html>

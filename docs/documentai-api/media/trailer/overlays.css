@@ -1,0 +1,133 @@
+/* Look of the trailer overlays (captions, chips, pills, title and end cards),
+   used by overlays.html. render_overlays.mjs sets the page size through the
+   custom properties --w and --h on <html>. */
+
+:root {
+  --card-bg: #111827; /* also the color clips fade into: assemble.py reads this line */
+}
+
+html,
+body {
+  margin: 0;
+  width: var(--w);
+  height: var(--h);
+  background: transparent;
+  font-family:
+    -apple-system, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+}
+
+#stage {
+  width: 100%;
+  height: 100%;
+}
+
+.caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 44px;
+  display: flex;
+  justify-content: center;
+}
+.caption p {
+  margin: 0;
+  background: rgba(17, 24, 39, 0.88);
+  color: #fff;
+  font-size: 27px;
+  line-height: 1.35;
+  padding: 12px 24px;
+  border-radius: 10px;
+  text-align: center;
+  max-width: 1020px;
+}
+
+.chip {
+  position: absolute;
+  top: calc(
+    280px + var(--chip-index) * 76px
+  ); /* --chip-index is set per chip */
+  left: 580px;
+  transform: translateX(-50%);
+  background: #fff;
+  color: #111827;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  width: 290px;
+  box-sizing: border-box;
+  padding: 12px 24px 12px 22px;
+  font-size: 27px;
+  font-weight: 550;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  white-space: nowrap;
+}
+.chip .icon {
+  display: flex;
+  flex: none;
+}
+.chip svg {
+  width: 32px;
+  height: 32px;
+  color: #059669;
+  flex: none;
+}
+
+/* Pills. .tc is the "Synthetic data" pill (top center); .tr is the "compressed"
+   label, shown only when a clip is sped up noticeably. */
+.badge {
+  position: absolute;
+  background: #fef3c7;
+  color: #78350f;
+  border: 1px solid #f59e0b;
+  font-size: 17px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 999px;
+}
+.badge.tc {
+  top: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 19px;
+  font-weight: 700;
+  padding: 5px 18px;
+  border: 2px solid #f59e0b;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+}
+.badge.tr {
+  top: 56px;
+  right: 24px;
+}
+
+.card {
+  width: 100%;
+  height: 100%;
+  background: var(--card-bg);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 44px;
+}
+.card h1 {
+  margin: 0;
+  font-size: 50px;
+  line-height: 1.25;
+  font-weight: 650;
+  max-width: 1000px;
+}
+.card .repo {
+  font-size: 27px;
+  color: #93c5fd;
+  letter-spacing: 0.2px;
+}
+.card .sub {
+  font-size: 28px;
+  color: #9ca3af;
+  margin-top: -20px;
+}
