@@ -29,6 +29,23 @@ const icon = (name) =>
     "currentColor",
   );
 
+// The Nava logo lives in media/ next to the other brand assets. Strip the XML
+// prolog and comment so the SVG can be inlined.
+const logo = {
+  svg: readFileSync(
+    join(trailerDir, "..", "Nava-Logo.svg"),
+    "utf8",
+  ).replace(/<\?xml[^>]*\?>|<!--[\s\S]*?-->/g, ""),
+};
+
+// A real blurry pay stub from the API's test fixtures, inlined for the "blurry upload" callout.
+const blurryDoc = `data:image/jpeg;base64,${readFileSync(
+  join(
+    trailerDir,
+    "../../../../documentai-api/tests/helpers/fixtures/test-documents/blur/synthetic-disk-defocus.jpeg",
+  ),
+).toString("base64")}`;
+
 const browser = await chromium.launch();
 const page = await browser.newPage({
   viewport: { width: spec.width, height: spec.height },
@@ -66,16 +83,71 @@ for (const c of spec.chips ?? []) {
 for (const b of spec.badges) {
   await renderOverlay(b.file, "badge", { "": b.text }, { classes: [b.pos] });
 }
-for (const c of [spec.intro, spec.interstitial]) {
-  await renderOverlay(c.file, "title-card", {
-    h1: c.title,
-    ".sub": c.subtitle,
+// The "integrate" callouts: a dimmed backdrop, then the blurry upload and the portal.
+if (spec.callouts) {
+  const { design, blur, portal } = spec.callouts;
+  await renderOverlay("backdrop.png", "backdrop", {});
+  await renderOverlay("callout-design.png", "callout-design", {
+    ".title": design.title,
+    ".sample-name": design.name,
+    ".sample-input": design.input,
+    ".sample-alert": design.alert,
+    ".sample-primary": design.primary,
+    ".sample-secondary": design.secondary,
+  });
+  await renderOverlay("callout-blur.png", "callout-blur", {
+    ".title": blur.title,
+    ".doc": { svg: `<img src="${blurryDoc}" alt="" />` },
+    ".alert-text": blur.alert,
+  });
+  const fields = Object.fromEntries(
+    portal.fields.flatMap(([label, value], i) => [
+      [`.f${i} label`, label],
+      [`.f${i} .val`, value],
+    ]),
+  );
+  await renderOverlay("callout-portal.png", "callout-portal", {
+    ".title": portal.title,
+    ...fields,
+    ".button": portal.button,
   });
 }
-await renderOverlay(spec.endCard.file, "end-card", {
-  h1: spec.endCard.question,
-  ".repo": spec.endCard.repoUrl,
-});
+const titleCard = (c) => ({ h1: c.title, ".sub": c.subtitle });
+await renderOverlay(
+  spec.interstitial.file,
+  "title-card",
+  titleCard(spec.interstitial),
+);
+// The intro is four layers (see overlays.css) so assemble.py can stagger the fade-in.
+for (const [layer, suffix] of [
+  ["bg", ""],
+  ["logo", "-logo"],
+  ["title", "-title"],
+  ["sub", "-subtitle"],
+]) {
+  await renderOverlay(
+    spec.intro.file.replace(".png", `${suffix}.png`),
+    "title-card",
+    { ...titleCard(spec.intro), ".logo": logo },
+    { classes: [`layer-${layer}`] },
+  );
+}
+// The end card is two layers: the question and link, then the logo that fades in.
+for (const [layer, suffix] of [
+  ["end-bg", ""],
+  ["end-logo", "-logo"],
+]) {
+  await renderOverlay(
+    spec.endCard.file.replace(".png", `${suffix}.png`),
+    "end-card",
+    {
+      ".logo": logo,
+      h1: spec.endCard.question,
+      ".repo": spec.endCard.repoUrl,
+    },
+    { classes: ["end", `layer-${layer}`] },
+  );
+}
 
 await browser.close();
 console.log(

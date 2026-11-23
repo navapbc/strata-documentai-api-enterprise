@@ -19,5 +19,6 @@ def load() -> dict:
     timeline = json.loads(TIMELINE.read_text())
     for b in n["segments"]:
         b.update(timeline["segments"][b["id"]])
+    n["total"] = timeline["total"]
     n["interstitial"].update(timeline["interstitial"])
     return n

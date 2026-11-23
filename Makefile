@@ -107,7 +107,7 @@ record-ui: playwright-install
 		[ -n "$$webm" ] && ui/shared/scripts/webm-to-gif.sh "$$webm" "$(MEDIA_DIR)/$$stem.gif" || echo "Warning: no webm found for $$stem"; \
 	done
 
-trailer: ## Build the 60s trailer -> docs/documentai-api/media/trailer/out/trailer.mp4. Optional: args=--no-audio
+trailer: ## Build the 60s trailer -> docs/documentai-api/media/trailer/out/documentai-trailer.mp4. Optional: args=--no-audio
 trailer: playwright-install
 	@which ffmpeg > /dev/null 2>&1 || (echo "Error: ffmpeg not found. Install with: brew install ffmpeg" && exit 1)
 	@[ "$(args)" = "--no-audio" ] || which uv > /dev/null 2>&1 || (echo "Error: uv not found (needed for the voiceover). Install with: brew install uv, or run: make trailer args=--no-audio" && exit 1)

@@ -76,6 +76,7 @@ if extra_time_to:
     spare = layout(extra)
 
 timeline = {
+    "total": TOTAL,
     "segments": {b["id"]: {"start": b["start"], "end": b["end"]} for b in segments},
     "interstitial": {"start": card["start"], "end": card["end"]},
 }

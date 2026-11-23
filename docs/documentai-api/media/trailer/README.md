@@ -12,27 +12,34 @@ make trailer args=--no-audio    # silent build, no Kokoro
 `make trailer` runs `docs/documentai-api/media/trailer/build.sh` after making sure
 Chromium is installed. You can also run that script directly.
 
-Output goes to `docs/documentai-api/media/trailer/out/` (gitignored): `trailer.mp4` with
-burned-in captions, and `trailer.srt` for a separate caption track.
+Output goes to `docs/documentai-api/media/trailer/out/` (gitignored): `documentai-trailer.mp4` with
+burned-in captions, and `documentai-trailer.srt` for a separate caption track.
 
 ## Timeline
 
-| Time | Shows | Source |
-|------|-------|--------|
-| 0-1.5s | "DocumentAI" title card | `narration.json` `intro` |
-| 1.5-17.7s | Overview narration over the ready upload screen | demo spec, held frame |
-| 17.7-23.2s | Upload a synthetic pay stub; processing (about 1.5x, labelled "Edited") | demo spec, real action |
-| 23.2-34.5s | Extracted fields beside the source document; the flagged low-confidence field last | demo spec, results |
-| 34.5-36s | "Administrator view" title card | `narration.json` `interstitial` |
-| 36-46.6s | Required fields defined for the Pay Stub document type | `ui/admin/e2e-trailer/trailer-admin.spec.js` "rules" |
-| 46.6-54.5s | Metrics dashboard: volume, outcomes, processing time | same spec, "metrics" |
-| 54.5-60s | The closing question and repository link (end card) | `narration.json` |
+The video has a fixed length, `TOTAL` in `timeline.py` (60s). The scenes run in this
+order; the start and end of each come from the measured speech and are printed by
+`timeline.py` (and saved in `out/timeline.json`), so they are not repeated here.
 
-The timeline comes from measured speech at voice speed 1.25. `make trailer`
+| Scene | Shows | Source |
+|-------|-------|--------|
+| Intro | The Nava logo fades in and out, then the "DocumentAI" title and tagline fade in as the voice starts | `narration.json` `intro` |
+| `overview` | Overview narration over the ready upload screen; chips appear as each requirement is named | demo spec, held frame |
+| `upload` | Upload a synthetic pay stub; processing (labelled "Edited" if it is sped up) | demo spec, real action |
+| `inspect` | Extracted fields beside the source document; the flagged low-confidence field last | demo spec, results |
+| `integrate` | The results screen dims and two illustrative panels fade in as the voice names each example: a blurry upload with a "too blurry" alert, then a mock caseworker portal prefilled with the extracted values | `narration.json` `callouts` |
+| Admin card | "Administrator view" title card | `narration.json` `interstitial` |
+| `configure` | Required fields defined for the Pay Stub document type | `ui/admin/e2e-trailer/trailer-admin.spec.js` "rules" |
+| `monitor` | Metrics dashboard: volume, outcomes, processing time | same spec, "metrics" |
+| `ask` | The closing question and repository link (end card); the Nava logo fades in at the bottom | `narration.json` |
+
+The timeline comes from measured speech at the voice speed set in `narration.json`. `make trailer`
 records the clips, renders the voice, builds the timeline (`timeline.py`, written
 to `out/timeline.json`) and assembles, so the whole chain re-runs on every build.
-`timeline.py` fails if the speech no longer fits 60s (shorten the text or raise
-`speed`).
+`timeline.py` fails if the speech no longer fits `TOTAL` (shorten the text or raise
+`speed`). Segment ends round up to whole seconds, so a small text change can cost or
+save a full second. Voice speed is not linear: small `speed` changes can move the
+total by several seconds, so re-run `timeline.py` after changing it.
 
 `narration.json` holds only hand-written content: voiceover text, captions, the
 end card, chips, and the title card text and lengths. During the overview, chips
@@ -66,14 +73,20 @@ page it saw).
   ```
 
   Set the winner in `narration.json`, then run `make trailer`.
-- `"voiceStart"` on the overview segment starts its voice at an absolute time (0.15s),
-  over the title card, instead of after the segment opens. Captions skip the title card.
+- `"voiceStart"` on the overview segment starts its voice at an absolute time (2.0s),
+  over the intro card, instead of after the segment opens. The intro is timed to it:
+  the Nava logo fades in and out first, then the title fades in as the voice starts
+  (the `INTRO_*` constants in `assemble.py`). Captions skip the intro card. The end
+  card fades the logo in at the bottom as the voice finishes (`END_LOGO_BEFORE_END`).
+  The logo is `../Nava-Logo.svg`, a copy of the Nava Strata logo without the "strata"
+  wordmark, inlined and filled white by `render_overlays.mjs`.
 
 ## What is committed
 
 - `narration.json`, `models.lock.json`, `tts_kokoro.py`, `timeline.py`, `narration.py`,
   `assemble.py`, `render_overlays.mjs`, `overlays.html`, `overlays.js`, `overlays.css`, `build.sh`, `icons/` (Heroicons, MIT; see
-  `THIRD_PARTY_NOTICES.md` at the repo root), this README
+  `THIRD_PARTY_NOTICES.md` at the repo root), this README, and the trimmed logo
+  `../Nava-Logo.svg`
 - The Playwright specs and configs in `ui/{demo,admin}/e2e-trailer/` and
   `playwright.trailer.config.js`, plus the pay stub fixture in
   `ui/shared/e2e/fixtures/recording/pay-stub-document.js`
@@ -110,6 +123,11 @@ clip looks off by a fraction of a second, adjust `--mark-offset`.
 
 ## Things to know
 
+- The `integrate` panels are drawn in Chromium like the other overlays (`callout-*` templates in
+  `overlays.html`). The blurry page is a real fixture,
+  `documentai-api/tests/helpers/fixtures/test-documents/blur/synthetic-disk-defocus.jpeg`, so
+  keep that file or point `render_overlays.mjs` at another. The portal values mirror
+  `ui/shared/e2e/fixtures/recording/pay-stub-document.js`; update them if that fixture changes.
 - The text overlays (captions, label, end card) are drawn in Chromium and
   composited as PNGs, because the local ffmpeg build has no `drawtext` or
   `subtitles` filter.

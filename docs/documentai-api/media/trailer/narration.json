@@ -1,41 +1,45 @@
 {
   "voice": "af_heart",
-  "speed": 1.25,
+  "speed": 1.3,
   "repoUrl": "https://github.com/navapbc/strata-documentai-api-enterprise",
   "question": "What would *your* agency need to configure, understand or measure before trying DocumentAI?",
   "intro": {
     "start": 0,
-    "end": 1.25,
+    "end": 5.0,
     "title": "DocumentAI",
     "subtitle": "An open-source, configurable document processing service"
   },
   "interstitial": {
     "title": "Administrator view",
     "subtitle": "Configure rules and monitor operations",
-    "followsSegment": "inspect",
-    "duration": 1.25
+    "followsSegment": "integrate",
+    "duration": 1.0
   },
   "segments": [
     {
       "id": "overview",
-      "text": "DocumentAI is an open-source, configurable document processing service that evaluates and extracts structured information from uploaded documents. It can help determine whether a document is processable, readable, complete and consistent with configured document requirements.",
-      "voiceStart": 0.15
+      "text": "DocumentAI is an open-source document processing service. It checks if a document is processable, readable, complete and consistent, and extracts information from the document where possible.",
+      "voiceStart": 1.5
     },
     {
       "id": "upload",
-      "text": "Here, we upload a synthetic paystub. DocumentAI evaluates the file, extracting information from the document in a consistent, structured format."
+      "text": "Here, we upload a synthetic paystub. DocumentAI returns data in a consistent, structured format."
     },
     {
       "id": "inspect",
-      "text": "Extracted values link back to their associated bounding box in the source document. Every value has a confidence score, and lower scores, like the employee ID, appear in red."
+      "text": "Extracted values link back to their location in the source document and each has an associated confidence score."
+    },
+    {
+      "id": "integrate",
+      "text": "DocumentAI fits existing design systems and interfaces, like warning a customer an upload is blurry or pre-filling a caseworker portal for review."
     },
     {
       "id": "configure",
-      "text": "Administrators can define which fields are required for each document type. Here, employee ID, gross pay and pay period are required, while the rest are optional."
+      "text": "Administrators can define required fields by document type. Here, Employee ID, gross pay and pay period are required."
     },
     {
       "id": "monitor",
-      "text": "Operational metrics show volume, outcomes and processing time, providing insight into how the system is performing."
+      "text": "Metrics show volume, outcomes and processing times. Paired with program outcomes, they give a holistic view of the system's impact on people and programs."
     },
     {
       "id": "ask",
@@ -50,6 +54,32 @@
       "complete",
       "consistent"
     ]
+  },
+  "callouts": {
+    "segment": "integrate",
+    "words": ["design", "blurry", "pre-filling"],
+    "design": {
+      "title": "Your design system",
+      "name": "Agency Portal",
+      "input": "",
+      "alert": "Your look and feel, your components.",
+      "primary": "Continue",
+      "secondary": "Back"
+    },
+    "blur": {
+      "title": "Customer upload",
+      "alert": "This image is too blurry. Please upload a clearer photo."
+    },
+    "portal": {
+      "title": "Caseworker portal",
+      "fields": [
+        ["Employee", "Jordan A. Rivera"],
+        ["Employee ID", "EMP-20417"],
+        ["Pay period", "11/01/2026 - 11/15/2026"],
+        ["Gross pay", "$3,250.00"]
+      ],
+      "button": "Verify and submit"
+    }
   },
   "emphasis": "phonemes",
   "extraTimeTo": "upload"
