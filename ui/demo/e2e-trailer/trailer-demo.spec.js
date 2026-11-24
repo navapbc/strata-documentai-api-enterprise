@@ -14,7 +14,7 @@ import { hoverFields, expectBboxOverlay } from "../../shared/e2e/helpers/documen
 //
 // Like e2e-video/, every network dependency is mocked so this runs offline and
 // deterministically. It lives in e2e-trailer/ (not e2e-video/) so that
-// `make record-ui` does not pick it up and write GIFs into docs/.../media.
+// `make record-ui` does not pick it up and write GIFs into docs/.../media/walkthroughs.
 // Record with: npx playwright test --config=playwright.trailer.config.js
 // The docs/documentai-api/media/trailer/ folder assembles the clips.
 // ---------------------------------------------------------------------------

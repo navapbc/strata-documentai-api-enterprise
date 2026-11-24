@@ -10,7 +10,7 @@ A serverless document processing system deployed as a Lambda container. Handles 
 
 The system follows an event-driven architecture:
 
-![Architecture diagram](../docs/documentai-api/media/architecture.svg)
+![Architecture diagram](../docs/documentai-api/media/diagrams/architecture.svg)
 
 The diagram source lives in [`architecture.mmd`](../docs/documentai-api/diagrams/architecture.mmd).
 
@@ -25,7 +25,7 @@ The diagram source lives in [`architecture.mmd`](../docs/documentai-api/diagrams
 
 The request lifecycle across these components:
 
-![Request lifecycle diagram](../docs/documentai-api/media/request-lifecycle.svg)
+![Request lifecycle diagram](../docs/documentai-api/media/diagrams/request-lifecycle.svg)
 
 The diagram source lives in [`request-lifecycle.mmd`](../docs/documentai-api/diagrams/request-lifecycle.mmd).
 
@@ -158,8 +158,6 @@ Set by infrastructure on deploy:
 Full API documentation is available at `/docs` (Swagger UI) and `/openapi.json` when the server is running. A snapshot is committed at [docs/documentai-api/openapi.json](../docs/documentai-api/openapi.json) - regenerate with `uv run export-openapi`.
 
 A [Postman collection](../docs/documentai-api/postman/DocumentAI.postman_collection.json) is committed with local-dev defaults pre-configured (baseUrl `localhost:8000`, `API-Key: local-dev-key`). Import it directly or regenerate with `make postman`.
-
-See the [API route map](../docs/documentai-api/diagrams/api-routes.mmd) for a visual overview grouped by auth scheme.
 
 Runtime behavior can be toggled without redeploying via [feature flags](../docs/documentai-api/feature-flags.md) stored in SSM Parameter Store. Response codes are documented in [response-codes.md](../docs/documentai-api/response-codes.md).
 

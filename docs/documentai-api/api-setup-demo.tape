@@ -22,7 +22,7 @@
 # Requires: an AWS profile with access to the dev account already exported.
 # Run from the repo root with `make record-api-setup` (see top-level
 # Makefile) - it invokes this tape and converts the result to
-# docs/documentai-api/media/api-setup-demo.gif, which README.md embeds.
+# docs/documentai-api/media/walkthroughs/api-setup-demo.mp4, which README.md embeds.
 
 Output api-setup-demo.mp4
 

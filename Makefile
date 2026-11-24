@@ -28,6 +28,7 @@ AWS_PROFILE ?= nava-sandbox
 AWS_ARGS := --profile $(AWS_PROFILE)
 TF_DIR := infra/environments/$(ENVIRONMENT)
 MEDIA_DIR := docs/documentai-api/media
+WALKTHROUGH_DIR := $(MEDIA_DIR)/walkthroughs
 TRAILER_DIR := $(MEDIA_DIR)/trailer
 
 deploy: ## Deploy everything (infra + UIs)
@@ -104,7 +105,7 @@ record-ui: playwright-install
 		root=$$(echo "$$dir" | sed 's|/e2e-video||'); \
 		( cd $$root && npm run record -- "e2e-video/$$stem.spec.js" ) || exit 1; \
 		webm=$$(ls $$root/video-output/*/video.webm 2>/dev/null | head -1); \
-		[ -n "$$webm" ] && ui/shared/scripts/webm-to-gif.sh "$$webm" "$(MEDIA_DIR)/$$stem.gif" || echo "Warning: no webm found for $$stem"; \
+		[ -n "$$webm" ] && ui/shared/scripts/webm-to-gif.sh "$$webm" "$(WALKTHROUGH_DIR)/$$stem.gif" || echo "Warning: no webm found for $$stem"; \
 	done
 
 trailer: ## Build the 60s trailer -> docs/documentai-api/media/trailer/out/documentai-trailer.mp4. Optional: args=--no-audio
@@ -117,19 +118,19 @@ playwright-install: ## Install Playwright Chromium browser for both UIs
 	cd ui/admin && npx playwright install chromium
 	cd ui/demo && npx playwright install chromium
 
-gifs-to-mp4: ## Convert all GIFs in $(MEDIA_DIR) to MP4 using ffmpeg
+gifs-to-mp4: ## Convert all GIFs in $(WALKTHROUGH_DIR) to MP4 using ffmpeg
 	@which ffmpeg > /dev/null 2>&1 || (echo "Error: ffmpeg not found. Install with: brew install ffmpeg" && exit 1)
-	@for gif in $(MEDIA_DIR)/*.gif; do \
+	@for gif in $(WALKTHROUGH_DIR)/*.gif; do \
 		[ -f "$$gif" ] || continue; \
 		mp4="$${gif%.gif}.mp4"; \
 		echo "Converting $$gif -> $$mp4"; \
 		ffmpeg -y -loglevel error -i "$$gif" -movflags faststart -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" "$$mp4"; \
 	done
 
-record-api-setup: ## Record local API setup demo -> $(MEDIA_DIR)/api-setup-demo.mp4
+record-api-setup: ## Record local API setup demo -> $(WALKTHROUGH_DIR)/api-setup-demo.mp4
 	@which vhs > /dev/null 2>&1 || (echo "Error: vhs not found. Install with: brew install vhs" && exit 1)
 	vhs docs/documentai-api/api-setup-demo.tape
-	mv api-setup-demo.mp4 $(MEDIA_DIR)/api-setup-demo.mp4
+	mv api-setup-demo.mp4 $(WALKTHROUGH_DIR)/api-setup-demo.mp4
 
 postman: ## Regenerate the Postman collection from docs/documentai-api/openapi.json
 	$(MAKE) -C documentai-api postman

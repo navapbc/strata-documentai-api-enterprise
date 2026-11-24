@@ -78,7 +78,7 @@ page it saw).
   the Nava logo fades in and out first, then the title fades in as the voice starts
   (the `INTRO_*` constants in `assemble.py`). Captions skip the intro card. The end
   card fades the logo in at the bottom as the voice finishes (`END_LOGO_BEFORE_END`).
-  The logo is `../Nava-Logo.svg`, a copy of the Nava Strata logo without the "strata"
+  The logo is `../logos/Nava-Logo.svg`, a copy of the Nava Strata logo without the "strata"
   wordmark, inlined and filled white by `render_overlays.mjs`.
 
 ## What is committed
@@ -86,7 +86,7 @@ page it saw).
 - `narration.json`, `models.lock.json`, `tts_kokoro.py`, `timeline.py`, `narration.py`,
   `assemble.py` (with `captions.py`, `timing.py`, `clips.py`, `overlay.py`), `render_overlays.mjs`, `overlays.html`, `overlays.js`, `overlays.css`, `build.sh`, `icons/` (Heroicons, MIT; see
   `THIRD_PARTY_NOTICES.md` at the repo root), this README, and the trimmed logo
-  `../Nava-Logo.svg`
+  `../logos/Nava-Logo.svg`
 - The Playwright specs and configs in `ui/{demo,admin}/e2e-trailer/` and
   `playwright.trailer.config.js`, plus the pay stub fixture in
   `ui/shared/e2e/fixtures/recording/pay-stub-document.js`

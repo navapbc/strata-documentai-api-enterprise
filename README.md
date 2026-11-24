@@ -1,5 +1,5 @@
 <p>
-  <img src="docs/documentai-api/media/Nava-Strata-Logo-V02.svg" alt="Nava Strata" width="400">
+  <img src="docs/documentai-api/media/logos/Nava-Strata-Logo-V02.svg" alt="Nava Strata" width="400">
 </p>
 <p><i>Open source tools for every layer of government service delivery.</i></p>
 <p><b>Strata is a gold-standard target architecture and suite of open-source tools that gives government agencies everything they need to run a modern service.</b></p>
@@ -39,13 +39,13 @@ The core service is designed for reuse across programs, agencies, and states wit
 
 Upload a document and view extraction results with bounding box overlay.
 
-![Demo UI walkthrough](docs/documentai-api/media/demo-walkthrough.gif)
+![Demo UI walkthrough](docs/documentai-api/media/walkthroughs/demo-walkthrough.gif)
 
 ## How it works
 
 A client uploads a document via the API. It's stored in S3 and queued for processing via EventBridge. A processor Lambda invokes Bedrock Data Automation with a tenant-specific blueprint, writes results back to S3, and a second Lambda extracts fields into DynamoDB. Metrics flow through SQS into Parquet via Glue.
 
-![Architecture diagram](docs/documentai-api/media/architecture.svg)
+![Architecture diagram](docs/documentai-api/media/diagrams/architecture.svg)
 
 ## Features
 

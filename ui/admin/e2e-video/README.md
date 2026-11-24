@@ -23,7 +23,7 @@ make record-ui   # records every e2e-video/*.spec.js in both UIs
 
 First run: `make playwright-install` (installs Chromium) and ensure `ffmpeg` is available (`brew install ffmpeg`).
 
-The spec filename stem becomes the GIF name — `foo-walkthrough.spec.js` produces `foo-walkthrough.gif` in `docs/documentai-api/media/`. To add a new recording, drop a `*.spec.js` in this directory; no Makefile changes needed.
+The spec filename stem becomes the GIF name — `foo-walkthrough.spec.js` produces `foo-walkthrough.gif` in `docs/documentai-api/media/walkthroughs/`. To add a new recording, drop a `*.spec.js` in this directory; no Makefile changes needed.
 
 ## What to edit
 
