@@ -64,5 +64,5 @@ Nova Micro was not tested directly: it is a further capability cut below Lite, w
 ## Links
 
 - Implementation: [ssm.py](../../documentai-api/src/documentai_api/utils/ssm.py) (`get_ocr_mapping_model_id`), [main.tf](../../infra/environments/dev/main.tf) (`ocr-mapping/model-id`)
-- Extraction path: [llm.py](../../documentai-api/src/documentai_api/extractors/llm.py)
+- Extraction path: [ocr_mapping.py](../../documentai-api/src/documentai_api/extractors/ocr_mapping.py)
 - Measurement tool: `make run-extraction-compare-fixtures` (CLI: `run-extraction-compare-fixtures` entry point in [run_extraction_compare.py](../../documentai-api/src/documentai_api/cli/run_extraction_compare.py)), results in `documentai-api/tests/results/extraction_compare/`
