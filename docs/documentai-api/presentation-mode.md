@@ -6,7 +6,7 @@ Presentation mode is a screen-sharing safety feature for the admin console. When
 
 ## See it in action
 
-![Presentation mode toggle - real tenant IDs replaced with masked names](media/admin-walkthrough-presentation-mode.gif)
+![Presentation mode toggle - real tenant IDs replaced with masked names](media/walkthroughs/admin-walkthrough-presentation-mode.gif)
 
 ## Activating presentation mode
 

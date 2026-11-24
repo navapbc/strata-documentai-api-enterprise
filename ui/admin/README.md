@@ -6,11 +6,11 @@ Admin console for managing API keys, tenants, users, extraction rules, and docum
 
 **Admin console** - tenant and user management, API keys, document review.
 
-![Admin console walkthrough](../../docs/documentai-api/media/admin-walkthrough.gif)
+![Admin console walkthrough](../../docs/documentai-api/media/walkthroughs/admin-walkthrough.gif)
 
 **Extraction rules** - configure per-tenant, per-document-type field rules.
 
-![Extraction rules walkthrough](../../docs/documentai-api/media/admin-extraction-rules-walkthrough.gif)
+![Extraction rules walkthrough](../../docs/documentai-api/media/walkthroughs/admin-extraction-rules-walkthrough.gif)
 
 ## Prerequisites
 

@@ -2,7 +2,7 @@
 
 This guide covers testing and troubleshooting DocumentAI behavior against blueprints and reference documents. It describes the standard testing workflow, diagnosing unexpected results, and maintaining the reference library.
 
-If you're unfamiliar with the overall pipeline (preclassification, BDA (Bedrock Data Automation) blueprint matching, extraction), see the [architecture diagram](media/architecture.svg) first.
+If you're unfamiliar with the overall pipeline (preclassification, BDA (Bedrock Data Automation) blueprint matching, extraction), see the [architecture diagram](media/diagrams/architecture.svg) first.
 
 ## Adding or configuring a new blueprint
 

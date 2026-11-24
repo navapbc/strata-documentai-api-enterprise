@@ -2,7 +2,7 @@
 
 Before a document reaches BDA for extraction, the platform runs preclassification using a Bedrock vision model to inspect the document. The model determines the document type, whether it contains multiple documents, whether a multipage PDF is internally consistent, and which BDA blueprint it should be routed to. Supports PDF, JPEG, PNG, GIF, and WebP; images over 5MB are skipped. Preclassification runs in the document processor Lambda, concurrently with blur detection and bounding-box detection.
 
-![Preclassification pipeline](media/preclassification.svg)
+![Preclassification pipeline](media/diagrams/preclassification.svg)
 
 ## Two parallel AWS Bedrock calls
 

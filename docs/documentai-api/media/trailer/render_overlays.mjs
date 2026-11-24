@@ -29,10 +29,10 @@ const icon = (name) =>
     "currentColor",
   );
 
-// The Nava logo lives in media/ next to the other brand assets. Strip the XML
+// The Nava logo lives in media/logos/ next to the other brand assets. Strip the XML
 // prolog and comment so the SVG can be inlined.
 const logo = {
-  svg: readFileSync(join(trailerDir, "..", "Nava-Logo.svg"), "utf8").replace(
+  svg: readFileSync(join(trailerDir, "..", "logos", "Nava-Logo.svg"), "utf8").replace(
     /<\?xml[^>]*\?>|<!--[\s\S]*?-->/g,
     "",
   ),

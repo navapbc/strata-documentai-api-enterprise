@@ -287,7 +287,7 @@ body {
   text-align: center;
   gap: 44px;
 }
-/* The logo is inlined from ../Nava-Logo.svg (black, no fill set), so
+/* The logo is inlined from ../logos/Nava-Logo.svg (black, no fill set), so
    it is filled white here. A card without a logo leaves this slot empty. */
 .card .logo:empty {
   display: none;

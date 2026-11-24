@@ -4,6 +4,7 @@ architecture-beta
   group api(aws:arch-amazon-api-gateway)[API Layer]
   group processing(aws:arch-aws-lambda)[Document Processing]
   group data-extraction(aws:arch-amazon-bedrock)[Data Extraction]
+  group identity-extraction(aws:arch-amazon-textract)[Identity Extraction]
   group ocr-mapping(aws:arch-amazon-textract)[OCR / LLM Mapping]
   group metrics(aws:arch-aws-glue)[Metrics Pipeline]
 
@@ -37,8 +38,12 @@ architecture-beta
 
   %% Dispatch
   group dispatch(material-symbols:alt-route)[Dispatch]
+  junction dispatch-start in dispatch
   junction dispatch-bda in dispatch
+  junction dispatch-identity in dispatch
   junction dispatch-ocr in dispatch
+  %% trailing member: with it, the grouped dispatch-ocr stays level with the OCR node (no curved line); its edge is hidden in architecture.css
+  junction dispatch-end in dispatch
 
   %% Data Extraction
   service bda(aws:arch-amazon-bedrock)[Bedrock Data Automation] in data-extraction
@@ -47,8 +52,18 @@ architecture-beta
   service bda-result-processor(aws:arch-aws-lambda)[BDA Result Processor] in data-extraction
   service ddb-bda(aws:arch-amazon-dynamodb)[Document Metadata] in data-extraction
 
+  %% Identity Extraction (identity documents per preclassification skip BDA; Textract runs inline in the processor and writes results directly)
+  %% Add spaces between "Analyze" and "ID" for alignment purposes
+  service textract-identity(aws:arch-amazon-textract)[Textract Analyze             ID] in identity-extraction
+  %% spacer junctions: give this row the same step count as Data Extraction so Document Metadata lines up
+  junction identity-spacer1 in identity-extraction
+  junction identity-spacer2 in identity-extraction
+  %% also carries the BDA Result Processor -> SQS line below, so it sits in the same cell as the row's last spacer
+  junction extract-junc1 in identity-extraction
+  service ddb-identity(aws:arch-amazon-dynamodb)[Document Metadata] in identity-extraction
+
   %% OCR / LLM Mapping
-  service textract(aws:arch-amazon-textract)[Textract AnalyzeDocument] in ocr-mapping
+  service textract-analyze-document(aws:arch-amazon-textract)[Textract Analyze Document] in ocr-mapping
   %% spacer junction: gives this row the same step count as Data Extraction so the lambdas can align
   junction ocr-spacer in ocr-mapping
   service ocr-mapping-sqs(aws:arch-amazon-sqs)[OCR Mapping Queue] in ocr-mapping
@@ -64,6 +79,9 @@ architecture-beta
   service s3-agg-metrics(aws:arch-amazon-s3)[Aggregated Processing Metrics] in metrics
   service tenant-schedule(aws:arch-aws-lambda)[Tenant Usage Report] in metrics
   service s3-tenant-usage-metrics(aws:arch-amazon-s3)[Tenant Usage Metrics] in metrics
+  service athena(aws:arch-amazon-athena)[Athena] in metrics
+  junction athena-junc in metrics
+  junction athena-spacer in metrics
 
   %% Admin flow
   user:B --> T:cloudfront
@@ -89,25 +107,37 @@ architecture-beta
   document-reaper:B --> T:ddb
 
   %% Dispatch
-  dispatch-bda:B -- T:dispatch-ocr
+  dispatch-bda:B -- T:dispatch-identity
+  dispatch-identity:B -- T:dispatch-ocr
+  dispatch-ocr:B -- T:dispatch-end
+  
   %% junctions push the extraction/OCR groups right so they clear the Dispatch group
   junction dispatch-junc-bda
   junction dispatch-junc-ocr
+  junction dispatch-junc-identity
   dispatch-bda:R -- L:dispatch-junc-bda
   dispatch-junc-bda:R --> L:bda
+  dispatch-identity:R -- L:dispatch-junc-identity
+  dispatch-junc-identity:R --> L:textract-identity
   dispatch-ocr:R -- L:dispatch-junc-ocr
-  dispatch-junc-ocr:R --> L:textract
-  %% align BDA/Textract and the two result-processor columns (group-to-group edge, avoids crossing node labels)
-  bda{group}:B -- T:textract{group}
+  dispatch-junc-ocr:R --> L:textract-analyze-document
+  %% align the two result-processor columns (group-to-group edge, avoids crossing node labels);
+  %% the three extraction rows stack from the dispatch junctions, so no stacking edges between them
   bda-result-processor{group}:B -- T:ocr-mapping-processor{group}
 
   %% OCR mapping path (always runs alongside primary; required for is_compare)
 
-  textract:R -- L:ocr-spacer
+  textract-analyze-document:R -- L:ocr-spacer
   ocr-spacer:R --> L:ocr-mapping-sqs
   ocr-mapping-sqs:R --> L:ocr-mapping-processor
   ocr-mapping-processor:R --> L:ddb-ocr
   ocr-mapping-processor:B --> T:sqs
+
+  %% Identity extraction flow
+  textract-identity:R -- L:identity-spacer1
+  identity-spacer1:R -- L:identity-spacer2
+  identity-spacer2:R -- L:extract-junc1
+  extract-junc1:R --> L:ddb-identity
 
   %% Extraction flow
   bda:R --> L:s3output
@@ -116,8 +146,8 @@ architecture-beta
   bda-result-processor:R --> L:ddb-bda
   %% force mermaid chart to render adequate space between groups by using a junction
   bda-result-processor:B -- T:extract-junc1
-  junction extract-junc1
-  extract-junc1:B --> T:sqs
+  %% continues down through the OCR processor (which feeds SQS below); reaching SQS from here instead puts it a row too high
+  extract-junc1:B -- T:ocr-mapping-processor
 
   %% Metrics flow
   sqs:R --> L:metrics-processor
@@ -127,3 +157,9 @@ architecture-beta
   metrics-aggregator:R --> L:s3-agg-metrics
   glue:B --> T:tenant-schedule
   tenant-schedule:B --> T:s3-tenant-usage-metrics
+  %% Athena sits bottom-right: under Aggregated Metrics, right of Tenant Usage Metrics.
+  %% The junction fills the empty column between them so both edges are straight lines.
+  s3-agg-metrics:B -- T:athena-spacer
+  athena-spacer:B --> T:athena
+  s3-tenant-usage-metrics:R -- L:athena-junc
+  athena-junc:R --> L:athena

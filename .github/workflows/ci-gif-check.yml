@@ -30,7 +30,7 @@ jobs:
         run: |
           # Keep path args in sync with on.pull_request.paths above.
           UI_CHANGED=$(git diff --name-only "$BASE"...HEAD -- ui/admin/src ui/shared ui/demo/src)
-          GIF_CHANGED=$(git diff --name-only "$BASE"...HEAD -- 'docs/documentai-api/media/*.gif')
+          GIF_CHANGED=$(git diff --name-only "$BASE"...HEAD -- 'docs/documentai-api/media/walkthroughs/*.gif')
           if [ -n "$UI_CHANGED" ] && [ -z "$GIF_CHANGED" ]; then
-            echo "::warning::UI source changed but no GIFs were updated in docs/documentai-api/media/. Run 'make record-ui' (or the relevant record-* target) if the walkthroughs need updating."
+            echo "::warning::UI source changed but no GIFs were updated in docs/documentai-api/media/walkthroughs/. Run 'make record-ui' (or the relevant record-* target) if the walkthroughs need updating."
           fi

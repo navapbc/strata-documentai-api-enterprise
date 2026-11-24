@@ -18,6 +18,7 @@ app = typer.Typer()
 
 ICONS = {
     "arch-amazon-api-gateway": "Arch_Amazon-API-Gateway_64.svg",
+    "arch-amazon-athena": "Arch_Amazon-Athena_64.svg",
     "arch-amazon-bedrock": "Arch_Amazon-Bedrock_64.svg",
     "arch-amazon-cloudfront": "Arch_Amazon-CloudFront_64.svg",
     "arch-amazon-cognito": "Arch_Amazon-Cognito_64.svg",

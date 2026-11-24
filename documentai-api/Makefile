@@ -102,9 +102,9 @@ TRAILER_DIR := /docs/documentai-api/media/trailer
 TF_DIR := ../infra/environments/dev
 
 DIAGRAMS := \
-	$(APP_DOCS_DIR)/media/architecture.svg \
-	$(APP_DOCS_DIR)/media/request-lifecycle.svg \
-	$(APP_DOCS_DIR)/media/preclassification.svg
+	$(APP_DOCS_DIR)/media/diagrams/architecture.svg \
+	$(APP_DOCS_DIR)/media/diagrams/request-lifecycle.svg \
+	$(APP_DOCS_DIR)/media/diagrams/preclassification.svg
 
 # By default, all python/uv commands will run inside of the docker container
 # if you wish to run this natively, add RUN_CMD_APPROACH=local to your environment vars
@@ -411,13 +411,13 @@ aws-icon-pack: ## Rebuild docs/documentai-api/icons/aws/icons.json from AWS icon
 	$(if $(ZIP),,$(error ZIP=/path/to/aws-icons.zip required))
 	$(AWS_RUN_CMD) build-aws-icon-pack $(ZIP) $(APP_DOCS_DIR)/icons/aws/icons.json
 
-$(APP_DOCS_DIR)/media/%.svg: $(APP_DOCS_DIR)/diagrams/%.mmd $(APP_DOCS_DIR)/icons/aws/icons.json $(CURDIR)/Dockerfile.mermaid
+$(APP_DOCS_DIR)/media/diagrams/%.svg: $(APP_DOCS_DIR)/diagrams/%.mmd $(APP_DOCS_DIR)/icons/aws/icons.json $(CURDIR)/Dockerfile.mermaid
 	docker build -q -t documentai-mermaid - < $(CURDIR)/Dockerfile.mermaid > /dev/null
 	docker run --rm \
 	-v $(APP_DOCS_DIR):/data \
 	documentai-mermaid \
 	-i diagrams/$*.mmd \
-	-o media/$*.svg \
+	-o media/diagrams/$*.svg \
 	$(if $(wildcard $(APP_DOCS_DIR)/diagrams/$*.css),--cssFile diagrams/$*.css) \
 	--iconPacks '@iconify-json/material-symbols' \
 	--iconPacks '/data/icons/aws'
