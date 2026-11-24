@@ -84,7 +84,7 @@ page it saw).
 ## What is committed
 
 - `narration.json`, `models.lock.json`, `tts_kokoro.py`, `timeline.py`, `narration.py`,
-  `assemble.py`, `render_overlays.mjs`, `overlays.html`, `overlays.js`, `overlays.css`, `build.sh`, `icons/` (Heroicons, MIT; see
+  `assemble.py` (with `captions.py`, `timing.py`, `clips.py`, `overlay.py`), `render_overlays.mjs`, `overlays.html`, `overlays.js`, `overlays.css`, `build.sh`, `icons/` (Heroicons, MIT; see
   `THIRD_PARTY_NOTICES.md` at the repo root), this README, and the trimmed logo
   `../Nava-Logo.svg`
 - The Playwright specs and configs in `ui/{demo,admin}/e2e-trailer/` and

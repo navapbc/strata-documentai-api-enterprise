@@ -36,6 +36,7 @@ from pathlib import Path
 
 import numpy as np
 from kokoro_onnx import Kokoro
+from narration import load_content
 
 TRAILER_DIR = Path(__file__).resolve().parent
 OUTPUT_DIR = TRAILER_DIR / "out"
@@ -134,11 +135,11 @@ def synth(kokoro: Kokoro, text: str, voice: str, speed: float, mode: str):
 
 
 def main() -> None:
-    narration = json.loads((TRAILER_DIR / "narration.json").read_text())
+    narration = load_content()
     ap = argparse.ArgumentParser()
-    ap.add_argument("--voice", default=narration.get("voice", "af_heart"))
-    ap.add_argument("--speed", type=float, default=narration.get("speed", 1.0))
-    ap.add_argument("--emphasis", choices=MODES, default=narration.get("emphasis", "none"))
+    ap.add_argument("--voice", default=narration.voice)
+    ap.add_argument("--speed", type=float, default=narration.speed)
+    ap.add_argument("--emphasis", choices=MODES, default=narration.emphasis)
     ap.add_argument("--emphasis-demo", action="store_true",
                     help="render the closing line in every emphasis mode to out/audio/emphasis/")
     args = ap.parse_args()
@@ -149,7 +150,7 @@ def main() -> None:
     if args.emphasis_demo:
         demo = AUDIO_DIR / "emphasis"
         demo.mkdir(parents=True, exist_ok=True)
-        ask = next(b for b in narration["segments"] if b["id"] == "ask")["text"]
+        ask = narration.segment("ask").text
         if "*" not in ask:
             sys.exit('Mark a word in the "ask" segment first, e.g. "What would *your* agency ...".')
         for mode in MODES:
@@ -161,11 +162,11 @@ def main() -> None:
 
     AUDIO_DIR.mkdir(parents=True, exist_ok=True)
     durations = {}
-    for segment in narration["segments"]:
-        samples, rate = synth(kokoro, segment["text"], args.voice, args.speed, args.emphasis)
-        dur = write_wav(AUDIO_DIR / f"{segment['id']}.wav", samples, rate)
-        durations[segment["id"]] = round(dur, 2)
-        print(f"{segment['id']:<10} {dur:5.1f}s")
+    for segment in narration.segments:
+        samples, rate = synth(kokoro, segment.text, args.voice, args.speed, args.emphasis)
+        dur = write_wav(AUDIO_DIR / f"{segment.id}.wav", samples, rate)
+        durations[segment.id] = round(dur, 2)
+        print(f"{segment.id:<10} {dur:5.1f}s")
 
     (AUDIO_DIR / "durations.json").write_text(json.dumps(durations, indent=2))
 
