@@ -1,4 +1,12 @@
-/* Alignment-only edge between the Data Extraction and OCR groups (keeps BDA and Textract in the same column); hide it. */
-#my-svg-L_bda_textract_0 {
+/* Alignment-only edge below the OCR branch of the Dispatch trunk (a trailing junction that keeps the OCR branch level with its node); hide it. */
+#my-svg-L_dispatch-ocr_dispatch-end_0 {
   display: none;
+}
+
+/* Trim the Dispatch box after layout: the solver sizes it around the free-floating dispatch-start and the trailing
+   junction, which makes it too wide and tall. Width = trunk +/- padding (165); height puts the bottom level with the OCR box (597).
+   These are layout coordinates: if nodes move, re-measure rect#my-svg-group-dispatch against rect#my-svg-group-ocr-mapping. */
+#my-svg-group-dispatch {
+  width: 165px;
+  height: 597px;
 }
