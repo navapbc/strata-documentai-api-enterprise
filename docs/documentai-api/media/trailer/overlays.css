@@ -1,0 +1,375 @@
+/* Look of the trailer overlays (captions, chips, pills, title and end cards),
+   used by overlays.html. render_overlays.mjs sets the page size through the
+   custom properties --w and --h on <html>. */
+
+:root {
+  --card-bg: #111827; /* also the color clips fade into: assemble.py reads this line */
+}
+
+html,
+body {
+  margin: 0;
+  width: var(--w);
+  height: var(--h);
+  background: transparent;
+  font-family: -apple-system, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+}
+
+#stage {
+  width: 100%;
+  height: 100%;
+}
+
+.caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 44px;
+  display: flex;
+  justify-content: center;
+}
+.caption p {
+  margin: 0;
+  background: rgba(17, 24, 39, 0.88);
+  color: #fff;
+  font-size: 27px;
+  line-height: 1.35;
+  padding: 12px 24px;
+  border-radius: 10px;
+  text-align: center;
+  max-width: 1020px;
+}
+
+.chip {
+  position: absolute;
+  top: calc(280px + var(--chip-index) * 76px); /* --chip-index is set per chip */
+  left: 580px;
+  transform: translateX(-50%);
+  background: #fff;
+  color: #111827;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  width: 290px;
+  box-sizing: border-box;
+  padding: 12px 24px 12px 22px;
+  font-size: 27px;
+  font-weight: 550;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  white-space: nowrap;
+}
+.chip .icon {
+  display: flex;
+  flex: none;
+}
+.chip svg {
+  width: 32px;
+  height: 32px;
+  color: #059669;
+  flex: none;
+}
+
+/* Pills. .tc is the "Synthetic data" pill (top center); .tr is the "compressed"
+   label, shown only when a clip is sped up noticeably. */
+.badge {
+  position: absolute;
+  background: #fef3c7;
+  color: #78350f;
+  border: 1px solid #f59e0b;
+  font-size: 17px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 999px;
+}
+.badge.tc {
+  top: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 19px;
+  font-weight: 700;
+  padding: 5px 18px;
+  border: 2px solid #f59e0b;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+}
+.badge.tr {
+  top: 56px;
+  right: 24px;
+}
+
+/* "Integrate" callouts: two illustrative panels over a dimmed results screen. */
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.6);
+}
+.callout {
+  position: absolute;
+  top: 110px;
+  width: 380px;
+  height: 540px;
+  background: #fff;
+  color: #111827;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+}
+.callout.col-0 {
+  left: 40px;
+}
+.callout.col-1 {
+  left: 450px;
+}
+.callout.col-2 {
+  left: 860px;
+}
+.callout header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  background: #f3f4f6;
+  border-bottom: 1px solid #d1d5db;
+  font-size: 21px;
+  font-weight: 650;
+}
+.callout .tag {
+  font-size: 15px;
+  font-weight: 600;
+  color: #78350f;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 999px;
+  padding: 3px 11px;
+}
+.callout .doc {
+  flex: 1;
+  min-height: 0;
+  background: #e5e7eb;
+}
+.callout .doc img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+  display: block;
+}
+.callout .alert {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin: 16px;
+  padding: 14px 16px;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 10px;
+  color: #991b1b;
+  font-size: 18px;
+  font-weight: 550;
+  line-height: 1.3;
+}
+.callout .mark {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #dc2626;
+  color: #fff;
+  text-align: center;
+  line-height: 32px;
+  font-weight: 800;
+}
+.callout .fields {
+  flex: 1;
+  padding: 16px 18px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.callout .field label {
+  display: block;
+  font-size: 15px;
+  color: #6b7280;
+  margin-bottom: 3px;
+}
+.callout .field .val {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #f9fafb;
+  padding: 8px 12px;
+  font-size: 19px;
+  font-weight: 550;
+}
+.callout .button {
+  margin: 14px 18px 18px;
+  background: #1d4ed8;
+  color: #fff;
+  text-align: center;
+  font-size: 19px;
+  font-weight: 650;
+  padding: 12px;
+  border-radius: 10px;
+}
+
+/* The "your design system" sample: a different brand look, to show the output adapts. */
+.callout .sample {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.callout .sample-bar {
+  background: #0b4a3f;
+  color: #fff;
+  padding: 16px 18px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.callout .sample-body {
+  padding: 20px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font-family: Georgia, "Times New Roman", serif;
+}
+.callout .sample-label {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1f2937;
+}
+.callout .sample-input {
+  height: 40px;
+  border: 2px solid #0b4a3f;
+  border-radius: 2px;
+  background: #fff;
+}
+.callout .sample-alert {
+  border-left: 6px solid #b45309;
+  background: #fffbeb;
+  padding: 12px 14px;
+  font-size: 17px;
+  color: #78350f;
+}
+.callout .sample-buttons {
+  display: flex;
+  gap: 12px;
+}
+.callout .sample-primary,
+.callout .sample-secondary {
+  padding: 11px 18px;
+  font-size: 17px;
+  font-weight: 700;
+  border-radius: 2px;
+  border: 2px solid #0b4a3f;
+}
+.callout .sample-primary {
+  background: #0b4a3f;
+  color: #fff;
+}
+.callout .sample-secondary {
+  background: #fff;
+  color: #0b4a3f;
+}
+
+.card {
+  width: 100%;
+  height: 100%;
+  background: var(--card-bg);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 44px;
+}
+/* The logo is inlined from ../Nava-Logo.svg (black, no fill set), so
+   it is filled white here. A card without a logo leaves this slot empty. */
+.card .logo:empty {
+  display: none;
+}
+.card .logo svg {
+  display: block;
+  width: 280px;
+  height: auto;
+  fill: #fff;
+  margin-bottom: -4px;
+}
+.card h1 {
+  margin: 0;
+  font-size: 54px;
+  line-height: 1.25;
+  font-weight: 700;
+  max-width: 1000px;
+}
+.card .repo {
+  font-size: 27px;
+  color: #93c5fd;
+  letter-spacing: 0.2px;
+}
+.card .sub {
+  font-size: 28px;
+  color: #9ca3af;
+  margin-top: -20px;
+}
+
+/* End card: the logo is a small sign-off mark at the bottom center. */
+.card.end .logo {
+  position: absolute;
+  bottom: 44px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.card.end .logo svg {
+  width: 200px;
+  margin: 0;
+}
+/* The end card is also layered so the logo can fade in: .layer-end-bg is the
+   question and link without the logo; .layer-end-logo is a transparent image of
+   just the logo (same layout). */
+.card.layer-end-bg .logo,
+.card.layer-end-logo h1,
+.card.layer-end-logo .repo {
+  visibility: hidden;
+}
+.card.layer-end-logo {
+  background: transparent;
+}
+
+/* The intro card is rendered as four layers so its parts can fade in and out at
+   different times: .layer-bg is the empty card; .layer-logo is the logo alone,
+   large and centered; .layer-title and .layer-sub are the title and subtitle,
+   centered together without the logo. Each is a transparent image (except bg)
+   with the same layout as the others. */
+.card.layer-bg .logo,
+.card.layer-title .logo,
+.card.layer-sub .logo {
+  display: none;
+}
+.card.layer-logo .logo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.card.layer-logo .logo svg {
+  width: 420px;
+  margin: 0;
+}
+.card.layer-bg h1,
+.card.layer-bg .sub,
+.card.layer-logo h1,
+.card.layer-logo .sub,
+.card.layer-title .sub,
+.card.layer-sub h1 {
+  visibility: hidden;
+}
+.card.layer-logo,
+.card.layer-title,
+.card.layer-sub {
+  background: transparent;
+}
