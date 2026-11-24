@@ -12,8 +12,7 @@ body {
   width: var(--w);
   height: var(--h);
   background: transparent;
-  font-family:
-    -apple-system, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  font-family: -apple-system, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
 }
 
 #stage {
@@ -43,9 +42,7 @@ body {
 
 .chip {
   position: absolute;
-  top: calc(
-    280px + var(--chip-index) * 76px
-  ); /* --chip-index is set per chip */
+  top: calc(280px + var(--chip-index) * 76px); /* --chip-index is set per chip */
   left: 580px;
   transform: translateX(-50%);
   background: #fff;

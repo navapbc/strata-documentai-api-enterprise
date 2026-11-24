@@ -32,10 +32,10 @@ const icon = (name) =>
 // The Nava logo lives in media/ next to the other brand assets. Strip the XML
 // prolog and comment so the SVG can be inlined.
 const logo = {
-  svg: readFileSync(
-    join(trailerDir, "..", "Nava-Logo.svg"),
-    "utf8",
-  ).replace(/<\?xml[^>]*\?>|<!--[\s\S]*?-->/g, ""),
+  svg: readFileSync(join(trailerDir, "..", "Nava-Logo.svg"), "utf8").replace(
+    /<\?xml[^>]*\?>|<!--[\s\S]*?-->/g,
+    "",
+  ),
 };
 
 // A real blurry pay stub from the API's test fixtures, inlined for the "blurry upload" callout.
@@ -62,8 +62,7 @@ await page.evaluate(
 // Fill a template from overlays.html and save a transparent PNG of the page.
 async function renderOverlay(file, template, content, options) {
   await page.evaluate(
-    ({ template, content, options }) =>
-      fillTemplate(template, content, options),
+    ({ template, content, options }) => fillTemplate(template, content, options),
     { template, content, options },
   );
   await page.screenshot({ path: join(outDir, file), omitBackground: true });
@@ -113,11 +112,7 @@ if (spec.callouts) {
   });
 }
 const titleCard = (c) => ({ h1: c.title, ".sub": c.subtitle });
-await renderOverlay(
-  spec.interstitial.file,
-  "title-card",
-  titleCard(spec.interstitial),
-);
+await renderOverlay(spec.interstitial.file, "title-card", titleCard(spec.interstitial));
 // The intro is four layers (see overlays.css) so assemble.py can stagger the fade-in.
 for (const [layer, suffix] of [
   ["bg", ""],

@@ -98,6 +98,7 @@ endef
 APP_NAME := documentai-api
 APP_DOCS_DIR := $(CURDIR)/../docs/$(APP_NAME)
 POSTMAN_DIR := /docs/documentai-api/postman
+TRAILER_DIR := /docs/documentai-api/media/trailer
 TF_DIR := ../infra/environments/dev
 
 DIAGRAMS := \
@@ -298,13 +299,13 @@ env-from-aws: _require-jq ## Append real dev AWS resource identifiers to .env fo
 ##################################################
 
 format: ## Format code
-	$(PY_RUN_CMD) ruff format $(FMT_ARGS) . $(POSTMAN_DIR)
+	$(PY_RUN_CMD) ruff format $(FMT_ARGS) . $(POSTMAN_DIR) $(TRAILER_DIR)
 
 lint: ## Run all linters
 lint: lint-ruff lint-uv lint-mypy lint-imports
 
 lint-ruff: ## Lint Python code with ruff
-	$(PY_RUN_CMD) ruff check $(LINT_ARGS) . $(POSTMAN_DIR)
+	$(PY_RUN_CMD) ruff check $(LINT_ARGS) . $(POSTMAN_DIR) $(TRAILER_DIR)
 
 lint-mypy: ## Type check with mypy
 	$(PY_RUN_CMD) mypy src tests $(POSTMAN_DIR)

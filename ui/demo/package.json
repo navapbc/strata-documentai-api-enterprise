@@ -14,8 +14,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "record": "playwright test --config=playwright.video.config.js",
-    "format": "prettier --write src/ styles/ tests/ e2e/ ../shared/ index.html",
-    "format:check": "prettier --check src/ styles/ tests/ e2e/ ../shared/ index.html"
+    "format": "prettier --write src/ styles/ tests/ e2e/ e2e-trailer/ ../shared/ index.html && prettier --config .prettierrc --write \"../../docs/documentai-api/media/trailer/*.{mjs,js,css}\"",
+    "format:check": "prettier --check src/ styles/ tests/ e2e/ e2e-trailer/ ../shared/ index.html && prettier --config .prettierrc --check \"../../docs/documentai-api/media/trailer/*.{mjs,js,css}\""
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

@@ -1,4 +1,4 @@
-# Trailer
+# DocumentAI Trailer
 
 Rebuilds the one-minute screen recording with voiceover and captions from
 scripted Playwright runs, so it can be regenerated after UI changes. Everything
@@ -27,7 +27,7 @@ order; the start and end of each come from the measured speech and are printed b
 | `overview` | Overview narration over the ready upload screen; chips appear as each requirement is named | demo spec, held frame |
 | `upload` | Upload a synthetic pay stub; processing (labelled "Edited" if it is sped up) | demo spec, real action |
 | `inspect` | Extracted fields beside the source document; the flagged low-confidence field last | demo spec, results |
-| `integrate` | The results screen dims and two illustrative panels fade in as the voice names each example: a blurry upload with a "too blurry" alert, then a mock caseworker portal prefilled with the extracted values | `narration.json` `callouts` |
+| `integrate` | The results screen dims and three illustrative panels fade in as the voice names each example: the existing design system's components, a blurry upload with a "too blurry" alert, then a mock caseworker portal prefilled with the extracted values | `narration.json` `callouts` |
 | Admin card | "Administrator view" title card | `narration.json` `interstitial` |
 | `configure` | Required fields defined for the Pay Stub document type | `ui/admin/e2e-trailer/trailer-admin.spec.js` "rules" |
 | `monitor` | Metrics dashboard: volume, outcomes, processing time | same spec, "metrics" |
@@ -73,7 +73,7 @@ page it saw).
   ```
 
   Set the winner in `narration.json`, then run `make trailer`.
-- `"voiceStart"` on the overview segment starts its voice at an absolute time (2.0s),
+- `"voiceStart"` on the overview segment starts its voice at an absolute time,
   over the intro card, instead of after the segment opens. The intro is timed to it:
   the Nava logo fades in and out first, then the title fades in as the voice starts
   (the `INTRO_*` constants in `assemble.py`). Captions skip the intro card. The end
@@ -112,6 +112,30 @@ To use a recorded human voice instead, drop one WAV per segment in `out/audio/`
 named after the segment id (`upload.wav`, `inspect.wav`, ...) and run
 `assemble.py` directly.
 
+## Where things live
+
+| File | Holds |
+|------|-------|
+| `narration.json` | The hand-written content: voiceover text, intro and title cards, chips, callouts, end card |
+| `narration.py` | Loads it into `Narration`, `Segment` and `Card`; `load()` also merges in `out/timeline.json` |
+| `tts_kokoro.py` | Renders each segment's voice to WAV and records how long each is |
+| `timeline.py` | Lays the segments out within `TOTAL` from the measured speech |
+| `timing.py` | Voice start times and the estimated times of spoken words, chips and callouts |
+| `captions.py` | Splits the narration into caption cues and writes the SRT |
+| `clips.py` | The recordings and their markers (`Recording`, `Cut`), and `ClipEdit`, which builds the ffmpeg chain that fits a clip to its window |
+| `overlay.py` | `Overlay`, a PNG shown for part of the timeline, with its alpha fades |
+| `assemble.py` | Puts it together: the filter graph, overlay schedule and audio mix, then runs ffmpeg |
+| `render_overlays.mjs`, `overlays.*` | Draws the text overlays as transparent PNGs in Chromium |
+
+### Format and lint
+
+- The Python follows the API's ruff settings (`documentai-api/pyproject.toml`) and is checked by
+  `make format` and `make lint`. The scripts carry `# ruff: noqa: INP001` because they are
+  scripts, not a package.
+- `render_overlays.mjs`, `overlays.js` and `overlays.css` are checked by `ui/demo`'s
+  `npm run format:check`, and the `e2e-trailer/` specs by both UIs'. `overlays.html` is left out:
+  prettier would change the whitespace inside its inline templates.
+
 ## How the timing works
 
 Playwright records each flow at its natural pace. `assemble.py` retimes each clip
@@ -135,4 +159,4 @@ clip looks off by a fraction of a second, adjust `--mark-offset`.
   fixture. The timing chart needs `dailyStats[].timingStats`, which that fixture
   stores flat, so `trailer-admin.spec.js` reshapes it locally.
 - The repository link on the end card is read from `narration.json`. Make sure
-  that repository is reachable by whoever watches the proposal.
+  that repository is reachable by whoever watches the video.

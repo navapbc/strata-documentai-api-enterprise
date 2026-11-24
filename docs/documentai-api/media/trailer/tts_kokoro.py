@@ -7,7 +7,7 @@
 """Render the narration segments to WAV files with Kokoro-ONNX (local, offline).
 
 Run with:  uv run docs/documentai-api/media/trailer/tts_kokoro.py [--voice af_heart] [--speed 1.0]
-           uv run docs/documentai-api/media/trailer/tts_kokoro.py --emphasis-demo   # A/B/C emphasis samples
+           uv run docs/documentai-api/media/trailer/tts_kokoro.py --emphasis-demo  # A/B/C samples
 
 The model and voices files are downloaded once into out/models/ and checked
 against the sha256 values in models.lock.json before use. Nothing is sent
@@ -71,7 +71,10 @@ def ensure_models() -> None:
         actual = sha256(dest)
         if actual != entry["sha256"]:
             dest.unlink()
-            sys.exit(f"sha256 mismatch for {entry['name']}: got {actual}, expected {entry['sha256']}. Deleted it.")
+            sys.exit(
+                f"sha256 mismatch for {entry['name']}: got {actual}, "
+                f"expected {entry['sha256']}. Deleted it."
+            )
         print(f"ok  {entry['name']}  sha256 verified")
 
 
@@ -87,19 +90,23 @@ def write_wav(path: Path, samples: np.ndarray, rate: int) -> float:
 
 def synth(kokoro: Kokoro, text: str, voice: str, speed: float, mode: str):
     """Speak `text`, applying `mode` to any *emphasised* words. Returns (samples, rate)."""
-    create = lambda t, s=speed, **kw: kokoro.create(t, voice=voice, speed=s, lang="en-us", **kw)
+
+    def create(t, s=speed, **kw):
+        return kokoro.create(t, voice=voice, speed=s, lang="en-us", **kw)
 
     if "*" not in text or mode == "none":
         return create(plain(text))
 
     if mode == "punct":
-        return create(EMPH.sub(lambda m: f", {m.group(1)},", text).replace(",,", ",").replace(", ,", ","))
+        return create(
+            EMPH.sub(lambda m: f", {m.group(1)},", text).replace(",,", ",").replace(", ,", ",")
+        )
 
     if mode == "segments":
         pieces, pos = [], 0
         for m in EMPH.finditer(text):
-            if text[pos:m.start()].strip():
-                pieces.append((text[pos:m.start()].strip(), False))
+            if text[pos : m.start()].strip():
+                pieces.append((text[pos : m.start()].strip(), False))
             pieces.append((m.group(1), True))
             pos = m.end()
         if text[pos:].strip():
@@ -119,13 +126,15 @@ def synth(kokoro: Kokoro, text: str, voice: str, speed: float, mode: str):
         # Phonemize the text around each marked word separately (aligning espeak's
         # word tokens with ours is unreliable), then speak everything in one call so
         # the intonation stays continuous. The marked word gets a primary stress mark.
-        phonemize = lambda t: kokoro.tokenizer.phonemize(t)
+        def phonemize(t):
+            return kokoro.tokenizer.phonemize(t)
+
         parts, pos = [], 0
         for m in EMPH.finditer(text):
-            if text[pos:m.start()].strip():
-                parts.append(phonemize(text[pos:m.start()].strip()))
+            if text[pos : m.start()].strip():
+                parts.append(phonemize(text[pos : m.start()].strip()))
             word = phonemize(m.group(1))
-            parts.append(word if "ˈ" in word else "ˈ" + word)
+            parts.append(word if "ˈ" in word else "ˈ" + word)  # noqa: RUF001 (IPA stress mark)
             pos = m.end()
         if text[pos:].strip():
             parts.append(phonemize(text[pos:].strip()))
@@ -140,8 +149,11 @@ def main() -> None:
     ap.add_argument("--voice", default=narration.voice)
     ap.add_argument("--speed", type=float, default=narration.speed)
     ap.add_argument("--emphasis", choices=MODES, default=narration.emphasis)
-    ap.add_argument("--emphasis-demo", action="store_true",
-                    help="render the closing line in every emphasis mode to out/audio/emphasis/")
+    ap.add_argument(
+        "--emphasis-demo",
+        action="store_true",
+        help="render the closing line in every emphasis mode to out/audio/emphasis/",
+    )
     args = ap.parse_args()
 
     ensure_models()

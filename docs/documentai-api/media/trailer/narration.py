@@ -1,4 +1,6 @@
-"""Load narration.json (hand-written content) and, optionally, the generated timeline (out/timeline.json)."""
+# These are standalone scripts, not a package.
+# ruff: noqa: INP001
+"""Load narration.json (hand-written content), and optionally the generated out/timeline.json."""
 
 import json
 from dataclasses import dataclass
@@ -16,7 +18,9 @@ class Segment:
 
     id: str
     text: str
-    voice_start: float | None = None  # absolute time the voice starts, if not just after the segment opens
+    voice_start: float | None = (
+        None  # absolute time the voice starts, if not just after the segment opens
+    )
     start: float = 0.0
     end: float = 0.0
 
@@ -82,7 +86,10 @@ def load_content() -> Narration:
         repo_url=n["repoUrl"],
         intro=_card(n["intro"]),
         interstitial=_card(n["interstitial"]),
-        segments=[Segment(id=s["id"], text=s["text"], voice_start=s.get("voiceStart")) for s in n["segments"]],
+        segments=[
+            Segment(id=s["id"], text=s["text"], voice_start=s.get("voiceStart"))
+            for s in n["segments"]
+        ],
         chips=n.get("chips"),
         callouts=n.get("callouts"),
         extra_time_to=n.get("extraTimeTo"),
@@ -97,11 +104,14 @@ def load() -> Narration:
             f"{TIMELINE.relative_to(REPO_ROOT)} not found. Run a full build once "
             "(make trailer) so the voiceover is measured and the timeline is built."
         )
-    
+
     timeline = json.loads(TIMELINE.read_text())
     for s in n.segments:
         s.start, s.end = timeline["segments"][s.id]["start"], timeline["segments"][s.id]["end"]
-    
-    n.interstitial.start, n.interstitial.end = timeline["interstitial"]["start"], timeline["interstitial"]["end"]
+
+    n.interstitial.start, n.interstitial.end = (
+        timeline["interstitial"]["start"],
+        timeline["interstitial"]["end"],
+    )
     n.total = timeline["total"]
     return n

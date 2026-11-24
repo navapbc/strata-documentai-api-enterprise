@@ -1,3 +1,5 @@
+# These are standalone scripts, not a package.
+# ruff: noqa: INP001
 """The recorded clips, and the ffmpeg filter chain that edits each one to its segment window."""
 
 import glob
@@ -25,14 +27,16 @@ def clip_duration(path: str) -> float:
     """Return the duration in seconds of a video file by calling ffprobe."""
     result = subprocess.run(
         ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", path],
-        capture_output=True, text=True, check=True,
+        capture_output=True,
+        text=True,
+        check=True,
     )
     return float(result.stdout.strip())
 
 
 @dataclass
 class Recording:
-    """A recorded video file, its length, and the moments in it the specs flagged (seconds into the file)."""
+    """A recorded video file, its length, and the moments in it the specs flagged (in seconds)."""
 
     path: str
     length: float
@@ -41,7 +45,9 @@ class Recording:
     @classmethod
     def latest(cls, pattern: str, markers: dict[str, float]) -> Self:
         """The most recently recorded clip matching a glob pattern.
-        Directories are timestamped so the last entry alphabetically is the newest."""
+
+        Directories are timestamped so the last entry alphabetically is the newest.
+        """
         matches = sorted(glob.glob(str(REPO_ROOT / pattern)))
         if not matches:
             sys.exit(f"No clip matches {pattern}. Record first (see README).")
@@ -50,8 +56,11 @@ class Recording:
 
 @dataclass
 class Clips:
-    """The recorded clips. Markers: demo `ready` (upload screen ready) and `results` (extracted
-    results appear); admin `start` (the screen starts, after sign-in)."""
+    """The recorded clips.
+
+    Markers: demo `ready` (upload screen ready) and `results` (extracted results appear);
+    admin `start` (the screen starts, after sign-in).
+    """
 
     demo: Recording
     rules: Recording
@@ -74,7 +83,10 @@ def find_clips(mark_offset: float) -> Clips:
     return Clips(
         demo=Recording.latest(
             DEMO_GLOB,
-            {"ready": demo_marks["readyAtSec"] + mark_offset, "results": demo_marks["resultsAtSec"] + mark_offset},
+            {
+                "ready": demo_marks["readyAtSec"] + mark_offset,
+                "results": demo_marks["resultsAtSec"] + mark_offset,
+            },
         ),
         rules=Recording.latest(RULES_GLOB, {"start": admin_marks["rules"] + mark_offset}),
         metrics=Recording.latest(METRICS_GLOB, {"start": admin_marks["metrics"] + mark_offset}),
@@ -104,7 +116,9 @@ class ClipEdit:
     def still(cls, input_index: int, seconds: float) -> Self:
         """For a looped still-image input: just normalize to `seconds` duration."""
         edit = object.__new__(cls)
-        edit._parts = [f"[{input_index}:v]null"]  # a first filter, so later parts can be comma-joined
+        edit._parts = [
+            f"[{input_index}:v]null"
+        ]  # a first filter, so later parts can be comma-joined
         edit._clip_secs = seconds
         edit._fitted_secs = seconds
         return edit
@@ -114,7 +128,9 @@ class ClipEdit:
         if self._clip_secs > seconds:
             self._parts.append(f"setpts=PTS*{seconds / self._clip_secs:.5f}")
         elif self._clip_secs < seconds:
-            self._parts.append(f"tpad=stop_mode=clone:stop_duration={seconds - self._clip_secs:.3f}")
+            self._parts.append(
+                f"tpad=stop_mode=clone:stop_duration={seconds - self._clip_secs:.3f}"
+            )
 
         self._fitted_secs = seconds
         return self
@@ -127,7 +143,7 @@ class ClipEdit:
         return self
 
     def normalize(self, seconds: float | None = None) -> Self:
-        """Enforce fps/scale/pixel-format and hard-trim to the final duration (`seconds`, else the fitted length)."""
+        """Enforce fps/scale/pixel-format; hard-trim to `seconds` (default: the fitted length)."""
         final_secs = seconds or self._fitted_secs or self._clip_secs
         self._parts.append(
             f"fps={FPS},scale={W}:{H},format=yuv420p,trim=duration={final_secs:.3f},setpts=PTS-STARTPTS"

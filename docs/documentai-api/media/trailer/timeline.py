@@ -1,3 +1,5 @@
+# These are standalone scripts, not a package.
+# ruff: noqa: INP001
 """Build the 60-second timeline: when each segment starts and ends, from measured speech.
 
 Runs after tts_kokoro.py (build.sh does both) and writes out/timeline.json;
@@ -37,8 +39,12 @@ def lead(i: int, b: Segment) -> float:
 
 need = [dur[b.id] + lead(i, b) + TAIL for i, b in enumerate(segments)]
 
+
 def layout(extra: int):
-    """Place every segment; `extra` whole seconds go to the `extraTimeTo` segment. Returns the last segment's spare time."""
+    """Place every segment; `extra` whole seconds go to the `extraTimeTo` segment.
+
+    Returns the last segment's spare time.
+    """
     t = intro.end  # earliest time the next segment can start
     for i, b in enumerate(segments):
         b.start = round(t, 2)
