@@ -4,7 +4,7 @@ The Extraction Test Runner lets you submit a document through the full pipeline 
 
 ## See it in action
 
-![Extraction Test Runner walkthrough](media/extraction-test-runner-walkthrough.gif)
+![Extraction Test Runner walkthrough](media/walkthroughs/extraction-test-runner-walkthrough.gif)
 
 ## How it works
 

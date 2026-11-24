@@ -64,6 +64,9 @@ architecture-beta
   service s3-agg-metrics(aws:arch-amazon-s3)[Aggregated Processing Metrics] in metrics
   service tenant-schedule(aws:arch-aws-lambda)[Tenant Usage Report] in metrics
   service s3-tenant-usage-metrics(aws:arch-amazon-s3)[Tenant Usage Metrics] in metrics
+  service athena(aws:arch-amazon-athena)[Athena] in metrics
+  junction athena-junc in metrics
+  junction athena-spacer in metrics
 
   %% Admin flow
   user:B --> T:cloudfront
@@ -127,3 +130,9 @@ architecture-beta
   metrics-aggregator:R --> L:s3-agg-metrics
   glue:B --> T:tenant-schedule
   tenant-schedule:B --> T:s3-tenant-usage-metrics
+  %% Athena sits bottom-right: under Aggregated Metrics, right of Tenant Usage Metrics.
+  %% The junction fills the empty column between them so both edges are straight lines.
+  s3-agg-metrics:B -- T:athena-spacer
+  athena-spacer:B --> T:athena
+  s3-tenant-usage-metrics:R -- L:athena-junc
+  athena-junc:R --> L:athena

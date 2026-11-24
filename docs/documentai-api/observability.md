@@ -46,7 +46,7 @@ Metrics appear in CloudWatch under the fixed `ApplicationSignals` namespace, not
 
 A CloudWatch dashboard is provisioned by the `monitoring` Terraform module (`infra/modules/monitoring/dashboard.tf`). It is enabled when `create_dashboard = true` and named `{project_name}-{environment}-dashboard` (deliberately excludes the account ID, unlike other resource names in this project).
 
-![CloudWatch dashboard](media/cloudwatch-observability-dashboard.png)
+![CloudWatch dashboard](media/screenshots/cloudwatch-observability-dashboard.png)
 
 The dashboard is organized into sections:
 

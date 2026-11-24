@@ -4,7 +4,7 @@ When a document is processed, the platform stores both the original image and th
 
 ## See it in action
 
-![Document viewer walkthrough](media/document-viewer-walkthrough.gif)
+![Document viewer walkthrough](media/walkthroughs/document-viewer-walkthrough.gif)
 
 ## Bounding box overlay
 
