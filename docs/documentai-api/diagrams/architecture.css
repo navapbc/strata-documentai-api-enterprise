@@ -3,6 +3,18 @@
   display: none;
 }
 
+/* Alignment-only group edge between the BDA and OCR result-processor columns; it runs under the dotted metrics line, so hide it. */
+#my-svg-L_bda-result-processor_ocr-mapping-processor_0 {
+  display: none;
+}
+
+/* Metrics feed into SQS (BDA result processor -> Document Processor -> OCR processor -> SQS): dotted, so it does not read as a flow through the Lambdas. */
+#my-svg-L_bda-result-processor_identity-processor_0,
+#my-svg-L_identity-processor_ocr-mapping-processor_0,
+#my-svg-L_ocr-mapping-processor_sqs_0 {
+  stroke-dasharray: 3 7;
+}
+
 /* Trim the Dispatch box after layout: the solver sizes it around the free-floating dispatch-start and the trailing
    junction, which makes it too wide and tall. Width = trunk +/- padding (165); height puts the bottom level with the OCR box (597).
    These are layout coordinates: if nodes move, re-measure rect#my-svg-group-dispatch against rect#my-svg-group-ocr-mapping. */

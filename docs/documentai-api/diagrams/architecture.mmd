@@ -52,14 +52,16 @@ architecture-beta
   service bda-result-processor(aws:arch-aws-lambda)[BDA Result Processor] in data-extraction
   service ddb-bda(aws:arch-amazon-dynamodb)[Document Metadata] in data-extraction
 
-  %% Identity Extraction (identity documents per preclassification skip BDA; Textract runs inline in the processor and writes results directly)
+  %% Identity Extraction: identity documents (per preclassification) skip BDA. The Document Processor Lambda runs Textract AnalyzeID inline,
+  %% writes the result to S3 Output, then classifies it and updates DynamoDB (no EventBridge / result-processor hop like BDA)
   %% Add spaces between "Analyze" and "ID" for alignment purposes
   service textract-identity(aws:arch-amazon-textract)[Textract Analyze             ID] in identity-extraction
-  %% spacer junctions: give this row the same step count as Data Extraction so Document Metadata lines up
-  junction identity-spacer1 in identity-extraction
-  junction identity-spacer2 in identity-extraction
+  %% same step count as the BDA row so everything lines up: S3 Output under S3 Output, an empty junction under EventBridge,
+  %% and the Lambda under the BDA Result Processor (and the OCR Mapping Processor)
+  service s3-identity-output(aws:arch-amazon-s3)[S3 Output] in identity-extraction
+  junction identity-spacer in identity-extraction
+  service identity-processor(aws:arch-aws-lambda)[Document Processor] in identity-extraction
   %% also carries the BDA Result Processor -> SQS line below, so it sits in the same cell as the row's last spacer
-  junction extract-junc1 in identity-extraction
   service ddb-identity(aws:arch-amazon-dynamodb)[Document Metadata] in identity-extraction
 
   %% OCR / LLM Mapping
@@ -125,7 +127,7 @@ architecture-beta
   %% the three extraction rows stack from the dispatch junctions, so no stacking edges between them
   bda-result-processor{group}:B -- T:ocr-mapping-processor{group}
 
-  %% OCR mapping path (always runs alongside primary; required for is_compare)
+  %% OCR mapping path (runs alongside the primary path when ocr-mapping-enabled, or for is_compare; needs a matched blueprint type)
 
   textract-analyze-document:R -- L:ocr-spacer
   ocr-spacer:R --> L:ocr-mapping-sqs
@@ -134,20 +136,20 @@ architecture-beta
   ocr-mapping-processor:B --> T:sqs
 
   %% Identity extraction flow
-  textract-identity:R -- L:identity-spacer1
-  identity-spacer1:R -- L:identity-spacer2
-  identity-spacer2:R -- L:extract-junc1
-  extract-junc1:R --> L:ddb-identity
+  textract-identity:R --> L:s3-identity-output
+  s3-identity-output:R -- L:identity-spacer
+  identity-spacer:R --> L:identity-processor
+  identity-processor:R --> L:ddb-identity
 
   %% Extraction flow
   bda:R --> L:s3output
   s3output:R --> L:eventbridge2
   eventbridge2:R --> L:bda-result-processor
   bda-result-processor:R --> L:ddb-bda
-  %% force mermaid chart to render adequate space between groups by using a junction
-  bda-result-processor:B -- T:extract-junc1
-  %% continues down through the OCR processor (which feeds SQS below); reaching SQS from here instead puts it a row too high
-  extract-junc1:B -- T:ocr-mapping-processor
+  %% metrics feed: the line to SQS runs down the Lambda column, through the identity Document Processor and the OCR processor
+  %% (drawn dotted in architecture.css). SQS must only be reached from the OCR processor, or it lands a row too high.
+  bda-result-processor:B -- T:identity-processor
+  identity-processor:B -- T:ocr-mapping-processor
 
   %% Metrics flow
   sqs:R --> L:metrics-processor

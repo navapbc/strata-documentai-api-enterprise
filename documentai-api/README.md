@@ -16,11 +16,11 @@ The diagram source lives in [`architecture.mmd`](../docs/documentai-api/diagrams
 
 **Processing Flow:**
 1. Document uploaded via API endpoint, stored in S3, metadata written to DynamoDB
-2. EventBridge triggers Document Processor Lambda
-3. Document Processor invokes Bedrock Data Automation with tenant-specific blueprint
-4. BDA writes results to S3 output bucket
-5. EventBridge triggers BDA Result Processor to extract fields and update DynamoDB
-6. Metrics emitted to SQS → Metrics Processor → S3 (Parquet) → Glue
+2. EventBridge triggers Document Processor Lambda, which preclassifies the document and dispatches it to an extraction path (the Dispatch box in the diagram)
+3. **BDA (default):** Document Processor invokes Bedrock Data Automation with tenant-specific blueprint, BDA writes results to the S3 output bucket, and EventBridge triggers BDA Result Processor to extract fields and update DynamoDB
+4. **Identity documents** (only when `textract-identity-enabled`, default off): Document Processor runs Textract AnalyzeID inline, writes the result to the S3 output bucket, then classifies it and updates DynamoDB itself, skipping BDA. If AnalyzeID fails or doesn't handle the document, it falls through to BDA
+5. **OCR / LLM mapping** (only when `ocr-mapping-enabled`, default off, or for [extraction-compare](#extraction-compare) jobs, and only for documents with a matched blueprint type): runs alongside the primary path
+6. Metrics emitted to SQS whenever a record reaches a terminal status (the dotted line in the diagram) → Metrics Processor → S3 (Parquet) → Glue
 7. Document Reaper runs hourly, finds records stuck in non-terminal states, checks BDA status, and resolves them to `timed_out` or `failed`
 
 The request lifecycle across these components:

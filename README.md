@@ -43,7 +43,7 @@ Upload a document and view extraction results with bounding box overlay.
 
 ## How it works
 
-A client uploads a document via the API. It's stored in S3 and queued for processing via EventBridge. A processor Lambda invokes Bedrock Data Automation with a tenant-specific blueprint, writes results back to S3, and a second Lambda extracts fields into DynamoDB. Metrics flow through SQS into Parquet via Glue.
+A client uploads a document via the API. It's stored in S3 and queued for processing via EventBridge. A processor Lambda invokes Bedrock Data Automation with a tenant-specific blueprint, writes results back to S3, and a second Lambda extracts fields into DynamoDB. Identity documents can use Textract AnalyzeID instead of BDA when that feature flag is enabled. Metrics flow through SQS into Parquet via Glue.
 
 ![Architecture diagram](docs/documentai-api/media/diagrams/architecture.svg)
 
