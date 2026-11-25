@@ -600,14 +600,16 @@ def upsert_ddb(data: InitialDdbRecord) -> None:
             expr_fields.append(f"{DocumentMetadata.USER_PROVIDED_DOCUMENT_CATEGORY} = :category")
             expr_values[":category"] = data.user_provided_document_category
 
-        if data.is_compare:
-            expr_fields.append(
-                f"{DocumentMetadata.API_RESPONSES_BY_METHOD} = if_not_exists({DocumentMetadata.API_RESPONSES_BY_METHOD}, :emptyMap)"
-            )
-            expr_fields.append(
-                f"{DocumentMetadata.DURATIONS_BY_METHOD} = if_not_exists({DocumentMetadata.DURATIONS_BY_METHOD}, :emptyMap)"
-            )
-            expr_values[":emptyMap"] = {}
+        # Always create the per-method maps: every terminal write nests into them
+        # (write_extract_method_response), and DynamoDB rejects a nested SET when
+        # the parent map is absent.
+        expr_fields.append(
+            f"{DocumentMetadata.API_RESPONSES_BY_METHOD} = if_not_exists({DocumentMetadata.API_RESPONSES_BY_METHOD}, :emptyMap)"
+        )
+        expr_fields.append(
+            f"{DocumentMetadata.DURATIONS_BY_METHOD} = if_not_exists({DocumentMetadata.DURATIONS_BY_METHOD}, :emptyMap)"
+        )
+        expr_values[":emptyMap"] = {}
 
         expr_fields.append(
             f"{DocumentMetadata.TOKENS_BY_MODEL} = if_not_exists({DocumentMetadata.TOKENS_BY_MODEL}, :emptyTokenMap)"

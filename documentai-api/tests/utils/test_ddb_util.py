@@ -839,3 +839,59 @@ def test_sum_token_usage_by_model_empty_map(ddb_doc_metadata_table):
     )
 
     assert ddb_util.sum_token_usage_by_model(object_key) == {}
+
+
+@pytest.mark.parametrize("is_compare", [True, False])
+def test_upsert_ddb_always_creates_per_method_maps(ddb_doc_metadata_table, is_compare):
+    """Per-method maps exist on every record, compare or not.
+
+    Every terminal write nests into apiResponsesByMethod/durationsByMethod, and
+    DynamoDB rejects a nested SET when the parent map is absent.
+    """
+    object_key = f"per-method-maps-{is_compare}"
+
+    ddb_util.upsert_ddb(
+        InitialDdbRecord(object_key=object_key, original_file_name="f.pdf", is_compare=is_compare)
+    )
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"]
+    assert item[DocumentMetadata.API_RESPONSES_BY_METHOD] == {}
+    assert item[DocumentMetadata.DURATIONS_BY_METHOD] == {}
+
+
+def test_upsert_ddb_preserves_existing_per_method_entries(ddb_doc_metadata_table):
+    """A re-upsert must not wipe per-method entries written in between."""
+    object_key = "per-method-preserved"
+
+    ddb_util.upsert_ddb(InitialDdbRecord(object_key=object_key, original_file_name="f.pdf"))
+    ddb_doc_metadata_table.update_item(
+        Key={"fileName": object_key},
+        UpdateExpression="SET apiResponsesByMethod.#m = :v",
+        ExpressionAttributeNames={"#m": "textract"},
+        ExpressionAttributeValues={":v": "{}"},
+    )
+    ddb_util.upsert_ddb(InitialDdbRecord(object_key=object_key, original_file_name="f.pdf"))
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"]
+    assert item[DocumentMetadata.API_RESPONSES_BY_METHOD] == {"textract": "{}"}
+
+
+def test_write_extract_method_response_succeeds_on_non_compare_record(ddb_doc_metadata_table):
+    """Regression: the per-method write used to raise ValidationException on non-compare records.
+
+    That exception propagated out of the Textract identity pipeline and sent the
+    document on to BDA after Textract had already written a terminal result.
+    """
+    from documentai_api.classifiers.api_response import write_extract_method_response
+
+    object_key = "non-compare-method-write"
+    ddb_util.upsert_ddb(
+        InitialDdbRecord(object_key=object_key, original_file_name="f.jpg", is_compare=False)
+    )
+
+    write_extract_method_response(
+        object_key, ProcessStatus.NO_CUSTOM_BLUEPRINT_MATCHED, ExtractMethod.TEXTRACT
+    )
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": object_key})["Item"]
+    assert ExtractMethod.TEXTRACT.value in item[DocumentMetadata.API_RESPONSES_BY_METHOD]
