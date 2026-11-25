@@ -1,21 +1,29 @@
 sequenceDiagram
-    participant C as Client
-    participant AGW as API Gateway
-    participant API as API Lambda
-    participant S3in as S3 (input)
+    box Upload
+        participant C as Client
+        participant AGW as API Gateway
+        participant API as API Lambda
+        participant S3in as S3 (input)
+    end
     participant DDB as DynamoDB
     participant EB as EventBridge
     participant DP as Document Processor
-    participant BDA
-    participant Textract
-    participant OCRQ as OCR Mapping Queue
-    participant OCRP as OCR Mapping Processor
-    participant Bedrock as Bedrock (LLM)
     participant S3out as S3 (output)
-    participant RP as Result Processor
-    participant SQS
-    participant MP as Metrics Processor
-    participant S3m as S3 (metrics, Parquet)
+    participant Textract
+    box BDA path
+        participant BDA
+        participant RP as Result Processor
+    end
+    box OCR / LLM mapping
+        participant OCRQ as OCR Mapping Queue
+        participant OCRP as OCR Mapping Processor
+        participant Bedrock as Bedrock (LLM)
+    end
+    box Metrics
+        participant SQS
+        participant MP as Metrics Processor
+        participant S3m as S3 (metrics, Parquet)
+    end
 
     C->>AGW: POST /v1/documents
     AGW->>API: invoke
@@ -24,22 +32,37 @@ sequenceDiagram
     API-->>C: 202 job_id
     S3in->>EB: ObjectCreated
     EB->>DP: invoke
-    DP->>BDA: InvokeDataAutomationAsync
 
-    par OCR / LLM mapping path (feature flag or is_compare)
+    rect rgba(0, 150, 110, 0.10)
+        Note over DDB,SQS: Primary extraction path<br/>If identity document (textract-identity-enabled)
+        DP->>Textract: AnalyzeID
+        Textract-->>DP: identity fields
+        DP->>S3out: write result
+        DP->>DDB: classify + update status + fields
+        DP->>SQS: emit metrics
+        Note over DDB,SQS: Otherwise (textract-identity-disabled, non-identity documents, or AnalyzeID fell through)
+        DP->>BDA: InvokeDataAutomationAsync
+        BDA->>S3out: write result
+        S3out->>EB: ObjectCreated
+        EB->>RP: invoke
+        RP->>DDB: update status + fields
+        RP->>SQS: emit metrics
+    end
+
+    rect rgba(130, 90, 220, 0.10)
+        Note over DDB,SQS: OCR / LLM mapping path runs alongside the primary path<br/>(ocr-mapping-enabled or is_compare, blueprint type matched)
         DP->>Textract: AnalyzeDocument (layout)
         Textract-->>DP: OCR blocks
-        DP->>OCRQ: enqueue OCR blocks
+        DP->>S3out: write OCR blocks
+        DP->>OCRQ: enqueue request (S3 URI)
+        Note over OCRQ,Bedrock: Asynchronous, after the Document Processor returns
         OCRQ->>OCRP: invoke
+        OCRP->>S3out: read OCR blocks
         OCRP->>Bedrock: map fields via LLM
         Bedrock-->>OCRP: extracted fields
+        OCRP->>S3out: write ocr-mapping result
         OCRP->>DDB: write ocr-mapping result
     end
 
-    BDA->>S3out: write result
-    S3out->>EB: ObjectCreated
-    EB->>RP: invoke
-    RP->>DDB: update status + fields
-    RP->>SQS: emit metrics
     SQS->>MP: invoke
     MP->>S3m: write Parquet
