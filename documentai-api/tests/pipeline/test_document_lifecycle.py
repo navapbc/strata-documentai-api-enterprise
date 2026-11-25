@@ -20,6 +20,7 @@ from documentai_api.utils.blur_detection import BlurResult
 from tests.helpers.documents import generate_blank_pdf
 
 _LIFECYCLE_MODULE = "documentai_api.pipeline.document_lifecycle"
+_NON_TERMINAL_CONDITION, _NON_TERMINAL_VALUES = ProcessStatus.build_ddb_non_terminal_condition()
 
 
 class _Mock:
@@ -408,7 +409,9 @@ def test_set_bda_processing_status_started_routed_to_category(mocker):
             pages_sent_to_bda=None,
             bda_invoke_duration_seconds=None,
             bda_invoke_retry_count=None,
-        )
+        ),
+        condition_expression=_NON_TERMINAL_CONDITION,
+        extra_expression_values=_NON_TERMINAL_VALUES,
     )
 
 
@@ -430,8 +433,53 @@ def test_set_bda_processing_status_started_falls_back_to_all(mocker):
             pages_sent_to_bda=None,
             bda_invoke_duration_seconds=None,
             bda_invoke_retry_count=None,
-        )
+        ),
+        condition_expression=_NON_TERMINAL_CONDITION,
+        extra_expression_values=_NON_TERMINAL_VALUES,
     )
+
+
+def test_set_bda_processing_status_started_does_not_reopen_terminal(ddb_doc_metadata_table):
+    """A terminal record is never flipped back to started (e.g. Textract already succeeded)."""
+    ddb_doc_metadata_table.put_item(
+        Item={
+            DocumentMetadata.FILE_NAME: "terminal-file",
+            DocumentMetadata.PROCESS_STATUS: ProcessStatus.SUCCESS,
+        }
+    )
+
+    lifecycle_util.set_bda_processing_status_started(
+        "terminal-file", "arn:aws:bda:us-east-1:123:job/1", "arn:aws:project/123"
+    )
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": "terminal-file"})["Item"]
+    assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.SUCCESS
+    assert DocumentMetadata.BDA_INVOCATION_ARN not in item
+
+
+def test_set_bda_processing_status_started_from_non_terminal(ddb_doc_metadata_table):
+    ddb_doc_metadata_table.put_item(
+        Item={
+            DocumentMetadata.FILE_NAME: "pending-file",
+            DocumentMetadata.PROCESS_STATUS: ProcessStatus.PENDING_IMAGE_OPTIMIZATION,
+        }
+    )
+
+    lifecycle_util.set_bda_processing_status_started(
+        "pending-file", "arn:aws:bda:us-east-1:123:job/2", "arn:aws:project/123"
+    )
+
+    item = ddb_doc_metadata_table.get_item(Key={"fileName": "pending-file"})["Item"]
+    assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.STARTED
+    assert item[DocumentMetadata.BDA_INVOCATION_ARN] == "arn:aws:bda:us-east-1:123:job/2"
+
+
+def test_set_bda_processing_status_started_reraises_other_client_errors(mocker):
+    error = ClientError({"Error": {"Code": "ProvisionedThroughputExceededException"}}, "UpdateItem")
+    mocker.patch(f"{_LIFECYCLE_MODULE}.update_ddb", side_effect=error)
+
+    with pytest.raises(ClientError):
+        lifecycle_util.set_bda_processing_status_started("test-file", "arn", "project")
 
 
 def test_set_bda_processing_status_not_started(mocker):

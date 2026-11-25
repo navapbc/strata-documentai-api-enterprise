@@ -48,9 +48,11 @@ def _write_terminal_status(
     update_ddb race and batch increment entirely.
     """
     if extraction_method != ExtractMethod.OCR_MAPPING:
-        condition, extra_values = ProcessStatus.build_ddb_non_terminal_condition()
+        condition, non_terminal_values = ProcessStatus.build_ddb_non_terminal_condition()
         try:
-            update_ddb(record, condition_expression=condition, extra_expression_values=extra_values)
+            update_ddb(
+                record, condition_expression=condition, extra_expression_values=non_terminal_values
+            )
         except ClientError as e:
             if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
                 logger.info(
