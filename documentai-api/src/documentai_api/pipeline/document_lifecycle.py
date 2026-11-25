@@ -95,20 +95,37 @@ def set_bda_processing_status_started(
     bda_invoke_duration_seconds: Decimal | None = None,
     bda_invoke_retry_count: int | None = None,
 ) -> None:
-    """Mark file processing as started with BDA job ARN."""
-    update_ddb(
-        UpdateDdbRecord(
-            object_key=object_key,
-            status=ProcessStatus.STARTED,
-            internal_api_response=None,
-            bda_invocation_arn=bda_invocation_arn,
-            bda_project_arn_used=bda_project_arn_used,
-            used_category_specific_project=used_category_specific_project,
-            pages_sent_to_bda=pages_sent_to_bda,
-            bda_invoke_duration_seconds=bda_invoke_duration_seconds,
-            bda_invoke_retry_count=bda_invoke_retry_count,
+    """Mark file processing as started with BDA job ARN.
+
+    Never re-opens a terminal record: if the document already reached a terminal
+    status (e.g. Textract identity wrote a result), the update is skipped so a
+    later BDA result can't overwrite it.
+    """
+    condition, non_terminal_values = ProcessStatus.build_ddb_non_terminal_condition()
+
+    try:
+        update_ddb(
+            UpdateDdbRecord(
+                object_key=object_key,
+                status=ProcessStatus.STARTED,
+                internal_api_response=None,
+                bda_invocation_arn=bda_invocation_arn,
+                bda_project_arn_used=bda_project_arn_used,
+                used_category_specific_project=used_category_specific_project,
+                pages_sent_to_bda=pages_sent_to_bda,
+                bda_invoke_duration_seconds=bda_invoke_duration_seconds,
+                bda_invoke_retry_count=bda_invoke_retry_count,
+            ),
+            condition_expression=condition,
+            extra_expression_values=non_terminal_values,
         )
-    )
+    except ClientError as e:
+        if e.response["Error"]["Code"] != "ConditionalCheckFailedException":
+            raise
+        logger.warning(
+            f"Not marking {object_key} as started: record is already terminal "
+            f"(BDA invocation {bda_invocation_arn})"
+        )
 
 
 def set_bda_processing_status_not_started(object_key: str) -> None:
