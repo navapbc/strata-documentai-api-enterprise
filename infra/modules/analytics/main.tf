@@ -125,6 +125,8 @@ resource "aws_glue_catalog_table" "raw_metrics" {
       name = "updated_at"
       type = "string"
     }
+    # Legacy: only present in S3 exports written before the extraction_* rename (#55).
+    # Kept so Athena can still read old partitions; remove once those are expired.
     columns {
       name = "bda_started_at"
       type = "string"
@@ -137,6 +139,8 @@ resource "aws_glue_catalog_table" "raw_metrics" {
       name = "total_processing_time_seconds"
       type = "double"
     }
+    # Legacy (see bda_started_at): superseded by extraction_processing_time_seconds
+    # and extraction_wait_time_seconds.
     columns {
       name = "bda_processing_time_seconds"
       type = "double"
@@ -329,6 +333,7 @@ resource "aws_glue_catalog_table" "raw_metrics" {
       name = "bda_invoke_duration_seconds"
       type = "double"
     }
+    # Legacy (see bda_started_at): superseded by retry_count.
     columns {
       name = "bda_invoke_retry_count"
       type = "int"

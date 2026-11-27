@@ -93,7 +93,7 @@ def set_bda_processing_status_started(
     used_category_specific_project: bool = False,
     pages_sent_to_bda: int | None = None,
     bda_invoke_duration_seconds: Decimal | None = None,
-    bda_invoke_retry_count: int | None = None,
+    retry_count: int | None = None,
 ) -> None:
     """Mark file processing as started with BDA job ARN.
 
@@ -114,7 +114,7 @@ def set_bda_processing_status_started(
                 used_category_specific_project=used_category_specific_project,
                 pages_sent_to_bda=pages_sent_to_bda,
                 bda_invoke_duration_seconds=bda_invoke_duration_seconds,
-                bda_invoke_retry_count=bda_invoke_retry_count,
+                retry_count=retry_count,
             ),
             condition_expression=condition,
             extra_expression_values=non_terminal_values,

@@ -77,7 +77,6 @@ class DocumentMetadata:
     PAGES_SENT_TO_BDA = "pagesSentToBda"
     S3_FETCH_DURATION_SECONDS = "s3FetchDurationSeconds"
     BDA_INVOKE_DURATION_SECONDS = "bdaInvokeDurationSeconds"
-    BDA_INVOKE_RETRY_COUNT = "bdaInvokeRetryCount"
     BLUR_DETECTION_DURATION_SECONDS = "blurDetectionDurationSeconds"
     IMAGE_OPT_CROP_BLOCK_DURATION_SECONDS = "imageOptCropBlockDurationSeconds"
     IMAGE_OPT_WRITE_DURATION_SECONDS = "imageOptWriteDurationSeconds"

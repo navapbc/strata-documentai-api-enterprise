@@ -164,7 +164,7 @@ class UpdateDdbRecord(BaseModel):
     pages_sent_to_bda: int | None = None
     result_processor_started_at: str | None = None
     bda_invoke_duration_seconds: Decimal | None = None
-    bda_invoke_retry_count: int | None = None
+    retry_count: int | None = None
     extraction_method: ExtractMethod = ExtractMethod.BDA
 
 

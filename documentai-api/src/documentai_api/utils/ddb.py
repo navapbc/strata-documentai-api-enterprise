@@ -401,9 +401,9 @@ def update_ddb(
             update_expr += f", {DocumentMetadata.BDA_INVOKE_DURATION_SECONDS} = :bdaInvokeDs"
             expr_values[":bdaInvokeDs"] = data.bda_invoke_duration_seconds
 
-        if data.bda_invoke_retry_count is not None:
-            update_expr += f", {DocumentMetadata.BDA_INVOKE_RETRY_COUNT} = :bdaRetryCount"
-            expr_values[":bdaRetryCount"] = data.bda_invoke_retry_count
+        if data.retry_count is not None:
+            update_expr += f", {DocumentMetadata.RETRY_COUNT} = :retryCount"
+            expr_values[":retryCount"] = data.retry_count
 
         if data.result_processor_started_at is not None:
             update_expr += f", {DocumentMetadata.RESULT_PROCESSOR_STARTED_AT} = :rpStartedAt"
