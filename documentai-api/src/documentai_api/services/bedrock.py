@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 @retry(
     retry=retry_if_exception(is_retryable),
     stop=stop_after_attempt(3),
-    wait=wait_exponential_jitter(initial=1, max=10),
+    wait=wait_exponential_jitter(multiplier=1, max=10),
 )
 def invoke_model(
     model_id: str,

@@ -176,7 +176,7 @@ def test_invoke_bda_success(input_pdf, mocker):
         used_category_specific_project=False,
         pages_sent_to_bda=1,
         bda_invoke_duration_seconds=ANY,
-        bda_invoke_retry_count=0,
+        retry_count=0,
     )
     assert isinstance(mock_set_status.call_args.kwargs["bda_invoke_duration_seconds"], Decimal)
     assert mock_set_status.call_args.kwargs["bda_invoke_duration_seconds"] >= 0
@@ -636,7 +636,7 @@ def test_invoke_bda_retry_count(mocker, retry_count):
 
     _invoke_bda("bucket", "key", "ddb-key", "test-tenant-id")
 
-    assert mock_set_started.call_args.kwargs["bda_invoke_retry_count"] == retry_count
+    assert mock_set_started.call_args.kwargs["retry_count"] == retry_count
 
 
 def test_bda_invoke_duration_arithmetic(mocker):

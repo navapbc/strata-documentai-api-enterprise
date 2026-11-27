@@ -254,7 +254,7 @@ def _invoke_bda(
 
     for attempt in Retrying(
         stop=stop_after_attempt(get_env_config().max_bda_invoke_retry_attempts),
-        wait=wait_exponential_jitter(initial=10, max=120),
+        wait=wait_exponential_jitter(multiplier=10, max=120),
         retry=retry_if_exception(is_retryable),
     ):
         with attempt:
@@ -275,7 +275,7 @@ def _invoke_bda(
                 used_category_specific_project=used_category_specific_project,
                 pages_sent_to_bda=pages_sent,
                 bda_invoke_duration_seconds=invoke_duration,
-                bda_invoke_retry_count=retry_count,
+                retry_count=retry_count,
             )
 
             logger.info(f"BDA job started for {ddb_key}, ARN: {invocation_arn}")
