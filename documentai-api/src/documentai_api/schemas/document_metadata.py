@@ -9,10 +9,9 @@ class DocumentMetadata:
     BDA_INVOCATION_ARN = "bdaInvocationArn"
     BDA_INVOCATION_ID = "bdaInvocationId"
     BDA_PROJECT_ARN_USED = "bdaProjectArn"
-    # TODO: Rename to extractionOutputS3Uri -- used by both BDA and Textract paths
+    # TODO: Rename to extractionOutputS3Uri - used by both BDA and Textract paths
     BDA_OUTPUT_S3_URI = "bdaOutputS3Uri"
     ERROR_MESSAGE = "errorMessage"
-    RESPONSE_JSON = "responseJson"
     RESPONSE_CODE = "responseCode"
     PROCESSED_DATE = "processedDate"
     JOB_ID = "jobId"
@@ -63,16 +62,17 @@ class DocumentMetadata:
 
     # performance tracking
     DOCUMENT_PROCESSOR_STARTED_AT = "documentProcessorStartedAt"
-    BDA_STARTED_AT = "bdaStartedAt"  # legacy read-only (metrics aggregator fallback)
-    BDA_COMPLETED_AT = "bdaCompletedAt"  # legacy read-only (metrics aggregator fallback)
+    # legacy: written before the extractionStartedAt/CompletedAt/ProcessingTime rename;
+    # no longer written, kept as read fallbacks for records from older deployments
+    BDA_STARTED_AT = "bdaStartedAt"
+    BDA_COMPLETED_AT = "bdaCompletedAt"
+    BDA_PROCESSING_TIME_SECONDS = "bdaProcessingTimeSeconds"
     EXTRACTION_STARTED_AT = "extractionStartedAt"
     EXTRACTION_COMPLETED_AT = "extractionCompletedAt"
     EXTRACTION_PROCESSING_TIME_SECONDS = "extractionProcessingTimeSeconds"
     EXTRACTION_WAIT_TIME_SECONDS = "extractionWaitTimeSeconds"
     RESULT_PROCESSOR_STARTED_AT = "resultProcessorStartedAt"
     TOTAL_PROCESSING_TIME_SECONDS = "totalProcessingTimeSeconds"
-    BDA_PROCESSING_TIME_SECONDS = "bdaProcessingTimeSeconds"  # time bda took to process the file
-    BDA_WAIT_TIME_SECONDS = "bdaWaitTimeSeconds"  # time between s3 write and bda invocation
     IS_DOCUMENT_PROCESSOR_COLD_START = "isDocumentProcessorColdStart"
     PAGES_SENT_TO_BDA = "pagesSentToBda"
     S3_FETCH_DURATION_SECONDS = "s3FetchDurationSeconds"
@@ -94,8 +94,6 @@ class DocumentMetadata:
     BLUR_LLM_CHECKED = "wasBlurLlmInvoked"
     IS_DOCUMENT_BLURRY_REASON = "isDocumentBlurryReason"
     DOCUMENT_WORD_QUADRANT_STATS = "documentWordQuadrantStats"
-    DOCUMENT_METRICS_RAW = "documentMetricsRaw"
-    DOCUMENT_METRICS_NORMALIZED = "documentMetricsNormalized"
 
     # operational intelligence
     ADDITIONAL_INFO = "additionalInfo"
