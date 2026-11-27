@@ -232,10 +232,7 @@ def test_upsert_initial_ddb_record(
         assert item[DocumentMetadata.PRECLASSIFICATION_CATEGORY] == preclassify_result.document_type
 
     if has_internal_response:
-        assert DocumentMetadata.RESPONSE_JSON in item
         assert DocumentMetadata.V1_API_RESPONSE_JSON in item
-    else:
-        assert DocumentMetadata.RESPONSE_JSON not in item
 
 
 @pytest.mark.parametrize(
@@ -366,7 +363,6 @@ def test_upsert_initial_ddb_record_sampling_excluded(
     )
     item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
     assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.PROCESSING_EXCLUDED
-    assert DocumentMetadata.RESPONSE_JSON in item
 
 
 def test_upsert_initial_ddb_record_sampling_not_applied_to_password_protected(
@@ -713,7 +709,6 @@ def test_upsert_initial_ddb_record_flags_multipage_with_inconsistency(
 
     item = ddb_doc_metadata_table.get_item(Key={"fileName": "test-file"})["Item"]
     assert item[DocumentMetadata.PROCESS_STATUS] == ProcessStatus.MULTIPLE_DOCUMENTS_IN_MULTIPAGE
-    assert DocumentMetadata.RESPONSE_JSON in item
 
 
 def test_upsert_initial_ddb_record_multipage_flag_disabled_proceeds_to_bda(

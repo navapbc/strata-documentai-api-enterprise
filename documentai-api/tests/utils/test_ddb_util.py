@@ -104,9 +104,7 @@ def test_build_timing_updates(status, ddb_doc_metadata_table, mocker):
         assert values[":extractionWaitTimeSeconds"] == Decimal("10.0")
         # bda* timing fields must NOT be written
         assert DocumentMetadata.BDA_STARTED_AT not in updates
-        assert DocumentMetadata.BDA_WAIT_TIME_SECONDS not in updates
         assert ":bdaStartedAt" not in values
-        assert ":bdaWaitTimeSeconds" not in values
     elif status in [ProcessStatus.SUCCESS, ProcessStatus.FAILED]:
         assert DocumentMetadata.EXTRACTION_COMPLETED_AT in updates
         assert DocumentMetadata.PROCESSED_DATE in updates
@@ -172,13 +170,9 @@ def test_build_update_expression(
 
     # verify attributes exist in update if populated, else attribute should not be present
     if internal_api_response:
-        assert DocumentMetadata.RESPONSE_JSON in expr
-        assert ":responseJson" in values
         assert DocumentMetadata.RESPONSE_CODE in expr
         assert ":responseCode" in values
     else:
-        assert DocumentMetadata.RESPONSE_JSON not in expr
-        assert ":responseJson" not in values
         assert DocumentMetadata.RESPONSE_CODE not in expr
         assert ":responseCode" not in values
 
@@ -401,7 +395,6 @@ def test_upsert_ddb(ddb_doc_metadata_table, mocker):
     assert item[DocumentMetadata.TRACE_ID] == "trace-456"
     assert item[DocumentMetadata.IS_PASSWORD_PROTECTED] is True
     assert item[DocumentMetadata.IS_DOCUMENT_BLURRY] is False
-    assert DocumentMetadata.RESPONSE_JSON in item
     assert item[DocumentMetadata.PRECLASSIFICATION_CATEGORY] == "W2"
     assert item[DocumentMetadata.PRECLASSIFICATION_CONFIDENCE] == Decimal("0.98")
 

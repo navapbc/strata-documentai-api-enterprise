@@ -194,9 +194,6 @@ def _build_update_expression(
                     values[param_key] = value
 
     if internal_api_response:
-        updates.append(f"{DocumentMetadata.RESPONSE_JSON} = :responseJson")
-        values[":responseJson"] = json.dumps(internal_api_response.__dict__)
-
         updates.append(f"{DocumentMetadata.RESPONSE_CODE} = :responseCode")
         values[":responseCode"] = internal_api_response.response_code
 
@@ -625,11 +622,6 @@ def upsert_ddb(data: InitialDdbRecord) -> None:
 
         # Dynamically add optional fields that were explicitly set and have ddb metadata
         _apply_ddb_fields(data, set_fields, expr_fields, expr_values)
-
-        # internal_api_response needs JSON serialization
-        if data.internal_api_response:
-            expr_fields.append(f"{DocumentMetadata.RESPONSE_JSON} = :respJson")
-            expr_values[":respJson"] = json.dumps(data.internal_api_response.__dict__)
 
         # Pre-classification sub-model
         if data.pre_classification:
